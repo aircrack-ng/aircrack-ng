@@ -43,6 +43,7 @@
 #include <netinet/udp.h>
 #undef __FAVOR_BSD
 
+#include "defs.h"
 #include "aircrack-osdep/osdep.h"
 #include "ieee80211.h"
 #include "easside.h"
@@ -161,6 +162,8 @@ static struct east_state _es;
 
 static void printf_time(char * fmt, ...)
 {
+	REQUIRE(fmt != NULL);
+
 	va_list ap;
 	struct timeval now;
 	time_t t;
@@ -183,8 +186,11 @@ static void printf_time(char * fmt, ...)
 	va_end(ap);
 }
 
-static void mac2str(char * str, unsigned char * m, int macsize)
+static inline void mac2str(char * str, unsigned char * m, int macsize)
 {
+	REQUIRE(str != NULL);
+	REQUIRE(m != NULL);
+
 	snprintf(str,
 			 macsize,
 			 "%.2X:%.2X:%.2X:%.2X:%.2X:%.2X",
@@ -196,10 +202,12 @@ static void mac2str(char * str, unsigned char * m, int macsize)
 			 m[5]);
 }
 
-static int str2mac(unsigned char * mac, char * str)
+static inline int str2mac(unsigned char * mac, char * str)
 {
+	REQUIRE(mac != NULL);
+	REQUIRE(str != NULL);
+
 	unsigned int macf[6];
-	int i;
 
 	if (sscanf(str,
 			   "%x:%x:%x:%x:%x:%x",
@@ -210,15 +218,17 @@ static int str2mac(unsigned char * mac, char * str)
 			   &macf[4],
 			   &macf[5])
 		!= 6)
-		return -1;
+		return (-1);
 
-	for (i = 0; i < 6; i++) *mac++ = (char) macf[i];
+	for (int i = 0; i < 6; i++) *mac++ = (char) macf[i];
 
-	return 0;
+	return (0);
 }
 
 static void init_defaults(struct east_state * es)
 {
+	REQUIRE(es != NULL);
+
 	memset(es, 0, sizeof(*es));
 
 	memcpy(es->es_mymac, "\x00\x00\xde\xfa\xce\x0d", 6);
@@ -245,6 +255,8 @@ static void init_defaults(struct east_state * es)
 
 static void reset(struct east_state * es)
 {
+	REQUIRE(es != NULL);
+
 	int sz;
 	void * ptr;
 	struct rpacket * p;
@@ -272,7 +284,7 @@ static void reset(struct east_state * es)
 
 	/* log ownage */
 	ow = malloc(sizeof(*ow));
-	if (!ow) err(1, "malloc()");
+	ALLEGE(ow != NULL);
 	memset(ow, 0, sizeof(*ow));
 	memcpy(ow->ow_mac, es->es_apmac, sizeof(ow->ow_mac));
 	ow->ow_next = es->es_owned;
@@ -298,6 +310,8 @@ static void reset(struct east_state * es)
 ************/
 static unsigned short in_cksum(unsigned short * ptr, int nbytes)
 {
+	REQUIRE(ptr != NULL);
+
 	register long sum;
 	u_short oddbyte;
 	register u_short answer;
@@ -319,6 +333,7 @@ static unsigned short in_cksum(unsigned short * ptr, int nbytes)
 	sum = (sum >> 16) + (sum & 0xffff);
 	sum += (sum >> 16);
 	answer = ~sum;
+
 	return (answer);
 }
 /**************
@@ -326,17 +341,21 @@ static unsigned short in_cksum(unsigned short * ptr, int nbytes)
 
 static void open_wifi(struct east_state * es)
 {
+	REQUIRE(es != NULL);
+
 	struct wif * wi;
 
 	wi = wi_open(es->es_ifname);
 	if (!wi) err(1, "wi_open()");
 
-	assert(es->es_wi == NULL);
+	INVARIANT(es->es_wi == NULL);
 	es->es_wi = wi;
 }
 
 static void open_tap(struct east_state * es)
 {
+	REQUIRE(es != NULL);
+
 	struct tif * ti;
 	char * iface = NULL;
 
@@ -356,6 +375,8 @@ static void open_tap(struct east_state * es)
 
 static void set_mac(struct east_state * es)
 {
+	REQUIRE(es != NULL);
+
 	printf("Sorting out wifi MAC\n");
 	if (!es->es_setmac)
 	{
@@ -374,30 +395,35 @@ static void set_mac(struct east_state * es)
 
 static void set_tap_ip(struct east_state * es)
 {
+	REQUIRE(es != NULL);
+
 	if (ti_set_ip(es->es_ti, &es->es_myip) == -1) err(1, "ti_set_ip()");
 }
 
 static void die(char * m)
 {
+	REQUIRE(m != NULL);
+
 	struct east_state * es = &_es;
 
 	printf("Dying: %s\n", m);
 	if (es->es_wi) wi_close(es->es_wi);
 	if (es->es_ti) ti_close(es->es_ti);
 
-	exit(0);
+	exit(EXIT_SUCCESS);
 }
 
 static void sighand(int sig)
 {
-	if (sig)
-	{
-	} /* XXX unused */
+	UNUSED_PARAM(sig);
+
 	die("signal");
 }
 
 static void set_chan(struct east_state * es)
 {
+	REQUIRE(es != NULL);
+
 	int chan = es->es_chanlock ? es->es_chanlock : es->es_apchan;
 
 	if (wi_set_channel(es->es_wi, chan) == -1) err(1, "wi_set_channel");
@@ -405,12 +431,17 @@ static void set_chan(struct east_state * es)
 
 static void clear_timeout(struct east_state * es)
 {
+	REQUIRE(es != NULL);
+
 	memset(&es->es_txlast, 0, sizeof(es->es_txlast));
 }
 
 static void
 read_beacon(struct east_state * es, struct ieee80211_frame * wh, int len)
 {
+	REQUIRE(es != NULL);
+	REQUIRE(wh != NULL);
+
 	ieee80211_mgt_beacon_t b = (ieee80211_mgt_beacon_t)(wh + 1);
 	u_int16_t capa;
 	int bhlen = 12;
@@ -498,21 +529,25 @@ read_beacon(struct east_state * es, struct ieee80211_frame * wh, int len)
 static int for_me_and_from_ap(struct east_state * es,
 							  struct ieee80211_frame * wh)
 {
-	if (memcmp(wh->i_addr1, es->es_mymac, 6) != 0) return 0;
+	REQUIRE(es != NULL);
+	REQUIRE(wh != NULL);
 
-	if (memcmp(wh->i_addr2, es->es_apmac, 6) != 0) return 0;
+	if (memcmp(wh->i_addr1, es->es_mymac, 6) != 0) return (0);
 
-	return 1;
+	if (memcmp(wh->i_addr2, es->es_apmac, 6) != 0) return (0);
+
+	return (1);
 }
 
 static void
 read_auth(struct east_state * es, struct ieee80211_frame * wh, int len)
 {
-	unsigned short * sp = (unsigned short *) (wh + 1);
+	UNUSED_PARAM(len);
 
-	if (len)
-	{
-	} /* XXX unused */
+	REQUIRE(es != NULL);
+	REQUIRE(wh != NULL);
+
+	unsigned short * sp = (unsigned short *) (wh + 1);
 
 	if (es->es_state != S_SENDAUTH) return;
 
@@ -535,7 +570,7 @@ read_auth(struct east_state * es, struct ieee80211_frame * wh, int len)
 	if (le16toh(*sp) != 0)
 	{
 		printf("Auth unsuccessful %d\n", le16toh(*sp));
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	printf("Authenticated\n");
@@ -544,25 +579,31 @@ read_auth(struct east_state * es, struct ieee80211_frame * wh, int len)
 
 static int is_dup(struct east_state * es, struct ieee80211_frame * wh)
 {
+	REQUIRE(wh != NULL);
+
 	unsigned short * sn = (unsigned short *) &wh->i_seq[0];
 	unsigned short s;
 
 	s = (le16toh(*sn) & IEEE80211_SEQ_SEQ_MASK) >> IEEE80211_SEQ_SEQ_SHIFT;
 
-	if (s == es->es_rxseq) return 1;
+	REQUIRE(es != NULL);
+
+	if (s == es->es_rxseq) return (1);
 
 	es->es_rxseq = s;
-	return 0;
+
+	return (0);
 }
 
 static void
 read_deauth(struct east_state * es, struct ieee80211_frame * wh, int len)
 {
-	unsigned short * sp = (unsigned short *) (wh + 1);
+	UNUSED_PARAM(len);
 
-	if (len)
-	{
-	} /* XXX unused */
+	REQUIRE(es != NULL);
+	REQUIRE(wh != NULL);
+
+	unsigned short * sp = (unsigned short *) (wh + 1);
 
 	if (!for_me_and_from_ap(es, wh)) return;
 
@@ -575,11 +616,12 @@ read_deauth(struct east_state * es, struct ieee80211_frame * wh, int len)
 static void
 read_disassoc(struct east_state * es, struct ieee80211_frame * wh, int len)
 {
-	unsigned short * sp = (unsigned short *) (wh + 1);
+	UNUSED_PARAM(len);
 
-	if (len)
-	{
-	} /* XXX unused */
+	REQUIRE(es != NULL);
+	REQUIRE(wh != NULL);
+
+	unsigned short * sp = (unsigned short *) (wh + 1);
 
 	if (!for_me_and_from_ap(es, wh)) return;
 
@@ -592,11 +634,12 @@ read_disassoc(struct east_state * es, struct ieee80211_frame * wh, int len)
 static void
 read_assoc_resp(struct east_state * es, struct ieee80211_frame * wh, int len)
 {
-	unsigned short * sp = (unsigned short *) (wh + 1);
+	UNUSED_PARAM(len);
 
-	if (len)
-	{
-	} /* XXX unused */
+	REQUIRE(es != NULL);
+	REQUIRE(wh != NULL);
+
+	unsigned short * sp = (unsigned short *) (wh + 1);
 
 	if (es->es_state != S_SENDASSOC) return;
 
@@ -608,7 +651,7 @@ read_assoc_resp(struct east_state * es, struct ieee80211_frame * wh, int len)
 	if (le16toh(*sp) != 0)
 	{
 		printf("Assoc unsuccessful %d\n", le16toh(*sp));
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	sp++;
@@ -621,6 +664,8 @@ read_assoc_resp(struct east_state * es, struct ieee80211_frame * wh, int len)
 static void
 read_mgt(struct east_state * es, struct ieee80211_frame * wh, int len)
 {
+	REQUIRE(wh != NULL);
+
 	if (len < (int) sizeof(*wh))
 	{
 		printf("Short mgt %d\n", len);
@@ -664,19 +709,21 @@ read_mgt(struct east_state * es, struct ieee80211_frame * wh, int len)
 static void
 read_ack(struct east_state * es, struct ieee80211_frame * wh, int len)
 {
-	if (len)
-	{
-	} /* XXX unused */
+	UNUSED_PARAM(len);
+
+	REQUIRE(es != NULL);
+	REQUIRE(wh != NULL);
 
 	if (memcmp(wh->i_addr1, es->es_mymac, sizeof(wh->i_addr1)) != 0) return;
 
 	es->es_txack = 1;
-	//	printf("Ack\n");
 }
 
 static void
 read_ctl(struct east_state * es, struct ieee80211_frame * wh, int len)
 {
+	REQUIRE(wh != NULL);
+
 	switch (wh->i_fc[0] & IEEE80211_FC0_SUBTYPE_MASK)
 	{
 		case IEEE80211_FC0_SUBTYPE_ACK:
@@ -698,14 +745,22 @@ read_ctl(struct east_state * es, struct ieee80211_frame * wh, int len)
 
 static int our_network(struct east_state * es, struct ieee80211_frame * wh)
 {
+	REQUIRE(es != NULL);
+	REQUIRE(wh != NULL);
+
 	void * bssid
 		= (wh->i_fc[1] & IEEE80211_FC1_DIR_FROMDS) ? wh->i_addr2 : wh->i_addr1;
 
-	return memcmp(es->es_apmac, bssid, sizeof(es->es_apmac)) == 0;
+	return (memcmp(es->es_apmac, bssid, sizeof(es->es_apmac)) == 0);
 }
 
-static void xor(void *out, void *clear, void *cipher, int len)
+static inline void xor(void *out, void *clear, void *cipher, int len)
 {
+	REQUIRE(out != NULL);
+	REQUIRE(clear != NULL);
+	REQUIRE(cipher != NULL);
+	REQUIRE(len > 0);
+
 	unsigned char *cl = (unsigned char*) clear;
 	unsigned char *ci = (unsigned char*) cipher;
 	unsigned char *o = (unsigned char*) out;
@@ -716,20 +771,16 @@ static void xor(void *out, void *clear, void *cipher, int len)
 
 static void save_prga(struct east_state *es)
 {
+	REQUIRE(es != NULL);
+
 	int fd, rc;
 
-	assert(es->es_prgalen <= (int) sizeof(es->es_prga));
+	ALLEGE(es->es_prgalen <= (int) sizeof(es->es_prga));
 	printf_time("Got %d bytes of PRGA IV [%.2X:%.2X:%.2X]",
 				es->es_prgalen,
 				es->es_iv[0],
 				es->es_iv[1],
 				es->es_iv[2]);
-
-#if 0
-	printf(": ");
-	for (i = 0; i < es->es_prgalen; i++)
-		printf("%.2X ", es->es_prga[i]);
-#endif
 	printf("\n");
 
 	fd = open(S_PRGA_LOG, O_WRONLY | O_CREAT, 0644);
@@ -739,48 +790,53 @@ static void save_prga(struct east_state *es)
 	if (rc != 3)
 	{
 		printf("save_prga: can't write IV\n");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 	rc = write(fd, es->es_prga, es->es_prgalen);
 	if (rc != es->es_prgalen)
 	{
 		printf("save_prga: can't write PRGA\n");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 	close(fd);
 }
 
-static int is_arp(struct ieee80211_frame * wh, int len)
+static inline int is_arp(struct ieee80211_frame * wh, int len)
 {
-	int arpsize = 8 + sizeof(struct arphdr) + 10 * 2;
+	UNUSED_PARAM(wh);
 
-	if (wh)
-	{
-	} /* XXX unused */
+	const int arpsize = 8 + sizeof(struct arphdr) + 10 * 2;
 
-	if (len == arpsize || len == 54) return 1;
+	if (len == arpsize || len == 54) return (1);
 
-	return 0;
+	return (0);
 }
 
 static void * get_sa(struct ieee80211_frame * wh)
 {
+	REQUIRE(wh != NULL);
+
 	if (wh->i_fc[1] & IEEE80211_FC1_DIR_FROMDS)
-		return wh->i_addr3;
+		return (wh->i_addr3);
 	else
-		return wh->i_addr2;
+		return (wh->i_addr2);
 }
 
 static void * get_da(struct ieee80211_frame * wh)
 {
+	REQUIRE(wh != NULL);
+
 	if (wh->i_fc[1] & IEEE80211_FC1_DIR_FROMDS)
-		return wh->i_addr1;
+		return (wh->i_addr1);
 	else
-		return wh->i_addr3;
+		return (wh->i_addr3);
 }
 
 static int known_clear(void * clear, struct ieee80211_frame * wh, int len)
 {
+	REQUIRE(clear != NULL);
+	REQUIRE(wh != NULL);
+
 	unsigned char * ptr = clear;
 
 	/* IP */
@@ -793,16 +849,16 @@ static int known_clear(void * clear, struct ieee80211_frame * wh, int len)
 		len = sizeof(S_LLC_SNAP_IP) - 1;
 		memcpy(ptr, S_LLC_SNAP_IP, len);
 		ptr += len;
-#if 1
+
 		len = 2;
 		memcpy(ptr, "\x45\x00", len);
 		ptr += len;
 
 		memcpy(ptr, &iplen, len);
 		ptr += len;
-#endif
+
 		len = ptr - ((unsigned char *) clear);
-		return len;
+		return (len);
 	}
 	printf("Assuming ARP %d\n", len);
 
@@ -830,12 +886,16 @@ static int known_clear(void * clear, struct ieee80211_frame * wh, int len)
 	ptr += len;
 
 	len = ptr - ((unsigned char *) clear);
-	return len;
+
+	return (len);
 }
 
 static void
 base_prga(struct east_state * es, struct ieee80211_frame * wh, int len)
 {
+	REQUIRE(es != NULL);
+	REQUIRE(wh != NULL);
+
 	unsigned char ct[1024];
 	unsigned char * data = (unsigned char *) (wh + 1);
 	int prgalen;
@@ -857,18 +917,24 @@ base_prga(struct east_state * es, struct ieee80211_frame * wh, int len)
 	save_prga(es);
 }
 
-static unsigned int get_crc32(void * data, int len)
+static inline unsigned int get_crc32(void * data, int len)
 {
+	REQUIRE(data != NULL);
+
 	uLong crc;
 
 	crc = crc32(0L, Z_NULL, 0);
 	crc = crc32(crc, data, len);
-	return crc;
+
+	return (crc);
 }
 
 static void
 check_expand(struct east_state * es, struct ieee80211_frame * wh, int len)
 {
+	REQUIRE(es != NULL);
+	REQUIRE(wh != NULL);
+
 	int elen;
 	unsigned long crc;
 	unsigned char * data = (unsigned char *) (wh + 1);
@@ -893,7 +959,7 @@ check_expand(struct east_state * es, struct ieee80211_frame * wh, int len)
 	elen -= 4;
 
 	/* payload */
-	assert(elen <= (int) sizeof(es->es_clear));
+	ALLEGE(elen <= (int) sizeof(es->es_clear));
 	es->es_prgalen = elen + 4;
 	xor(es->es_prga, es->es_clear, data, elen);
 
@@ -907,59 +973,73 @@ check_expand(struct east_state * es, struct ieee80211_frame * wh, int len)
 
 static int to_me(struct east_state * es, struct ieee80211_frame * wh)
 {
+	REQUIRE(es != NULL);
+	REQUIRE(wh != NULL);
+
 	return (wh->i_fc[1] & IEEE80211_FC1_DIR_FROMDS)
 		   && memcmp(es->es_mymac, get_da(wh), 6) == 0;
 }
 
 static int from_me(struct east_state * es, struct ieee80211_frame * wh)
 {
-	return memcmp(es->es_mymac, get_sa(wh), 6) == 0;
+	REQUIRE(es != NULL);
+	REQUIRE(wh != NULL);
+
+	return (memcmp(es->es_mymac, get_sa(wh), 6) == 0);
 }
 
 static int
 check_decrypt(struct east_state * es, struct ieee80211_frame * wh, int len)
 {
+	REQUIRE(es != NULL);
+	REQUIRE(wh != NULL);
+
 	int elen;
 
 	if (!from_me(es, wh)) return 0;
 
-	if (memcmp(wh->i_addr1, S_MCAST, 5) != 0) return 0;
+	if (memcmp(wh->i_addr1, S_MCAST, 5) != 0) return (0);
 
 	elen = es->es_prga_dlen + 1;
 
-	if (elen != (len - 4)) return 0;
+	if (elen != (len - 4)) return (0);
 
 	es->es_prga_d[es->es_prga_dlen] = wh->i_addr1[5];
-#if 0
-	printf("\nPrga byte %d is %.2X\n",
-	       es->es_prga_dlen, es->es_prga_d[es->es_prga_dlen]);
-#endif
 	es->es_prga_dlen++;
 
-	assert(es->es_prga_dlen <= (int) sizeof(es->es_prga_d));
-	return 1;
+	ALLEGE(es->es_prga_dlen <= (int) sizeof(es->es_prga_d));
+
+	return (1);
 }
 
 static void decrypt_ip_addr(
 	struct east_state * es, void * dst, int * len, void * cipher, int off)
 {
+	REQUIRE(es != NULL);
+	REQUIRE(dst != NULL);
+	REQUIRE(len != NULL);
+	REQUIRE(cipher != NULL);
+
 	unsigned char * c = cipher;
 
 	*len = es->es_prga_dlen - off;
 	if (*len > 4) *len = 4;
-	assert(*len > 0);
+	INVARIANT(*len > 0);
 	xor(dst, c + off, es->es_prga_d + off, *len);
 }
 
 static void found_net_addr(struct east_state * es, unsigned char * a)
 {
+	REQUIRE(es != NULL);
+	REQUIRE(a != NULL);
+
 	unsigned char ip[4];
 
 	memcpy(ip, a, 3);
 	if (!ip[0])
 	{
 		printf("Shit, prolly got a lame dhcp dude\n");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	ip[3] = 123;
@@ -976,16 +1056,19 @@ static void found_net_addr(struct east_state * es, unsigned char * a)
 static void
 check_decrypt_arp(struct east_state * es, struct ieee80211_frame * wh, int len)
 {
+	REQUIRE(es != NULL);
+	REQUIRE(wh != NULL);
+
 	unsigned char ip[4];
 	int iplen;
-	int off = 8 + sizeof(struct arphdr) + 6;
+	const int off = 8 + sizeof(struct arphdr) + 6;
 	unsigned char * data;
 	int i;
 
 	if (!check_decrypt(es, wh, len)) return;
 
 	iplen = es->es_prga_dlen - off;
-	assert(iplen > 0 && iplen <= (int) sizeof(ip));
+	ALLEGE(iplen > 0 && iplen <= (int) sizeof(ip));
 
 	data = (unsigned char *) (((struct ieee80211_frame *) es->es_packet_arp)
 							  + 1);
@@ -1006,6 +1089,9 @@ check_decrypt_arp(struct east_state * es, struct ieee80211_frame * wh, int len)
 static void
 check_decrypt_ip(struct east_state * es, struct ieee80211_frame * wh, int len)
 {
+	REQUIRE(es != NULL);
+	REQUIRE(wh != NULL);
+
 	int off_ip = 8;
 	int off_id = off_ip + 4;
 	int off_ttl = off_id + 4;
@@ -1019,15 +1105,7 @@ check_decrypt_ip(struct east_state * es, struct ieee80211_frame * wh, int len)
 
 	if (es->es_prga_dlen == (off_id + 2))
 	{
-#if 0
-		unsigned char *c = data + off_id + 2;
-#endif
 		printf("\nGot IP ID\n");
-#if 0
-		xor(&es->es_prga_d[es->es_prga_dlen], c, "\x00\x00", 2);
-		es->es_prga_dlen += 2;
-		es->es_prga_d[es->es_prga_dlen] = 0;
-#endif
 	}
 	else if (es->es_prga_dlen == (off_ttl + 1))
 	{
@@ -1097,7 +1175,7 @@ check_decrypt_ip(struct east_state * es, struct ieee80211_frame * wh, int len)
 		}
 		printf("\n");
 
-		assert(!es->es_have_src);
+		ALLEGE(!es->es_have_src);
 		if (iplen == 3) found_net_addr(es, dip);
 	}
 	else if (es->es_prga_dlen > off_d_addr)
@@ -1106,6 +1184,8 @@ check_decrypt_ip(struct east_state * es, struct ieee80211_frame * wh, int len)
 
 static void setup_internet(struct east_state * es)
 {
+	REQUIRE(es != NULL);
+
 	struct sockaddr_in s_in;
 	char buf[16];
 
@@ -1115,7 +1195,7 @@ static void setup_internet(struct east_state * es)
 		   inet_ntoa(es->es_srvip),
 		   es->es_port);
 
-	assert(es->es_buddys == 0);
+	ALLEGE(es->es_buddys == 0);
 	es->es_buddys = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (es->es_buddys == -1) err(1, "setup_internet: socket()");
 
@@ -1136,7 +1216,7 @@ static void setup_internet(struct east_state * es)
 	if (memcmp(buf, "sorbox", 6) != 0)
 	{
 		printf("setup_internet: handshake failed");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 	printf("Handshake compl33t\n");
 }
@@ -1144,6 +1224,9 @@ static void setup_internet(struct east_state * es)
 static void
 check_rtr_mac(struct east_state * es, struct ieee80211_frame * wh, int len)
 {
+	REQUIRE(es != NULL);
+	REQUIRE(wh != NULL);
+
 	void * sa;
 	char str[18];
 
@@ -1161,13 +1244,15 @@ check_rtr_mac(struct east_state * es, struct ieee80211_frame * wh, int len)
 
 static struct rpacket * get_slot(struct east_state * es)
 {
+	REQUIRE(es != NULL);
+
 	struct rpacket * slot = es->es_rqueue;
 	struct rpacket * p = es->es_rqueue;
 
 	/* try to recycle */
 	while (slot)
 	{
-		if (!slot->rp_len) return slot;
+		if (!slot->rp_len) return (slot);
 
 		slot = slot->rp_next;
 	}
@@ -1183,43 +1268,51 @@ static struct rpacket * get_slot(struct east_state * es)
 		while (p->rp_next) p = p->rp_next;
 		p->rp_next = slot;
 	}
-	return slot;
+
+	return (slot);
 }
 
 static struct rpacket * get_head(struct east_state * es)
 {
+	REQUIRE(es != NULL);
+
 	struct rpacket * rp = es->es_rqueue;
 
-	if (!rp) return NULL;
+	if (!rp) return (NULL);
 
-	if (!rp->rp_len) return NULL;
+	if (!rp->rp_len) return (NULL);
 
-	return rp;
+	return (rp);
 }
 
 static struct rpacket * get_packet(struct east_state * es, int id)
 {
+	REQUIRE(es != NULL);
+
 	struct rpacket * rp = es->es_rqueue;
 
 	while (rp)
 	{
-		if (!rp->rp_len) return NULL;
+		if (!rp->rp_len) return (NULL);
 
-		if (rp->rp_id == id) return rp;
+		if (rp->rp_id == id) return (rp);
 
 		rp = rp->rp_next;
 	}
 
-	return NULL;
+	return (NULL);
 }
 
 static void remove_packet(struct east_state * es, int id)
 {
+	REQUIRE(es != NULL);
+
 	struct rpacket * rp = es->es_rqueue;
 	struct rpacket ** prevn;
 	struct rpacket * p;
 
-	assert(rp);
+	ALLEGE(rp != NULL);
+
 	prevn = &es->es_rqueue;
 
 	/* find and remove */
@@ -1235,14 +1328,15 @@ static void remove_packet(struct east_state * es, int id)
 		prevn = &rp->rp_next;
 		rp = rp->rp_next;
 	}
-	assert(rp);
+
+	ALLEGE(rp != NULL);
 
 	/* only one element */
 	p = es->es_rqueue;
 	if (!p)
 	{
 		es->es_rqueue = rp;
-		assert(!rp->rp_next);
+		ALLEGE(rp->rp_next == NULL);
 		return;
 	}
 
@@ -1266,6 +1360,8 @@ static void remove_packet(struct east_state * es, int id)
 
 static int queue_len(struct east_state * es)
 {
+	REQUIRE(es != NULL);
+
 	int len = 0;
 	struct rpacket * slot = es->es_rqueue;
 
@@ -1276,12 +1372,15 @@ static int queue_len(struct east_state * es)
 		slot = slot->rp_next;
 	}
 
-	return len;
+	return (len);
 }
 
 static void
 redirect_enque(struct east_state * es, struct ieee80211_frame * wh, int len)
 {
+	REQUIRE(es != NULL);
+	REQUIRE(wh != NULL);
+
 	char s[18];
 	char d[18];
 	struct rpacket * slot;
@@ -1289,7 +1388,7 @@ redirect_enque(struct east_state * es, struct ieee80211_frame * wh, int len)
 	slot = get_slot(es);
 
 	slot->rp_len = len;
-	assert(slot->rp_len <= (int) sizeof(slot->rp_packet));
+	ALLEGE(slot->rp_len <= (int) sizeof(slot->rp_packet));
 	memcpy(slot->rp_packet, wh, slot->rp_len);
 	es->es_rpacket_id++;
 	slot->rp_id = es->es_rpacket_id;
@@ -1317,6 +1416,9 @@ check_redirect(struct east_state * es, struct ieee80211_frame * wh, int len)
 static void
 read_data(struct east_state * es, struct ieee80211_frame * wh, int len)
 {
+	REQUIRE(es != NULL);
+	REQUIRE(wh != NULL);
+
 	if ((wh->i_fc[0] & IEEE80211_FC0_SUBTYPE_MASK)
 		!= IEEE80211_FC0_SUBTYPE_DATA)
 		return;
@@ -1330,7 +1432,7 @@ read_data(struct east_state * es, struct ieee80211_frame * wh, int len)
 		if (!es->es_have_packet
 			|| (es->es_astate <= AS_FIND_IP && !es->es_have_src))
 		{
-			assert((int) sizeof(es->es_packet) >= len);
+			ALLEGE((int) sizeof(es->es_packet) >= len);
 			memcpy(es->es_packet, wh, len);
 			es->es_have_packet = len;
 
@@ -1338,6 +1440,7 @@ read_data(struct east_state * es, struct ieee80211_frame * wh, int len)
 			if ((wh->i_fc[1] & IEEE80211_FC1_DIR_FROMDS) && wh->i_addr1[0] != 0)
 				es->es_have_src = 1;
 		}
+
 		if (!es->es_have_arp && is_arp(wh, len - sizeof(*wh) - 4 - 4))
 		{
 			memcpy(es->es_packet_arp, wh, len);
@@ -1393,12 +1496,13 @@ read_data(struct east_state * es, struct ieee80211_frame * wh, int len)
 
 static void read_wifi(struct east_state * es)
 {
-	unsigned char buf[4096];
-	int len;
+	REQUIRE(es != NULL);
+
+	unsigned char buf[8192];
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 
-	len = wi_read(es->es_wi, buf, sizeof(buf), NULL);
-	if (len == -1) err(1, "wi_read()");
+	const int len = wi_read(es->es_wi, buf, sizeof(buf), NULL);
+	if (len < 0 || len > sizeof(buf)) err(1, "wi_read()");
 
 	/* XXX: I don't do any length chex */
 	if (len < 2)
@@ -1410,6 +1514,7 @@ static void read_wifi(struct east_state * es)
 	switch (wh->i_fc[0] & IEEE80211_FC0_TYPE_MASK)
 	{
 		case IEEE80211_FC0_TYPE_MGT:
+			INVARIANT(len == sizeof(struct ieee80211_frame));
 			read_mgt(es, wh, len);
 			break;
 
@@ -1429,9 +1534,11 @@ static void read_wifi(struct east_state * es)
 
 static unsigned int msec_diff(struct timeval * after, struct timeval * before)
 {
-	unsigned int diff;
+	REQUIRE(after != NULL);
+	REQUIRE(before != NULL);
+	REQUIRE(after->tv_sec >= before->tv_sec);
 
-	assert(after->tv_sec >= before->tv_sec);
+	unsigned int diff;
 
 	if (after->tv_sec > before->tv_sec)
 	{
@@ -1445,17 +1552,21 @@ static unsigned int msec_diff(struct timeval * after, struct timeval * before)
 	else /* after->tv_sec == before->tv_sec */
 		diff = (after->tv_usec - before->tv_usec) / 1000;
 
-	return diff;
+	return (diff);
 }
 
-static void msec_to_tv(int msec, struct timeval * tv)
+static inline void msec_to_tv(int msec, struct timeval * tv)
 {
+	REQUIRE(tv != NULL);
+
 	tv->tv_sec = msec / 1000;
 	tv->tv_usec = (msec - tv->tv_sec * 1000) * 1000;
 }
 
 static void chan_hop(struct east_state * es, struct timeval * tv)
 {
+	REQUIRE(es != NULL);
+
 	struct timeval now;
 	unsigned int elapsed;
 
@@ -1481,17 +1592,19 @@ static void chan_hop(struct east_state * es, struct timeval * tv)
 
 static unsigned short fnseq(unsigned short fn, unsigned short seq)
 {
-	unsigned short r = 0;
+	REQUIRE(fn < 16);
 
-	assert(fn < 16);
-
-	r = fn;
+	unsigned short r = fn;
 	r |= ((seq % 4096) << IEEE80211_SEQ_SEQ_SHIFT);
-	return r;
+
+	return (r);
 }
 
 static void fill_basic(struct east_state * es, struct ieee80211_frame * wh)
 {
+	REQUIRE(es != NULL);
+	REQUIRE(wh != NULL);
+
 	unsigned short * sp;
 
 	/* macs */
@@ -1501,7 +1614,6 @@ static void fill_basic(struct east_state * es, struct ieee80211_frame * wh)
 
 	/* duration */
 	sp = (unsigned short *) wh->i_dur;
-	//	*sp = htole16(32767);
 	*sp = htole16(0);
 
 	/* seq */
@@ -1511,9 +1623,10 @@ static void fill_basic(struct east_state * es, struct ieee80211_frame * wh)
 
 static void send_frame(struct east_state * es, void * buf, int len)
 {
-	int rc;
+	REQUIRE(es != NULL);
+	REQUIRE(buf != NULL);
 
-	rc = wi_write(es->es_wi, buf, len, NULL);
+	int rc = wi_write(es->es_wi, buf, len, NULL);
 	if (rc == -1) err(1, "wi_write()");
 	if (rc != len)
 	{
@@ -1521,7 +1634,7 @@ static void send_frame(struct east_state * es, void * buf, int len)
 			   "%d).\n",
 			   rc,
 			   len);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	if (gettimeofday(&es->es_txlast, NULL) == -1) err(1, "gettimeofday()");
@@ -1539,15 +1652,19 @@ static int too_early(struct timeval * tv, int to, struct timeval * last_sent)
 	if (elapsed < (unsigned int) to)
 	{
 		msec_to_tv(to - elapsed, tv);
-		return 1;
+
+		return (1);
 	}
 
 	msec_to_tv(to, tv);
-	return 0;
+
+	return (0);
 }
 
 static void send_auth(struct east_state * es, struct timeval * tv)
 {
+	REQUIRE(es != NULL);
+
 	unsigned char buf[4096];
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	unsigned short * sp;
@@ -1573,6 +1690,8 @@ static void send_auth(struct east_state * es, struct timeval * tv)
 
 static void send_assoc(struct east_state * es, struct timeval * tv)
 {
+	REQUIRE(es != NULL);
+
 	unsigned char buf[4096];
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	unsigned short * sp;
@@ -1626,8 +1745,10 @@ static void send_assoc(struct east_state * es, struct timeval * tv)
 	send_frame(es, wh, len);
 }
 
-static void put_crc32(void * data, int len)
+static inline void put_crc32(void * data, int len)
 {
+	REQUIRE(data != NULL);
+
 	unsigned int * ptr = (unsigned int *) ((char *) data + len);
 
 	*ptr = get_crc32(data, len);
@@ -1635,6 +1756,8 @@ static void put_crc32(void * data, int len)
 
 static void expand_prga(struct east_state * es, struct timeval * tv)
 {
+	REQUIRE(es != NULL);
+
 	unsigned char buf[2048];
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	unsigned char * data = (unsigned char *) (wh + 1);
@@ -1708,7 +1831,7 @@ static void expand_prga(struct east_state * es, struct timeval * tv)
 		wh->i_fc[1] &= ~IEEE80211_FC1_MORE_FRAG;
 	}
 
-	assert((es->es_clearp >= es->es_clear)
+	ALLEGE((es->es_clearp >= es->es_clear)
 		   && ((es->es_clearp + dlen) < &es->es_clear[sizeof(es->es_clear)]));
 	memcpy(data, es->es_clearp, dlen);
 	es->es_clearpnext = es->es_clearp + dlen;
@@ -1731,6 +1854,8 @@ static void expand_prga(struct east_state * es, struct timeval * tv)
 
 static void decrypt_packet(struct east_state * es, struct timeval * tv)
 {
+	REQUIRE(es != NULL);
+
 	unsigned char buf[2048];
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	unsigned char * data = (unsigned char *) (wh + 1);
@@ -1767,6 +1892,8 @@ static void decrypt_packet(struct east_state * es, struct timeval * tv)
 
 static void decrypt_arp(struct east_state * es, struct timeval * tv)
 {
+	REQUIRE(es != NULL);
+
 	/* init */
 	if (es->es_astate != AS_DECRYPT_ARP)
 	{
@@ -1795,6 +1922,8 @@ static void decrypt_arp(struct east_state * es, struct timeval * tv)
 
 static void decrypt_ip(struct east_state * es, struct timeval * tv)
 {
+	REQUIRE(es != NULL);
+
 	/* init */
 	if (es->es_astate != AS_DECRYPT_IP)
 	{
@@ -1842,6 +1971,8 @@ static void decrypt_ip(struct east_state * es, struct timeval * tv)
 
 static void find_ip(struct east_state * es, struct timeval * tv)
 {
+	REQUIRE(es != NULL);
+
 	if (es->es_rtrip.s_addr && es->es_myip.s_addr)
 	{
 		set_tap_ip(es);
@@ -1858,6 +1989,8 @@ static void find_ip(struct east_state * es, struct timeval * tv)
 
 static void send_whohas(struct east_state * es, struct timeval * tv)
 {
+	REQUIRE(es != NULL);
+
 	unsigned char buf[2048];
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	unsigned char * data = (unsigned char *) (wh + 1);
@@ -1914,6 +2047,8 @@ static void send_whohas(struct east_state * es, struct timeval * tv)
 
 static void check_inet(struct east_state * es, struct timeval * tv)
 {
+	REQUIRE(es != NULL);
+
 	unsigned char buf[2048];
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	unsigned char * data = (unsigned char *) (wh + 1);
@@ -1973,7 +2108,7 @@ static void check_inet(struct east_state * es, struct timeval * tv)
 
 	dlen = data - datas;
 	put_crc32(datas, dlen);
-	assert(es->es_prgalen >= dlen + 4);
+	ALLEGE(es->es_prgalen >= dlen + 4);
 	xor(datas, datas, es->es_prga, dlen + 4);
 
 	printf("Checking for internet... %d\n", es->es_rpacket_id);
@@ -1983,6 +2118,8 @@ static void check_inet(struct east_state * es, struct timeval * tv)
 
 static void redirect_sendip(struct east_state * es, struct rpacket * rp)
 {
+	REQUIRE(es != NULL);
+
 	unsigned char buf[2048];
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	unsigned char * data = (unsigned char *) (wh + 1);
@@ -2042,15 +2179,13 @@ static void redirect_sendip(struct east_state * es, struct rpacket * rp)
 	assert(es->es_prgalen >= dlen + 4);
 	xor(datas, datas, es->es_prga, dlen + 4);
 
-#if 0
-	printf("Sending IP for %d %d:0\n",
-	       rp->rp_id, es->es_txseq);
-#endif
 	send_frame(es, wh, data - buf + 4);
 }
 
 static void redirect_sendfrag(struct east_state * es, struct rpacket * rp)
 {
+	REQUIRE(es != NULL);
+
 	unsigned char buf[2048];
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	unsigned char * data = (unsigned char *) (wh + 1);
@@ -2070,15 +2205,13 @@ static void redirect_sendfrag(struct east_state * es, struct rpacket * rp)
 	dlen = rp->rp_len - sizeof(*wh);
 	memcpy(data, ((struct ieee80211_frame *) rp->rp_packet) + 1, dlen);
 
-#if 0
-	printf("Sending frag for %d %d:1 [%d]\n",
-	       rp->rp_id, es->es_txseq, dlen - 8);
-#endif
 	send_frame(es, wh, sizeof(*wh) + dlen);
 }
 
 static void redirect(struct east_state * es, struct timeval * tv)
 {
+	REQUIRE(es != NULL);
+
 	struct rpacket * rp = get_head(es);
 
 	if (!rp) return;
@@ -2095,6 +2228,7 @@ static void redirect(struct east_state * es, struct timeval * tv)
 	if (!es->es_rtt_id || (es->es_rtt_id = rp->rp_id))
 	{
 		es->es_rtt_id = rp->rp_id;
+
 		if (gettimeofday(&es->es_rtt, NULL) == -1) err(1, "gettimeofday()");
 	}
 
@@ -2106,6 +2240,8 @@ static void redirect(struct east_state * es, struct timeval * tv)
 
 static void associated(struct east_state * es, struct timeval * tv)
 {
+	REQUIRE(es != NULL);
+
 	switch (es->es_astate)
 	{
 		case AS_NOPRGA:
@@ -2147,6 +2283,8 @@ static void associated(struct east_state * es, struct timeval * tv)
 
 static void buddy_inet_check(struct east_state * es)
 {
+	REQUIRE(es != NULL);
+
 	struct
 	{
 		struct in_addr addr;
@@ -2155,7 +2293,7 @@ static void buddy_inet_check(struct east_state * es)
 	struct timeval now;
 	int rtt;
 
-	assert(sizeof(data) == 6);
+	REQUIRE(sizeof(data) == 6u);
 
 	if (recv(es->es_buddys, &data, sizeof(data), 0) != sizeof(data))
 		err(1, "buddy_inet_check: recv()");
@@ -2183,6 +2321,8 @@ static void buddy_inet_check(struct east_state * es)
 
 static void buddy_packet(struct east_state * es)
 {
+	REQUIRE(es != NULL);
+
 	unsigned char buf[2048];
 	unsigned short * p = (unsigned short *) buf;
 	unsigned short id, len;
@@ -2196,7 +2336,7 @@ static void buddy_packet(struct east_state * es)
 	{
 		if (rc == -1) err(1, "buddy_packet: recv() id & len");
 		printf("buddy_packet: recv id len got %d/%d\n", rc, 4);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	id = ntohs(*p);
@@ -2204,7 +2344,7 @@ static void buddy_packet(struct east_state * es)
 	len = ntohs(*p);
 	p++;
 
-	assert(len + 6 <= (int) sizeof(buf));
+	ALLEGE(len + 6 <= (int) sizeof(buf));
 
 	ptr = &buf[6];
 	got = 0;
@@ -2266,6 +2406,8 @@ static void buddy_packet(struct east_state * es)
 
 static void read_buddy(struct east_state * es)
 {
+	REQUIRE(es != NULL);
+
 	unsigned short cmd;
 	int rc;
 
@@ -2292,6 +2434,8 @@ static void read_buddy(struct east_state * es)
 
 static void read_tap(struct east_state * es)
 {
+	REQUIRE(es != NULL);
+
 	unsigned char buf[2048];
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	unsigned char * data = (unsigned char *) (wh + 1);
@@ -2325,7 +2469,7 @@ static void read_tap(struct east_state * es)
 
 	dlen = dlen - 14 + 8;
 	put_crc32(datas, dlen);
-	assert(es->es_prgalen >= dlen + 4);
+	ALLEGE(es->es_prgalen >= dlen + 4);
 	xor(datas, datas, es->es_prga, dlen + 4);
 
 	printf_time("Sending frame from tap %d\n", dlen);
@@ -2336,6 +2480,8 @@ static void read_tap(struct east_state * es)
 
 static void own(struct east_state * es)
 {
+	REQUIRE(es != NULL);
+
 	fd_set rfds;
 	struct timeval tv, *tvp;
 	int maxfd;
@@ -2405,9 +2551,8 @@ static void own(struct east_state * es)
 
 static void usage(char * p)
 {
-	if (p)
-	{
-	}
+	UNUSED_PARAM(p);
+
 	char * version_info
 		= getVersion("Easside-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 	printf("\n"
@@ -2434,6 +2579,8 @@ static void usage(char * p)
 
 static void load_prga(struct east_state * es)
 {
+	REQUIRE(es != NULL);
+
 	int fd;
 	int rc;
 
@@ -2444,7 +2591,7 @@ static void load_prga(struct east_state * es)
 	if (rc != 3)
 	{
 		printf("Can't read IV from %s\n", S_PRGA_LOG);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	rc = read(fd, es->es_prga, sizeof(es->es_prga));
@@ -2479,7 +2626,7 @@ int main(int argc, char * argv[])
 				if (str2mac(es->es_apmac, optarg) == -1)
 				{
 					printf("Can't parse AP mac\n");
-					exit(1);
+					exit(EXIT_FAILURE);
 				}
 				break;
 
@@ -2487,7 +2634,7 @@ int main(int argc, char * argv[])
 				if (str2mac(es->es_mymac, optarg) == -1)
 				{
 					printf("Can't parse my mac\n");
-					exit(1);
+					exit(EXIT_FAILURE);
 				}
 				es->es_setmac = 1;
 				break;
@@ -2496,7 +2643,7 @@ int main(int argc, char * argv[])
 				if (!inet_aton(optarg, &es->es_myip))
 				{
 					printf("Can't parse my ip\n");
-					exit(1);
+					exit(EXIT_FAILURE);
 				}
 				break;
 
@@ -2504,7 +2651,7 @@ int main(int argc, char * argv[])
 				if (!inet_aton(optarg, &es->es_rtrip))
 				{
 					printf("Can't parse rtr ip\n");
-					exit(1);
+					exit(EXIT_FAILURE);
 				}
 				break;
 
@@ -2512,7 +2659,7 @@ int main(int argc, char * argv[])
 				if (!inet_aton(optarg, &es->es_srvip))
 				{
 					printf("Can't parse srv ip\n");
-					exit(1);
+					exit(EXIT_FAILURE);
 				}
 				break;
 
@@ -2523,7 +2670,7 @@ int main(int argc, char * argv[])
 			case 'h':
 			default:
 				usage(argv[0]);
-				exit(0);
+				exit(EXIT_SUCCESS);
 		}
 	}
 
@@ -2531,7 +2678,7 @@ int main(int argc, char * argv[])
 	{
 		printf("Need at least server IP\n");
 		usage(argv[0]);
-		exit(0);
+		exit(EXIT_FAILURE);
 	}
 
 	load_prga(es);
@@ -2547,5 +2694,5 @@ int main(int argc, char * argv[])
 	own(es);
 
 	die("the end");
-	exit(0);
+	exit(EXIT_SUCCESS);
 }

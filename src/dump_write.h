@@ -33,11 +33,11 @@
 #define _AIRODUMP_NG_DUMP_WRITE_H_
 
 int dump_write_csv(void);
-int dump_write_airodump_ng_logcsv_add_ap(const struct AP_info * ap_cur, 
-											const int32_t ri_power);
-int dump_write_airodump_ng_logcsv_add_client(const struct AP_info * ap_cur, 
-												const struct ST_info * st_cur,
-												const int32_t ri_power);
+int dump_write_airodump_ng_logcsv_add_ap(const struct AP_info * ap_cur,
+										 const int32_t ri_power);
+int dump_write_airodump_ng_logcsv_add_client(const struct AP_info * ap_cur,
+											 const struct ST_info * st_cur,
+											 const int32_t ri_power);
 char * get_manufacturer_from_string(char * buffer);
 int dump_write_kismet_netxml(void);
 int dump_write_kismet_csv(void);

@@ -38,7 +38,7 @@
 	{                                                                          \
 		if (!(c))                                                              \
 		{                                                                      \
-			fprintf(stderr, "FAILED: %s\n", #c);                               \
+			fprintf(stderr, "FAILED:%s:%d: %s\n", __FILE__, __LINE__, #c);     \
 			abort();                                                           \
 		}                                                                      \
 	} while (0)
@@ -110,6 +110,19 @@
 #define likely(x) (x)
 #define unlikely(x) (x)
 #endif
+
+#define UNUSED_PARAM(x) (void) x
+
+#ifdef UNUSED
+#elif defined(__GNUC__)
+#define UNUSED(x) UNUSED_##x __attribute__((unused))
+#elif defined(__LCLINT__)
+#define UNUSED(x) /*@unused@*/ x
+#else
+#define UNUSED(x) x
+#endif
+
+#define ArrayCount(a) (sizeof((a)) / sizeof((a)[0]))
 
 #ifdef __cplusplus
 extern "C" {

@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "defs.h"
 #include "aircrack-util/common.h"
 
 #define IVBUF_SIZE (5UL * 0xFFFFFF)
@@ -49,7 +50,7 @@ enum KoreK_attacks
 	A_neg /* helps reject false positives */
 };
 
-int K_COEFF[N_ATTACKS]
+static const int K_COEFF[N_ATTACKS]
 	= {15, 13, 12, 12, 12, 5, 5, 5, 3, 4, 3, 4, 3, 13, 4, 4, -20};
 
 static void calc_votes(unsigned char * ivbuf,
@@ -58,6 +59,10 @@ static void calc_votes(unsigned char * ivbuf,
 					   int B,
 					   int votes[N_ATTACKS][256])
 {
+	REQUIRE(ivbuf != NULL);
+	REQUIRE(nb_ivs >= 0);
+	REQUIRE(key != NULL);
+
 	int i, j;
 	long xv;
 	unsigned char R[256], jj[256];
@@ -276,8 +281,11 @@ typedef struct
 	int idx, val;
 } vote;
 
-static int cmp_votes(const void * bs1, const void * bs2)
+static inline int cmp_votes(const void * bs1, const void * bs2)
 {
+	REQUIRE(bs1 != NULL);
+	REQUIRE(bs2 != NULL);
+
 	if (((vote *) bs1)->val < ((vote *) bs2)->val) return (1);
 
 	if (((vote *) bs1)->val > ((vote *) bs2)->val) return (-1);
@@ -301,7 +309,7 @@ int main(int argc, char * argv[])
 	if (argc != 3)
 	{
 		printf("usage: kstats <ivs file> <104-bit key>\n");
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	i = 0;
@@ -316,7 +324,7 @@ int main(int argc, char * argv[])
 		if (n < 0 || n > 255)
 		{
 			fprintf(stderr, "Invalid wep key.\n");
-			return (1);
+			return (EXIT_FAILURE);
 		}
 
 		wepkey[i++] = n;
@@ -336,13 +344,13 @@ int main(int argc, char * argv[])
 	if (i != 13)
 	{
 		fprintf(stderr, "Invalid wep key.\n");
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	if ((ivbuf = (unsigned char *) malloc(IVBUF_SIZE)) == NULL)
 	{
 		perror("malloc");
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	memset(ivbuf, 0, IVBUF_SIZE);
@@ -351,7 +359,7 @@ int main(int argc, char * argv[])
 	{
 		free(ivbuf);
 		perror("fopen");
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	if (fread(buffer, 1, 4, f) != 4)
@@ -359,7 +367,7 @@ int main(int argc, char * argv[])
 		free(ivbuf);
 		fclose(f);
 		perror("fread header");
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	if (memcmp(buffer, "\xBF\xCA\x84\xD4", 4) != 0)
@@ -367,7 +375,7 @@ int main(int argc, char * argv[])
 		free(ivbuf);
 		fclose(f);
 		fprintf(stderr, "Not an .IVS file\n");
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	nb_ivs = 0;
@@ -435,5 +443,5 @@ int main(int argc, char * argv[])
 	free(ivbuf);
 	fclose(f);
 
-	return (0);
+	return (EXIT_SUCCESS);
 }

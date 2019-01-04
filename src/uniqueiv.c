@@ -40,6 +40,8 @@
  */
 
 #include <stdlib.h>
+
+#include "defs.h"
 #include "uniqueiv.h"
 
 /* allocate root structure */
@@ -203,7 +205,8 @@ unsigned char * data_init(void)
 	// It could eat up to (256*256*256) * 3 bytes = 48Mb :/
 	unsigned char * IVs
 		= (unsigned char *) calloc(256 * 256 * 256 * 3, sizeof(unsigned char));
-	return IVs;
+	ALLEGE(IVs != NULL);
+	return (IVs);
 }
 
 /* Checking WEP packet:
@@ -252,7 +255,7 @@ int data_check(unsigned char * data_root,
 	}
 	// else, cannot detect since it is not started
 
-	return cloaking;
+	return (cloaking);
 }
 
 void data_wipe(unsigned char * data)

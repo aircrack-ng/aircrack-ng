@@ -69,6 +69,7 @@
 
 #include "version.h"
 #include "pcap.h"
+#include "defs.h"
 #include "aircrack-osdep/osdep.h"
 #include "crypto.h"
 #include "aircrack-util/common.h"
@@ -128,20 +129,20 @@
 #define RATE_48M 48000000
 #define RATE_54M 54000000
 
-int bitrates[RATE_NUM] = {RATE_1M,
-						  RATE_2M,
-						  RATE_5_5M,
-						  RATE_6M,
-						  RATE_9M,
-						  RATE_11M,
-						  RATE_12M,
-						  RATE_18M,
-						  RATE_24M,
-						  RATE_36M,
-						  RATE_48M,
-						  RATE_54M};
+static const int bitrates[RATE_NUM] = {RATE_1M,
+									   RATE_2M,
+									   RATE_5_5M,
+									   RATE_6M,
+									   RATE_9M,
+									   RATE_11M,
+									   RATE_12M,
+									   RATE_18M,
+									   RATE_24M,
+									   RATE_36M,
+									   RATE_48M,
+									   RATE_54M};
 
-char usage[] =
+static const char usage[] =
 
 	"\n"
 	"  %s - (C) 2006-2018 Thomas d\'Otreppe\n"
@@ -195,12 +196,6 @@ char usage[] =
 	"\n"
 	"      -B        : activates the bitrate test\n"
 	"\n"
-	/*
-"  WIDS evasion options:\n"
-"      -y value  : Use packets older than n packets\n"
-"      -z        : Ghosting\n"
-"\n"
-*/
 	"  Source options:\n"
 	"\n"
 	"      -i iface  : capture packets from this interface\n"
@@ -232,7 +227,7 @@ char usage[] =
 	"      --help              : Displays this usage screen\n"
 	"\n";
 
-struct options
+static struct options
 {
 	unsigned char f_bssid[6];
 	unsigned char f_dmac[6];
@@ -289,7 +284,7 @@ struct options
 	int reassoc;
 } opt;
 
-struct devices
+static struct devices
 {
 	int fd_in, arptype_in;
 	int fd_out, arptype_out;
@@ -330,25 +325,19 @@ struct APt
 	int pwr[REQUESTS];
 };
 
-struct APt ap[MAX_APS];
+static struct APt ap[MAX_APS];
 
-unsigned long nb_pkt_sent;
-unsigned char h80211[4096];
-unsigned char tmpbuf[4096];
-unsigned char srcbuf[4096];
-char strbuf[512];
+static unsigned long nb_pkt_sent;
+static unsigned char h80211[4096];
+static unsigned char tmpbuf[4096];
+static unsigned char srcbuf[4096];
+static char strbuf[512];
 
-unsigned char ska_auth1[]
-	= "\xb0\x00\x3a\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-	  "\x00\x00\x00\x00\x00\x00\xb0\x01\x01\x00\x01\x00\x00\x00";
-
-unsigned char ska_auth3[4096]
+static const unsigned char ska_auth3[4096]
 	= "\xb0\x40\x3a\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
 	  "\x00\x00\x00\x00\x00\x00\xc0\x01";
 
-int ctrl_c, alarmed;
-
-char * iwpriv;
+static int ctrl_c, alarmed;
 
 static void sighandler(int signum)
 {
@@ -505,6 +494,8 @@ static int set_bitrate(struct wif * wi, int rate)
 
 static int send_packet(void * buf, size_t count)
 {
+	REQUIRE(buf != NULL);
+
 	struct wif * wi = _wi_out; /* XXX globals suck */
 	unsigned char * pkt = (unsigned char *) buf;
 
@@ -534,6 +525,9 @@ static int send_packet(void * buf, size_t count)
 
 static int read_packet(void * buf, size_t count, struct rx_info * ri)
 {
+	REQUIRE(buf != NULL && count > 0);
+	REQUIRE(ri != NULL);
+
 	struct wif * wi = _wi_in; /* XXX */
 	int rc;
 
@@ -586,6 +580,8 @@ static void read_sleep(unsigned long usec)
 
 static int filter_packet(unsigned char * h80211, int caplen)
 {
+	REQUIRE(h80211 != NULL);
+
 	int z, mi_b, mi_s, mi_d, ext = 0, qos;
 
 	if (caplen <= 0) return (1);
@@ -668,6 +664,8 @@ static int filter_packet(unsigned char * h80211, int caplen)
 static int
 wait_for_beacon(unsigned char * bssid, unsigned char * capa, char * essid)
 {
+	REQUIRE(bssid != NULL);
+
 	int len = 0, chan = 0, taglen = 0, tagtype = 0, pos = 0;
 	unsigned char pkt_sniff[4096];
 	struct timeval tv, tv2;
@@ -927,6 +925,9 @@ static int getnet(unsigned char * capa, int filter, int force)
 static int
 xor_keystream(unsigned char * ph80211, unsigned char * keystream, int len)
 {
+	REQUIRE(ph80211 != NULL);
+	REQUIRE(keystream != NULL);
+
 	int i = 0;
 
 	if (len <= 0 || len >= INT_MAX) return 0;
@@ -941,6 +942,8 @@ xor_keystream(unsigned char * ph80211, unsigned char * keystream, int len)
 
 static int capture_ask_packet(int * caplen, int just_grab)
 {
+	REQUIRE(caplen != NULL);
+
 	time_t tr;
 	struct timeval tv;
 	struct tm * lt;
@@ -988,7 +991,7 @@ static int capture_ask_packet(int * caplen, int just_grab)
 			{
 				if (errno == EINTR) continue;
 				perror("select failed");
-				return (1);
+				return (EXIT_FAILURE);
 			}
 
 			if (!FD_ISSET(dev.fd_in, &rfds)) continue;
@@ -997,7 +1000,7 @@ static int capture_ask_packet(int * caplen, int just_grab)
 
 			*caplen = read_packet(h80211, sizeof(h80211), NULL);
 
-			if (*caplen < 0) return (1);
+			if (*caplen < 0) return (EXIT_FAILURE);
 			if (*caplen == 0) continue;
 		}
 		else
@@ -1011,7 +1014,7 @@ static int capture_ask_packet(int * caplen, int just_grab)
 				printf("\r");
 				erase_line(0);
 				printf("End of file.\n");
-				return (1);
+				return (EXIT_FAILURE);
 			}
 
 			if (dev.pfh_in.magic == TCPDUMP_CIGAM)
@@ -1030,7 +1033,7 @@ static int capture_ask_packet(int * caplen, int just_grab)
 				printf("\r");
 				erase_line(0);
 				printf("Invalid packet length %d.\n", n);
-				return (1);
+				return (EXIT_FAILURE);
 			}
 
 			if (fread(h80211, n, 1, dev.f_cap_in) != 1)
@@ -1038,7 +1041,7 @@ static int capture_ask_packet(int * caplen, int just_grab)
 				printf("\r");
 				erase_line(0);
 				printf("End of file.\n");
-				return (1);
+				return (EXIT_FAILURE);
 			}
 
 			if (dev.pfh_in.linktype == LINKTYPE_PRISM_HEADER)
@@ -1280,7 +1283,7 @@ static int capture_ask_packet(int * caplen, int just_grab)
 		if ((f_cap_out = fopen(strbuf, "wb+")) == NULL)
 		{
 			perror("fopen failed");
-			return (1);
+			return (EXIT_FAILURE);
 		}
 
 		n = sizeof(struct pcap_file_header);
@@ -1289,7 +1292,7 @@ static int capture_ask_packet(int * caplen, int just_grab)
 		{
 			fclose(f_cap_out);
 			perror("fwrite failed\n");
-			return (1);
+			return (EXIT_FAILURE);
 		}
 
 		pkh.tv_sec = tv.tv_sec;
@@ -1303,7 +1306,7 @@ static int capture_ask_packet(int * caplen, int just_grab)
 		{
 			fclose(f_cap_out);
 			perror("fwrite failed");
-			return (1);
+			return (EXIT_FAILURE);
 		}
 
 		n = pkh.caplen;
@@ -1312,13 +1315,13 @@ static int capture_ask_packet(int * caplen, int just_grab)
 		{
 			fclose(f_cap_out);
 			perror("fwrite failed");
-			return (1);
+			return (EXIT_FAILURE);
 		}
 
 		fclose(f_cap_out);
 	}
 
-	return (0);
+	return (EXIT_SUCCESS);
 }
 
 static int read_prga(unsigned char ** dest, char * file)
@@ -1326,15 +1329,19 @@ static int read_prga(unsigned char ** dest, char * file)
 	FILE * f;
 	int size;
 
-	if (file == NULL) return (1);
-	if (*dest == NULL) *dest = (unsigned char *) malloc(1501);
+	if (file == NULL) return (EXIT_FAILURE);
+	if (*dest == NULL)
+	{
+		*dest = (unsigned char *) malloc(1501);
+		ALLEGE(*dest != NULL);
+	}
 
 	f = fopen(file, "r");
 
 	if (f == NULL)
 	{
 		printf("Error opening %s\n", file);
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	fseek(f, 0, SEEK_END);
@@ -1343,7 +1350,7 @@ static int read_prga(unsigned char ** dest, char * file)
 	{
 		fclose(f);
 		fprintf(stderr, "ftell failed\n");
-		return (1);
+		return (EXIT_FAILURE);
 	}
 	rewind(f);
 
@@ -1353,17 +1360,21 @@ static int read_prga(unsigned char ** dest, char * file)
 	{
 		fclose(f);
 		fprintf(stderr, "fread failed\n");
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	opt.prgalen = size;
 
 	fclose(f);
-	return (0);
+	return (EXIT_SUCCESS);
 }
 
 static void add_icv(unsigned char * input, int len, int offset)
 {
+	REQUIRE(input != NULL);
+	REQUIRE(len > 0 && offset >= 0);
+	REQUIRE(offset <= len);
+
 	unsigned long crc = 0xFFFFFFFF;
 	int n = 0;
 
@@ -1387,6 +1398,10 @@ static void send_fragments(unsigned char * packet,
 						   int fragsize,
 						   int ska)
 {
+	REQUIRE(packet != NULL);
+	REQUIRE(packet_len > 0 && packet_len < INT_MAX);
+	REQUIRE(iv != NULL);
+
 	int t, u;
 	int data_size;
 	unsigned char frag[32 + fragsize];
@@ -1396,7 +1411,7 @@ static void send_fragments(unsigned char * packet,
 	data_size = packet_len - header_size;
 	packet[23] = (rand() % 0xFF);
 
-	for (t = 0; t += fragsize;)
+	for (t = 0; t < INT_MAX; t += fragsize)
 	{
 
 		// Copy header
@@ -1428,7 +1443,7 @@ static void send_fragments(unsigned char * packet,
 
 		// Fragment number
 		frag[22] = 0;
-		for (u = t; u -= fragsize;)
+		for (u = t; u < INT_MAX; u -= fragsize)
 		{
 			frag[22] += 1;
 		}
@@ -1463,7 +1478,7 @@ static int do_attack_deauth(void)
 	struct timeval tv;
 	fd_set rfds;
 
-	if (getnet(NULL, 0, 1) != 0) return 1;
+	if (getnet(NULL, 0, 1) != 0) return (EXIT_FAILURE);
 
 	if (memcmp(opt.r_dmac, NULL_MAC, 6) == 0)
 		printf("NB: this attack is more effective when targeting\n"
@@ -1510,14 +1525,14 @@ static int do_attack_deauth(void)
 				memcpy(h80211 + 4, opt.r_dmac, 6);
 				memcpy(h80211 + 10, opt.r_bssid, 6);
 
-				if (send_packet(h80211, 26) < 0) return (1);
+				if (send_packet(h80211, 26) < 0) return (EXIT_FAILURE);
 
 				usleep(2000);
 
 				memcpy(h80211 + 4, opt.r_bssid, 6);
 				memcpy(h80211 + 10, opt.r_dmac, 6);
 
-				if (send_packet(h80211, 26) < 0) return (1);
+				if (send_packet(h80211, 26) < 0) return (EXIT_FAILURE);
 
 				usleep(2000);
 
@@ -1533,7 +1548,7 @@ static int do_attack_deauth(void)
 					{
 						if (errno == EINTR) continue;
 						perror("select failed");
-						return (1);
+						return (EXIT_FAILURE);
 					}
 
 					if (!FD_ISSET(dev.fd_in, &rfds)) break;
@@ -1601,7 +1616,7 @@ static int do_attack_deauth(void)
 		}
 	}
 
-	return (0);
+	return (EXIT_SUCCESS);
 }
 
 static int do_attack_fake_auth(void)
@@ -1639,15 +1654,15 @@ static int do_attack_fake_auth(void)
 	if (memcmp(opt.r_smac, NULL_MAC, 6) == 0)
 	{
 		printf("Please specify a source MAC (-h).\n");
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
-	if (getnet(capa, 0, 1) != 0) return 1;
+	if (getnet(capa, 0, 1) != 0) return (EXIT_FAILURE);
 
 	if (verifyssid((const unsigned char *) opt.r_essid) == 0)
 	{
 		printf("Please specify an ESSID (-e).\n");
-		return 1;
+		return (EXIT_FAILURE);
 	}
 
 	memcpy(ackbuf, "\xD4\x00\x00\x00", 4);
@@ -1678,7 +1693,7 @@ static int do_attack_fake_auth(void)
 					if (retry == opt.f_retry)
 					{
 						abort = 1;
-						return 1;
+						return (EXIT_FAILURE);
 					}
 					++retry;
 				}
@@ -1802,7 +1817,7 @@ static int do_attack_fake_auth(void)
 							"    * You're too far from the AP. Get closer, or "
 							"lower\n"
 							"      the transmit rate.\n\n");
-						return (1);
+						return (EXIT_FAILURE);
 					}
 
 					state = 0;
@@ -1880,10 +1895,10 @@ static int do_attack_fake_auth(void)
 						send_packet(h80211, 24 + 4 + challengelen + 4);
 					}
 
-					if (send_packet(ackbuf, 14) < 0) return (1);
+					if (send_packet(ackbuf, 14) < 0) return (EXIT_FAILURE);
 					usleep(10);
 
-					if (send_packet(ackbuf, 14) < 0) return (1);
+					if (send_packet(ackbuf, 14) < 0) return (EXIT_FAILURE);
 				}
 
 				break;
@@ -1932,7 +1947,7 @@ static int do_attack_fake_auth(void)
 							"    * You're too far from the AP. Get closer, or "
 							"lower\n"
 							"      the transmit rate.\n\n");
-						return (1);
+						return (EXIT_FAILURE);
 					}
 
 					state = 0;
@@ -1973,14 +1988,14 @@ static int do_attack_fake_auth(void)
 
 				for (i = 0; i < x_send; i++)
 				{
-					if (send_packet(h80211, 46 + n) < 0) return (1);
+					if (send_packet(h80211, 46 + n) < 0) return (EXIT_FAILURE);
 
 					usleep(10);
 
-					if (send_packet(ackbuf, 14) < 0) return (1);
+					if (send_packet(ackbuf, 14) < 0) return (EXIT_FAILURE);
 					usleep(10);
 
-					if (send_packet(ackbuf, 14) < 0) return (1);
+					if (send_packet(ackbuf, 14) < 0) return (EXIT_FAILURE);
 				}
 
 				break;
@@ -2005,7 +2020,7 @@ static int do_attack_fake_auth(void)
 				if (opt.a_delay == 0 && opt.reassoc == 0)
 				{
 					printf("\n");
-					return (0);
+					return (EXIT_SUCCESS);
 				}
 
 				if (opt.a_delay == 0 && opt.reassoc == 1)
@@ -2047,7 +2062,7 @@ static int do_attack_fake_auth(void)
 						kas = 32;
 
 					for (i = 0; i < kas; i++)
-						if (send_packet(h80211, 24) < 0) return (1);
+						if (send_packet(h80211, 24) < 0) return (EXIT_FAILURE);
 				}
 
 				break;
@@ -2085,14 +2100,14 @@ static int do_attack_fake_auth(void)
 
 				for (i = 0; i < x_send; i++)
 				{
-					if (send_packet(h80211, 52 + n) < 0) return (1);
+					if (send_packet(h80211, 52 + n) < 0) return (EXIT_FAILURE);
 
 					usleep(10);
 
-					if (send_packet(ackbuf, 14) < 0) return (1);
+					if (send_packet(ackbuf, 14) < 0) return (EXIT_FAILURE);
 					usleep(10);
 
-					if (send_packet(ackbuf, 14) < 0) return (1);
+					if (send_packet(ackbuf, 14) < 0) return (EXIT_FAILURE);
 				}
 
 				break;
@@ -2128,14 +2143,14 @@ static int do_attack_fake_auth(void)
 		{
 			if (errno == EINTR) continue;
 			perror("select failed");
-			return (1);
+			return (EXIT_FAILURE);
 		}
 
 		if (!FD_ISSET(dev.fd_in, &rfds)) continue;
 
 		caplen = read_packet(h80211, sizeof(h80211), NULL);
 
-		if (caplen < 0) return (1);
+		if (caplen < 0) return (EXIT_FAILURE);
 		if (caplen == 0) continue;
 
 		if (caplen == 10 && h80211[0] == 0xD4)
@@ -2448,7 +2463,7 @@ static int do_attack_fake_auth(void)
 		}
 	}
 
-	return (0);
+	return (EXIT_SUCCESS);
 }
 
 static int do_attack_interactive(void)
@@ -2464,7 +2479,7 @@ static int do_attack_interactive(void)
 
 read_packets:
 
-	if (capture_ask_packet(&caplen, 0) != 0) return (1);
+	if (capture_ask_packet(&caplen, 0) != 0) return (EXIT_FAILURE);
 
 	/* rewrite the frame control & MAC addresses */
 
@@ -2546,7 +2561,7 @@ read_packets:
 	/* Check if airodump-ng is running. If not, print that message */
 	printf("You should also start airodump-ng to capture replies.\n\n");
 
-	signal(SIGINT, sighandler);
+	ALLEGE(signal(SIGINT, sighandler) != SIG_ERR);
 	ctrl_c = 0;
 
 	memset(ticks, 0, sizeof(ticks));
@@ -2564,7 +2579,7 @@ read_packets:
 			if (read(dev.fd_rtc, &n, sizeof(n)) < 0)
 			{
 				perror("read(/dev/rtc) failed");
-				return (1);
+				return (EXIT_FAILURE);
 			}
 
 			ticks[0]++;
@@ -2609,16 +2624,16 @@ read_packets:
 
 		if (nb_pkt_sent == 0) ticks[0] = 0;
 
-		if (send_packet(h80211, caplen) < 0) return (1);
+		if (send_packet(h80211, caplen) < 0) return (EXIT_FAILURE);
 
 		if (((double) ticks[0] / (double) RTC_RESOLUTION) * (double) opt.r_nbpps
 			> (double) nb_pkt_sent)
 		{
-			if (send_packet(h80211, caplen) < 0) return (1);
+			if (send_packet(h80211, caplen) < 0) return (EXIT_FAILURE);
 		}
 	}
 
-	return (0);
+	return (EXIT_SUCCESS);
 }
 
 static int do_attack_arp_resend(void)
@@ -2650,10 +2665,10 @@ static int do_attack_arp_resend(void)
 	if (memcmp(opt.r_smac, NULL_MAC, 6) == 0)
 	{
 		printf("Please specify a source MAC (-h).\n");
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
-	if (getnet(NULL, 1, 1) != 0) return 1;
+	if (getnet(NULL, 1, 1) != 0) return (EXIT_FAILURE);
 
 	/* create and write the output pcap header */
 
@@ -2684,7 +2699,7 @@ static int do_attack_arp_resend(void)
 	if ((f_cap_out = fopen(strbuf, "wb+")) == NULL)
 	{
 		perror("fopen failed");
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	n = sizeof(struct pcap_file_header);
@@ -2693,7 +2708,7 @@ static int do_attack_arp_resend(void)
 	{
 		perror("fwrite failed\n");
 		fclose(f_cap_out);
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	fflush(f_cap_out);
@@ -2707,15 +2722,21 @@ static int do_attack_arp_resend(void)
 		{
 			perror("fcntl(O_NONBLOCK) failed");
 			fclose(f_cap_out);
-			return (1);
+			return (EXIT_FAILURE);
 		}
 	}
 
 	if (opt.ringbuffer)
+	{
 		arp = (struct ARP_req *) malloc(opt.ringbuffer
 										* sizeof(struct ARP_req));
+		ALLEGE(arp != NULL);
+	}
 	else
+	{
 		arp = (struct ARP_req *) malloc(sizeof(struct ARP_req));
+		ALLEGE(arp != NULL);
+	}
 
 	memset(ticks, 0, sizeof(ticks));
 
@@ -2740,7 +2761,7 @@ static int do_attack_arp_resend(void)
 				perror("read(/dev/rtc) failed");
 				free(arp);
 				fclose(f_cap_out);
-				return (1);
+				return (EXIT_FAILURE);
 			}
 
 			ticks[0]++;
@@ -2789,7 +2810,7 @@ static int do_attack_arp_resend(void)
 				{
 					free(arp);
 					fclose(f_cap_out);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				if (((double) ticks[0] / (double) RTC_RESOLUTION)
@@ -2800,7 +2821,7 @@ static int do_attack_arp_resend(void)
 					{
 						free(arp);
 						fclose(f_cap_out);
-						return (1);
+						return (EXIT_FAILURE);
 					}
 				}
 
@@ -2820,7 +2841,7 @@ static int do_attack_arp_resend(void)
 			{
 				free(arp);
 				fclose(f_cap_out);
-				return (1);
+				return (EXIT_FAILURE);
 			}
 			if (caplen == 0) continue;
 		}
@@ -3027,7 +3048,7 @@ static int do_attack_arp_resend(void)
 					perror("malloc failed");
 					free(arp);
 					fclose(f_cap_out);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				memcpy(arp[nb_arp].buf, h80211, caplen);
@@ -3047,7 +3068,7 @@ static int do_attack_arp_resend(void)
 					perror("fwrite failed");
 					free(arp);
 					fclose(f_cap_out);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				n = pkh.caplen;
@@ -3057,7 +3078,7 @@ static int do_attack_arp_resend(void)
 					perror("fwrite failed");
 					free(arp);
 					fclose(f_cap_out);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				fflush(f_cap_out);
@@ -3065,7 +3086,7 @@ static int do_attack_arp_resend(void)
 		}
 	}
 
-	return (0);
+	return (EXIT_SUCCESS);
 }
 
 static int do_attack_caffe_latte(void)

@@ -37,12 +37,13 @@
 #include <sys/select.h>
 #endif
 
+#include "defs.h"
 #include "easside.h"
 #include "version.h"
 
-unsigned char ids[8192];
-unsigned short last_id;
-int wrap;
+static unsigned char ids[8192];
+static unsigned short last_id;
+static int wrap;
 
 static int is_dup(unsigned short id)
 {
@@ -50,15 +51,18 @@ static int is_dup(unsigned short id)
 	int bit = id % 8;
 	unsigned char mask = (1 << bit);
 
-	if (ids[idx] & mask) return 1;
+	if (ids[idx] & mask) return (1);
 
 	ids[idx] |= mask;
-	return 0;
+	return (0);
 }
 
 static int
 handle(int s, unsigned char * data, int len, struct sockaddr_in * s_in)
 {
+	REQUIRE(data != NULL);
+	REQUIRE(s_in != NULL);
+
 	char buf[2048];
 	unsigned short * cmd = (unsigned short *) buf;
 	int plen;
@@ -76,15 +80,15 @@ handle(int s, unsigned char * data, int len, struct sockaddr_in * s_in)
 		memcpy(cmd + 1 + 2, id, 2);
 
 		printf("Inet check by %s %d\n", inet_ntoa(*addr), ntohs(*id));
-		if (send(s, buf, x, 0) != x) return 1;
+		if (send(s, buf, x, 0) != x) return (1);
 
-		return 0;
+		return (0);
 	}
 
 	*cmd++ = htons(S_CMD_PACKET);
 	*cmd++ = *pid;
 	plen = len - 2;
-	if (plen < 0) return 0;
+	if (plen < 0) return (0);
 
 	last_id = ntohs(*pid);
 	if (last_id > 20000) wrap = 1;
@@ -98,7 +102,7 @@ handle(int s, unsigned char * data, int len, struct sockaddr_in * s_in)
 	if (is_dup(last_id))
 	{
 		printf(" (DUP)\n");
-		return 0;
+		return (0);
 	}
 	printf("\n");
 
@@ -106,10 +110,10 @@ handle(int s, unsigned char * data, int len, struct sockaddr_in * s_in)
 	memcpy(cmd, data + 2, plen);
 
 	plen += 2 + 2 + 2;
-	assert(plen <= (int) sizeof(buf));
-	if (send(s, buf, plen, 0) != plen) return 1;
+	ALLEGE(plen <= (int) sizeof(buf));
+	if (send(s, buf, plen, 0) != plen) return (1);
 
-	return 0;
+	return (0);
 }
 
 static void handle_dude(int dude, int udp)
@@ -203,7 +207,7 @@ static void usage(void)
 		   version_info);
 	free(version_info);
 
-	exit(1);
+	exit(EXIT_FAILURE);
 }
 
 int main(int argc, char * argv[])
@@ -278,5 +282,6 @@ int main(int argc, char * argv[])
 		handle_dude(dude, udp);
 		printf("That was it\n");
 	}
-	exit(0);
+
+	exit(EXIT_SUCCESS);
 }

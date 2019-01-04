@@ -46,6 +46,7 @@
 #include <fcntl.h>
 #include <signal.h>
 
+#include "defs.h"
 #include "cowpatty.h"
 #include "crypto.h"
 #ifdef HAVE_REGEXP
@@ -60,7 +61,7 @@
 #define IMPORT_COWPATTY "cowpatty"
 #define EXPORT_COWPATTY IMPORT_COWPATTY
 
-int exit_airolib;
+static int exit_airolib;
 
 static void print_help(const char * msg)
 {
@@ -132,22 +133,29 @@ static void sighandler(int signum)
 
 static void sql_error(sqlite3 * db)
 {
+	REQUIRE(db != NULL);
+
 	fprintf(stderr, "Database error: %s\n", sqlite3_errmsg(db));
 }
 
 static int
 sql_exec_cb(sqlite3 * db, const char * sql, void * callback, void * cb_arg)
 {
+	REQUIRE(db != NULL);
+	REQUIRE(sql != NULL);
+
 #ifdef SQL_DEBUG
 	printf(sql);
 	printf("\n");
 	fflush(stdout);
 #endif
+
 	int rc;
 	char * zErrMsg = 0;
 	char looper[4] = {'|', '/', '-', '\\'};
 	int looperc = 0;
 	int waited = 0;
+
 	while (1)
 	{
 		rc = sqlite3_exec(db, sql, callback, cb_arg, &zErrMsg);
@@ -168,7 +176,7 @@ sql_exec_cb(sqlite3 * db, const char * sql, void * callback, void * cb_arg)
 				sqlite3_free(zErrMsg);
 			}
 			if (waited != 0) printf("\n\n");
-			return rc;
+			return (rc);
 		}
 	}
 }
@@ -176,17 +184,23 @@ sql_exec_cb(sqlite3 * db, const char * sql, void * callback, void * cb_arg)
 // execute sql fast and hard.
 static int sql_exec(sqlite3 * db, const char * sql)
 {
-	return sql_exec_cb(db, sql, 0, 0);
+	REQUIRE(db != NULL);
+	REQUIRE(sql != NULL);
+
+	return (sql_exec_cb(db, sql, 0, 0));
 }
 
 // wrapper for sqlite3_step which retries executing statements if the db returns
 // SQLITE_BUSY or SQLITE_LOCKED
 static int sql_step(sqlite3_stmt * stmt, int wait)
 {
+	REQUIRE(stmt != NULL);
+
 	int rc;
 	char looper[4] = {'|', '/', '-', '\\'};
 	int looperc = 0;
 	int waited = 0;
+
 	while (1)
 	{
 		rc = sqlite3_step(stmt);
@@ -208,13 +222,13 @@ static int sql_step(sqlite3_stmt * stmt, int wait)
 				fprintf(stderr,
 						"Database was locked or busy while getting "
 						"results. I've given up.\n");
-				return rc;
+				return (rc);
 			}
 		}
 		else
 		{
 			if (waited != 0) printf("\n\n");
-			return rc;
+			return (rc);
 		}
 	}
 }
@@ -224,15 +238,20 @@ static int sql_step(sqlite3_stmt * stmt, int wait)
 static int
 sql_prepare(sqlite3 * db, const char * sql, sqlite3_stmt ** ppStmt, int wait)
 {
+	REQUIRE(db != NULL);
+	REQUIRE(sql != NULL);
+
 #ifdef SQL_DEBUG
 	printf(sql);
 	printf("\n");
 	fflush(stdout);
 #endif
+
 	int rc;
 	char looper[4] = {'|', '/', '-', '\\'};
 	int looperc = 0;
 	int waited = 0;
+
 	while (1)
 	{
 		rc = sqlite3_prepare_v2(db, sql, -1, ppStmt, NULL);
@@ -254,13 +273,13 @@ sql_prepare(sqlite3 * db, const char * sql, sqlite3_stmt ** ppStmt, int wait)
 				fprintf(stderr,
 						"Database was locked or busy while creating "
 						"statement. I've given up.\n");
-				return rc;
+				return (rc);
 			}
 		}
 		else
 		{
 			if (waited != 0) printf("\n\n");
-			return rc;
+			return (rc);
 		}
 	}
 }
@@ -268,12 +287,15 @@ sql_prepare(sqlite3 * db, const char * sql, sqlite3_stmt ** ppStmt, int wait)
 // generic function to dump a resultset including column names to stdout
 static int stmt_stdout(sqlite3_stmt * stmt, int * rowcount)
 {
+	REQUIRE(stmt != NULL);
+
 	int ccount;
 	int rcount = 0;
 	int rc;
+
 	if (stmt == 0 || (ccount = sqlite3_column_count(stmt)) == 0)
 	{
-		return sql_step(stmt, 0);
+		return (sql_step(stmt, 0));
 	}
 
 	int i = 0;
@@ -298,13 +320,16 @@ static int stmt_stdout(sqlite3_stmt * stmt, int * rowcount)
 
 	if (rowcount != NULL) *rowcount = rcount;
 
-	return rc;
+	return (rc);
 }
 
 // generic function to dump the output of a sql statement to stdout.
 // will return sqlite error codes but also handle (read: ignore) them itself
 static int sql_stdout(sqlite3 * db, const char * sql, int * rowcount)
 {
+	REQUIRE(db != NULL);
+	REQUIRE(sql != NULL);
+
 	int rc;
 	sqlite3_stmt * stmt;
 
@@ -312,7 +337,7 @@ static int sql_stdout(sqlite3 * db, const char * sql, int * rowcount)
 	if (rc != SQLITE_OK)
 	{
 		sql_error(db);
-		return rc;
+		return (rc);
 	}
 
 	rc = stmt_stdout(stmt, rowcount);
@@ -330,7 +355,7 @@ static int sql_stdout(sqlite3 * db, const char * sql, int * rowcount)
 	}
 
 	printf("\n");
-	return rc;
+	return (rc);
 }
 
 // retrieve a single int value using a sql query.
@@ -338,6 +363,8 @@ static int sql_stdout(sqlite3 * db, const char * sql, int * rowcount)
 // need error handling.
 static int query_int(sqlite3 * db, const char * sql)
 {
+	REQUIRE(db != NULL);
+
 	sqlite3_stmt * stmt;
 	int rc;
 	int ret;
@@ -366,19 +393,22 @@ static int query_int(sqlite3 * db, const char * sql)
 	}
 
 	sqlite3_finalize(stmt);
-	return ret;
+
+	return (ret);
 }
 
 // throw some statistics about the db to stdout.
 // if precise!=0 the stats will be queried nail by nail which can be slow
 static void show_stats(sqlite3 * db, int precise)
 {
+	REQUIRE(db != NULL);
 
 	sql_exec(db, "BEGIN;");
 
 	int essids = query_int(db, "SELECT COUNT(*) FROM essid;");
 	int passwds = query_int(db, "SELECT COUNT(*) FROM passwd;");
 	int done;
+
 	if (precise != 0)
 	{
 		printf("Determining precise statistics may be slow...\n");
@@ -391,6 +421,7 @@ static void show_stats(sqlite3 * db, int precise)
 	{
 		done = query_int(db, "SELECT COUNT(*) FROM pmk;");
 	}
+
 	fprintf(stdout,
 			"There are %i ESSIDs and %i passwords in the database. %i out of "
 			"%i possible combinations have been computed (%g%%).\n\n",
@@ -434,13 +465,16 @@ considering speed, efficiency and concurrency.
 */
 static void batch_process(sqlite3 * db)
 {
+	REQUIRE(db != NULL);
+
 	int rc;
 	int cur_essid = 0;
 	struct timeval starttime;
 	struct timeval curtime;
-	gettimeofday(&starttime, NULL);
 	int rowcount = 0;
 	char * sql;
+
+	gettimeofday(&starttime, NULL);
 
 	if (sql_exec(db,
 				 "CREATE TEMPORARY TABLE temp.buffer (wb_id integer, "
@@ -545,22 +579,7 @@ static void batch_process(sqlite3 * db)
 		{
 			printf("All ESSID processed.\n\n");
 			sqlite3_close(db);
-			exit(0);
-			/*
-			printf("No free ESSID found. Will try determining new ESSID in 5
-			minutes...\n");
-			sleep(60*5);
-			// slower, yet certain. should never be any better than the above,
-			unless users fumble with the db.
-			cur_essid = query_int(db,"SELECT essid.essid_id FROM essid,passwd
-			LEFT JOIN pmk ON pmk.essid_id = essid.essid_id AND pmk.passwd_id =
-			passwd.passwd_id WHERE pmk.essid_id IS NULL LIMIT 1;");
-			if (cur_essid == 0) {
-				printf("No free ESSID found. Sleeping 25 additional
-			minutes...\n");
-				sleep(60*25);
-			}
-			*/
+			exit(EXIT_SUCCESS);
 		}
 	}
 
@@ -572,7 +591,7 @@ static void batch_process(sqlite3 * db)
 // TODO More things to verify? Invalid chars?
 static int verify_essid(char * essid)
 {
-	return essid == NULL || strlen(essid) < 1 || strlen(essid) > 32;
+	return (essid == NULL || strlen(essid) < 1 || strlen(essid) > 32);
 }
 
 // sql function which checks a given ESSID
@@ -591,7 +610,7 @@ sql_verify_essid(sqlite3_context * context, int argc, sqlite3_value ** values)
 
 static int verify_passwd(char * passwd)
 {
-	return passwd == NULL || strlen(passwd) < 8 || strlen(passwd) > 63;
+	return (passwd == NULL || strlen(passwd) < 8 || strlen(passwd) > 63);
 }
 
 static void
@@ -670,17 +689,17 @@ static void verify(sqlite3 * db, int complete)
 static int
 sql_exportcow(void * arg, int ccount, char ** values, char ** columnnames)
 {
+	REQUIRE(arg != NULL);
+	UNUSED_PARAM(columnnames);
+
 	FILE * f = (FILE *) arg;
 	struct hashdb_rec rec;
 	if (ccount != 2 || values[0] == NULL || values[1] == NULL
 		|| fileno(f) == -1)
 	{
 		printf("Illegal call to sql_exportcow.\n");
-		return -1;
+		return (-1);
 	}
-	if (columnnames)
-	{
-	} // XXX
 
 	char * passwd = (char *) values[0];
 
@@ -693,10 +712,10 @@ sql_exportcow(void * arg, int ccount, char ** values, char ** columnnames)
 	if (rc != 3)
 	{
 		printf("Error while writing to export file. Query aborted...\n");
-		return 1;
+		return (1);
 	}
 	fflush(f);
-	return 0;
+	return (0);
 }
 
 // export to a cowpatty file
@@ -802,13 +821,13 @@ static int import_cowpatty(sqlite3 * db, char * filename)
 	if (hashdb == NULL)
 	{
 		printf("Failed opening file\n");
-		return 0;
+		return (0);
 	}
 	else if (hashdb->error[0])
 	{
 		printf("Failed opening file: %s\n", hashdb->error);
 		close_free_cowpatty_hashdb(hashdb);
-		return 0;
+		return (0);
 	}
 
 	// We need protection so concurrent transactions can't smash the
@@ -830,7 +849,7 @@ static int import_cowpatty(sqlite3 * db, char * filename)
 		close_free_cowpatty_hashdb(hashdb);
 		sql_exec(db, "ROLLBACK;");
 		printf("ESSID couldn't be inserted. I've given up.\n");
-		return 0;
+		return (0);
 	}
 
 	sql = sqlite3_mprintf(
@@ -862,7 +881,7 @@ static int import_cowpatty(sqlite3 * db, char * filename)
 				close_free_cowpatty_hashdb(hashdb);
 				free(rec->word);
 				free(rec);
-				return 1;
+				return (1);
 			}
 		}
 		else
@@ -887,7 +906,7 @@ static int import_cowpatty(sqlite3 * db, char * filename)
 		printf("Error: %s, rolling back\n", hashdb->error);
 		sql_exec(db, "ROLLBACK;");
 		close_free_cowpatty_hashdb(hashdb);
-		return 1;
+		return (1);
 	}
 	close_free_cowpatty_hashdb(hashdb);
 
@@ -907,7 +926,7 @@ static int import_cowpatty(sqlite3 * db, char * filename)
 
 	sql_exec(db, "COMMIT;");
 
-	return 1;
+	return (1);
 }
 
 static int import_ascii(sqlite3 * db, const char * mode, const char * filename)
@@ -930,7 +949,7 @@ static int import_ascii(sqlite3 * db, const char * mode, const char * filename)
 	else
 	{
 		printf("Specify either 'essid' or 'passwd' as import mode.\n");
-		return 0;
+		return (0);
 	}
 
 	if (strcmp(filename, "-") == 0)
@@ -944,7 +963,7 @@ static int import_ascii(sqlite3 * db, const char * mode, const char * filename)
 	if (f == NULL)
 	{
 		printf("Could not open file/stream for reading.\n");
-		return 0;
+		return (0);
 	}
 
 	char * sql = sqlite3_mprintf(
@@ -975,7 +994,7 @@ static int import_ascii(sqlite3 * db, const char * mode, const char * filename)
 				sql_exec(db, "ROLLBACK;");
 				sqlite3_finalize(stmt);
 				fclose(f);
-				return 1;
+				return (1);
 			}
 		}
 		else
@@ -998,7 +1017,7 @@ static int import_ascii(sqlite3 * db, const char * mode, const char * filename)
 		printf("Error while reading file.\n");
 		sql_exec(db, "ROLLBACK;");
 		fclose(f);
-		return 1;
+		return (1);
 	}
 	fclose(f);
 
@@ -1006,13 +1025,16 @@ static int import_ascii(sqlite3 * db, const char * mode, const char * filename)
 	sql_exec(db, "COMMIT;");
 
 	printf("Done.\n");
-	return 1;
+	return (1);
 }
 
 // sql function. takes ESSID and PASSWD, gives PMK
 static void
 sql_calcpmk(sqlite3_context * context, int argc, sqlite3_value ** values)
 {
+	REQUIRE(context != NULL);
+	REQUIRE(values != NULL);
+
 	unsigned char pmk[40];
 	char * passwd = (char *) sqlite3_value_blob(values[1]);
 	char * essid = (char *) sqlite3_value_blob(values[0]);
@@ -1030,6 +1052,9 @@ sql_calcpmk(sqlite3_context * context, int argc, sqlite3_value ** values)
 static void
 sqlite_regexp(sqlite3_context * context, int argc, sqlite3_value ** values)
 {
+	REQUIRE(context != NULL);
+	REQUIRE(values != NULL);
+
 	int ret;
 	regex_t regex;
 	char * reg = (char *) sqlite3_value_text(values[0]);
@@ -1060,17 +1085,17 @@ sqlite_regexp(sqlite3_context * context, int argc, sqlite3_value ** values)
 
 static int initDataBase(const char * filename, sqlite3 ** db)
 {
-	// int rc = sqlite3_open_v2(filename, &db, SQLITE_OPEN_READWRITE |
-	// SQLITE_OPEN_CREATE, NULL);
-	int rc = sqlite3_open(filename, &(*db));
+	REQUIRE(filename != NULL);
+	REQUIRE(db != NULL);
 
+	int rc = sqlite3_open(filename, &(*db));
 	if (rc != SQLITE_OK)
 	{
 		sql_error(*db);
 		sqlite3_close(*db);
 
 		// May be useful later
-		return rc;
+		return (rc);
 	}
 
 	sql_exec(*db,
@@ -1136,12 +1161,14 @@ static int initDataBase(const char * filename, sqlite3 ** db)
 
 	sqlite3_close(*db);
 	printf("Database <%s> successfully created\n", filename);
-	return 0;
+	return (0);
 }
 
 static int
 check_for_db(sqlite3 ** db, const char * filename, int can_create, int readonly)
 {
+	REQUIRE(filename != NULL);
+
 	struct stat dbfile;
 	int rc;
 	int accessflags = R_OK | W_OK;
@@ -1162,13 +1189,13 @@ check_for_db(sqlite3 ** db, const char * filename, int can_create, int readonly)
 				printf("Error initializing database (return code: %d), "
 					   "exiting...\n",
 					   rc);
-				return 1;
+				return (1);
 			}
 		}
 		else
 		{
 			printf("exiting ...\n");
-			return 1;
+			return (1);
 		}
 	}
 	else
@@ -1176,12 +1203,12 @@ check_for_db(sqlite3 ** db, const char * filename, int can_create, int readonly)
 		if (stat(filename, &dbfile))
 		{
 			perror("stat()");
-			return 1;
+			return (1);
 		}
 		if ((S_ISREG(dbfile.st_mode) && !S_ISDIR(dbfile.st_mode)) == 0)
 		{
 			printf("\"%s\" does not appear to be a file.\n", filename);
-			return 1;
+			return (1);
 		}
 	}
 
@@ -1190,7 +1217,7 @@ check_for_db(sqlite3 ** db, const char * filename, int can_create, int readonly)
 	{
 		sql_error(*db);
 		sqlite3_close(*db);
-		return 1;
+		return (1);
 	}
 
 	// TODO: Sanity check: Table definitions, index
@@ -1203,7 +1230,7 @@ check_for_db(sqlite3 ** db, const char * filename, int can_create, int readonly)
 		printf("Failed creating PMK function.\n");
 		sql_error(*db);
 		sqlite3_close(*db);
-		return 1;
+		return (1);
 	}
 	if (sqlite3_create_function(
 			*db, "VERIFY_ESSID", 1, SQLITE_ANY, 0, &sql_verify_essid, 0, 0)
@@ -1212,7 +1239,7 @@ check_for_db(sqlite3 ** db, const char * filename, int can_create, int readonly)
 		printf("Failed creating VERIFY_ESSID function.\n");
 		sql_error(*db);
 		sqlite3_close(*db);
-		return 1;
+		return (1);
 	}
 	if (sqlite3_create_function(
 			*db, "VERIFY_PASSWD", 1, SQLITE_ANY, 0, &sql_verify_passwd, 0, 0)
@@ -1221,7 +1248,7 @@ check_for_db(sqlite3 ** db, const char * filename, int can_create, int readonly)
 		printf("Failed creating VERIFY_PASSWD function.\n");
 		sql_error(*db);
 		sqlite3_close(*db);
-		return 1;
+		return (1);
 	}
 #ifdef HAVE_REGEXP
 	if (sqlite3_create_function(
@@ -1231,11 +1258,11 @@ check_for_db(sqlite3 ** db, const char * filename, int can_create, int readonly)
 		printf("Failed creating regexp() handler.\n");
 		sql_error(*db);
 		sqlite3_close(*db);
-		return 1;
+		return (1);
 	}
 #endif
 
-	return 0;
+	return (0);
 }
 
 int main(int argc, char ** argv)
@@ -1247,14 +1274,14 @@ int main(int argc, char ** argv)
 	if (argc < 3)
 	{
 		print_help(NULL);
-		return 1;
+		return (EXIT_FAILURE);
 	}
 
 	db = NULL;
 
 	option_index = 0;
 
-	static struct option long_options[]
+	static const struct option long_options[]
 		= {{"batch", 0, 0, 'b'},
 		   {"clean", 2, 0, 'c'},
 		   {"export", 2, 0, 'e'},
@@ -1293,7 +1320,7 @@ int main(int argc, char ** argv)
 				// Batch
 				if (check_for_db(&db, argv[1], 0, 1))
 				{
-					return 1;
+					return (EXIT_FAILURE);
 				}
 				batch_process(db);
 
@@ -1303,7 +1330,7 @@ int main(int argc, char ** argv)
 				// Clean
 				if (check_for_db(&db, argv[1], 0, 0))
 				{
-					return 1;
+					return (EXIT_FAILURE);
 				}
 				vacuum(db,
 					   (argc > 3 && strcasecmp(argv[3], "all") == 0) ? 1 : 0);
@@ -1327,7 +1354,7 @@ int main(int argc, char ** argv)
 						// Export
 						if (check_for_db(&db, argv[1], 0, 0))
 						{
-							return 1;
+							return (EXIT_FAILURE);
 						}
 						export_cowpatty(db, argv[4], argv[5]);
 					}
@@ -1358,7 +1385,7 @@ int main(int argc, char ** argv)
 				{
 					if (check_for_db(&db, argv[1], 1, 0))
 					{
-						return 1;
+						return (EXIT_FAILURE);
 					}
 					import_cowpatty(db, argv[4]);
 				}
@@ -1366,7 +1393,7 @@ int main(int argc, char ** argv)
 				{
 					if (check_for_db(&db, argv[1], 1, 0))
 					{
-						return 1;
+						return (EXIT_FAILURE);
 					}
 					import_ascii(db, IMPORT_ESSID, argv[4]);
 				}
@@ -1375,14 +1402,14 @@ int main(int argc, char ** argv)
 				{
 					if (check_for_db(&db, argv[1], 1, 0))
 					{
-						return 1;
+						return (EXIT_FAILURE);
 					}
 					import_ascii(db, IMPORT_PASSWD, argv[4]);
 				}
 				else
 				{
 					print_help("Invalid import format specified.");
-					return 1;
+					return (EXIT_FAILURE);
 				}
 				break;
 			case 's':
@@ -1391,7 +1418,7 @@ int main(int argc, char ** argv)
 				// We don't know if the SQL order is changing the file or not
 				if (check_for_db(&db, argv[1], 0, 0))
 				{
-					return 1;
+					return (EXIT_FAILURE);
 				}
 
 				sql_stdout(db, argv[3], 0);
@@ -1402,7 +1429,7 @@ int main(int argc, char ** argv)
 				// Stats
 				if (check_for_db(&db, argv[1], 0, 1))
 				{
-					return 1;
+					return (EXIT_FAILURE);
 				}
 
 				show_stats(db, (argv[3] == NULL) ? 0 : 1);
@@ -1417,7 +1444,7 @@ int main(int argc, char ** argv)
 						0,
 						(argc > 3 && strcasecmp(argv[3], "all") == 0) ? 0 : 1))
 				{
-					return 1;
+					return (EXIT_FAILURE);
 				}
 
 				verify(db,
@@ -1436,5 +1463,5 @@ int main(int argc, char ** argv)
 
 	if (db) sqlite3_close(db);
 
-	return 0;
+	return (EXIT_SUCCESS);
 }

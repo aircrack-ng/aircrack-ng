@@ -41,34 +41,33 @@
 #include <getopt.h>
 #include "airdecloak-ng.h"
 #include "version.h"
+#include "defs.h"
 #include "aircrack-osdep/radiotap/radiotap_iter.h"
 #include "aircrack-util/console.h"
 
-unsigned char buffer[65536];
+static unsigned char buffer[65536];
 
-char * _essid;
+static char * _filename_output_invalid;
+static char * _filename_output_cloaked;
+static char * _filename_output_filtered;
+static FILE * _output_cloaked_packets_file;
+static FILE * _output_clean_capture_file;
+static FILE * _input_file;
+static struct pcap_file_header _pfh_in;
+static struct pcap_file_header _pfh_out;
 
-char * _filename_output_invalid;
-char * _filename_output_cloaked;
-char * _filename_output_filtered;
-FILE * _output_cloaked_packets_file;
-FILE * _output_clean_capture_file;
-FILE * _input_file;
-struct pcap_file_header _pfh_in;
-struct pcap_file_header _pfh_out;
+static long _filters;
 
-long _filters;
+static int _is_wep;
 
-int _is_wep;
+static unsigned char _bssid[6];
 
-unsigned char _bssid[6];
+static int _options_drop_fragments = 0;
+static int _options_disable_retry = 0;
+static int _options_disable_base_filter = 0;
+static int _options_assume_null_packets_uncloaked = 0;
 
-int _options_drop_fragments = 0;
-int _options_disable_retry = 0;
-int _options_disable_base_filter = 0;
-int _options_assume_null_packets_uncloaked = 0;
-
-struct decloak_stats stats;
+static struct decloak_stats stats;
 
 static int getBits(unsigned char b, int from, int nb_bits)
 {
@@ -94,6 +93,9 @@ static int getBits(unsigned char b, int from, int nb_bits)
 
 static FILE * openfile(const char * filename, const char * mode, int fatal)
 {
+	REQUIRE(filename != NULL);
+	REQUIRE(mode != NULL);
+
 	FILE * f;
 
 	if ((f = fopen(filename, mode)) == NULL)
@@ -103,7 +105,7 @@ static FILE * openfile(const char * filename, const char * mode, int fatal)
 
 		if (fatal)
 		{
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 	}
 
@@ -113,8 +115,9 @@ static FILE * openfile(const char * filename, const char * mode, int fatal)
 // Return 1 on success, 0 on failure
 static BOOLEAN write_packet(FILE * file, struct packet_elt * packet)
 {
-	// TODO: Do not forget to swap what has to be swapped if needed (caplen,
-	// ...)
+	REQUIRE(file != NULL);
+	REQUIRE(packet != NULL);
+
 	int result;
 	unsigned int caplen = packet->header.caplen;
 
@@ -143,6 +146,8 @@ static BOOLEAN write_packet(FILE * file, struct packet_elt * packet)
 
 static FILE * init_new_pcap(const char * filename)
 {
+	REQUIRE(filename != NULL);
+
 	FILE * f;
 
 	f = openfile(filename, "wb", 1);
@@ -161,6 +166,8 @@ static FILE * init_new_pcap(const char * filename)
 
 static FILE * open_existing_pcap(const char * filename)
 {
+	REQUIRE(filename != NULL);
+
 	FILE * f;
 	size_t temp_sizet;
 
@@ -220,7 +227,7 @@ static FILE * open_existing_pcap(const char * filename)
 	return f;
 }
 
-static BOOLEAN initialize_linked_list()
+static BOOLEAN initialize_linked_list(void)
 {
 	_packet_elt_head
 		= (struct packet_elt_header *) malloc(sizeof(struct packet_elt_header));
@@ -235,7 +242,7 @@ static BOOLEAN initialize_linked_list()
 	return true;
 }
 
-static BOOLEAN add_node_if_not_complete()
+static BOOLEAN add_node_if_not_complete(void)
 {
 	if (_packet_elt_head->current->complete == 1)
 	{
@@ -281,6 +288,8 @@ static void remove_last_uncomplete_node(void)
 
 static int get_rtap_signal(int caplen)
 {
+	REQUIRE(caplen > 0 && caplen < INT32_MAX);
+
 	struct ieee80211_radiotap_iterator iterator;
 	struct ieee80211_radiotap_header * rthdr;
 
@@ -666,6 +675,7 @@ static BOOLEAN read_packets(void)
 		// Copy the packet itself
 		_packet_elt_head->current->packet = (unsigned char *) malloc(
 			_packet_elt_head->current->header.caplen);
+		ALLEGE(_packet_elt_head->current->packet != NULL);
 		memcpy(_packet_elt_head->current->packet,
 			   buffer,
 			   _packet_elt_head->current->header.caplen);
@@ -773,6 +783,8 @@ static BOOLEAN next_packet_pointer(void)
 
 static int compare_SN_to_current_packet(struct packet_elt * packet)
 {
+	REQUIRE(packet != NULL);
+
 	if (_packet_elt_head->current->sequence_number > packet->sequence_number)
 	{
 		// Current packet SN is superior to packet SN
@@ -792,6 +804,8 @@ static int compare_SN_to_current_packet(struct packet_elt * packet)
 static BOOLEAN
 current_packet_pointer_same_fromToDS_and_source(struct packet_elt * packet)
 {
+	REQUIRE(packet != NULL);
+
 	BOOLEAN success = false;
 
 	if (_packet_elt_head->current->fromDS == packet->fromDS
@@ -829,6 +843,8 @@ current_packet_pointer_same_fromToDS_and_source(struct packet_elt * packet)
 static BOOLEAN
 next_packet_pointer_same_fromToDS_and_source(struct packet_elt * packet)
 {
+	REQUIRE(packet != NULL);
+
 	BOOLEAN success = false;
 
 	// !!! Now we only have the packets from the BSSID.
@@ -1191,11 +1207,7 @@ static int CFC_filter_duplicate_iv(void)
 	puts("Cloaking - Duplicate IV filtering");
 
 	ivs_table = (unsigned char *) calloc(16777215, 1);
-	if (ivs_table == NULL)
-	{
-		puts("Failed to allocate memory for IVs table, exiting");
-		exit(-1);
-	}
+	ALLEGE(ivs_table != NULL);
 
 	// 1. Get the list of all IV values (and number of duplicates
 	reset_current_packet_pointer();
@@ -1258,6 +1270,7 @@ static char * status_format(int status)
 {
 	size_t len = 19;
 	char * ret = (char *) calloc(1, (len + 1) * sizeof(char));
+	ALLEGE(ret != NULL);
 	char * rret;
 
 	switch (status)
@@ -1557,7 +1570,7 @@ int main(int argc, char * argv[])
 
 		int option_index = 0;
 
-		static struct option long_options[]
+		static const struct option long_options[]
 			= {{"essid", 1, 0, 'e'},
 			   {"ssid", 1, 0, 'e'},
 			   {"bssid", 1, 0, 'b'},
@@ -1588,12 +1601,12 @@ int main(int argc, char * argv[])
 			case ':':
 
 				printf("\"%s --help\" for help.\n", argv[0]);
-				return (1);
+				return (EXIT_FAILURE);
 
 			case '?':
 
 				printf("\"%s --help\" for help.\n", argv[0]);
-				return (1);
+				return (EXIT_FAILURE);
 			case 'a':
 				_options_disable_base_filter = 1;
 				break;
@@ -1621,7 +1634,7 @@ int main(int argc, char * argv[])
 				if (getmac(optarg, 1, _bssid))
 				{
 					puts("Failed to parse MAC address");
-					exit(1);
+					exit(EXIT_FAILURE);
 				}
 
 				input_bssid = optarg;
@@ -1677,7 +1690,7 @@ int main(int argc, char * argv[])
 					{
 						usage();
 						puts("Invalid filter name");
-						exit(1);
+						exit(EXIT_FAILURE);
 					}
 					temp *= 10;
 					filter_name = strtok(NULL, ",");
@@ -1692,15 +1705,15 @@ int main(int argc, char * argv[])
 			case 'r':
 				_options_disable_retry = 1;
 				printf("'%c' option not yet implemented\n", option);
-				exit(0);
+				exit(EXIT_SUCCESS);
 				break;
 			case 'e':
 				printf("'%c' option not yet implemented\n", option);
-				exit(0);
+				exit(EXIT_SUCCESS);
 				break;
 			case 'h':
 				usage();
-				exit(0);
+				exit(EXIT_SUCCESS);
 				break;
 		}
 	}
@@ -1709,7 +1722,7 @@ int main(int argc, char * argv[])
 	{
 		usage();
 		puts("Missing input file");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	// Add options (some are mandatory, some are optional).
@@ -1753,7 +1766,7 @@ int main(int argc, char * argv[])
 
 	if (_input_file == NULL)
 	{
-		return 1;
+		return (EXIT_FAILURE);
 	}
 
 	// Create output filenames
@@ -1761,10 +1774,16 @@ int main(int argc, char * argv[])
 	{
 		temp = strlen(input_filename);
 		if (!manual_cloaked_fname)
+		{
 			_filename_output_cloaked = (char *) calloc(temp + 9 + 5, 1);
+			ALLEGE(_filename_output_cloaked != NULL);
+		}
 
 		if (!manual_filtered_fname)
+		{
 			_filename_output_filtered = (char *) calloc(temp + 10 + 5, 1);
+			ALLEGE(_filename_output_filtered != NULL);
+		}
 
 		while (--temp > 0)
 		{
@@ -1819,7 +1838,7 @@ int main(int argc, char * argv[])
 	if (tempBool != true)
 	{
 		printf("Failed reading packets: %d\n", temp);
-		return 1;
+		return (EXIT_FAILURE);
 	}
 
 	// 2. Go through the list and mark all cloaked packets
@@ -1828,7 +1847,7 @@ int main(int argc, char * argv[])
 	if (tempBool != true)
 	{
 		printf("Checking for cloaking failed: %d\n", temp);
-		return 1;
+		return (EXIT_FAILURE);
 	}
 
 	// 3. Write all data to output files
@@ -1839,7 +1858,7 @@ int main(int argc, char * argv[])
 	if (tempBool != true)
 	{
 		printf("Writing packets failed: %d\n", temp);
-		return 1;
+		return (EXIT_FAILURE);
 	}
 
 	// 4. Print some statistics
@@ -1852,5 +1871,5 @@ int main(int argc, char * argv[])
 	// - File names
 	print_statistics();
 
-	return 0;
+	return (EXIT_SUCCESS);
 }

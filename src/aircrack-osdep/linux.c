@@ -167,7 +167,7 @@ static int check_crc_buf_osdep(unsigned char * buf, int len)
 // Check if the driver is ndiswrapper */
 static int is_ndiswrapper(const char * iface, const char * path)
 {
-	int n, pid, unused;
+	int n, pid;
 	if (!path || !iface || strlen(iface) >= IFNAMSIZ)
 	{
 		return 0;
@@ -177,7 +177,7 @@ static int is_ndiswrapper(const char * iface, const char * path)
 		close(0);
 		close(1);
 		close(2);
-		unused = chdir("/");
+		(void) chdir("/");
 		execl(path, "iwpriv", iface, "ndis_reset", NULL);
 		exit(1);
 	}
@@ -205,6 +205,7 @@ static char * searchInside(const char * dir, const char * filename)
 	len = strlen(filename);
 	lentot = strlen(dir) + 256 + 2;
 	curfile = (char *) calloc(1, lentot);
+	if (curfile == NULL) return (NULL);
 
 	while ((ep = readdir(dp)) != NULL)
 	{
@@ -444,7 +445,7 @@ static int linux_set_rate(struct wif * wi, int rate)
 	struct ifreq ifr;
 	struct iwreq wrq;
 	char s[32];
-	int pid, status, unused;
+	int pid, status;
 
 	memset(s, 0, sizeof(s));
 
@@ -479,7 +480,7 @@ static int linux_set_rate(struct wif * wi, int rate)
 				close(0);
 				close(1);
 				close(2);
-				unused = chdir("/");
+				(void) chdir("/");
 				execlp(dev->iwconfig,
 					   "iwconfig",
 					   wi_get_ifname(wi),
@@ -596,7 +597,7 @@ static int
 linux_read(struct wif * wi, unsigned char * buf, int count, struct rx_info * ri)
 {
 	struct priv_linux * dev = wi_priv(wi);
-	unsigned char tmpbuf[4096];
+	unsigned char tmpbuf[4096] __attribute__((aligned(8)));
 
 	int caplen, n, got_signal, got_noise, got_channel, fcs_removed;
 
@@ -635,7 +636,7 @@ linux_read(struct wif * wi, unsigned char * buf, int count, struct rx_info * ri)
 			if (ri)
 			{
 				ri->ri_power = tmpbuf[0x33];
-				ri->ri_noise = *(unsigned int *) (tmpbuf + 0x33 + 12);
+				ri->ri_noise = *(unsigned int *) (tmpbuf + 0x33 + 12); //-V1032
 				ri->ri_rate = (*(unsigned int *) (tmpbuf + 0x33 + 24)) * 500000;
 
 				got_signal = 1;
@@ -808,7 +809,7 @@ static int linux_write(struct wif * wi,
 	unsigned char rate;
 	unsigned short int * p_rtlen;
 
-	unsigned char u8aRadiotap[] = {
+	unsigned char u8aRadiotap[] __attribute__((aligned(8))) = {
 		0x00,
 		0x00, // <-- radiotap version
 		0x0c,
@@ -824,7 +825,7 @@ static int linux_write(struct wif * wi,
 	};
 
 	/* Pointer to the radiotap header length field for later use. */
-	p_rtlen = (unsigned short int *) (u8aRadiotap + 2);
+	p_rtlen = (unsigned short int *) (u8aRadiotap + 2); //-V1032
 
 	if ((unsigned) count > sizeof(tmpbuf) - 22) return -1;
 
@@ -953,7 +954,7 @@ linux_set_ht_channel_nl80211(struct wif * wi, int channel, unsigned int htval)
 {
 	struct priv_linux * dev = wi_priv(wi);
 	char s[32];
-	int pid, status, unused;
+	int pid, status;
 
 	unsigned int devid;
 	struct nl_msg * msg;
@@ -971,7 +972,7 @@ linux_set_ht_channel_nl80211(struct wif * wi, int channel, unsigned int htval)
 				close(0);
 				close(1);
 				close(2);
-				unused = chdir("/");
+				(void) chdir("/");
 				execl(dev->wlanctlng,
 					  "wlanctl-ng",
 					  wi_get_ifname(wi),
@@ -1000,7 +1001,7 @@ linux_set_ht_channel_nl80211(struct wif * wi, int channel, unsigned int htval)
 				close(0);
 				close(1);
 				close(2);
-				unused = chdir("/");
+				(void) chdir("/");
 				execlp(dev->iwpriv,
 					   "iwpriv",
 					   wi_get_ifname(wi),
@@ -1024,7 +1025,7 @@ linux_set_ht_channel_nl80211(struct wif * wi, int channel, unsigned int htval)
 				close(0);
 				close(1);
 				close(2);
-				unused = chdir("/");
+				(void) chdir("/");
 				execlp(dev->iwconfig,
 					   "iwconfig",
 					   wi_get_ifname(wi),
@@ -1103,7 +1104,7 @@ static int linux_set_channel(struct wif * wi, int channel)
 {
 	struct priv_linux * dev = wi_priv(wi);
 	char s[32];
-	int pid, status, unused;
+	int pid, status;
 	struct iwreq wrq;
 
 	memset(s, 0, sizeof(s));
@@ -1118,7 +1119,7 @@ static int linux_set_channel(struct wif * wi, int channel)
 				close(0);
 				close(1);
 				close(2);
-				unused = chdir("/");
+				(void) chdir("/");
 				execl(dev->wlanctlng,
 					  "wlanctl-ng",
 					  wi_get_ifname(wi),
@@ -1147,7 +1148,7 @@ static int linux_set_channel(struct wif * wi, int channel)
 				close(0);
 				close(1);
 				close(2);
-				unused = chdir("/");
+				(void) chdir("/");
 				execlp(dev->iwpriv,
 					   "iwpriv",
 					   wi_get_ifname(wi),
@@ -1171,7 +1172,7 @@ static int linux_set_channel(struct wif * wi, int channel)
 				close(0);
 				close(1);
 				close(2);
-				unused = chdir("/");
+				(void) chdir("/");
 				execlp(dev->iwconfig,
 					   "iwconfig",
 					   wi_get_ifname(wi),
@@ -1218,7 +1219,7 @@ static int linux_set_freq(struct wif * wi, int freq)
 {
 	struct priv_linux * dev = wi_priv(wi);
 	char s[32];
-	int pid, status, unused;
+	int pid, status;
 	struct iwreq wrq;
 
 	memset(s, 0, sizeof(s));
@@ -1235,7 +1236,7 @@ static int linux_set_freq(struct wif * wi, int freq)
 				close(0);
 				close(1);
 				close(2);
-				unused = chdir("/");
+				(void) chdir("/");
 				execlp(dev->iwconfig,
 					   "iwconfig",
 					   wi_get_ifname(wi),
@@ -1359,8 +1360,7 @@ static int linux_get_monitor(struct wif * wi)
 	return (0);
 }
 
-__attribute__((unused))
-static char * get_linux_driver(const char * iface)
+__attribute__((unused)) static char * get_linux_driver(const char * iface)
 {
 	char path[PATH_MAX];
 	char link[PATH_MAX];
@@ -1405,7 +1405,7 @@ static char * get_linux_driver(const char * iface)
 
 static int set_monitor(struct priv_linux * dev, char * iface, int fd)
 {
-	int pid, status, unused;
+	int pid, status;
 	struct iwreq wrq;
 
 	if (iface == NULL || strlen(iface) >= IFNAMSIZ)
@@ -1421,7 +1421,7 @@ static int set_monitor(struct priv_linux * dev, char * iface, int fd)
 			close(0);
 			close(1);
 			close(2);
-			unused = chdir("/");
+			(void) chdir("/");
 			execl(dev->wl, "wl", "monitor", "1", NULL);
 			exit(1);
 		}
@@ -1443,7 +1443,7 @@ static int set_monitor(struct priv_linux * dev, char * iface, int fd)
 					close(0);
 					close(1);
 					close(2);
-					unused = chdir("/");
+					(void) chdir("/");
 					execl(dev->wlanctlng,
 						  "wlanctl-ng",
 						  iface,
@@ -1470,7 +1470,7 @@ static int set_monitor(struct priv_linux * dev, char * iface, int fd)
 					close(0);
 					close(1);
 					close(2);
-					unused = chdir("/");
+					(void) chdir("/");
 					execlp(dev->iwpriv,
 						   "iwpriv",
 						   iface,
@@ -1494,7 +1494,7 @@ static int set_monitor(struct priv_linux * dev, char * iface, int fd)
 					close(0);
 					close(1);
 					close(2);
-					unused = chdir("/");
+					(void) chdir("/");
 					execlp(dev->iwpriv,
 						   "iwpriv",
 						   iface,
@@ -1540,7 +1540,7 @@ static int set_monitor(struct priv_linux * dev, char * iface, int fd)
 		close(0);
 		close(1);
 		close(2);
-		unused = chdir("/");
+		(void) chdir("/");
 		execlp("iwpriv", "iwpriv", iface, "monitor_type", "1", NULL);
 		exit(1);
 	}
@@ -1551,7 +1551,7 @@ static int set_monitor(struct priv_linux * dev, char * iface, int fd)
 		close(0);
 		close(1);
 		close(2);
-		unused = chdir("/");
+		(void) chdir("/");
 		execlp("iwpriv", "iwpriv", iface, "prismhdr", "1", NULL);
 		exit(1);
 	}
@@ -1562,7 +1562,7 @@ static int set_monitor(struct priv_linux * dev, char * iface, int fd)
 		close(0);
 		close(1);
 		close(2);
-		unused = chdir("/");
+		(void) chdir("/");
 		execlp("iwpriv", "iwpriv", iface, "set_prismhdr", "1", NULL);
 		exit(1);
 	}
@@ -1651,7 +1651,8 @@ static int openraw(struct priv_linux * dev,
 			sll2.sll_ifindex = ifr2.ifr_ifindex;
 			sll2.sll_protocol = htons(ETH_P_ALL);
 
-			if (bind(dev->fd_main, (struct sockaddr *) &sll2, sizeof(sll2)) < 0)
+			if (bind(dev->fd_main, (struct sockaddr *) &sll2, sizeof(sll2))
+				< 0) //-V641
 			{
 				printf("Interface %s: \n", dev->main_if);
 				perror("bind(ETH_P_ALL) failed");
@@ -1729,7 +1730,7 @@ static int openraw(struct priv_linux * dev,
 	}
 	/* bind the raw socket to the interface */
 
-	if (bind(fd, (struct sockaddr *) &sll, sizeof(sll)) < 0)
+	if (bind(fd, (struct sockaddr *) &sll, sizeof(sll)) < 0) //-V641
 	{
 		printf("Interface %s: \n", iface);
 		perror("bind(ETH_P_ALL) failed");
@@ -1745,7 +1746,7 @@ static int openraw(struct priv_linux * dev,
 		return (1);
 	}
 
-	memcpy(mac, (unsigned char *) ifr.ifr_hwaddr.sa_data, 6);
+	memcpy(mac, (unsigned char *) ifr.ifr_hwaddr.sa_data, 6); //-V512
 
 	*arptype = ifr.ifr_hwaddr.sa_family;
 
@@ -1791,7 +1792,7 @@ static int openraw(struct priv_linux * dev,
  */
 static int do_linux_open(struct wif * wi, char * iface)
 {
-	int kver, unused;
+	int kver;
 	struct utsname checklinuxversion;
 	struct priv_linux * dev = wi_priv(wi);
 	char * iwpriv = NULL;
@@ -1806,7 +1807,6 @@ static int do_linux_open(struct wif * wi, char * iface)
 	char buf[128];
 	char * r_file = NULL;
 	struct ifreq ifr;
-	char * unused_str;
 	int iface_malloced = 0;
 
 	if (iface == NULL || strlen(iface) >= IFNAMSIZ)
@@ -1964,12 +1964,12 @@ static int do_linux_open(struct wif * wi, char * iface)
 				 sizeof(strbuf) - 1,
 				 "iwpriv %s rfmontx 1 >/dev/null 2>/dev/null",
 				 iface);
-		unused = system(strbuf);
+		(void) system(strbuf);
 	}
 
 	/* check if newer athXraw interface available */
 
-	if ((strlen(iface) >= 4 || strlen(iface) <= 6)
+	if ((strlen(iface) >= 4 && strlen(iface) <= 6)
 		&& memcmp(iface, "ath", 3) == 0)
 	{
 		dev->drivertype = DT_MADWIFI;
@@ -2014,14 +2014,14 @@ static int do_linux_open(struct wif * wi, char * iface)
 
 				memset(strbuf, 0, sizeof(strbuf));
 				snprintf(strbuf, sizeof(strbuf) - 1, "ifconfig %s up", athXraw);
-				unused = system(strbuf);
+				(void) system(strbuf);
 
 #if 0 /* some people reported problems when prismheader is enabled */
                 memset( strbuf, 0, sizeof( strbuf ) );
                 snprintf( strbuf,  sizeof( strbuf ) - 1,
                          "sysctl -w dev.%s.rawdev_type=1 >/dev/null 2>/dev/null",
                          iface );
-                unused = system( strbuf );
+                (void) system( strbuf );
 #endif
 
 				iface = athXraw;
@@ -2038,7 +2038,7 @@ static int do_linux_open(struct wif * wi, char * iface)
 			close(0);
 			close(1);
 			close(2);
-			unused = chdir("/");
+			(void) chdir("/");
 			execlp("iwpriv", "iwpriv", iface, "get_port3", NULL);
 			exit(1);
 		}
@@ -2066,7 +2066,7 @@ static int do_linux_open(struct wif * wi, char * iface)
 			close(0);
 			close(1);
 			close(2);
-			unused = chdir("/");
+			(void) chdir("/");
 			execlp("iwpriv", "iwpriv", iface, "get_regdomain", NULL);
 			exit(1);
 		}
@@ -2090,7 +2090,7 @@ static int do_linux_open(struct wif * wi, char * iface)
 
 		if ((acpi = fopen(r_file, "r")) == NULL) goto close_out;
 		memset(buf, 0, 128);
-		unused_str = fgets(buf, 128, acpi);
+		(void) fgets(buf, 128, acpi);
 		buf[127] = '\x00';
 		// rtap iface doesn't exist
 		if (strncmp(buf, "-1", 2) == 0)
@@ -2102,16 +2102,18 @@ static int do_linux_open(struct wif * wi, char * iface)
 			// reopen for reading
 			fclose(acpi);
 			if ((acpi = fopen(r_file, "r")) == NULL) goto close_out;
-			unused_str = fgets(buf, 128, acpi);
+			(void) fgets(buf, 128, acpi);
 		}
 		fclose(acpi);
 
 		// use name in buf as new iface and set original iface as main iface
 		dev->main_if = (char *) malloc(strlen(iface) + 1);
+		if (dev->main_if == NULL) goto close_out;
 		memset(dev->main_if, 0, strlen(iface) + 1);
 		strncpy(dev->main_if, iface, strlen(iface));
 
 		iface = (char *) malloc(strlen(buf) + 1);
+		if (iface == NULL) goto close_out;
 		iface_malloced = 1;
 		memset(iface, 0, strlen(buf) + 1);
 		strncpy(iface, buf, strlen(buf));
@@ -2134,8 +2136,7 @@ static int do_linux_open(struct wif * wi, char * iface)
 		net_ifaces = opendir("/sys/class/net");
 		if (net_ifaces != NULL)
 		{
-			while (net_ifaces != NULL
-				   && ((this_iface = readdir(net_ifaces)) != NULL))
+			while ((this_iface = readdir(net_ifaces)) != NULL)
 			{
 				if (this_iface->d_name[0] == '.') continue;
 
@@ -2153,57 +2154,50 @@ static int do_linux_open(struct wif * wi, char * iface)
 						 this_iface->d_name);
 
 				if ((acpi = fopen(r_file, "r")) == NULL) continue;
-				if (acpi != NULL)
-				{
-					dev->drivertype = DT_IPW2200;
+				dev->drivertype = DT_IPW2200;
 
-					memset(buf, 0, 128);
-					unused_str = fgets(buf, 128, acpi);
-					if (n == 0) // interface exists
+				memset(buf, 0, 128);
+				(void) fgets(buf, 128, acpi);
+				if (n == 0) // interface exists
+				{
+					if (strncmp(buf, iface, 5) == 0)
 					{
+						fclose(acpi);
+						closedir(net_ifaces);
+						net_ifaces = NULL;
+						dev->main_if
+							= (char *) malloc(strlen(this_iface->d_name) + 1);
+						if (dev->main_if == NULL) continue;
+						strcpy(dev->main_if, this_iface->d_name);
+						break;
+					}
+				}
+				else // need to create interface
+				{
+					if (strncmp(buf, "-1", 2) == 0)
+					{
+						// repoen for writing
+						fclose(acpi);
+						if ((acpi = fopen(r_file, "w")) == NULL) continue;
+						fputs("1", acpi);
+						// reopen for reading
+						fclose(acpi);
+						if ((acpi = fopen(r_file, "r")) == NULL) continue;
+						(void) fgets(buf, 128, acpi);
 						if (strncmp(buf, iface, 5) == 0)
 						{
-							fclose(acpi);
-							if (net_ifaces != NULL)
-							{
-								closedir(net_ifaces);
-								net_ifaces = NULL;
-							}
+							closedir(net_ifaces);
+							net_ifaces = NULL;
 							dev->main_if = (char *) malloc(
 								strlen(this_iface->d_name) + 1);
+							if (dev->main_if == NULL) continue;
 							strcpy(dev->main_if, this_iface->d_name);
+							fclose(acpi);
 							break;
 						}
 					}
-					else // need to create interface
-					{
-						if (strncmp(buf, "-1", 2) == 0)
-						{
-							// repoen for writing
-							fclose(acpi);
-							if ((acpi = fopen(r_file, "w")) == NULL) continue;
-							fputs("1", acpi);
-							// reopen for reading
-							fclose(acpi);
-							if ((acpi = fopen(r_file, "r")) == NULL) continue;
-							unused_str = fgets(buf, 128, acpi);
-							if (strncmp(buf, iface, 5) == 0)
-							{
-								if (net_ifaces != NULL)
-								{
-									closedir(net_ifaces);
-									net_ifaces = NULL;
-								}
-								dev->main_if = (char *) malloc(
-									strlen(this_iface->d_name) + 1);
-								strcpy(dev->main_if, this_iface->d_name);
-								fclose(acpi);
-								break;
-							}
-						}
-					}
-					fclose(acpi);
 				}
+				fclose(acpi);
 			}
 			if (net_ifaces != NULL) closedir(net_ifaces);
 		}
@@ -2381,7 +2375,7 @@ static int linux_set_mac(struct wif * wi, unsigned char * mac)
 	}
 
 	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-	memcpy(ifr.ifr_hwaddr.sa_data, mac, 6);
+	memcpy(ifr.ifr_hwaddr.sa_data, mac, 6); //-V512
 	memcpy(pl->pl_mac, mac, 6);
 
 	// set mac
@@ -2453,7 +2447,7 @@ EXPORT int get_battery_state(void)
 	char buf[128];
 	int batteryTime = 0;
 	FILE * apm;
-	int flag;
+	unsigned flag;
 	char units[32];
 	int ret;
 	static int linux_apm = 1;
@@ -2471,7 +2465,7 @@ EXPORT int get_battery_state(void)
 
 		if (battery_data != NULL)
 		{
-			int charging, ac;
+			unsigned charging, ac;
 
 			ret = sscanf(battery_data,
 						 "%*s %*d.%*d %*x %x %x %x %*d%% %d %s\n",
@@ -2483,9 +2477,9 @@ EXPORT int get_battery_state(void)
 			if (!ret) return 0;
 
 			if ((flag & 0x80) == 0 && charging != 0xFF && ac != 1
-				&& batteryTime != -1)
+				&& batteryTime == -1)
 			{
-				if (!strncmp(units, "min", 32)) batteryTime *= 60;
+				if (!strncmp(units, "min", 3)) batteryTime *= 60;
 			}
 			else
 				return 0;
@@ -2511,8 +2505,7 @@ EXPORT int get_battery_state(void)
 		ac_adapters = opendir("/proc/acpi/ac_adapter");
 		if (ac_adapters == NULL) return 0;
 
-		while (ac_adapters != NULL
-			   && ((this_adapter = readdir(ac_adapters)) != NULL))
+		while ((this_adapter = readdir(ac_adapters)) != NULL)
 		{
 			if (this_adapter->d_name[0] == '.')
 			{
@@ -2527,24 +2520,18 @@ EXPORT int get_battery_state(void)
 			{
 				continue;
 			}
-			if (acpi != NULL)
+			while (fgets(buf, 128, acpi))
 			{
-				while (fgets(buf, 128, acpi))
+				if (strstr(buf, "on-line") != NULL)
 				{
-					if (strstr(buf, "on-line") != NULL)
-					{
-						fclose(acpi);
-						if (ac_adapters != NULL) closedir(ac_adapters);
-						return 0;
-					}
+					fclose(acpi);
+					closedir(ac_adapters);
+					return 0;
 				}
-				fclose(acpi);
 			}
+			fclose(acpi);
 		}
-		if (ac_adapters != NULL)
-		{
-			closedir(ac_adapters);
-		}
+		closedir(ac_adapters);
 
 		batteries = opendir("/proc/acpi/battery");
 		if (batteries == NULL)
@@ -2552,8 +2539,7 @@ EXPORT int get_battery_state(void)
 			return 0;
 		}
 
-		while (batteries != NULL
-			   && ((this_battery = readdir(batteries)) != NULL))
+		while ((this_battery = readdir(batteries)) != NULL)
 		{
 			if (this_battery->d_name[0] == '.') continue;
 
@@ -2613,7 +2599,7 @@ EXPORT int get_battery_state(void)
 		}
 		info_timer++;
 
-		if (batteries != NULL) closedir(batteries);
+		closedir(batteries);
 	}
 	return batteryTime;
 }

@@ -64,7 +64,7 @@ struct _cpuinfo cpuinfo = {0, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0.0, NULL};
 unsigned long
 getRegister(const unsigned int val, const char from, const char to)
 {
-	unsigned long mask = (1 << (to + 1)) - 1;
+	unsigned long mask = (1ul << (to + 1ul)) - 1ul;
 
 	if (to == 31) return val >> from;
 
@@ -73,9 +73,9 @@ getRegister(const unsigned int val, const char from, const char to)
 
 void sprintcat(char * dest, const char * src, size_t len)
 {
-	if (strlen(dest)) (void) strncat(dest, ",", len);
+	if (strlen(dest) > 0) (void) strncat(dest, ",", len - strlen(dest) - 1);
 
-	(void) strncat(dest, src, len);
+	(void) strncat(dest, src, len - strlen(dest) - 1);
 }
 
 int is_dir(const char * dir)
@@ -277,12 +277,13 @@ float cpuid_getcoretemp(void)
 	if (sysctlbyname("dev.cpu.0.temperature", &tempval, &len, NULL, 0) == -1)
 		return 0;
 
-	cpuinfo.coretemp = (tempval - 2732) / 10;
+	cpuinfo.coretemp = (tempval - 2732) / 10.0f;
 #elif __linux__
 	if (cpuinfo.cputemppath != NULL)
 	{
 		cpuinfo.coretemp
-			= cpuid_readsysfs((const char *) cpuinfo.cputemppath) / 1000;
+			= (float) cpuid_readsysfs((const char *) cpuinfo.cputemppath)
+			  / 1000.0f;
 	}
 #else
 	return 0;
@@ -296,9 +297,10 @@ float cpuid_getcoretemp(void)
 //
 int cpuid_findcpusensorpath(const char * path)
 {
+#define MAX_SENSOR_PATHS 16
 	DIR * dirp;
 	struct dirent * dp;
-	char tbuf[16][32] = {{0}};
+	char tbuf[MAX_SENSOR_PATHS][32] = {{0}};
 	int cnt = 0, i = 0, sensorx = 0;
 	char sensor[8] = {0};
 
@@ -308,7 +310,7 @@ int cpuid_findcpusensorpath(const char * path)
 
 	snprintf(sensor, sizeof(sensor), "temp%d", sensorx);
 
-	while ((dp = readdir(dirp)) != NULL)
+	while (cnt < MAX_SENSOR_PATHS && (dp = readdir(dirp)) != NULL)
 	{
 		if (!strncmp(dp->d_name, sensor, 5))
 		{
@@ -324,7 +326,7 @@ int cpuid_findcpusensorpath(const char * path)
 			return sensorx;
 		}
 		else if (!strncmp(dp->d_name, "temp", 4))
-			sprintf(tbuf[cnt++], "%s", dp->d_name);
+			sprintf(tbuf[cnt++], "%*s", 31, dp->d_name);
 	}
 
 	(void) closedir(dirp);
@@ -406,7 +408,7 @@ char * cpuid_modelinfo(void)
 #ifdef _X86
 	unsigned eax = 0, ebx = 0, ecx = 0, edx = 0;
 	int bi = 2, broff = 0;
-	char * tmpmodel = calloc(1, (sizeof(unsigned) * 4) * 5);
+	char * tmpmodel = calloc(1, (size_t)((sizeof(unsigned) * 4ul) * 5ul));
 #elif __linux__
 	FILE * cfd;
 	char *line = NULL, *token = NULL;

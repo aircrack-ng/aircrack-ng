@@ -113,7 +113,7 @@ Push-Location gui
 git reset --hard
 Pop-Location
 
-c:\cygwin\bin\bash.exe -e -l -c "/bin/rsync -a gui/ `"$env:DIST/src`" && /bin/rm -fr `"$env:DIST/src/.git`" `"$env:DIST/patches`" `"$env:DIST/apparmor`""
+c:\cygwin\bin\bash.exe -e -l -c "/bin/rsync -a gui/ `"$env:DIST/src`" && /bin/rm -fr `"$env:DIST/src/.git`" `"$env:DIST/.gitignore`" `"$env:DIST/appveyor.yml`" `"$env:DIST/.travis.yml`" `"$env:DIST/README.md`" `"$env:DIST/.github`" `"$env:DIST/patches`" `"$env:DIST/apparmor`""
 
 Push-Location gui/GUI
 & "$env:MSBUILD" Aircrack-ng.sln /p:Configuration=Release /p:Platform="Any CPU"

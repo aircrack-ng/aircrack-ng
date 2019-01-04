@@ -25,6 +25,7 @@
 #include <getopt.h>
 #include <time.h>
 
+#include "defs.h"
 #include "version.h"
 #include "pcap.h"
 #include "uniqueiv.h"
@@ -32,7 +33,7 @@
 
 #define NULL_MAC "\x00\x00\x00\x00\x00\x00"
 
-char usage[] =
+static const char usage[] =
 
 	"\n"
 	"  %s - (C) 2006-2018 Thomas d\'Otreppe\n"
@@ -63,7 +64,6 @@ int main(int argc, char * argv[])
 	FILE * f_ivs_out;
 	unsigned char K[32];
 	unsigned char S[256];
-	//     unsigned char buffer[64];
 	char *s, *filename = NULL;
 	struct ivs2_pkthdr ivs2;
 	struct ivs2_filehdr fivs2;
@@ -78,19 +78,19 @@ int main(int argc, char * argv[])
 	unsigned char byte;
 	unsigned char ** uiv_root;
 
-	static struct option long_options[] = {{"key", 1, 0, 'k'},
-										   {"write", 1, 0, 'w'},
-										   {"count", 1, 0, 'c'},
-										   {"seed", 1, 0, 's'},
-										   {"length", 1, 0, 'l'},
-										   {"first", 1, 0, 'f'},
-										   {"bssid", 1, 0, 'b'},
-										   {"dupe", 1, 0, 'd'},
-										   {"error", 1, 0, 'e'},
-										   {"nofms", 0, 0, 'n'},
-										   {"prng", 0, 0, 'p'},
-										   {"help", 0, 0, 'H'},
-										   {0, 0, 0, 0}};
+	static const struct option long_options[] = {{"key", 1, 0, 'k'},
+												 {"write", 1, 0, 'w'},
+												 {"count", 1, 0, 'c'},
+												 {"seed", 1, 0, 's'},
+												 {"length", 1, 0, 'l'},
+												 {"first", 1, 0, 'f'},
+												 {"bssid", 1, 0, 'b'},
+												 {"dupe", 1, 0, 'd'},
+												 {"error", 1, 0, 'e'},
+												 {"nofms", 0, 0, 'n'},
+												 {"prng", 0, 0, 'p'},
+												 {"help", 0, 0, 'H'},
+												 {0, 0, 0, 0}};
 
 	i = 0;
 	memset(K, 0, 32);
@@ -150,7 +150,7 @@ int main(int argc, char * argv[])
 									  _BETA,
 									  _RC));
 					printf("Specified keystream length is invalid. [2-2300]");
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				length = atoi(optarg);
@@ -170,7 +170,7 @@ int main(int argc, char * argv[])
 									  _BETA,
 									  _RC));
 					printf("Specified number of IVs is invalid. [1-16777216]");
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				count = atoi(optarg);
@@ -183,7 +183,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Specified seed is invalid. [>=1]");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				seed = atoi(optarg);
@@ -209,7 +209,7 @@ int main(int argc, char * argv[])
 									  _BETA,
 									  _RC));
 					printf("Specified errorrate is invalid. [0-100]");
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				break;
@@ -236,7 +236,7 @@ int main(int argc, char * argv[])
 									  _RC));
 
 					printf("Specified dupe is invalid. [0-100]");
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				break;
@@ -256,7 +256,7 @@ int main(int argc, char * argv[])
 									  _RC));
 
 					printf("Specified start IV is invalid. [0-16777215]");
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				paramUsed = 1;
@@ -289,7 +289,7 @@ int main(int argc, char * argv[])
 									  _RC));
 
 					printf("Notice: invalid bssid\n");
-					return (1);
+					return (EXIT_FAILURE);
 				}
 				break;
 
@@ -308,7 +308,7 @@ int main(int argc, char * argv[])
 									  _RC));
 
 					printf("Encryption key already specified.\n");
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				crypt = 1;
@@ -334,7 +334,7 @@ int main(int argc, char * argv[])
 										  _RC));
 
 						printf("Invalid WEP key.\n");
-						return (1);
+						return (EXIT_FAILURE);
 					}
 
 					if (3 + i >= 32) break;
@@ -363,7 +363,7 @@ int main(int argc, char * argv[])
 									  _RC));
 
 					printf("Invalid WEP key length. [5,13,29]\n");
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				weplen = i;
@@ -391,7 +391,7 @@ int main(int argc, char * argv[])
 		printf(usage,
 			   getVersion(
 				   "makeivs-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC));
-		return (0);
+		return (EXIT_SUCCESS);
 	}
 
 	if (count > maxivs)
@@ -403,7 +403,7 @@ int main(int argc, char * argv[])
 		printf("Specified too many IVs (%d), but there are only %d possible.\n",
 			   count,
 			   maxivs);
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	if (length == 0) length = 16; // default 16 keystreambytes
@@ -415,7 +415,7 @@ int main(int argc, char * argv[])
 				   "makeivs-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC));
 
 		printf("You need to specify the WEP key (-k).\n");
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	if (filename == NULL)
@@ -425,7 +425,7 @@ int main(int argc, char * argv[])
 				   "makeivs-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC));
 
 		printf("You need to specify the output filename (-w).\n");
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	size = (long long) strlen(IVS2_MAGIC)
@@ -447,13 +447,13 @@ int main(int argc, char * argv[])
 	if ((f_ivs_out = fopen(filename, "wb+")) == NULL)
 	{
 		perror("fopen");
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	if (fwrite(IVS2_MAGIC, 1, 4, f_ivs_out) != (size_t) 4)
 	{
 		perror("fwrite(IVs file MAGIC) failed");
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	memset(&fivs2, '\x00', sizeof(struct ivs2_filehdr));
@@ -463,7 +463,7 @@ int main(int argc, char * argv[])
 	if (fwrite(&fivs2, sizeof(struct ivs2_filehdr), 1, f_ivs_out) != (size_t) 1)
 	{
 		perror("fwrite(IV file header) failed");
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	memset(&ivs2, '\x00', sizeof(struct ivs2_pkthdr));
@@ -475,7 +475,7 @@ int main(int argc, char * argv[])
 		!= (size_t) sizeof(struct ivs2_pkthdr))
 	{
 		perror("fwrite(IV header) failed");
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	if (memcmp(NULL_MAC, bssid, 6) == 0)
@@ -487,7 +487,7 @@ int main(int argc, char * argv[])
 	if (fwrite(bssid, 1, 6, f_ivs_out) != (size_t) 6)
 	{
 		perror("fwrite(IV bssid) failed");
-		return (1);
+		return (EXIT_FAILURE);
 	}
 	printf("Using fake BSSID %02X:%02X:%02X:%02X:%02X:%02X\n",
 		   bssid[0],
@@ -577,18 +577,18 @@ int main(int argc, char * argv[])
 			!= (size_t) sizeof(struct ivs2_pkthdr))
 		{
 			perror("fwrite(IV header) failed");
-			return (1);
+			return (EXIT_FAILURE);
 		}
 
 		if (fwrite(K, 1, 3, f_ivs_out) != (size_t) 3)
 		{
 			perror("fwrite(IV iv) failed");
-			return (1);
+			return (EXIT_FAILURE);
 		}
 		if (fwrite(&zero, 1, 1, f_ivs_out) != (size_t) 1)
 		{
 			perror("fwrite(IV idx) failed");
-			return (1);
+			return (EXIT_FAILURE);
 		}
 		ivs2.len -= 4;
 
@@ -613,5 +613,6 @@ int main(int argc, char * argv[])
 
 	fclose(f_ivs_out);
 	printf("Done.\n");
-	return (0);
+
+	return (EXIT_SUCCESS);
 }

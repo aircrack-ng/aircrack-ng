@@ -65,6 +65,7 @@
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 
+#include "defs.h"
 #include "version.h"
 #include "pcap.h"
 #include "aircrack-osdep/osdep.h"
@@ -124,20 +125,7 @@
 
 #define DEFAULT_MIC_FAILURE_INTERVAL 60
 
-int bitrates[RATE_NUM] = {RATE_1M,
-						  RATE_2M,
-						  RATE_5_5M,
-						  RATE_6M,
-						  RATE_9M,
-						  RATE_11M,
-						  RATE_12M,
-						  RATE_18M,
-						  RATE_24M,
-						  RATE_36M,
-						  RATE_48M,
-						  RATE_54M};
-
-char usage[] =
+static const char usage[] =
 
 	"\n"
 	"  %s - (C) 2008-2015 Thomas d\'Otreppe\n"
@@ -181,7 +169,7 @@ char usage[] =
 	"      --help    : Displays this usage screen\n"
 	"\n";
 
-struct options
+static struct options
 {
 	unsigned char f_bssid[6];
 	unsigned char f_dmac[6];
@@ -271,7 +259,7 @@ struct options
 	int mic_failure_interval; /* time between allowed mic failures */
 } opt;
 
-struct devices
+static struct devices
 {
 	int fd_in, arptype_in;
 	int fd_out, arptype_out;
@@ -312,35 +300,24 @@ struct APt
 	int pwr[REQUESTS];
 };
 
-struct APt ap[MAX_APS];
-
-unsigned long nb_pkt_sent;
-unsigned char h80211[4096];
-unsigned char tmpbuf[4096];
-unsigned char srcbuf[4096];
-char strbuf[512];
-
-unsigned char ska_auth1[]
-	= "\xb0\x00\x3a\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-	  "\x00\x00\x00\x00\x00\x00\xb0\x01\x01\x00\x01\x00\x00\x00";
-
-unsigned char ska_auth3[4096]
-	= "\xb0\x40\x3a\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-	  "\x00\x00\x00\x00\x00\x00\xc0\x01";
-
-int ctrl_c, alarmed;
-
-char * iwpriv;
+static unsigned long nb_pkt_sent;
+static unsigned char h80211[4096];
+static unsigned char tmpbuf[4096];
+static unsigned char srcbuf[4096];
+static char strbuf[512];
+static int alarmed;
 
 static int check_received(unsigned char * packet, unsigned length)
 {
+	REQUIRE(packet != NULL);
+
 	unsigned z;
 	unsigned char bssid[6], smac[6], dmac[6];
 	struct ivs2_pkthdr ivs2;
 
 	z = ((packet[1] & 3) != 3) ? 24 : 30;
 
-	if (length < z) return 0;
+	if (length < z) return (0);
 
 	/* Check if 802.11e (QoS) */
 	if ((packet[0] & 0x80) == 0x80) z += 2;
@@ -380,7 +357,7 @@ static int check_received(unsigned char * packet, unsigned length)
 			return (0);
 	}
 
-	if (z + 26 > length) return 0;
+	if (z + 26 > length) return (0);
 
 	if (!(packet[1] & 0x40)) // not encrypted
 	{
@@ -407,7 +384,7 @@ static int check_received(unsigned char * packet, unsigned length)
 				/* frame 2 or 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1
 				 */
 
-				if (z + 17 + 32 > length) return 0;
+				if (z + 17 + 32 > length) return (0);
 
 				if ((packet[z + 6] & 0x08) != 0 && (packet[z + 6] & 0x40) == 0
 					&& (packet[z + 6] & 0x80) == 0
@@ -429,7 +406,7 @@ static int check_received(unsigned char * packet, unsigned length)
 						{
 							// ignore packet trying to crash us
 							opt.wpa.eapol_size = 0;
-							return 0;
+							return (0);
 						}
 
 						memcpy(opt.wpa.keymic, &packet[z + 81], 16);
@@ -462,7 +439,7 @@ static int check_received(unsigned char * packet, unsigned length)
 						{
 							// ignore packet trying to crash us
 							opt.wpa.eapol_size = 0;
-							return 0;
+							return (0);
 						}
 
 						memcpy(opt.wpa.keymic, &packet[z + 81], 16);
@@ -534,11 +511,13 @@ static int check_received(unsigned char * packet, unsigned length)
 		}
 	}
 
-	return 0;
+	return (0);
 }
 
 static int send_packet(void * buf, size_t count)
 {
+	REQUIRE(buf != NULL);
+
 	struct wif * wi = _wi_out; /* XXX globals suck */
 
 	if (wi_write(wi, buf, count, NULL) == -1)
@@ -548,19 +527,21 @@ static int send_packet(void * buf, size_t count)
 			case EAGAIN:
 			case ENOBUFS:
 				usleep(10000);
-				return 0; /* XXX not sure I like this... -sorbo */
+				return (0); /* XXX not sure I like this... -sorbo */
 		}
 
 		perror("wi_write()");
-		return -1;
+		return (-1);
 	}
 
 	nb_pkt_sent++;
-	return 0;
+	return (0);
 }
 
 static int read_packet(void * buf, size_t count, struct rx_info * ri)
 {
+	REQUIRE(buf != NULL);
+
 	struct wif * wi = _wi_in; /* XXX */
 	int rc;
 
@@ -570,14 +551,14 @@ static int read_packet(void * buf, size_t count, struct rx_info * ri)
 		switch (errno)
 		{
 			case EAGAIN:
-				return 0;
+				return (0);
 		}
 
 		perror("wi_read()");
-		return -1;
+		return (-1);
 	}
 
-	return rc;
+	return (rc);
 }
 
 static void read_sleep(unsigned long usec)
@@ -617,6 +598,8 @@ static void read_sleep(unsigned long usec)
 
 static int filter_packet(unsigned char * h80211, int caplen)
 {
+	REQUIRE(h80211 != NULL);
+
 	int z, mi_b, mi_s, mi_d, ext = 0, qos = 0;
 
 	if (caplen <= 0) return (1);
@@ -732,7 +715,7 @@ wait_for_beacon(unsigned char * bssid, unsigned char * capa, char * essid)
 					+ (tv2.tv_usec - tv.tv_usec)
 				> 10000 * 1000) // wait 10sec for beacon frame
 			{
-				return -1;
+				return (-1);
 			}
 			if (len <= 0) usleep(1000);
 		}
@@ -851,7 +834,7 @@ wait_for_beacon(unsigned char * bssid, unsigned char * capa, char * essid)
 
 	if (capa) memcpy(capa, pkt_sniff + 34, 2);
 
-	return chan;
+	return (chan);
 }
 
 /*
@@ -873,7 +856,7 @@ static int attack_check(unsigned char * bssid,
 		{
 			PCT;
 			printf("No such BSSID available.\n");
-			return -1;
+			return (-1);
 		}
 		if (ap_chan != iface_chan)
 		{
@@ -882,18 +865,18 @@ static int attack_check(unsigned char * bssid,
 				   wi_get_ifname(wi),
 				   iface_chan,
 				   ap_chan);
-			return -1;
+			return (-1);
 		}
 	}
 
-	return 0;
+	return (0);
 }
 
 static int getnet(unsigned char * capa, int filter, int force)
 {
 	unsigned char * bssid;
 
-	if (opt.nodetect) return 0;
+	if (opt.nodetect) return (0);
 
 	if (filter)
 		bssid = opt.f_bssid;
@@ -934,7 +917,7 @@ static int getnet(unsigned char * capa, int filter, int force)
 		return (1);
 	}
 	else
-		return 0;
+		return (0);
 
 	if (attack_check(bssid, opt.r_essid, capa, _wi_in) != 0)
 	{
@@ -956,7 +939,7 @@ static int getnet(unsigned char * capa, int filter, int force)
 		return (1);
 	}
 
-	return 0;
+	return (0);
 }
 
 static int capture_ask_packet(int * caplen, int just_grab)
@@ -1376,10 +1359,13 @@ static int read_prga(unsigned char ** dest, char * file)
 
 static void add_icv(unsigned char * input, int len, int offset)
 {
-	unsigned long crc = 0xFFFFFFFF;
-	int n = 0;
+	REQUIRE(input != NULL);
+	REQUIRE(len >= 0);
+	REQUIRE(offset <= len);
 
-	for (n = offset; n < len; n++)
+	unsigned long crc = 0xFFFFFFFF;
+
+	for (int n = offset; n < len; n++)
 		crc = crc_tbl[(crc ^ input[n]) & 0xFF] ^ (crc >> 8);
 
 	crc = ~crc;
@@ -1388,15 +1374,13 @@ static void add_icv(unsigned char * input, int len, int offset)
 	input[len + 1] = (crc >> 8) & 0xFF;
 	input[len + 2] = (crc >> 16) & 0xFF;
 	input[len + 3] = (crc >> 24) & 0xFF;
-
-	return;
 }
 
 static int set_clear_arp(unsigned char * buf,
 						 unsigned char * smac,
 						 unsigned char * dmac) // set first 22 bytes
 {
-	if (buf == NULL) return -1;
+	if (buf == NULL) return (-1);
 
 	memcpy(buf, S_LLC_SNAP_ARP, 8);
 	buf[8] = 0x00;
@@ -1412,11 +1396,13 @@ static int set_clear_arp(unsigned char * buf,
 		buf[15] = 0x02; // reply
 	memcpy(buf + 16, smac, 6);
 
-	return 0;
+	return (0);
 }
 
 static int build_arp_request(unsigned char * packet, int * length, int toDS)
 {
+	REQUIRE(packet != NULL);
+
 	int i;
 	unsigned char buf[128];
 
@@ -1465,10 +1451,12 @@ static int build_arp_request(unsigned char * packet, int * length, int toDS)
 	else
 		memcpy(packet + 26 + 32, opt.ip_cli, 4);
 
+	INVARIANT(*length < (INT_MAX - 26 - 36 - 1));
 	*length = 26 + 36;
 
 	calc_tkip_mic(packet, *length, opt.ptk, packet + (*length));
 
+	INVARIANT(*length < (INT_MAX - 8 - 1));
 	*length += 8;
 
 	memcpy(buf, packet + 26, (*length) - 26);
@@ -1483,6 +1471,7 @@ static int build_arp_request(unsigned char * packet, int * length, int toDS)
 			   opt.chopped_from_prga,
 			   8); // set IV&extIV for a fromDS frame
 
+	INVARIANT(*length < (INT_MAX - 8 - 1));
 	(*length) += 8;
 
 	add_icv(packet, *length, 26 + 8);
@@ -1491,19 +1480,22 @@ static int build_arp_request(unsigned char * packet, int * length, int toDS)
 
 	if (toDS)
 	{
-		if (opt.chopped_to_prga_len - 8 < *length - 26 - 8) return 1;
+		if (opt.chopped_to_prga_len - 8 < *length - 26 - 8) return (1);
 
 		for (i = 0; i < *length - 26 - 8; i++)
 			packet[26 + 8 + i] ^= opt.chopped_to_prga[8 + i];
 	}
 	else
 	{
-		if (opt.chopped_from_prga_len - 8 < *length - 26 - 8) return 1;
+		if (opt.chopped_from_prga_len - 8 < *length - 26 - 8) return (1);
+
+		INVARIANT(*length < (INT_MAX - 26 - 8 - 1));
 
 		for (i = 0; i < *length - 26 - 8; i++)
 			packet[26 + 8 + i] ^= opt.chopped_from_prga[8 + i];
 	}
-	return 0;
+
+	return (0);
 }
 
 static int check_guess(unsigned char * srcbuf,
@@ -1513,6 +1505,10 @@ static int check_guess(unsigned char * srcbuf,
 					   unsigned char * arp,
 					   unsigned char * dmac)
 {
+	REQUIRE(srcbuf != NULL);
+	REQUIRE(chopped != NULL);
+	REQUIRE(arp != NULL);
+
 	int i, j, z, pos;
 
 	z = ((srcbuf[1] & 3) != 3) ? 24 : 30;
@@ -1535,7 +1531,7 @@ static int check_guess(unsigned char * srcbuf,
 			{
 				chopped[z + 8 + i] = srcbuf[z + 8 + i] ^ arp[i];
 			}
-			return 1;
+			return (1);
 		}
 
 		memcpy(arp + 26, BROADCAST, 6);
@@ -1545,7 +1541,7 @@ static int check_guess(unsigned char * srcbuf,
 			{
 				chopped[z + 8 + i] = srcbuf[z + 8 + i] ^ arp[i];
 			}
-			return 1;
+			return (1);
 		}
 
 		memcpy(arp + 26, dmac, 6);
@@ -1555,10 +1551,11 @@ static int check_guess(unsigned char * srcbuf,
 			{
 				chopped[z + 8 + i] = srcbuf[z + 8 + i] ^ arp[i];
 			}
-			return 1;
+			return (1);
 		}
 	}
-	return 0;
+
+	return (0);
 }
 
 static int guess_packet(unsigned char * srcbuf,
@@ -1566,6 +1563,9 @@ static int guess_packet(unsigned char * srcbuf,
 						int caplen,
 						int clearlen)
 {
+	REQUIRE(srcbuf != NULL);
+	REQUIRE(chopped != NULL);
+
 	int i, j, k, l, z, len;
 	unsigned char smac[6], dmac[6], bssid[6];
 
@@ -1577,7 +1577,7 @@ static int guess_packet(unsigned char * srcbuf,
 		z += 2;
 
 	if (caplen - z - 8 - clearlen > 36) // too many unknown bytes
-		return 1;
+		return (1);
 
 	printf("%i bytes still unknown\n", caplen - z - 8 - clearlen);
 
@@ -1671,7 +1671,7 @@ static int guess_packet(unsigned char * srcbuf,
 									clearlen,
 									arp,
 									dmac)) // got correct guess
-						return 0;
+						return (0);
 				}
 			}
 		}
@@ -1700,7 +1700,7 @@ static int guess_packet(unsigned char * srcbuf,
 									clearlen,
 									arp,
 									dmac)) // got correct guess
-						return 0;
+						return (0);
 				}
 			}
 		}
@@ -1729,7 +1729,7 @@ static int guess_packet(unsigned char * srcbuf,
 									clearlen,
 									arp,
 									dmac)) // got correct guess
-						return 0;
+						return (0);
 				}
 			}
 		}
@@ -1758,7 +1758,7 @@ static int guess_packet(unsigned char * srcbuf,
 								clearlen,
 								arp,
 								dmac)) // got correct guess
-					return 0;
+					return (0);
 			}
 		}
 
@@ -1785,7 +1785,7 @@ static int guess_packet(unsigned char * srcbuf,
 									clearlen,
 									arp,
 									dmac)) // got correct guess
-						return 0;
+						return (0);
 				}
 			}
 		}
@@ -1813,7 +1813,7 @@ static int guess_packet(unsigned char * srcbuf,
 									clearlen,
 									arp,
 									dmac)) // got correct guess
-						return 0;
+						return (0);
 				}
 			}
 		}
@@ -1841,7 +1841,7 @@ static int guess_packet(unsigned char * srcbuf,
 								clearlen,
 								arp,
 								dmac)) // got correct guess
-					return 0;
+					return (0);
 			}
 		}
 
@@ -1867,7 +1867,7 @@ static int guess_packet(unsigned char * srcbuf,
 									clearlen,
 									arp,
 									dmac)) // got correct guess
-						return 0;
+						return (0);
 				}
 			}
 		}
@@ -1894,7 +1894,7 @@ static int guess_packet(unsigned char * srcbuf,
 									clearlen,
 									arp,
 									dmac)) // got correct guess
-						return 0;
+						return (0);
 				}
 			}
 		}
@@ -1923,7 +1923,7 @@ static int guess_packet(unsigned char * srcbuf,
 									clearlen,
 									arp,
 									dmac)) // got correct guess
-						return 0;
+						return (0);
 				}
 			}
 		}
@@ -1952,7 +1952,7 @@ static int guess_packet(unsigned char * srcbuf,
 										clearlen,
 										arp,
 										dmac)) // got correct guess
-							return 0;
+							return (0);
 					}
 				}
 			}
@@ -1979,7 +1979,7 @@ static int guess_packet(unsigned char * srcbuf,
 									clearlen,
 									arp,
 									dmac)) // got correct guess
-						return 0;
+						return (0);
 				}
 			}
 		}
@@ -2004,7 +2004,7 @@ static int guess_packet(unsigned char * srcbuf,
 								clearlen,
 								arp,
 								dmac)) // got correct guess
-					return 0;
+					return (0);
 			}
 		}
 
@@ -2028,7 +2028,7 @@ static int guess_packet(unsigned char * srcbuf,
 									clearlen,
 									arp,
 									dmac)) // got correct guess
-						return 0;
+						return (0);
 				}
 			}
 		}
@@ -2049,7 +2049,7 @@ static int guess_packet(unsigned char * srcbuf,
 								clearlen,
 								arp,
 								dmac)) // got correct guess
-					return 0;
+					return (0);
 			}
 		}
 	}
@@ -2070,7 +2070,7 @@ static int guess_packet(unsigned char * srcbuf,
 							clearlen,
 							arp,
 							dmac)) // got correct guess
-				return 0;
+				return (0);
 		}
 
 		if ((srcbuf[z + 8 + 32] ^ chopped[z + 8 + 32]) == 172
@@ -2090,7 +2090,7 @@ static int guess_packet(unsigned char * srcbuf,
 								clearlen,
 								arp,
 								dmac)) // got correct guess
-					return 0;
+					return (0);
 			}
 		}
 
@@ -2107,7 +2107,7 @@ static int guess_packet(unsigned char * srcbuf,
 							clearlen,
 							arp,
 							dmac)) // got correct guess
-				return 0;
+				return (0);
 		}
 	}
 
@@ -2126,7 +2126,7 @@ static int guess_packet(unsigned char * srcbuf,
 							clearlen,
 							arp,
 							dmac)) // got correct guess
-				return 0;
+				return (0);
 		}
 
 		if ((srcbuf[z + 8 + 32] ^ chopped[z + 8 + 32]) == 172
@@ -2143,7 +2143,7 @@ static int guess_packet(unsigned char * srcbuf,
 							clearlen,
 							arp,
 							dmac)) // got correct guess
-				return 0;
+				return (0);
 		}
 
 		printf("Checking 10.x.y.z\n");
@@ -2156,7 +2156,7 @@ static int guess_packet(unsigned char * srcbuf,
 						clearlen,
 						arp,
 						dmac)) // got correct guess
-			return 0;
+			return (0);
 	}
 
 	if (caplen - z - 8 - clearlen <= 32)
@@ -2176,15 +2176,18 @@ static int guess_packet(unsigned char * srcbuf,
 								clearlen,
 								arp,
 								dmac)) // got correct guess
-					return 0;
+					return (0);
 			}
 		}
 	}
-	return 1;
+
+	return (1);
 }
 
 static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 {
+	REQUIRE(src_packet != NULL);
+
 	float f, ticks[4];
 	int i, j, n, z, caplen, srcz, srclen;
 	int data_start, data_end, srcdiff, diff;
@@ -2914,9 +2917,11 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 		memcpy(opt.ptk + 48 + 8, mic, 8);
 		opt.got_mic_tods = 1;
 		opt.chopped_to_plain = (unsigned char *) malloc(caplen);
+		ALLEGE(opt.chopped_to_plain != NULL);
 		memcpy(opt.chopped_to_plain, h80211, caplen);
 		opt.chopped_to_plain_len = caplen;
 		opt.chopped_to_prga = (unsigned char *) malloc(caplen - 26 + 4 + 8);
+		ALLEGE(opt.chopped_to_prga != NULL);
 		memcpy(opt.chopped_to_prga, chopped + 26, caplen - 26 + 4 + 8);
 		opt.chopped_to_prga_len = caplen - 26 + 4 + 8;
 	}
@@ -2930,9 +2935,11 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 		memcpy(opt.ptk + 48, mic, 8);
 		opt.got_mic_fromds = 1;
 		opt.chopped_from_plain = (unsigned char *) malloc(caplen);
+		ALLEGE(opt.chopped_from_plain != NULL);
 		memcpy(opt.chopped_from_plain, h80211, caplen);
 		opt.chopped_from_plain_len = caplen;
 		opt.chopped_from_prga = (unsigned char *) malloc(caplen - 26 + 4 + 8);
+		ALLEGE(opt.chopped_from_prga != NULL);
 		memcpy(opt.chopped_from_prga, chopped + 26, caplen - 26 + 4 + 8);
 		opt.chopped_from_prga_len = caplen - 26 + 4 + 8;
 	}
@@ -3045,18 +3052,21 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 		   (float) (pkh.caplen - 6 - 26) / (float) (time(NULL) - tt));
 
 	free(chopped);
+
 	return (0);
 }
 
 static int get_ip_port(char * iface, char * ip, const int ip_size)
 {
+	REQUIRE(iface != NULL);
+
 	char * host;
 	char * ptr;
 	int port = -1;
 	struct in_addr addr;
 
 	host = strdup(iface);
-	if (!host) return -1;
+	if (!host) return (-1);
 
 	ptr = strchr(host, ':');
 	if (!ptr) goto out;
@@ -3071,13 +3081,16 @@ static int get_ip_port(char * iface, char * ip, const int ip_size)
 		port = -1;
 		goto out;
 	}
+
+	REQUIRE(ip != NULL);
+
 	strncpy(ip, host, ip_size);
 	port = atoi(ptr);
 	if (port <= 0) port = -1;
 
 out:
 	free(host);
-	return port;
+	return (port);
 }
 
 static int getHDSK(void)
@@ -3228,10 +3241,10 @@ int main(int argc, char * argv[])
 	{
 		int option_index = 0;
 
-		static struct option long_options[] = {{"help", 0, 0, 'H'},
-											   {"pmk", 1, 0, 'P'},
-											   {"psk", 1, 0, 'p'},
-											   {0, 0, 0, 0}};
+		static const struct option long_options[] = {{"help", 0, 0, 'H'},
+													 {"pmk", 1, 0, 'P'},
+													 {"psk", 1, 0, 'p'},
+													 {0, 0, 0, 0}};
 
 		int option = getopt_long(argc,
 								 argv,
@@ -3623,7 +3636,7 @@ int main(int argc, char * argv[])
 	{
 		/* open the replay interface */
 		_wi_out = wi_open(opt.iface_out);
-		if (!_wi_out) return 1;
+		if (!_wi_out) return (1);
 		dev.fd_out = wi_fd(_wi_out);
 
 		/* open the packet source */
@@ -3633,7 +3646,7 @@ int main(int argc, char * argv[])
 			if (!(opt.a_mode == 9 && opt.port_in >= 0))
 			{
 				_wi_in = wi_open(opt.s_face);
-				if (!_wi_in) return 1;
+				if (!_wi_in) return (1);
 				dev.fd_in = wi_fd(_wi_in);
 				wi_get_mac(_wi_in, dev.mac_in);
 			}
@@ -3757,7 +3770,7 @@ int main(int argc, char * argv[])
 
 	/* END MICHAEL TEST*/
 
-	if (getnet(NULL, 0, 0) != 0) return 1;
+	if (getnet(NULL, 0, 0) != 0) return (1);
 
 	PCT;
 	printf("Found specified AP\n");

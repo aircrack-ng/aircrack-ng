@@ -21,6 +21,10 @@ then
 	export CC CXX LIBS
 fi
 
+CFLAGS="-O3 -DNDEBUG"
+CXXFLAGS="-O3 -DNDEBUG"
+export CFLAGS CXXFLAGS
+
 RETRY=0
 
 while [ $RETRY -lt 3 ];

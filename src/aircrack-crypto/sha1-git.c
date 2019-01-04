@@ -38,6 +38,8 @@
 
 /* this is only to get definitions for memcpy(), ntohl() and htonl() */
 //#include "../git-compat-util.h"
+#include <assert.h>
+#include <stdint.h>
 #include <string.h>
 #include <arpa/inet.h>
 #include "sha1-git.h"
@@ -320,7 +322,7 @@ void blk_SHA1_Update(blk_SHA_CTX * ctx, const void * data, unsigned long len)
 
 void blk_SHA1_Final(unsigned char hashout[20], blk_SHA_CTX * ctx)
 {
-	static const unsigned char pad[64] = {0x80};
+	static const unsigned char pad[64] = {0x80}; //-V1009
 	unsigned int padlen[2];
 	int i;
 
@@ -333,6 +335,8 @@ void blk_SHA1_Final(unsigned char hashout[20], blk_SHA_CTX * ctx)
 	blk_SHA1_Update(ctx, padlen, 8);
 
 	/* Output hash */
+	assert(((uintptr_t) hashout % 4UL) == 0); // V1032 catch
+
 	put_be32(hashout + 0 * 4, ctx->h0);
 	put_be32(hashout + 1 * 4, ctx->h1);
 	put_be32(hashout + 2 * 4, ctx->h2);

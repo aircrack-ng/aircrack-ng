@@ -42,7 +42,10 @@
 #if defined(__sun__)
 #include <alloca.h>
 #endif
+#include <limits.h>
+
 #include "pcap.h"
+#include "defs.h"
 #include "aircrack-ptw-lib.h"
 #include "aircrack-ng.h"
 
@@ -128,6 +131,9 @@ PTW_tableentry keytable[KEYHSBYTES][n];
 // For sorting
 static int compare(const void * ina, const void * inb)
 {
+	REQUIRE(ina != NULL);
+	REQUIRE(inb != NULL);
+
 	PTW_tableentry * a = (PTW_tableentry *) ina;
 	PTW_tableentry * b = (PTW_tableentry *) inb;
 	return b->votes - a->votes;
@@ -136,6 +142,9 @@ static int compare(const void * ina, const void * inb)
 // For sorting
 static int comparedoublesorthelper(const void * ina, const void * inb)
 {
+	REQUIRE(ina != NULL);
+	REQUIRE(inb != NULL);
+
 	doublesorthelper * a = (doublesorthelper *) ina;
 	doublesorthelper * b = (doublesorthelper *) inb;
 	if (a->difference > b->difference)
@@ -295,6 +304,10 @@ rc4test_amd64_sse2(uint8_t * key, int keylen, uint8_t * iv, uint8_t * keystream)
 // RC4 key setup
 static void rc4init(uint8_t * key, int keylen, rc4state * state)
 {
+	REQUIRE(key != NULL);
+	REQUIRE(keylen > 0 && keylen < INT_MAX);
+	REQUIRE(state != NULL);
+
 	int i;
 	unsigned char j;
 	uint8_t tmp;
@@ -321,6 +334,8 @@ static void rc4init(uint8_t * key, int keylen, rc4state * state)
 // RC4 key stream generation
 static uint8_t rc4update(rc4state * state)
 {
+	REQUIRE(state != NULL);
+
 	uint8_t tmp;
 	uint8_t k;
 	state->i++;
@@ -335,11 +350,16 @@ static uint8_t rc4update(rc4state * state)
 
 static int rc4test(uint8_t * key, int keylen, uint8_t * iv, uint8_t * keystream)
 {
+	REQUIRE(key != NULL);
+	REQUIRE(keylen > 0);
+	REQUIRE(iv != NULL);
+	REQUIRE(keystream != NULL);
+
 	uint8_t keybuf[PTW_KSBYTES];
 	rc4state rc4state;
 	int j;
 	memcpy(&keybuf[IVBYTES], key, keylen);
-	memcpy(keybuf, iv, IVBYTES);
+	memcpy(keybuf, iv, IVBYTES); //-V512
 	rc4init(keybuf, keylen + IVBYTES, &rc4state);
 	for (j = 0; j < TESTBYTES; j++)
 	{
@@ -354,6 +374,9 @@ static int rc4test(uint8_t * key, int keylen, uint8_t * iv, uint8_t * keystream)
 // For sorting
 static int comparesorthelper(const void * ina, const void * inb)
 {
+	REQUIRE(ina != NULL);
+	REQUIRE(inb != NULL);
+
 	sorthelper * a = (sorthelper *) ina;
 	sorthelper * b = (sorthelper *) inb;
 	return a->distance - b->distance;
@@ -370,6 +393,10 @@ static int comparesorthelper(const void * ina, const void * inb)
 static void guesskeybytes(
 	int ivlen, uint8_t * iv, uint8_t * keystream, uint8_t * result, int kb)
 {
+	REQUIRE(iv != NULL);
+	REQUIRE(keystream != NULL);
+	REQUIRE(result != NULL);
+
 	uint32_t state[n];
 	uint8_t j = 0;
 	uint8_t tmp;
@@ -406,6 +433,9 @@ static void guesskeybytes(
  */
 static int correct(PTW_attackstate * state, uint8_t * key, int keylen)
 {
+	REQUIRE(state != NULL);
+	REQUIRE(key != NULL && keylen > 0);
+
 	int i;
 	int k;
 
@@ -449,7 +479,7 @@ static void getdrv(PTW_tableentry orgtable[][n],
 	{
 		numvotes += orgtable[0][i].votes;
 	}
-	e = numvotes / n;
+	e = (double) (numvotes) / n;
 	for (i = 0; i < keylen; i++)
 	{
 		emax = eval[i] * numvotes;
@@ -586,6 +616,9 @@ static int doRound(PTW_tableentry sortedtable[][n],
 	}
 	else
 	{
+		REQUIRE(searchborders != NULL);
+		REQUIRE(keybyte >= 0);
+
 		for (i = 0; i < searchborders[keybyte]; i++)
 		{
 			key[keybyte] = sortedtable[keybyte][i].b - sum;
@@ -724,6 +757,8 @@ int PTW_computeKey(PTW_attackstate * state,
 				   int validchars[][n],
 				   int attacks)
 {
+	REQUIRE(state != NULL);
+
 	int strongbytes[KEYHSBYTES];
 	double normal[KEYHSBYTES];
 	double ausreisser[KEYHSBYTES];
@@ -743,6 +778,7 @@ int PTW_computeKey(PTW_attackstate * state,
 	uint8_t guessbuf[PTW_KSBYTES];
 	sorthelper(*sh)[n - 1];
 	PTW_tableentry(*table)[n] = alloca(sizeof(PTW_tableentry) * n * keylen);
+	ALLEGE(table != NULL);
 
 #ifdef USE_AMD64_RC4_OPTIMIZED
 	/*
@@ -757,12 +793,6 @@ int PTW_computeKey(PTW_attackstate * state,
 
 	tried = 0;
 	sh = NULL;
-
-	if (table == NULL)
-	{
-		printf("could not allocate memory\n");
-		exit(-1);
-	}
 
 	if (!(attacks & NO_KLEIN))
 	{
@@ -799,7 +829,7 @@ int PTW_computeKey(PTW_attackstate * state,
 		{
 			memcpy(keybuf, &fullkeybuf[3], keylen * sizeof(uint8_t));
 			// printf("hit without correction\n");
-			return 1;
+			return (FAILURE);
 		}
 	}
 
@@ -819,11 +849,7 @@ int PTW_computeKey(PTW_attackstate * state,
 		}
 
 		sh = alloca(sizeof(sorthelper) * (n - 1) * keylen);
-		if (sh == NULL)
-		{
-			printf("could not allocate memory\n");
-			exit(-1);
-		}
+		ALLEGE(sh != NULL);
 
 		for (i = 0; i < keylen; i++)
 		{
@@ -846,7 +872,7 @@ int PTW_computeKey(PTW_attackstate * state,
 						  bf,
 						  validchars))
 		{
-			return 1;
+			return (FAILURE);
 		}
 
 		// Now one strong byte
@@ -877,7 +903,7 @@ int PTW_computeKey(PTW_attackstate * state,
 						  bf,
 						  validchars))
 		{
-			return 1;
+			return (FAILURE);
 		}
 
 		// two strong bytes
@@ -897,10 +923,10 @@ int PTW_computeKey(PTW_attackstate * state,
 						  bf,
 						  validchars))
 		{
-			return 1;
+			return (FAILURE);
 		}
 	}
-	return 0;
+	return (SUCCESS);
 }
 
 /*
@@ -915,6 +941,11 @@ int PTW_addsession(PTW_attackstate * state,
 				   int * weight,
 				   int total)
 {
+	REQUIRE(state != NULL);
+	REQUIRE(iv != NULL);
+	REQUIRE(keystream != NULL);
+	REQUIRE(weight != NULL);
+
 	int i, j;
 	int il;
 	int ir;
@@ -938,14 +969,11 @@ int PTW_addsession(PTW_attackstate * state,
 			if (state->allsessions_size < state->packets_collected)
 			{
 				state->allsessions_size = state->allsessions_size << 1;
-				state->allsessions
+				PTW_session * tmp_allsessions
 					= realloc(state->allsessions,
 							  state->allsessions_size * sizeof(PTW_session));
-				if (state->allsessions == NULL)
-				{
-					printf("could not allocate memory\n");
-					exit(-1);
-				}
+				ALLEGE(tmp_allsessions != NULL);
+				state->allsessions = tmp_allsessions;
 			}
 			memcpy(state->allsessions[state->packets_collected - 1].iv,
 				   iv,
@@ -964,26 +992,23 @@ int PTW_addsession(PTW_attackstate * state,
 			state->sessions_collected++;
 		}
 
-		return 1;
+		return (FAILURE);
 	}
 	else
 	{
-		return 0;
+		return (SUCCESS);
 	}
 }
 
 /*
  * Allocate a new attackstate
  */
-PTW_attackstate * PTW_newattackstate()
+PTW_attackstate * PTW_newattackstate(void)
 {
 	int i, k;
 	PTW_attackstate * state = NULL;
 	state = malloc(sizeof(PTW_attackstate));
-	if (state == NULL)
-	{
-		return NULL;
-	}
+	ALLEGE(state != NULL);
 	memset(state, 0, sizeof(PTW_attackstate));
 	for (i = 0; i < PTW_KEYHSBYTES; i++)
 	{
@@ -993,12 +1018,8 @@ PTW_attackstate * PTW_newattackstate()
 		}
 	}
 	state->allsessions = malloc(4096 * sizeof(PTW_session));
+	ALLEGE(state->allsessions != NULL);
 	state->allsessions_size = 4096;
-	if (state->allsessions == NULL)
-	{
-		printf("could not allocate memory\n");
-		exit(-1);
-	}
 
 	return state;
 }

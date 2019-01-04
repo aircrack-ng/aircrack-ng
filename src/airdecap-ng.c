@@ -43,6 +43,7 @@
 #include "version.h"
 #include "crypto.h"
 #include "pcap.h"
+#include "defs.h"
 #include "aircrack-osdep/byteorder.h"
 #include "aircrack-util/avl_tree.h"
 #include "aircrack-util/common.h"
@@ -52,7 +53,7 @@
 #define CRYPT_WEP 1
 #define CRYPT_WPA 2
 
-char usage[] =
+static const char usage[] =
 
 	"\n"
 	"  %s - (C) 2006-2018 Thomas d\'Otreppe\n"
@@ -78,7 +79,7 @@ char usage[] =
 	"      --help     : Displays this usage screen\n"
 	"\n";
 
-struct decap_stats
+static struct decap_stats
 {
 	unsigned long nb_stations; /* # of stations seen */
 	unsigned long nb_read; /* # of packets read       */
@@ -92,7 +93,7 @@ struct decap_stats
 	unsigned long nb_failed_ccmp; /* # of failed WPA CCMP pkt decryptions */
 } stats;
 
-struct options
+static struct options
 {
 	int no_convert;
 	char essid[36];
@@ -106,14 +107,18 @@ struct options
 	char corrupted_fpath[65536];
 } opt;
 
-unsigned char buffer[65536];
-unsigned char buffer2[65536];
+static unsigned char buffer[65536];
+static unsigned char buffer2[65536];
 
 /* this routine handles to 802.11 to Ethernet translation */
 
 static int
 write_packet(FILE * f_out, struct pcap_pkthdr * pkh, unsigned char * h80211)
 {
+	REQUIRE(f_out != NULL);
+	REQUIRE(pkh != NULL);
+	REQUIRE(h80211 != NULL);
+
 	int n;
 	unsigned char arphdr[12];
 	int qosh_offset = 0;
@@ -188,7 +193,7 @@ write_packet(FILE * f_out, struct pcap_pkthdr * pkh, unsigned char * h80211)
 	if (fwrite(pkh, 1, n, f_out) != (size_t) n)
 	{
 		perror("fwrite(packet header) failed");
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	n = pkh->caplen;
@@ -196,14 +201,17 @@ write_packet(FILE * f_out, struct pcap_pkthdr * pkh, unsigned char * h80211)
 	if (fwrite(buffer, 1, n, f_out) != (size_t) n)
 	{
 		perror("fwrite(packet data) failed");
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
-	return (0);
+	return (EXIT_SUCCESS);
 }
 
 static int station_compare(const void * a, const void * b)
 {
+	REQUIRE(a != NULL);
+	REQUIRE(b != NULL);
+
 	return memcmp(a, b, 6);
 }
 
@@ -214,12 +222,14 @@ int main(int argc, char * argv[])
 	char *s, buf[128];
 	FILE *f_in, *f_out, *f_bad = NULL;
 	unsigned long crc;
-	int i = 0, n, linktype;
+	int i = 0, linktype;
+	unsigned n;
 	unsigned z;
 	unsigned char * h80211;
 	unsigned char bssid[6], stmac[6];
 
 	c_avl_tree_t * stations = c_avl_create(station_compare);
+	ALLEGE(stations != NULL);
 	struct WPA_ST_info * st_cur;
 	struct pcap_file_header pfh;
 	struct pcap_pkthdr pkh;
@@ -239,10 +249,10 @@ int main(int argc, char * argv[])
 	{
 		int option_index = 0;
 
-		static struct option long_options[] = {{"bssid", 1, 0, 'b'},
-											   {"debug", 1, 0, 'd'},
-											   {"help", 0, 0, 'H'},
-											   {0, 0, 0, 0}};
+		const struct option long_options[] = {{"bssid", 1, 0, 'b'},
+											  {"debug", 1, 0, 'd'},
+											  {"help", 0, 0, 'H'},
+											  {0, 0, 0, 0}};
 
 		int option = getopt_long(
 			argc, argv, "lb:k:e:o:p:w:c:H", long_options, &option_index);
@@ -254,12 +264,12 @@ int main(int argc, char * argv[])
 			case ':':
 
 				printf("\"%s --help\" for help.\n", argv[0]);
-				return (1);
+				return (EXIT_FAILURE);
 
 			case '?':
 
 				printf("\"%s --help\" for help.\n", argv[0]);
-				return (1);
+				return (EXIT_FAILURE);
 
 			case 'l':
 
@@ -273,11 +283,11 @@ int main(int argc, char * argv[])
 
 				while (sscanf(s, "%x", &n) == 1)
 				{
-					if (n < 0 || n > 255)
+					if (n > 255)
 					{
 						printf("Invalid BSSID (not a MAC).\n");
 						printf("\"%s --help\" for help.\n", argv[0]);
-						return (1);
+						return (EXIT_FAILURE);
 					}
 
 					opt.bssid[i] = n;
@@ -293,7 +303,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Invalid BSSID (not a MAC).\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				break;
@@ -304,7 +314,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Encryption key already specified.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				opt.crypt = CRYPT_WPA;
@@ -318,11 +328,11 @@ int main(int argc, char * argv[])
 
 				while (sscanf(buf, "%x", &n) == 1)
 				{
-					if (n < 0 || n > 255)
+					if (n > 255)
 					{
 						printf("Invalid WPA PMK.\n");
 						printf("\"%s --help\" for help.\n", argv[0]);
-						return (1);
+						return (EXIT_FAILURE);
 					}
 
 					opt.pmk[i++] = n;
@@ -342,7 +352,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Invalid WPA PMK.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				break;
@@ -353,7 +363,7 @@ int main(int argc, char * argv[])
 				{
 					printf("ESSID already specified.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				memset(opt.essid, 0, sizeof(opt.essid));
@@ -367,7 +377,7 @@ int main(int argc, char * argv[])
 					printf(
 						"filename for decrypted packets already specified.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				strncpy(opt.decrypted_fpath,
@@ -382,7 +392,7 @@ int main(int argc, char * argv[])
 					printf(
 						"filename for corrupted packets already specified.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				strncpy(opt.corrupted_fpath,
@@ -396,7 +406,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Encryption key already specified.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				opt.crypt = CRYPT_WPA;
@@ -411,7 +421,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Encryption key already specified.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				opt.crypt = CRYPT_WEP;
@@ -425,11 +435,11 @@ int main(int argc, char * argv[])
 
 				while (sscanf(buf, "%x", &n) == 1)
 				{
-					if (n < 0 || n > 255)
+					if (n > 255)
 					{
 						printf("Invalid WEP key.\n");
 						printf("\"%s --help\" for help.\n", argv[0]);
-						return (1);
+						return (EXIT_FAILURE);
 					}
 
 					opt.wepkey[i++] = n;
@@ -450,7 +460,7 @@ int main(int argc, char * argv[])
 				{
 					printf("Invalid WEP key length. [5,13,16,29,61]\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
-					return (1);
+					return (EXIT_FAILURE);
 				}
 
 				opt.weplen = i;
@@ -467,7 +477,7 @@ int main(int argc, char * argv[])
 								  _REVISION,
 								  _BETA,
 								  _RC));
-				return (1);
+				return (EXIT_FAILURE);
 
 			default:
 				goto usage;
@@ -496,7 +506,7 @@ int main(int argc, char * argv[])
 		{
 			printf("\"%s --help\" for help.\n", argv[0]);
 		}
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	if (opt.crypt == CRYPT_WPA)
@@ -509,7 +519,7 @@ int main(int argc, char * argv[])
 			{
 				printf("You must also specify the ESSID (-e).\n");
 				printf("\"%s --help\" for help.\n", argv[0]);
-				return (1);
+				return (EXIT_FAILURE);
 			}
 
 			calc_pmk(opt.passphrase, opt.essid, opt.pmk);
@@ -522,7 +532,7 @@ int main(int argc, char * argv[])
 	{
 		perror("fopen failed\n");
 		printf("Could not open \"%s\".\n", argv[optind]);
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	n = sizeof(pfh);
@@ -530,7 +540,7 @@ int main(int argc, char * argv[])
 	if (fread(&pfh, 1, n, f_in) != (size_t) n)
 	{
 		perror("fread(pcap file header) failed");
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	if (pfh.magic != TCPDUMP_MAGIC && pfh.magic != TCPDUMP_CIGAM)
@@ -538,7 +548,7 @@ int main(int argc, char * argv[])
 		printf("\"%s\" isn't a pcap file (expected "
 			   "TCPDUMP_MAGIC).\n",
 			   argv[optind]);
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	if ((magic = pfh.magic) == TCPDUMP_CIGAM) SWAP32(pfh.linktype);
@@ -551,7 +561,7 @@ int main(int argc, char * argv[])
 		printf("\"%s\" isn't a regular 802.11 "
 			   "(wireless) capture.\n",
 			   argv[optind]);
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	linktype = pfh.linktype;
@@ -605,7 +615,7 @@ int main(int argc, char * argv[])
 	{
 		perror("fopen failed");
 		printf("Could not create \"%s\".\n", buffer);
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	if (opt.store_bad)
@@ -619,7 +629,7 @@ int main(int argc, char * argv[])
 		{
 			perror("fopen failed");
 			printf("Could not create \"%s\".\n", buffer2);
-			return (1);
+			return (EXIT_FAILURE);
 		}
 	}
 
@@ -636,7 +646,7 @@ int main(int argc, char * argv[])
 	if (fwrite(&pfh, 1, n, f_out) != (size_t) n)
 	{
 		perror("fwrite(pcap file header) failed");
-		return (1);
+		return (EXIT_FAILURE);
 	}
 
 	if (opt.store_bad)
@@ -644,7 +654,7 @@ int main(int argc, char * argv[])
 		if (fwrite(&pfh, 1, n, f_bad) != (size_t) n)
 		{
 			perror("fwrite(pcap file header) failed");
-			return (1);
+			return (EXIT_FAILURE);
 		}
 	}
 
@@ -704,7 +714,7 @@ int main(int argc, char * argv[])
 				if (magic == TCPDUMP_CIGAM) SWAP32(n);
 			}
 
-			if (n < 8 || n >= (int) pkh.caplen) continue;
+			if (n < 8 || n >= (unsigned) pkh.caplen) continue;
 
 			h80211 += n;
 			pkh.caplen -= n;
@@ -716,7 +726,7 @@ int main(int argc, char * argv[])
 
 			n = *(unsigned short *) (h80211 + 2);
 
-			if (n <= 0 || n >= (int) pkh.caplen) continue;
+			if (n <= 0 || n >= (unsigned) pkh.caplen) continue;
 
 			h80211 += n;
 			pkh.caplen -= n;
@@ -728,13 +738,13 @@ int main(int argc, char * argv[])
 
 			n = le16_to_cpu(*(unsigned short *) (h80211 + 2));
 
-			if (n <= 0 || n >= (int) pkh.caplen) continue;
+			if (n <= 0 || n >= (unsigned) pkh.caplen) continue;
 
 			/* for a while Kismet logged broken PPI headers */
 			if (n == 24 && le16_to_cpu(*(unsigned short *) (h80211 + 8)) == 2)
 				n = 32;
 
-			if (n <= 0 || n >= (int) pkh.caplen) continue;
+			if (n <= 0 || n >= (unsigned) pkh.caplen) continue;
 
 			h80211 += n;
 			pkh.caplen -= n;
@@ -1094,5 +1104,5 @@ int main(int argc, char * argv[])
 		   stats.nb_failed_tkip,
 		   stats.nb_failed_ccmp);
 
-	return (0);
+	return (EXIT_SUCCESS);
 }

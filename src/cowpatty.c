@@ -35,6 +35,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+
+#include "defs.h"
 #include "cowpatty.h"
 
 void close_free_cowpatty_hashdb(struct cowpatty_file * cf)
@@ -57,6 +59,7 @@ struct cowpatty_file * open_cowpatty_hashdb(const char * filename,
 	// Initialize structure
 	struct cowpatty_file * ret
 		= (struct cowpatty_file *) malloc(sizeof(struct cowpatty_file));
+	ALLEGE(ret != NULL);
 	memset(ret->ssid, 0, sizeof(ret->ssid));
 	memset(ret->error, 0, sizeof(ret->error));
 	ret->fp = NULL;
@@ -64,7 +67,7 @@ struct cowpatty_file * open_cowpatty_hashdb(const char * filename,
 	if (filename == NULL || filename[0] == 0)
 	{
 		strcpy(ret->error, "No filename specified");
-		return ret;
+		return (ret);
 	}
 
 	if (mode == NULL || strncmp(mode, "r", 1) == 0)
@@ -82,7 +85,7 @@ struct cowpatty_file * open_cowpatty_hashdb(const char * filename,
 						 sizeof(ret->error),
 						 "File <%s> cannot be opened",
 						 filename);
-				return ret;
+				return (ret);
 			}
 		}
 
@@ -92,7 +95,7 @@ struct cowpatty_file * open_cowpatty_hashdb(const char * filename,
 			strcpy(ret->error, "Failed reading hash DB header");
 			fclose(ret->fp);
 			ret->fp = NULL;
-			return ret;
+			return (ret);
 		}
 
 		if (filehead.magic != GENPMKMAGIC)
@@ -100,14 +103,14 @@ struct cowpatty_file * open_cowpatty_hashdb(const char * filename,
 			strcpy(ret->error, "Header magic doesn't match");
 			fclose(ret->fp);
 			ret->fp = NULL;
-			return ret;
+			return (ret);
 		}
 		if (filehead.ssid[0] == 0)
 		{
 			strcpy(ret->error, "SSID is NULL");
 			fclose(ret->fp);
 			ret->fp = NULL;
-			return ret;
+			return (ret);
 		}
 
 		// Copy SSID
@@ -128,7 +131,7 @@ struct cowpatty_file * open_cowpatty_hashdb(const char * filename,
 		strcpy(ret->error, "Write and other modes not supported yet");
 	}
 
-	return ret;
+	return (ret);
 }
 
 struct hashdb_rec * read_next_cowpatty_record(struct cowpatty_file * cf)
@@ -138,13 +141,13 @@ struct hashdb_rec * read_next_cowpatty_record(struct cowpatty_file * cf)
 
 	if (cf == NULL || cf->error[0])
 	{
-		return NULL;
+		return (NULL);
 	}
 
 	if (cf->fp == NULL)
 	{
 		strcpy(cf->error, "File pointer is NULL");
-		return NULL;
+		return (NULL);
 	}
 
 	// Allocate memory
@@ -152,7 +155,7 @@ struct hashdb_rec * read_next_cowpatty_record(struct cowpatty_file * cf)
 	if (ret == NULL)
 	{
 		strcpy(cf->error, "Failed allocating memory for coWPAtty record");
-		return NULL;
+		return (NULL);
 	}
 
 	// Read record size
@@ -164,7 +167,7 @@ struct hashdb_rec * read_next_cowpatty_record(struct cowpatty_file * cf)
 		free(ret);
 		fclose(cf->fp);
 		cf->fp = NULL;
-		return NULL;
+		return (NULL);
 	}
 
 	// Get passphrase length
@@ -174,6 +177,7 @@ struct hashdb_rec * read_next_cowpatty_record(struct cowpatty_file * cf)
 	if (wordlength > 0 && wordlength <= MAX_PASSPHRASE_LENGTH)
 	{
 		ret->word = (char *) calloc(wordlength + 1, sizeof(char));
+		ALLEGE(ret->word != NULL);
 
 		// Read passphrase
 		rc += fread(ret->word, wordlength, 1, cf->fp);
@@ -212,5 +216,5 @@ struct hashdb_rec * read_next_cowpatty_record(struct cowpatty_file * cf)
 		cf->fp = NULL;
 	}
 
-	return ret;
+	return (ret);
 }

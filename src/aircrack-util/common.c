@@ -56,6 +56,9 @@
 #include <windows.h>
 #include <errno.h>
 #endif
+
+#include "defs.h"
+
 #define isHex(c) (hexToInt(c) != -1)
 #define HEX_BASE 16
 
@@ -275,6 +278,7 @@ char * getVersion(const char * progname,
 	if (rev)
 	{
 		char * tmp = strdup(rev);
+		ALLEGE(tmp != NULL);
 
 		char * sep = strstr(tmp, "_");
 		if (sep)
@@ -548,7 +552,8 @@ int hexStringToArray(char * in,
 int getmac(const char * macAddress, const int strict, unsigned char * mac)
 {
 	char byte[3];
-	int i, nbElem, n;
+	int i, nbElem;
+	unsigned n;
 
 	if (macAddress == NULL) return 1;
 
@@ -660,22 +665,22 @@ char * get_current_working_directory(void)
 	do
 	{
 		wd_size += PATH_MAX;
-		char * wd_realloc = (char *) realloc(ret, wd_size);
+		wd_realloc = (char *) realloc(ret, wd_size);
 		if (wd_realloc == NULL)
 		{
 			if (ret) free(ret);
-			return NULL;
+			return (NULL);
 		}
 		ret = wd_realloc;
 		wd_realloc = getcwd(ret, wd_size);
 		if (wd_realloc == NULL && errno != ERANGE)
 		{
-			if (ret) free(ret);
-			return NULL;
+			free(ret);
+			return (NULL);
 		}
 	} while (wd_realloc == NULL && errno == ERANGE);
 
-	return ret;
+	return (ret);
 }
 
 int string_has_suffix(const char * str, const char * suf)
