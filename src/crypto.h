@@ -39,6 +39,8 @@
 #include "gcrypt-openssl-wrapper.h"
 #endif
 
+#include "defs.h"
+
 #define S_LLC_SNAP "\xAA\xAA\x03\x00\x00\x00"
 #define S_LLC_SNAP_ARP (S_LLC_SNAP "\x08\x06")
 #define S_LLC_SNAP_WLCCP "\xAA\xAA\x03\x00\x40\x96\x00\x00"
@@ -145,5 +147,24 @@ int calc_tkip_mic_key(unsigned char * packet, int length, unsigned char key[8]);
 
 extern const unsigned long int crc_tbl[256];
 extern const unsigned char crc_chop_tbl[256][4];
+
+static inline void add_icv(unsigned char * input, int len, int offset)
+{
+	REQUIRE(input != NULL);
+	REQUIRE(len > 0 && offset >= 0);
+	REQUIRE(offset <= len);
+
+	unsigned long crc = 0xFFFFFFFF;
+
+	for (int n = offset; n < len; n++)
+		crc = crc_tbl[(crc ^ input[n]) & 0xFF] ^ (crc >> 8);
+
+	crc = ~crc;
+
+	input[len] = (uint8_t)((crc) &0xFF);
+	input[len + 1] = (uint8_t)((crc >> 8) & 0xFF);
+	input[len + 2] = (uint8_t)((crc >> 16) & 0xFF);
+	input[len + 3] = (uint8_t)((crc >> 24) & 0xFF);
+}
 
 #endif /* crypto.h */

@@ -1357,25 +1357,6 @@ static int read_prga(unsigned char ** dest, char * file)
 	return (0);
 }
 
-static void add_icv(unsigned char * input, int len, int offset)
-{
-	REQUIRE(input != NULL);
-	REQUIRE(len >= 0);
-	REQUIRE(offset <= len);
-
-	unsigned long crc = 0xFFFFFFFF;
-
-	for (int n = offset; n < len; n++)
-		crc = crc_tbl[(crc ^ input[n]) & 0xFF] ^ (crc >> 8);
-
-	crc = ~crc;
-
-	input[len] = (crc) &0xFF;
-	input[len + 1] = (crc >> 8) & 0xFF;
-	input[len + 2] = (crc >> 16) & 0xFF;
-	input[len + 3] = (crc >> 24) & 0xFF;
-}
-
 static int set_clear_arp(unsigned char * buf,
 						 unsigned char * smac,
 						 unsigned char * dmac) // set first 22 bytes

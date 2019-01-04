@@ -1369,28 +1369,6 @@ static int read_prga(unsigned char ** dest, char * file)
 	return (EXIT_SUCCESS);
 }
 
-static void add_icv(unsigned char * input, int len, int offset)
-{
-	REQUIRE(input != NULL);
-	REQUIRE(len > 0 && offset >= 0);
-	REQUIRE(offset <= len);
-
-	unsigned long crc = 0xFFFFFFFF;
-	int n = 0;
-
-	for (n = offset; n < len; n++)
-		crc = crc_tbl[(crc ^ input[n]) & 0xFF] ^ (crc >> 8);
-
-	crc = ~crc;
-
-	input[len] = (crc) &0xFF;
-	input[len + 1] = (crc >> 8) & 0xFF;
-	input[len + 2] = (crc >> 16) & 0xFF;
-	input[len + 3] = (crc >> 24) & 0xFF;
-
-	return;
-}
-
 static void send_fragments(unsigned char * packet,
 						   int packet_len,
 						   unsigned char * iv,
