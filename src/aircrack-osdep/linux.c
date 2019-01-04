@@ -205,7 +205,11 @@ static char * searchInside(const char * dir, const char * filename)
 	len = strlen(filename);
 	lentot = strlen(dir) + 256 + 2;
 	curfile = (char *) calloc(1, lentot);
-	if (curfile == NULL) return (NULL);
+	if (curfile == NULL)
+    {
+        (void) closedir(dp);
+        return (NULL);
+    }
 
 	while ((ep = readdir(dp)) != NULL)
 	{
@@ -1803,7 +1807,7 @@ static int do_linux_open(struct wif * wi, char * iface)
 	int n;
 	DIR * net_ifaces;
 	struct dirent * this_iface;
-	FILE * acpi;
+	FILE * acpi = NULL;
 	char buf[128];
 	char * r_file = NULL;
 	struct ifreq ifr;
@@ -2105,6 +2109,7 @@ static int do_linux_open(struct wif * wi, char * iface)
 			(void) fgets(buf, 128, acpi);
 		}
 		fclose(acpi);
+        acpi = NULL;
 
 		// use name in buf as new iface and set original iface as main iface
 		dev->main_if = (char *) malloc(strlen(iface) + 1);
@@ -2163,6 +2168,7 @@ static int do_linux_open(struct wif * wi, char * iface)
 					if (strncmp(buf, iface, 5) == 0)
 					{
 						fclose(acpi);
+                        acpi = NULL;
 						closedir(net_ifaces);
 						net_ifaces = NULL;
 						dev->main_if
@@ -2193,11 +2199,13 @@ static int do_linux_open(struct wif * wi, char * iface)
 							if (dev->main_if == NULL) continue;
 							strcpy(dev->main_if, this_iface->d_name);
 							fclose(acpi);
+                            acpi = NULL;
 							break;
 						}
 					}
 				}
 				fclose(acpi);
+                acpi = NULL;
 			}
 			if (net_ifaces != NULL) closedir(net_ifaces);
 		}
@@ -2240,6 +2248,7 @@ close_out:
 	}
 close_in:
 	close(dev->fd_in);
+    if (acpi) fclose(acpi);
 	if (iface_malloced) free(iface);
 	if (iwpriv) free(iwpriv);
 	return 1;
