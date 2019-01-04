@@ -57,7 +57,7 @@ SRC_PF		= packetforge-ng.c
 SRC_AR		= aireplay-ng.c
 SRC_ADU		= airodump-ng.c dump_write.c
 
-SRC_AT		= airtun-ng.c
+SRC_AT		= airtun-ng.c fragments.c
 SRC_IV		= ivstools.c
 SRC_AS		= airserv-ng.c
 SRC_WS		= wesside-ng.c
@@ -71,7 +71,7 @@ SRC_COW		= cowpatty.c
 SRC_ES		= easside-ng.c
 SRC_BUDDY	= buddy-ng.c
 SRC_MI		= makeivs-ng.c
-SRC_AB		= airbase-ng.c
+SRC_AB		= airbase-ng.c fragments.c
 SRC_AU		= airdecloak-ng.c
 SRC_TT		= tkiptun-ng.c
 SRC_WC		= wpaclean.c
@@ -315,7 +315,9 @@ EXTRA_DIST = wpaclean.c \
              session.h \
 			 defs.h \
 			 dump_write.h \
-			 dump_write.c
+			 dump_write.c \
+			 fragments.h \
+			 fragments.c
 
 
 @CODE_COVERAGE_RULES@

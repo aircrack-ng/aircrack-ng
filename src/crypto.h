@@ -41,6 +41,10 @@
 
 #include "defs.h"
 
+#define CRYPT_NONE 0
+#define CRYPT_WEP 1
+#define CRYPT_WPA 2
+
 #define S_LLC_SNAP "\xAA\xAA\x03\x00\x00\x00"
 #define S_LLC_SNAP_ARP (S_LLC_SNAP "\x08\x06")
 #define S_LLC_SNAP_WLCCP "\xAA\xAA\x03\x00\x40\x96\x00\x00"

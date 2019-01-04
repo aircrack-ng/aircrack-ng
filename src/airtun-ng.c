@@ -60,6 +60,7 @@
 
 #include "defs.h"
 #include "version.h"
+#include "fragments.h"
 #include "pcap.h"
 #include "crypto.h"
 #include "aircrack-util/common.h"
@@ -67,14 +68,6 @@
 #include "aircrack-osdep/osdep.h"
 
 static struct wif *_wi_in, *_wi_out;
-
-#define CRYPT_NONE 0
-#define CRYPT_WEP 1
-#define CRYPT_WPA 2
-
-// if not all fragments are available 60 seconds after the last fragment was
-// received, they will be removed
-#define FRAG_TIMEOUT (1000000 * 60)
 
 static const char usage[]
 	= "\n"
@@ -166,21 +159,6 @@ struct ARP_req
 	int len;
 };
 
-typedef struct Fragment_list * pFrag_t;
-struct Fragment_list
-{
-	unsigned char source[6];
-	unsigned short sequence;
-	unsigned char * fragment[16];
-	short fragmentlen[16];
-	char fragnum;
-	unsigned char * header;
-	short headerlen;
-	struct timeval access;
-	char wep;
-	pFrag_t next;
-};
-
 struct net_entry
 {
 	unsigned char * addr;
@@ -194,7 +172,7 @@ static unsigned char tmpbuf[4096];
 static struct net_entry * nets = NULL;
 static struct WPA_ST_info * st_1st = NULL;
 
-static pFrag_t rFragment;
+pFrag_t rFragment;
 
 static struct net_entry * find_entry(unsigned char * adress)
 {
@@ -268,280 +246,6 @@ static void swap_ra_ta(unsigned char * h80211)
 	memcpy(mbuf, h80211 + 4, 6);
 	memcpy(h80211 + 4, h80211 + 10, 6);
 	memcpy(h80211 + 10, mbuf, 6);
-}
-
-static int addFrag(unsigned char * packet, unsigned char * smac, int len)
-{
-	pFrag_t cur = rFragment;
-	int seq, frag, wep, z, i;
-	unsigned char frame[4096];
-	unsigned char K[128];
-
-	if (packet == NULL) return (-1);
-
-	if (smac == NULL) return (-1);
-
-	if (len <= 32 || len > 2000) return (-1);
-
-	if (rFragment == NULL) return (-1);
-
-	memset(frame, 0, 4096);
-	memcpy(frame, packet, len);
-
-	z = ((frame[1] & 3) != 3) ? 24 : 30;
-	frag = frame[22] & 0x0F;
-	seq = (frame[22] >> 4) | (frame[23] << 4);
-	wep = (frame[1] & 0x40) >> 6;
-
-	if (frag < 0 || frag > 15) return (-1);
-
-	if (wep && opt.crypt != CRYPT_WEP) return (-1);
-
-	if (wep)
-	{
-		// decrypt it
-		memcpy(K, frame + z, 3);
-		memcpy(K + 3, opt.wepkey, opt.weplen);
-
-		if (decrypt_wep(frame + z + 4, len - z - 4, K, 3 + opt.weplen) == 0
-			&& (len - z - 4 > 8))
-		{
-			printf("error decrypting... len: %d\n", len - z - 4);
-			return (-1);
-		}
-
-		/* WEP data packet was successfully decrypted, *
-		* remove the WEP IV & ICV and write the data  */
-
-		len -= 8;
-
-		memcpy(frame + z, frame + z + 4, len - z);
-
-		frame[1] &= 0xBF;
-	}
-
-	while (cur->next != NULL)
-	{
-		cur = cur->next;
-		if ((memcmp(smac, cur->source, 6) == 0) && (seq == cur->sequence)
-			&& (wep == cur->wep))
-		{
-			// entry already exists, update
-			if (cur->fragment[frag] != NULL) return (0);
-
-			if ((frame[1] & 0x04) == 0)
-			{
-				cur->fragnum = frag; // no higher frag number possible
-			}
-			cur->fragment[frag] = (unsigned char *) malloc(len - z);
-			ALLEGE(cur->fragment[frag] != NULL);
-			memcpy(cur->fragment[frag], frame + z, len - z);
-			cur->fragmentlen[frag] = len - z;
-			gettimeofday(&cur->access, NULL);
-
-			return (0);
-		}
-	}
-
-	// new entry, first fragment received
-	// alloc mem
-	cur->next = (pFrag_t) malloc(sizeof(struct Fragment_list));
-	ALLEGE(cur->next != NULL);
-	cur = cur->next;
-
-	for (i = 0; i < 16; i++)
-	{
-		cur->fragment[i] = NULL;
-		cur->fragmentlen[i] = 0;
-	}
-
-	if ((frame[1] & 0x04) == 0)
-	{
-		cur->fragnum = frag; // no higher frag number possible
-	}
-	else
-	{
-		cur->fragnum = 0;
-	}
-
-	// remove retry & more fragments flag
-	frame[1] &= 0xF3;
-	// set frag number to 0
-	frame[22] &= 0xF0;
-	memcpy(cur->source, smac, 6);
-	cur->sequence = seq;
-	cur->header = (unsigned char *) malloc(z);
-	ALLEGE(cur->header != NULL);
-	memcpy(cur->header, frame, z);
-	cur->headerlen = z;
-	cur->fragment[frag] = (unsigned char *) malloc(len - z);
-	ALLEGE(cur->fragment[frag] != NULL);
-	memcpy(cur->fragment[frag], frame + z, len - z);
-	cur->fragmentlen[frag] = len - z;
-	cur->wep = wep;
-	gettimeofday(&cur->access, NULL);
-
-	cur->next = NULL;
-
-	return (0);
-}
-
-static int timeoutFrag(void)
-{
-	pFrag_t old, cur = rFragment;
-	struct timeval tv;
-	int64_t timediff;
-	int i;
-
-	if (rFragment == NULL) return (-1);
-
-	gettimeofday(&tv, NULL);
-
-	while (cur->next != NULL)
-	{
-		old = cur->next;
-		timediff = (tv.tv_sec - old->access.tv_sec) * 1000000UL
-				   + (tv.tv_usec - old->access.tv_usec);
-		if (timediff > FRAG_TIMEOUT)
-		{
-			// remove captured fragments
-			if (old->header != NULL) free(old->header);
-			for (i = 0; i < 16; i++)
-				if (old->fragment[i] != NULL) free(old->fragment[i]);
-
-			cur->next = old->next;
-			free(old);
-		}
-		cur = cur->next;
-	}
-	return (0);
-}
-
-static int delFrag(unsigned char * smac, int sequence)
-{
-	pFrag_t old, cur = rFragment;
-	int i;
-
-	if (rFragment == NULL) return (-1);
-
-	if (smac == NULL) return (-1);
-
-	if (sequence < 0) return (-1);
-
-	while (cur->next != NULL)
-	{
-		old = cur->next;
-		if (memcmp(smac, old->source, 6) == 0 && old->sequence == sequence)
-		{
-			// remove captured fragments
-			if (old->header != NULL) free(old->header);
-			for (i = 0; i < 16; i++)
-				if (old->fragment[i] != NULL) free(old->fragment[i]);
-
-			cur->next = old->next;
-			free(old);
-			return (0);
-		}
-		cur = cur->next;
-	}
-	return (0);
-}
-
-static unsigned char *
-getCompleteFrag(unsigned char * smac, int sequence, int * packetlen)
-{
-	pFrag_t old, cur = rFragment;
-	int i, len = 0;
-	unsigned char * packet = NULL;
-	unsigned char K[128];
-
-	if (rFragment == NULL) return (NULL);
-
-	if (smac == NULL) return (NULL);
-
-	while (cur->next != NULL)
-	{
-		old = cur->next;
-		if (memcmp(smac, old->source, 6) == 0 && old->sequence == sequence)
-		{
-			// check if all frags available
-			if (old->fragnum == 0) return (NULL);
-			for (i = 0; i <= old->fragnum; i++)
-			{
-				if (old->fragment[i] == NULL) return (NULL);
-				len += old->fragmentlen[i];
-			}
-
-			if (len > 2000) return (NULL);
-
-			if (old->wep)
-			{
-				if (opt.crypt == CRYPT_WEP)
-				{
-					packet = (unsigned char *) malloc(len + old->headerlen + 8);
-					ALLEGE(packet != NULL);
-					K[0] = rand() & 0xFF;
-					K[1] = rand() & 0xFF;
-					K[2] = rand() & 0xFF;
-					K[3] = 0x00;
-
-					memcpy(packet, old->header, old->headerlen);
-					len = old->headerlen;
-					memcpy(packet + len, K, 4);
-					len += 4;
-					for (i = 0; i <= old->fragnum; i++)
-					{
-						memcpy(packet + len,
-							   old->fragment[i],
-							   old->fragmentlen[i]);
-						len += old->fragmentlen[i];
-					}
-
-					/* write crc32 value behind data */
-					if (add_crc32(packet + old->headerlen + 4,
-								  len - old->headerlen - 4)
-						!= 0)
-						return (NULL);
-
-					len += 4; // icv
-
-					memcpy(K + 3, opt.wepkey, opt.weplen);
-
-					encrypt_wep(packet + old->headerlen + 4,
-								len - old->headerlen - 4,
-								K,
-								opt.weplen + 3);
-
-					packet[1] = packet[1] | 0x40;
-
-					// delete captured fragments
-					delFrag(smac, sequence);
-					*packetlen = len;
-					return (packet);
-				}
-				else
-					return (NULL);
-			}
-			else
-			{
-				packet = (unsigned char *) malloc(len + old->headerlen);
-				ALLEGE(packet != NULL);
-				memcpy(packet, old->header, old->headerlen);
-				len = old->headerlen;
-				for (i = 0; i <= old->fragnum; i++)
-				{
-					memcpy(packet + len, old->fragment[i], old->fragmentlen[i]);
-					len += old->fragmentlen[i];
-				}
-				// delete captured fragments
-				delFrag(smac, sequence);
-				*packetlen = len;
-				return (packet);
-			}
-		}
-		cur = cur->next;
-	}
-	return (packet);
 }
 
 static int is_filtered_netmask(unsigned char * bssid)
@@ -987,8 +691,9 @@ static int packet_recv(unsigned char * packet, int length)
 	/* Fragment? */
 	if (fragnum > 0 || morefrag)
 	{
-		addFrag(packet, smac, length);
-		buffer = getCompleteFrag(smac, seqnum, &len);
+		addFrag(packet, smac, length, opt.crypt, opt.wepkey, opt.weplen);
+		buffer = getCompleteFrag(
+			smac, seqnum, &len, opt.crypt, opt.wepkey, opt.weplen);
 		timeoutFrag();
 
 		/* we got frag, no compelete packet avail -> do nothing */
