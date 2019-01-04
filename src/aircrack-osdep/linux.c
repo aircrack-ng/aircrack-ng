@@ -2235,6 +2235,7 @@ static int do_linux_open(struct wif * wi, char * iface)
 	dev->arptype_in = dev->arptype_out;
 
 	if (iface_malloced) free(iface);
+	if (iwpriv) free(iwpriv);
 	if (r_file)
 	{
 		free(r_file);
