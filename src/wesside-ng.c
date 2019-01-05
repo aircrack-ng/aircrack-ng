@@ -387,7 +387,7 @@ static void send_frame(struct wstate * ws, unsigned char * buf, int len)
 
 		if (ws->ws_retries > 10)
 		{
-			time_print("ERROR Max retransmists for (%d bytes):\n", lastlen);
+			time_print("ERROR Max retransmits for (%d bytes):\n", lastlen);
 			hexdump(&lame[0], lastlen);
 		}
 		len = lastlen;
