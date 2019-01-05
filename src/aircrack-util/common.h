@@ -189,8 +189,7 @@ int string_has_suffix(const char * str, const char * suf);
 // Returns 1 if the current process is running in the background, 0 otherwise
 int is_background(void);
 
-static inline unsigned int time_diff(struct timeval * past,
-									 struct timeval * now)
+static inline int time_diff(struct timeval * past, struct timeval * now)
 {
 	REQUIRE(past != NULL);
 	REQUIRE(now != NULL);
@@ -205,7 +204,7 @@ static inline unsigned int time_diff(struct timeval * past,
 	n += now->tv_usec;
 	p += past->tv_usec;
 
-	return (unsigned int) (n - p);
+	return (int) (n - p);
 }
 
 #ifdef __cplusplus
