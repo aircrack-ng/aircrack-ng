@@ -155,8 +155,8 @@ extern const unsigned char crc_chop_tbl[256][4];
 static inline void add_icv(unsigned char * input, int len, int offset)
 {
 	REQUIRE(input != NULL);
-	REQUIRE(len > 0 && offset >= 0);
-	REQUIRE(offset <= len);
+	REQUIRE(len > 0 && len < (INT_MAX - 4));
+	REQUIRE(offset >= 0 && offset <= len);
 
 	unsigned long crc = 0xFFFFFFFF;
 
