@@ -1002,7 +1002,7 @@ static void send_auth(struct network * n)
 	*rc++ = htole16(1);
 	*rc++ = htole16(0);
 
-	wifi_send(wh, (unsigned long) rc - (unsigned long) wh);
+	wifi_send(wh, (int) ((intptr_t) rc - (intptr_t) wh));
 }
 
 static void ping_send(struct network * n)

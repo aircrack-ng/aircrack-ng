@@ -1621,24 +1621,21 @@ static void send_auth(struct east_state * es, struct timeval * tv)
 	unsigned char buf[4096];
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	unsigned short * sp;
-	int len;
 
 	if (too_early(tv, es->es_txto_mgt, &es->es_txlast)) return;
 
-	memset(buf, 0, sizeof(buf));
-
 	es->es_txseq++;
+
+	memset(buf, 0, sizeof(buf));
 	fill_basic(es, wh);
 	wh->i_fc[0] |= IEEE80211_FC0_TYPE_MGT | IEEE80211_FC0_SUBTYPE_AUTH;
 
 	/* transaction number */
-	sp = (unsigned short *) (wh + 1);
+	sp = (unsigned short *) ((unsigned char *) wh + sizeof(*wh)); //-V1032
 	sp++;
 	*sp = htole16(1);
 
-	len = sizeof(*wh) + 2 + 2 + 2;
-	printf("Sending auth request\n");
-	send_frame(es, wh, len);
+	send_frame(es, wh, sizeof(*wh) + 2 + 2 + 2);
 }
 
 static void send_assoc(struct east_state * es, struct timeval * tv)

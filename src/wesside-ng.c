@@ -520,6 +520,8 @@ static void wepify(struct wstate * ws, unsigned char * body, int dlen)
 
 static void send_auth(struct wstate * ws)
 {
+	REQUIRE(ws != NULL);
+
 	unsigned char buf[128] __attribute__((aligned(8)));
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	unsigned short * n;
@@ -528,6 +530,7 @@ static void send_auth(struct wstate * ws)
 	fill_basic(ws, wh);
 	wh->i_fc[0] |= IEEE80211_FC0_TYPE_MGT | IEEE80211_FC0_SUBTYPE_AUTH;
 
+	/* transaction number */
 	n = (unsigned short *) ((unsigned char *) wh + sizeof(*wh)); //-V1032
 	n++;
 	*n = htole16(1);
