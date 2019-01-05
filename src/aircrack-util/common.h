@@ -30,6 +30,10 @@
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
+#include <stdbool.h>
+#include <time.h>
+#include <sys/time.h>
+
 #if defined(__CYGWIN32__) && !defined(__CYGWIN64__)
 int fseeko64(FILE * fp, int64_t offset, int whence);
 int64_t ftello64(FILE * fp);
@@ -45,10 +49,6 @@ int64_t ftello64(FILE * fp);
 #undef srand
 #define srand srand48
 #endif
-
-#include <stdbool.h>
-#include <time.h>
-#include <sys/time.h>
 
 #include "defs.h"
 
