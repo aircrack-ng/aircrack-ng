@@ -71,6 +71,7 @@
 #include "version.h"
 #include "pcap.h"
 #include "aircrack-osdep/osdep.h"
+#include "communications.h"
 #include "crypto.h"
 #include "aircrack-util/common.h"
 #include "ieee80211.h"
@@ -280,7 +281,7 @@ struct APt
 	int pwr[REQUESTS];
 };
 
-static unsigned long nb_pkt_sent;
+unsigned long nb_pkt_sent;
 static u_int8_t h80211[4096];
 static u_int8_t tmpbuf[4096];
 
@@ -337,354 +338,6 @@ static int set_bitrate(struct wif * wi, int rate)
 		return (1);
 	}
 	return (0);
-}
-
-static int send_packet(void * buf, u_int32_t count)
-{
-	struct wif * wi = _wi_out; /* XXX globals suck */
-	u_int8_t * pkt = (u_int8_t *) buf;
-
-	// setting sequence numbers... Don' want to do this for our purposes...
-	// One main reason for this is because IF this is an encrypted frame
-	// then the sequence number is used in the encryption, so changing it here
-	// will break it. It won't be able to be decrypted...
-
-	if ((count > 24))
-	{
-		// Set the duration...
-		pkt[2] = 0x3A;
-		pkt[3] = 0x01;
-
-		// Reset Retry Flag
-		pkt[1] = pkt[1] & ~0x4;
-	}
-
-	if (wi_write(wi, buf, count, NULL) == -1)
-	{
-		switch (errno)
-		{
-			case EAGAIN:
-			case ENOBUFS:
-				printf("Hey, ENOBUFS happened\n");
-				usleep(10000);
-				return (0); /* XXX not sure I like this... -sorbo */
-		}
-
-		perror("wi_write()");
-		return (-1);
-	}
-
-	nb_pkt_sent++;
-	return (0);
-}
-
-static int read_packet(void * buf, u_int32_t count, struct rx_info * ri)
-{
-	REQUIRE(buf != NULL);
-
-	struct wif * wi = _wi_in; /* XXX */
-	int rc;
-
-	rc = wi_read(wi, buf, count, ri);
-	if (rc == -1)
-	{
-		switch (errno)
-		{
-			case EAGAIN:
-				return (0);
-		}
-
-		perror("wi_read()");
-		return (-1);
-	}
-
-	return (rc);
-}
-
-static int wait_for_beacon(uint8_t * bssid, uint8_t * capa, char * essid)
-{
-	int len = 0, chan = 0, taglen = 0, tagtype = 0, pos = 0;
-	uint8_t pkt_sniff[4096];
-	struct timeval tv, tv2;
-	char essid2[33];
-
-	gettimeofday(&tv, NULL);
-	while (1)
-	{
-		len = 0;
-		while (len < 22)
-		{
-			len = read_packet(pkt_sniff, sizeof(pkt_sniff), NULL);
-
-			gettimeofday(&tv2, NULL);
-			if (((tv2.tv_sec - tv.tv_sec) * 1000000)
-					+ (tv2.tv_usec - tv.tv_usec)
-				> 10000 * 1000) // wait 10sec for beacon frame
-			{
-				return (-1);
-			}
-			if (len <= 0) usleep(1);
-		}
-		if (!memcmp(pkt_sniff, "\x80", 1))
-		{
-			pos = 0;
-			taglen = 22; // initial value to get the fixed tags parsing started
-			taglen += 12; // skip fixed tags in frames
-			do
-			{
-				pos += taglen + 2;
-				tagtype = pkt_sniff[pos];
-				taglen = pkt_sniff[pos + 1];
-			} while (tagtype != 3 && pos < len - 2);
-
-			if (tagtype != 3) continue;
-			if (taglen != 1) continue;
-			if (pos + 2 + taglen > len) continue;
-
-			chan = pkt_sniff[pos + 2];
-
-			if (essid)
-			{
-				pos = 0;
-				taglen
-					= 22; // initial value to get the fixed tags parsing started
-				taglen += 12; // skip fixed tags in frames
-				do
-				{
-					pos += taglen + 2;
-					tagtype = pkt_sniff[pos];
-					taglen = pkt_sniff[pos + 1];
-				} while (tagtype != 0 && pos < len - 2);
-
-				if (tagtype != 0) continue;
-				if (taglen <= 1)
-				{
-					if (bssid != NULL && memcmp(bssid, pkt_sniff + 10, 6) == 0)
-						break;
-					else
-						continue;
-				}
-				if (pos + 2 + taglen > len) continue;
-
-				if (taglen > 32) taglen = 32;
-
-				if ((pkt_sniff + pos + 2)[0] < 32 && bssid != NULL
-					&& memcmp(bssid, pkt_sniff + 10, 6) == 0)
-				{
-					break;
-				}
-
-				/* if bssid is given, copy essid */
-				if (bssid != NULL && memcmp(bssid, pkt_sniff + 10, 6) == 0
-					&& strlen(essid) == 0)
-				{
-					memset(essid, 0, 33);
-					memcpy(essid, pkt_sniff + pos + 2, taglen);
-					break;
-				}
-
-				/* if essid is given, copy bssid AND essid, so we can handle
-				 * case insensitive arguments */
-				if (bssid != NULL && memcmp(bssid, NULL_MAC, 6) == 0
-					&& strncasecmp(essid, (char *) pkt_sniff + pos + 2, taglen)
-						   == 0
-					&& strlen(essid) == (unsigned) taglen)
-				{
-					memset(essid, 0, 33);
-					memcpy(essid, pkt_sniff + pos + 2, taglen);
-					memcpy(bssid, pkt_sniff + 10, 6);
-					printf("Found BSSID \"%02X:%02X:%02X:%02X:%02X:%02X\" to "
-						   "given ESSID \"%s\".\n",
-						   bssid[0],
-						   bssid[1],
-						   bssid[2],
-						   bssid[3],
-						   bssid[4],
-						   bssid[5],
-						   essid);
-					break;
-				}
-
-				/* if essid and bssid are given, check both */
-				if (bssid != NULL && memcmp(bssid, pkt_sniff + 10, 6) == 0
-					&& strlen(essid) > 0)
-				{
-					memset(essid2, 0, 33);
-					memcpy(essid2, pkt_sniff + pos + 2, taglen);
-					if (strncasecmp(essid, essid2, taglen) == 0
-						&& strlen(essid) == (unsigned) taglen)
-						break;
-					else
-					{
-						printf("For the given BSSID "
-							   "\"%02X:%02X:%02X:%02X:%02X:%02X\", there is an "
-							   "ESSID mismatch!\n",
-							   bssid[0],
-							   bssid[1],
-							   bssid[2],
-							   bssid[3],
-							   bssid[4],
-							   bssid[5]);
-						printf(
-							"Found ESSID \"%s\" vs. specified ESSID \"%s\"\n",
-							essid2,
-							essid);
-						printf("Using the given one, double check it to be "
-							   "sure its correct!\n");
-						break;
-					}
-				}
-			}
-		}
-	}
-
-	if (capa) memcpy(capa, pkt_sniff + 34, 2);
-
-	return (chan);
-}
-
-/**
-	if bssid != NULL its looking for a beacon frame
-*/
-static int
-attack_check(uint8_t * bssid, char * essid, uint8_t * capa, struct wif * wi)
-{
-	int ap_chan = 0, iface_chan = 0;
-
-	iface_chan = wi_get_channel(wi);
-
-	if (iface_chan == -1 && !opt.ignore_negative_one)
-	{
-		PCT;
-		printf("Couldn't determine current channel for %s, you should either "
-			   "force the operation with --ignore-negative-one or apply a "
-			   "kernel patch\n",
-			   wi_get_ifname(wi));
-		return (-1);
-	}
-
-	if (bssid != NULL)
-	{
-		ap_chan = wait_for_beacon(bssid, capa, essid);
-		if (ap_chan < 0)
-		{
-			PCT;
-			printf("No such BSSID available.\n");
-			return (-1);
-		}
-		if ((ap_chan != iface_chan)
-			&& (iface_chan != -1 || !opt.ignore_negative_one))
-		{
-			PCT;
-			printf("%s is on channel %d, but the AP uses channel %d\n",
-				   wi_get_ifname(wi),
-				   iface_chan,
-				   ap_chan);
-			return (-1);
-		}
-	}
-
-	return (0);
-}
-
-static int getnet(uint8_t * capa, int filter, int force)
-{
-	u_int8_t * bssid;
-
-	if (filter)
-		bssid = opt.f_bssid;
-	else
-		bssid = opt.r_bssid;
-
-	if (memcmp(bssid, NULL_MAC, 6))
-	{
-		PCT;
-		printf("Waiting for beacon frame (BSSID: "
-			   "%02X:%02X:%02X:%02X:%02X:%02X) on channel %d\n",
-			   bssid[0],
-			   bssid[1],
-			   bssid[2],
-			   bssid[3],
-			   bssid[4],
-			   bssid[5],
-			   wi_get_channel(_wi_in));
-	}
-	else if (strlen(opt.r_essid) > 0)
-	{
-		PCT;
-		printf("Waiting for beacon frame (ESSID: %s) on channel %d\n",
-			   opt.r_essid,
-			   wi_get_channel(_wi_in));
-	}
-	else if (force)
-	{
-		PCT;
-		if (filter)
-		{
-			printf("Please specify at least a BSSID (-b) or an ESSID (-e)\n");
-		}
-		else
-		{
-			printf("Please specify at least a BSSID (-a) or an ESSID (-e)\n");
-		}
-		return (1);
-	}
-	else
-		return (0);
-
-	if (attack_check(bssid, opt.r_essid, capa, _wi_in) != 0)
-	{
-		if (memcmp(bssid, NULL_MAC, 6))
-		{
-			if (strlen(opt.r_essid) == 0 || opt.r_essid[0] < 32)
-			{
-				printf("Please specify an ESSID (-e).\n");
-			}
-		}
-
-		if (!memcmp(bssid, NULL_MAC, 6))
-		{
-			if (strlen(opt.r_essid) > 0)
-			{
-				printf("Please specify a BSSID (-a).\n");
-			}
-		}
-		return (1);
-	}
-
-	return (0);
-}
-
-static int get_ip_port(char * iface, char * ip, const int ip_size)
-{
-	char * host;
-	char * ptr;
-	int port = -1;
-	struct in_addr addr;
-
-	host = strdup(iface);
-	if (!host) return (-1);
-
-	ptr = strchr(host, ':');
-	if (!ptr) goto out;
-
-	*ptr++ = 0;
-
-	if (!inet_aton(host, (struct in_addr *) &addr))
-		goto out; /* XXX resolve hostname */
-
-	if (strlen(host) > 15)
-	{
-		port = -1;
-		goto out;
-	}
-	strncpy(ip, host, ip_size);
-	port = atoi(ptr);
-	if (port <= 0) port = -1;
-
-out:
-	free(host);
-	return (port);
 }
 
 static int tcp_test(const char * ip_str, const short port)
@@ -940,13 +593,13 @@ static int deauth_station(struct WPA_ST_info * st_cur)
 			memcpy(h80211 + 4, st_cur->stmac, 6);
 			memcpy(h80211 + 10, st_cur->bssid, 6);
 
-			if (send_packet(h80211, 26) < 0) return (1);
+			if (send_packet(_wi_out, h80211, 26, true) < 0) return (1);
 
 			// Send deauth to the AP...
 			memcpy(h80211 + 4, st_cur->bssid, 6);
 			memcpy(h80211 + 10, st_cur->stmac, 6);
 
-			if (send_packet(h80211, 26) < 0) return (1);
+			if (send_packet(_wi_out, h80211, 26, true) < 0) return (1);
 			// Usually this is where we would wait for an ACK, but we need to
 			// get back
 			// to capturing packets to get the EAPOL 4 way handshake
@@ -1664,11 +1317,11 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 						PRINTMAC(opt.st_cur->stmac);
 						printf(COL_REST);
 
-						if (send_packet(pkt, res_length) != 0)
+						if (send_packet(_wi_out, pkt, res_length, true) != 0)
 							printf("Error Sending Packet\n");
 						printf("\n");
 						// Uncomment to send RST packet to the server
-						// if( send_packet( tmpbuf, tmpbuf_len ) != 0 )
+						// if (send_packet(_wi_out, tmpbuf, tmpbuf_len, true) != 0)
 						//    printf("ERROR: couldn't send Ack\n");
 						return;
 					}
@@ -1753,7 +1406,9 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 							pkt, packet_start_length, opt.st_cur);
 					}
 
-					if (send_packet(pkt, packet_start_length) != 0)
+					if (send_packet(
+							_wi_out, pkt, (size_t) packet_start_length, true)
+						!= 0)
 						printf("Error Sending Packet\n");
 
 					return;
@@ -1815,7 +1470,9 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 					}
 
 					printf("Sending ICMP response\n");
-					if (send_packet(pkt, packet_start_length) != 0)
+					if (send_packet(
+							_wi_out, pkt, (size_t) packet_start_length, true)
+						!= 0)
 						printf("Error Sending Packet\n");
 
 					return;
@@ -2201,7 +1858,17 @@ static int do_active_injection(void)
 		}
 	}
 
-	if (getnet(NULL, 0, 0) != 0) return (1);
+	if (getnet(_wi_in,
+			   NULL,
+			   0,
+			   0,
+			   opt.f_bssid,
+			   opt.r_bssid,
+			   (uint8_t *) opt.r_essid,
+			   opt.ignore_negative_one,
+			   0 /* nodetect */)
+		!= 0)
+		return (EXIT_FAILURE);
 
 	srand(time(NULL));
 	// Set our bitrate to the loudest/most likely to reach the station/AP...
@@ -2225,7 +1892,7 @@ static int do_active_injection(void)
 		if (!FD_ISSET(dev.fd_in, &rfds)) continue;
 
 		memset(h80211, 0, sizeof(h80211));
-		caplen = read_packet(h80211, sizeof(h80211), NULL);
+		caplen = read_packet(_wi_in, h80211, sizeof(h80211), NULL);
 
 		// Ignore small frames...
 		if (caplen <= 30) continue;

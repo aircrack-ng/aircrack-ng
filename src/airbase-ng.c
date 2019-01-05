@@ -68,6 +68,7 @@
 #include "eapol.h"
 
 #include "defs.h"
+#include "communications.h"
 #include "fragments.h"
 #include "aircrack-osdep/osdep.h"
 #include "aircrack-util/common.h"
@@ -375,7 +376,7 @@ struct CF_packet
 static pthread_mutex_t mx_cf; /* lock write access to rCF */
 static pthread_mutex_t mx_cap; /* lock write access to rCF */
 
-static unsigned long nb_pkt_sent;
+unsigned long nb_pkt_sent;
 static unsigned char h80211[4096];
 static unsigned char tmpbuf[4096];
 
@@ -888,35 +889,13 @@ static int addMACfile(pMAC_t pMAC, char * filename)
 	return (0);
 }
 
-static int send_packet(void * buf, size_t count)
+static int my_send_packet(void * buf, size_t count)
 {
-	struct wif * wi = _wi_out; /* XXX globals suck */
-
-	if (wi_write(wi, buf, count, NULL) == -1)
-	{
-		perror("wi_write()");
-		return (-1);
-	}
+	int rc = send_packet(_wi_out, buf, count, false);
 
 	ALLEGE(pthread_mutex_lock(&mx_cap) == 0);
 	if (opt.record_data) capture_packet(buf, count);
 	ALLEGE(pthread_mutex_unlock(&mx_cap) == 0);
-
-	nb_pkt_sent++;
-	return (0);
-}
-
-static int read_packet(void * buf, size_t count)
-{
-	struct wif * wi = _wi_in; /* XXX */
-	int rc;
-
-	rc = wi_read(wi, buf, count, NULL);
-	if (rc == -1)
-	{
-		perror("wi_read()");
-		return (-1);
-	}
 
 	return (rc);
 }
@@ -1331,7 +1310,7 @@ static int packet_xmit(unsigned char * packet, int length)
 				if (create_wep_packet(h80211, &length2, 24) != 0) return (1);
 			}
 
-			send_packet(h80211, length2);
+			my_send_packet(h80211, length2);
 		}
 
 		usedlen += newlen;
@@ -1383,7 +1362,7 @@ packet_xmit_external(unsigned char * packet, int length, struct AP_conf * apc)
 	else if (memcmp(buf + 12, (unsigned char *) "\xFF\xFF", 2)
 			 == 0) /* outgoing packet */
 	{
-		send_packet(packet, length);
+		my_send_packet(packet, length);
 	}
 
 	return (0);
@@ -2386,7 +2365,7 @@ static int packet_recv(unsigned char * packet,
 
 					len += 99;
 
-					send_packet(h80211, len);
+					my_send_packet(h80211, len);
 					return (0);
 				}
 
@@ -2493,7 +2472,7 @@ static int packet_recv(unsigned char * packet,
 
 					if (create_wep_packet(h80211, &length, z) != 0) return (1);
 
-					if (!opt.adhoc) send_packet(h80211, length);
+					if (!opt.adhoc) my_send_packet(h80211, length);
 				}
 				else
 				{
@@ -2513,7 +2492,7 @@ static int packet_recv(unsigned char * packet,
 			else
 			{
 				/* unencrypted -> send it through the wireless interface */
-				send_packet(packet, length);
+				my_send_packet(packet, length);
 			}
 		}
 
@@ -2697,7 +2676,7 @@ static int packet_recv(unsigned char * packet,
 						}
 					}
 
-					send_packet(packet, length);
+					my_send_packet(packet, length);
 					return (0);
 				}
 			}
@@ -2833,11 +2812,11 @@ static int packet_recv(unsigned char * packet,
 						}
 					}
 
-					send_packet(packet, length);
+					my_send_packet(packet, length);
 
-					send_packet(packet, length);
+					my_send_packet(packet, length);
 
-					send_packet(packet, length);
+					my_send_packet(packet, length);
 					return (0);
 				}
 			}
@@ -2873,7 +2852,7 @@ static int packet_recv(unsigned char * packet,
 						packet[z + 4] = 13;
 					}
 
-					send_packet(packet, length);
+					my_send_packet(packet, length);
 					return (0);
 				}
 			}
@@ -2916,7 +2895,7 @@ static int packet_recv(unsigned char * packet,
 
 						length += bytes2use;
 					}
-					send_packet(packet, length);
+					my_send_packet(packet, length);
 					check_shared_key(packet, length);
 					return (0);
 				}
@@ -2937,7 +2916,7 @@ static int packet_recv(unsigned char * packet,
 					packet[z + 5] = 0x00;
 
 					length = z + 6;
-					send_packet(packet, length);
+					my_send_packet(packet, length);
 					check_shared_key(packet, length);
 					if (!opt.quiet) PCT;
 					printf("SKA from %02X:%02X:%02X:%02X:%02X:%02X\n",
@@ -3026,7 +3005,7 @@ static int packet_recv(unsigned char * packet,
 			remove_tag(packet + z + 6, 0, &len);
 			length = len + z + 6;
 
-			send_packet(packet, length);
+			my_send_packet(packet, length);
 			if (!opt.quiet)
 			{
 				PCT;
@@ -3159,7 +3138,7 @@ static int packet_recv(unsigned char * packet,
 
 				len += 99;
 
-				send_packet(h80211, len);
+				my_send_packet(h80211, len);
 			}
 
 			return (0);
@@ -3361,7 +3340,7 @@ static void beacon_thread(void * arg)
 
 			fflush(stdout);
 
-			if (send_packet(beacon, beacon_len) < 0)
+			if (my_send_packet(beacon, beacon_len) < 0)
 			{
 				printf("Error sending beacon!\n");
 				return;
@@ -3409,7 +3388,7 @@ static void caffelatte_thread(void)
 			{
 				if (nb_pkt_sent_1 == 0) ticks[0] = 0;
 
-				if (send_packet(arp[arp_off1].buf, arp[arp_off1].len) < 0)
+				if (my_send_packet(arp[arp_off1].buf, arp[arp_off1].len) < 0)
 					return;
 
 				nb_pkt_sent_1++;
@@ -3418,7 +3397,8 @@ static void caffelatte_thread(void)
 						* (double) opt.r_nbpps
 					> (double) nb_pkt_sent_1)
 				{
-					if (send_packet(arp[arp_off1].buf, arp[arp_off1].len) < 0)
+					if (my_send_packet(arp[arp_off1].buf, arp[arp_off1].len)
+						< 0)
 						return;
 
 					nb_pkt_sent_1++;
@@ -3576,7 +3556,7 @@ static void cfrag_thread(void)
 					memcpy(buffer, curCF->frags[i], curCF->fraglen[i]);
 					cfrag_fuzz(
 						buffer, curCF->fragnum, i, curCF->fraglen[i], rnd);
-					if (send_packet(buffer, curCF->fraglen[i]) < 0)
+					if (my_send_packet(buffer, curCF->fraglen[i]) < 0)
 					{
 						ALLEGE(pthread_mutex_unlock(&mx_cf) == 0);
 						return;
@@ -3588,7 +3568,7 @@ static void cfrag_thread(void)
 						   curCF->fragnum,
 						   curCF->finallen,
 						   rnd);
-				if (send_packet(buffer, curCF->finallen) < 0)
+				if (my_send_packet(buffer, curCF->finallen) < 0)
 				{
 					ALLEGE(pthread_mutex_unlock(&mx_cf) == 0);
 					return;
@@ -3608,7 +3588,7 @@ static void cfrag_thread(void)
 						memcpy(buffer, curCF->frags[i], curCF->fraglen[i]);
 						cfrag_fuzz(
 							buffer, curCF->fragnum, i, curCF->fraglen[i], rnd);
-						if (send_packet(buffer, curCF->fraglen[i]) < 0)
+						if (my_send_packet(buffer, curCF->fraglen[i]) < 0)
 						{
 							ALLEGE(pthread_mutex_unlock(&mx_cf) == 0);
 							return;
@@ -3620,7 +3600,7 @@ static void cfrag_thread(void)
 							   curCF->fragnum,
 							   curCF->finallen,
 							   rnd);
-					if (send_packet(buffer, curCF->finallen) < 0)
+					if (my_send_packet(buffer, curCF->finallen) < 0)
 					{
 						ALLEGE(pthread_mutex_unlock(&mx_cf) == 0);
 						return;
@@ -4731,7 +4711,7 @@ int main(int argc, char * argv[])
 			}
 			if (FD_ISSET(dev.fd_in, &read_fds))
 			{
-				len = read_packet(buffer, sizeof(buffer));
+				len = read_packet(_wi_in, buffer, sizeof(buffer), NULL);
 				if (len > 0)
 				{
 					packet_recv(buffer, len, &apc, (opt.external & EXT_IN));

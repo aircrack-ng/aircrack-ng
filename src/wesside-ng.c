@@ -57,6 +57,7 @@
 #include <limits.h>
 
 #include "defs.h"
+#include "communications.h"
 #include "aircrack-osdep/osdep.h"
 #include "pcap.h"
 #include "aircrack-ptw-lib.h"
@@ -444,24 +445,6 @@ static void send_frame(struct wstate * ws, unsigned char * buf, int len)
 		perror("gettimeofday()");
 		exit(EXIT_FAILURE);
 	}
-}
-
-/* Expects host-endian arguments, but returns little-endian seq. */
-static unsigned short fnseq(unsigned short fn, unsigned short seq)
-{
-	unsigned short r = 0;
-
-	if (fn > 15)
-	{
-		time_print("too many fragments (%d)\n", fn);
-		exit(EXIT_FAILURE);
-	}
-
-	r = fn;
-
-	r |= ((seq % 4096) << IEEE80211_SEQ_SEQ_SHIFT);
-
-	return (htole16(r));
 }
 
 static void fill_basic(struct wstate * ws, struct ieee80211_frame * wh)
@@ -1836,13 +1819,6 @@ static inline int elapsedd(struct timeval * past, struct timeval * now)
 	return (el);
 }
 
-static inline int read_packet(struct wstate * ws, unsigned char * dst, int len)
-{
-	REQUIRE(ws != NULL);
-
-	return wi_read(ws->ws_wi, dst, len, NULL);
-}
-
 static void open_wepfile(struct wstate * ws)
 {
 	REQUIRE(ws != NULL);
@@ -2044,7 +2020,7 @@ static void do_input(struct wstate * ws)
 	unsigned char buf[4096];
 	int rd;
 
-	rd = read_packet(ws, buf, sizeof(buf));
+	rd = wi_read(ws->ws_wi, buf, sizeof(buf), NULL);
 	if (rd == 0) return;
 	if (rd == -1)
 	{

@@ -54,13 +54,13 @@ SRC_AC_ALL  = aircrack-ng.c
 
 SRC_AD		= airdecap-ng.c
 SRC_PF		= packetforge-ng.c
-SRC_AR		= aireplay-ng.c
+SRC_AR		= aireplay-ng.c communications.c
 SRC_ADU		= airodump-ng.c dump_write.c
 
-SRC_AT		= airtun-ng.c fragments.c
+SRC_AT		= airtun-ng.c fragments.c communications.c
 SRC_IV		= ivstools.c
 SRC_AS		= airserv-ng.c
-SRC_WS		= wesside-ng.c
+SRC_WS		= wesside-ng.c communications.c
 SRC_BS		= besside-ng.c
 SRC_BC		= besside-ng-crawler.c
 SRC_AL		= airolib-ng.c
@@ -71,11 +71,11 @@ SRC_COW		= cowpatty.c
 SRC_ES		= easside-ng.c
 SRC_BUDDY	= buddy-ng.c
 SRC_MI		= makeivs-ng.c
-SRC_AB		= airbase-ng.c fragments.c
+SRC_AB		= airbase-ng.c communications.c fragments.c
 SRC_AU		= airdecloak-ng.c
-SRC_TT		= tkiptun-ng.c
+SRC_TT		= tkiptun-ng.c communications.c
 SRC_WC		= wpaclean.c
-SRC_AV		= airventriloquist-ng.c
+SRC_AV		= airventriloquist-ng.c communications.c
 
 SRC_ACLIB	= crypto.c $(SSEC_INT) uniqueiv.c session.c
 LIBAC_LIBS	= libaclib.la
@@ -317,7 +317,9 @@ EXTRA_DIST = wpaclean.c \
 			 dump_write.h \
 			 dump_write.c \
 			 fragments.h \
-			 fragments.c
+			 fragments.c \
+			 communications.h \
+			 communications.c
 
 
 @CODE_COVERAGE_RULES@

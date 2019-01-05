@@ -62,6 +62,7 @@
 #include "version.h"
 #include "fragments.h"
 #include "pcap.h"
+#include "communications.h"
 #include "crypto.h"
 #include "aircrack-util/common.h"
 
@@ -166,7 +167,7 @@ struct net_entry
 	struct net_entry * next;
 };
 
-static unsigned long nb_pkt_sent;
+unsigned long nb_pkt_sent;
 static unsigned char h80211[4096];
 static unsigned char tmpbuf[4096];
 static struct net_entry * nets = NULL;
@@ -268,34 +269,6 @@ static int is_filtered_netmask(unsigned char * bssid)
 	}
 
 	return (0);
-}
-
-static int send_packet(void * buf, size_t count)
-{
-	struct wif * wi = _wi_out; /* XXX globals suck */
-	if (wi_write(wi, buf, count, NULL) == -1)
-	{
-		perror("wi_write()");
-		return (-1);
-	}
-
-	nb_pkt_sent++;
-	return (0);
-}
-
-static int read_packet(void * buf, size_t count)
-{
-	struct wif * wi = _wi_in; /* XXX */
-	int rc;
-
-	rc = wi_read(wi, buf, count, NULL);
-	if (rc == -1)
-	{
-		perror("wi_read()");
-		return (-1);
-	}
-
-	return (rc);
 }
 
 static int msleep(int msec)
@@ -607,23 +580,23 @@ static int packet_xmit(unsigned char * packet, int length)
 		// network part to send the packet.
 		if (dest_net == 0)
 		{
-			send_packet(h80211, length);
+			send_packet(_wi_out, h80211, (size_t) length, false);
 		}
 		else if (dest_net == 1)
 		{
 			swap_ra_ta(h80211);
-			send_packet(h80211, length);
+			send_packet(_wi_out, h80211, (size_t) length, false);
 		}
 		else
 		{
-			send_packet(h80211, length);
+			send_packet(_wi_out, h80211, (size_t) length, false);
 			swap_ra_ta(h80211);
-			send_packet(h80211, length);
+			send_packet(_wi_out, h80211, (size_t) length, false);
 		}
 	}
 	else
 	{
-		send_packet(h80211, length);
+		send_packet(_wi_out, h80211, (size_t) length, false);
 	}
 
 	return (0);
@@ -1695,7 +1668,7 @@ int main(int argc, char * argv[])
 						if (memcmp(opt.f_bssid, bssid, 6) != 0) continue;
 					}
 				}
-				send_packet(h80211, caplen);
+				send_packet(_wi_out, h80211, (size_t) caplen, false);
 			}
 
 			packet_recv(h80211, caplen);
@@ -1721,7 +1694,7 @@ int main(int argc, char * argv[])
 			}
 			if (FD_ISSET(dev.fd_in, &read_fds))
 			{
-				len = read_packet(buffer, sizeof(buffer));
+				len = read_packet(_wi_in, buffer, sizeof(buffer), NULL);
 				if (len > 0)
 				{
 					packet_recv(buffer, len);

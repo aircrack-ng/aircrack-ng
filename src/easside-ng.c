@@ -44,6 +44,7 @@
 #undef __FAVOR_BSD
 
 #include "defs.h"
+#include "communications.h"
 #include "aircrack-osdep/osdep.h"
 #include "ieee80211.h"
 #include "easside.h"
@@ -1588,16 +1589,6 @@ static void chan_hop(struct east_state * es, struct timeval * tv)
 	}
 	else
 		msec_to_tv(es->es_hopfreq - elapsed, tv);
-}
-
-static unsigned short fnseq(unsigned short fn, unsigned short seq)
-{
-	REQUIRE(fn < 16);
-
-	unsigned short r = fn;
-	r |= ((seq % 4096) << IEEE80211_SEQ_SEQ_SHIFT);
-
-	return (r);
 }
 
 static void fill_basic(struct east_state * es, struct ieee80211_frame * wh)

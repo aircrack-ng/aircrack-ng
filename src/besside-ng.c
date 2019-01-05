@@ -60,6 +60,7 @@
 #include "defs.h"
 #include "aircrack-ng.h"
 #include "version.h"
+#include "communications.h"
 #include "aircrack-ptw-lib.h"
 #include "aircrack-osdep/osdep.h"
 #include "ieee80211.h"
@@ -643,19 +644,6 @@ static void channel_set(int num)
 	if (wi_set_channel(_state.s_wi, num) == -1) err(1, "wi_set_channel()");
 
 	_state.s_chan = num;
-}
-
-static unsigned short fnseq(unsigned short fn, unsigned short seq)
-{
-	unsigned short r = 0;
-
-	REQUIRE(fn < 16);
-
-	r = fn;
-
-	r |= ((seq % 4096) << IEEE80211_SEQ_SEQ_SHIFT);
-
-	return (htole16(r));
 }
 
 static void fill_basic(struct network * n, struct ieee80211_frame * wh)

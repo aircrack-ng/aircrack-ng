@@ -71,6 +71,7 @@
 #include "pcap.h"
 #include "defs.h"
 #include "aircrack-osdep/osdep.h"
+#include "communications.h"
 #include "crypto.h"
 #include "aircrack-util/common.h"
 #include "aircrack-util/verifyssid.h"
@@ -327,7 +328,7 @@ struct APt
 
 static struct APt ap[MAX_APS];
 
-static unsigned long nb_pkt_sent;
+unsigned long nb_pkt_sent;
 static unsigned char h80211[4096];
 static unsigned char tmpbuf[4096];
 static unsigned char srcbuf[4096];
@@ -492,92 +493,6 @@ static int set_bitrate(struct wif * wi, int rate)
 	return 0;
 }
 
-static int send_packet(void * buf, size_t count)
-{
-	REQUIRE(buf != NULL);
-
-	struct wif * wi = _wi_out; /* XXX globals suck */
-	unsigned char * pkt = (unsigned char *) buf;
-
-	if ((count > 24) && (pkt[1] & 0x04) == 0 && (pkt[22] & 0x0F) == 0)
-	{
-		pkt[22] = (nb_pkt_sent & 0x0000000F) << 4;
-		pkt[23] = (nb_pkt_sent & 0x00000FF0) >> 4;
-	}
-
-	if (wi_write(wi, buf, count, NULL) == -1)
-	{
-		switch (errno)
-		{
-			case EAGAIN:
-			case ENOBUFS:
-				usleep(10000);
-				return 0; /* XXX not sure I like this... -sorbo */
-		}
-
-		perror("wi_write()");
-		return -1;
-	}
-
-	nb_pkt_sent++;
-	return 0;
-}
-
-static int read_packet(void * buf, size_t count, struct rx_info * ri)
-{
-	REQUIRE(buf != NULL && count > 0);
-	REQUIRE(ri != NULL);
-
-	struct wif * wi = _wi_in; /* XXX */
-	int rc;
-
-	rc = wi_read(wi, buf, count, ri);
-	if (rc == -1)
-	{
-		switch (errno)
-		{
-			case EAGAIN:
-				return 0;
-		}
-
-		perror("wi_read()");
-		return -1;
-	}
-
-	return rc;
-}
-
-static void read_sleep(unsigned long usec)
-{
-	struct timeval tv, tv2, tv3;
-	int caplen;
-	fd_set rfds;
-
-	gettimeofday(&tv, NULL);
-	gettimeofday(&tv2, NULL);
-
-	tv3.tv_sec = 0;
-	tv3.tv_usec = 10000;
-
-	while (((tv2.tv_sec * 1000000UL - tv.tv_sec * 1000000UL)
-			+ (tv2.tv_usec - tv.tv_usec))
-		   < (usec))
-	{
-		FD_ZERO(&rfds);
-		FD_SET(dev.fd_in, &rfds);
-
-		if (select(dev.fd_in + 1, &rfds, NULL, NULL, &tv3) < 0)
-		{
-			continue;
-		}
-
-		if (FD_ISSET(dev.fd_in, &rfds))
-			caplen = read_packet(h80211, sizeof(h80211), NULL);
-
-		gettimeofday(&tv2, NULL);
-	}
-}
-
 static int filter_packet(unsigned char * h80211, int caplen)
 {
 	REQUIRE(h80211 != NULL);
@@ -662,267 +577,6 @@ static int filter_packet(unsigned char * h80211, int caplen)
 }
 
 static int
-wait_for_beacon(unsigned char * bssid, unsigned char * capa, char * essid)
-{
-	REQUIRE(bssid != NULL);
-
-	int len = 0, chan = 0, taglen = 0, tagtype = 0, pos = 0;
-	unsigned char pkt_sniff[4096];
-	struct timeval tv, tv2;
-	char essid2[33];
-
-	gettimeofday(&tv, NULL);
-	while (1)
-	{
-		len = 0;
-		while (len < 22)
-		{
-			len = read_packet(pkt_sniff, sizeof(pkt_sniff), NULL);
-
-			gettimeofday(&tv2, NULL);
-			if (((tv2.tv_sec - tv.tv_sec) * 1000000UL)
-					+ (tv2.tv_usec - tv.tv_usec)
-				> 10000 * 1000) // wait 10sec for beacon frame
-			{
-				return -1;
-			}
-			if (len <= 0) usleep(1);
-		}
-		if (!memcmp(pkt_sniff, "\x80", 1))
-		{
-			pos = 0;
-			taglen = 22; // initial value to get the fixed tags parsing started
-			taglen += 12; // skip fixed tags in frames
-			do
-			{
-				pos += taglen + 2;
-				tagtype = pkt_sniff[pos];
-				taglen = pkt_sniff[pos + 1];
-			} while (tagtype != 3 && pos < len - 2);
-
-			if (tagtype != 3) continue;
-			if (taglen != 1) continue;
-			if (pos + 2 + taglen > len) continue;
-
-			chan = pkt_sniff[pos + 2];
-
-			if (essid)
-			{
-				pos = 0;
-				taglen
-					= 22; // initial value to get the fixed tags parsing started
-				taglen += 12; // skip fixed tags in frames
-				do
-				{
-					pos += taglen + 2;
-					tagtype = pkt_sniff[pos];
-					taglen = pkt_sniff[pos + 1];
-				} while (tagtype != 0 && pos < len - 2);
-
-				if (tagtype != 0) continue;
-				if (taglen <= 1)
-				{
-					if (memcmp(bssid, pkt_sniff + 10, 6) == 0)
-						break;
-					else
-						continue;
-				}
-				if (pos + 2 + taglen > len) continue;
-
-				if (taglen > 32) taglen = 32;
-
-				if ((pkt_sniff + pos + 2)[0] < 32
-					&& memcmp(bssid, pkt_sniff + 10, 6) == 0)
-				{
-					break;
-				}
-
-				/* if bssid is given, copy essid */
-				if (bssid != NULL && memcmp(bssid, pkt_sniff + 10, 6) == 0
-					&& strlen(essid) == 0)
-				{
-					memset(essid, 0, 33);
-					memcpy(essid, pkt_sniff + pos + 2, taglen);
-					break;
-				}
-
-				/* if essid is given, copy bssid AND essid, so we can handle
-				 * case insensitive arguments */
-				if (bssid != NULL && memcmp(bssid, NULL_MAC, 6) == 0
-					&& strncasecmp(essid, (char *) pkt_sniff + pos + 2, taglen)
-						   == 0
-					&& strlen(essid) == (unsigned) taglen)
-				{
-					memset(essid, 0, 33);
-					memcpy(essid, pkt_sniff + pos + 2, taglen);
-					memcpy(bssid, pkt_sniff + 10, 6);
-					printf("Found BSSID \"%02X:%02X:%02X:%02X:%02X:%02X\" to "
-						   "given ESSID \"%s\".\n",
-						   bssid[0],
-						   bssid[1],
-						   bssid[2],
-						   bssid[3],
-						   bssid[4],
-						   bssid[5],
-						   essid);
-					break;
-				}
-
-				/* if essid and bssid are given, check both */
-				if (bssid != NULL && memcmp(bssid, pkt_sniff + 10, 6) == 0
-					&& strlen(essid) > 0)
-				{
-					memset(essid2, 0, 33);
-					memcpy(essid2, pkt_sniff + pos + 2, taglen);
-					if (strncasecmp(essid, essid2, taglen) == 0
-						&& strlen(essid) == (unsigned) taglen)
-						break;
-					else
-					{
-						printf("For the given BSSID "
-							   "\"%02X:%02X:%02X:%02X:%02X:%02X\", there is an "
-							   "ESSID mismatch!\n",
-							   bssid[0],
-							   bssid[1],
-							   bssid[2],
-							   bssid[3],
-							   bssid[4],
-							   bssid[5]);
-						printf(
-							"Found ESSID \"%s\" vs. specified ESSID \"%s\"\n",
-							essid2,
-							essid);
-						printf("Using the given one, double check it to be "
-							   "sure its correct!\n");
-						break;
-					}
-				}
-			}
-		}
-	}
-
-	if (capa) memcpy(capa, pkt_sniff + 34, 2);
-
-	return chan;
-}
-
-/**
-	if bssid != NULL its looking for a beacon frame
-*/
-static int attack_check(unsigned char * bssid,
-						char * essid,
-						unsigned char * capa,
-						struct wif * wi)
-{
-	int ap_chan = 0, iface_chan = 0;
-
-	iface_chan = wi_get_channel(wi);
-
-	if (iface_chan == -1 && !opt.ignore_negative_one)
-	{
-		PCT;
-		printf("Couldn't determine current channel for %s, you should either "
-			   "force the operation with --ignore-negative-one or apply a "
-			   "kernel patch\n",
-			   wi_get_ifname(wi));
-		return -1;
-	}
-
-	if (bssid != NULL)
-	{
-		ap_chan = wait_for_beacon(bssid, capa, essid);
-		if (ap_chan < 0)
-		{
-			PCT;
-			printf("No such BSSID available.\n");
-			return -1;
-		}
-		if ((ap_chan != iface_chan)
-			&& (iface_chan != -1 || !opt.ignore_negative_one))
-		{
-			PCT;
-			printf("%s is on channel %d, but the AP uses channel %d\n",
-				   wi_get_ifname(wi),
-				   iface_chan,
-				   ap_chan);
-			return -1;
-		}
-	}
-
-	return 0;
-}
-
-static int getnet(unsigned char * capa, int filter, int force)
-{
-	unsigned char * bssid;
-
-	if (opt.nodetect) return 0;
-
-	if (filter)
-		bssid = opt.f_bssid;
-	else
-		bssid = opt.r_bssid;
-
-	if (memcmp(bssid, NULL_MAC, 6))
-	{
-		PCT;
-		printf("Waiting for beacon frame (BSSID: "
-			   "%02X:%02X:%02X:%02X:%02X:%02X) on channel %d\n",
-			   bssid[0],
-			   bssid[1],
-			   bssid[2],
-			   bssid[3],
-			   bssid[4],
-			   bssid[5],
-			   wi_get_channel(_wi_in));
-	}
-	else if (strlen(opt.r_essid) > 0)
-	{
-		PCT;
-		printf("Waiting for beacon frame (ESSID: %s) on channel %d\n",
-			   opt.r_essid,
-			   wi_get_channel(_wi_in));
-	}
-	else if (force)
-	{
-		PCT;
-		if (filter)
-		{
-			printf("Please specify at least a BSSID (-b) or an ESSID (-e)\n");
-		}
-		else
-		{
-			printf("Please specify at least a BSSID (-a) or an ESSID (-e)\n");
-		}
-		return (1);
-	}
-	else
-		return 0;
-
-	if (attack_check(bssid, opt.r_essid, capa, _wi_in) != 0)
-	{
-		if (memcmp(bssid, NULL_MAC, 6))
-		{
-			if (verifyssid((const unsigned char *) opt.r_essid) == 0)
-			{
-				printf("Please specify an ESSID (-e).\n");
-			}
-		}
-
-		if (!memcmp(bssid, NULL_MAC, 6))
-		{
-			if (strlen(opt.r_essid) > 0)
-			{
-				printf("Please specify a BSSID (-a).\n");
-			}
-		}
-		return (1);
-	}
-
-	return 0;
-}
-
-static int
 xor_keystream(unsigned char * ph80211, unsigned char * keystream, int len)
 {
 	REQUIRE(ph80211 != NULL);
@@ -998,7 +652,7 @@ static int capture_ask_packet(int * caplen, int just_grab)
 
 			gettimeofday(&tv, NULL);
 
-			*caplen = read_packet(h80211, sizeof(h80211), NULL);
+			*caplen = read_packet(_wi_in, h80211, sizeof(h80211), NULL);
 
 			if (*caplen < 0) return (EXIT_FAILURE);
 			if (*caplen == 0) continue;
@@ -1369,6 +1023,11 @@ static int read_prga(unsigned char ** dest, char * file)
 	return (EXIT_SUCCESS);
 }
 
+static void my_read_sleep_cb(void)
+{
+	read_packet(_wi_in, h80211, sizeof(h80211), NULL);
+}
+
 static void send_fragments(unsigned char * packet,
 						   int packet_len,
 						   unsigned char * iv,
@@ -1442,7 +1101,7 @@ static void send_fragments(unsigned char * packet,
 		xor_keystream(frag + header_size + 4, keystream, fragsize + 4);
 
 		// Send
-		send_packet(frag, pack_size);
+		send_packet(_wi_out, frag, (size_t) pack_size, true);
 		if (t < data_size) usleep(100);
 
 		if (t >= data_size) break;
@@ -1456,7 +1115,17 @@ static int do_attack_deauth(void)
 	struct timeval tv;
 	fd_set rfds;
 
-	if (getnet(NULL, 0, 1) != 0) return (EXIT_FAILURE);
+	if (getnet(_wi_in,
+			   NULL,
+			   0,
+			   1,
+			   opt.f_bssid,
+			   opt.r_bssid,
+			   (uint8_t *) opt.r_essid,
+			   opt.ignore_negative_one,
+			   opt.nodetect)
+		!= 0)
+		return (EXIT_FAILURE);
 
 	if (memcmp(opt.r_dmac, NULL_MAC, 6) == 0)
 		printf("NB: this attack is more effective when targeting\n"
@@ -1503,14 +1172,16 @@ static int do_attack_deauth(void)
 				memcpy(h80211 + 4, opt.r_dmac, 6);
 				memcpy(h80211 + 10, opt.r_bssid, 6);
 
-				if (send_packet(h80211, 26) < 0) return (EXIT_FAILURE);
+				if (send_packet(_wi_out, h80211, 26, true) < 0)
+					return (EXIT_FAILURE);
 
 				usleep(2000);
 
 				memcpy(h80211 + 4, opt.r_bssid, 6);
 				memcpy(h80211 + 10, opt.r_dmac, 6);
 
-				if (send_packet(h80211, 26) < 0) return (EXIT_FAILURE);
+				if (send_packet(_wi_out, h80211, 26, true) < 0)
+					return (EXIT_FAILURE);
 
 				usleep(2000);
 
@@ -1531,7 +1202,7 @@ static int do_attack_deauth(void)
 
 					if (!FD_ISSET(dev.fd_in, &rfds)) break;
 
-					caplen = read_packet(tmpbuf, sizeof(tmpbuf), NULL);
+					caplen = read_packet(_wi_in, tmpbuf, sizeof(tmpbuf), NULL);
 
 					if (caplen <= 0) break;
 					if (caplen != 10) continue;
@@ -1587,7 +1258,7 @@ static int do_attack_deauth(void)
 
 			for (i = 0; i < 128; i++)
 			{
-				if (send_packet(h80211, 26) < 0) return (1);
+				if (send_packet(_wi_out, h80211, 26, true) < 0) return (1);
 
 				usleep(2000);
 			}
@@ -1635,7 +1306,17 @@ static int do_attack_fake_auth(void)
 		return (EXIT_FAILURE);
 	}
 
-	if (getnet(capa, 0, 1) != 0) return (EXIT_FAILURE);
+	if (getnet(_wi_in,
+			   capa,
+			   0,
+			   1,
+			   opt.f_bssid,
+			   opt.r_bssid,
+			   (uint8_t *) opt.r_essid,
+			   opt.ignore_negative_one,
+			   opt.nodetect)
+		!= 0)
+		return (EXIT_FAILURE);
 
 	if (verifyssid((const unsigned char *) opt.r_essid) == 0)
 	{
@@ -1739,14 +1420,14 @@ static int do_attack_fake_auth(void)
 
 				for (i = 0; i < x_send; i++)
 				{
-					if (send_packet(h80211, 30) < 0) return (1);
+					if (send_packet(_wi_out, h80211, 30, true) < 0) return (1);
 
 					usleep(10);
 
-					if (send_packet(ackbuf, 14) < 0) return (1);
+					if (send_packet(_wi_out, ackbuf, 14, true) < 0) return (1);
 					usleep(10);
 
-					if (send_packet(ackbuf, 14) < 0) return (1);
+					if (send_packet(_wi_out, ackbuf, 14, true) < 0) return (1);
 				}
 
 				break;
@@ -1870,13 +1551,18 @@ static int do_attack_fake_auth(void)
 					{
 						add_icv(h80211, challengelen + 28, 28);
 						xor_keystream(h80211 + 28, keystream, challengelen + 4);
-						send_packet(h80211, 24 + 4 + challengelen + 4);
+						send_packet(_wi_out,
+									h80211,
+									24 + 4 + (size_t) challengelen + 4,
+									true);
 					}
 
-					if (send_packet(ackbuf, 14) < 0) return (EXIT_FAILURE);
+					if (send_packet(_wi_out, ackbuf, 14, true) < 0)
+						return (EXIT_FAILURE);
 					usleep(10);
 
-					if (send_packet(ackbuf, 14) < 0) return (EXIT_FAILURE);
+					if (send_packet(_wi_out, ackbuf, 14, true) < 0)
+						return (EXIT_FAILURE);
 				}
 
 				break;
@@ -1966,14 +1652,17 @@ static int do_attack_fake_auth(void)
 
 				for (i = 0; i < x_send; i++)
 				{
-					if (send_packet(h80211, 46 + n) < 0) return (EXIT_FAILURE);
+					if (send_packet(_wi_out, h80211, 46 + (size_t) n, true) < 0)
+						return (EXIT_FAILURE);
 
 					usleep(10);
 
-					if (send_packet(ackbuf, 14) < 0) return (EXIT_FAILURE);
+					if (send_packet(_wi_out, ackbuf, 14, true) < 0)
+						return (EXIT_FAILURE);
 					usleep(10);
 
-					if (send_packet(ackbuf, 14) < 0) return (EXIT_FAILURE);
+					if (send_packet(_wi_out, ackbuf, 14, true) < 0)
+						return (EXIT_FAILURE);
 				}
 
 				break;
@@ -2040,7 +1729,8 @@ static int do_attack_fake_auth(void)
 						kas = 32;
 
 					for (i = 0; i < kas; i++)
-						if (send_packet(h80211, 24) < 0) return (EXIT_FAILURE);
+						if (send_packet(_wi_out, h80211, 24, true) < 0)
+							return (EXIT_FAILURE);
 				}
 
 				break;
@@ -2078,14 +1768,17 @@ static int do_attack_fake_auth(void)
 
 				for (i = 0; i < x_send; i++)
 				{
-					if (send_packet(h80211, 52 + n) < 0) return (EXIT_FAILURE);
+					if (send_packet(_wi_out, h80211, 52 + (size_t) n, true) < 0)
+						return (EXIT_FAILURE);
 
 					usleep(10);
 
-					if (send_packet(ackbuf, 14) < 0) return (EXIT_FAILURE);
+					if (send_packet(_wi_out, ackbuf, 14, true) < 0)
+						return (EXIT_FAILURE);
 					usleep(10);
 
-					if (send_packet(ackbuf, 14) < 0) return (EXIT_FAILURE);
+					if (send_packet(_wi_out, ackbuf, 14, true) < 0)
+						return (EXIT_FAILURE);
 				}
 
 				break;
@@ -2126,7 +1819,7 @@ static int do_attack_fake_auth(void)
 
 		if (!FD_ISSET(dev.fd_in, &rfds)) continue;
 
-		caplen = read_packet(h80211, sizeof(h80211), NULL);
+		caplen = read_packet(_wi_in, h80211, sizeof(h80211), NULL);
 
 		if (caplen < 0) return (EXIT_FAILURE);
 		if (caplen == 0) continue;
@@ -2204,7 +1897,8 @@ static int do_attack_fake_auth(void)
 				if (opt.npackets == -1) x_send = 4;
 				state = 0;
 				challengelen = 0;
-				read_sleep(deauth_wait * 1000000UL);
+				read_sleep(
+					dev.fd_in, deauth_wait * 1000000UL, my_read_sleep_cb);
 				deauth_wait += 2;
 				continue;
 			}
@@ -2220,7 +1914,7 @@ static int do_attack_fake_auth(void)
 				if (opt.npackets == -1) x_send = 4;
 				state = 0;
 				challengelen = 0;
-				read_sleep(deauth_wait);
+				read_sleep(dev.fd_in, deauth_wait, my_read_sleep_cb);
 				deauth_wait += 2;
 				continue;
 			}
@@ -2244,7 +1938,7 @@ static int do_attack_fake_auth(void)
 				if (caplen < 30)
 				{
 					printf("Error: packet length < 30 bytes\n");
-					read_sleep(3 * 1000000);
+					read_sleep(dev.fd_in, 3 * 1000000, my_read_sleep_cb);
 					challengelen = 0;
 					continue;
 				}
@@ -2253,7 +1947,9 @@ static int do_attack_fake_auth(void)
 				{
 					ska = 1;
 					printf("Switching to shared key authentication\n");
-					read_sleep(2 * 1000000); // read sleep 2s
+					read_sleep(dev.fd_in,
+							   2 * 1000000,
+							   my_read_sleep_cb); // read sleep 2s
 					challengelen = 0;
 					continue;
 				}
@@ -2290,7 +1986,9 @@ static int do_attack_fake_auth(void)
 								printf("Challenge failure\n");
 								challengelen = 0;
 							}
-							read_sleep(2 * 1000000); // read sleep 2s
+							read_sleep(dev.fd_in,
+									   2 * 1000000,
+									   my_read_sleep_cb); // read sleep 2s
 							challengelen = 0;
 							continue;
 						default:
@@ -2299,7 +1997,7 @@ static int do_attack_fake_auth(void)
 
 					printf("Authentication failed (code %d)\n", n);
 					if (opt.npackets == -1) x_send = 4;
-					read_sleep(3 * 1000000);
+					read_sleep(dev.fd_in, 3 * 1000000, my_read_sleep_cb);
 					challengelen = 0;
 					continue;
 				}
@@ -2602,12 +2300,14 @@ read_packets:
 
 		if (nb_pkt_sent == 0) ticks[0] = 0;
 
-		if (send_packet(h80211, caplen) < 0) return (EXIT_FAILURE);
+		if (send_packet(_wi_out, h80211, (size_t) caplen, true) < 0)
+			return (EXIT_FAILURE);
 
 		if (((double) ticks[0] / (double) RTC_RESOLUTION) * (double) opt.r_nbpps
 			> (double) nb_pkt_sent)
 		{
-			if (send_packet(h80211, caplen) < 0) return (EXIT_FAILURE);
+			if (send_packet(_wi_out, h80211, (size_t) caplen, true) < 0)
+				return (EXIT_FAILURE);
 		}
 	}
 
@@ -2646,7 +2346,17 @@ static int do_attack_arp_resend(void)
 		return (EXIT_FAILURE);
 	}
 
-	if (getnet(NULL, 1, 1) != 0) return (EXIT_FAILURE);
+	if (getnet(_wi_in,
+			   NULL,
+			   1,
+			   1,
+			   opt.f_bssid,
+			   opt.r_bssid,
+			   (uint8_t *) opt.r_essid,
+			   opt.ignore_negative_one,
+			   opt.nodetect)
+		!= 0)
+		return (EXIT_FAILURE);
 
 	/* create and write the output pcap header */
 
@@ -2784,7 +2494,11 @@ static int do_attack_arp_resend(void)
 			{
 				if (nb_pkt_sent == 0) ticks[0] = 0;
 
-				if (send_packet(arp[arp_off1].buf, arp[arp_off1].len) < 0)
+				if (send_packet(_wi_out,
+								arp[arp_off1].buf,
+								(size_t) arp[arp_off1].len,
+								true)
+					< 0)
 				{
 					free(arp);
 					fclose(f_cap_out);
@@ -2795,7 +2509,11 @@ static int do_attack_arp_resend(void)
 						* (double) opt.r_nbpps
 					> (double) nb_pkt_sent)
 				{
-					if (send_packet(arp[arp_off1].buf, arp[arp_off1].len) < 0)
+					if (send_packet(_wi_out,
+									arp[arp_off1].buf,
+									(size_t) arp[arp_off1].len,
+									true)
+						< 0)
 					{
 						free(arp);
 						fclose(f_cap_out);
@@ -2813,7 +2531,7 @@ static int do_attack_arp_resend(void)
 		{
 			gettimeofday(&tv, NULL);
 
-			caplen = read_packet(h80211, sizeof(h80211), NULL);
+			caplen = read_packet(_wi_in, h80211, sizeof(h80211), NULL);
 
 			if (caplen < 0)
 			{
@@ -3093,7 +2811,17 @@ static int do_attack_caffe_latte(void)
 	opt.f_iswep = 1;
 	opt.f_fromds = 0;
 
-	if (getnet(NULL, 1, 1) != 0) return 1;
+	if (getnet(_wi_in,
+			   NULL,
+			   1,
+			   1,
+			   opt.f_bssid,
+			   opt.r_bssid,
+			   (uint8_t *) opt.r_essid,
+			   opt.ignore_negative_one,
+			   opt.nodetect)
+		!= 0)
+		return (EXIT_FAILURE);
 
 	if (memcmp(opt.f_bssid, NULL_MAC, 6) == 0)
 	{
@@ -3230,7 +2958,11 @@ static int do_attack_caffe_latte(void)
 			{
 				if (nb_pkt_sent == 0) ticks[0] = 0;
 
-				if (send_packet(arp[arp_off1].buf, arp[arp_off1].len) < 0)
+				if (send_packet(_wi_out,
+								arp[arp_off1].buf,
+								(size_t) arp[arp_off1].len,
+								true)
+					< 0)
 				{
 					free(arp);
 					fclose(f_cap_out);
@@ -3240,7 +2972,11 @@ static int do_attack_caffe_latte(void)
 						* (double) opt.r_nbpps
 					> (double) nb_pkt_sent)
 				{
-					if (send_packet(arp[arp_off1].buf, arp[arp_off1].len) < 0)
+					if (send_packet(_wi_out,
+									arp[arp_off1].buf,
+									(size_t) arp[arp_off1].len,
+									true)
+						< 0)
 					{
 						free(arp);
 						fclose(f_cap_out);
@@ -3258,7 +2994,7 @@ static int do_attack_caffe_latte(void)
 		{
 			gettimeofday(&tv, NULL);
 
-			caplen = read_packet(h80211, sizeof(h80211), NULL);
+			caplen = read_packet(_wi_in, h80211, sizeof(h80211), NULL);
 
 			if (caplen < 0)
 			{
@@ -3563,7 +3299,16 @@ static int do_attack_migmode(void)
 	opt.f_iswep = 1;
 	opt.f_fromds = 1;
 
-	if (getnet(NULL, 1, 1) != 0)
+	if (getnet(_wi_in,
+			   NULL,
+			   1,
+			   1,
+			   opt.f_bssid,
+			   opt.r_bssid,
+			   (uint8_t *) opt.r_essid,
+			   opt.ignore_negative_one,
+			   opt.nodetect)
+		!= 0)
 	{
 		free(arp);
 		return 1;
@@ -3706,7 +3451,11 @@ static int do_attack_migmode(void)
 			{
 				if (nb_pkt_sent == 0) ticks[0] = 0;
 
-				if (send_packet(arp[arp_off1].buf, arp[arp_off1].len) < 0)
+				if (send_packet(_wi_out,
+								arp[arp_off1].buf,
+								(size_t) arp[arp_off1].len,
+								true)
+					< 0)
 				{
 					free(arp);
 					fclose(f_cap_out);
@@ -3717,7 +3466,11 @@ static int do_attack_migmode(void)
 						* (double) opt.r_nbpps
 					> (double) nb_pkt_sent)
 				{
-					if (send_packet(arp[arp_off1].buf, arp[arp_off1].len) < 0)
+					if (send_packet(_wi_out,
+									arp[arp_off1].buf,
+									(size_t) arp[arp_off1].len,
+									true)
+						< 0)
 					{
 						free(arp);
 						fclose(f_cap_out);
@@ -3735,7 +3488,7 @@ static int do_attack_migmode(void)
 		{
 			gettimeofday(&tv, NULL);
 
-			caplen = read_packet(h80211, sizeof(h80211), NULL);
+			caplen = read_packet(_wi_in, h80211, sizeof(h80211), NULL);
 
 			if (caplen < 0)
 			{
@@ -4343,17 +4096,21 @@ read_packets:
 
 		if (isarp)
 		{
-			if (send_packet(frag1, z + 4 + 10 + 4) < 0) return (1);
+			if (send_packet(_wi_out, frag1, (size_t) z + 4 + 10 + 4, true) < 0)
+				return (1);
 			nb_pkt_sent--;
 		}
 		else
 		{
-			if (send_packet(frag1, z + 4 + 4 + 4) < 0) return (1);
-			if (send_packet(frag2, z + 4 + 4 + 4) < 0) return (1);
-			if (send_packet(frag3, z + 4 + 4 + 4) < 0) return (1);
+			if (send_packet(_wi_out, frag1, (size_t) z + 4 + 4 + 4, true) < 0)
+				return (1);
+			if (send_packet(_wi_out, frag2, (size_t) z + 4 + 4 + 4, true) < 0)
+				return (1);
+			if (send_packet(_wi_out, frag3, (size_t) z + 4 + 4 + 4, true) < 0)
+				return (1);
 			nb_pkt_sent -= 3;
 		}
-		if (send_packet(h80211, caplen) < 0) return (1);
+		if (send_packet(_wi_out, h80211, (size_t) caplen, true) < 0) return (1);
 	}
 
 	return (0);
@@ -4385,7 +4142,17 @@ static int do_attack_chopchop(void)
 	struct pcap_file_header pfh_out;
 	struct pcap_pkthdr pkh;
 
-	if (getnet(NULL, 1, 0) != 0) return 1;
+	if (getnet(_wi_in,
+			   NULL,
+			   1,
+			   0,
+			   opt.f_bssid,
+			   opt.r_bssid,
+			   (uint8_t *) opt.r_essid,
+			   opt.ignore_negative_one,
+			   opt.nodetect)
+		!= 0)
+		return (EXIT_FAILURE);
 
 	srand(time(NULL));
 
@@ -4413,9 +4180,10 @@ static int do_attack_chopchop(void)
 		packet[0] = 0x08; // make it a data packet
 		packet[1] = 0x41; // set encryption and ToDS=1
 
-		memcpy(packet + 24, h80211 + z, caplen - z);
+		memcpy(packet + 24, h80211 + z, (size_t) caplen - z);
 
-		if (send_packet(packet, caplen - z + 24) != 0) return (1);
+		if (send_packet(_wi_out, packet, (size_t) caplen - z + 24, true) != 0)
+			return (1);
 		// done sending a correct packet
 	}
 
@@ -4771,7 +4539,7 @@ static int do_attack_chopchop(void)
 
 			errno = 0;
 
-			if (send_packet(h80211, data_end - 1) != 0)
+			if (send_packet(_wi_out, h80211, (size_t) data_end - 1, true) != 0)
 			{
 				free(chopped);
 				return (1);
@@ -4787,7 +4555,7 @@ static int do_attack_chopchop(void)
 
 		/* watch for a response from the AP */
 
-		n = read_packet(h80211, sizeof(h80211), NULL);
+		n = read_packet(_wi_in, h80211, sizeof(h80211), NULL);
 
 		if (n < 0)
 		{
@@ -5166,7 +4934,17 @@ static int do_attack_fragment(void)
 		return (1);
 	}
 
-	if (getnet(NULL, 1, 1) != 0) return 1;
+	if (getnet(_wi_in,
+			   NULL,
+			   1,
+			   1,
+			   opt.f_bssid,
+			   opt.r_bssid,
+			   (uint8_t *) opt.r_essid,
+			   opt.ignore_negative_one,
+			   opt.nodetect)
+		!= 0)
+		return (EXIT_FAILURE);
 
 	if (memcmp(opt.r_dmac, NULL_MAC, 6) == 0)
 	{
@@ -5263,7 +5041,7 @@ static int do_attack_fragment(void)
 
 			while (!gotit) // waiting for relayed packet
 			{
-				caplen = read_packet(packet, sizeof(packet), NULL);
+				caplen = read_packet(_wi_in, packet, sizeof(packet), NULL);
 				z = ((packet[1] & 3) != 3) ? 24 : 30;
 				if ((packet[0] & 0x80) == 0x80) /* QoS */
 					z += 2;
@@ -5307,7 +5085,10 @@ static int do_attack_fragment(void)
 				{
 					PCT;
 					printf("Got a deauthentication packet!\n");
-					read_sleep(5 * 1000000); // sleep 5 seconds and ignore all
+					read_sleep(
+						dev.fd_in,
+						5 * 1000000,
+						my_read_sleep_cb); // sleep 5 seconds and ignore all
 					// frames in this period
 				}
 
@@ -5317,7 +5098,10 @@ static int do_attack_fragment(void)
 				{
 					PCT;
 					printf("Got a disassociation packet!\n");
-					read_sleep(5 * 1000000); // sleep 5 seconds and ignore all
+					read_sleep(
+						dev.fd_in,
+						5 * 1000000,
+						my_read_sleep_cb); // sleep 5 seconds and ignore all
 					// frames in this period
 				}
 
@@ -5440,7 +5224,7 @@ static int do_attack_fragment(void)
 			gotit = 0;
 			while (!gotit) // waiting for relayed packet
 			{
-				caplen = read_packet(packet, sizeof(packet), NULL);
+				caplen = read_packet(_wi_in, packet, sizeof(packet), NULL);
 				z = ((packet[1] & 3) != 3) ? 24 : 30;
 				if ((packet[0] & 0x80) == 0x80) /* QoS */
 					z += 2;
@@ -5483,7 +5267,10 @@ static int do_attack_fragment(void)
 				{
 					PCT;
 					printf("Got a deauthentication packet!\n");
-					read_sleep(5 * 1000000); // sleep 5 seconds and ignore all
+					read_sleep(
+						dev.fd_in,
+						5 * 1000000,
+						my_read_sleep_cb); // sleep 5 seconds and ignore all
 					// frames in this period
 				}
 
@@ -5493,7 +5280,10 @@ static int do_attack_fragment(void)
 				{
 					PCT;
 					printf("Got a disassociation packet!\n");
-					read_sleep(5 * 1000000); // sleep 5 seconds and ignore all
+					read_sleep(
+						dev.fd_in,
+						5 * 1000000,
+						my_read_sleep_cb); // sleep 5 seconds and ignore all
 					// frames in this period
 				}
 
@@ -5593,7 +5383,7 @@ static int do_attack_fragment(void)
 			gotit = 0;
 			while (!gotit) // waiting for relayed packet
 			{
-				caplen = read_packet(packet, sizeof(packet), NULL);
+				caplen = read_packet(_wi_in, packet, sizeof(packet), NULL);
 				z = ((packet[1] & 3) != 3) ? 24 : 30;
 				if ((packet[0] & 0x80) == 0x80) /* QoS */
 					z += 2;
@@ -5635,7 +5425,10 @@ static int do_attack_fragment(void)
 				{
 					PCT;
 					printf("Got a deauthentication packet!\n");
-					read_sleep(5 * 1000000); // sleep 5 seconds and ignore all
+					read_sleep(
+						dev.fd_in,
+						5 * 1000000,
+						my_read_sleep_cb); // sleep 5 seconds and ignore all
 					// frames in this period
 				}
 
@@ -5645,7 +5438,10 @@ static int do_attack_fragment(void)
 				{
 					PCT;
 					printf("Got a disassociation packet!\n");
-					read_sleep(5 * 1000000); // sleep 5 seconds and ignore all
+					read_sleep(
+						dev.fd_in,
+						5 * 1000000,
+						my_read_sleep_cb); // sleep 5 seconds and ignore all
 					// frames in this period
 				}
 
@@ -5819,43 +5615,6 @@ static int grab_essid(unsigned char * packet, int len)
 		}
 	}
 	return -1;
-}
-
-static int get_ip_port(char * iface, char * ip, const int ip_size)
-{
-	char * host;
-	char * ptr;
-	int port = -1;
-	struct in_addr addr;
-
-	if (iface == NULL || iface[0] == 0)
-	{
-		return -1;
-	}
-
-	host = strdup(iface);
-	if (!host) return -1;
-
-	ptr = strchr(host, ':');
-	if (!ptr) goto out;
-
-	*ptr++ = 0;
-
-	if (!inet_aton(host, (struct in_addr *) &addr))
-		goto out; /* XXX resolve hostname */
-
-	if (strlen(host) > 15)
-	{
-		port = -1;
-		goto out;
-	}
-	strncpy(ip, host, ip_size);
-	port = atoi(ptr);
-	if (port <= 0) port = -1;
-
-out:
-	free(host);
-	return port;
 }
 
 struct net_hdr
@@ -6181,7 +5940,17 @@ static int do_attack_test(void)
 		}
 	}
 
-	if (getnet(NULL, 0, 0) != 0) return 1;
+	if (getnet(_wi_in,
+			   NULL,
+			   0,
+			   0,
+			   opt.f_bssid,
+			   opt.r_bssid,
+			   (uint8_t *) opt.r_essid,
+			   opt.ignore_negative_one,
+			   opt.nodetect)
+		!= 0)
+		return (EXIT_FAILURE);
 
 	srand(time(NULL));
 
@@ -6235,13 +6004,13 @@ static int do_attack_test(void)
 
 		memcpy(h80211 + 10, opt.r_smac, 6);
 
-		send_packet(h80211, len);
+		send_packet(_wi_out, h80211, (size_t) len, true);
 
 		gettimeofday(&tv, NULL);
 
 		while (1) // waiting for relayed packet
 		{
-			caplen = read_packet(packet, sizeof(packet), &ri);
+			caplen = read_packet(_wi_in, packet, sizeof(packet), &ri);
 
 			if (packet[0] == 0x50) // Is probe response
 			{
@@ -6355,7 +6124,7 @@ static int do_attack_test(void)
 			// build/send probe request
 			memcpy(h80211 + 10, opt.r_smac, 6);
 
-			send_packet(h80211, len);
+			send_packet(_wi_out, h80211, (size_t) len, true);
 			usleep(10);
 
 			// build/send request-to-send
@@ -6363,7 +6132,7 @@ static int do_attack_test(void)
 			memcpy(nulldata + 4, ap[i].bssid, 6);
 			memcpy(nulldata + 10, opt.r_smac, 6);
 
-			send_packet(nulldata, 16);
+			send_packet(_wi_out, nulldata, 16, true);
 			usleep(10);
 
 			// build/send null data packet
@@ -6372,7 +6141,7 @@ static int do_attack_test(void)
 			memcpy(nulldata + 10, opt.r_smac, 6);
 			memcpy(nulldata + 16, ap[i].bssid, 6);
 
-			send_packet(nulldata, 24);
+			send_packet(_wi_out, nulldata, 24, true);
 			usleep(10);
 
 			// build/send auth request packet
@@ -6381,7 +6150,7 @@ static int do_attack_test(void)
 			memcpy(nulldata + 10, opt.r_smac, 6);
 			memcpy(nulldata + 16, ap[i].bssid, 6);
 
-			send_packet(nulldata, 30);
+			send_packet(_wi_out, nulldata, 30, true);
 
 			// continue
 			gettimeofday(&tv, NULL);
@@ -6393,7 +6162,7 @@ static int do_attack_test(void)
 			fflush(stdout);
 			while (1) // waiting for relayed packet
 			{
-				caplen = read_packet(packet, sizeof(packet), &ri);
+				caplen = read_packet(_wi_in, packet, sizeof(packet), &ri);
 
 				if (packet[0] == 0x50) // Is probe response
 				{
@@ -6623,7 +6392,7 @@ static int do_attack_test(void)
 
 					memcpy(h80211 + 10, opt.r_smac, 6);
 
-					send_packet(h80211, len);
+					send_packet(_wi_out, h80211, (size_t) len, true);
 
 					gettimeofday(&tv, NULL);
 
@@ -6634,7 +6403,8 @@ static int do_attack_test(void)
 					fflush(stdout);
 					while (1) // waiting for relayed packet
 					{
-						caplen = read_packet(packet, sizeof(packet), &ri);
+						caplen
+							= read_packet(_wi_in, packet, sizeof(packet), &ri);
 
 						if (packet[0] == 0x50) // Is probe response
 						{
@@ -6830,12 +6600,12 @@ static int do_attack_test(void)
 
 			for (j = 0; (j < (REQUESTS / 4) && !k); j++) // try it 5 times
 			{
-				send_packet(h80211, opt.f_minlen);
+				send_packet(_wi_out, h80211, (size_t) opt.f_minlen, true);
 
 				gettimeofday(&tv, NULL);
 				while (1) // waiting for relayed packet
 				{
-					caplen = read_packet(packet, sizeof(packet), &ri);
+					caplen = read_packet(_wi_in, packet, sizeof(packet), &ri);
 					if (filter_packet(packet, caplen)
 						== 0) // got same length and same type
 					{
