@@ -46,7 +46,10 @@ int64_t ftello64(FILE * fp);
 #define srand srand48
 #endif
 
+#include <stdbool.h>
 #include <time.h>
+
+#include "defs.h"
 
 #define SWAP(x, y)                                                             \
 	{                                                                          \
@@ -111,7 +114,59 @@ int get_nb_cpus(void);
 
 int maccmp(unsigned char * mac1, unsigned char * mac2);
 
-char * mac2string(unsigned char * mac_address);
+static inline void mac2str(char * str, uint8_t * m, size_t macsize)
+{
+	REQUIRE(str != NULL);
+	REQUIRE(m != NULL);
+
+	snprintf(str,
+			 macsize,
+			 "%.2X:%.2X:%.2X:%.2X:%.2X:%.2X",
+			 m[0],
+			 m[1],
+			 m[2],
+			 m[3],
+			 m[4],
+			 m[5]);
+}
+
+#define MAC_ADDRESS_STRING_LEN 18
+
+/// Converts a mac address in a human-readable format.
+static inline char * mac2string(unsigned char * mac_address)
+{
+	REQUIRE(mac_address != NULL);
+
+	char * mac_string = (char *) malloc(MAC_ADDRESS_STRING_LEN);
+	ALLEGE(mac_string != NULL);
+
+	mac2str(mac_string, mac_address, MAC_ADDRESS_STRING_LEN);
+
+	return (mac_string);
+}
+
+static inline int str2mac(uint8_t * mac, const char * str)
+{
+	REQUIRE(mac != NULL);
+	REQUIRE(str != NULL);
+
+	unsigned int macf[6];
+
+	if (sscanf(str,
+			   "%x:%x:%x:%x:%x:%x",
+			   &macf[0],
+			   &macf[1],
+			   &macf[2],
+			   &macf[3],
+			   &macf[4],
+			   &macf[5])
+		!= 6)
+		return (-1);
+
+	for (int i = 0; i < 6; i++) *mac++ = (uint8_t) macf[i];
+
+	return (0);
+}
 
 int hexCharToInt(unsigned char c);
 
@@ -127,8 +182,6 @@ int getmac(const char * macAddress, const int strict, unsigned char * mac);
 int readLine(char line[], int maxlength);
 
 int hexToInt(char s[], int len);
-
-void rtrim(char * line);
 
 int string_has_suffix(const char * str, const char * suf);
 

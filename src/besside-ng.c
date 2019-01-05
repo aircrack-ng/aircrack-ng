@@ -294,25 +294,6 @@ static void cracker_kill(struct cracker * c)
 	memset(c, 0, sizeof(*c));
 }
 
-static char * mac2str(unsigned char * mac)
-{
-	REQUIRE(mac != NULL);
-
-	static char out[18];
-
-	snprintf(out,
-			 sizeof(out),
-			 "%.2x:%.2x:%.2x:%.2x:%.2x:%.2x",
-			 mac[0],
-			 mac[1],
-			 mac[2],
-			 mac[3],
-			 mac[4],
-			 mac[5]);
-
-	return (out);
-}
-
 static void save_network(FILE * f, struct network * n)
 {
 	REQUIRE(f != NULL);
@@ -360,10 +341,10 @@ static void save_network(FILE * f, struct network * n)
 
 	while (len++ < 38) fprintf(f, " ");
 
-	fprintf(f, " | %s", mac2str(n->n_bssid));
+	fprintf(f, " | %s", mac2string(n->n_bssid));
 
 	fprintf(f, " | ");
-	if (n->n_got_mac) fprintf(f, "%s", mac2str(n->n_client_mac->c_mac));
+	if (n->n_got_mac) fprintf(f, "%s", mac2string(n->n_client_mac->c_mac));
 
 	fprintf(f, "\n");
 }
@@ -632,7 +613,7 @@ static void network_print(struct network * n)
 
 	time_printf(V_VERBOSE,
 				"Found AP %s [%s] chan %d crypto %s dbm %d\n",
-				mac2str(n->n_bssid),
+				mac2string(n->n_bssid),
 				n->n_ssid,
 				n->n_chan,
 				crypto,
@@ -691,7 +672,7 @@ static void deauth_send(struct network * n, unsigned char * mac)
 
 	*rc++ = htole16(7);
 
-	time_printf(V_VERBOSE, "Sending deauth to %s\n", mac2str(mac));
+	time_printf(V_VERBOSE, "Sending deauth to %s\n", mac2string(mac));
 
 	wifi_send(wh, (unsigned long) rc - (unsigned long) wh);
 }
@@ -1062,7 +1043,7 @@ static void set_mac(void * mac)
 	time_printf(V_VERBOSE,
 				"Can't set MAC - this'll suck."
 				" Set it manually to %s for best performance.\n",
-				mac2str(mac));
+				mac2string(mac));
 
 	memcpy(_state.s_mac, mac, 6);
 }
@@ -1643,7 +1624,8 @@ static void attack(struct network * n)
 
 	channel_set(n->n_chan);
 
-	time_printf(V_VERBOSE, "Pwning [%s] %s\n", n->n_ssid, mac2str(n->n_bssid));
+	time_printf(
+		V_VERBOSE, "Pwning [%s] %s\n", n->n_ssid, mac2string(n->n_bssid));
 
 	if (n->n_start.tv_sec == 0)
 		memcpy(&n->n_start, &_state.s_now, sizeof(n->n_start));
@@ -1664,7 +1646,7 @@ static void found_new_client(struct network * n, struct client * c)
 	time_printf(V_VERBOSE,
 				"Found client for network [%s] %s\n",
 				n->n_ssid,
-				mac2str(c->c_mac));
+				mac2string(c->c_mac));
 
 	if (n->n_mac_filter && !n->n_client_mac) attack_continue(n);
 }
@@ -1717,8 +1699,10 @@ static void found_ssid(struct network * n)
 	int ssidlen;
 	int origlen;
 
-	time_printf(
-		V_NORMAL, "Found SSID [%s] for %s\n", n->n_ssid, mac2str(n->n_bssid));
+	time_printf(V_NORMAL,
+				"Found SSID [%s] for %s\n",
+				n->n_ssid,
+				mac2string(n->n_bssid));
 
 	/* beacon surgery */
 	p = n->n_beacon.p_data + sizeof(struct ieee80211_frame) + 8 + 2 + 2;
@@ -1905,7 +1889,7 @@ wifi_beacon(struct network * n, struct ieee80211_frame * wh, int totlen)
 			time_printf(V_NORMAL,
 						"WARNING: unsupported multiple SSIDs"
 						" for network %s [%s]\n",
-						mac2str(n->n_bssid),
+						mac2string(n->n_bssid),
 						n->n_ssid);
 		}
 	}
@@ -1980,7 +1964,7 @@ static void found_mac(struct network * n)
 
 	time_printf(V_NORMAL,
 				"Found MAC %s for %s\n",
-				mac2str(n->n_client_mac->c_mac),
+				mac2string(n->n_client_mac->c_mac),
 				n->n_ssid);
 
 	n->n_got_mac = 1;
@@ -3051,7 +3035,7 @@ static void pwn(void)
 	wifd = wi_fd(s->s_wi);
 	max = wifd;
 
-	time_printf(V_VERBOSE, "mac %s\n", mac2str(_state.s_mac));
+	time_printf(V_VERBOSE, "mac %s\n", mac2string(_state.s_mac));
 	time_printf(V_NORMAL, "Let's ride\n");
 
 	if (wi_set_channel(s->s_wi, _state.s_chan) == -1)
@@ -3159,7 +3143,7 @@ static void print_state_network(struct network * n)
 		   " have_beacon %d crypto %d",
 		   n->n_ssid,
 		   n->n_chan,
-		   mac2str(n->n_bssid),
+		   mac2string(n->n_bssid),
 		   n->n_astate,
 		   n->n_dbm,
 		   n->n_have_beacon,
@@ -3177,7 +3161,7 @@ static void print_state_network(struct network * n)
 	while (c)
 	{
 		printf("\tClient: %s wpa_got %d dbm %d\n",
-			   mac2str(c->c_mac),
+			   mac2string(c->c_mac),
 			   c->c_wpa_got,
 			   c->c_dbm);
 
@@ -3200,7 +3184,7 @@ static void print_state(int UNUSED(x))
 	{
 		printf("Current attack network: [%s] %s\n",
 			   n->n_ssid,
-			   mac2str(n->n_bssid));
+			   mac2string(n->n_bssid));
 	}
 
 	n = _state.s_networks.n_next;

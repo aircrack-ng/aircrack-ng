@@ -52,6 +52,7 @@
 #include "ethernet.h"
 #include "version.h"
 #include "aircrack-osdep/byteorder.h"
+#include "aircrack-util/common.h"
 
 #define S_MTU 1500
 #define S_MCAST "\x01\x00\x5e\x01\x00"
@@ -185,45 +186,6 @@ static void printf_time(char * fmt, ...)
 	va_start(ap, fmt);
 	vprintf(fmt, ap);
 	va_end(ap);
-}
-
-static inline void mac2str(char * str, unsigned char * m, int macsize)
-{
-	REQUIRE(str != NULL);
-	REQUIRE(m != NULL);
-
-	snprintf(str,
-			 macsize,
-			 "%.2X:%.2X:%.2X:%.2X:%.2X:%.2X",
-			 m[0],
-			 m[1],
-			 m[2],
-			 m[3],
-			 m[4],
-			 m[5]);
-}
-
-static inline int str2mac(unsigned char * mac, char * str)
-{
-	REQUIRE(mac != NULL);
-	REQUIRE(str != NULL);
-
-	unsigned int macf[6];
-
-	if (sscanf(str,
-			   "%x:%x:%x:%x:%x:%x",
-			   &macf[0],
-			   &macf[1],
-			   &macf[2],
-			   &macf[3],
-			   &macf[4],
-			   &macf[5])
-		!= 6)
-		return (-1);
-
-	for (int i = 0; i < 6; i++) *mac++ = (char) macf[i];
-
-	return (0);
 }
 
 static void init_defaults(struct east_state * es)

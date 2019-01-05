@@ -397,22 +397,6 @@ int maccmp(unsigned char * mac1, unsigned char * mac2)
 	return 0;
 }
 
-// Converts a mac address in a human-readable format
-char * mac2string(unsigned char * mac_address)
-{
-	char * mac_string = (char *) malloc(sizeof(char) * 18);
-	snprintf(mac_string,
-			 18,
-			 "%02X:%02X:%02X:%02X:%02X:%02X",
-			 *mac_address,
-			 *(mac_address + 1),
-			 *(mac_address + 2),
-			 *(mac_address + 3),
-			 *(mac_address + 4),
-			 *(mac_address + 5));
-	return mac_string;
-}
-
 /* Return -1 if it's not an hex value and return its value when it's a hex value
  */
 int hexCharToInt(unsigned char c)
