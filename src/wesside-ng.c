@@ -1777,32 +1777,6 @@ static void try_crack(struct wstate * ws)
 	ws->ws_wep_thresh += ws->ws_thresh_incr;
 }
 
-static inline int elapsedd(struct timeval * past, struct timeval * now)
-{
-	REQUIRE(past != NULL);
-	REQUIRE(now != NULL);
-
-	int el;
-	const int inf = 666 * 1000 * 1000;
-
-	el = now->tv_sec - past->tv_sec;
-
-	if (el == 0)
-	{
-		el = now->tv_usec - past->tv_usec;
-	}
-	else
-	{
-		el = (el - 1) * 1000 * 1000;
-		el += 1000 * 1000 - past->tv_usec;
-		el += now->tv_usec;
-	}
-
-	if (el < 0) return (inf);
-
-	return (el);
-}
-
 static void open_wepfile(struct wstate * ws)
 {
 	REQUIRE(ws != NULL);
@@ -1868,7 +1842,7 @@ static void check_relay_timeout(struct wstate * ws, struct timeval * now)
 
 	if (!ws->ws_fs.fs_waiting_relay) return;
 
-	int el = elapsedd(&ws->ws_fs.fs_last, now);
+	int el = time_diff(&ws->ws_fs.fs_last, now);
 
 	if (el > (1500 * 1000))
 	{
@@ -1883,7 +1857,7 @@ static void check_arp_timeout(struct wstate * ws, struct timeval * now)
 
 	if (ws->ws_rtrmac != (unsigned char *) 1) return;
 
-	int el = elapsedd(&ws->ws_arpsend, now);
+	int el = time_diff(&ws->ws_arpsend, now);
 	if (el >= (1500 * 1000))
 	{
 		ws->ws_rtrmac = 0;
@@ -1897,7 +1871,7 @@ static void display_status_bar(struct wstate * ws,
 {
 	int el;
 
-	el = elapsedd(last_status, now);
+	el = time_diff(last_status, now);
 	if (el < 100 * 1000) return;
 
 	if (ws->ws_crack_pid) check_key(ws);
@@ -1946,7 +1920,7 @@ static void check_tx(struct wstate * ws, struct timeval * now)
 
 	if (!ws->ws_waiting_ack) return;
 
-	int elapsed = elapsedd(&ws->ws_tsent, now);
+	int elapsed = time_diff(&ws->ws_tsent, now);
 	if (elapsed >= (int) ws->ws_ack_timeout) send_frame(ws, NULL, -1);
 }
 
@@ -1957,8 +1931,7 @@ static void check_hop(struct wstate * ws, struct timeval * now)
 	int elapsed;
 	int chan = ws->ws_chan;
 
-	elapsed = elapsedd(&ws->ws_lasthop, now);
-
+	elapsed = time_diff(&ws->ws_lasthop, now);
 	if (elapsed < 300 * 1000) return;
 
 	chan++;
@@ -1984,7 +1957,7 @@ static void post_input(struct wstate * ws, struct timeval * now)
 	// check if we need to write something...
 	if (!ws->ws_waiting_ack) can_write(ws);
 
-	el = elapsedd(&ws->ws_last_wcount, now);
+	el = time_diff(&ws->ws_last_wcount, now);
 
 	/* calculate rate, roughtly */
 	if (el < 1 * 1000 * 1000) return;
