@@ -442,7 +442,7 @@ static void timer_check(void)
 	{
 		struct timer * t = _state.s_timers.t_next;
 
-		if (time_diff(&t->t_tv, &_state.s_now) < 1) break;
+		if (time_diff(&t->t_tv, &_state.s_now) < 0) break;
 
 		_state.s_timers.t_next = t->t_next;
 
