@@ -381,24 +381,6 @@ static inline void * xmalloc(size_t sz)
 	return p;
 }
 
-static int time_diff(struct timeval * past, struct timeval * now)
-{
-	REQUIRE(past != NULL);
-	REQUIRE(now != NULL);
-
-	int p = 0, n = 0;
-
-	if (now->tv_sec > past->tv_sec)
-		n = (now->tv_sec - past->tv_sec) * 1000 * 1000;
-	else
-		p = (past->tv_sec - now->tv_sec) * 1000 * 1000;
-
-	n += now->tv_usec;
-	p += past->tv_usec;
-
-	return (n - p);
-}
-
 static void timer_next(struct timeval * tv)
 {
 	REQUIRE(tv != NULL);

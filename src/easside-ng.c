@@ -1495,30 +1495,7 @@ static void read_wifi(struct east_state * es)
 	}
 }
 
-static unsigned int msec_diff(struct timeval * after, struct timeval * before)
-{
-	REQUIRE(after != NULL);
-	REQUIRE(before != NULL);
-	REQUIRE(after->tv_sec >= before->tv_sec);
-
-	unsigned int diff;
-
-	if (after->tv_sec > before->tv_sec)
-	{
-		unsigned int usec;
-
-		diff = (after->tv_sec - before->tv_sec - 1) * 1000;
-		usec = 1000 * 1000 - before->tv_usec;
-		usec += after->tv_usec;
-		diff += usec / 1000;
-	}
-	else /* after->tv_sec == before->tv_sec */
-		diff = (after->tv_usec - before->tv_usec) / 1000;
-
-	return (diff);
-}
-
-static inline void msec_to_tv(int msec, struct timeval * tv)
+static inline void msec_to_tv(unsigned int msec, struct timeval * tv)
 {
 	REQUIRE(tv != NULL);
 
@@ -1535,7 +1512,7 @@ static void chan_hop(struct east_state * es, struct timeval * tv)
 
 	if (gettimeofday(&now, NULL) == -1) err(1, "gettimeofday()");
 
-	elapsed = msec_diff(&now, &es->es_lasthop);
+	elapsed = time_diff(&es->es_lasthop, &now);
 
 	/* hop */
 	if (elapsed >= es->es_hopfreq)
@@ -1601,7 +1578,7 @@ static int too_early(struct timeval * tv, int to, struct timeval * last_sent)
 	/* check if timeout expired */
 	if (gettimeofday(&now, NULL) == -1) err(1, "gettimeofday()");
 
-	elapsed = msec_diff(&now, last_sent);
+	elapsed = time_diff(last_sent, &now);
 	if (elapsed < (unsigned int) to)
 	{
 		msec_to_tv(to - elapsed, tv);
@@ -2262,7 +2239,7 @@ static void buddy_inet_check(struct east_state * es)
 
 	if (gettimeofday(&now, NULL) == -1) err(1, "gettimeofday()");
 
-	rtt = msec_diff(&now, &es->es_rtt);
+	rtt = time_diff(&es->es_rtt, &now);
 	es->es_astate = AS_REDIRECT;
 	printf("Rtt %dms\n", rtt);
 
@@ -2317,7 +2294,7 @@ static void buddy_packet(struct east_state * es)
 
 		if (gettimeofday(&now, NULL) == -1) err(1, "gettimeofday()");
 
-		rtt = msec_diff(&now, &es->es_rtt);
+		rtt = time_diff(&es->es_rtt, &now);
 		es->es_rtt_id = 0;
 		printf(" rtt %dms", rtt);
 

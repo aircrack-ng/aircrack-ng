@@ -188,6 +188,25 @@ int string_has_suffix(const char * str, const char * suf);
 // Returns 1 if the current process is running in the background, 0 otherwise
 int is_background(void);
 
+static inline unsigned int time_diff(struct timeval * past,
+									 struct timeval * now)
+{
+	REQUIRE(past != NULL);
+	REQUIRE(now != NULL);
+
+	time_t p = 0, n = 0;
+
+	if (now->tv_sec > past->tv_sec)
+		n = (now->tv_sec - past->tv_sec) * 1000 * 1000;
+	else
+		p = (past->tv_sec - now->tv_sec) * 1000 * 1000;
+
+	n += now->tv_usec;
+	p += past->tv_usec;
+
+	return (unsigned int) (n - p);
+}
+
 #ifdef __cplusplus
 };
 #endif
