@@ -48,6 +48,7 @@ int64_t ftello64(FILE * fp);
 
 #include <stdbool.h>
 #include <time.h>
+#include <sys/time.h>
 
 #include "defs.h"
 
