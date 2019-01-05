@@ -35,6 +35,7 @@
 #ifndef AIRCRACK_NG_COMMUNICATIONS_H
 #define AIRCRACK_NG_COMMUNICATIONS_H
 
+#include <errno.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <sys/time.h>
@@ -44,9 +45,93 @@
 #include <unistd.h>
 
 #include "defs.h"
+#include "pcap.h"
 #include "aircrack-osdep/osdep.h"
 #include "aircrack-util/common.h"
 #include "include/ieee80211.h"
+
+struct communication_options
+{
+	uint8_t f_bssid[6];
+	uint8_t f_dmac[6];
+	uint8_t f_smac[6];
+	uint8_t f_netmask[6];
+	int f_minlen;
+	int f_maxlen;
+	int f_type;
+	int f_subtype;
+	int f_tods;
+	int f_fromds;
+	int f_iswep;
+
+	uint8_t deauth_rc;
+	int r_nbpps;
+	int r_fctrl;
+	uint8_t r_bssid[6];
+	uint8_t r_dmac[6];
+	uint8_t r_smac[6];
+	uint8_t r_trans[6];
+	uint8_t r_dip[4];
+	uint8_t r_sip[4];
+	char r_essid[33];
+	int r_fromdsinj;
+	char r_smac_set;
+
+	char ip_out[16]; // 16 for 15 chars + \x00
+	char ip_in[16];
+	int port_out;
+	int port_in;
+
+	char * iface_out;
+	char * s_face;
+	char * s_file;
+	uint8_t * prga;
+
+	int a_mode;
+	int a_count;
+	int a_delay;
+	int f_retry;
+
+	int ringbuffer;
+	int ghost;
+	int prgalen;
+
+	int delay;
+	int npackets;
+
+	int fast;
+	int bittest;
+
+	int nodetect;
+	int ignore_negative_one;
+	int rtc;
+
+	int reassoc;
+
+	int crypt;
+};
+
+struct devices
+{
+	int fd_in, arptype_in;
+	int fd_out, arptype_out;
+	int fd_rtc;
+	struct tif * dv_ti;
+	struct tif * dv_ti2;
+
+	uint8_t mac_in[6];
+	uint8_t mac_out[6];
+
+	int is_wlanng;
+	int is_hostap;
+	int is_madwifi;
+	int is_madwifing;
+	int is_bcm43xx;
+
+	FILE * f_cap_in;
+
+	struct pcap_file_header pfh_in;
+};
 
 /* Expects host-endian arguments, but returns little-endian seq. */
 static inline uint16_t fnseq(uint16_t fn, uint16_t seq)
@@ -207,5 +292,8 @@ int getnet(struct wif * wi,
 		   uint8_t * r_essid,
 		   int ignore_negative_one,
 		   int nodetect);
+
+int capture_ask_packet(int * caplen, int just_grab);
+int filter_packet(unsigned char * h80211, int caplen);
 
 #endif //AIRCRACK_NG_COMMUNICATIONS_H

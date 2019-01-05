@@ -80,8 +80,6 @@ GCRY_THREAD_OPTION_PTHREAD_IMPL;
 #endif
 #endif
 
-static struct wif *_wi_in, *_wi_out;
-
 #define EXT_IN 0x01
 #define EXT_OUT 0x02
 
@@ -213,7 +211,7 @@ static const char usage[]
 	  "      --help           : Displays this usage screen\n"
 	  "\n";
 
-struct options
+struct local_options
 {
 	struct ST_info *st_1st, *st_end;
 
@@ -284,24 +282,10 @@ struct options
 	unsigned char fixed_nonce[32];
 } opt;
 
-struct devices
-{
-	int fd_in, arptype_in;
-	int fd_out, arptype_out;
-	int fd_rtc;
-	struct tif * dv_ti;
-	struct tif * dv_ti2;
-
-	int is_wlanng;
-	int is_hostap;
-	int is_madwifi;
-	int is_madwifing;
-	int is_bcm43xx;
-
-	FILE * f_cap_in;
-
-	struct pcap_file_header pfh_in;
-} dev;
+struct devices dev;
+extern struct wif *_wi_in, *_wi_out;
+extern uint8_t h80211[4096];
+extern uint8_t tmpbuf[4096];
 
 struct ARP_req
 {
@@ -377,8 +361,6 @@ static pthread_mutex_t mx_cf; /* lock write access to rCF */
 static pthread_mutex_t mx_cap; /* lock write access to rCF */
 
 unsigned long nb_pkt_sent;
-static unsigned char h80211[4096];
-static unsigned char tmpbuf[4096];
 
 static int invalid_channel_displayed;
 

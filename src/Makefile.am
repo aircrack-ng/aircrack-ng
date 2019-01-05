@@ -53,7 +53,7 @@ SRC_AC		= aircrack-ng.c
 SRC_AC_ALL  = aircrack-ng.c
 
 SRC_AD		= airdecap-ng.c
-SRC_PF		= packetforge-ng.c
+SRC_PF		= packetforge-ng.c communications.c
 SRC_AR		= aireplay-ng.c communications.c
 SRC_ADU		= airodump-ng.c dump_write.c
 
@@ -174,7 +174,7 @@ airdecap_ng_LDADD = $(COMMON_LDADD) $(LIBAC_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRY
 
 packetforge_ng_SOURCES = $(SRC_PF)
 packetforge_ng_CFLAGS = $(COMMON_CFLAGS)
-packetforge_ng_LDADD = $(COMMON_LDADD) $(LIBAC_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
+packetforge_ng_LDADD = $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
 aireplay_ng_SOURCES = $(SRC_AR)
 aireplay_ng_CFLAGS = $(COMMON_CFLAGS) $(LIBNL_CFLAGS)

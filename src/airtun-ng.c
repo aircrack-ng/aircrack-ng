@@ -68,8 +68,6 @@
 
 #include "aircrack-osdep/osdep.h"
 
-static struct wif *_wi_in, *_wi_out;
-
 static const char usage[]
 	= "\n"
 	  "  %s - (C) 2006-2018 Thomas d'Otreppe\n"
@@ -107,52 +105,23 @@ static const char usage[]
 	  "      --help           : Displays this usage screen\n"
 	  "\n";
 
-struct options
+struct communication_options opt;
+static struct local_options
 {
-	unsigned char r_bssid[6];
-	unsigned char r_dmac[6];
-	unsigned char r_smac[6];
-	unsigned char r_trans[6];
-
-	unsigned char f_bssid[6];
-	unsigned char f_netmask[6];
-
-	char * s_face;
-	char * s_file;
-	unsigned char * prga;
-
-	int r_nbpps;
-	int prgalen;
 	int tods;
 	int bidir;
-
 	char essid[36];
 	char passphrase[65];
 	unsigned char pmk[40];
-
 	unsigned char wepkey[64];
-	int weplen, crypt;
-
+	int weplen;
 	int repeat;
-} opt;
+} lopt;
 
-struct devices
-{
-	int fd_in, arptype_in;
-	int fd_out, arptype_out;
-	int fd_rtc;
-	struct tif * dv_ti;
-
-	int is_wlanng;
-	int is_hostap;
-	int is_madwifi;
-	int is_madwifing;
-	int is_bcm43xx;
-
-	FILE * f_cap_in;
-
-	struct pcap_file_header pfh_in;
-} dev;
+struct devices dev;
+extern struct wif *_wi_in, *_wi_out;
+extern uint8_t h80211[4096];
+extern uint8_t tmpbuf[4096];
 
 struct ARP_req
 {
@@ -168,8 +137,6 @@ struct net_entry
 };
 
 unsigned long nb_pkt_sent;
-static unsigned char h80211[4096];
-static unsigned char tmpbuf[4096];
 static struct net_entry * nets = NULL;
 static struct WPA_ST_info * st_1st = NULL;
 
@@ -484,14 +451,14 @@ static int packet_xmit(unsigned char * packet, int length)
 				 - 14; // 32=IEEE80211+LLC/SNAP; 14=SRC_MAC+DST_MAC+TYPE
 	}
 
-	if (opt.tods == 1)
+	if (lopt.tods == 1)
 	{
 		h80211[1] |= 0x01;
 		memcpy(h80211 + 4, opt.r_bssid, 6); // BSSID
 		memcpy(h80211 + 10, packet + 6, 6); // SRC_MAC
 		memcpy(h80211 + 16, packet, 6); // DST_MAC
 	}
-	else if (opt.tods == 2)
+	else if (lopt.tods == 2)
 	{
 		h80211[1] |= 0x03;
 		length += 6; // additional MAC addr
@@ -530,12 +497,12 @@ static int packet_xmit(unsigned char * packet, int length)
 		memcpy(h80211 + data_begin, K, 4);
 		length += 4; // iv
 
-		memcpy(K + 3, opt.wepkey, opt.weplen);
+		memcpy(K + 3, lopt.wepkey, lopt.weplen);
 
 		encrypt_wep(h80211 + data_begin + 4,
 					length - data_begin - 4,
 					K,
-					opt.weplen + 3);
+					lopt.weplen + 3);
 
 		h80211[1] = h80211[1] | 0x40;
 	}
@@ -546,11 +513,11 @@ static int packet_xmit(unsigned char * packet, int length)
 		while (st_cur != NULL)
 		{
 			// STA -> AP
-			if (opt.tods == 1 && memcmp(st_cur->stmac, packet + 6, 6) == 0)
+			if (lopt.tods == 1 && memcmp(st_cur->stmac, packet + 6, 6) == 0)
 				break;
 
 			// AP -> STA
-			if (opt.tods == 0 && memcmp(st_cur->stmac, packet, 6) == 0) break;
+			if (lopt.tods == 0 && memcmp(st_cur->stmac, packet, 6) == 0) break;
 
 			st_cur = st_cur->next;
 		}
@@ -574,7 +541,7 @@ static int packet_xmit(unsigned char * packet, int length)
 		if (create_wep_packet(h80211, &length, data_begin) != 0) return (1);
 	}
 
-	if ((opt.tods == 2) && opt.bidir)
+	if ((lopt.tods == 2) && lopt.bidir)
 	{
 		dest_net = get_entry(packet); // Search the list to determine in which
 		// network part to send the packet.
@@ -664,9 +631,9 @@ static int packet_recv(unsigned char * packet, int length)
 	/* Fragment? */
 	if (fragnum > 0 || morefrag)
 	{
-		addFrag(packet, smac, length, opt.crypt, opt.wepkey, opt.weplen);
+		addFrag(packet, smac, length, opt.crypt, lopt.wepkey, lopt.weplen);
 		buffer = getCompleteFrag(
-			smac, seqnum, &len, opt.crypt, opt.wepkey, opt.weplen);
+			smac, seqnum, &len, opt.crypt, lopt.wepkey, lopt.weplen);
 		timeoutFrag();
 
 		/* we got frag, no compelete packet avail -> do nothing */
@@ -688,7 +655,7 @@ static int packet_recv(unsigned char * packet, int length)
 		{
 			process_packet = 1;
 		}
-		else if (opt.tods == 2 && memcmp(bssid, opt.r_trans, 6) == 0)
+		else if (lopt.tods == 2 && memcmp(bssid, opt.r_trans, 6) == 0)
 		{
 			process_packet = 1;
 		}
@@ -766,10 +733,10 @@ static int packet_recv(unsigned char * packet, int length)
 				if (opt.crypt != CRYPT_WEP) return (1);
 
 				memcpy(K, packet + z, 3);
-				memcpy(K + 3, opt.wepkey, opt.weplen);
+				memcpy(K + 3, lopt.wepkey, lopt.weplen);
 
 				if (decrypt_wep(
-						packet + z + 4, length - z - 4, K, 3 + opt.weplen)
+						packet + z + 4, length - z - 4, K, 3 + lopt.weplen)
 					== 0)
 				{
 					printf("ICV check failed!\n");
@@ -934,7 +901,7 @@ static int packet_recv(unsigned char * packet, int length)
 				st_cur->keyver = packet[z + 6] & 7;
 			}
 
-			st_cur->valid_ptk = calc_ptk(st_cur, opt.pmk);
+			st_cur->valid_ptk = calc_ptk(st_cur, lopt.pmk);
 
 			if (st_cur->valid_ptk)
 			{
@@ -968,7 +935,7 @@ static int packet_recv(unsigned char * packet, int length)
 
 		/* Keep track of known MACs, so we only have to tunnel into one side of
 		 * the WDS network */
-		if (((packet[1] & 3) == 3) && opt.bidir)
+		if (((packet[1] & 3) == 3) && lopt.bidir)
 		{
 			if (!memcmp(packet + 10, opt.r_bssid, 6))
 			{
@@ -1038,7 +1005,7 @@ int main(int argc, char * argv[])
 	memset(rFragment, 0, sizeof(struct Fragment_list));
 
 	opt.r_nbpps = 100;
-	opt.tods = 0;
+	lopt.tods = 0;
 
 	srand(time(NULL));
 
@@ -1142,11 +1109,11 @@ int main(int argc, char * argv[])
 			case 't':
 
 				if (atoi(optarg) == 1)
-					opt.tods = 1;
+					lopt.tods = 1;
 				else if (atoi(optarg) == 2)
-					opt.tods = 2;
+					lopt.tods = 2;
 				else
-					opt.tods = 0;
+					lopt.tods = 0;
 				break;
 
 			case 's':
@@ -1161,7 +1128,7 @@ int main(int argc, char * argv[])
 
 			case 'b':
 
-				opt.bidir = 1;
+				lopt.bidir = 1;
 				break;
 
 			case 'w':
@@ -1197,7 +1164,7 @@ int main(int argc, char * argv[])
 						return (EXIT_FAILURE);
 					}
 
-					opt.wepkey[i++] = n;
+					lopt.wepkey[i++] = n;
 
 					if (i >= 64) break;
 
@@ -1218,13 +1185,13 @@ int main(int argc, char * argv[])
 					return (EXIT_FAILURE);
 				}
 
-				opt.weplen = i;
+				lopt.weplen = i;
 
 				break;
 
 			case 'e':
 
-				if (opt.essid[0])
+				if (lopt.essid[0])
 				{
 					printf("ESSID already specified.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
@@ -1233,8 +1200,8 @@ int main(int argc, char * argv[])
 
 				opt.crypt = CRYPT_WPA;
 
-				memset(opt.essid, 0, sizeof(opt.essid));
-				strncpy(opt.essid, optarg, sizeof(opt.essid) - 1);
+				memset(lopt.essid, 0, sizeof(lopt.essid));
+				strncpy(lopt.essid, optarg, sizeof(lopt.essid) - 1);
 				break;
 
 			case 'p':
@@ -1254,8 +1221,8 @@ int main(int argc, char * argv[])
 
 				opt.crypt = CRYPT_WPA;
 
-				memset(opt.passphrase, 0, sizeof(opt.passphrase));
-				strncpy(opt.passphrase, optarg, sizeof(opt.passphrase) - 1);
+				memset(lopt.passphrase, 0, sizeof(lopt.passphrase));
+				strncpy(lopt.passphrase, optarg, sizeof(lopt.passphrase) - 1);
 
 				break;
 
@@ -1289,7 +1256,7 @@ int main(int argc, char * argv[])
 				}
 				break;
 			case 'f':
-				opt.repeat = 1;
+				lopt.repeat = 1;
 				break;
 			case 'r':
 
@@ -1355,7 +1322,7 @@ int main(int argc, char * argv[])
 		return (EXIT_FAILURE);
 	}
 
-	if ((memcmp(opt.r_trans, NULL_MAC, 6) == 0) && opt.tods == 2)
+	if ((memcmp(opt.r_trans, NULL_MAC, 6) == 0) && lopt.tods == 2)
 	{
 		printf("Please specify a Transmitter (-s).\n");
 		printf("\"%s --help\" for help.\n", argv[0]);
@@ -1364,18 +1331,18 @@ int main(int argc, char * argv[])
 
 	if (opt.crypt == CRYPT_WPA)
 	{
-		if (opt.passphrase[0] != '\0')
+		if (lopt.passphrase[0] != '\0')
 		{
 			/* compute the Pairwise Master Key */
 
-			if (opt.essid[0] == '\0')
+			if (lopt.essid[0] == '\0')
 			{
 				printf("You must also specify the ESSID (-e).\n");
 				printf("\"%s --help\" for help.\n", argv[0]);
 				return (EXIT_FAILURE);
 			}
 
-			calc_pmk(opt.passphrase, opt.essid, opt.pmk);
+			calc_pmk(lopt.passphrase, lopt.essid, lopt.pmk);
 		}
 	}
 
@@ -1537,14 +1504,14 @@ int main(int argc, char * argv[])
 			   argv[optind]);
 	}
 
-	if (opt.tods == 1)
+	if (lopt.tods == 1)
 	{
 		printf("ToDS bit set in all frames.\n");
 	}
-	else if (opt.tods == 2)
+	else if (lopt.tods == 2)
 	{
 		printf("ToDS and FromDS bit set in all frames (WDS/Bridge) - ");
-		if (opt.bidir)
+		if (lopt.bidir)
 		{
 			printf("bidirectional mode\n");
 		}
@@ -1640,7 +1607,7 @@ int main(int argc, char * argv[])
 				memcpy(h80211, tmpbuf + n, caplen);
 			}
 
-			if (opt.repeat)
+			if (lopt.repeat)
 			{
 				if (memcmp(opt.f_bssid, NULL_MAC, 6) != 0)
 				{

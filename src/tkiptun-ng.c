@@ -170,7 +170,8 @@ static const char usage[] =
 	"      --help    : Displays this usage screen\n"
 	"\n";
 
-static struct options
+struct communication_options opt;
+static struct local_options
 {
 	unsigned char f_bssid[6];
 	unsigned char f_dmac[6];
@@ -258,29 +259,11 @@ static struct options
 
 	struct timeval last_mic_failure; /* timestamp of last mic failure */
 	int mic_failure_interval; /* time between allowed mic failures */
-} opt;
+} lopt;
 
-static struct devices
-{
-	int fd_in, arptype_in;
-	int fd_out, arptype_out;
-	int fd_rtc;
-
-	unsigned char mac_in[6];
-	unsigned char mac_out[6];
-
-	int is_wlanng;
-	int is_hostap;
-	int is_madwifi;
-	int is_madwifing;
-	int is_bcm43xx;
-
-	FILE * f_cap_in;
-
-	struct pcap_file_header pfh_in;
-} dev;
-
-static struct wif *_wi_in, *_wi_out;
+// unused, but needed for link
+struct devices dev;
+struct wif *_wi_in, *_wi_out;
 
 struct ARP_req
 {
@@ -302,8 +285,7 @@ struct APt
 };
 
 unsigned long nb_pkt_sent;
-static unsigned char h80211[4096];
-static unsigned char tmpbuf[4096];
+unsigned char h80211[4096];
 static unsigned char srcbuf[4096];
 static char strbuf[512];
 static int alarmed;
@@ -353,8 +335,8 @@ static int check_received(unsigned char * packet, unsigned length)
 	}
 	else
 	{
-		if (memcmp(dmac, opt.wpa.stmac, 6) != 0
-			&& memcmp(smac, opt.wpa.stmac, 6) != 0)
+		if (memcmp(dmac, lopt.wpa.stmac, 6) != 0
+			&& memcmp(smac, lopt.wpa.stmac, 6) != 0)
 			return (0);
 	}
 
@@ -368,7 +350,7 @@ static int check_received(unsigned char * packet, unsigned length)
 		if (packet[z] == 0x88 && packet[z + 1] == 0x8E
 			&& (packet[1] & 0x40) != 0x40)
 		{
-			if (opt.wpa.state != 7 || time(NULL) - opt.wpa_time > 1)
+			if (lopt.wpa.state != 7 || time(NULL) - lopt.wpa_time > 1)
 			{
 				z += 2; // skip ethertype
 
@@ -378,8 +360,8 @@ static int check_received(unsigned char * packet, unsigned length)
 					&& (packet[z + 6] & 0x80) != 0
 					&& (packet[z + 5] & 0x01) == 0)
 				{
-					memcpy(opt.wpa.anonce, &packet[z + 17], 32);
-					opt.wpa.state = 1;
+					memcpy(lopt.wpa.anonce, &packet[z + 17], 32);
+					lopt.wpa.state = 1;
 				}
 
 				/* frame 2 or 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1
@@ -393,28 +375,28 @@ static int check_received(unsigned char * packet, unsigned length)
 				{
 					if (memcmp(&packet[z + 17], ZERO, 32) != 0)
 					{
-						memcpy(opt.wpa.snonce, &packet[z + 17], 32);
-						opt.wpa.state |= 2;
+						memcpy(lopt.wpa.snonce, &packet[z + 17], 32);
+						lopt.wpa.state |= 2;
 					}
 
-					if ((opt.wpa.state & 4) != 4)
+					if ((lopt.wpa.state & 4) != 4)
 					{
-						opt.wpa.eapol_size
+						lopt.wpa.eapol_size
 							= (packet[z + 2] << 8) + packet[z + 3] + 4;
 
-						if (opt.wpa.eapol_size > sizeof(opt.wpa.eapol)
-							|| length - z < opt.wpa.eapol_size)
+						if (lopt.wpa.eapol_size > sizeof(lopt.wpa.eapol)
+							|| length - z < lopt.wpa.eapol_size)
 						{
 							// ignore packet trying to crash us
-							opt.wpa.eapol_size = 0;
+							lopt.wpa.eapol_size = 0;
 							return (0);
 						}
 
-						memcpy(opt.wpa.keymic, &packet[z + 81], 16);
-						memcpy(opt.wpa.eapol, &packet[z], opt.wpa.eapol_size);
-						memset(opt.wpa.eapol + 81, 0, 16);
-						opt.wpa.state |= 4;
-						opt.wpa.keyver = packet[z + 6] & 7;
+						memcpy(lopt.wpa.keymic, &packet[z + 81], 16);
+						memcpy(lopt.wpa.eapol, &packet[z], lopt.wpa.eapol_size);
+						memset(lopt.wpa.eapol + 81, 0, 16);
+						lopt.wpa.state |= 4;
+						lopt.wpa.keyver = packet[z + 6] & 7;
 					}
 				}
 
@@ -426,34 +408,34 @@ static int check_received(unsigned char * packet, unsigned length)
 				{
 					if (memcmp(&packet[z + 17], ZERO, 32) != 0)
 					{
-						memcpy(opt.wpa.anonce, &packet[z + 17], 32);
-						opt.wpa.state |= 1;
+						memcpy(lopt.wpa.anonce, &packet[z + 17], 32);
+						lopt.wpa.state |= 1;
 					}
 
-					if ((opt.wpa.state & 4) != 4)
+					if ((lopt.wpa.state & 4) != 4)
 					{
-						opt.wpa.eapol_size
+						lopt.wpa.eapol_size
 							= (packet[z + 2] << 8) + packet[z + 3] + 4;
 
-						if (opt.wpa.eapol_size > sizeof(opt.wpa.eapol)
-							|| length - z < opt.wpa.eapol_size)
+						if (lopt.wpa.eapol_size > sizeof(lopt.wpa.eapol)
+							|| length - z < lopt.wpa.eapol_size)
 						{
 							// ignore packet trying to crash us
-							opt.wpa.eapol_size = 0;
+							lopt.wpa.eapol_size = 0;
 							return (0);
 						}
 
-						memcpy(opt.wpa.keymic, &packet[z + 81], 16);
-						memcpy(opt.wpa.eapol, &packet[z], opt.wpa.eapol_size);
-						memset(opt.wpa.eapol + 81, 0, 16);
-						opt.wpa.state |= 4;
-						opt.wpa.keyver = packet[z + 6] & 7;
+						memcpy(lopt.wpa.keymic, &packet[z + 81], 16);
+						memcpy(lopt.wpa.eapol, &packet[z], lopt.wpa.eapol_size);
+						memset(lopt.wpa.eapol + 81, 0, 16);
+						lopt.wpa.state |= 4;
+						lopt.wpa.keyver = packet[z + 6] & 7;
 					}
 				}
 
-				if (opt.wpa.state == 7)
+				if (lopt.wpa.state == 7)
 				{
-					memcpy(opt.wpa.stmac, opt.r_smac, 6);
+					memcpy(lopt.wpa.stmac, opt.r_smac, 6);
 					PCT;
 					printf("WPA handshake: %02X:%02X:%02X:%02X:%02X:%02X "
 						   "captured\n",
@@ -464,9 +446,9 @@ static int check_received(unsigned char * packet, unsigned length)
 						   opt.r_bssid[4],
 						   opt.r_bssid[5]);
 
-					opt.wpa_time = time(NULL);
+					lopt.wpa_time = time(NULL);
 
-					if (opt.f_ivs != NULL)
+					if (lopt.f_ivs != NULL)
 					{
 						memset(&ivs2, '\x00', sizeof(struct ivs2_pkthdr));
 						ivs2.flags = 0;
@@ -478,8 +460,10 @@ static int check_received(unsigned char * packet, unsigned length)
 						ivs2.flags |= IVS2_BSSID;
 						ivs2.len += 6;
 
-						if (fwrite(
-								&ivs2, 1, sizeof(struct ivs2_pkthdr), opt.f_ivs)
+						if (fwrite(&ivs2,
+								   1,
+								   sizeof(struct ivs2_pkthdr),
+								   lopt.f_ivs)
 							!= (size_t) sizeof(struct ivs2_pkthdr))
 						{
 							perror("fwrite(IV header) failed");
@@ -488,7 +472,7 @@ static int check_received(unsigned char * packet, unsigned length)
 
 						if (ivs2.flags & IVS2_BSSID)
 						{
-							if (fwrite(opt.r_bssid, 1, 6, opt.f_ivs)
+							if (fwrite(opt.r_bssid, 1, 6, lopt.f_ivs)
 								!= (size_t) 6)
 							{
 								perror("fwrite(IV bssid) failed");
@@ -497,10 +481,10 @@ static int check_received(unsigned char * packet, unsigned length)
 							ivs2.len -= 6;
 						}
 
-						if (fwrite(&(opt.wpa),
+						if (fwrite(&(lopt.wpa),
 								   1,
 								   sizeof(struct WPA_hdsk),
-								   opt.f_ivs)
+								   lopt.f_ivs)
 							!= (size_t) sizeof(struct WPA_hdsk))
 						{
 							perror("fwrite(IV wpa_hdsk) failed");
@@ -519,484 +503,6 @@ static void my_read_sleep_cb(void)
 {
 	int caplen = read_packet(_wi_in, h80211, sizeof(h80211), NULL);
 	check_received(h80211, caplen);
-}
-
-static int filter_packet(unsigned char * h80211, int caplen)
-{
-	REQUIRE(h80211 != NULL);
-
-	int z, mi_b, mi_s, mi_d, ext = 0, qos = 0;
-
-	if (caplen <= 0) return (1);
-
-	z = ((h80211[1] & 3) != 3) ? 24 : 30;
-	if ((h80211[0] & 0x80) == 0x80)
-	{
-		qos = 1; /* 802.11e QoS */
-		z += 2;
-	}
-
-	if (!qos) return (1);
-
-	if ((h80211[0] & 0x0C) == 0x08) // if data packet
-		ext = z - 24; // how many bytes longer than default ieee80211 header
-
-	/* check length */
-	if (caplen - ext < opt.f_minlen || caplen - ext > opt.f_maxlen) return (1);
-
-	/* check the frame control bytes */
-
-	if ((h80211[0] & 0x80) != 0x80) return (1); // no QoS packet
-
-	if ((h80211[0] & 0x0C) != (opt.f_type << 2) && opt.f_type >= 0) return (1);
-
-	if ((h80211[0] & 0x70) != ((opt.f_subtype << 4) & 0x70)
-		&& // ignore the leading bit (QoS)
-		opt.f_subtype >= 0)
-		return (1);
-
-	if ((h80211[1] & 0x01) != (opt.f_tods) && opt.f_tods >= 0) return (1);
-
-	if ((h80211[1] & 0x02) != (opt.f_fromds << 1) && opt.f_fromds >= 0)
-		return (1);
-
-	if ((h80211[1] & 0x40) != (opt.f_iswep << 6) && opt.f_iswep >= 0)
-		return (1);
-
-	/* MAC address checking */
-
-	switch (h80211[1] & 3)
-	{
-		case 0:
-			mi_b = 16;
-			mi_s = 10;
-			mi_d = 4;
-			break;
-		case 1:
-			mi_b = 4;
-			mi_s = 10;
-			mi_d = 16;
-			break;
-		case 2:
-			mi_b = 10;
-			mi_s = 16;
-			mi_d = 4;
-			break;
-		default:
-			mi_b = 10;
-			mi_d = 16;
-			mi_s = 24;
-			break;
-	}
-
-	if (memcmp(opt.f_bssid, NULL_MAC, 6) != 0)
-		if (memcmp(h80211 + mi_b, opt.f_bssid, 6) != 0) return (1);
-
-	if (memcmp(opt.f_bssid, opt.f_smac, 6) == 0)
-	{
-		if (memcmp(opt.f_smac, NULL_MAC, 6) != 0)
-			if (memcmp(h80211 + mi_s, opt.f_smac, 5) != 0) return (1);
-	}
-	else
-	{
-		if (memcmp(opt.f_smac, NULL_MAC, 6) != 0)
-			if (memcmp(h80211 + mi_s, opt.f_smac, 6) != 0) return (1);
-	}
-
-	if (memcmp(opt.f_bssid, opt.f_dmac, 6) == 0)
-	{
-		if (memcmp(opt.f_dmac, NULL_MAC, 6) != 0)
-			if (memcmp(h80211 + mi_d, opt.f_dmac, 5) != 0) return (1);
-	}
-	else
-	{
-		if (memcmp(opt.f_dmac, NULL_MAC, 6) != 0)
-			if (memcmp(h80211 + mi_d, opt.f_dmac, 6) != 0) return (1);
-	}
-
-	/* this one looks good */
-
-	return (0);
-}
-
-static int capture_ask_packet(int * caplen, int just_grab)
-{
-	time_t tr;
-	struct timeval tv;
-	struct tm * lt;
-
-	fd_set rfds;
-	long nb_pkt_read;
-	int i, j, n, mi_b = 0, mi_s = 0, mi_d = 0, mi_t = 0, mi_r = 0, is_wds = 0,
-				 key_index_offset;
-	int ret, z;
-
-	FILE * f_cap_out;
-	struct pcap_file_header pfh_out;
-	struct pcap_pkthdr pkh;
-
-	if (opt.f_minlen < 0) opt.f_minlen = 40;
-	if (opt.f_maxlen < 0) opt.f_maxlen = 1500;
-	if (opt.f_type < 0) opt.f_type = 2;
-	if (opt.f_subtype < 0) opt.f_subtype = 0;
-	if (opt.f_iswep < 0) opt.f_iswep = 1;
-
-	tr = time(NULL);
-
-	nb_pkt_read = 0;
-
-	signal(SIGINT, SIG_DFL);
-
-	while (1)
-	{
-		if (time(NULL) - tr > 0)
-		{
-			tr = time(NULL);
-			printf("\rRead %ld packets...\r", nb_pkt_read);
-			fflush(stdout);
-		}
-
-		if (opt.s_file == NULL)
-		{
-			FD_ZERO(&rfds);
-			FD_SET(dev.fd_in, &rfds);
-
-			tv.tv_sec = 1;
-			tv.tv_usec = 0;
-
-			if (select(dev.fd_in + 1, &rfds, NULL, NULL, &tv) < 0)
-			{
-				if (errno == EINTR) continue;
-				perror("select failed");
-				return (1);
-			}
-
-			if (!FD_ISSET(dev.fd_in, &rfds)) continue;
-
-			gettimeofday(&tv, NULL);
-
-			*caplen = read_packet(_wi_in, h80211, sizeof(h80211), NULL);
-
-			if (*caplen < 0) return (1);
-			if (*caplen == 0) continue;
-		}
-		else
-		{
-			/* there are no hidden backdoors in this source code */
-
-			n = sizeof(pkh);
-
-			if (fread(&pkh, n, 1, dev.f_cap_in) != 1)
-			{
-				printf("\r");
-				erase_line(0);
-				printf("End of file.\n");
-				return (1);
-			}
-
-			if (dev.pfh_in.magic == TCPDUMP_CIGAM)
-			{
-				SWAP32(pkh.caplen);
-				SWAP32(pkh.len);
-			}
-
-			tv.tv_sec = pkh.tv_sec;
-			tv.tv_usec = pkh.tv_usec;
-
-			n = *caplen = pkh.caplen;
-
-			if (n <= 0 || n > (int) sizeof(h80211) || n > (int) sizeof(tmpbuf))
-			{
-				printf("\r");
-				erase_line(0);
-				printf("Invalid packet length %d.\n", n);
-				return (1);
-			}
-
-			if (fread(h80211, n, 1, dev.f_cap_in) != 1)
-			{
-				printf("\r");
-				erase_line(0);
-				printf("End of file.\n");
-				return (1);
-			}
-
-			if (dev.pfh_in.linktype == LINKTYPE_PRISM_HEADER)
-			{
-				if (h80211[7] == 0x40)
-					n = 64;
-				else
-					n = *(int *) (h80211 + 4);
-
-				if (n < 8 || n >= (int) *caplen) continue;
-
-				memcpy(tmpbuf, h80211, *caplen);
-				*caplen -= n;
-				memcpy(h80211, tmpbuf + n, *caplen);
-			}
-
-			if (dev.pfh_in.linktype == LINKTYPE_RADIOTAP_HDR)
-			{
-				/* remove the radiotap header */
-
-				n = *(unsigned short *) (h80211 + 2);
-
-				if (n <= 0 || n >= (int) *caplen) continue;
-
-				memcpy(tmpbuf, h80211, *caplen);
-				*caplen -= n;
-				memcpy(h80211, tmpbuf + n, *caplen);
-			}
-
-			if (dev.pfh_in.linktype == LINKTYPE_PPI_HDR)
-			{
-				/* remove the PPI header */
-
-				n = le16_to_cpu(*(unsigned short *) (h80211 + 2));
-
-				if (n <= 0 || n >= (int) *caplen) continue;
-
-				/* for a while Kismet logged broken PPI headers */
-				if (n == 24
-					&& le16_to_cpu(*(unsigned short *) (h80211 + 8)) == 2)
-					n = 32;
-
-				if (n <= 0 || n >= (int) *caplen) continue;
-
-				memcpy(tmpbuf, h80211, *caplen);
-				*caplen -= n;
-				memcpy(h80211, tmpbuf + n, *caplen);
-			}
-		}
-
-		nb_pkt_read++;
-
-		if (filter_packet(h80211, *caplen) != 0) continue;
-
-		if (opt.fast) break;
-
-		z = ((h80211[1] & 3) != 3) ? 24 : 30;
-		if ((h80211[0] & 0x80) == 0x80) /* QoS */
-			z += 2;
-
-		switch (h80211[1] & 3)
-		{
-			case 0:
-				mi_b = 16;
-				mi_s = 10;
-				mi_d = 4;
-				is_wds = 0;
-				break;
-			case 1:
-				mi_b = 4;
-				mi_s = 10;
-				mi_d = 16;
-				is_wds = 0;
-				break;
-			case 2:
-				mi_b = 10;
-				mi_s = 16;
-				mi_d = 4;
-				is_wds = 0;
-				break;
-			case 3:
-				mi_t = 10;
-				mi_r = 4;
-				mi_d = 16;
-				mi_s = 24;
-				is_wds = 1;
-				break; // WDS packet
-		}
-
-		printf("\n\n        Size: %d, FromDS: %d, ToDS: %d",
-			   *caplen,
-			   (h80211[1] & 2) >> 1,
-			   (h80211[1] & 1));
-
-		if ((h80211[0] & 0x0C) == 8 && (h80211[1] & 0x40) != 0)
-		{
-			//             if (is_wds) key_index_offset = 33; // WDS packets
-			//             have an additional MAC, so the key index is at byte
-			//             33
-			//             else key_index_offset = 27;
-			key_index_offset = z + 3;
-
-			if ((h80211[key_index_offset] & 0x20) == 0)
-				printf(" (WEP)");
-			else
-				printf(" (WPA)");
-		}
-
-		printf("\n\n");
-
-		if (is_wds)
-		{
-			printf("        Transmitter  =  %02X:%02X:%02X:%02X:%02X:%02X\n",
-				   h80211[mi_t],
-				   h80211[mi_t + 1],
-				   h80211[mi_t + 2],
-				   h80211[mi_t + 3],
-				   h80211[mi_t + 4],
-				   h80211[mi_t + 5]);
-
-			printf("           Receiver  =  %02X:%02X:%02X:%02X:%02X:%02X\n",
-				   h80211[mi_r],
-				   h80211[mi_r + 1],
-				   h80211[mi_r + 2],
-				   h80211[mi_r + 3],
-				   h80211[mi_r + 4],
-				   h80211[mi_r + 5]);
-		}
-		else
-		{
-			printf("              BSSID  =  %02X:%02X:%02X:%02X:%02X:%02X\n",
-				   h80211[mi_b],
-				   h80211[mi_b + 1],
-				   h80211[mi_b + 2],
-				   h80211[mi_b + 3],
-				   h80211[mi_b + 4],
-				   h80211[mi_b + 5]);
-		}
-
-		printf("          Dest. MAC  =  %02X:%02X:%02X:%02X:%02X:%02X\n",
-			   h80211[mi_d],
-			   h80211[mi_d + 1],
-			   h80211[mi_d + 2],
-			   h80211[mi_d + 3],
-			   h80211[mi_d + 4],
-			   h80211[mi_d + 5]);
-
-		printf("         Source MAC  =  %02X:%02X:%02X:%02X:%02X:%02X\n",
-			   h80211[mi_s],
-			   h80211[mi_s + 1],
-			   h80211[mi_s + 2],
-			   h80211[mi_s + 3],
-			   h80211[mi_s + 4],
-			   h80211[mi_s + 5]);
-
-		/* print a hex dump of the packet */
-
-		for (i = 0; i < *caplen; i++)
-		{
-			if ((i & 15) == 0)
-			{
-				if (i == 224)
-				{
-					printf("\n        --- CUT ---");
-					break;
-				}
-
-				printf("\n        0x%04x:  ", i);
-			}
-
-			printf("%02x", h80211[i]);
-
-			if ((i & 1) != 0) printf(" ");
-
-			if (i == *caplen - 1 && ((i + 1) & 15) != 0)
-			{
-				for (j = ((i + 1) & 15); j < 16; j++)
-				{
-					printf("  ");
-					if ((j & 1) != 0) printf(" ");
-				}
-
-				printf(" ");
-
-				for (j = 16 - ((i + 1) & 15); j < 16; j++)
-					printf("%c",
-						   (h80211[i - 15 + j] < 32 || h80211[i - 15 + j] > 126)
-							   ? '.'
-							   : h80211[i - 15 + j]);
-			}
-
-			if (i > 0 && i < INT_MAX && ((i + 1) & 15) == 0)
-			{
-				printf(" ");
-
-				for (j = 0; j < 16; j++)
-					printf("%c",
-						   (h80211[i - 15 + j] < 32 || h80211[i - 15 + j] > 127)
-							   ? '.'
-							   : h80211[i - 15 + j]);
-			}
-		}
-
-		printf("\n\nUse this packet ? ");
-		fflush(stdout);
-		ret = 0;
-		while (!ret) ret = scanf("%1s", tmpbuf);
-		printf("\n");
-
-		if (tmpbuf[0] == 'y' || tmpbuf[0] == 'Y') break;
-	}
-
-	if (!just_grab)
-	{
-		pfh_out.magic = TCPDUMP_MAGIC;
-		pfh_out.version_major = PCAP_VERSION_MAJOR;
-		pfh_out.version_minor = PCAP_VERSION_MINOR;
-		pfh_out.thiszone = 0;
-		pfh_out.sigfigs = 0;
-		pfh_out.snaplen = 65535;
-		pfh_out.linktype = LINKTYPE_IEEE802_11;
-
-		lt = localtime((const time_t *) &tv.tv_sec);
-
-		memset(strbuf, 0, sizeof(strbuf));
-		snprintf(strbuf,
-				 sizeof(strbuf) - 1,
-				 "replay_src-%02d%02d-%02d%02d%02d.cap",
-				 lt->tm_mon + 1,
-				 lt->tm_mday,
-				 lt->tm_hour,
-				 lt->tm_min,
-				 lt->tm_sec);
-
-		printf("Saving chosen packet in %s\n", strbuf);
-
-		if ((f_cap_out = fopen(strbuf, "wb+")) == NULL)
-		{
-			perror("fopen failed");
-			return (1);
-		}
-
-		n = sizeof(struct pcap_file_header);
-
-		if (fwrite(&pfh_out, n, 1, f_cap_out) != 1)
-		{
-			fclose(f_cap_out);
-			perror("fwrite failed\n");
-			return (1);
-		}
-
-		pkh.tv_sec = tv.tv_sec;
-		pkh.tv_usec = tv.tv_usec;
-		pkh.caplen = *caplen;
-		pkh.len = *caplen;
-
-		n = sizeof(pkh);
-
-		if (fwrite(&pkh, n, 1, f_cap_out) != 1)
-		{
-			fclose(f_cap_out);
-			perror("fwrite failed");
-			return (1);
-		}
-
-		n = pkh.caplen;
-
-		if (fwrite(h80211, n, 1, f_cap_out) != 1)
-		{
-			fclose(f_cap_out);
-			perror("fwrite failed");
-			return (1);
-		}
-
-		fclose(f_cap_out);
-	}
-
-	return (0);
 }
 
 static int read_prga(unsigned char ** dest, char * file)
@@ -1075,13 +581,13 @@ static int build_arp_request(unsigned char * packet, int * length, int toDS)
 	{
 		memcpy(packet + 4, opt.f_bssid, 6);
 		memcpy(packet + 10, opt.r_smac, 6);
-		memcpy(packet + 16, opt.r_apmac, 6);
+		memcpy(packet + 16, lopt.r_apmac, 6);
 	}
 	else
 	{
 		memcpy(packet + 4, opt.r_smac, 6);
 		memcpy(packet + 10, opt.f_bssid, 6);
-		memcpy(packet + 16, opt.r_apmac, 6);
+		memcpy(packet + 16, lopt.r_apmac, 6);
 	}
 
 	packet[22] = 0xD0; // fragment 0
@@ -1095,24 +601,24 @@ static int build_arp_request(unsigned char * packet, int * length, int toDS)
 	if (toDS)
 		set_clear_arp(packet + 26, opt.r_smac, BROADCAST);
 	else
-		set_clear_arp(packet + 26, opt.r_apmac, BROADCAST);
+		set_clear_arp(packet + 26, lopt.r_apmac, BROADCAST);
 
 	if (toDS)
-		memcpy(packet + 26 + 22, opt.ip_cli, 4);
+		memcpy(packet + 26 + 22, lopt.ip_cli, 4);
 	else
-		memcpy(packet + 26 + 22, opt.ip_ap, 4);
+		memcpy(packet + 26 + 22, lopt.ip_ap, 4);
 
 	memcpy(packet + 26 + 26, BROADCAST, 6);
 
 	if (toDS)
-		memcpy(packet + 26 + 32, opt.ip_ap, 4);
+		memcpy(packet + 26 + 32, lopt.ip_ap, 4);
 	else
-		memcpy(packet + 26 + 32, opt.ip_cli, 4);
+		memcpy(packet + 26 + 32, lopt.ip_cli, 4);
 
 	INVARIANT(*length < (INT_MAX - 26 - 36 - 1));
 	*length = 26 + 36;
 
-	calc_tkip_mic(packet, *length, opt.ptk, packet + (*length));
+	calc_tkip_mic(packet, *length, lopt.ptk, packet + (*length));
 
 	INVARIANT(*length < (INT_MAX - 8 - 1));
 	*length += 8;
@@ -1122,11 +628,11 @@ static int build_arp_request(unsigned char * packet, int * length, int toDS)
 
 	if (toDS)
 		memcpy(packet + 26,
-			   opt.chopped_to_prga,
+			   lopt.chopped_to_prga,
 			   8); // set IV&extIV for a toDS frame
 	else
 		memcpy(packet + 26,
-			   opt.chopped_from_prga,
+			   lopt.chopped_from_prga,
 			   8); // set IV&extIV for a fromDS frame
 
 	INVARIANT(*length < (INT_MAX - 8 - 1));
@@ -1138,19 +644,19 @@ static int build_arp_request(unsigned char * packet, int * length, int toDS)
 
 	if (toDS)
 	{
-		if (opt.chopped_to_prga_len - 8 < *length - 26 - 8) return (1);
+		if (lopt.chopped_to_prga_len - 8 < *length - 26 - 8) return (1);
 
 		for (i = 0; i < *length - 26 - 8; i++)
-			packet[26 + 8 + i] ^= opt.chopped_to_prga[8 + i];
+			packet[26 + 8 + i] ^= lopt.chopped_to_prga[8 + i];
 	}
 	else
 	{
-		if (opt.chopped_from_prga_len - 8 < *length - 26 - 8) return (1);
+		if (lopt.chopped_from_prga_len - 8 < *length - 26 - 8) return (1);
 
 		INVARIANT(*length < (INT_MAX - 26 - 8 - 1));
 
 		for (i = 0; i < *length - 26 - 8; i++)
-			packet[26 + 8 + i] ^= opt.chopped_from_prga[8 + i];
+			packet[26 + 8 + i] ^= lopt.chopped_from_prga[8 + i];
 	}
 
 	return (0);
@@ -1921,9 +1427,9 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 	memcpy(srcbuf, h80211, caplen);
 
 	/* debug: generate the keystream */
-	if (opt.got_ptk)
+	if (lopt.got_ptk)
 	{
-		calc_tkip_ppk(srcbuf, caplen, opt.wpa_sta.ptk + 32, rc4key);
+		calc_tkip_ppk(srcbuf, caplen, lopt.wpa_sta.ptk + 32, rc4key);
 		PCT;
 		printf("Per Packet Key: ");
 		for (i = 0; i < 15; i++) printf("%02X:", rc4key[i]);
@@ -1951,9 +1457,9 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 			   packet[z + 8 + keystream_len - 1]
 				   ^ srcbuf[z + 8 + keystream_len - 1]);
 
-		opt.oldkeystreamlen = keystream_len - 37;
-		for (i = 0; i < opt.oldkeystreamlen; i++)
-			opt.oldkeystream[i] = keystream[keystream_len - 1 - i];
+		lopt.oldkeystreamlen = keystream_len - 37;
+		for (i = 0; i < lopt.oldkeystreamlen; i++)
+			lopt.oldkeystream[i] = keystream[keystream_len - 1 - i];
 	}
 
 	/* setup the chopping buffer */
@@ -2046,9 +1552,9 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 	is_deauth_mode = 0;
 
 	/* chop down old/known keystreambytes */
-	for (i = 0; i < opt.oldkeystreamlen; i++)
+	for (i = 0; i < lopt.oldkeystreamlen; i++)
 	{
-		guess = (opt.oldkeystream[i] ^ chopped[data_end - 1]) % 256;
+		guess = (lopt.oldkeystream[i] ^ chopped[data_end - 1]) % 256;
 
 		n = caplen - data_start;
 
@@ -2131,10 +1637,10 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 			printf("\rLooks like mic failure report was not detected."
 				   "Waiting %i seconds before trying again to avoid "
 				   "the AP shutting down.\n",
-				   opt.mic_failure_interval);
+				   lopt.mic_failure_interval);
 			fflush(stdout);
 			settle = 1;
-			sleep(opt.mic_failure_interval);
+			sleep(lopt.mic_failure_interval);
 		}
 
 		if (dev.fd_rtc >= 0)
@@ -2478,9 +1984,9 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 
 		data_end--;
 
-		gettimeofday(&opt.last_mic_failure, NULL);
+		gettimeofday(&lopt.last_mic_failure, NULL);
 		PCT;
-		printf("\rSleeping for %i seconds.", opt.mic_failure_interval);
+		printf("\rSleeping for %i seconds.", lopt.mic_failure_interval);
 		fflush(stdout);
 
 		if (guess_packet(srcbuf, chopped, caplen, caplen - data_end)
@@ -2490,9 +1996,9 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 		while (1)
 		{
 			gettimeofday(&mic_fail, NULL);
-			if ((mic_fail.tv_sec - opt.last_mic_failure.tv_sec) * 1000000
-					+ (mic_fail.tv_usec - opt.last_mic_failure.tv_usec)
-				> opt.mic_failure_interval * 1000000)
+			if ((mic_fail.tv_sec - lopt.last_mic_failure.tv_sec) * 1000000
+					+ (mic_fail.tv_usec - lopt.last_mic_failure.tv_usec)
+				> lopt.mic_failure_interval * 1000000)
 				break;
 			sleep(1);
 		}
@@ -2537,11 +2043,11 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 
 	caplen -= 8 + 4; /* remove the TKIP EXT IV & CRC (ICV) */
 
-	if (opt.got_ptk)
+	if (lopt.got_ptk)
 	{
 		PCT;
 		printf("Priority: %02X:%02X\n", h80211[z - 2], h80211[z - 1]);
-		calc_tkip_mic(h80211, caplen - 8, opt.wpa_sta.ptk, mic);
+		calc_tkip_mic(h80211, caplen - 8, lopt.wpa_sta.ptk, mic);
 		if (memcmp(mic, h80211 + caplen - 8, 8) == 0)
 		{
 			PCT;
@@ -2572,16 +2078,16 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 		printf("Reversed MIC Key (ToDS): ");
 		for (i = 0; i < 7; i++) printf("%02X:", mic[i]);
 		printf("%02X\n", mic[7]);
-		memcpy(opt.ptk + 48 + 8, mic, 8);
-		opt.got_mic_tods = 1;
-		opt.chopped_to_plain = (unsigned char *) malloc(caplen);
-		ALLEGE(opt.chopped_to_plain != NULL);
-		memcpy(opt.chopped_to_plain, h80211, caplen);
-		opt.chopped_to_plain_len = caplen;
-		opt.chopped_to_prga = (unsigned char *) malloc(caplen - 26 + 4 + 8);
-		ALLEGE(opt.chopped_to_prga != NULL);
-		memcpy(opt.chopped_to_prga, chopped + 26, caplen - 26 + 4 + 8);
-		opt.chopped_to_prga_len = caplen - 26 + 4 + 8;
+		memcpy(lopt.ptk + 48 + 8, mic, 8);
+		lopt.got_mic_tods = 1;
+		lopt.chopped_to_plain = (unsigned char *) malloc(caplen);
+		ALLEGE(lopt.chopped_to_plain != NULL);
+		memcpy(lopt.chopped_to_plain, h80211, caplen);
+		lopt.chopped_to_plain_len = caplen;
+		lopt.chopped_to_prga = (unsigned char *) malloc(caplen - 26 + 4 + 8);
+		ALLEGE(lopt.chopped_to_prga != NULL);
+		memcpy(lopt.chopped_to_prga, chopped + 26, caplen - 26 + 4 + 8);
+		lopt.chopped_to_prga_len = caplen - 26 + 4 + 8;
 	}
 
 	if ((h80211[1] & 3) == 2)
@@ -2590,16 +2096,16 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 		printf("Reversed MIC Key (FromDS): ");
 		for (i = 0; i < 7; i++) printf("%02X:", mic[i]);
 		printf("%02X\n", mic[7]);
-		memcpy(opt.ptk + 48, mic, 8);
-		opt.got_mic_fromds = 1;
-		opt.chopped_from_plain = (unsigned char *) malloc(caplen);
-		ALLEGE(opt.chopped_from_plain != NULL);
-		memcpy(opt.chopped_from_plain, h80211, caplen);
-		opt.chopped_from_plain_len = caplen;
-		opt.chopped_from_prga = (unsigned char *) malloc(caplen - 26 + 4 + 8);
-		ALLEGE(opt.chopped_from_prga != NULL);
-		memcpy(opt.chopped_from_prga, chopped + 26, caplen - 26 + 4 + 8);
-		opt.chopped_from_prga_len = caplen - 26 + 4 + 8;
+		memcpy(lopt.ptk + 48, mic, 8);
+		lopt.got_mic_fromds = 1;
+		lopt.chopped_from_plain = (unsigned char *) malloc(caplen);
+		ALLEGE(lopt.chopped_from_plain != NULL);
+		memcpy(lopt.chopped_from_plain, h80211, caplen);
+		lopt.chopped_from_plain_len = caplen;
+		lopt.chopped_from_prga = (unsigned char *) malloc(caplen - 26 + 4 + 8);
+		ALLEGE(lopt.chopped_from_prga != NULL);
+		memcpy(lopt.chopped_from_prga, chopped + 26, caplen - 26 + 4 + 8);
+		lopt.chopped_from_prga_len = caplen - 26 + 4 + 8;
 	}
 
 	/* save the decrypted packet */
@@ -2737,17 +2243,17 @@ static int getHDSK(void)
 			PCT;
 			printf("Sending 4 directed DeAuth. STMAC:"
 				   " [%02X:%02X:%02X:%02X:%02X:%02X] [%2d|%2d ACKs]\r",
-				   opt.wpa.stmac[0],
-				   opt.wpa.stmac[1],
-				   opt.wpa.stmac[2],
-				   opt.wpa.stmac[3],
-				   opt.wpa.stmac[4],
-				   opt.wpa.stmac[5],
+				   lopt.wpa.stmac[0],
+				   lopt.wpa.stmac[1],
+				   lopt.wpa.stmac[2],
+				   lopt.wpa.stmac[3],
+				   lopt.wpa.stmac[4],
+				   lopt.wpa.stmac[5],
 				   sacks,
 				   aacks);
 		}
 
-		memcpy(h80211 + 4, opt.wpa.stmac, 6);
+		memcpy(h80211 + 4, lopt.wpa.stmac, 6);
 		memcpy(h80211 + 10, opt.r_bssid, 6);
 
 		if (send_packet(_wi_out, h80211, 26, false) < 0) return (1);
@@ -2755,7 +2261,7 @@ static int getHDSK(void)
 		usleep(2000);
 
 		memcpy(h80211 + 4, opt.r_bssid, 6);
-		memcpy(h80211 + 10, opt.wpa.stmac, 6);
+		memcpy(h80211 + 10, lopt.wpa.stmac, 6);
 
 		if (send_packet(_wi_out, h80211, 26, false) < 0) return (1);
 
@@ -2786,7 +2292,7 @@ static int getHDSK(void)
 			if (caplen != 10) continue;
 			if (h80211[0] == 0xD4)
 			{
-				if (memcmp(h80211 + 4, opt.wpa.stmac, 6) == 0)
+				if (memcmp(h80211 + 4, lopt.wpa.stmac, 6) == 0)
 				{
 					aacks++;
 				}
@@ -2797,12 +2303,12 @@ static int getHDSK(void)
 				PCT;
 				printf("Sending 4 directed DeAuth. STMAC:"
 					   " [%02X:%02X:%02X:%02X:%02X:%02X] [%2d|%2d ACKs]\r",
-					   opt.wpa.stmac[0],
-					   opt.wpa.stmac[1],
-					   opt.wpa.stmac[2],
-					   opt.wpa.stmac[3],
-					   opt.wpa.stmac[4],
-					   opt.wpa.stmac[5],
+					   lopt.wpa.stmac[0],
+					   lopt.wpa.stmac[1],
+					   lopt.wpa.stmac[2],
+					   lopt.wpa.stmac[3],
+					   lopt.wpa.stmac[4],
+					   lopt.wpa.stmac[5],
 					   sacks,
 					   aacks);
 			}
@@ -2839,8 +2345,8 @@ int main(int argc, char * argv[])
 	opt.f_subtype = -1;
 	opt.f_minlen = 80;
 	opt.f_maxlen = 80;
-	opt.f_minlen_set = 0;
-	opt.f_maxlen_set = 0;
+	lopt.f_minlen_set = 0;
+	lopt.f_maxlen_set = 0;
 	opt.f_tods = -1;
 	opt.f_fromds = -1;
 	opt.f_iswep = -1;
@@ -2856,7 +2362,7 @@ int main(int argc, char * argv[])
 	opt.r_smac_set = 0;
 	opt.npackets = 1;
 	opt.nodetect = 0;
-	opt.mic_failure_interval = DEFAULT_MIC_FAILURE_INTERVAL;
+	lopt.mic_failure_interval = DEFAULT_MIC_FAILURE_INTERVAL;
 
 	while (1)
 	{
@@ -2920,7 +2426,7 @@ int main(int argc, char * argv[])
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (1);
 				}
-				opt.f_minlen_set = 1;
+				lopt.f_minlen_set = 1;
 				break;
 
 			case 'n':
@@ -2932,7 +2438,7 @@ int main(int argc, char * argv[])
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (1);
 				}
-				opt.f_maxlen_set = 1;
+				lopt.f_maxlen_set = 1;
 				break;
 
 			case 't':
@@ -3002,7 +2508,7 @@ int main(int argc, char * argv[])
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (1);
 				}
-				if (getmac(optarg, 1, opt.wpa.stmac) != 0)
+				if (getmac(optarg, 1, lopt.wpa.stmac) != 0)
 				{
 					printf("Invalid source MAC address.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
@@ -3108,8 +2614,8 @@ int main(int argc, char * argv[])
 						printf("\"%s --help\" for help.\n", argv[0]);
 						return (1);
 					}
-					opt.oldkeystream[opt.oldkeystreamlen] = n;
-					opt.oldkeystreamlen++;
+					lopt.oldkeystream[lopt.oldkeystreamlen] = n;
+					lopt.oldkeystreamlen++;
 					s += 2;
 					buf[0] = s[0];
 					buf[1] = s[1];
@@ -3118,34 +2624,34 @@ int main(int argc, char * argv[])
 
 			case 'P':
 
-				memset(opt.pmk, 0, sizeof(opt.pmk));
-				i = hexStringToArray(optarg, strlen(optarg), opt.pmk, 128);
+				memset(lopt.pmk, 0, sizeof(lopt.pmk));
+				i = hexStringToArray(optarg, strlen(optarg), lopt.pmk, 128);
 				if (i == -1)
 				{
 					printf("Invalid value. It requires 128 bytes of PMK in "
 						   "hexadecimal.\n");
 					return (1);
 				}
-				opt.got_pmk = 1;
+				lopt.got_pmk = 1;
 				break;
 
 			case 'p':
 
-				memset(opt.psk, 0, sizeof(opt.psk));
+				memset(lopt.psk, 0, sizeof(lopt.psk));
 				if (strlen(optarg) < 8 || strlen(optarg) > 63)
 				{
 					printf("PSK with invalid length specified [8-64].\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (1);
 				}
-				strncpy(opt.psk, optarg, sizeof(opt.psk) - 1);
-				opt.got_psk = 1;
+				strncpy(lopt.psk, optarg, sizeof(lopt.psk) - 1);
+				lopt.got_psk = 1;
 				break;
 
 			case 'M':
 
-				ret = sscanf(optarg, "%d", &opt.mic_failure_interval);
-				if (ret != 1 || opt.mic_failure_interval < 0)
+				ret = sscanf(optarg, "%d", &lopt.mic_failure_interval);
+				if (ret != 1 || lopt.mic_failure_interval < 0)
 				{
 					printf("Invalid MIC error timeout. [>=0]\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
@@ -3413,7 +2919,7 @@ int main(int argc, char * argv[])
 		for (i = 0; i < 10; i++)
 		{
 			read_sleep(dev.fd_in, 500000, my_read_sleep_cb);
-			if (opt.wpa.state == 7)
+			if (lopt.wpa.state == 7)
 			{
 				got_hdsk = 1;
 				break;
@@ -3422,62 +2928,62 @@ int main(int argc, char * argv[])
 		if (got_hdsk) break;
 	}
 
-	if (!opt.got_pmk && opt.got_psk && strlen(opt.r_essid) > 1)
+	if (!lopt.got_pmk && lopt.got_psk && strlen(opt.r_essid) > 1)
 	{
-		calc_pmk(opt.psk, opt.r_essid, opt.pmk);
+		calc_pmk(lopt.psk, opt.r_essid, lopt.pmk);
 		PCT;
-		printf("PSK: %s\n", opt.psk);
+		printf("PSK: %s\n", lopt.psk);
 		PCT;
 		printf("PMK: ");
-		for (i = 0; i < 31; i++) printf("%02X:", opt.pmk[i]);
-		printf("%02X\n", opt.pmk[31]);
-		opt.got_pmk = 1;
+		for (i = 0; i < 31; i++) printf("%02X:", lopt.pmk[i]);
+		printf("%02X\n", lopt.pmk[31]);
+		lopt.got_pmk = 1;
 	}
 
-	if (opt.got_pmk)
+	if (lopt.got_pmk)
 	{
-		opt.wpa_sta.next = NULL;
-		memcpy(opt.wpa_sta.stmac, opt.r_smac, 6);
-		memcpy(opt.wpa_sta.bssid, opt.f_bssid, 6);
-		memcpy(opt.wpa_sta.snonce, opt.wpa.snonce, 32);
-		memcpy(opt.wpa_sta.anonce, opt.wpa.anonce, 32);
-		memcpy(opt.wpa_sta.keymic, opt.wpa.keymic, 20);
-		memcpy(opt.wpa_sta.eapol, opt.wpa.eapol, 256);
-		opt.wpa_sta.eapol_size = opt.wpa.eapol_size;
-		opt.wpa_sta.keyver = opt.wpa.keyver;
-		opt.wpa_sta.valid_ptk = calc_ptk(&opt.wpa_sta, opt.pmk);
+		lopt.wpa_sta.next = NULL;
+		memcpy(lopt.wpa_sta.stmac, opt.r_smac, 6);
+		memcpy(lopt.wpa_sta.bssid, opt.f_bssid, 6);
+		memcpy(lopt.wpa_sta.snonce, lopt.wpa.snonce, 32);
+		memcpy(lopt.wpa_sta.anonce, lopt.wpa.anonce, 32);
+		memcpy(lopt.wpa_sta.keymic, lopt.wpa.keymic, 20);
+		memcpy(lopt.wpa_sta.eapol, lopt.wpa.eapol, 256);
+		lopt.wpa_sta.eapol_size = lopt.wpa.eapol_size;
+		lopt.wpa_sta.keyver = lopt.wpa.keyver;
+		lopt.wpa_sta.valid_ptk = calc_ptk(&lopt.wpa_sta, lopt.pmk);
 		PCT;
 		printf("PTK: ");
-		for (i = 0; i < 79; i++) printf("%02X:", opt.wpa_sta.ptk[i]);
-		printf("%02X\n", opt.wpa_sta.ptk[79]);
+		for (i = 0; i < 79; i++) printf("%02X:", lopt.wpa_sta.ptk[i]);
+		printf("%02X\n", lopt.wpa_sta.ptk[79]);
 		PCT;
-		printf("Valid PTK: %s\n", (opt.wpa_sta.valid_ptk) ? "Yes" : "No!");
-		if (opt.wpa_sta.valid_ptk) opt.got_ptk = 1;
+		printf("Valid PTK: %s\n", (lopt.wpa_sta.valid_ptk) ? "Yes" : "No!");
+		if (lopt.wpa_sta.valid_ptk) lopt.got_ptk = 1;
 
 		PCT;
 		printf("KCK: ");
-		for (i = 0; i < 15; i++) printf("%02X:", opt.wpa_sta.ptk[i]);
-		printf("%02X\n", opt.wpa_sta.ptk[15]);
+		for (i = 0; i < 15; i++) printf("%02X:", lopt.wpa_sta.ptk[i]);
+		printf("%02X\n", lopt.wpa_sta.ptk[15]);
 
 		PCT;
 		printf("KEK: ");
-		for (i = 16; i < 31; i++) printf("%02X:", opt.wpa_sta.ptk[i]);
-		printf("%02X\n", opt.wpa_sta.ptk[31]);
+		for (i = 16; i < 31; i++) printf("%02X:", lopt.wpa_sta.ptk[i]);
+		printf("%02X\n", lopt.wpa_sta.ptk[31]);
 
 		PCT;
 		printf("Temporal Encryption Key (TK1): ");
-		for (i = 32; i < 47; i++) printf("%02X:", opt.wpa_sta.ptk[i]);
-		printf("%02X\n", opt.wpa_sta.ptk[47]);
+		for (i = 32; i < 47; i++) printf("%02X:", lopt.wpa_sta.ptk[i]);
+		printf("%02X\n", lopt.wpa_sta.ptk[47]);
 
 		PCT;
 		printf("Michael Key (FromDS): ");
-		for (i = 48; i < 55; i++) printf("%02X:", opt.wpa_sta.ptk[i]);
-		printf("%02X\n", opt.wpa_sta.ptk[55]);
+		for (i = 48; i < 55; i++) printf("%02X:", lopt.wpa_sta.ptk[i]);
+		printf("%02X\n", lopt.wpa_sta.ptk[55]);
 
 		PCT;
 		printf("Michael Key (ToDS): ");
-		for (i = 56; i < 63; i++) printf("%02X:", opt.wpa_sta.ptk[i]);
-		printf("%02X\n", opt.wpa_sta.ptk[63]);
+		for (i = 56; i < 63; i++) printf("%02X:", lopt.wpa_sta.ptk[i]);
+		printf("%02X\n", lopt.wpa_sta.ptk[63]);
 	}
 
 	/* Select ToDS ARP from Client */
@@ -3488,14 +2994,13 @@ int main(int argc, char * argv[])
 	opt.f_tods = 1;
 	opt.f_fromds = 0;
 	memcpy(opt.f_smac, opt.r_smac, 6);
-	//    memcpy(opt.f_dmac, opt.f_bssid, 6);
 	if (opt.fast == -1) opt.fast = 1;
 
-	if (opt.f_minlen_set == 0)
+	if (lopt.f_minlen_set == 0)
 	{
 		opt.f_minlen = 80;
 	}
-	if (opt.f_maxlen_set == 0)
+	if (lopt.f_maxlen_set == 0)
 	{
 		opt.f_maxlen = 80;
 	}
@@ -3519,11 +3024,11 @@ int main(int argc, char * argv[])
 	memcpy(opt.f_dmac, opt.r_smac, 6);
 	memcpy(opt.f_smac, NULL_MAC, 6);
 
-	if (opt.f_minlen_set == 0)
+	if (lopt.f_minlen_set == 0)
 	{
 		opt.f_minlen = 80;
 	}
-	if (opt.f_maxlen_set == 0)
+	if (lopt.f_maxlen_set == 0)
 	{
 		opt.f_maxlen = 98;
 	}
@@ -3552,25 +3057,25 @@ int main(int argc, char * argv[])
 	if (do_attack_tkipchop(h80211, caplen) == 1) return (1);
 
 	/* derive IPs and MACs; relays on QoS, ARP and fromDS packet */
-	if (opt.chopped_from_plain != NULL)
+	if (lopt.chopped_from_plain != NULL)
 	{
-		memcpy(opt.ip_cli, opt.chopped_from_plain + 58, 4);
-		memcpy(opt.ip_ap, opt.chopped_from_plain + 48, 4);
-		memcpy(opt.r_apmac, opt.chopped_from_plain + 42, 6);
+		memcpy(lopt.ip_cli, lopt.chopped_from_plain + 58, 4);
+		memcpy(lopt.ip_ap, lopt.chopped_from_plain + 48, 4);
+		memcpy(lopt.r_apmac, lopt.chopped_from_plain + 42, 6);
 	}
 
 	PCT;
 	printf("AP MAC: %02X:%02X:%02X:%02X:%02X:%02X IP: %i.%i.%i.%i\n",
-		   opt.r_apmac[0],
-		   opt.r_apmac[1],
-		   opt.r_apmac[2],
-		   opt.r_apmac[3],
-		   opt.r_apmac[4],
-		   opt.r_apmac[5],
-		   opt.ip_ap[0],
-		   opt.ip_ap[1],
-		   opt.ip_ap[2],
-		   opt.ip_ap[3]);
+		   lopt.r_apmac[0],
+		   lopt.r_apmac[1],
+		   lopt.r_apmac[2],
+		   lopt.r_apmac[3],
+		   lopt.r_apmac[4],
+		   lopt.r_apmac[5],
+		   lopt.ip_ap[0],
+		   lopt.ip_ap[1],
+		   lopt.ip_ap[2],
+		   lopt.ip_ap[3]);
 	PCT;
 	printf("Client MAC: %02X:%02X:%02X:%02X:%02X:%02X IP: %i.%i.%i.%i\n",
 		   opt.r_smac[0],
@@ -3579,10 +3084,10 @@ int main(int argc, char * argv[])
 		   opt.r_smac[3],
 		   opt.r_smac[4],
 		   opt.r_smac[5],
-		   opt.ip_cli[0],
-		   opt.ip_cli[1],
-		   opt.ip_cli[2],
-		   opt.ip_cli[3]);
+		   lopt.ip_cli[0],
+		   lopt.ip_cli[1],
+		   lopt.ip_cli[2],
+		   lopt.ip_cli[3]);
 
 	/* Send an ARP Request from the AP to the Client */
 
@@ -3596,14 +3101,14 @@ int main(int argc, char * argv[])
 
 	PCT;
 	printf("Wait for the mic countermeasure timeout of %i seconds.\n",
-		   opt.mic_failure_interval);
+		   lopt.mic_failure_interval);
 
 	while (1)
 	{
 		gettimeofday(&mic_fail, NULL);
-		if ((mic_fail.tv_sec - opt.last_mic_failure.tv_sec) * 1000000UL
-				+ (mic_fail.tv_usec - opt.last_mic_failure.tv_usec)
-			> opt.mic_failure_interval * 1000000UL)
+		if ((mic_fail.tv_sec - lopt.last_mic_failure.tv_sec) * 1000000UL
+				+ (mic_fail.tv_usec - lopt.last_mic_failure.tv_usec)
+			> lopt.mic_failure_interval * 1000000UL)
 			break;
 		sleep(1);
 	}

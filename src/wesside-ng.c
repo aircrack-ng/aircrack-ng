@@ -92,6 +92,11 @@
 #define PRGA_FILE "prga.log"
 #define KEYLIMIT 1000000
 
+// unused, but needed for link
+struct communication_options opt;
+struct devices dev;
+extern struct wif *_wi_in, *_wi_out;
+
 struct frag_state
 {
 	struct ieee80211_frame fs_wh;
