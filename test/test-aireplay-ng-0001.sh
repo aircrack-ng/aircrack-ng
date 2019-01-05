@@ -56,7 +56,7 @@ fi
 
 # Run actual test
 "${top_builddir}/src/aireplay-ng${EXEEXT}" \
-    -0 0 \
+    -1 1 \
     -e "${SSID}" \
     -T 1 \
     ${WI_IFACE} \
