@@ -435,7 +435,7 @@ static int packet_xmit(unsigned char * packet, int length)
 
 	if (memcmp(packet, SPANTREE, 6) == 0)
 	{
-		memcpy(h80211,
+		memcpy(h80211, //-V512
 			   IEEE80211_LLC_SNAP,
 			   24); // shorter LLC/SNAP - only copy IEEE80211 HEADER
 		memcpy(h80211 + 24, packet + 14, length - 14);
@@ -494,7 +494,7 @@ static int packet_xmit(unsigned char * packet, int length)
 		memcpy(buf, h80211 + data_begin, length - data_begin);
 		memcpy(h80211 + data_begin + 4, buf, length - data_begin);
 
-		memcpy(h80211 + data_begin, K, 4);
+		memcpy(h80211 + data_begin, K, 4); //-V512
 		length += 4; // iv
 
 		memcpy(K + 3, lopt.wepkey, lopt.weplen);
@@ -759,7 +759,7 @@ static int packet_recv(unsigned char * packet, int length)
 
 				/* if the PTK is valid, try to decrypt */
 
-				if (st_cur == NULL || !st_cur->valid_ptk) return (1);
+				if (!st_cur->valid_ptk) return (1);
 
 				if (st_cur->keyver == 1)
 				{
@@ -849,7 +849,6 @@ static int packet_recv(unsigned char * packet, int length)
 				st_cur->eapol_size = (packet[z + 2] << 8) + packet[z + 3] + 4;
 
 				if (length - z < (int) st_cur->eapol_size
-					|| st_cur->eapol_size == 0
 					|| st_cur->eapol_size > sizeof(st_cur->eapol))
 				{
 					// Ignore the packet trying to crash us.
@@ -857,7 +856,7 @@ static int packet_recv(unsigned char * packet, int length)
 					return (1);
 				}
 
-				memcpy(st_cur->keymic, &packet[z + 81], 16);
+				memcpy(st_cur->keymic, &packet[z + 81], 16); //-V512
 				memcpy(st_cur->eapol, &packet[z], st_cur->eapol_size);
 				memset(st_cur->eapol + 81, 0, 16);
 
@@ -884,7 +883,6 @@ static int packet_recv(unsigned char * packet, int length)
 				st_cur->eapol_size = (packet[z + 2] << 8) + packet[z + 3] + 4;
 
 				if (length - z < (int) st_cur->eapol_size
-					|| st_cur->eapol_size == 0
 					|| st_cur->eapol_size > sizeof(st_cur->eapol))
 				{
 					// Ignore the packet trying to crash us.
@@ -892,7 +890,7 @@ static int packet_recv(unsigned char * packet, int length)
 					return (1); // continue;
 				}
 
-				memcpy(st_cur->keymic, &packet[z + 81], 16);
+				memcpy(st_cur->keymic, &packet[z + 81], 16); //-V512
 				memcpy(st_cur->eapol, &packet[z], st_cur->eapol_size);
 				memset(st_cur->eapol + 81, 0, 16);
 
@@ -1565,7 +1563,7 @@ int main(int argc, char * argv[])
 				if (h80211[7] == 0x40)
 					n = 64;
 				else
-					n = *(int *) (h80211 + 4);
+					n = *(int *) (h80211 + 4); //-V1032
 
 				if (n < 8 || n >= (int) caplen) continue;
 
@@ -1578,9 +1576,9 @@ int main(int argc, char * argv[])
 			{
 				/* remove the radiotap header */
 
-				n = *(unsigned short *) (h80211 + 2);
+				n = *(unsigned short *) (h80211 + 2); //-V1032
 
-				if (n <= 0 || n >= (int) caplen) continue;
+				if (n <= 0 || n >= (int) caplen) continue; //-V560
 
 				memcpy(tmpbuf, h80211, caplen);
 				caplen -= n;
@@ -1591,16 +1589,17 @@ int main(int argc, char * argv[])
 			{
 				/* remove the PPI header */
 
-				n = le16_to_cpu(*(unsigned short *) (h80211 + 2));
+				n = le16_to_cpu(*(unsigned short *) (h80211 + 2)); //-V1032
 
 				if (n <= 0 || n >= (int) caplen) continue;
 
 				/* for a while Kismet logged broken PPI headers */
 				if (n == 24
-					&& le16_to_cpu(*(unsigned short *) (h80211 + 8)) == 2)
+					&& le16_to_cpu(*(unsigned short *) (h80211 + 8)) //-V1032
+						   == 2)
 					n = 32;
 
-				if (n <= 0 || n >= (int) caplen) continue;
+				if (n <= 0 || n >= (int) caplen) continue; //-V560
 
 				memcpy(tmpbuf, h80211, caplen);
 				caplen -= n;

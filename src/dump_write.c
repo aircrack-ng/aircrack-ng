@@ -119,7 +119,6 @@ static char * format_text_for_csv(const unsigned char * input, int len)
 	ret[pos++] = '\0';
 
 	rret = realloc(ret, pos);
-	ALLEGE(rret != NULL);
 
 	return (rret) ? (rret) : (ret);
 }
@@ -223,7 +222,7 @@ int dump_write_csv(void)
 			if (ap_cur->security & ENC_WEP104) fprintf(G.f_txt, " WEP104");
 			if (ap_cur->security & ENC_WEP40) fprintf(G.f_txt, " WEP40");
 			if (ap_cur->security & ENC_WEP) fprintf(G.f_txt, " WEP");
-			if (ap_cur->security & ENC_WEP) fprintf(G.f_txt, " GCMP");
+			if (ap_cur->security & ENC_GCMP) fprintf(G.f_txt, " GCMP");
 		}
 
 		fprintf(G.f_txt, ",");
@@ -572,8 +571,9 @@ static char * sanitize_xml(unsigned char * text, int length)
 					break;
 			}
 		}
-		newtext = (char *) realloc(newtext, strlen(newtext) + 1);
-		ALLEGE(newtext != NULL);
+		char * tmp_newtext = (char *) realloc(newtext, strlen(newtext) + 1);
+		ALLEGE(tmp_newtext != NULL);
+		newtext = tmp_newtext;
 	}
 
 	return (newtext);
@@ -1404,9 +1404,7 @@ int dump_write_kismet_csv(void)
 			if (ap_cur->security & ENC_TKIP) fprintf(G.f_kis, "TKIP,");
 			if (ap_cur->security & ENC_WEP104) fprintf(G.f_kis, "WEP104,");
 			if (ap_cur->security & ENC_WEP40) fprintf(G.f_kis, "WEP40,");
-			/*            if( ap_cur->security & ENC_WEP    ) fprintf( G.f_kis,
-			 * " WEP,");*/
-			if (ap_cur->security & ENC_WEP40) fprintf(G.f_kis, "GCMP,");
+			if (ap_cur->security & ENC_GCMP) fprintf(G.f_kis, "GCMP,");
 		}
 
 		fseek(G.f_kis, -1, SEEK_CUR);

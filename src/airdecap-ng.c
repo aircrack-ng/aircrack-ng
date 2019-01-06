@@ -1014,7 +1014,7 @@ int main(int argc, char * argv[])
 					continue;
 				}
 
-				memcpy(st_cur->keymic, &h80211[z + 81], 16);
+				memcpy(st_cur->keymic, &h80211[z + 81], 16); //-V512
 				memcpy(st_cur->eapol, &h80211[z], st_cur->eapol_size);
 				memset(st_cur->eapol + 81, 0, 16);
 

@@ -1728,17 +1728,17 @@ read_packets:
 			usleep(1000000 / RTC_RESOLUTION);
 			gettimeofday(&tv2, NULL);
 
-			f = 1000000 * (float) (tv2.tv_sec - tv.tv_sec)
+			f = 1000000.f * (float) (tv2.tv_sec - tv.tv_sec)
 				+ (float) (tv2.tv_usec - tv.tv_usec);
 
-			ticks[0] += f / (1000000 / RTC_RESOLUTION);
-			ticks[1] += f / (1000000 / RTC_RESOLUTION);
-			ticks[2] += f / (1000000 / RTC_RESOLUTION);
+			ticks[0] += f / (1000000.f / (float) RTC_RESOLUTION);
+			ticks[1] += f / (1000000.f / (float) RTC_RESOLUTION);
+			ticks[2] += f / (1000000.f / (float) RTC_RESOLUTION);
 		}
 
 		/* update the status line */
 
-		if (ticks[1] > RTC_RESOLUTION / 10)
+		if (ticks[1] > (float) RTC_RESOLUTION / 10.f)
 		{
 			ticks[1] = 0;
 			printf("\rSent %lu packets...(%d pps)",
@@ -2042,7 +2042,7 @@ static int do_attack_arp_resend(void)
 				if (h80211[7] == 0x40)
 					n = 64;
 				else
-					n = *(int *) (h80211 + 4);
+					n = *(int *) (h80211 + 4); //-V1032
 
 				if (n < 8 || n >= (int) caplen) continue;
 
@@ -2347,6 +2347,7 @@ static int do_attack_caffe_latte(void)
 										* sizeof(struct ARP_req));
 	else
 		arp = (struct ARP_req *) malloc(sizeof(struct ARP_req));
+	ALLEGE(arp != NULL);
 
 	memset(ticks, 0, sizeof(ticks));
 
@@ -2506,7 +2507,7 @@ static int do_attack_caffe_latte(void)
 				if (h80211[7] == 0x40)
 					n = 64;
 				else
-					n = *(int *) (h80211 + 4);
+					n = *(int *) (h80211 + 4); //-V1032
 
 				if (n < 8 || n >= (int) caplen) continue;
 
@@ -2999,7 +3000,7 @@ static int do_attack_migmode(void)
 				if (h80211[7] == 0x40)
 					n = 64;
 				else
-					n = *(int *) (h80211 + 4);
+					n = *(int *) (h80211 + 4); //-V1032
 
 				if (n < 8 || n >= (int) caplen) continue;
 
@@ -3456,7 +3457,7 @@ read_packets:
 		frag2[1] |= 0x04; // more frags
 		frag3[1] |= 0x04; // more frags
 
-		memcpy(frag1 + z + 4, S_LLC_SNAP_ARP, 4);
+		memcpy(frag1 + z + 4, S_LLC_SNAP_ARP, 4); //-V512
 		add_crc32(frag1 + z + 4, 4);
 		for (i = 0; i < 8; i++) (frag1 + z + 4)[i] ^= keystream[i];
 
@@ -3522,17 +3523,17 @@ read_packets:
 			usleep(1000000 / RTC_RESOLUTION);
 			gettimeofday(&tv2, NULL);
 
-			f = 1000000 * (float) (tv2.tv_sec - tv.tv_sec)
+			f = 1000000.f * (float) (tv2.tv_sec - tv.tv_sec)
 				+ (float) (tv2.tv_usec - tv.tv_usec);
 
-			ticks[0] += f / (1000000 / RTC_RESOLUTION);
-			ticks[1] += f / (1000000 / RTC_RESOLUTION);
-			ticks[2] += f / (1000000 / RTC_RESOLUTION);
+			ticks[0] += f / (1000000.f / (float) RTC_RESOLUTION);
+			ticks[1] += f / (1000000.f / (float) RTC_RESOLUTION);
+			ticks[2] += f / (1000000.f / (float) RTC_RESOLUTION);
 		}
 
 		/* update the status line */
 
-		if (ticks[1] > RTC_RESOLUTION / 10)
+		if (ticks[1] > (float) RTC_RESOLUTION / 10.f)
 		{
 			ticks[1] = 0;
 			printf("\rSent %lu packets...(%d pps)",
@@ -4459,7 +4460,7 @@ static int do_attack_fragment(void)
 
 		memcpy(packet, packet2, caplen2);
 		caplen = caplen2;
-		memcpy(prga, packet + z + 4, prga_len);
+		memcpy(prga, packet + z + 4, prga_len); //-V512
 		memcpy(iv, packet + z, 4);
 
 		xor_keystream(prga, snap_header, prga_len);
@@ -4633,12 +4634,12 @@ static int do_attack_fragment(void)
 			memcpy(ct + 32, opt.r_sip, 4);
 
 			// Calculating
-			memcpy(prga, packet + z + 4, 36);
+			memcpy(prga, packet + z + 4, 36); //-V512
 			xor_keystream(prga, ct, 36);
 		}
 		else
 		{
-			memcpy(prga, packet + z + 4, 36);
+			memcpy(prga, packet + z + 4, 36); //-V512
 			xor_keystream(prga, h80211 + 24, 36);
 		}
 
@@ -4800,7 +4801,7 @@ static int do_attack_fragment(void)
 		}
 
 		memcpy(iv, packet + z, 4);
-		memcpy(prga, packet + z + 4, 384);
+		memcpy(prga, packet + z + 4, 384); //-V512
 		xor_keystream(prga, h80211 + 24, 384);
 
 		round = 0;
@@ -5415,7 +5416,6 @@ static int do_attack_test(void)
 	memset(ap, '\0', sizeof(ap));
 
 	essidlen = strlen(opt.r_essid);
-	if (essidlen > 250) essidlen = 250;
 
 	if (essidlen > 0)
 	{

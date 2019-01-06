@@ -454,7 +454,6 @@ static int check_received(unsigned char * packet, unsigned length)
 						ivs2.flags = 0;
 						ivs2.len = 0;
 
-						ivs2.len = sizeof(struct WPA_hdsk);
 						ivs2.flags |= IVS2_WPA;
 
 						ivs2.flags |= IVS2_BSSID;
@@ -688,7 +687,7 @@ static int check_guess(unsigned char * srcbuf,
 	{
 		arp[15] = j;
 
-		memcpy(arp + 26, ZERO, 6);
+		memcpy(arp + 26, ZERO, 6); //-V512
 		if (check_crc_buf(arp, caplen - z - 8 - 4) == 1)
 		{
 			for (i = 0; i < pos; i++)
@@ -806,7 +805,7 @@ static int guess_packet(unsigned char * srcbuf,
 	else
 	{
 		printf("ARP Request\n");
-		memcpy(pdmac, ZERO, 6);
+		memcpy(pdmac, ZERO, 6); //-V512
 	}
 
 	if (caplen - z - 8 - clearlen == 36)
@@ -1676,7 +1675,7 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 
 		/* update the status line */
 
-		if (ticks[1] > (RTC_RESOLUTION / 10))
+		if (ticks[1] > ((float) RTC_RESOLUTION / 10.f))
 		{
 			ticks[1] = 0;
 			printf("\rSent %3lu packets, current guess: %02X...",
@@ -2360,7 +2359,6 @@ int main(int argc, char * argv[])
 	opt.bittest = 0;
 	opt.fast = -1;
 	opt.r_smac_set = 0;
-	opt.npackets = 1;
 	opt.nodetect = 0;
 	lopt.mic_failure_interval = DEFAULT_MIC_FAILURE_INTERVAL;
 
@@ -2947,7 +2945,7 @@ int main(int argc, char * argv[])
 		memcpy(lopt.wpa_sta.bssid, opt.f_bssid, 6);
 		memcpy(lopt.wpa_sta.snonce, lopt.wpa.snonce, 32);
 		memcpy(lopt.wpa_sta.anonce, lopt.wpa.anonce, 32);
-		memcpy(lopt.wpa_sta.keymic, lopt.wpa.keymic, 20);
+		memcpy(lopt.wpa_sta.keymic, lopt.wpa.keymic, 20); //-V512
 		memcpy(lopt.wpa_sta.eapol, lopt.wpa.eapol, 256);
 		lopt.wpa_sta.eapol_size = lopt.wpa.eapol_size;
 		lopt.wpa_sta.keyver = lopt.wpa.keyver;

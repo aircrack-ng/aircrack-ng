@@ -46,9 +46,9 @@
 extern struct communication_options opt;
 extern struct devices dev;
 struct wif *_wi_in = NULL, *_wi_out = NULL;
-uint8_t h80211[4096];
-uint8_t tmpbuf[4096];
-static char strbuf[512];
+uint8_t h80211[4096] __attribute__((aligned(16)));
+uint8_t tmpbuf[4096] __attribute__((aligned(16)));
+static char strbuf[512] __attribute__((aligned(16)));
 
 int read_packet(struct wif * wi,
 				void * buf,
@@ -560,7 +560,7 @@ int capture_ask_packet(int * caplen, int just_grab)
 				if (h80211[7] == 0x40)
 					n = 64;
 				else
-					n = *(int *) (h80211 + 4);
+					n = *(int *) (h80211 + 4); //-V1032
 
 				if (n < 8 || n >= (int) *caplen) continue;
 
@@ -573,7 +573,7 @@ int capture_ask_packet(int * caplen, int just_grab)
 			{
 				/* remove the radiotap header */
 
-				n = *(unsigned short *) (h80211 + 2);
+				n = *(unsigned short *) (h80211 + 2); //-V1032
 
 				if (n <= 0 || n >= (int) *caplen) continue;
 
@@ -586,7 +586,7 @@ int capture_ask_packet(int * caplen, int just_grab)
 			{
 				/* remove the PPI header */
 
-				n = le16_to_cpu(*(unsigned short *) (h80211 + 2));
+				n = le16_to_cpu(*(unsigned short *) (h80211 + 2)); //-V1032
 
 				if (n <= 0 || n >= (int) *caplen) continue;
 
@@ -595,7 +595,7 @@ int capture_ask_packet(int * caplen, int just_grab)
 					&& le16_to_cpu(*(unsigned short *) (h80211 + 8)) == 2)
 					n = 32;
 
-				if (n <= 0 || n >= (int) *caplen) continue;
+				if (n <= 0 || n >= (int) *caplen) continue; //-V560
 
 				memcpy(tmpbuf, h80211, *caplen);
 				*caplen -= n;

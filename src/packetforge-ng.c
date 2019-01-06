@@ -788,7 +788,7 @@ static int forge_udp(void)
 	h80211[57] = '\x09';
 
 	/* generate + set ip checksum */
-	chksum = ip_chksum((unsigned short *) (h80211 + 32), 20);
+	chksum = ip_chksum((unsigned short *) (h80211 + 32), 20); //-V1032
 	memcpy(h80211 + 42, &chksum, 2); //-V512
 
 	return (0);
@@ -819,7 +819,7 @@ static int forge_icmp(void)
 	if (set_ipid(h80211, 36) != 0) return (1);
 
 	/* generate + set ip checksum */
-	chksum = ip_chksum((unsigned short *) (h80211 + 32), 20);
+	chksum = ip_chksum((unsigned short *) (h80211 + 32), 20); //-V1032
 	memcpy(h80211 + 42, &chksum, 2);
 
 	return (0);

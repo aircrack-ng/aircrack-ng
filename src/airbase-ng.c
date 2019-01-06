@@ -1972,7 +1972,6 @@ static int store_wpa_handshake(struct ST_info * st_cur)
 
 	// add wpa data
 	ivs2.flags = 0;
-	ivs2.len = 0;
 
 	ivs2.len = sizeof(struct WPA_hdsk);
 	ivs2.flags |= IVS2_WPA;
@@ -3903,7 +3902,7 @@ int main(int argc, char * argv[])
 					opt.filter
 						= ALLOW_MACS; // block all, allow the specified macs
 				}
-				else if (strncasecmp(optarg, "disallow", 5) == 0
+				else if (strncasecmp(optarg, "disallow", 8) == 0
 						 || strncmp(optarg, "1", 1) == 0)
 				{
 					opt.filter
@@ -4606,7 +4605,7 @@ int main(int argc, char * argv[])
 				if (h80211[7] == 0x40)
 					n = 64;
 				else
-					n = *(int *) (h80211 + 4);
+					n = *(int *) (h80211 + 4); //-V1032
 
 				if (n < 8 || n >= (int) caplen) continue;
 

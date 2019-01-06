@@ -69,7 +69,7 @@ int addFrag(unsigned char * packet,
 	seq = (frame[22] >> 4) | (frame[23] << 4);
 	wep = (frame[1] & 0x40) >> 6;
 
-	if (frag < 0 || frag > 15) return (-1);
+	ALLEGE(frag >= 0 && frag <= 15); //-V560
 
 	if (wep && crypt != CRYPT_WEP) return (-1);
 
@@ -110,6 +110,7 @@ int addFrag(unsigned char * packet,
 				cur->fragnum = (char) frag; // no higher frag number possible
 			}
 			cur->fragment[frag] = (unsigned char *) malloc((size_t) len - z);
+			ALLEGE(cur->fragment[frag] != NULL);
 			memcpy(cur->fragment[frag], frame + z, (size_t) len - z);
 			cur->fragmentlen[frag] = (short) (len - z);
 			gettimeofday(&cur->access, NULL);
@@ -268,7 +269,7 @@ unsigned char * getCompleteFrag(unsigned char * smac,
 
 					memcpy(packet, old->header, (size_t) old->headerlen);
 					len = old->headerlen;
-					memcpy(packet + len, K, 4);
+					memcpy(packet + len, K, 4); //-V512
 					len += 4;
 
 					for (i = 0; i <= old->fragnum; i++)
