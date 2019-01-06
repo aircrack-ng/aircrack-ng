@@ -36,6 +36,7 @@
 #define AIRCRACK_NG_COMMUNICATIONS_H
 
 #include <errno.h>
+#include <limits.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <sys/time.h>
@@ -243,7 +244,7 @@ static inline int send_packet(struct wif * wi,
 							  bool rewriteSequenceNumber)
 {
 	REQUIRE(buf != NULL);
-	REQUIRE(count > 0);
+	REQUIRE(count > 0 && count < INT_MAX);
 
 	uint8_t * pkt = (uint8_t *) buf;
 
