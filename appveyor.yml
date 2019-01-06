@@ -3,6 +3,9 @@ version: 1.0.{build}
 pull_requests:
   do_not_increment_build_number: true
 
+# Do not build feature branch with open Pull Requests
+skip_branch_with_pr: true
+
 image: Visual Studio 2017
 
 configuration: Release
