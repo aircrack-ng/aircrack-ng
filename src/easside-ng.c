@@ -1465,7 +1465,7 @@ static void read_wifi(struct east_state * es)
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 
 	const int len = wi_read(es->es_wi, buf, sizeof(buf), NULL);
-	if (len < 0 || len > sizeof(buf)) err(1, "wi_read()");
+	if (len < 0 || (size_t) len > sizeof(buf)) err(1, "wi_read()");
 
 	/* XXX: I don't do any length chex */
 	if (len < 2)
