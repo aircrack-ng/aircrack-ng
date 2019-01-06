@@ -87,6 +87,7 @@ struct communication_options
 	char * s_face;
 	char * s_file;
 	uint8_t * prga;
+	size_t prgalen;
 
 	int a_mode;
 	int a_count;
@@ -95,7 +96,6 @@ struct communication_options
 
 	int ringbuffer;
 	int ghost;
-	int prgalen;
 
 	int delay;
 	int npackets;
@@ -110,6 +110,23 @@ struct communication_options
 	int reassoc;
 
 	int crypt;
+	uint8_t wepkey[64];
+	size_t weplen;
+
+	int f_index; /* outfiles index       */
+	FILE * f_cap; /* output cap file      */
+	FILE * f_xor; /* output prga file     */
+	char * f_cap_name;
+	char * prefix;
+
+	unsigned char sharedkey[3][4096]; /* array for 3 packets with a size of \
+							   up to 4096Byte */
+	time_t sk_start;
+	size_t sk_len;
+	size_t sk_len2;
+
+	int quiet;
+	int verbose;
 };
 
 struct devices
@@ -296,5 +313,17 @@ int getnet(struct wif * wi,
 
 int capture_ask_packet(int * caplen, int just_grab);
 int filter_packet(unsigned char * h80211, int caplen);
+
+int dump_initialize(char * prefix);
+
+int check_shared_key(const uint8_t * h80211, size_t caplen);
+int encrypt_data(uint8_t * data, size_t length);
+
+int create_wep_packet(uint8_t * packet, size_t * length, size_t hdrlen);
+
+int set_clear_arp(uint8_t * buf, uint8_t * smac, uint8_t * dmac);
+int set_final_arp(uint8_t * buf, uint8_t * mymac);
+int set_clear_ip(uint8_t * buf, size_t ip_len);
+int set_final_ip(uint8_t * buf, uint8_t * mymac);
 
 #endif //AIRCRACK_NG_COMMUNICATIONS_H

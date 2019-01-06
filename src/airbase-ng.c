@@ -211,41 +211,15 @@ static const char usage[]
 	  "      --help           : Displays this usage screen\n"
 	  "\n";
 
-struct local_options
+struct communication_options opt;
+static struct local_options
 {
 	struct ST_info *st_1st, *st_end;
 
-	unsigned char r_bssid[6];
-	unsigned char r_dmac[6];
-	unsigned char r_smac[6];
-
-	unsigned char f_bssid[6];
-	unsigned char f_netmask[6];
-
-	char * s_face;
-	char * s_file;
-	unsigned char * prga;
-
 	char * dump_prefix;
 	char * keyout;
-	char * f_cap_name;
-	char * prefix;
 
-	int f_index; /* outfiles index       */
-	FILE * f_cap; /* output cap file      */
-	FILE * f_xor; /* output prga file     */
-	unsigned char sharedkey[3][4096]; /* array for 3 packets with a size of \
-							   up to 4096Byte */
-	time_t sk_start;
-	int sk_len;
-	int sk_len2;
-
-	int r_nbpps;
-	int prgalen;
 	int tods;
-
-	unsigned char wepkey[64];
-	int weplen, crypt;
 
 	int f_essid;
 	int promiscuous;
@@ -261,7 +235,6 @@ struct local_options
 	int skalen;
 	int filter;
 	int caffelatte;
-	int ringbuffer;
 	int adhoc;
 	int nb_arp;
 	int verbose;
@@ -280,7 +253,7 @@ struct local_options
 	// Fixed nonce
 	int use_fixed_nonce;
 	unsigned char fixed_nonce[32];
-} opt;
+} lopt;
 
 struct devices dev;
 extern struct wif *_wi_in, *_wi_out;
@@ -350,8 +323,8 @@ struct CF_packet
 {
 	unsigned char frags[3][128]; /* first fragments to fill a gap */
 	unsigned char final[4096]; /* final frame derived from orig */
-	int fraglen[3]; /* fragmentation frame lengths   */
-	int finallen; /* length of frame in final[]    */
+	size_t fraglen[3]; /* fragmentation frame lengths   */
+	size_t finallen; /* length of frame in final[]    */
 	int xmitcount; /* how often was this frame sent */
 	unsigned char fragnum; /* number of fragments to send   */
 	pCF_t next; /* next set of fragments to send */
@@ -516,82 +489,6 @@ static int capture_packet(unsigned char * packet, int length)
 #endif
 	}
 	return 0;
-}
-
-static int dump_initialize(char * prefix)
-{
-	const size_t ADDED_LENGTH = 7;
-	FILE * f;
-	char * ofn;
-	size_t ofn_len;
-	struct pcap_file_header pfh;
-
-	if (prefix == NULL)
-	{
-		return (0);
-	}
-
-	ofn_len = strlen(prefix) + ADDED_LENGTH + 1;
-	ofn = (char *) calloc(1, ofn_len);
-	ALLEGE(ofn != NULL);
-
-	/* Get the index for the filename so we don't overwrite an existing file */
-	opt.f_index = 1;
-
-	do
-	{
-		snprintf(ofn, ofn_len, "%s-%02d.%s", prefix, opt.f_index, "cap");
-
-		if ((f = fopen(ofn, "rb+")) != NULL)
-		{
-			fclose(f);
-			opt.f_index++;
-			continue;
-		}
-		break;
-	} while (1);
-
-	opt.prefix = (char *) calloc(1, strlen(prefix) + 1);
-	memcpy(opt.prefix, prefix, strlen(prefix));
-
-	/* create the output packet capture file */
-
-	snprintf(ofn, ofn_len, "%s-%02d.cap", prefix, opt.f_index);
-
-	if ((opt.f_cap = fopen(ofn, "wb+")) == NULL)
-	{
-		perror("fopen failed");
-		fprintf(stderr, "Could not create \"%s\".\n", ofn);
-		free(ofn);
-		return (1);
-	}
-
-	opt.f_cap_name = ofn;
-
-	pfh.magic = TCPDUMP_MAGIC;
-	pfh.version_major = PCAP_VERSION_MAJOR;
-	pfh.version_minor = PCAP_VERSION_MINOR;
-	pfh.thiszone = 0;
-	pfh.sigfigs = 0;
-	pfh.snaplen = 65535;
-	pfh.linktype = LINKTYPE_IEEE802_11;
-
-	if (fwrite(&pfh, 1, sizeof(pfh), opt.f_cap) != (size_t) sizeof(pfh))
-	{
-		perror("fwrite(pcap file header) failed");
-		free(ofn);
-		return (1);
-	}
-
-	if (!opt.quiet)
-	{
-		PCT;
-		printf("Created capture file \"%s\".\n", ofn);
-	}
-
-	free(ofn);
-
-	return (0);
 }
 
 static int addMAC(pMAC_t pMAC, unsigned char * mac)
@@ -876,7 +773,7 @@ static int my_send_packet(void * buf, size_t count)
 	int rc = send_packet(_wi_out, buf, count, false);
 
 	ALLEGE(pthread_mutex_lock(&mx_cap) == 0);
-	if (opt.record_data) capture_packet(buf, count);
+	if (lopt.record_data) capture_packet(buf, (int) count);
 	ALLEGE(pthread_mutex_unlock(&mx_cap) == 0);
 
 	return (rc);
@@ -929,254 +826,9 @@ static int msleep(int msec)
 	return (0);
 }
 
-static int check_shared_key(unsigned char * h80211, int caplen)
-{
-	int m_bmac, m_smac, m_dmac, n, textlen;
-	char ofn[1024];
-	unsigned char text[4096];
-	unsigned char prga[4096];
-	unsigned int long crc;
-
-	if ((unsigned) caplen > sizeof(opt.sharedkey[0])) return (1);
-
-	m_bmac = 16;
-	m_smac = 10;
-	m_dmac = 4;
-
-	if (time(NULL) - opt.sk_start > 5)
-	{
-		/* timeout(5sec) - remove all packets, restart timer */
-		memset(opt.sharedkey, '\x00', 4096 * 3);
-		opt.sk_start = time(NULL);
-	}
-
-	/* is auth packet */
-	if ((h80211[1] & 0x40) != 0x40)
-	{
-		/* not encrypted */
-		if ((h80211[24] + (h80211[25] << 8)) == 1)
-		{
-			/* Shared-Key Authentication */
-			if ((h80211[26] + (h80211[27] << 8)) == 2)
-			{
-				/* sequence == 2 */
-				memcpy(opt.sharedkey[0], h80211, caplen);
-				opt.sk_len = caplen - 24;
-			}
-			if ((h80211[26] + (h80211[27] << 8)) == 4)
-			{
-				/* sequence == 4 */
-				memcpy(opt.sharedkey[2], h80211, caplen);
-			}
-		}
-		else
-			return (1);
-	}
-	else
-	{
-		/* encrypted */
-		memcpy(opt.sharedkey[1], h80211, caplen);
-		opt.sk_len2 = caplen - 24 - 4;
-	}
-
-	/* check if the 3 packets form a proper authentication */
-
-	if ((memcmp(opt.sharedkey[0] + m_bmac, NULL_MAC, 6) == 0)
-		|| (memcmp(opt.sharedkey[1] + m_bmac, NULL_MAC, 6) == 0)
-		|| (memcmp(opt.sharedkey[2] + m_bmac, NULL_MAC, 6)
-			== 0)) /* some bssids == zero */
-	{
-		return (1);
-	}
-
-	if ((memcmp(opt.sharedkey[0] + m_bmac, opt.sharedkey[1] + m_bmac, 6) != 0)
-		|| (memcmp(opt.sharedkey[0] + m_bmac, opt.sharedkey[2] + m_bmac, 6)
-			!= 0)) /* all bssids aren't equal */
-	{
-		return (1);
-	}
-
-	if ((memcmp(opt.sharedkey[0] + m_smac, opt.sharedkey[2] + m_smac, 6) != 0)
-		|| (memcmp(opt.sharedkey[0] + m_smac, opt.sharedkey[1] + m_dmac, 6)
-			!= 0)) /* SA in 2&4 != DA in 3 */
-	{
-		return (1);
-	}
-
-	if ((memcmp(opt.sharedkey[0] + m_dmac, opt.sharedkey[2] + m_dmac, 6) != 0)
-		|| (memcmp(opt.sharedkey[0] + m_dmac, opt.sharedkey[1] + m_smac, 6)
-			!= 0)) /* DA in 2&4 != SA in 3 */
-	{
-		return (1);
-	}
-
-	textlen = opt.sk_len;
-
-	if (textlen + 4 != opt.sk_len2)
-	{
-		if (!opt.quiet)
-		{
-			PCT;
-			printf("Broken SKA: %02X:%02X:%02X:%02X:%02X:%02X (expected: %d, "
-				   "got %d bytes)\n",
-				   *(opt.sharedkey[0] + m_dmac),
-				   *(opt.sharedkey[0] + m_dmac + 1),
-				   *(opt.sharedkey[0] + m_dmac + 2),
-				   *(opt.sharedkey[0] + m_dmac + 3),
-				   *(opt.sharedkey[0] + m_dmac + 4),
-				   *(opt.sharedkey[0] + m_dmac + 5),
-				   textlen + 4,
-				   opt.sk_len2);
-		}
-		return (1);
-	}
-
-	if ((unsigned) textlen > sizeof(text) - 4) return (1);
-
-	memcpy(text, opt.sharedkey[0] + 24, textlen);
-
-	/* increment sequence number from 2 to 3 */
-	text[2] = text[2] + 1;
-
-	crc = 0xFFFFFFFF;
-
-	for (n = 0; n < textlen; n++)
-		crc = crc_tbl[(crc ^ text[n]) & 0xFF] ^ (crc >> 8);
-
-	crc = ~crc;
-
-	/* append crc32 over body */
-	text[textlen] = (crc) &0xFF;
-	text[textlen + 1] = (crc >> 8) & 0xFF;
-	text[textlen + 2] = (crc >> 16) & 0xFF;
-	text[textlen + 3] = (crc >> 24) & 0xFF;
-
-	/* cleartext XOR cipher */
-	for (n = 0; n < (textlen + 4); n++)
-	{
-		prga[4 + n] = (text[n] ^ opt.sharedkey[1][28 + n]) & 0xFF;
-	}
-
-	/* write IV+index */
-	prga[0] = opt.sharedkey[1][24] & 0xFF;
-	prga[1] = opt.sharedkey[1][25] & 0xFF;
-	prga[2] = opt.sharedkey[1][26] & 0xFF;
-	prga[3] = opt.sharedkey[1][27] & 0xFF;
-
-	if (opt.f_xor != NULL)
-	{
-		fclose(opt.f_xor);
-		opt.f_xor = NULL;
-	}
-
-	snprintf(ofn,
-			 sizeof(ofn) - 1,
-			 "keystream-%02d-%02X-%02X-%02X-%02X-%02X-%02X.%s",
-			 opt.f_index,
-			 *(opt.sharedkey[0] + m_dmac),
-			 *(opt.sharedkey[0] + m_dmac + 1),
-			 *(opt.sharedkey[0] + m_dmac + 2),
-			 *(opt.sharedkey[0] + m_dmac + 3),
-			 *(opt.sharedkey[0] + m_dmac + 4),
-			 *(opt.sharedkey[0] + m_dmac + 5),
-			 "xor");
-
-	opt.f_index++;
-
-	opt.f_xor = fopen(ofn, "w");
-	if (opt.f_xor == NULL) return (1);
-
-	for (n = 0; n < textlen + 8; n++) fputc((prga[n] & 0xFF), opt.f_xor);
-
-	fflush(opt.f_xor);
-
-	if (opt.f_xor != NULL)
-	{
-		fclose(opt.f_xor);
-		opt.f_xor = NULL;
-	}
-
-	if (!opt.quiet)
-	{
-		PCT;
-		printf("Got %d bytes keystream: %02X:%02X:%02X:%02X:%02X:%02X\n",
-			   textlen + 4,
-			   *(opt.sharedkey[0] + m_dmac),
-			   *(opt.sharedkey[0] + m_dmac + 1),
-			   *(opt.sharedkey[0] + m_dmac + 2),
-			   *(opt.sharedkey[0] + m_dmac + 3),
-			   *(opt.sharedkey[0] + m_dmac + 4),
-			   *(opt.sharedkey[0] + m_dmac + 5));
-	}
-
-	memset(opt.sharedkey, '\x00', 512 * 3);
-
-	/* ok, keystream saved */
-	return (0);
-}
-
 #define IEEE80211_LLC_SNAP                                                     \
 	"\x08\x00\x00\x00\xDD\xDD\xDD\xDD\xDD\xDD\xBB\xBB\xBB\xBB\xBB\xBB"         \
 	"\xCC\xCC\xCC\xCC\xCC\xCC\xE0\x32\xAA\xAA\x03\x00\x00\x00\x08\x00"
-
-static int encrypt_data(unsigned char * data, int length)
-{
-	unsigned char cipher[4096];
-	unsigned char K[128];
-
-	if (data == NULL) return (1);
-	if (length < 1 || length > 2044) return (1);
-
-	if (opt.prga == NULL && opt.crypt != CRYPT_WEP)
-	{
-		printf("Please specify a WEP key (-w).\n");
-		return (1);
-	}
-
-	if (opt.prgalen - 4 < length && opt.crypt != CRYPT_WEP)
-	{
-		printf(
-			"Please specify a longer PRGA file (-y) with at least %i bytes.\n",
-			(length + 4));
-		return (1);
-	}
-
-	/* encrypt data */
-	if (opt.crypt == CRYPT_WEP)
-	{
-		K[0] = rand() & 0xFF;
-		K[1] = rand() & 0xFF;
-		K[2] = rand() & 0xFF;
-		memcpy(K + 3, opt.wepkey, opt.weplen);
-
-		encrypt_wep(data, length, K, opt.weplen + 3);
-		memcpy(cipher, data, length);
-		memcpy(data + 4, cipher, length);
-		memcpy(data, K, 3);
-		data[3] = 0x00;
-	}
-
-	return (0);
-}
-
-static int create_wep_packet(unsigned char * packet, int * length, int hdrlen)
-{
-	if (packet == NULL) return (1);
-
-	/* write crc32 value behind data */
-	if (add_crc32(packet + hdrlen, *length - hdrlen) != 0) return (1);
-
-	/* encrypt data+crc32 and keep a 4byte hole */
-	if (encrypt_data(packet + hdrlen, *length - hdrlen + 4) != 0) return (1);
-
-	/* set WEP bit */
-	packet[1] = packet[1] | 0x40;
-
-	*length += 8;
-	/* now you got yourself a shiny, brand new encrypted wep packet ;) */
-
-	return (0);
-}
 
 static int intercept(unsigned char * packet, int length)
 {
@@ -1196,7 +848,9 @@ static int intercept(unsigned char * packet, int length)
 		memcpy(K, packet + z, 3);
 		memcpy(K + 3, opt.wepkey, opt.weplen);
 
-		if (decrypt_wep(packet + z + 4, length - z - 4, K, 3 + opt.weplen) == 0)
+		if (decrypt_wep(
+				packet + z + 4, length - z - 4, K, (int) (3 + opt.weplen))
+			== 0)
 		{
 			// ICV check failed!
 			return (1);
@@ -1207,14 +861,14 @@ static int intercept(unsigned char * packet, int length)
 
 		length -= 8;
 
-		memcpy(packet + z, packet + z + 4, length - z);
+		memcpy(packet + z, packet + z + 4, (size_t) length - z);
 	}
 
 	/* clear wep bit */
 	packet[1] &= 0xBF;
 
 	// insert ethernet header
-	memcpy(buf + 14, packet, length);
+	memcpy(buf + 14, packet, (size_t) length);
 	length += 14;
 
 	ti_write(dev.dv_ti2, buf, length);
@@ -1225,23 +879,23 @@ static int packet_xmit(unsigned char * packet, int length)
 {
 	unsigned char buf[4096];
 	int fragments = 1, i;
-	int newlen = 0, usedlen = 0, length2;
+	size_t newlen = 0, usedlen = 0, length2;
 
 	if (packet == NULL) return (1);
 
 	if (length < 38) return (1);
 
-	if (length - 14 > 16 * opt.wif_mtu - MAX_FRAME_EXTENSION) return (1);
+	if (length - 14 > 16 * lopt.wif_mtu - MAX_FRAME_EXTENSION) return (1);
 
-	if (length + MAX_FRAME_EXTENSION > opt.wif_mtu)
-		fragments = ((length - 14 + MAX_FRAME_EXTENSION) / opt.wif_mtu) + 1;
+	if (length + MAX_FRAME_EXTENSION > lopt.wif_mtu)
+		fragments = ((length - 14 + MAX_FRAME_EXTENSION) / lopt.wif_mtu) + 1;
 
 	if (fragments > 16) return (1);
 
 	if (fragments > 1)
-		newlen = (length - 14 + MAX_FRAME_EXTENSION) / fragments;
+		newlen = (length - 14u + MAX_FRAME_EXTENSION) / fragments;
 	else
-		newlen = length - 14;
+		newlen = length - 14u;
 
 	for (i = 0; i < fragments; i++)
 	{
@@ -1276,14 +930,14 @@ static int packet_xmit(unsigned char * packet, int length)
 
 		length2 = newlen + 32;
 
-		if ((opt.external & EXT_OUT))
+		if ((lopt.external & EXT_OUT))
 		{
 			memset(buf, 0, 4096);
 			memcpy(buf + 14, h80211, length2);
 			// mark it as outgoing packet
 			buf[12] = 0xFF;
 			buf[13] = 0xFF;
-			ti_write(dev.dv_ti2, buf, length2 + 14);
+			ti_write(dev.dv_ti2, buf, (int) length2 + 14);
 		}
 		else
 		{
@@ -1299,19 +953,21 @@ static int packet_xmit(unsigned char * packet, int length)
 
 		if ((i + 1) < fragments) usleep(3000);
 	}
+
 	return (0);
 }
 
-static int packet_recv(unsigned char * packet,
-					   int length,
+static int packet_recv(uint8_t * packet,
+					   size_t length,
 					   struct AP_conf * apc,
 					   int external);
 
-static int
-packet_xmit_external(unsigned char * packet, int length, struct AP_conf * apc)
+static int packet_xmit_external(unsigned char * packet,
+								size_t length,
+								struct AP_conf * apc)
 {
-	unsigned char buf[4096];
-	int z = 0;
+	uint8_t buf[4096];
+	size_t z = 0;
 
 	if (packet == NULL) return (1);
 
@@ -1427,7 +1083,8 @@ parse_tags(unsigned char * flags, unsigned char type, int length, int * taglen)
 	return (NULL);
 }
 
-static int wpa_client(struct ST_info * st_cur, unsigned char * tag, int length)
+static int
+wpa_client(struct ST_info * st_cur, const unsigned char * tag, int length)
 {
 	if (tag == NULL) return (1);
 
@@ -1477,83 +1134,8 @@ static int wpa_client(struct ST_info * st_cur, unsigned char * tag, int length)
 	return (0);
 }
 
-static int set_clear_arp(unsigned char * buf,
-						 unsigned char * smac,
-						 unsigned char * dmac) // set first 22 bytes
-{
-	if (buf == NULL) return (-1);
-
-	memcpy(buf, S_LLC_SNAP_ARP, 8);
-	buf[8] = 0x00;
-	buf[9] = 0x01; // ethernet
-	buf[10] = 0x08; // IP
-	buf[11] = 0x00;
-	buf[12] = 0x06; // hardware size
-	buf[13] = 0x04; // protocol size
-	buf[14] = 0x00;
-	if (memcmp(dmac, BROADCAST, 6) == 0)
-		buf[15] = 0x01; // request
-	else
-		buf[15] = 0x02; // reply
-	memcpy(buf + 16, smac, 6);
-
-	return (0);
-}
-
-static int set_final_arp(unsigned char * buf, unsigned char * mymac)
-{
-	if (buf == NULL) return (-1);
-
-	// shifted by 10bytes to set source IP as target IP :)
-
-	buf[0] = 0x08; // IP
-	buf[1] = 0x00;
-	buf[2] = 0x06; // hardware size
-	buf[3] = 0x04; // protocol size
-	buf[4] = 0x00;
-	buf[5] = 0x01; // request
-	memcpy(buf + 6, mymac, 6); // sender mac
-	buf[12] = 0xA9; // sender IP 169.254.87.197
-	buf[13] = 0xFE;
-	buf[14] = 0x57;
-	buf[15] = 0xC5; // end sender IP
-
-	return (0);
-}
-
-static int set_clear_ip(unsigned char * buf, int ip_len) // set first 9 bytes
-{
-	if (buf == NULL) return (-1);
-
-	memcpy(buf, S_LLC_SNAP_IP, 8);
-	buf[8] = 0x45;
-	buf[10] = (ip_len >> 8) & 0xFF;
-	buf[11] = ip_len & 0xFF;
-
-	return (0);
-}
-
-static int set_final_ip(unsigned char * buf, unsigned char * mymac)
-{
-	if (buf == NULL) return (-1);
-
-	// shifted by 10bytes to set source IP as target IP :)
-
-	buf[0] = 0x06; // hardware size
-	buf[1] = 0x04; // protocol size
-	buf[2] = 0x00;
-	buf[3] = 0x01; // request
-	memcpy(buf + 4, mymac, 6); // sender mac
-	buf[10] = 0xA9; // sender IP from 169.254.XXX.XXX
-	buf[11] = 0xFE;
-	buf[12] = 0x57;
-	buf[13] = 0xC5; // end sender IP
-
-	return (0);
-}
-
 // add packet for client fragmentation attack
-static int addCF(unsigned char * packet, int length)
+static int addCF(unsigned char * packet, size_t length)
 {
 	pCF_t curCF = rCF;
 	unsigned char bssid[6];
@@ -1563,10 +1145,9 @@ static int addCF(unsigned char * packet, int length)
 	unsigned char frag1[128], frag2[128], frag3[128];
 	unsigned char clear[4096], final[4096], flip[4096];
 	int isarp;
-	int z, i;
+	size_t z, i;
 
 	if (curCF == NULL) return (1);
-
 	if (packet == NULL) return (1);
 
 	z = ((packet[1] & 3) != 3) ? 24 : 30;
@@ -1578,7 +1159,7 @@ static int addCF(unsigned char * packet, int length)
 		return (1);
 	}
 
-	if (opt.cf_count >= 100) return (1);
+	if (lopt.cf_count >= 100) return (1);
 
 	memset(clear, 0, 4096);
 	memset(final, 0, 4096);
@@ -1680,7 +1261,7 @@ static int addCF(unsigned char * packet, int length)
 
 		for (i = 0; i < length; i++) flip[i] = clear[i] ^ final[i];
 
-		add_crc32_plain(flip, length - z - 4 - 4);
+		add_crc32_plain(flip, (int) (length - z - 4 - 4));
 
 		for (i = 0; i < length - z - 4; i++) (packet + z + 4)[i] ^= flip[i];
 		packet[22] = 0xD1; // frag = 1;
@@ -1744,7 +1325,7 @@ static int addCF(unsigned char * packet, int length)
 
 		for (i = 0; i < length; i++) flip[i] = clear[i] ^ final[i];
 
-		add_crc32_plain(flip, length - z - 4 - 4);
+		add_crc32_plain(flip, (int) (length - z - 4 - 4));
 
 		for (i = 0; i < length - z - 4; i++) (packet + z + 4)[i] ^= flip[i];
 		packet[22] = 0xD3; // frag = 3;
@@ -1782,11 +1363,11 @@ static int addCF(unsigned char * packet, int length)
 		curCF->fragnum = 3; /* three frags and final frame */
 	}
 
-	opt.cf_count++;
+	lopt.cf_count++;
 
 	ALLEGE(pthread_mutex_unlock(&mx_cf) == 0);
 
-	if (opt.cf_count == 1 && !opt.quiet)
+	if (lopt.cf_count == 1 && !opt.quiet)
 	{
 		PCT;
 		printf("Starting Hirte attack against %02X:%02X:%02X:%02X:%02X:%02X at "
@@ -1843,7 +1424,7 @@ static int addarp(unsigned char * packet, int length)
 	// few clients do not honor ARP from its
 	// own MAC
 
-	if (opt.nb_arp >= opt.ringbuffer) return (-1);
+	if (lopt.nb_arp >= opt.ringbuffer) return (-1);
 
 	memset(flip, 0, 4096);
 
@@ -1855,13 +1436,13 @@ static int addarp(unsigned char * packet, int length)
 	add_crc32_plain(flip, length - z - 4 - 4);
 	for (i = 0; i < length - z - 4; i++) (packet + z + 4)[i] ^= flip[i];
 
-	arp[opt.nb_arp].buf = (unsigned char *) malloc(length);
-	ALLEGE(arp[opt.nb_arp].buf != NULL);
-	arp[opt.nb_arp].len = length;
-	memcpy(arp[opt.nb_arp].buf, packet, length);
-	opt.nb_arp++;
+	arp[lopt.nb_arp].buf = (unsigned char *) malloc(length);
+	ALLEGE(arp[lopt.nb_arp].buf != NULL);
+	arp[lopt.nb_arp].len = length;
+	memcpy(arp[lopt.nb_arp].buf, packet, length);
+	lopt.nb_arp++;
 
-	if (opt.nb_arp == 1 && !opt.quiet)
+	if (lopt.nb_arp == 1 && !opt.quiet)
 	{
 		PCT;
 		printf("Starting Caffe-Latte attack against "
@@ -1879,7 +1460,7 @@ static int addarp(unsigned char * packet, int length)
 	{
 		PCT;
 		printf("Added an ARP to the caffe-latte ringbuffer %d/%d\n",
-			   opt.nb_arp,
+			   lopt.nb_arp,
 			   opt.ringbuffer);
 	}
 
@@ -1962,7 +1543,7 @@ static int store_wpa_handshake(struct ST_info * st_cur)
 	ivs2.len -= 6;
 
 	/* write essid */
-	if (fwrite(st_cur->essid, 1, st_cur->essid_length, f_ivs)
+	if (fwrite(st_cur->essid, 1, (size_t) st_cur->essid_length, f_ivs)
 		!= (size_t) st_cur->essid_length)
 	{
 		perror("fwrite(IV essid) failed");
@@ -1997,29 +1578,30 @@ static int store_wpa_handshake(struct ST_info * st_cur)
 	return (0);
 }
 
-static int packet_recv(unsigned char * packet,
-					   int length,
-					   struct AP_conf * apc,
-					   int external)
+static int
+packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 {
 	REQUIRE(packet != NULL);
 
-	unsigned char K[64];
-	unsigned char bssid[6];
-	unsigned char smac[6];
-	unsigned char dmac[6];
-	int trailer = 0;
-	unsigned char * tag = NULL;
-	int len = 0, i = 0, c = 0;
-	unsigned char * buffer;
-	char essid[256];
+	uint8_t K[64];
+	uint8_t bssid[6];
+	uint8_t smac[6];
+	uint8_t dmac[6];
+	size_t trailer = 0;
+	uint8_t * tag = NULL;
+	size_t len = 0;
+	size_t i = 0;
+	int c = 0;
+	uint8_t * buffer;
+	uint8_t essid[256];
 	struct timeval tv1;
 	u_int64_t timestamp;
 	char fessid[MAX_IE_ELEMENT_SIZE + 1];
 	int seqnum, fragnum, morefrag;
 	int gotsource, gotbssid;
-	int remaining, bytes2use;
+	int remaining;
 	int reasso, fixed, temp_channel;
+	uint8_t bytes2use;
 	unsigned z;
 
 	struct ST_info * st_cur = NULL;
@@ -2030,14 +1612,14 @@ static int packet_recv(unsigned char * packet,
 	memset(essid, 0, 256);
 
 	ALLEGE(pthread_mutex_lock(&mx_cap) == 0);
-	if (opt.record_data) capture_packet(packet, length);
+	if (lopt.record_data) capture_packet(packet, (int) length);
 	ALLEGE(pthread_mutex_unlock(&mx_cap) == 0);
 
 	z = ((packet[1] & 3) != 3) ? 24 : 30;
 
 	if (packet[0] == 0x88) z += 2; /* handle QoS field */
 
-	if ((unsigned) length < z)
+	if (length < z)
 	{
 		return (1);
 	}
@@ -2078,15 +1660,15 @@ static int packet_recv(unsigned char * packet,
 	}
 
 	/* MAC Filter */
-	if (opt.filter >= 0)
+	if (lopt.filter >= 0)
 	{
 		if (getMACcount(rClient) > 0)
 		{
 			/* filter clients */
 			gotsource = gotMAC(rClient, smac);
 
-			if ((gotsource && opt.filter == BLOCK_MACS)
-				|| (!gotsource && opt.filter == ALLOW_MACS))
+			if ((gotsource && lopt.filter == BLOCK_MACS)
+				|| (!gotsource && lopt.filter == ALLOW_MACS))
 				return (0);
 		}
 		if (getMACcount(rBSSID) > 0)
@@ -2094,14 +1676,14 @@ static int packet_recv(unsigned char * packet,
 			/* filter bssids */
 			gotbssid = gotMAC(rBSSID, bssid);
 
-			if ((gotbssid && opt.filter == BLOCK_MACS)
-				|| (!gotbssid && opt.filter == ALLOW_MACS))
+			if ((gotbssid && lopt.filter == BLOCK_MACS)
+				|| (!gotbssid && lopt.filter == ALLOW_MACS))
 				return (0);
 		}
 	}
 
 	/* check list of clients */
-	st_cur = opt.st_1st;
+	st_cur = lopt.st_1st;
 	st_prv = NULL;
 
 	while (st_cur != NULL)
@@ -2124,8 +1706,8 @@ static int packet_recv(unsigned char * packet,
 
 		memset(st_cur, 0, sizeof(struct ST_info));
 
-		if (opt.st_1st == NULL)
-			opt.st_1st = st_cur;
+		if (lopt.st_1st == NULL)
+			lopt.st_1st = st_cur;
 		else
 			st_prv->next = st_cur;
 
@@ -2158,7 +1740,7 @@ static int packet_recv(unsigned char * packet,
 		st_cur->wpahash = 0;
 		st_cur->wep = 0;
 
-		opt.st_end = st_cur;
+		lopt.st_end = st_cur;
 	}
 
 	/* Got a data packet with our bssid set and ToDS==1*/
@@ -2172,9 +1754,18 @@ static int packet_recv(unsigned char * packet,
 		/* Fragment? */
 		if (fragnum > 0 || morefrag)
 		{
-			addFrag(packet, smac, length, opt.crypt, opt.wepkey, opt.weplen);
-			buffer = getCompleteFrag(
-				smac, seqnum, &len, opt.crypt, opt.wepkey, opt.weplen);
+			addFrag(packet,
+					smac,
+					(int) length,
+					opt.crypt,
+					opt.wepkey,
+					(int) opt.weplen);
+			buffer = getCompleteFrag(smac,
+									 seqnum,
+									 (int *) &len,
+									 opt.crypt,
+									 opt.wepkey,
+									 (int) opt.weplen);
 			timeoutFrag();
 
 			/* we got frag, no compelete packet avail -> do nothing */
@@ -2189,13 +1780,13 @@ static int packet_recv(unsigned char * packet,
 		/* intercept packets in case we got external processing */
 		if (external)
 		{
-			intercept(packet, length);
+			intercept(packet, (int) length);
 			return (0);
 		}
 
 		/* To our mac? */
-		if ((memcmp(dmac, opt.r_bssid, 6) == 0 && !opt.adhoc)
-			|| (memcmp(dmac, opt.r_smac, 6) == 0 && opt.adhoc))
+		if ((memcmp(dmac, opt.r_bssid, 6) == 0 && !lopt.adhoc)
+			|| (memcmp(dmac, opt.r_smac, 6) == 0 && lopt.adhoc))
 		{
 			/* Is encrypted */
 			if ((packet[z] != packet[z + 1] || packet[z + 2] != 0x03)
@@ -2204,13 +1795,15 @@ static int packet_recv(unsigned char * packet,
 				/* check the extended IV flag */
 				/* WEP and we got the key */
 				if ((packet[z + 3] & 0x20) == 0 && opt.crypt == CRYPT_WEP
-					&& !opt.cf_attack)
+					&& !lopt.cf_attack)
 				{
 					memcpy(K, packet + z, 3);
 					memcpy(K + 3, opt.wepkey, opt.weplen);
 
-					if (decrypt_wep(
-							packet + z + 4, length - z - 4, K, 3 + opt.weplen)
+					if (decrypt_wep(packet + z + 4,
+									(int) (length - z - 4),
+									K,
+									(int) (3u + opt.weplen))
 						== 0)
 					{
 						return (1);
@@ -2227,7 +1820,7 @@ static int packet_recv(unsigned char * packet,
 				}
 				else
 				{
-					if (opt.cf_attack)
+					if (lopt.cf_attack)
 					{
 						addCF(packet, length);
 						return (0);
@@ -2242,7 +1835,7 @@ static int packet_recv(unsigned char * packet,
 			{
 				/* unencrypted data packet, nothing special, send it through
 				 * dev_ti */
-				if (opt.sendeapol
+				if (lopt.sendeapol
 					&& memcmp(packet + z,
 							  "\xAA\xAA\x03\x00\x00\x00\x88\x8E\x01\x01",
 							  10)
@@ -2263,14 +1856,14 @@ static int packet_recv(unsigned char * packet,
 					}
 					st_cur->wpa.state = 0;
 
-					if (opt.use_fixed_nonce)
+					if (lopt.use_fixed_nonce)
 					{
-						memcpy(st_cur->wpa.anonce, opt.fixed_nonce, 32);
+						memcpy(st_cur->wpa.anonce, lopt.fixed_nonce, 32);
 					}
 					else
 					{
 						for (i = 0; i < 32; i++)
-							st_cur->wpa.anonce[i] = rand() & 0xFF;
+							st_cur->wpa.anonce[i] = (uint8_t)(rand() & 0xFF);
 					}
 					st_cur->wpa.state |= 1;
 
@@ -2299,11 +1892,11 @@ static int packet_recv(unsigned char * packet,
 					h80211[len + 1] = 0x03; // type
 					h80211[len + 2] = 0x00;
 					h80211[len + 3] = 0x5F; // len
-					if (opt.wpa1type) h80211[len + 4] = 0xFE; // WPA1
+					if (lopt.wpa1type) h80211[len + 4] = 0xFE; // WPA1
 
-					if (opt.wpa2type) h80211[len + 4] = 0x02; // WPA2
+					if (lopt.wpa2type) h80211[len + 4] = 0x02; // WPA2
 
-					if (!opt.wpa1type && !opt.wpa2type)
+					if (!lopt.wpa1type && !lopt.wpa2type)
 					{
 						if (st_cur->wpatype == 1) // WPA1
 							h80211[len + 4] = 0xFE; // WPA1
@@ -2311,9 +1904,9 @@ static int packet_recv(unsigned char * packet,
 							h80211[len + 4] = 0x02; // WPA2
 					}
 
-					if (opt.sendeapol >= 1 && opt.sendeapol <= 2) // specified
+					if (lopt.sendeapol >= 1 && lopt.sendeapol <= 2) // specified
 					{
-						if (opt.sendeapol == 1) // MD5
+						if (lopt.sendeapol == 1) // MD5
 						{
 							h80211[len + 5] = 0x00;
 							h80211[len + 6] = 0x89;
@@ -2350,14 +1943,14 @@ static int packet_recv(unsigned char * packet,
 					return (0);
 				}
 
-				if (opt.sendeapol
+				if (lopt.sendeapol
 					&& memcmp(packet + z,
 							  "\xAA\xAA\x03\x00\x00\x00\x88\x8E\x01\x03",
 							  10)
 						   == 0)
 				{
-					st_cur->wpa.eapol_size
-						= (packet[z + 8 + 2] << 8) + packet[z + 8 + 3] + 4;
+					st_cur->wpa.eapol_size = (uint32_t)(
+						(packet[z + 8 + 2] << 8) + packet[z + 8 + 3] + 4);
 
 					if ((unsigned) length - z - 10 < st_cur->wpa.eapol_size
 						|| st_cur->wpa.eapol_size == 0
@@ -2378,7 +1971,7 @@ static int packet_recv(unsigned char * packet,
 						   st_cur->wpa.eapol_size);
 					memset(st_cur->wpa.eapol + 81, 0, 16);
 					st_cur->wpa.state |= 4;
-					st_cur->wpa.keyver = packet[z + 8 + 6] & 7;
+					st_cur->wpa.keyver = (uint8_t)(packet[z + 8 + 6] & 7);
 
 					memcpy(st_cur->wpa.stmac, st_cur->stmac, 6);
 
@@ -2403,7 +1996,7 @@ static int packet_recv(unsigned char * packet,
 		else
 		{
 			packet[1] &= 0xFC; // clear ToDS/FromDS
-			if (!opt.adhoc)
+			if (!lopt.adhoc)
 			{
 				/* Our bssid, ToDS=1, but to a different destination MAC -> send
 				 * it through both interfaces */
@@ -2426,14 +2019,16 @@ static int packet_recv(unsigned char * packet,
 				/* check the extended IV flag */
 				/* WEP and we got the key */
 				if ((packet[z + 3] & 0x20) == 0 && opt.crypt == CRYPT_WEP
-					&& !opt.caffelatte
-					&& !opt.cf_attack)
+					&& !lopt.caffelatte
+					&& !lopt.cf_attack)
 				{
 					memcpy(K, packet + z, 3);
 					memcpy(K + 3, opt.wepkey, opt.weplen);
 
-					if (decrypt_wep(
-							packet + z + 4, length - z - 4, K, 3 + opt.weplen)
+					if (decrypt_wep(packet + z + 4,
+									(int) (length - z - 4u),
+									K,
+									(int) (3u + opt.weplen))
 						== 0)
 					{
 						return (1);
@@ -2453,15 +2048,15 @@ static int packet_recv(unsigned char * packet,
 
 					if (create_wep_packet(h80211, &length, z) != 0) return (1);
 
-					if (!opt.adhoc) my_send_packet(h80211, length);
+					if (!lopt.adhoc) my_send_packet(h80211, length);
 				}
 				else
 				{
-					if (opt.caffelatte)
+					if (lopt.caffelatte)
 					{
-						addarp(packet, length);
+						addarp(packet, (int) length);
 					}
-					if (opt.cf_attack)
+					if (lopt.cf_attack)
 					{
 						addCF(packet, length);
 					}
@@ -2482,7 +2077,7 @@ static int packet_recv(unsigned char * packet,
 
 		memcpy(h80211 + 12, packet + z + 6, 2); // copy ether type
 
-		if ((unsigned) length <= z + 8) return (1);
+		if (length <= z + 8) return (1);
 
 		memcpy(h80211 + 14, packet + z + 8, length - z - 8);
 		length = length - z - 8 + 14;
@@ -2495,7 +2090,7 @@ static int packet_recv(unsigned char * packet,
 			length += trailer;
 		}
 
-		ti_write(dev.dv_ti, h80211, length);
+		ti_write(dev.dv_ti, h80211, (int) length);
 	}
 	else
 	{
@@ -2504,11 +2099,11 @@ static int packet_recv(unsigned char * packet,
 		// probe, ignore it.
 		if (packet[0] == 0x40)
 		{
-			tag = parse_tags(packet + z, 0, length - z, &len);
+			tag = parse_tags(packet + z, 0, (int) (length - z), (int *) &len);
 			if (tag != NULL && tag[0] >= 32 && len <= 255) // directed probe
 			{
-				if (opt.promiscuous || !opt.f_essid
-					|| gotESSID((char *) tag, len) == 1)
+				if (lopt.promiscuous || !lopt.f_essid
+					|| gotESSID((char *) tag, (int) len) == 1)
 				{
 					memset(essid, 0, 256);
 					memcpy(essid, tag, len);
@@ -2519,8 +2114,8 @@ static int packet_recv(unsigned char * packet,
 					/* got a valid probed ESSID */
 
 					/* add this to the beacon queue */
-					if (opt.beacon_cache)
-						addESSID(essid, len, opt.beacon_cache);
+					if (lopt.beacon_cache)
+						addESSID((char *) essid, (int) len, lopt.beacon_cache);
 
 					/* check if it's already in the ring buffer */
 					for (i = 0; i < NB_PRB; i++)
@@ -2532,14 +2127,14 @@ static int packet_recv(unsigned char * packet,
 					memcpy(st_cur->probes[st_cur->probe_index],
 						   essid,
 						   len); // twice?!
-					st_cur->ssid_length[st_cur->probe_index] = len;
+					st_cur->ssid_length[st_cur->probe_index] = (int) len;
 
 					for (i = 0; i < len; i++)
 					{
 						c = essid[i];
 						if (c == 0 || (c > 126 && c < 160))
 							c = '.'; // could also check ||(c>0 && c<32)
-						st_cur->probes[st_cur->probe_index][i] = c;
+						st_cur->probes[st_cur->probe_index][i] = (char) c;
 					}
 
 				skip_probe:
@@ -2562,15 +2157,16 @@ static int packet_recv(unsigned char * packet,
 					}
 
 					// store the tagged parameters and insert the fixed ones
-					buffer = (unsigned char *) malloc(length - z);
+					buffer = (uint8_t *) malloc(length - z);
 					ALLEGE(buffer != NULL);
 					memcpy(buffer, packet + z, length - z);
 
 					memcpy(packet + z,
 						   "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
 						   12); // fixed information
-					packet[z + 8] = (apc->interval) & 0xFF; // beacon interval
-					packet[z + 9] = (apc->interval >> 8) & 0xFF;
+					packet[z + 8]
+						= (uint8_t)((apc->interval) & 0xFF); // beacon interval
+					packet[z + 9] = (uint8_t)((apc->interval >> 8) & 0xFF);
 					memcpy(packet + z + 10, apc->capa, 2); // capability
 
 					// set timestamp
@@ -2581,7 +2177,8 @@ static int packet_recv(unsigned char * packet,
 					// incremented each microsecond
 					for (i = 0; i < 8; i++)
 					{
-						packet[z + i] = (timestamp >> (i * 8)) & 0xFF;
+						packet[z + i]
+							= (uint8_t)((timestamp >> (i * 8)) & 0xFF);
 					}
 
 					// insert tagged parameters
@@ -2615,10 +2212,10 @@ static int packet_recv(unsigned char * packet,
 						}
 					}
 					packet[length + 2]
-						= ((temp_channel > 255 || temp_channel < 1)
-						   && opt.channel != 0)
-							  ? opt.channel
-							  : temp_channel;
+						= (uint8_t)(((temp_channel > 255 || temp_channel < 1)
+									 && lopt.channel != 0)
+										? lopt.channel
+										: temp_channel);
 
 					length += 3;
 
@@ -2627,7 +2224,7 @@ static int packet_recv(unsigned char * packet,
 					memcpy(packet + 16, opt.r_bssid, 6);
 
 					// TODO: See also about 100 lines below
-					if (opt.allwpa)
+					if (lopt.allwpa)
 					{
 						memcpy(packet + length,
 							   ALL_WPA2_TAGS,
@@ -2640,19 +2237,19 @@ static int packet_recv(unsigned char * packet,
 					}
 					else
 					{
-						if (opt.wpa2type > 0)
+						if (lopt.wpa2type > 0)
 						{
 							memcpy(packet + length, WPA2_TAG, 22);
-							packet[length + 7] = opt.wpa2type;
-							packet[length + 13] = opt.wpa2type;
+							packet[length + 7] = (uint8_t) lopt.wpa2type;
+							packet[length + 13] = (uint8_t) lopt.wpa2type;
 							length += 22;
 						}
 
-						if (opt.wpa1type > 0)
+						if (lopt.wpa1type > 0)
 						{
 							memcpy(packet + length, WPA1_TAG, 24);
-							packet[length + 11] = opt.wpa1type;
-							packet[length + 17] = opt.wpa1type;
+							packet[length + 11] = (uint8_t) lopt.wpa1type;
+							packet[length + 17] = (uint8_t) lopt.wpa1type;
 							length += 24;
 						}
 					}
@@ -2663,7 +2260,7 @@ static int packet_recv(unsigned char * packet,
 			}
 			else // broadcast probe
 			{
-				if (!opt.nobroadprobe)
+				if (!lopt.nobroadprobe)
 				{
 					// transform into probe response
 					packet[0] = 0x50;
@@ -2682,15 +2279,16 @@ static int packet_recv(unsigned char * packet,
 					}
 
 					// store the tagged parameters and insert the fixed ones
-					buffer = (unsigned char *) malloc(length - z);
+					buffer = (uint8_t *) malloc(length - z);
 					ALLEGE(buffer != NULL);
 					memcpy(buffer, packet + z, length - z);
 
 					memcpy(packet + z,
 						   "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
 						   12); // fixed information
-					packet[z + 8] = (apc->interval) & 0xFF; // beacon interval
-					packet[z + 9] = (apc->interval >> 8) & 0xFF;
+					packet[z + 8]
+						= (uint8_t)((apc->interval) & 0xFF); // beacon interval
+					packet[z + 9] = (uint8_t)((apc->interval >> 8) & 0xFF);
 					memcpy(packet + z + 10, apc->capa, 2); // capability
 
 					// set timestamp
@@ -2701,18 +2299,19 @@ static int packet_recv(unsigned char * packet,
 					// incremented each microsecond
 					for (i = 0; i < 8; i++)
 					{
-						packet[z + i] = (timestamp >> (i * 8)) & 0xFF;
+						packet[z + i]
+							= (uint8_t)((timestamp >> (i * 8)) & 0xFF);
 					}
 
 					// insert essid
-					len = getESSID(fessid);
+					len = (size_t) getESSID(fessid);
 					if (!len)
 					{
 						strncpy(fessid, "default", sizeof(fessid) - 1);
 						len = strlen(fessid);
 					}
 					packet[z + 12] = 0x00;
-					packet[z + 13] = len;
+					packet[z + 13] = (uint8_t) len;
 					memcpy(packet + z + 14, fessid, len);
 
 					// insert tagged parameters
@@ -2751,10 +2350,10 @@ static int packet_recv(unsigned char * packet,
 						}
 					}
 					packet[length + 2]
-						= ((temp_channel > 255 || temp_channel < 1)
-						   && opt.channel != 0)
-							  ? opt.channel
-							  : temp_channel;
+						= (uint8_t)(((temp_channel > 255 || temp_channel < 1)
+									 && lopt.channel != 0)
+										? lopt.channel
+										: temp_channel);
 
 					length += 3;
 
@@ -2763,7 +2362,7 @@ static int packet_recv(unsigned char * packet,
 					memcpy(packet + 16, opt.r_bssid, 6);
 
 					// TODO: See also around ~3500
-					if (opt.allwpa)
+					if (lopt.allwpa)
 					{
 						memcpy(packet + length,
 							   ALL_WPA2_TAGS,
@@ -2776,28 +2375,27 @@ static int packet_recv(unsigned char * packet,
 					}
 					else
 					{
-						if (opt.wpa2type > 0)
+						if (lopt.wpa2type > 0)
 						{
 							memcpy(packet + length, WPA2_TAG, 22);
-							packet[length + 7] = opt.wpa2type;
-							packet[length + 13] = opt.wpa2type;
+							packet[length + 7] = (uint8_t) lopt.wpa2type;
+							packet[length + 13] = (uint8_t) lopt.wpa2type;
 							length += 22;
 						}
 
-						if (opt.wpa1type > 0)
+						if (lopt.wpa1type > 0)
 						{
 							memcpy(packet + length, WPA1_TAG, 24);
-							packet[length + 11] = opt.wpa1type;
-							packet[length + 17] = opt.wpa1type;
+							packet[length + 11] = (uint8_t) lopt.wpa1type;
+							packet[length + 17] = (uint8_t) lopt.wpa1type;
 							length += 24;
 						}
 					}
 
 					my_send_packet(packet, length);
-
+					my_send_packet(packet, length);
 					my_send_packet(packet, length);
 
-					my_send_packet(packet, length);
 					return (0);
 				}
 			}
@@ -2827,13 +2425,14 @@ static int packet_recv(unsigned char * packet,
 					memcpy(packet + 10, dmac, 6);
 					packet[z + 2] = 0x02;
 
-					if (opt.forceska)
+					if (lopt.forceska)
 					{
 						packet[z] = 0x01;
 						packet[z + 4] = 13;
 					}
 
 					my_send_packet(packet, length);
+
 					return (0);
 				}
 			}
@@ -2858,11 +2457,11 @@ static int packet_recv(unsigned char * packet,
 					memcpy(packet + 10, dmac, 6);
 					packet[z + 2] = 0x02;
 
-					remaining = opt.skalen;
+					remaining = lopt.skalen;
 
 					while (remaining > 0)
 					{
-						bytes2use = MIN(255, remaining);
+						bytes2use = MIN((uint8_t) 255u, (uint8_t) remaining);
 						remaining -= bytes2use;
 						// add challenge
 						packet[length] = 0x10;
@@ -2871,13 +2470,14 @@ static int packet_recv(unsigned char * packet,
 
 						for (i = 0; i < bytes2use; i++)
 						{
-							packet[length + i] = rand() & 0xFF;
+							packet[length + i] = (uint8_t)(rand() & 0xFF);
 						}
 
 						length += bytes2use;
 					}
 					my_send_packet(packet, length);
 					check_shared_key(packet, length);
+
 					return (0);
 				}
 
@@ -2928,35 +2528,47 @@ static int packet_recv(unsigned char * packet,
 
 			st_cur->wep = (packet[z] & 0x10) >> 4;
 
-			tag = parse_tags(packet + z + fixed, 0, length - z - fixed, &len);
+			tag = parse_tags(packet + z + fixed,
+							 0,
+							 (int) (length - z - fixed),
+							 (int *) &len);
 			if (tag != NULL && tag[0] >= 32 && len < 256)
 			{
 				memcpy(essid, tag, len);
 				essid[len] = 0x00;
-				if (opt.f_essid && !gotESSID(essid, len)) return (0);
+				if (lopt.f_essid && !gotESSID((char *) essid, (int) len))
+					return (0);
 			}
 
 			st_cur->wpatype = 0;
 			st_cur->wpahash = 0;
 
-			tag = parse_tags(
-				packet + z + fixed, 0xDD, length - z - fixed, &len);
+			tag = parse_tags(packet + z + fixed,
+							 0xDD,
+							 (int) (length - z - fixed),
+							 (int *) &len);
 			while (tag != NULL)
 			{
-				wpa_client(st_cur, tag - 2, len + 2);
+				wpa_client(st_cur, tag - 2, (int) (len + 2u));
 				tag += (tag - 2)[1] + 2;
-				tag = parse_tags(
-					tag - 2, 0xDD, length - (tag - packet) + 2, &len);
+				tag = parse_tags(tag - 2,
+								 0xDD,
+								 (int) (length - (tag - packet) + 2u),
+								 (int *) &len);
 			}
 
-			tag = parse_tags(
-				packet + z + fixed, 0x30, length - z - fixed, &len);
+			tag = parse_tags(packet + z + fixed,
+							 0x30,
+							 (int) (length - z - fixed),
+							 (int *) &len);
 			while (tag != NULL)
 			{
-				wpa_client(st_cur, tag - 2, len + 2);
+				wpa_client(st_cur, tag - 2, (int) (len + 2u));
 				tag += (tag - 2)[1] + 2;
-				tag = parse_tags(
-					tag - 2, 0x30, length - (tag - packet) + 2, &len);
+				tag = parse_tags(tag - 2,
+								 0x30,
+								 (int) (length - (tag - packet) + 2u),
+								 (int *) &len);
 			}
 
 			if (!reasso)
@@ -2983,7 +2595,7 @@ static int packet_recv(unsigned char * packet,
 			buffer = NULL;
 
 			len = length - z - 6;
-			remove_tag(packet + z + 6, 0, &len);
+			remove_tag(packet + z + 6, 0, (int *) &len);
 			length = len + z + 6;
 
 			my_send_packet(packet, length);
@@ -3025,24 +2637,24 @@ static int packet_recv(unsigned char * packet,
 
 			memset(st_cur->essid, 0, 256);
 			memcpy(st_cur->essid, essid, 255);
-			st_cur->essid_length = strlen(essid);
+			st_cur->essid_length = (int) strlen((char *) essid);
 
 			memset(essid, 0, 256);
 
 			/* either specified or determined */
-			if ((opt.sendeapol && (opt.wpa1type || opt.wpa2type))
+			if ((lopt.sendeapol && (lopt.wpa1type || lopt.wpa2type))
 				|| (st_cur->wpatype && st_cur->wpahash))
 			{
 				st_cur->wpa.state = 0;
 
-				if (opt.use_fixed_nonce)
+				if (lopt.use_fixed_nonce)
 				{
-					memcpy(st_cur->wpa.anonce, opt.fixed_nonce, 32);
+					memcpy(st_cur->wpa.anonce, lopt.fixed_nonce, 32);
 				}
 				else
 				{
 					for (i = 0; i < 32; i++)
-						st_cur->wpa.anonce[i] = rand() & 0xFF;
+						st_cur->wpa.anonce[i] = (uint8_t)(rand() & 0xFF);
 				}
 
 				st_cur->wpa.state |= 1;
@@ -3072,11 +2684,11 @@ static int packet_recv(unsigned char * packet,
 				h80211[len + 1] = 0x03; // type
 				h80211[len + 2] = 0x00;
 				h80211[len + 3] = 0x5F; // len
-				if (opt.wpa1type) h80211[len + 4] = 0xFE; // WPA1
+				if (lopt.wpa1type) h80211[len + 4] = 0xFE; // WPA1
 
-				if (opt.wpa2type) h80211[len + 4] = 0x02; // WPA2
+				if (lopt.wpa2type) h80211[len + 4] = 0x02; // WPA2
 
-				if (!opt.wpa1type && !opt.wpa2type)
+				if (!lopt.wpa1type && !lopt.wpa2type)
 				{
 					if (st_cur->wpatype == 1) // WPA1
 						h80211[len + 4] = 0xFE; // WPA1
@@ -3084,9 +2696,9 @@ static int packet_recv(unsigned char * packet,
 						h80211[len + 4] = 0x02; // WPA2
 				}
 
-				if (opt.sendeapol >= 1 && opt.sendeapol <= 2) // specified
+				if (lopt.sendeapol >= 1 && lopt.sendeapol <= 2) // specified
 				{
-					if (opt.sendeapol == 1) // MD5
+					if (lopt.sendeapol == 1) // MD5
 					{
 						h80211[len + 5] = 0x00;
 						h80211[len + 6] = 0x89;
@@ -3138,11 +2750,12 @@ static void beacon_thread(void * arg)
 	struct AP_conf apc;
 	struct timeval tv, tv1, tv2;
 	u_int64_t timestamp;
-	unsigned char beacon[512];
-	int beacon_len = 0;
+	uint8_t beacon[512];
+	size_t beacon_len = 0;
 	int seq = 0, i = 0, n = 0;
-	int essid_len, temp_channel;
-	char essid[MAX_IE_ELEMENT_SIZE + 1];
+	size_t essid_len;
+	int temp_channel;
+	uint8_t essid[MAX_IE_ELEMENT_SIZE + 1];
 	float f, ticks[3];
 	ssize_t rc;
 
@@ -3200,10 +2813,10 @@ static void beacon_thread(void * arg)
 
 			/* flush expired ESSID entries */
 			flushESSID();
-			essid_len = getNextESSID(essid);
+			essid_len = (size_t) getNextESSID((char *) essid);
 			if (!essid_len)
 			{
-				strncpy(essid, "default", sizeof(essid) - 1);
+				strncpy((char *) essid, "default", sizeof(essid) - 1);
 				essid_len = strlen("default");
 			}
 
@@ -3215,7 +2828,7 @@ static void beacon_thread(void * arg)
 			beacon_len += 4;
 			memcpy(beacon + beacon_len, BROADCAST, 6); // destination
 			beacon_len += 6;
-			if (!opt.adhoc)
+			if (!lopt.adhoc)
 				memcpy(beacon + beacon_len, apc.bssid, 6); // source
 			else
 				memcpy(beacon + beacon_len, opt.r_smac, 6); // source
@@ -3229,15 +2842,16 @@ static void beacon_thread(void * arg)
 				   "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
 				   12); // fixed information
 
-			beacon[beacon_len + 8] = (apc.interval * MAX(getESSIDcount(), 1))
-									 & 0xFF; // beacon interval
-			beacon[beacon_len + 9]
-				= (apc.interval * MAX(getESSIDcount(), 1) >> 8) & 0xFF;
+			beacon[beacon_len + 8]
+				= (uint8_t)((apc.interval * MAX(getESSIDcount(), 1))
+							& 0xFF); // beacon interval
+			beacon[beacon_len + 9] = (uint8_t)(
+				(apc.interval * MAX(getESSIDcount(), 1) >> 8) & 0xFF);
 			memcpy(beacon + beacon_len + 10, apc.capa, 2); // capability
 			beacon_len += 12;
 
 			beacon[beacon_len] = 0x00; // essid tag
-			beacon[beacon_len + 1] = essid_len; // essid tag
+			beacon[beacon_len + 1] = (uint8_t) essid_len; // essid tag
 			beacon_len += 2;
 			memcpy(beacon + beacon_len, essid, essid_len); // actual essid
 			beacon_len += essid_len;
@@ -3266,25 +2880,25 @@ static void beacon_thread(void * arg)
 							temp_channel);
 				}
 			}
-			beacon[beacon_len + 2]
-				= ((temp_channel > 255 || temp_channel < 1) && opt.channel != 0)
-					  ? opt.channel
-					  : temp_channel;
+			beacon[beacon_len + 2] = (uint8_t)(
+				((temp_channel > 255 || temp_channel < 1) && lopt.channel != 0)
+					? lopt.channel
+					: temp_channel);
 
 			beacon_len += 3;
 
-			if (opt.allwpa)
+			if (lopt.allwpa)
 			{
 				memcpy(beacon + beacon_len,
 					   ALL_WPA2_TAGS,
 					   sizeof(ALL_WPA2_TAGS) - 1);
 				beacon_len += sizeof(ALL_WPA2_TAGS) - 1;
 			}
-			else if (opt.wpa2type > 0)
+			else if (lopt.wpa2type > 0)
 			{
 				memcpy(beacon + beacon_len, WPA2_TAG, 22);
-				beacon[beacon_len + 7] = opt.wpa2type;
-				beacon[beacon_len + 13] = opt.wpa2type;
+				beacon[beacon_len + 7] = (uint8_t) lopt.wpa2type;
+				beacon[beacon_len + 13] = (uint8_t) lopt.wpa2type;
 				beacon_len += 22;
 			}
 
@@ -3294,18 +2908,18 @@ static void beacon_thread(void * arg)
 				   sizeof(EXTENDED_RATES) - 1);
 			beacon_len += sizeof(EXTENDED_RATES) - 1;
 
-			if (opt.allwpa)
+			if (lopt.allwpa)
 			{
 				memcpy(beacon + beacon_len,
 					   ALL_WPA1_TAGS,
 					   sizeof(ALL_WPA1_TAGS) - 1);
 				beacon_len += sizeof(ALL_WPA1_TAGS) - 1;
 			}
-			else if (opt.wpa1type > 0)
+			else if (lopt.wpa1type > 0)
 			{
 				memcpy(beacon + beacon_len, WPA1_TAG, 24);
-				beacon[beacon_len + 11] = opt.wpa1type;
-				beacon[beacon_len + 17] = opt.wpa1type;
+				beacon[beacon_len + 11] = (uint8_t) lopt.wpa1type;
+				beacon[beacon_len + 17] = (uint8_t) lopt.wpa1type;
 				beacon_len += 24;
 			}
 
@@ -3313,11 +2927,11 @@ static void beacon_thread(void * arg)
 			// microsecond
 			for (i = 0; i < 8; i++)
 			{
-				beacon[24 + i] = (timestamp >> (i * 8)) & 0xFF;
+				beacon[24 + i] = (uint8_t)((timestamp >> (i * 8)) & 0xFF);
 			}
 
-			beacon[22] = (seq << 4) & 0xFF;
-			beacon[23] = (seq >> 4) & 0xFF;
+			beacon[22] = (uint8_t)((seq << 4) & 0xFF);
+			beacon[23] = (uint8_t)((seq >> 4) & 0xFF);
 
 			fflush(stdout);
 
@@ -3347,7 +2961,6 @@ static void caffelatte_thread(void)
 	while (1)
 	{
 		/* sleep until the next clock tick */
-
 		gettimeofday(&tv, NULL);
 		usleep(1000000 / RTC_RESOLUTION);
 		gettimeofday(&tv2, NULL);
@@ -3365,11 +2978,13 @@ static void caffelatte_thread(void)
 			/* threshold reach, send one frame */
 			//            ticks[2] = 0;
 
-			if (opt.nb_arp > 0)
+			if (lopt.nb_arp > 0)
 			{
 				if (nb_pkt_sent_1 == 0) ticks[0] = 0;
 
-				if (my_send_packet(arp[arp_off1].buf, arp[arp_off1].len) < 0)
+				if (my_send_packet(arp[arp_off1].buf,
+								   (size_t) arp[arp_off1].len)
+					< 0)
 					return;
 
 				nb_pkt_sent_1++;
@@ -3378,14 +2993,15 @@ static void caffelatte_thread(void)
 						* (double) opt.r_nbpps
 					> (double) nb_pkt_sent_1)
 				{
-					if (my_send_packet(arp[arp_off1].buf, arp[arp_off1].len)
+					if (my_send_packet(arp[arp_off1].buf,
+									   (size_t) arp[arp_off1].len)
 						< 0)
 						return;
 
 					nb_pkt_sent_1++;
 				}
 
-				if (++arp_off1 >= opt.nb_arp) arp_off1 = 0;
+				if (++arp_off1 >= lopt.nb_arp) arp_off1 = 0;
 			}
 		}
 	}
@@ -3396,7 +3012,6 @@ static int del_next_CF(pCF_t curCF)
 	pCF_t tmp;
 
 	if (curCF == NULL) return (1);
-
 	if (curCF->next == NULL) return (1);
 
 	tmp = curCF->next;
@@ -3411,7 +3026,7 @@ static int cfrag_fuzz(unsigned char * packet,
 					  int frags,
 					  int frag_num,
 					  int length,
-					  unsigned char rnd[2])
+					  const unsigned char rnd[2])
 {
 	int z, i;
 	unsigned char overlay[4096];
@@ -3481,7 +3096,6 @@ static void cfrag_thread(void)
 	while (1)
 	{
 		/* sleep until the next clock tick */
-
 		gettimeofday(&tv, NULL);
 		usleep(1000000 / RTC_RESOLUTION);
 		gettimeofday(&tv2, NULL);
@@ -3501,13 +3115,13 @@ static void cfrag_thread(void)
 
 			ALLEGE(pthread_mutex_lock(&mx_cf) == 0);
 
-			if (opt.cf_count > 0)
+			if (lopt.cf_count > 0)
 			{
 				curCF = rCF;
 
 				if (curCF->next == NULL)
 				{
-					opt.cf_count = 0;
+					lopt.cf_count = 0;
 					ALLEGE(pthread_mutex_unlock(&mx_cf) == 0);
 					continue;
 				}
@@ -3520,7 +3134,7 @@ static void cfrag_thread(void)
 
 				if (curCF->next == NULL)
 				{
-					opt.cf_count = 0;
+					lopt.cf_count = 0;
 					ALLEGE(pthread_mutex_unlock(&mx_cf) == 0);
 					continue;
 				}
@@ -3529,14 +3143,17 @@ static void cfrag_thread(void)
 
 				if (nb_pkt_sent_1 == 0) ticks[0] = 0;
 
-				rnd[0] = rand() % 0xFF;
-				rnd[1] = rand() % 0xFF;
+				rnd[0] = (unsigned char) (rand() % 0xFF);
+				rnd[1] = (unsigned char) (rand() % 0xFF);
 
 				for (i = 0; i < curCF->fragnum; i++)
 				{
 					memcpy(buffer, curCF->frags[i], curCF->fraglen[i]);
-					cfrag_fuzz(
-						buffer, curCF->fragnum, i, curCF->fraglen[i], rnd);
+					cfrag_fuzz(buffer,
+							   curCF->fragnum,
+							   i,
+							   (int) curCF->fraglen[i],
+							   rnd);
 					if (my_send_packet(buffer, curCF->fraglen[i]) < 0)
 					{
 						ALLEGE(pthread_mutex_unlock(&mx_cf) == 0);
@@ -3547,7 +3164,7 @@ static void cfrag_thread(void)
 				cfrag_fuzz(buffer,
 						   curCF->fragnum,
 						   curCF->fragnum,
-						   curCF->finallen,
+						   (int) curCF->finallen,
 						   rnd);
 				if (my_send_packet(buffer, curCF->finallen) < 0)
 				{
@@ -3562,13 +3179,16 @@ static void cfrag_thread(void)
 						* (double) opt.r_nbpps
 					> (double) nb_pkt_sent_1)
 				{
-					rnd[0] = rand() % 0xFF;
-					rnd[1] = rand() % 0xFF;
+					rnd[0] = (unsigned char) (rand() % 0xFF);
+					rnd[1] = (unsigned char) (rand() % 0xFF);
 					for (i = 0; i < curCF->fragnum; i++)
 					{
 						memcpy(buffer, curCF->frags[i], curCF->fraglen[i]);
-						cfrag_fuzz(
-							buffer, curCF->fragnum, i, curCF->fraglen[i], rnd);
+						cfrag_fuzz(buffer,
+								   curCF->fragnum,
+								   i,
+								   (int) curCF->fraglen[i],
+								   rnd);
 						if (my_send_packet(buffer, curCF->fraglen[i]) < 0)
 						{
 							ALLEGE(pthread_mutex_unlock(&mx_cf) == 0);
@@ -3579,7 +3199,7 @@ static void cfrag_thread(void)
 					cfrag_fuzz(buffer,
 							   curCF->fragnum,
 							   curCF->fragnum,
-							   curCF->finallen,
+							   (int) curCF->finallen,
 							   rnd);
 					if (my_send_packet(buffer, curCF->finallen) < 0)
 					{
@@ -3649,19 +3269,19 @@ int main(int argc, char * argv[])
 	ALLEGE(pthread_mutex_init(&mx_cap, NULL) == 0);
 
 	opt.r_nbpps = 100;
-	opt.tods = 0;
-	opt.setWEP = -1;
-	opt.skalen = 128;
-	opt.filter = -1;
+	lopt.tods = 0;
+	lopt.setWEP = -1;
+	lopt.skalen = 128;
+	lopt.filter = -1;
 	opt.ringbuffer = 10;
-	opt.nb_arp = 0;
+	lopt.nb_arp = 0;
 	opt.f_index = 1;
-	opt.interval = 0x64;
-	opt.channel = 0;
-	opt.beacon_cache = 0; /* disable by default */
-	opt.use_fixed_nonce = 0;
-	opt.ti_mtu = TI_MTU;
-	opt.wif_mtu = WIF_MTU;
+	lopt.interval = 0x64;
+	lopt.channel = 0;
+	lopt.beacon_cache = 0; /* disable by default */
+	lopt.use_fixed_nonce = 0;
+	lopt.ti_mtu = TI_MTU;
+	lopt.wif_mtu = WIF_MTU;
 	invalid_channel_displayed = 0;
 
 	srand(time(NULL));
@@ -3719,7 +3339,7 @@ int main(int argc, char * argv[])
 
 				// Check the value is 32 bytes, in hex (64 hex)
 				if (hexStringToArray(
-						optarg, strlen(optarg), opt.fixed_nonce, 32)
+						optarg, (int) strlen(optarg), lopt.fixed_nonce, 32)
 					!= 32)
 				{
 					printf("Invalid fixed nonce. It must be 64 hexadecimal "
@@ -3727,7 +3347,7 @@ int main(int argc, char * argv[])
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (EXIT_FAILURE);
 				}
-				opt.use_fixed_nonce = 1;
+				lopt.use_fixed_nonce = 1;
 				break;
 
 			case 'a':
@@ -3742,12 +3362,12 @@ int main(int argc, char * argv[])
 
 			case 'c':
 
-				opt.channel = atoi(optarg);
-				if (opt.channel > 255 || opt.channel < 1)
+				lopt.channel = atoi(optarg);
+				if (lopt.channel > 255 || lopt.channel < 1)
 				{
 					printf("Invalid channel value <%d>. It must be between 1 "
 						   "and 255.\n",
-						   opt.channel);
+						   lopt.channel);
 					return (EXIT_FAILURE);
 				}
 
@@ -3755,8 +3375,8 @@ int main(int argc, char * argv[])
 
 			case 'V':
 
-				opt.sendeapol = atoi(optarg);
-				if (opt.sendeapol < 1 || opt.sendeapol > 3)
+				lopt.sendeapol = atoi(optarg);
+				if (lopt.sendeapol < 1 || lopt.sendeapol > 3)
 				{
 					printf("EAPOL value can only be 1[MD5], 2[SHA1] or "
 						   "3[auto].\n");
@@ -3780,48 +3400,48 @@ int main(int argc, char * argv[])
 
 			case 'z':
 
-				opt.wpa1type = atoi(optarg);
-				if (opt.wpa1type < 1 || opt.wpa1type > 5)
+				lopt.wpa1type = atoi(optarg);
+				if (lopt.wpa1type < 1 || lopt.wpa1type > 5)
 				{
 					printf("Invalid WPA1 type [1-5]\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (EXIT_FAILURE);
 				}
 
-				if (opt.setWEP == -1)
+				if (lopt.setWEP == -1)
 				{
-					opt.setWEP = 1;
+					lopt.setWEP = 1;
 				}
 
 				break;
 
 			case 'Z':
 
-				opt.wpa2type = atoi(optarg);
-				if (opt.wpa2type < 1 || opt.wpa2type > 5)
+				lopt.wpa2type = atoi(optarg);
+				if (lopt.wpa2type < 1 || lopt.wpa2type > 5)
 				{
 					printf("Invalid WPA2 type [1-5]\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (EXIT_FAILURE);
 				}
 
-				if (opt.setWEP == -1)
+				if (lopt.setWEP == -1)
 				{
-					opt.setWEP = 1;
+					lopt.setWEP = 1;
 				}
 
 				break;
 
 			case 'e':
 
-				if (addESSID(optarg, strlen(optarg), 0) != 0)
+				if (addESSID(optarg, (int) strlen(optarg), 0) != 0)
 				{
 					printf("Invalid ESSID, too long\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (EXIT_FAILURE);
 				}
 
-				opt.f_essid = 1;
+				lopt.f_essid = 1;
 
 				break;
 
@@ -3829,50 +3449,50 @@ int main(int argc, char * argv[])
 
 				if (addESSIDfile(optarg) != 0) return (EXIT_FAILURE);
 
-				opt.f_essid = 1;
+				lopt.f_essid = 1;
 
 				break;
 
 			case 'P':
 
-				opt.promiscuous = 1;
+				lopt.promiscuous = 1;
 
 				break;
 
 			case 'I':
 
-				opt.interval = atoi(optarg);
+				lopt.interval = atoi(optarg);
 
 				break;
 
 			case 'C':
 
-				opt.beacon_cache = atoi(optarg);
+				lopt.beacon_cache = atoi(optarg);
 
 				break;
 
 			case 'A':
 
-				opt.adhoc = 1;
+				lopt.adhoc = 1;
 
 				break;
 
 			case 'N':
 
-				opt.cf_attack = 1;
+				lopt.cf_attack = 1;
 
 				break;
 
 			case 'X':
 
-				opt.hidden = 1;
+				lopt.hidden = 1;
 
 				break;
 
 			case '0':
 
-				opt.allwpa = 1;
-				if (opt.sendeapol == 0) opt.sendeapol = 3;
+				lopt.allwpa = 1;
+				if (lopt.sendeapol == 0) lopt.sendeapol = 3;
 
 				break;
 
@@ -3890,7 +3510,7 @@ int main(int argc, char * argv[])
 
 			case 's':
 
-				opt.forceska = 1;
+				lopt.forceska = 1;
 
 				break;
 
@@ -3899,13 +3519,13 @@ int main(int argc, char * argv[])
 				if (strncasecmp(optarg, "allow", 5) == 0
 					|| strncmp(optarg, "0", 1) == 0)
 				{
-					opt.filter
+					lopt.filter
 						= ALLOW_MACS; // block all, allow the specified macs
 				}
 				else if (strncasecmp(optarg, "disallow", 8) == 0
 						 || strncmp(optarg, "1", 1) == 0)
 				{
-					opt.filter
+					lopt.filter
 						= BLOCK_MACS; // allow all, block the specified macs
 				}
 				else
@@ -3926,7 +3546,7 @@ int main(int argc, char * argv[])
 					return (EXIT_FAILURE);
 				}
 
-				opt.skalen = atoi(optarg);
+				lopt.skalen = atoi(optarg);
 
 				break;
 
@@ -3961,25 +3581,25 @@ int main(int argc, char * argv[])
 					return (EXIT_FAILURE);
 				}
 
-				opt.setWEP = atoi(optarg);
+				lopt.setWEP = atoi(optarg);
 
 				break;
 
 			case 'M':
 
-				opt.mitm = 1;
+				lopt.mitm = 1;
 
 				break;
 
 			case 'L':
 
-				opt.caffelatte = 1;
+				lopt.caffelatte = 1;
 
 				break;
 
 			case 'y':
 
-				opt.nobroadprobe = 1;
+				lopt.nobroadprobe = 1;
 
 				break;
 
@@ -3987,16 +3607,17 @@ int main(int argc, char * argv[])
 
 				if (strncasecmp(optarg, "in", 2) == 0)
 				{
-					opt.external |= EXT_IN; // process incoming frames
+					lopt.external |= EXT_IN; // process incoming frames
 				}
 				else if (strncasecmp(optarg, "out", 3) == 0)
 				{
-					opt.external |= EXT_OUT; // process outgoing frames
+					lopt.external |= EXT_OUT; // process outgoing frames
 				}
 				else if (strncasecmp(optarg, "both", 4) == 0
 						 || strncasecmp(optarg, "all", 3) == 0)
 				{
-					opt.external |= EXT_IN | EXT_OUT; // process both directions
+					lopt.external
+						|= EXT_IN | EXT_OUT; // process both directions
 				}
 				else
 				{
@@ -4052,7 +3673,7 @@ int main(int argc, char * argv[])
 						return (EXIT_FAILURE);
 					}
 
-					opt.wepkey[i++] = n;
+					opt.wepkey[i++] = (uint8_t) n;
 
 					if (i >= 64) break;
 
@@ -4073,20 +3694,20 @@ int main(int argc, char * argv[])
 					return (EXIT_FAILURE);
 				}
 
-				opt.weplen = i;
+				opt.weplen = (size_t) i;
 
 				break;
 
 			case 'F':
 
-				if (opt.dump_prefix != NULL)
+				if (lopt.dump_prefix != NULL)
 				{
 					printf("Notice: dump prefix already given\n");
 					break;
 				}
 				/* Write prefix */
-				opt.dump_prefix = optarg;
-				opt.record_data = 1;
+				lopt.dump_prefix = optarg;
+				lopt.record_data = 1;
 				break;
 
 			case 'd':
@@ -4102,7 +3723,7 @@ int main(int argc, char * argv[])
 					return (EXIT_FAILURE);
 				}
 
-				if (opt.filter == -1) opt.filter = ALLOW_MACS;
+				if (lopt.filter == -1) lopt.filter = ALLOW_MACS;
 
 				break;
 
@@ -4110,7 +3731,7 @@ int main(int argc, char * argv[])
 
 				if (addMACfile(rClient, optarg) != 0) return (EXIT_FAILURE);
 
-				if (opt.filter == -1) opt.filter = ALLOW_MACS;
+				if (lopt.filter == -1) lopt.filter = ALLOW_MACS;
 
 				break;
 
@@ -4127,7 +3748,7 @@ int main(int argc, char * argv[])
 					return (EXIT_FAILURE);
 				}
 
-				if (opt.filter == -1) opt.filter = ALLOW_MACS;
+				if (lopt.filter == -1) lopt.filter = ALLOW_MACS;
 
 				break;
 
@@ -4135,7 +3756,7 @@ int main(int argc, char * argv[])
 
 				if (addMACfile(rBSSID, optarg) != 0) return (EXIT_FAILURE);
 
-				if (opt.filter == -1) opt.filter = ALLOW_MACS;
+				if (lopt.filter == -1) lopt.filter = ALLOW_MACS;
 
 				break;
 
@@ -4196,7 +3817,7 @@ int main(int argc, char * argv[])
 		return (EXIT_FAILURE);
 	}
 
-	if (opt.mitm && (getMACcount(rBSSID) != 1 || getMACcount(rClient) < 1))
+	if (lopt.mitm && (getMACcount(rBSSID) != 1 || getMACcount(rClient) < 1))
 	{
 		printf("Notice: You need to specify exactly one BSSID (-b)"
 			   " and at least one client MAC (-d)\n");
@@ -4204,14 +3825,14 @@ int main(int argc, char * argv[])
 		return (EXIT_FAILURE);
 	}
 
-	if (opt.wpa1type && opt.wpa2type)
+	if (lopt.wpa1type && lopt.wpa2type)
 	{
 		printf("Notice: You can only set one method: WPA (-z) or WPA2 (-Z)\n");
 		printf("\"%s --help\" for help.\n", argv[0]);
 		return (EXIT_FAILURE);
 	}
 
-	if (opt.allwpa && (opt.wpa1type || opt.wpa2type))
+	if (lopt.allwpa && (lopt.wpa1type || lopt.wpa2type))
 	{
 		printf("Notice: You cannot use all WPA tags (-0)"
 			   " together with WPA (-z) or WPA2 (-Z)\n");
@@ -4308,8 +3929,8 @@ int main(int argc, char * argv[])
 			opt.r_nbpps = 500;
 	}
 
-	if (opt.record_data)
-		if (dump_initialize(opt.dump_prefix)) return (EXIT_FAILURE);
+	if (lopt.record_data)
+		if (dump_initialize(lopt.dump_prefix)) return (EXIT_FAILURE);
 
 	if (opt.s_file != NULL)
 	{
@@ -4371,47 +3992,48 @@ int main(int argc, char * argv[])
 	{
 		PCT;
 		printf(
-			"Trying to set MTU on %s to %i\n", ti_name(dev.dv_ti), opt.ti_mtu);
+			"Trying to set MTU on %s to %i\n", ti_name(dev.dv_ti), lopt.ti_mtu);
 	}
-	if (ti_set_mtu(dev.dv_ti, opt.ti_mtu) != 0)
+	if (ti_set_mtu(dev.dv_ti, lopt.ti_mtu) != 0)
 	{
 		if (!opt.quiet)
 		{
 			printf("error setting MTU on %s\n", ti_name(dev.dv_ti));
 		}
-		opt.ti_mtu = ti_get_mtu(dev.dv_ti);
+		lopt.ti_mtu = ti_get_mtu(dev.dv_ti);
 		if (!opt.quiet)
 		{
 			PCT;
-			printf("MTU on %s remains at %i\n", ti_name(dev.dv_ti), opt.ti_mtu);
+			printf(
+				"MTU on %s remains at %i\n", ti_name(dev.dv_ti), lopt.ti_mtu);
 		}
 	}
 
 	// Set MTU on wireless interface to a preferred value
-	if (wi_get_mtu(_wi_out) < opt.wif_mtu)
+	if (wi_get_mtu(_wi_out) < lopt.wif_mtu)
 	{
 		if (!opt.quiet)
 		{
 			PCT;
 			printf("Trying to set MTU on %s to %i\n",
 				   _wi_out->wi_interface,
-				   opt.wif_mtu);
+				   lopt.wif_mtu);
 		}
-		if (wi_set_mtu(_wi_out, opt.wif_mtu) != 0)
+		if (wi_set_mtu(_wi_out, lopt.wif_mtu) != 0)
 		{
-			opt.wif_mtu = wi_get_mtu(_wi_out);
+			lopt.wif_mtu = wi_get_mtu(_wi_out);
 			if (!opt.quiet)
 			{
 				printf("error setting MTU on %s\n", _wi_out->wi_interface);
 				PCT;
 				printf("MTU on %s remains at %i\n",
 					   _wi_out->wi_interface,
-					   opt.wif_mtu);
+					   lopt.wif_mtu);
 			}
 		}
 	}
 
-	if (opt.external)
+	if (lopt.external)
 	{
 		dev.dv_ti2 = ti_open(NULL);
 		if (!dev.dv_ti2)
@@ -4431,9 +4053,9 @@ int main(int argc, char * argv[])
 		}
 	}
 
-	if (opt.channel > 0) wi_set_channel(_wi_out, opt.channel);
+	if (lopt.channel > 0) wi_set_channel(_wi_out, lopt.channel);
 
-	if (memcmp(opt.r_bssid, NULL_MAC, 6) == 0 && !opt.adhoc)
+	if (memcmp(opt.r_bssid, NULL_MAC, 6) == 0 && !lopt.adhoc)
 	{
 		wi_get_mac(_wi_out, opt.r_bssid);
 	}
@@ -4443,22 +4065,22 @@ int main(int argc, char * argv[])
 		wi_get_mac(_wi_out, opt.r_smac);
 	}
 
-	if (opt.adhoc)
+	if (lopt.adhoc)
 	{
 		for (i = 0; i < 6; i++) // random cell
-			opt.r_bssid[i] = rand() & 0xFF;
+			opt.r_bssid[i] = (uint8_t)(rand() & 0xFF);
 
 		// generate an even first byte
 		if (opt.r_bssid[0] & 0x01) opt.r_bssid[0] ^= 0x01;
 	}
 
 	memcpy(apc.bssid, opt.r_bssid, 6);
-	if (getESSIDcount() == 1 && opt.hidden != 1)
+	if (getESSIDcount() == 1 && lopt.hidden != 1)
 	{
 		apc.essid = (char *) malloc(MAX_IE_ELEMENT_SIZE + 1);
 		ALLEGE(apc.essid != NULL);
 		apc.essid_len = getESSID(apc.essid);
-		apc.essid = (char *) realloc((void *) apc.essid, apc.essid_len + 1);
+		apc.essid = (char *) realloc((void *) apc.essid, apc.essid_len + 1u);
 		ALLEGE(apc.essid != NULL);
 		apc.essid[apc.essid_len] = 0x00;
 	}
@@ -4467,13 +4089,13 @@ int main(int argc, char * argv[])
 		apc.essid = "\x00";
 		apc.essid_len = 1;
 	}
-	apc.interval = opt.interval;
+	apc.interval = lopt.interval;
 	apc.capa[0] = 0x00;
-	if (opt.adhoc)
+	if (lopt.adhoc)
 		apc.capa[0] |= 0x02;
 	else
 		apc.capa[0] |= 0x01;
-	if ((opt.crypt == CRYPT_WEP && opt.setWEP == -1) || opt.setWEP == 1)
+	if ((opt.crypt == CRYPT_WEP && lopt.setWEP == -1) || lopt.setWEP == 1)
 		apc.capa[0] |= 0x10;
 	apc.capa[1] = 0x04;
 
@@ -4492,7 +4114,7 @@ int main(int argc, char * argv[])
 			   opt.r_bssid[5]);
 	}
 
-	if (opt.external)
+	if (lopt.external)
 	{
 		if (ti_set_mac(dev.dv_ti2, (unsigned char *) "\xba\x98\x76\x54\x32\x10")
 			!= 0)
@@ -4510,7 +4132,7 @@ int main(int argc, char * argv[])
 		return (EXIT_FAILURE);
 	}
 
-	if (opt.caffelatte)
+	if (lopt.caffelatte)
 	{
 		arp = (struct ARP_req *) malloc(opt.ringbuffer
 										* sizeof(struct ARP_req));
@@ -4525,7 +4147,7 @@ int main(int argc, char * argv[])
 		}
 	}
 
-	if (opt.cf_attack)
+	if (lopt.cf_attack)
 	{
 		if (pthread_create(&(cfragpid), NULL, (void *) cfrag_thread, NULL) != 0)
 		{
@@ -4536,7 +4158,7 @@ int main(int argc, char * argv[])
 
 	if (!opt.quiet)
 	{
-		if (opt.adhoc)
+		if (lopt.adhoc)
 		{
 			PCT;
 			printf("Sending beacons in Ad-Hoc mode for Cell "
@@ -4647,7 +4269,7 @@ int main(int argc, char * argv[])
 				memcpy(h80211, tmpbuf + n, caplen);
 			}
 
-			packet_recv(h80211, caplen, &apc, (opt.external & EXT_IN));
+			packet_recv(h80211, caplen, &apc, (lopt.external & EXT_IN));
 			msleep(1000 / opt.r_nbpps);
 			continue;
 		}
@@ -4655,7 +4277,7 @@ int main(int argc, char * argv[])
 		FD_ZERO(&read_fds);
 		FD_SET(dev.fd_in, &read_fds);
 		FD_SET(ti_fd(dev.dv_ti), &read_fds);
-		if (opt.external)
+		if (lopt.external)
 		{
 			FD_SET(ti_fd(dev.dv_ti2), &read_fds);
 			ret_val = select(
@@ -4682,7 +4304,7 @@ int main(int argc, char * argv[])
 					packet_xmit(buffer, len);
 				}
 			}
-			if (opt.external && FD_ISSET(ti_fd(dev.dv_ti2), &read_fds))
+			if (lopt.external && FD_ISSET(ti_fd(dev.dv_ti2), &read_fds))
 			{
 				len = ti_read(dev.dv_ti2, buffer, sizeof(buffer));
 				if (len > 0)
@@ -4695,7 +4317,7 @@ int main(int argc, char * argv[])
 				len = read_packet(_wi_in, buffer, sizeof(buffer), NULL);
 				if (len > 0)
 				{
-					packet_recv(buffer, len, &apc, (opt.external & EXT_IN));
+					packet_recv(buffer, len, &apc, (lopt.external & EXT_IN));
 				}
 			}
 		} // if( ret_val > 0 )

@@ -362,7 +362,8 @@ static int set_IVidx(unsigned char * packet, int data_begin)
 	return (0);
 }
 
-static int encrypt_data(unsigned char * dest, unsigned char * data, int length)
+static int
+my_encrypt_data(unsigned char * dest, unsigned char * data, int length)
 {
 	unsigned char cipher[2048];
 	int n;
@@ -397,7 +398,7 @@ static int encrypt_data(unsigned char * dest, unsigned char * data, int length)
 }
 
 static int
-create_wep_packet(unsigned char * packet, int * length, int data_begin)
+my_create_wep_packet(unsigned char * packet, int * length, int data_begin)
 {
 	if (packet == NULL) return (1);
 
@@ -405,9 +406,9 @@ create_wep_packet(unsigned char * packet, int * length, int data_begin)
 	if (add_crc32(packet + data_begin, *length - data_begin) != 0) return (1);
 
 	/* encrypt data+crc32 and keep a 4byte hole */
-	if (encrypt_data(packet + data_begin + 4,
-					 packet + data_begin,
-					 *length - (data_begin - 4))
+	if (my_encrypt_data(packet + data_begin + 4,
+						packet + data_begin,
+						*length - (data_begin - 4))
 		!= 0)
 		return (1);
 
@@ -538,7 +539,7 @@ static int packet_xmit(unsigned char * packet, int length)
 	}
 	else if (opt.prgalen > 0)
 	{
-		if (create_wep_packet(h80211, &length, data_begin) != 0) return (1);
+		if (my_create_wep_packet(h80211, &length, data_begin) != 0) return (1);
 	}
 
 	if ((lopt.tods == 2) && lopt.bidir)

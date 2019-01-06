@@ -498,8 +498,9 @@ static int next_keystream(unsigned char * dest,
 	return (-1);
 }
 
-static int
-encrypt_data(unsigned char * dest, const unsigned char * data, const int length)
+static int my_encrypt_data(unsigned char * dest,
+						   const unsigned char * data,
+						   const int length)
 {
 	unsigned char cipher[2048];
 	int n;
@@ -555,7 +556,7 @@ encrypt_data(unsigned char * dest, const unsigned char * data, const int length)
 	return (0);
 }
 
-static int create_wep_packet(unsigned char * packet, int * length)
+static int my_create_wep_packet(unsigned char * packet, int * length)
 {
 	if (packet == NULL) return (1);
 
@@ -563,7 +564,8 @@ static int create_wep_packet(unsigned char * packet, int * length)
 	if (add_crc32(packet + 24, *length - 24) != 0) return (1);
 
 	/* encrypt data+crc32 and keep a 4byte hole */
-	if (encrypt_data(packet + 28, packet + 24, *length - 20) != 0) return (1);
+	if (my_encrypt_data(packet + 28, packet + 24, *length - 20) != 0)
+		return (1);
 
 	/* write IV+IDX right in front of the encrypted data */
 	if (set_IVidx(packet) != 0) return (1);
@@ -1270,7 +1272,7 @@ int main(int argc, char * argv[])
 
 		if (lopt.encrypt)
 		{
-			if (create_wep_packet(h80211, &(lopt.pktlen)) != 0)
+			if (my_create_wep_packet(h80211, &(lopt.pktlen)) != 0)
 				return (EXIT_FAILURE);
 		}
 		else

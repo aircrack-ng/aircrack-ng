@@ -832,3 +832,415 @@ int capture_ask_packet(int * caplen, int just_grab)
 
 	return (EXIT_SUCCESS);
 }
+
+int dump_initialize(char * prefix)
+{
+	const size_t ADDED_LENGTH = 7;
+	FILE * f;
+	char * ofn;
+	size_t ofn_len;
+	struct pcap_file_header pfh;
+
+	if (prefix == NULL)
+	{
+		return (0);
+	}
+
+	ofn_len = strlen(prefix) + ADDED_LENGTH + 1;
+	ofn = (char *) calloc(1, ofn_len);
+	ALLEGE(ofn != NULL);
+
+	/* Get the index for the filename so we don't overwrite an existing file */
+	opt.f_index = 1;
+
+	do
+	{
+		snprintf(ofn, ofn_len, "%s-%02d.%s", prefix, opt.f_index, "cap");
+
+		if ((f = fopen(ofn, "rb+")) != NULL)
+		{
+			fclose(f);
+			opt.f_index++;
+			continue;
+		}
+		break;
+	} while (1);
+
+	opt.prefix = (char *) calloc(1, strlen(prefix) + 1);
+	ALLEGE(opt.prefix != NULL);
+	memcpy(opt.prefix, prefix, strlen(prefix) + 1);
+
+	/* create the output packet capture file */
+
+	snprintf(ofn, ofn_len, "%s-%02d.cap", prefix, opt.f_index);
+
+	if ((opt.f_cap = fopen(ofn, "wb+")) == NULL)
+	{
+		perror("fopen failed");
+		fprintf(stderr, "Could not create \"%s\".\n", ofn);
+		free(ofn);
+		return (1);
+	}
+
+	opt.f_cap_name = ofn;
+
+	pfh.magic = TCPDUMP_MAGIC;
+	pfh.version_major = PCAP_VERSION_MAJOR;
+	pfh.version_minor = PCAP_VERSION_MINOR;
+	pfh.thiszone = 0;
+	pfh.sigfigs = 0;
+	pfh.snaplen = 65535;
+	pfh.linktype = LINKTYPE_IEEE802_11;
+
+	if (fwrite(&pfh, 1, sizeof(pfh), opt.f_cap) != (size_t) sizeof(pfh))
+	{
+		perror("fwrite(pcap file header) failed");
+		free(ofn);
+		return (1);
+	}
+
+	if (!opt.quiet)
+	{
+		PCT;
+		printf("Created capture file \"%s\".\n", ofn);
+	}
+
+	free(ofn);
+
+	return (0);
+}
+
+int check_shared_key(const uint8_t * h80211, size_t caplen)
+{
+	REQUIRE(h80211 != NULL);
+	REQUIRE(caplen > 0 && caplen < (int) sizeof(opt.sharedkey[0]));
+
+	int m_bmac = 16;
+	int m_smac = 10;
+	int m_dmac = 4;
+	size_t n;
+	size_t textlen;
+	int maybe_broken;
+	char ofn[1024];
+	uint8_t text[4096];
+	uint8_t prga[4096];
+	unsigned int long crc = 0xFFFFFFFF;
+
+	if (time(NULL) - opt.sk_start > 5)
+	{
+		/* timeout(5sec) - remove all packets, restart timer */
+		memset(opt.sharedkey, '\x00', sizeof(opt.sharedkey));
+		opt.sk_start = time(NULL);
+	}
+
+	/* is auth packet */
+	if ((h80211[1] & 0x40) != 0x40)
+	{
+		/* not encrypted */
+		if ((h80211[24] + (h80211[25] << 8)) == 1)
+		{
+			/* Shared-Key Authentication */
+			if ((h80211[26] + (h80211[27] << 8)) == 2)
+			{
+				/* sequence == 2 */
+				memcpy(opt.sharedkey[0], h80211, caplen);
+				opt.sk_len = caplen - 24;
+			}
+			if ((h80211[26] + (h80211[27] << 8)) == 4)
+			{
+				/* sequence == 4 */
+				memcpy(opt.sharedkey[2], h80211, caplen);
+			}
+		}
+		else
+			return (1);
+	}
+	else
+	{
+		/* encrypted */
+		memcpy(opt.sharedkey[1], h80211, caplen);
+		opt.sk_len2 = caplen - 24 - 4;
+	}
+
+	/* check if the 3 packets form a proper authentication */
+
+	if ((memcmp(opt.sharedkey[0] + m_bmac, NULL_MAC, 6) == 0)
+		|| (memcmp(opt.sharedkey[1] + m_bmac, NULL_MAC, 6) == 0)
+		|| (memcmp(opt.sharedkey[2] + m_bmac, NULL_MAC, 6)
+			== 0)) /* some bssids == zero */
+	{
+		return (1);
+	}
+
+	if ((memcmp(opt.sharedkey[0] + m_bmac, opt.sharedkey[1] + m_bmac, 6) != 0)
+		|| (memcmp(opt.sharedkey[0] + m_bmac, opt.sharedkey[2] + m_bmac, 6)
+			!= 0)) /* all bssids aren't equal */
+	{
+		return (1);
+	}
+
+	if ((memcmp(opt.sharedkey[0] + m_smac, opt.sharedkey[2] + m_smac, 6) != 0)
+		|| (memcmp(opt.sharedkey[0] + m_smac, opt.sharedkey[1] + m_dmac, 6)
+			!= 0)) /* SA in 2&4 != DA in 3 */
+	{
+		return (1);
+	}
+
+	if ((memcmp(opt.sharedkey[0] + m_dmac, opt.sharedkey[2] + m_dmac, 6) != 0)
+		|| (memcmp(opt.sharedkey[0] + m_dmac, opt.sharedkey[1] + m_smac, 6)
+			!= 0)) /* DA in 2&4 != SA in 3 */
+	{
+		return (1);
+	}
+
+	textlen = opt.sk_len;
+
+	maybe_broken = 0;
+
+	/* this check is probably either broken or not very reliable,
+	   since there are known cases when it is hit with valid data.
+	   rather than doing a hard exit here, we now set a flag so
+	   the .xor file is only written if not already existing, in
+	   order to make sure we don't overwrite a good .xor file with
+	   a potentially broken one; but on the other hand if none exist
+	   already, we do want it being written. */
+	if (textlen + 4 != opt.sk_len2)
+	{
+		if (!opt.quiet)
+		{
+			PCT;
+			printf("Broken SKA: %02X:%02X:%02X:%02X:%02X:%02X (expected: %lu, "
+				   "got %lu bytes)\n",
+				   *(opt.sharedkey[0] + m_dmac),
+				   *(opt.sharedkey[0] + m_dmac + 1),
+				   *(opt.sharedkey[0] + m_dmac + 2),
+				   *(opt.sharedkey[0] + m_dmac + 3),
+				   *(opt.sharedkey[0] + m_dmac + 4),
+				   *(opt.sharedkey[0] + m_dmac + 5),
+				   textlen + 4,
+				   opt.sk_len2);
+		}
+
+		maybe_broken = 1;
+	}
+
+	if (textlen > sizeof(text) - 4) return (1);
+
+	memcpy(text, opt.sharedkey[0] + 24, textlen);
+
+	/* increment sequence number from 2 to 3 */
+	text[2] = (uint8_t)(text[2] + 1);
+
+	for (n = 0; n < textlen; n++)
+		crc = crc_tbl[(crc ^ text[n]) & 0xFF] ^ (crc >> 8);
+
+	crc = ~crc;
+
+	/* append crc32 over body */
+	text[textlen] = (uint8_t)((crc) &0xFF);
+	text[textlen + 1] = (uint8_t)((crc >> 8) & 0xFF);
+	text[textlen + 2] = (uint8_t)((crc >> 16) & 0xFF);
+	text[textlen + 3] = (uint8_t)((crc >> 24) & 0xFF);
+
+	/* cleartext XOR cipher */
+	for (n = 0u; n < (textlen + 4u); n++)
+	{
+		prga[4 + n] = (uint8_t)((text[n] ^ opt.sharedkey[1][28 + n]) & 0xFF);
+	}
+
+	/* write IV+index */
+	prga[0] = (uint8_t)(opt.sharedkey[1][24] & 0xFF);
+	prga[1] = (uint8_t)(opt.sharedkey[1][25] & 0xFF);
+	prga[2] = (uint8_t)(opt.sharedkey[1][26] & 0xFF);
+	prga[3] = (uint8_t)(opt.sharedkey[1][27] & 0xFF);
+
+	if (opt.f_xor != NULL)
+	{
+		fclose(opt.f_xor);
+		opt.f_xor = NULL;
+	}
+
+	snprintf(ofn,
+			 sizeof(ofn) - 1,
+			 "%s-%02d-%02X-%02X-%02X-%02X-%02X-%02X.%s",
+			 opt.prefix,
+			 opt.f_index,
+			 *(opt.sharedkey[0] + m_bmac),
+			 *(opt.sharedkey[0] + m_bmac + 1),
+			 *(opt.sharedkey[0] + m_bmac + 2),
+			 *(opt.sharedkey[0] + m_bmac + 3),
+			 *(opt.sharedkey[0] + m_bmac + 4),
+			 *(opt.sharedkey[0] + m_bmac + 5),
+			 "xor");
+
+	if (maybe_broken && (opt.f_xor = fopen(ofn, "r")))
+	{
+		/* do not overwrite existing .xor file with maybe broken one */
+		fclose(opt.f_xor);
+		opt.f_xor = NULL;
+		return (1);
+	}
+
+	opt.f_xor = fopen(ofn, "w");
+	if (opt.f_xor == NULL) return (1);
+
+	for (n = 0; n < textlen + 8; n++) fputc((prga[n] & 0xFF), opt.f_xor);
+
+	fclose(opt.f_xor);
+	opt.f_xor = NULL;
+
+	if (!opt.quiet)
+	{
+		PCT;
+		printf("Got %lu bytes keystream: %02X:%02X:%02X:%02X:%02X:%02X\n",
+			   textlen + 4,
+			   *(opt.sharedkey[0] + m_dmac),
+			   *(opt.sharedkey[0] + m_dmac + 1),
+			   *(opt.sharedkey[0] + m_dmac + 2),
+			   *(opt.sharedkey[0] + m_dmac + 3),
+			   *(opt.sharedkey[0] + m_dmac + 4),
+			   *(opt.sharedkey[0] + m_dmac + 5));
+	}
+
+	memset(opt.sharedkey, '\x00', sizeof(opt.sharedkey));
+
+	return (0);
+}
+
+int encrypt_data(uint8_t * data, size_t length)
+{
+	uint8_t cipher[4096];
+	uint8_t K[128];
+
+	if (data == NULL) return (1);
+	if (length < 1 || length > 2044) return (1);
+
+	if (opt.prga == NULL && opt.crypt != CRYPT_WEP)
+	{
+		printf("Please specify a WEP key (-w).\n");
+		return (1);
+	}
+
+	if (opt.prgalen - 4 < length && opt.crypt != CRYPT_WEP)
+	{
+		printf(
+			"Please specify a longer PRGA file (-y) with at least %lu bytes.\n",
+			(length + 4));
+		return (1);
+	}
+
+	/* encrypt data */
+	if (opt.crypt == CRYPT_WEP)
+	{
+		K[0] = (uint8_t)(rand() & 0xFF);
+		K[1] = (uint8_t)(rand() & 0xFF);
+		K[2] = (uint8_t)(rand() & 0xFF);
+		memcpy(K + 3, opt.wepkey, opt.weplen);
+
+		encrypt_wep(data, (int) length, K, (int) opt.weplen + 3);
+		memcpy(cipher, data, length);
+		memcpy(data + 4, cipher, length);
+		memcpy(data, K, 3); //-V512
+		data[3] = 0x00;
+	}
+
+	return (0);
+}
+
+int create_wep_packet(uint8_t * packet, size_t * length, size_t hdrlen)
+{
+	if (packet == NULL) return (1);
+	if (length == NULL) return (1);
+	if (hdrlen >= INT_MAX) return (1);
+	if (*length >= INT_MAX) return (1);
+	if (*length - hdrlen >= INT_MAX) return (1);
+
+	/* write crc32 value behind data */
+	if (add_crc32(packet + hdrlen, (int) (*length - hdrlen)) != 0) return (1);
+
+	/* encrypt data+crc32 and keep a 4byte hole */
+	if (encrypt_data(packet + hdrlen, *length - hdrlen + 4) != 0) return (1);
+
+	/* set WEP bit */
+	packet[1] = (uint8_t)(packet[1] | 0x40);
+
+	*length += 8;
+
+	/* now you got yourself a shiny, brand new encrypted wep packet ;) */
+	return (0);
+}
+
+int set_clear_arp(uint8_t * buf,
+				  uint8_t * smac,
+				  uint8_t * dmac) // set first 22 bytes
+{
+	if (buf == NULL) return (-1);
+
+	memcpy(buf, S_LLC_SNAP_ARP, 8);
+	buf[8] = 0x00;
+	buf[9] = 0x01; // ethernet
+	buf[10] = 0x08; // IP
+	buf[11] = 0x00;
+	buf[12] = 0x06; // hardware size
+	buf[13] = 0x04; // protocol size
+	buf[14] = 0x00;
+	if (memcmp(dmac, BROADCAST, 6) == 0)
+		buf[15] = 0x01; // request
+	else
+		buf[15] = 0x02; // reply
+	memcpy(buf + 16, smac, 6);
+
+	return (0);
+}
+
+int set_final_arp(uint8_t * buf, uint8_t * mymac)
+{
+	if (buf == NULL) return (-1);
+
+	// shifted by 10bytes to set source IP as target IP :)
+
+	buf[0] = 0x08; // IP
+	buf[1] = 0x00;
+	buf[2] = 0x06; // hardware size
+	buf[3] = 0x04; // protocol size
+	buf[4] = 0x00;
+	buf[5] = 0x01; // request
+	memcpy(buf + 6, mymac, 6); // sender mac
+	buf[12] = 0xA9; // sender IP 169.254.87.197
+	buf[13] = 0xFE;
+	buf[14] = 0x57;
+	buf[15] = 0xC5; // end sender IP
+
+	return (0);
+}
+
+int set_clear_ip(uint8_t * buf, size_t ip_len) // set first 9 bytes
+{
+	if (buf == NULL) return (-1);
+
+	memcpy(buf, S_LLC_SNAP_IP, 8);
+	buf[8] = 0x45;
+	buf[10] = (uint8_t)((ip_len >> 8) & 0xFF);
+	buf[11] = (uint8_t)(ip_len & 0xFF);
+
+	return (0);
+}
+
+int set_final_ip(uint8_t * buf, uint8_t * mymac)
+{
+	if (buf == NULL) return (-1);
+
+	// shifted by 10bytes to set source IP as target IP :)
+
+	buf[0] = 0x06; // hardware size
+	buf[1] = 0x04; // protocol size
+	buf[2] = 0x00;
+	buf[3] = 0x01; // request
+	memcpy(buf + 4, mymac, 6); // sender mac
+	buf[10] = 0xA9; // sender IP from 169.254.XXX.XXX
+	buf[11] = 0xFE;
+	buf[12] = 0x57;
+	buf[13] = 0xC5; // end sender IP
+
+	return (0);
+}
