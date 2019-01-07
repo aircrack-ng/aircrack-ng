@@ -1370,6 +1370,7 @@ static int remove_namac(unsigned char * mac)
 	return (0);
 }
 
+// NOTE(jbenden): This is also in ivstools.c
 static int dump_add_packet(unsigned char * h80211,
 						   int caplen,
 						   struct rx_info * ri,
@@ -1378,9 +1379,13 @@ static int dump_add_packet(unsigned char * h80211,
 	REQUIRE(h80211 != NULL);
 	REQUIRE(caplen >= 24);
 
-	int i, n, seq, msd, dlen, offset, clen, o;
+	int seq, msd, offset, clen, o;
+	size_t i;
+	size_t n;
+	size_t dlen;
 	unsigned z;
-	int type, length, numuni = 0, numauth = 0;
+	int type, length, numuni = 0;
+	size_t numauth = 0;
 	struct pcap_pkthdr pkh;
 	struct timeval tv;
 	struct ivs2_pkthdr ivs2;
@@ -2663,7 +2668,8 @@ skip_probe:
 						/* reveal keystream (plain^encrypted) */
 						for (n = 0; n < (ivs2.len - 4); n++)
 						{
-							clear[n] = (clear[n] ^ h80211[z + 4 + n]) & 0xFF;
+							clear[n] = (uint8_t)((clear[n] ^ h80211[z + 4 + n])
+												 & 0xFF);
 						}
 						// clear is now the keystream
 					}
@@ -2676,16 +2682,16 @@ skip_probe:
 						// len = 4(iv+idx) + 1(num of keystreams) + 1(len per
 						// keystream) + 32*num_xor + 16*sizeof(int)(weight[16])
 						ivs2.len += 4 + 1 + 1 + 32 * num_xor + 16 * sizeof(int);
-						clear[0] = num_xor;
-						clear[1] = clen;
+						clear[0] = (uint8_t) num_xor;
+						clear[1] = (uint8_t) clen;
 						/* reveal keystream (plain^encrypted) */
 						for (o = 0; o < num_xor; o++)
 						{
 							for (n = 0; n < (ivs2.len - 4); n++)
 							{
-								clear[2 + n + o * 32] = (clear[2 + n + o * 32]
-														 ^ h80211[z + 4 + n])
-														& 0xFF;
+								clear[2 + n + o * 32] = (uint8_t)(
+									(clear[2 + n + o * 32] ^ h80211[z + 4 + n])
+									& 0xFF);
 							}
 						}
 						memcpy(clear + 4 + 1 + 1 + 32 * num_xor,
@@ -2705,7 +2711,7 @@ skip_probe:
 						!= (size_t) sizeof(struct ivs2_pkthdr))
 					{
 						perror("fwrite(IV header) failed");
-						return (1);
+						return (EXIT_FAILURE);
 					}
 
 					if (ivs2.flags & IVS2_BSSID)
@@ -2721,7 +2727,7 @@ skip_probe:
 					if (fwrite(h80211 + z, 1, 4, G.f_ivs) != (size_t) 4)
 					{
 						perror("fwrite(IV iv+idx) failed");
-						return (1);
+						return (EXIT_FAILURE);
 					}
 					ivs2.len -= 4;
 
@@ -2729,7 +2735,7 @@ skip_probe:
 						!= (size_t) ivs2.len)
 					{
 						perror("fwrite(IV keystream) failed");
-						return (1);
+						return (EXIT_FAILURE);
 					}
 				}
 
@@ -2851,12 +2857,11 @@ skip_probe:
 				if ((st_cur->wpa.state & 4) != 4)
 				{
 					st_cur->wpa.eapol_size
-						= (h80211[z + 2] << 8) + h80211[z + 3] + 4;
+						= (h80211[z + 2] << 8) + h80211[z + 3] + 4u;
 
-					if (caplen - (unsigned) z < st_cur->wpa.eapol_size
-						|| st_cur->wpa.eapol_size == 0
-						|| caplen - (unsigned) z < 81 + 16
-						|| st_cur->wpa.eapol_size > sizeof(st_cur->wpa.eapol))
+					if (st_cur->wpa.eapol_size == 0
+						|| st_cur->wpa.eapol_size
+							   >= sizeof(st_cur->wpa.eapol) - 16)
 					{
 						// Ignore the packet trying to crash us.
 						st_cur->wpa.eapol_size = 0;
@@ -2868,7 +2873,7 @@ skip_probe:
 						st_cur->wpa.eapol, &h80211[z], st_cur->wpa.eapol_size);
 					memset(st_cur->wpa.eapol + 81, 0, 16);
 					st_cur->wpa.state |= 4;
-					st_cur->wpa.keyver = h80211[z + 6] & 7;
+					st_cur->wpa.keyver = (uint8_t)(h80211[z + 6] & 7);
 				}
 			}
 
@@ -2907,7 +2912,7 @@ skip_probe:
 						!= (size_t) sizeof(struct ivs2_pkthdr))
 					{
 						perror("fwrite(IV header) failed");
-						return (1);
+						return (EXIT_FAILURE);
 					}
 
 					if (ivs2.flags & IVS2_BSSID)
@@ -2915,7 +2920,7 @@ skip_probe:
 						if (fwrite(ap_cur->bssid, 1, 6, G.f_ivs) != (size_t) 6)
 						{
 							perror("fwrite(IV bssid) failed");
-							return (1);
+							return (EXIT_FAILURE);
 						}
 						ivs2.len -= 6;
 					}
@@ -2925,7 +2930,7 @@ skip_probe:
 						!= (size_t) sizeof(struct WPA_hdsk))
 					{
 						perror("fwrite(IV wpa_hdsk) failed");
-						return (1);
+						return (EXIT_FAILURE);
 					}
 				}
 			}

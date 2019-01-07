@@ -225,11 +225,15 @@ static int merge(int argc, char * argv[])
 	return (EXIT_SUCCESS);
 }
 
+// NOTE(jbenden): This is also in airodump-ng.c
 static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 {
 	REQUIRE(h80211 != NULL);
 
-	int i, n, seq, dlen, clen;
+	int seq, clen;
+	size_t dlen;
+	size_t i;
+	size_t n;
 	unsigned z;
 	struct ivs2_pkthdr ivs2;
 	unsigned char * p;
@@ -584,7 +588,8 @@ skip_station:
 						/* reveal keystream (plain^encrypted) */
 						for (n = 0; n < (ivs2.len - 4); n++)
 						{
-							clear[n] = (clear[n] ^ h80211[z + 4 + n]) & 0xFF;
+							clear[n] = (uint8_t)((clear[n] ^ h80211[z + 4 + n])
+												 & 0xFF);
 						}
 						// clear is now the keystream
 					}
@@ -597,16 +602,16 @@ skip_station:
 						// len = 4(iv+idx) + 1(num of keystreams) + 1(len per
 						// keystream) + 32*num_xor + 16*sizeof(int)(weight[16])
 						ivs2.len += 4 + 1 + 1 + 32 * num_xor + 16 * sizeof(int);
-						clear[0] = num_xor;
-						clear[1] = clen;
+						clear[0] = (uint8_t) num_xor;
+						clear[1] = (uint8_t) clen;
 						/* reveal keystream (plain^encrypted) */
 						for (o = 0; o < num_xor; o++)
 						{
 							for (n = 0; n < (ivs2.len - 4); n++)
 							{
-								clear[2 + n + o * 32] = (clear[2 + n + o * 32]
-														 ^ h80211[z + 4 + n])
-														& 0xFF;
+								clear[2 + n + o * 32] = (uint8_t)(
+									(clear[2 + n + o * 32] ^ h80211[z + 4 + n])
+									& 0xFF);
 							}
 						}
 						memcpy(clear + 4 + 1 + 1 + 32 * num_xor,
@@ -705,10 +710,10 @@ skip_station:
 				&& (h80211[z + 5] & 0x01) != 0)
 			{
 				st_cur->wpa.eapol_size
-					= (h80211[z + 2] << 8) + h80211[z + 3] + 4;
+					= (h80211[z + 2] << 8) + h80211[z + 3] + 4u;
 
-				if (st_cur->wpa.eapol_size > sizeof(st_cur->wpa.eapol_size)
-					|| caplen - z < st_cur->wpa.eapol_size)
+				if (st_cur->wpa.eapol_size == 0
+					|| st_cur->wpa.eapol_size >= sizeof(st_cur->wpa.eapol) - 16)
 				{
 					// ignore packet trying to crash us
 					st_cur->wpa.eapol_size = 0;
@@ -725,7 +730,7 @@ skip_station:
 				memcpy(st_cur->wpa.eapol, &h80211[z], st_cur->wpa.eapol_size);
 				memset(st_cur->wpa.eapol + 81, 0, 16);
 				st_cur->wpa.state |= 8;
-				st_cur->wpa.keyver = h80211[z + 6] & 7;
+				st_cur->wpa.keyver = (uint8_t)(h80211[z + 6] & 7);
 
 				if (st_cur->wpa.state == 15)
 				{
