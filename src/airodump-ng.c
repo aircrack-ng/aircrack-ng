@@ -90,24 +90,15 @@ GCRY_THREAD_OPTION_PTHREAD_IMPL;
 #endif
 #endif
 
-#define AIRODUMP_NG_CSV_EXT "csv"
-#define KISMET_CSV_EXT "kismet.csv"
-#define KISMET_NETXML_EXT "kismet.netxml"
-#define AIRODUMP_NG_GPS_EXT "gps"
-#define AIRODUMP_NG_CAP_EXT "cap"
-#define AIRODUMP_NG_LOG_CSV_EXT "log.csv"
+static const char * f_ext[] = {AIRODUMP_NG_CSV_EXT,
+							   AIRODUMP_NG_GPS_EXT,
+							   AIRODUMP_NG_CAP_EXT,
+							   IVS2_EXTENSION,
+							   KISMET_CSV_EXT,
+							   KISMET_NETXML_EXT,
+							   AIRODUMP_NG_LOG_CSV_EXT};
 
-#define NB_EXTENSIONS 7
-
-static const char * f_ext[NB_EXTENSIONS] = {AIRODUMP_NG_CSV_EXT,
-											AIRODUMP_NG_GPS_EXT,
-											AIRODUMP_NG_CAP_EXT,
-											IVS2_EXTENSION,
-											KISMET_CSV_EXT,
-											KISMET_NETXML_EXT,
-											AIRODUMP_NG_LOG_CSV_EXT};
-
-static const unsigned char llcnull[4] = {0, 0, 0, 0};
+static const unsigned char llcnull[] = {0, 0, 0, 0};
 
 static const char * OUI_PATHS[]
 	= {"./airodump-ng-oui.txt",
@@ -953,7 +944,7 @@ static int dump_initialize(char * prefix, int ivs_only)
 	/* Make sure no file with the same name & all possible file extensions. */
 	do
 	{
-		for (i = 0; i < NB_EXTENSIONS; i++)
+		for (i = 0; i < ArrayCount(f_ext); i++)
 		{
 			memset(ofn, 0, ofn_len);
 			snprintf(ofn, ofn_len, "%s-%02d.%s", prefix, G.f_index, f_ext[i]);
@@ -968,7 +959,7 @@ static int dump_initialize(char * prefix, int ivs_only)
 	}
 	/* If we did all extensions then no file with that name or extension exist
 	   so we can use that number */
-	while (i < NB_EXTENSIONS);
+	while (i < ArrayCount(f_ext));
 
 	G.prefix = (char *) malloc(strlen(prefix) + 1);
 	ALLEGE(G.prefix != NULL);
