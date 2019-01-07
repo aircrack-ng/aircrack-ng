@@ -272,4 +272,15 @@ void show_wep_stats(int B,
 					int depth[KEYHSBYTES],
 					int prod);
 
+static inline int cmp_votes(const void * bs1, const void * bs2)
+{
+	REQUIRE(bs1 != NULL);
+	REQUIRE(bs2 != NULL);
+
+	if (((vote *) bs1)->val < ((vote *) bs2)->val) return (1);
+	if (((vote *) bs1)->val > ((vote *) bs2)->val) return (-1);
+
+	return (0);
+}
+
 #endif /* _AIRCRACK_NG_H */

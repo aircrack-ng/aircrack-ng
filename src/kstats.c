@@ -24,31 +24,10 @@
 #include <stdio.h>
 
 #include "defs.h"
+#include "aircrack-ng.h"
 #include "aircrack-util/common.h"
 
 #define IVBUF_SIZE (5UL * 0xFFFFFF)
-#define N_ATTACKS 17
-
-enum KoreK_attacks
-{
-	A_u15, /* semi-stable  15%             */
-	A_s13, /* stable       13%             */
-	A_u13_1, /* unstable     13%             */
-	A_u13_2, /* unstable ?   13%             */
-	A_u13_3, /* unstable ?   13%             */
-	A_s5_1, /* standard      5% (~FMS)      */
-	A_s5_2, /* other stable  5%             */
-	A_s5_3, /* other stable  5%             */
-	A_u5_1, /* unstable      5% no good ?   */
-	A_u5_2, /* unstable      5%             */
-	A_u5_3, /* unstable      5% no good     */
-	A_u5_4, /* unstable      5%             */
-	A_s3, /* stable        3%             */
-	A_4_s13, /* stable       13% on q = 4    */
-	A_4_u5_1, /* unstable      5% on q = 4    */
-	A_4_u5_2, /* unstable      5% on q = 4    */
-	A_neg /* helps reject false positives */
-};
 
 static const int K_COEFF[N_ATTACKS]
 	= {15, 13, 12, 12, 12, 5, 5, 5, 3, 4, 3, 4, 3, 13, 4, 4, -20};
@@ -274,23 +253,6 @@ static void calc_votes(unsigned char * ivbuf,
 			}
 		}
 	}
-}
-
-typedef struct
-{
-	int idx, val;
-} vote;
-
-static inline int cmp_votes(const void * bs1, const void * bs2)
-{
-	REQUIRE(bs1 != NULL);
-	REQUIRE(bs2 != NULL);
-
-	if (((vote *) bs1)->val < ((vote *) bs2)->val) return (1);
-
-	if (((vote *) bs1)->val > ((vote *) bs2)->val) return (-1);
-
-	return (0);
 }
 
 int main(int argc, char * argv[])

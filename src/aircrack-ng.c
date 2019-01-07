@@ -2895,20 +2895,6 @@ static int check_wep_key(unsigned char * wepkey, int B, int keylen)
 	return (SUCCESS);
 }
 
-/* routine used to sort the votes */
-
-static inline int cmp_votes(const void * bs1, const void * bs2)
-{
-	REQUIRE(bs1 != NULL);
-	REQUIRE(bs2 != NULL);
-
-	if (((vote *) bs1)->val < ((vote *) bs2)->val) return (1);
-
-	if (((vote *) bs1)->val > ((vote *) bs2)->val) return (-1);
-
-	return (0);
-}
-
 /* sum up the votes and sort them */
 
 static int calc_poll(int B)
