@@ -95,7 +95,8 @@ TESTS = test-hex_string_to_array.sh \
 		test-alltools.sh
 
 if LINUX
-TESTS += test-aireplay-ng-0001.sh
+TESTS += test-aireplay-ng-0001.sh \
+		test-aireplay-ng-0002.sh
 endif
 
 if HAVE_SQLITE3
@@ -154,7 +155,8 @@ EXTRA_DIST = test-hex_string_to_array.sh \
 			 test-airolib-sqlite.sh
 
 if LINUX
-EXTRA_DIST += test-aireplay-ng-0001.sh
+EXTRA_DIST += test-aireplay-ng-0001.sh \
+		test-aireplay-ng-0002.sh
 endif
 
 if HAVE_SQLITE3
