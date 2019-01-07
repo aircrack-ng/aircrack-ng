@@ -668,12 +668,8 @@ static int check_shared_key(unsigned char * h80211, int caplen)
 	for (n = 0; n < textlen + 8; n++) fputc((prga[n] & 0xFF), G.f_xor);
 
 	fflush(G.f_xor);
-
-	if (G.f_xor != NULL)
-	{
-		fclose(G.f_xor);
-		G.f_xor = NULL;
-	}
+	fclose(G.f_xor);
+	G.f_xor = NULL;
 
 	snprintf(G.message,
 			 sizeof(G.message),
@@ -927,7 +923,8 @@ static int dump_initialize(char * prefix, int ivs_only)
 	REQUIRE(prefix != NULL);
 	REQUIRE(strlen(prefix) > 0);
 
-	int i, ofn_len;
+	size_t i;
+	int ofn_len;
 	FILE * f;
 	char * ofn = NULL;
 
@@ -1206,11 +1203,8 @@ static int list_tail_free(struct pkt_buf ** list)
 			(*pkts)->packet = NULL;
 		}
 
-		if (*pkts)
-		{
-			free(*pkts);
-			*pkts = NULL;
-		}
+		free(*pkts);
+		*pkts = NULL;
 		*pkts = next;
 	}
 
@@ -1369,7 +1363,6 @@ static int dump_add_packet(unsigned char * h80211,
 						   int cardnum)
 {
 	REQUIRE(h80211 != NULL);
-	REQUIRE(caplen >= 24);
 
 	int seq, msd, offset, clen, o;
 	size_t i;
@@ -1401,7 +1394,7 @@ static int dump_add_packet(unsigned char * h80211,
 
 	/* skip packets smaller than a 802.11 header */
 
-	if (caplen < sizeof(struct ieee80211_frame)) goto write_packet;
+	if (caplen < (int) sizeof(struct ieee80211_frame)) goto write_packet;
 
 	/* skip (uninteresting) control frames */
 
@@ -3633,7 +3626,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				 lt->tm_min);
 	}
 
-	strncat(strbuf, buffer, (512 - strlen(strbuf)));
+	strncat(strbuf, buffer, (512 - strlen(strbuf) - 1));
 	memset(buffer, '\0', 512);
 
 	if (G.is_berlin)
@@ -3646,18 +3639,18 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				 G.maxaps);
 	}
 
-	strncat(strbuf, buffer, (512 - strlen(strbuf)));
+	strncat(strbuf, buffer, (512 - strlen(strbuf) - 1));
 	memset(buffer, '\0', 512);
 
 	if (strlen(G.message) > 0)
 	{
-		strncat(strbuf, G.message, (512 - strlen(strbuf)));
+		strncat(strbuf, G.message, (512 - strlen(strbuf) - 1));
 	}
 
 	// add traling spaces to overwrite previous messages
 	strncat(strbuf,
 			"                                        ",
-			(512 - strlen(strbuf)));
+			(512 - strlen(strbuf) - 1));
 
 	strbuf[ws_col - 1] = '\0';
 	fprintf(stderr, "%s\n", strbuf);
@@ -3989,7 +3982,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 		{                                                                      \
 			if (sep) strcat(tbuf, ",");                                        \
 			sep = 1;                                                           \
-			strncat(tbuf, (name), (64 - strlen(tbuf)));                        \
+			strncat(tbuf, (name), (64 - strlen(tbuf) - 1));                    \
 		}                                                                      \
 	} while (0)
 								T(0, "USB"); // USB method
@@ -4412,7 +4405,7 @@ get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2)
 	if (!found || *manuf == '\0')
 	{
 		memcpy(manuf, "Unknown", 7);
-		manuf[strlen(manuf)] = '\0';
+		manuf[7] = '\0';
 	}
 
 	// Going in a smaller buffer
@@ -5323,6 +5316,7 @@ static int getchannels(const char * optarg)
 	// create a writable string
 	optc = optchan = (char *) malloc(strlen(optarg) + 1);
 	ALLEGE(optc != NULL);
+	ALLEGE(optchan != NULL);
 	strncpy(optchan, optarg, strlen(optarg));
 	optchan[strlen(optarg)] = '\0';
 
@@ -5447,6 +5441,7 @@ static int getfrequencies(const char * optarg)
 	// create a writable string
 	optc = optfreq = (char *) malloc(strlen(optarg) + 1);
 	ALLEGE(optc != NULL);
+	ALLEGE(optfreq != NULL);
 	strncpy(optfreq, optarg, strlen(optarg));
 	optfreq[strlen(optarg)] = '\0';
 
@@ -6560,7 +6555,7 @@ int main(int argc, char * argv[])
 						{
 							G.output_format_log_csv = 1;
 						}
-						else if (strncasecmp(output_format_string, "default", 6)
+						else if (strncasecmp(output_format_string, "default", 7)
 								 == 0)
 						{
 							G.output_format_pcap = 1;
@@ -6568,7 +6563,7 @@ int main(int argc, char * argv[])
 							G.output_format_kismet_csv = 1;
 							G.output_format_kismet_netxml = 1;
 						}
-						else if (strncasecmp(output_format_string, "none", 6)
+						else if (strncasecmp(output_format_string, "none", 4)
 								 == 0)
 						{
 							G.output_format_pcap = 0;
@@ -6907,7 +6902,7 @@ int main(int argc, char * argv[])
 		return (EXIT_FAILURE);
 	}
 	strncpy(G.elapsed_time, "0 s", 4);
-	G.elapsed_time[strlen(G.elapsed_time)] = 0;
+	G.elapsed_time[3] = '\0';
 
 	/* Create start time string for kismet netxml file */
 	G.airodump_start_time = (char *) calloc(1, 1000 * sizeof(char));
@@ -7058,7 +7053,7 @@ int main(int argc, char * argv[])
 				if (h80211[7] == 0x40)
 					n = 64;
 				else
-					n = *(int *) (h80211 + 4);
+					n = *(int *) (h80211 + 4); //-V1032
 
 				if (n < 8 || n >= (int) caplen) continue;
 
@@ -7266,15 +7261,15 @@ int main(int argc, char * argv[])
 		if (G.output_format_kismet_csv) dump_write_kismet_csv();
 		if (G.output_format_kismet_netxml) dump_write_kismet_netxml();
 
-		if (G.output_format_csv || G.f_txt != NULL) fclose(G.f_txt);
-		if (G.output_format_kismet_csv || G.f_kis != NULL) fclose(G.f_kis);
-		if (G.output_format_kismet_netxml || G.f_kis_xml != NULL)
+		if (G.output_format_csv && G.f_txt != NULL) fclose(G.f_txt);
+		if (G.output_format_kismet_csv && G.f_kis != NULL) fclose(G.f_kis);
+		if (G.output_format_kismet_netxml && G.f_kis_xml != NULL)
 		{
 			fclose(G.f_kis_xml);
 			free(G.airodump_start_time);
 		}
 		if (G.f_gps != NULL) fclose(G.f_gps);
-		if (G.output_format_pcap || G.f_cap != NULL) fclose(G.f_cap);
+		if (G.output_format_pcap && G.f_cap != NULL) fclose(G.f_cap);
 		if (G.f_ivs != NULL) fclose(G.f_ivs);
 		if (G.f_logcsv != NULL) fclose(G.f_logcsv);
 	}
