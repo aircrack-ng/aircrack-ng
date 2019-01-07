@@ -42,11 +42,12 @@
 #include "version.h"
 #include "crypto.h"
 #include "pcap.h"
+#include "aircrack-osdep/packed.h"
+#include "include/ieee80211.h"
 #include "uniqueiv.h"
 #include "aircrack-osdep/byteorder.h"
 #include "aircrack-util/common.h"
 #include "eapol.h"
-
 #include "aircrack-util/console.h"
 
 #define FAILURE -1
@@ -250,31 +251,32 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 
 	/* skip packets smaller than a 802.11 header */
 
-	if (caplen < 24) return (FAILURE);
+	if (caplen < sizeof(struct ieee80211_frame)) return (FAILURE);
 
 	/* skip (uninteresting) control frames */
 
-	if ((h80211[0] & 0x0C) == 0x04) return (FAILURE);
+	if ((h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_CTL)
+		return (FAILURE);
 
 	/* grab the sequence number */
 	seq = ((h80211[22] >> 4) + (h80211[23] << 4));
 
 	/* locate the access point's MAC address */
 
-	switch (h80211[1] & 3)
+	switch (h80211[1] & IEEE80211_FC1_DIR_MASK)
 	{
-		case 0:
+		case IEEE80211_FC1_DIR_NODS:
 			memcpy(bssid, h80211 + 16, 6);
-			break;
-		case 1:
+			break; // Adhoc
+		case IEEE80211_FC1_DIR_TODS:
 			memcpy(bssid, h80211 + 4, 6);
-			break;
-		case 2:
+			break; // ToDS
+		case IEEE80211_FC1_DIR_FROMDS:
 			memcpy(bssid, h80211 + 10, 6);
-			break;
-		default:
+			break; // FromDS
+		case IEEE80211_FC1_DIR_DSTODS:
 			memcpy(bssid, h80211 + 10, 6);
-			break;
+			break; // WDS -> Transmitter taken as BSSID
 	}
 
 	/* update our chained list of access points */
@@ -330,9 +332,9 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 
 	/* locate the station MAC in the 802.11 header */
 
-	switch (h80211[1] & 3)
+	switch (h80211[1] & IEEE80211_FC1_DIR_MASK)
 	{
-		case 0:
+		case IEEE80211_FC1_DIR_NODS:
 
 			/* if management, check that SA != BSSID */
 
@@ -341,14 +343,14 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 			memcpy(stmac, h80211 + 10, 6);
 			break;
 
-		case 1:
+		case IEEE80211_FC1_DIR_TODS:
 
 			/* ToDS packet, must come from a client */
 
 			memcpy(stmac, h80211 + 10, 6);
 			break;
 
-		case 2:
+		case IEEE80211_FC1_DIR_FROMDS:
 
 			/* FromDS packet, reject broadcast MACs */
 
@@ -356,7 +358,7 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 			memcpy(stmac, h80211 + 4, 6);
 			break;
 
-		default:
+		case IEEE80211_FC1_DIR_DSTODS:
 			goto skip_station;
 	}
 
@@ -404,7 +406,8 @@ skip_station:
 
 	/* packet parsing: Beacon or Probe Response */
 
-	if (h80211[0] == 0x80 || h80211[0] == 0x50)
+	if (h80211[0] == IEEE80211_FC0_SUBTYPE_BEACON
+		|| h80211[0] == IEEE80211_FC0_SUBTYPE_PROBE_RESP)
 	{
 		p = h80211 + 36;
 
@@ -479,7 +482,7 @@ skip_station:
 
 	/* packet parsing: Association Request */
 
-	if (h80211[0] == 0x00 && caplen > 28)
+	if (h80211[0] == IEEE80211_FC0_SUBTYPE_ASSOC_REQ && caplen > 28)
 	{
 		p = h80211 + 28;
 
@@ -552,18 +555,20 @@ skip_station:
 
 	/* packet parsing: some data */
 
-	if ((h80211[0] & 0x0C) == 0x08)
+	if ((h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_DATA)
 	{
 		/* check the SNAP header to see if data is encrypted */
 
-		z = ((h80211[1] & 3) != 3) ? 24 : 30;
+		z = ((h80211[1] & IEEE80211_FC1_DIR_MASK) != IEEE80211_FC1_DIR_DSTODS)
+				? 24
+				: 30;
 
 		if (z + 26 > caplen) return (FAILURE);
 
 		if (z + 10 > caplen) return (FAILURE);
 
 		// check if WEP bit set and extended iv
-		if ((h80211[1] & 0x40) != 0 && (h80211[z + 3] & 0x20) == 0)
+		if ((h80211[1] & IEEE80211_FC1_WEP) != 0 && (h80211[z + 3] & 0x20) == 0)
 		{
 			/* WEP: check if we've already seen this IV */
 
@@ -664,7 +669,9 @@ skip_station:
 			}
 		}
 
-		z = ((h80211[1] & 3) != 3) ? 24 : 30;
+		z = ((h80211[1] & IEEE80211_FC1_DIR_MASK) != IEEE80211_FC1_DIR_DSTODS)
+				? 24
+				: 30;
 
 		if (z + 26 > caplen) return (FAILURE);
 

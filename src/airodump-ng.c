@@ -77,6 +77,7 @@
 #include "airodump-ng.h"
 #include "dump_write.h"
 #include "aircrack-osdep/common.h"
+#include "include/ieee80211.h"
 #include "aircrack-util/common.h"
 #include "aircrack-util/mcs_index_rates.h"
 #include "aircrack-util/verifyssid.h"
@@ -1409,11 +1410,12 @@ static int dump_add_packet(unsigned char * h80211,
 
 	/* skip packets smaller than a 802.11 header */
 
-	if (caplen < 24) goto write_packet;
+	if (caplen < sizeof(struct ieee80211_frame)) goto write_packet;
 
 	/* skip (uninteresting) control frames */
 
-	if ((h80211[0] & 0x0C) == 0x04) goto write_packet;
+	if ((h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_CTL)
+		goto write_packet;
 
 	/* if it's a LLC null packet, just forget it (may change in the future) */
 
@@ -1425,18 +1427,18 @@ static int dump_add_packet(unsigned char * h80211,
 
 	/* locate the access point's MAC address */
 
-	switch (h80211[1] & 3)
+	switch (h80211[1] & IEEE80211_FC1_DIR_MASK)
 	{
-		case 0:
+		case IEEE80211_FC1_DIR_NODS:
 			memcpy(bssid, h80211 + 16, 6);
 			break; // Adhoc
-		case 1:
+		case IEEE80211_FC1_DIR_TODS:
 			memcpy(bssid, h80211 + 4, 6);
 			break; // ToDS
-		case 2:
+		case IEEE80211_FC1_DIR_FROMDS:
 			memcpy(bssid, h80211 + 10, 6);
 			break; // FromDS
-		case 3:
+		case IEEE80211_FC1_DIR_DSTODS:
 			memcpy(bssid, h80211 + 10, 6);
 			break; // WDS -> Transmitter taken as BSSID
 	}
@@ -1579,8 +1581,9 @@ static int dump_add_packet(unsigned char * h80211,
 	 * the AP: either type == mgmt and SA == BSSID,
 	 * or FromDS == 1 and ToDS == 0 */
 
-	if (((h80211[1] & 3) == 0 && memcmp(h80211 + 10, bssid, 6) == 0)
-		|| ((h80211[1] & 3) == 2))
+	if (((h80211[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_NODS
+		 && memcmp(h80211 + 10, bssid, 6) == 0)
+		|| ((h80211[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_FROMDS))
 	{
 		ap_cur->power_index = (ap_cur->power_index + 1) % NB_PWR;
 		ap_cur->power_lvl[ap_cur->power_index] = ri->ri_power;
@@ -1646,10 +1649,11 @@ static int dump_add_packet(unsigned char * h80211,
 
 	switch (h80211[0])
 	{
-		case 0x80:
+		case IEEE80211_FC0_SUBTYPE_BEACON:
 			ap_cur->nb_bcn++;
 			break;
-		case 0x50:
+
+		case IEEE80211_FC0_SUBTYPE_PROBE_RESP:
 			/* reset the WPS state */
 			ap_cur->wps.state = 0xFF;
 			ap_cur->wps.ap_setup_locked = 0;
@@ -1660,9 +1664,9 @@ static int dump_add_packet(unsigned char * h80211,
 
 	/* locate the station MAC in the 802.11 header */
 
-	switch (h80211[1] & 3)
+	switch (h80211[1] & IEEE80211_FC1_DIR_MASK)
 	{
-		case 0:
+		case IEEE80211_FC1_DIR_NODS:
 
 			/* if management, check that SA != BSSID */
 
@@ -1671,14 +1675,14 @@ static int dump_add_packet(unsigned char * h80211,
 			memcpy(stmac, h80211 + 10, 6);
 			break;
 
-		case 1:
+		case IEEE80211_FC1_DIR_TODS:
 
 			/* ToDS packet, must come from a client */
 
 			memcpy(stmac, h80211 + 10, 6);
 			break;
 
-		case 2:
+		case IEEE80211_FC1_DIR_FROMDS:
 
 			/* FromDS packet, reject broadcast MACs */
 
@@ -1686,7 +1690,7 @@ static int dump_add_packet(unsigned char * h80211,
 			memcpy(stmac, h80211 + 4, 6);
 			break;
 
-		default:
+		case IEEE80211_FC1_DIR_DSTODS:
 			goto skip_station;
 	}
 
@@ -1779,8 +1783,9 @@ static int dump_add_packet(unsigned char * h80211,
 	 * client: either type == Mgmt and SA != BSSID,
 	 * or FromDS == 0 and ToDS == 1 */
 
-	if (((h80211[1] & 3) == 0 && memcmp(h80211 + 10, bssid, 6) != 0)
-		|| ((h80211[1] & 3) == 1))
+	if (((h80211[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_NODS
+		 && memcmp(h80211 + 10, bssid, 6) != 0)
+		|| ((h80211[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_TODS))
 	{
 		st_cur->power = ri->ri_power;
 		if (ri->ri_power > st_cur->best_power)
@@ -1832,7 +1837,7 @@ skip_station:
 
 	/* packet parsing: Probe Request */
 
-	if (h80211[0] == 0x40 && st_cur != NULL)
+	if (h80211[0] == IEEE80211_FC0_SUBTYPE_PROBE_REQ && st_cur != NULL)
 	{
 		p = h80211 + 24;
 
@@ -1882,7 +1887,8 @@ skip_probe:
 
 	/* packet parsing: Beacon or Probe Response */
 
-	if (h80211[0] == 0x80 || h80211[0] == 0x50)
+	if (h80211[0] == IEEE80211_FC0_SUBTYPE_BEACON
+		|| h80211[0] == IEEE80211_FC0_SUBTYPE_PROBE_RESP)
 	{
 		if (!(ap_cur->security & (STD_OPN | STD_WEP | STD_WPA | STD_WPA2)))
 		{
@@ -2233,7 +2239,9 @@ skip_probe:
 
 	/* packet parsing: Beacon & Probe response */
 	/* TODO: Merge this if and the one above */
-	if ((h80211[0] == 0x80 || h80211[0] == 0x50) && caplen > 38)
+	if ((h80211[0] == IEEE80211_FC0_SUBTYPE_BEACON
+		 || h80211[0] == IEEE80211_FC0_SUBTYPE_PROBE_RESP)
+		&& caplen > 38)
 	{
 		p = h80211 + 36; // ignore hdr + fixed params
 
@@ -2304,7 +2312,7 @@ skip_probe:
 				}
 
 				// Get the list of cipher suites
-				for (i = 0; i < numuni; i++)
+				for (i = 0; i < (size_t) numuni; i++)
 				{
 					switch (p[i * 4 + 3])
 					{
@@ -2436,7 +2444,7 @@ skip_probe:
 
 	/* packet parsing: Authentication Response */
 
-	if (h80211[0] == 0xB0 && caplen >= 30)
+	if (h80211[0] == IEEE80211_FC0_SUBTYPE_AUTH && caplen >= 30)
 	{
 		if (ap_cur->security & STD_WEP)
 		{
@@ -2453,7 +2461,7 @@ skip_probe:
 
 	/* packet parsing: Association Request */
 
-	if (h80211[0] == 0x00 && caplen > 28)
+	if (h80211[0] == IEEE80211_FC0_SUBTYPE_ASSOC_REQ && caplen > 28)
 	{
 		p = h80211 + 28;
 
@@ -2529,7 +2537,7 @@ skip_probe:
 
 	/* packet parsing: some data */
 
-	if ((h80211[0] & 0x0C) == 0x08)
+	if ((h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_DATA)
 	{
 		/* update the channel if we didn't get any beacon */
 
@@ -2543,7 +2551,9 @@ skip_probe:
 
 		/* check the SNAP header to see if data is encrypted */
 
-		z = ((h80211[1] & 3) != 3) ? 24 : 30;
+		z = ((h80211[1] & IEEE80211_FC1_DIR_MASK) != IEEE80211_FC1_DIR_DSTODS)
+				? 24
+				: 30;
 
 		/* Check if 802.11e (QoS) */
 		if ((h80211[0] & 0x80) == 0x80)
@@ -2775,7 +2785,9 @@ skip_probe:
 			ap_cur->nb_data++;
 		}
 
-		z = ((h80211[1] & 3) != 3) ? 24 : 30;
+		z = ((h80211[1] & IEEE80211_FC1_DIR_MASK) != IEEE80211_FC1_DIR_DSTODS)
+				? 24
+				: 30;
 
 		/* Check if 802.11e (QoS) */
 		if ((h80211[0] & 0x80) == 0x80) z += 2;
