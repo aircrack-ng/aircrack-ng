@@ -42,6 +42,7 @@
 #include "version.h"
 #include "crypto.h"
 #include "pcap.h"
+#include "aircrack-osdep/byteorder.h"
 #include "aircrack-osdep/packed.h"
 #include "include/ieee80211.h"
 #include "uniqueiv.h"
