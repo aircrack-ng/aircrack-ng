@@ -3,22 +3,32 @@
 if test ! -z "${CI}"; then exit 77; fi
 
 # Check root
-[ `id -u` -ne 0 ] && exit 77
+if [ $(id -u) -ne 0 ]; then
+	echo "Not root, skipping"
+	exit 77
+fi
 
 # Check hostapd is present
 hash hostapd 2>&1 >/dev/null
-if test $? -ne 0; then exit 77; fi
+if [ $? -ne 0 ]; then
+	echo "HostAPd is not installed, skipping"
+	exit 77
+fi
 
 # Load module
 LOAD_MODULE=0
 if [ $(lsmod | egrep mac80211_hwsim | wc -l) -eq 0 ]; then
 	LOAD_MODULE=1
 	modprobe mac80211_hwsim radios=1 2>&1 >/dev/null
-	if test $? -ne 0; then exit 77; fi
+	if [ $? -ne 0 ]; then
+		# XXX: It can fail if inside a container too
+		echo "Failed inserting module, skipping"
+	fi
 fi
 
 # Check if there is only one radio
 if [ $("${top_builddir}/scripts/airmon-ng" | egrep hwsim | wc -l) -gt 1 ]; then
+	echo "More than one radio, hwsim may be in use by something else, skipping"
 	exit 77;
 fi
 
