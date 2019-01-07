@@ -2,12 +2,6 @@
 
 if test ! -z "${CI}"; then exit 77; fi
 
-if [ "${OSTYPE}" != "linux-gnu" ]; then
-	exit 77
-fi
-
-# Check if Linux, if not, skip
-
 # Check root
 [ `id -u` -ne 0 ] && exit 77
 

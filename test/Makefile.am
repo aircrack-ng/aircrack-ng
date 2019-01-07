@@ -92,8 +92,11 @@ TESTS = test-hex_string_to_array.sh \
 		test-airdecap-ng-0004.sh \
 		test-wpaclean-0001.sh \
 		test-wpaclean-0002.sh \
-		test-alltools.sh \
-		test-aireplay-ng-0001.sh
+		test-alltools.sh
+
+if LINUX
+TESTS += test-aireplay-ng-0001.sh
+endif
 
 if HAVE_SQLITE3
 TESTS += test-airolib-ng-0001.sh
@@ -124,7 +127,6 @@ EXTRA_DIST = test-hex_string_to_array.sh \
 			 test-wpaclean-0001.sh \
 			 test-wpaclean-0002.sh \
 			 test-alltools.sh \
-			 test-aireplay-ng-0001.sh \
 			 wpaclean_crash.pcap \
              wep.open.system.authentication.cap \
              wpa2-psk-linksys.cap \
@@ -150,6 +152,10 @@ EXTRA_DIST = test-hex_string_to_array.sh \
              passphrases.db \
 			 test-airdecap-ng.sh \
 			 test-airolib-sqlite.sh
+
+if LINUX
+EXTRA_DIST += test-aireplay-ng-0001.sh
+endif
 
 if HAVE_SQLITE3
 EXTRA_DIST += test-airolib-ng-0001.sh
