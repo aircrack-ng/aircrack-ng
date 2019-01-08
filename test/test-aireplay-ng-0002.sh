@@ -23,13 +23,14 @@ if [ $(lsmod | egrep mac80211_hwsim | wc -l) -eq 0 ]; then
 	if [ $? -ne 0 ]; then
 		# XXX: It can fail if inside a container too
 		echo "Failed inserting module, skipping"
+		exit 77
 	fi
 fi
 
 # Check if there is only one radio
 if [ $("${top_builddir}/scripts/airmon-ng" | egrep hwsim | wc -l) -gt 1 ]; then
 	echo "More than one radio, hwsim may be in use by something else, skipping"
-	exit 77;
+	exit 77
 fi
 
 # Check if interface is present and grab it
