@@ -931,7 +931,7 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 			// this is a Extended IV field
 			extra_enc_length = 8;
 		}
-		packet += extra_enc_length;
+		packet += (uintptr_t) extra_enc_length;
 		length -= extra_enc_length;
 		size_80211hdr += extra_enc_length;
 	}
@@ -1506,7 +1506,9 @@ static void process_station_data(u_int8_t * packet, int length)
 	struct ieee80211_frame * wfrm = (struct ieee80211_frame *) packet;
 
 	u_int8_t * p_stmac = packet_get_sta_80211(packet);
+	ALLEGE(p_stmac != NULL);
 	u_int8_t * p_bssid = packet_get_bssid_80211(packet);
+	ALLEGE(p_bssid != NULL);
 
 	if (!find_station_in_db(p_stmac))
 	{

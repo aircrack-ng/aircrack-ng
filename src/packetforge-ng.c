@@ -48,6 +48,7 @@
 #include "communications.h"
 #include "crypto.h"
 #include "aircrack-osdep/byteorder.h"
+#include "include/ethernet.h"
 #include "aircrack-util/common.h"
 #include "aircrack-util/console.h"
 
@@ -287,21 +288,16 @@ static int set_dmac(unsigned char * packet)
 
 	if (packet == NULL) return (1);
 
-	if (memcmp(lopt.dmac, NULL_MAC, 6) == 0)
+	if (memcmp(lopt.dmac, NULL_MAC, ETHER_ADDR_LEN) == 0)
 	{
 		printf("Please specify a destination MAC (-c).\n");
 		return (1);
 	}
 
-	switch (packet[1] & 3)
+	switch (packet[1] & IEEE80211_FC1_DIR_MASK)
 	{
-		case 0:
-			mi_d = 4;
-			break;
-		case 1:
-			mi_d = 16;
-			break;
-		case 2:
+		case IEEE80211_FC1_DIR_NODS:
+		case IEEE80211_FC1_DIR_FROMDS:
 			mi_d = 4;
 			break;
 		default:
@@ -310,7 +306,7 @@ static int set_dmac(unsigned char * packet)
 	}
 
 	/* write destination mac */
-	memcpy(packet + mi_d, lopt.dmac, 6);
+	memcpy(packet + mi_d, lopt.dmac, ETHER_ADDR_LEN);
 
 	return (0);
 }
@@ -321,21 +317,19 @@ static int set_smac(unsigned char * packet)
 
 	if (packet == NULL) return (1);
 
-	if (memcmp(lopt.smac, NULL_MAC, 6) == 0)
+	if (memcmp(lopt.smac, NULL_MAC, ETHER_ADDR_LEN) == 0)
 	{
 		printf("Please specify a source MAC (-h).\n");
 		return (1);
 	}
 
-	switch (packet[1] & 3)
+	switch (packet[1] & IEEE80211_FC1_DIR_MASK)
 	{
-		case 0:
+		case IEEE80211_FC1_DIR_NODS:
+		case IEEE80211_FC1_DIR_TODS:
 			mi_s = 10;
 			break;
-		case 1:
-			mi_s = 10;
-			break;
-		case 2:
+		case IEEE80211_FC1_DIR_FROMDS:
 			mi_s = 16;
 			break;
 		default:
@@ -344,7 +338,7 @@ static int set_smac(unsigned char * packet)
 	}
 
 	/* write source mac */
-	memcpy(packet + mi_s, lopt.smac, 6);
+	memcpy(packet + mi_s, lopt.smac, ETHER_ADDR_LEN);
 
 	return (0);
 }
@@ -544,6 +538,8 @@ static int my_encrypt_data(unsigned char * dest,
 			(length + 4));
 		return (1);
 	}
+
+	ALLEGE(opt.prga != NULL);
 
 	/* encrypt data */
 	for (n = 0; n < length; n++)

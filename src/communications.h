@@ -269,7 +269,7 @@ static inline int send_packet(struct wif * wi,
 {
 	REQUIRE(buf != NULL);
 	REQUIRE(count > 0 && count < INT_MAX);
-	REQUIRE(option >= kNoChange && option <= kRewriteDuration);
+	REQUIRE(option >= kNoChange && option <= kRewriteDuration); //-V1016
 
 	uint8_t * pkt = (uint8_t *) buf;
 
