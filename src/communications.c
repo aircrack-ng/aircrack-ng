@@ -33,8 +33,10 @@
  */
 
 #include <errno.h>
+#include <stdint.h>
 #include <sys/signal.h>
 #include <sys/time.h>
+#include <sys/types.h>
 
 #include "defs.h"
 #include "communications.h"
@@ -42,6 +44,11 @@
 #include "pcap.h"
 #include "aircrack-util/console.h"
 #include "aircrack-util/verifyssid.h"
+
+#include "aircrack-osdep/byteorder.h"
+#include "aircrack-osdep/packed.h"
+#include "include/ethernet.h"
+#include "include/ieee80211.h"
 
 extern struct communication_options opt;
 extern struct devices dev;
@@ -139,7 +146,8 @@ int wait_for_beacon(struct wif * wi,
 				if (tagtype != 0) continue;
 				if (taglen <= 1)
 				{
-					if (bssid != NULL && memcmp(bssid, pkt_sniff + 10, 6) == 0)
+					if (bssid != NULL
+						&& memcmp(bssid, pkt_sniff + 10, ETHER_ADDR_LEN) == 0)
 						break;
 					else
 						continue;
@@ -149,13 +157,14 @@ int wait_for_beacon(struct wif * wi,
 				if (taglen > 32) taglen = 32;
 
 				if ((pkt_sniff + pos + 2)[0] < 32 && bssid != NULL
-					&& memcmp(bssid, pkt_sniff + 10, 6) == 0)
+					&& memcmp(bssid, pkt_sniff + 10, ETHER_ADDR_LEN) == 0)
 				{
 					break;
 				}
 
 				/* if bssid is given, copy essid */
-				if (bssid != NULL && memcmp(bssid, pkt_sniff + 10, 6) == 0
+				if (bssid != NULL
+					&& memcmp(bssid, pkt_sniff + 10, ETHER_ADDR_LEN) == 0
 					&& strlen(essid) == 0)
 				{
 					memset(essid, 0, 33);
@@ -165,14 +174,15 @@ int wait_for_beacon(struct wif * wi,
 
 				/* if essid is given, copy bssid AND essid, so we can handle
 				 * case insensitive arguments */
-				if (bssid != NULL && memcmp(bssid, NULL_MAC, 6) == 0
+				if (bssid != NULL
+					&& memcmp(bssid, NULL_MAC, ETHER_ADDR_LEN) == 0
 					&& strncasecmp(essid, (char *) pkt_sniff + pos + 2, taglen)
 						   == 0
 					&& strlen(essid) == (unsigned) taglen)
 				{
 					memset(essid, 0, 33);
 					memcpy(essid, pkt_sniff + pos + 2, taglen);
-					memcpy(bssid, pkt_sniff + 10, 6);
+					memcpy(bssid, pkt_sniff + 10, ETHER_ADDR_LEN);
 					printf("Found BSSID \"%02X:%02X:%02X:%02X:%02X:%02X\" to "
 						   "given ESSID \"%s\".\n",
 						   bssid[0],
@@ -186,7 +196,8 @@ int wait_for_beacon(struct wif * wi,
 				}
 
 				/* if essid and bssid are given, check both */
-				if (bssid != NULL && memcmp(bssid, pkt_sniff + 10, 6) == 0
+				if (bssid != NULL
+					&& memcmp(bssid, pkt_sniff + 10, ETHER_ADDR_LEN) == 0
 					&& strlen(essid) > 0)
 				{
 					memset(essid2, 0, 33);
@@ -289,7 +300,7 @@ int getnet(struct wif * wi,
 	else
 		bssid = r_bssid;
 
-	if (memcmp(bssid, NULL_MAC, 6) != 0)
+	if (memcmp(bssid, NULL_MAC, ETHER_ADDR_LEN) != 0)
 	{
 		PCT;
 		printf("Waiting for beacon frame (BSSID: "
@@ -329,7 +340,7 @@ int getnet(struct wif * wi,
 	if (attack_check(bssid, (char *) r_essid, capa, wi, ignore_negative_one)
 		!= 0)
 	{
-		if (memcmp(bssid, NULL_MAC, 6) != 0)
+		if (memcmp(bssid, NULL_MAC, ETHER_ADDR_LEN) != 0)
 		{
 			if (verifyssid(r_essid) == 0)
 			{
@@ -419,29 +430,33 @@ int filter_packet(unsigned char * h80211, int caplen)
 			break;
 	}
 
-	if (memcmp(opt.f_bssid, NULL_MAC, 6) != 0)
-		if (memcmp(h80211 + mi_b, opt.f_bssid, 6) != 0) return (1);
+	if (memcmp(opt.f_bssid, NULL_MAC, ETHER_ADDR_LEN) != 0)
+		if (memcmp(h80211 + mi_b, opt.f_bssid, ETHER_ADDR_LEN) != 0) return (1);
 
-	if (memcmp(opt.f_bssid, opt.f_smac, 6) == 0)
+	if (memcmp(opt.f_bssid, opt.f_smac, ETHER_ADDR_LEN) == 0)
 	{
-		if (memcmp(opt.f_smac, NULL_MAC, 6) != 0)
-			if (memcmp(h80211 + mi_s, opt.f_smac, 5) != 0) return (1);
+		if (memcmp(opt.f_smac, NULL_MAC, ETHER_ADDR_LEN) != 0)
+			if (memcmp(h80211 + mi_s, opt.f_smac, ETHER_ADDR_LEN - 1) != 0)
+				return (1);
 	}
 	else
 	{
-		if (memcmp(opt.f_smac, NULL_MAC, 6) != 0)
-			if (memcmp(h80211 + mi_s, opt.f_smac, 6) != 0) return (1);
+		if (memcmp(opt.f_smac, NULL_MAC, ETHER_ADDR_LEN) != 0)
+			if (memcmp(h80211 + mi_s, opt.f_smac, ETHER_ADDR_LEN) != 0)
+				return (1);
 	}
 
-	if (memcmp(opt.f_bssid, opt.f_dmac, 6) == 0)
+	if (memcmp(opt.f_bssid, opt.f_dmac, ETHER_ADDR_LEN) == 0)
 	{
-		if (memcmp(opt.f_dmac, NULL_MAC, 6) != 0)
-			if (memcmp(h80211 + mi_d, opt.f_dmac, 5) != 0) return (1);
+		if (memcmp(opt.f_dmac, NULL_MAC, ETHER_ADDR_LEN) != 0)
+			if (memcmp(h80211 + mi_d, opt.f_dmac, ETHER_ADDR_LEN - 1) != 0)
+				return (1);
 	}
 	else
 	{
-		if (memcmp(opt.f_dmac, NULL_MAC, 6) != 0)
-			if (memcmp(h80211 + mi_d, opt.f_dmac, 6) != 0) return (1);
+		if (memcmp(opt.f_dmac, NULL_MAC, ETHER_ADDR_LEN) != 0)
+			if (memcmp(h80211 + mi_d, opt.f_dmac, ETHER_ADDR_LEN) != 0)
+				return (1);
 	}
 
 	/* this one looks good */
@@ -964,30 +979,45 @@ int check_shared_key(const uint8_t * h80211, size_t caplen)
 
 	/* check if the 3 packets form a proper authentication */
 
-	if ((memcmp(opt.sharedkey[0] + m_bmac, NULL_MAC, 6) == 0)
-		|| (memcmp(opt.sharedkey[1] + m_bmac, NULL_MAC, 6) == 0)
-		|| (memcmp(opt.sharedkey[2] + m_bmac, NULL_MAC, 6)
+	if ((memcmp(opt.sharedkey[0] + m_bmac, NULL_MAC, ETHER_ADDR_LEN) == 0)
+		|| (memcmp(opt.sharedkey[1] + m_bmac, NULL_MAC, ETHER_ADDR_LEN) == 0)
+		|| (memcmp(opt.sharedkey[2] + m_bmac, NULL_MAC, ETHER_ADDR_LEN)
 			== 0)) /* some bssids == zero */
 	{
 		return (1);
 	}
 
-	if ((memcmp(opt.sharedkey[0] + m_bmac, opt.sharedkey[1] + m_bmac, 6) != 0)
-		|| (memcmp(opt.sharedkey[0] + m_bmac, opt.sharedkey[2] + m_bmac, 6)
+	if ((memcmp(opt.sharedkey[0] + m_bmac,
+				opt.sharedkey[1] + m_bmac,
+				ETHER_ADDR_LEN)
+		 != 0)
+		|| (memcmp(opt.sharedkey[0] + m_bmac,
+				   opt.sharedkey[2] + m_bmac,
+				   ETHER_ADDR_LEN)
 			!= 0)) /* all bssids aren't equal */
 	{
 		return (1);
 	}
 
-	if ((memcmp(opt.sharedkey[0] + m_smac, opt.sharedkey[2] + m_smac, 6) != 0)
-		|| (memcmp(opt.sharedkey[0] + m_smac, opt.sharedkey[1] + m_dmac, 6)
+	if ((memcmp(opt.sharedkey[0] + m_smac,
+				opt.sharedkey[2] + m_smac,
+				ETHER_ADDR_LEN)
+		 != 0)
+		|| (memcmp(opt.sharedkey[0] + m_smac,
+				   opt.sharedkey[1] + m_dmac,
+				   ETHER_ADDR_LEN)
 			!= 0)) /* SA in 2&4 != DA in 3 */
 	{
 		return (1);
 	}
 
-	if ((memcmp(opt.sharedkey[0] + m_dmac, opt.sharedkey[2] + m_dmac, 6) != 0)
-		|| (memcmp(opt.sharedkey[0] + m_dmac, opt.sharedkey[1] + m_smac, 6)
+	if ((memcmp(opt.sharedkey[0] + m_dmac,
+				opt.sharedkey[2] + m_dmac,
+				ETHER_ADDR_LEN)
+		 != 0)
+		|| (memcmp(opt.sharedkey[0] + m_dmac,
+				   opt.sharedkey[1] + m_smac,
+				   ETHER_ADDR_LEN)
 			!= 0)) /* DA in 2&4 != SA in 3 */
 	{
 		return (1);
@@ -1184,11 +1214,11 @@ int set_clear_arp(uint8_t * buf,
 	buf[12] = 0x06; // hardware size
 	buf[13] = 0x04; // protocol size
 	buf[14] = 0x00;
-	if (memcmp(dmac, BROADCAST, 6) == 0)
+	if (memcmp(dmac, BROADCAST, ETHER_ADDR_LEN) == 0)
 		buf[15] = 0x01; // request
 	else
 		buf[15] = 0x02; // reply
-	memcpy(buf + 16, smac, 6);
+	memcpy(buf + 16, smac, ETHER_ADDR_LEN);
 
 	return (0);
 }
@@ -1205,7 +1235,7 @@ int set_final_arp(uint8_t * buf, uint8_t * mymac)
 	buf[3] = 0x04; // protocol size
 	buf[4] = 0x00;
 	buf[5] = 0x01; // request
-	memcpy(buf + 6, mymac, 6); // sender mac
+	memcpy(buf + 6, mymac, ETHER_ADDR_LEN); // sender mac
 	buf[12] = 0xA9; // sender IP 169.254.87.197
 	buf[13] = 0xFE;
 	buf[14] = 0x57;
@@ -1236,7 +1266,7 @@ int set_final_ip(uint8_t * buf, uint8_t * mymac)
 	buf[1] = 0x04; // protocol size
 	buf[2] = 0x00;
 	buf[3] = 0x01; // request
-	memcpy(buf + 4, mymac, 6); // sender mac
+	memcpy(buf + 4, mymac, ETHER_ADDR_LEN); // sender mac
 	buf[10] = 0xA9; // sender IP from 169.254.XXX.XXX
 	buf[11] = 0xFE;
 	buf[12] = 0x57;
