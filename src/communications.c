@@ -372,7 +372,7 @@ int filter_packet(unsigned char * h80211, int caplen)
 
 	z = ((h80211[1] & IEEE80211_FC1_DIR_MASK) != IEEE80211_FC1_DIR_DSTODS) ? 24
 																		   : 30;
-	if ((h80211[0] & IEEE80211_FC0_SUBTYPE_MASK)
+	if ((h80211[0] & IEEE80211_FC0_SUBTYPE_BEACON)
 		== IEEE80211_FC0_SUBTYPE_BEACON)
 	{
 		qos = 1; /* 802.11e QoS */
