@@ -370,14 +370,17 @@ int filter_packet(unsigned char * h80211, int caplen)
 
 	if (caplen <= 0) return (1);
 
-	z = ((h80211[1] & 3) != 3) ? 24 : 30;
-	if ((h80211[0] & 0x80) == 0x80)
+	z = ((h80211[1] & IEEE80211_FC1_DIR_MASK) != IEEE80211_FC1_DIR_DSTODS) ? 24
+																		   : 30;
+	if ((h80211[0] & IEEE80211_FC0_SUBTYPE_MASK)
+		== IEEE80211_FC0_SUBTYPE_BEACON)
 	{
 		qos = 1; /* 802.11e QoS */
 		z += 2;
 	}
 
-	if ((h80211[0] & 0x0C) == 0x08) // if data packet
+	if ((h80211[0] & IEEE80211_FC0_TYPE_MASK)
+		== IEEE80211_FC0_TYPE_DATA) // if data packet
 		ext = z - 24; // how many bytes longer than default ieee80211 header
 
 	/* check length */
@@ -385,19 +388,25 @@ int filter_packet(unsigned char * h80211, int caplen)
 
 	/* check the frame control bytes */
 
-	if ((h80211[0] & 0x0C) != (opt.f_type << 2) && opt.f_type >= 0) return (1);
+	if ((h80211[0] & IEEE80211_FC0_TYPE_MASK) != (opt.f_type << 2)
+		&& opt.f_type >= 0)
+		return (1);
 
-	if ((h80211[0] & 0x70) != ((opt.f_subtype << 4) & 0x70)
+	if ((h80211[0] & IEEE80211_FC0_SUBTYPE_CF_ACK_CF_ACK)
+			!= ((opt.f_subtype << 4) & 0x70)
 		&& // ignore the leading bit (QoS)
 		opt.f_subtype >= 0)
 		return (1);
 
-	if ((h80211[1] & 0x01) != (opt.f_tods) && opt.f_tods >= 0) return (1);
-
-	if ((h80211[1] & 0x02) != (opt.f_fromds << 1) && opt.f_fromds >= 0)
+	if ((h80211[1] & IEEE80211_FC1_DIR_TODS) != (opt.f_tods) && opt.f_tods >= 0)
 		return (1);
 
-	if ((h80211[1] & 0x40) != (opt.f_iswep << 6) && opt.f_iswep >= 0)
+	if ((h80211[1] & IEEE80211_FC1_DIR_FROMDS) != (opt.f_fromds << 1)
+		&& opt.f_fromds >= 0)
+		return (1);
+
+	if ((h80211[1] & IEEE80211_FC1_PROTECTED) != (opt.f_iswep << 6)
+		&& opt.f_iswep >= 0)
 		return (1);
 
 	/* check the extended IV (TKIP) flag */
@@ -407,28 +416,30 @@ int filter_packet(unsigned char * h80211, int caplen)
 
 	/* MAC address checking */
 
-	switch (h80211[1] & 3)
+	switch (h80211[1] & IEEE80211_FC1_DIR_MASK)
 	{
-		case 0:
+		case IEEE80211_FC1_DIR_NODS:
 			mi_b = 16;
 			mi_s = 10;
 			mi_d = 4;
 			break;
-		case 1:
+		case IEEE80211_FC1_DIR_TODS:
 			mi_b = 4;
 			mi_s = 10;
 			mi_d = 16;
 			break;
-		case 2:
+		case IEEE80211_FC1_DIR_FROMDS:
 			mi_b = 10;
 			mi_s = 16;
 			mi_d = 4;
 			break;
-		default:
+		case IEEE80211_FC1_DIR_DSTODS:
 			mi_b = 10;
 			mi_d = 16;
 			mi_s = 24;
 			break;
+		default:
+			abort();
 	}
 
 	if (memcmp(opt.f_bssid, NULL_MAC, ETHER_ADDR_LEN) != 0)
@@ -625,45 +636,51 @@ int capture_ask_packet(int * caplen, int just_grab)
 
 		if (opt.fast) break;
 
-		z = ((h80211[1] & 3) != 3) ? 24 : 30;
-		if ((h80211[0] & 0x80) == 0x80) /* QoS */
+		z = ((h80211[1] & IEEE80211_FC1_DIR_MASK) != IEEE80211_FC1_DIR_DSTODS)
+				? 24
+				: 30;
+		if ((h80211[0] & IEEE80211_FC0_SUBTYPE_QOS)
+			== IEEE80211_FC0_SUBTYPE_QOS) /* QoS */
 			z += 2;
 
-		switch (h80211[1] & 3)
+		switch (h80211[1] & IEEE80211_FC1_DIR_MASK)
 		{
-			case 0:
+			case IEEE80211_FC1_DIR_NODS:
 				mi_b = 16;
 				mi_s = 10;
 				mi_d = 4;
 				is_wds = 0;
 				break;
-			case 1:
+			case IEEE80211_FC1_DIR_TODS:
 				mi_b = 4;
 				mi_s = 10;
 				mi_d = 16;
 				is_wds = 0;
 				break;
-			case 2:
+			case IEEE80211_FC1_DIR_FROMDS:
 				mi_b = 10;
 				mi_s = 16;
 				mi_d = 4;
 				is_wds = 0;
 				break;
-			case 3:
+			case IEEE80211_FC1_DIR_DSTODS:
 				mi_t = 10;
 				mi_r = 4;
 				mi_d = 16;
 				mi_s = 24;
 				is_wds = 1;
 				break; // WDS packet
+			default:
+				abort();
 		}
 
 		printf("\n\n        Size: %d, FromDS: %d, ToDS: %d",
 			   *caplen,
-			   (h80211[1] & 2) >> 1,
-			   (h80211[1] & 1));
+			   (h80211[1] & IEEE80211_FC1_DIR_FROMDS) >> 1,
+			   (h80211[1] & IEEE80211_FC1_DIR_TODS));
 
-		if ((h80211[0] & 0x0C) == 8 && (h80211[1] & 0x40) != 0)
+		if ((h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_DATA
+			&& (h80211[1] & IEEE80211_FC1_WEP) != 0)
 		{
 			//             if (is_wds) key_index_offset = 33; // WDS packets
 			//             have an additional MAC, so the key index is at byte
@@ -950,7 +967,7 @@ int check_shared_key(const uint8_t * h80211, size_t caplen)
 	}
 
 	/* is auth packet */
-	if ((h80211[1] & 0x40) != 0x40)
+	if ((h80211[1] & IEEE80211_FC1_PROTECTED) != IEEE80211_FC1_PROTECTED)
 	{
 		/* not encrypted */
 		if ((h80211[24] + (h80211[25] << 8)) == 1)
