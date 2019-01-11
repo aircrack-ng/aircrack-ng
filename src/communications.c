@@ -89,7 +89,8 @@ int wait_for_beacon(struct wif * wi,
 					uint8_t * capa,
 					char * essid)
 {
-	int len = 0, chan = 0, taglen = 0, tagtype = 0, pos = 0;
+	int chan = 0, tagtype = 0;
+	size_t taglen = 0, pos = 0, len = 0;
 	uint8_t pkt_sniff[4096];
 	struct timeval tv, tv2;
 	char essid2[33];
@@ -100,7 +101,7 @@ int wait_for_beacon(struct wif * wi,
 		len = 0;
 		while (len < 22)
 		{
-			len = read_packet(wi, pkt_sniff, sizeof(pkt_sniff), NULL);
+			len = (size_t) read_packet(wi, pkt_sniff, sizeof(pkt_sniff), NULL);
 
 			gettimeofday(&tv2, NULL);
 			if (((tv2.tv_sec - tv.tv_sec) * 1000000)
