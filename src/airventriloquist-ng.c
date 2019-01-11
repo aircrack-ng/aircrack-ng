@@ -531,13 +531,15 @@ static int deauth_station(struct WPA_ST_info * st_cur)
 			memcpy(h80211 + 4, st_cur->stmac, 6);
 			memcpy(h80211 + 10, st_cur->bssid, 6);
 
-			if (send_packet(_wi_out, h80211, 26, true) < 0) return (1);
+			if (send_packet(_wi_out, h80211, 26, kRewriteSequenceNumber) < 0)
+				return (1);
 
 			// Send deauth to the AP...
 			memcpy(h80211 + 4, st_cur->bssid, 6);
 			memcpy(h80211 + 10, st_cur->stmac, 6);
 
-			if (send_packet(_wi_out, h80211, 26, true) < 0) return (1);
+			if (send_packet(_wi_out, h80211, 26, kRewriteSequenceNumber) < 0)
+				return (1);
 			// Usually this is where we would wait for an ACK, but we need to
 			// get back
 			// to capturing packets to get the EAPOL 4 way handshake
@@ -1256,7 +1258,11 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 						PRINTMAC(lopt.st_cur->stmac);
 						printf(COL_REST);
 
-						if (send_packet(_wi_out, pkt, res_length, true) != 0)
+						if (send_packet(_wi_out,
+										pkt,
+										res_length,
+										kRewriteSequenceNumber)
+							!= 0)
 							printf("Error Sending Packet\n");
 						printf("\n");
 						// Uncomment to send RST packet to the server
@@ -1345,8 +1351,10 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 							pkt, packet_start_length, lopt.st_cur);
 					}
 
-					if (send_packet(
-							_wi_out, pkt, (size_t) packet_start_length, true)
+					if (send_packet(_wi_out,
+									pkt,
+									(size_t) packet_start_length,
+									kRewriteSequenceNumber)
 						!= 0)
 						printf("Error Sending Packet\n");
 
@@ -1409,8 +1417,10 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 					}
 
 					printf("Sending ICMP response\n");
-					if (send_packet(
-							_wi_out, pkt, (size_t) packet_start_length, true)
+					if (send_packet(_wi_out,
+									pkt,
+									(size_t) packet_start_length,
+									kRewriteSequenceNumber)
 						!= 0)
 						printf("Error Sending Packet\n");
 

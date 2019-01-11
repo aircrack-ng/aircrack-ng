@@ -559,7 +559,7 @@ static void send_fragments(unsigned char * packet,
 		xor_keystream(frag + header_size + 4, keystream, fragsize + 4);
 
 		// Send
-		send_packet(_wi_out, frag, (size_t) pack_size, true);
+		send_packet(_wi_out, frag, (size_t) pack_size, kRewriteDuration);
 		if (t < data_size) usleep(100);
 
 		if (t >= data_size) break;
@@ -630,7 +630,7 @@ static int do_attack_deauth(void)
 				memcpy(h80211 + 4, opt.r_dmac, 6);
 				memcpy(h80211 + 10, opt.r_bssid, 6);
 
-				if (send_packet(_wi_out, h80211, 26, true) < 0)
+				if (send_packet(_wi_out, h80211, 26, kRewriteDuration) < 0)
 					return (EXIT_FAILURE);
 
 				usleep(2000);
@@ -638,7 +638,7 @@ static int do_attack_deauth(void)
 				memcpy(h80211 + 4, opt.r_bssid, 6);
 				memcpy(h80211 + 10, opt.r_dmac, 6);
 
-				if (send_packet(_wi_out, h80211, 26, true) < 0)
+				if (send_packet(_wi_out, h80211, 26, kRewriteDuration) < 0)
 					return (EXIT_FAILURE);
 
 				usleep(2000);
@@ -716,7 +716,8 @@ static int do_attack_deauth(void)
 
 			for (i = 0; i < 128; i++)
 			{
-				if (send_packet(_wi_out, h80211, 26, true) < 0) return (1);
+				if (send_packet(_wi_out, h80211, 26, kRewriteDuration) < 0)
+					return (1);
 
 				usleep(2000);
 			}
@@ -878,14 +879,17 @@ static int do_attack_fake_auth(void)
 
 				for (i = 0; i < x_send; i++)
 				{
-					if (send_packet(_wi_out, h80211, 30, true) < 0) return (1);
+					if (send_packet(_wi_out, h80211, 30, kRewriteDuration) < 0)
+						return (1);
 
 					usleep(10);
 
-					if (send_packet(_wi_out, ackbuf, 14, true) < 0) return (1);
+					if (send_packet(_wi_out, ackbuf, 14, kRewriteDuration) < 0)
+						return (1);
 					usleep(10);
 
-					if (send_packet(_wi_out, ackbuf, 14, true) < 0) return (1);
+					if (send_packet(_wi_out, ackbuf, 14, kRewriteDuration) < 0)
+						return (1);
 				}
 
 				break;
@@ -1012,14 +1016,14 @@ static int do_attack_fake_auth(void)
 						send_packet(_wi_out,
 									h80211,
 									24 + 4 + (size_t) challengelen + 4,
-									true);
+									kRewriteDuration);
 					}
 
-					if (send_packet(_wi_out, ackbuf, 14, true) < 0)
+					if (send_packet(_wi_out, ackbuf, 14, kRewriteDuration) < 0)
 						return (EXIT_FAILURE);
 					usleep(10);
 
-					if (send_packet(_wi_out, ackbuf, 14, true) < 0)
+					if (send_packet(_wi_out, ackbuf, 14, kRewriteDuration) < 0)
 						return (EXIT_FAILURE);
 				}
 
@@ -1110,16 +1114,18 @@ static int do_attack_fake_auth(void)
 
 				for (i = 0; i < x_send; i++)
 				{
-					if (send_packet(_wi_out, h80211, 46 + (size_t) n, true) < 0)
+					if (send_packet(
+							_wi_out, h80211, 46 + (size_t) n, kRewriteDuration)
+						< 0)
 						return (EXIT_FAILURE);
 
 					usleep(10);
 
-					if (send_packet(_wi_out, ackbuf, 14, true) < 0)
+					if (send_packet(_wi_out, ackbuf, 14, kRewriteDuration) < 0)
 						return (EXIT_FAILURE);
 					usleep(10);
 
-					if (send_packet(_wi_out, ackbuf, 14, true) < 0)
+					if (send_packet(_wi_out, ackbuf, 14, kRewriteDuration) < 0)
 						return (EXIT_FAILURE);
 				}
 
@@ -1187,7 +1193,8 @@ static int do_attack_fake_auth(void)
 						kas = 32;
 
 					for (i = 0; i < kas; i++)
-						if (send_packet(_wi_out, h80211, 24, true) < 0)
+						if (send_packet(_wi_out, h80211, 24, kRewriteDuration)
+							< 0)
 							return (EXIT_FAILURE);
 				}
 
@@ -1226,16 +1233,18 @@ static int do_attack_fake_auth(void)
 
 				for (i = 0; i < x_send; i++)
 				{
-					if (send_packet(_wi_out, h80211, 52 + (size_t) n, true) < 0)
+					if (send_packet(
+							_wi_out, h80211, 52 + (size_t) n, kRewriteDuration)
+						< 0)
 						return (EXIT_FAILURE);
 
 					usleep(10);
 
-					if (send_packet(_wi_out, ackbuf, 14, true) < 0)
+					if (send_packet(_wi_out, ackbuf, 14, kRewriteDuration) < 0)
 						return (EXIT_FAILURE);
 					usleep(10);
 
-					if (send_packet(_wi_out, ackbuf, 14, true) < 0)
+					if (send_packet(_wi_out, ackbuf, 14, kRewriteDuration) < 0)
 						return (EXIT_FAILURE);
 				}
 
@@ -1758,13 +1767,14 @@ read_packets:
 
 		if (nb_pkt_sent == 0) ticks[0] = 0;
 
-		if (send_packet(_wi_out, h80211, (size_t) caplen, true) < 0)
+		if (send_packet(_wi_out, h80211, (size_t) caplen, kRewriteDuration) < 0)
 			return (EXIT_FAILURE);
 
 		if (((double) ticks[0] / (double) RTC_RESOLUTION) * (double) opt.r_nbpps
 			> (double) nb_pkt_sent)
 		{
-			if (send_packet(_wi_out, h80211, (size_t) caplen, true) < 0)
+			if (send_packet(_wi_out, h80211, (size_t) caplen, kRewriteDuration)
+				< 0)
 				return (EXIT_FAILURE);
 		}
 	}
@@ -1955,7 +1965,7 @@ static int do_attack_arp_resend(void)
 				if (send_packet(_wi_out,
 								arp[arp_off1].buf,
 								(size_t) arp[arp_off1].len,
-								true)
+								kRewriteDuration)
 					< 0)
 				{
 					free(arp);
@@ -1970,7 +1980,7 @@ static int do_attack_arp_resend(void)
 					if (send_packet(_wi_out,
 									arp[arp_off1].buf,
 									(size_t) arp[arp_off1].len,
-									true)
+									kRewriteDuration)
 						< 0)
 					{
 						free(arp);
@@ -2420,7 +2430,7 @@ static int do_attack_caffe_latte(void)
 				if (send_packet(_wi_out,
 								arp[arp_off1].buf,
 								(size_t) arp[arp_off1].len,
-								true)
+								kRewriteDuration)
 					< 0)
 				{
 					free(arp);
@@ -2434,7 +2444,7 @@ static int do_attack_caffe_latte(void)
 					if (send_packet(_wi_out,
 									arp[arp_off1].buf,
 									(size_t) arp[arp_off1].len,
-									true)
+									kRewriteDuration)
 						< 0)
 					{
 						free(arp);
@@ -2913,7 +2923,7 @@ static int do_attack_migmode(void)
 				if (send_packet(_wi_out,
 								arp[arp_off1].buf,
 								(size_t) arp[arp_off1].len,
-								true)
+								kRewriteDuration)
 					< 0)
 				{
 					free(arp);
@@ -2928,7 +2938,7 @@ static int do_attack_migmode(void)
 					if (send_packet(_wi_out,
 									arp[arp_off1].buf,
 									(size_t) arp[arp_off1].len,
-									true)
+									kRewriteDuration)
 						< 0)
 					{
 						free(arp);
@@ -3482,21 +3492,30 @@ read_packets:
 
 		if (isarp)
 		{
-			if (send_packet(_wi_out, frag1, (size_t) z + 4 + 10 + 4, true) < 0)
+			if (send_packet(
+					_wi_out, frag1, (size_t) z + 4 + 10 + 4, kRewriteDuration)
+				< 0)
 				return (1);
 			nb_pkt_sent--;
 		}
 		else
 		{
-			if (send_packet(_wi_out, frag1, (size_t) z + 4 + 4 + 4, true) < 0)
+			if (send_packet(
+					_wi_out, frag1, (size_t) z + 4 + 4 + 4, kRewriteDuration)
+				< 0)
 				return (1);
-			if (send_packet(_wi_out, frag2, (size_t) z + 4 + 4 + 4, true) < 0)
+			if (send_packet(
+					_wi_out, frag2, (size_t) z + 4 + 4 + 4, kRewriteDuration)
+				< 0)
 				return (1);
-			if (send_packet(_wi_out, frag3, (size_t) z + 4 + 4 + 4, true) < 0)
+			if (send_packet(
+					_wi_out, frag3, (size_t) z + 4 + 4 + 4, kRewriteDuration)
+				< 0)
 				return (1);
 			nb_pkt_sent -= 3;
 		}
-		if (send_packet(_wi_out, h80211, (size_t) caplen, true) < 0) return (1);
+		if (send_packet(_wi_out, h80211, (size_t) caplen, kRewriteDuration) < 0)
+			return (1);
 	}
 
 	return (0);
@@ -3568,7 +3587,9 @@ static int do_attack_chopchop(void)
 
 		memcpy(packet + 24, h80211 + z, (size_t) caplen - z);
 
-		if (send_packet(_wi_out, packet, (size_t) caplen - z + 24, true) != 0)
+		if (send_packet(
+				_wi_out, packet, (size_t) caplen - z + 24, kRewriteDuration)
+			!= 0)
 			return (1);
 		// done sending a correct packet
 	}
@@ -3925,7 +3946,9 @@ static int do_attack_chopchop(void)
 
 			errno = 0;
 
-			if (send_packet(_wi_out, h80211, (size_t) data_end - 1, true) != 0)
+			if (send_packet(
+					_wi_out, h80211, (size_t) data_end - 1, kRewriteDuration)
+				!= 0)
 			{
 				free(chopped);
 				return (1);
@@ -5389,7 +5412,7 @@ static int do_attack_test(void)
 
 		memcpy(h80211 + 10, opt.r_smac, 6);
 
-		send_packet(_wi_out, h80211, (size_t) len, true);
+		send_packet(_wi_out, h80211, (size_t) len, kRewriteDuration);
 
 		gettimeofday(&tv, NULL);
 
@@ -5509,7 +5532,7 @@ static int do_attack_test(void)
 			// build/send probe request
 			memcpy(h80211 + 10, opt.r_smac, 6);
 
-			send_packet(_wi_out, h80211, (size_t) len, true);
+			send_packet(_wi_out, h80211, (size_t) len, kRewriteDuration);
 			usleep(10);
 
 			// build/send request-to-send
@@ -5517,7 +5540,7 @@ static int do_attack_test(void)
 			memcpy(nulldata + 4, ap[i].bssid, 6);
 			memcpy(nulldata + 10, opt.r_smac, 6);
 
-			send_packet(_wi_out, nulldata, 16, true);
+			send_packet(_wi_out, nulldata, 16, kRewriteDuration);
 			usleep(10);
 
 			// build/send null data packet
@@ -5526,7 +5549,7 @@ static int do_attack_test(void)
 			memcpy(nulldata + 10, opt.r_smac, 6);
 			memcpy(nulldata + 16, ap[i].bssid, 6);
 
-			send_packet(_wi_out, nulldata, 24, true);
+			send_packet(_wi_out, nulldata, 24, kRewriteDuration);
 			usleep(10);
 
 			// build/send auth request packet
@@ -5535,7 +5558,7 @@ static int do_attack_test(void)
 			memcpy(nulldata + 10, opt.r_smac, 6);
 			memcpy(nulldata + 16, ap[i].bssid, 6);
 
-			send_packet(_wi_out, nulldata, 30, true);
+			send_packet(_wi_out, nulldata, 30, kRewriteDuration);
 
 			// continue
 			gettimeofday(&tv, NULL);
@@ -5777,7 +5800,8 @@ static int do_attack_test(void)
 
 					memcpy(h80211 + 10, opt.r_smac, 6);
 
-					send_packet(_wi_out, h80211, (size_t) len, true);
+					send_packet(
+						_wi_out, h80211, (size_t) len, kRewriteDuration);
 
 					gettimeofday(&tv, NULL);
 
@@ -5985,7 +6009,8 @@ static int do_attack_test(void)
 
 			for (j = 0; (j < (REQUESTS / 4) && !k); j++) // try it 5 times
 			{
-				send_packet(_wi_out, h80211, (size_t) opt.f_minlen, true);
+				send_packet(
+					_wi_out, h80211, (size_t) opt.f_minlen, kRewriteDuration);
 
 				gettimeofday(&tv, NULL);
 				while (1) // waiting for relayed packet

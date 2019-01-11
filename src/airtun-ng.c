@@ -548,23 +548,23 @@ static int packet_xmit(unsigned char * packet, int length)
 		// network part to send the packet.
 		if (dest_net == 0)
 		{
-			send_packet(_wi_out, h80211, (size_t) length, false);
+			send_packet(_wi_out, h80211, (size_t) length, kNoChange);
 		}
 		else if (dest_net == 1)
 		{
 			swap_ra_ta(h80211);
-			send_packet(_wi_out, h80211, (size_t) length, false);
+			send_packet(_wi_out, h80211, (size_t) length, kNoChange);
 		}
 		else
 		{
-			send_packet(_wi_out, h80211, (size_t) length, false);
+			send_packet(_wi_out, h80211, (size_t) length, kNoChange);
 			swap_ra_ta(h80211);
-			send_packet(_wi_out, h80211, (size_t) length, false);
+			send_packet(_wi_out, h80211, (size_t) length, kNoChange);
 		}
 	}
 	else
 	{
-		send_packet(_wi_out, h80211, (size_t) length, false);
+		send_packet(_wi_out, h80211, (size_t) length, kNoChange);
 	}
 
 	return (0);
@@ -1635,7 +1635,7 @@ int main(int argc, char * argv[])
 						if (memcmp(opt.f_bssid, bssid, 6) != 0) continue;
 					}
 				}
-				send_packet(_wi_out, h80211, (size_t) caplen, false);
+				send_packet(_wi_out, h80211, (size_t) caplen, kNoChange);
 			}
 
 			packet_recv(h80211, caplen);

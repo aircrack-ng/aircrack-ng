@@ -255,23 +255,33 @@ static inline void read_sleep(int fd_in, unsigned long usec, read_sleep_cb cb)
 
 extern unsigned long nb_pkt_sent;
 
+enum Send_Packet_Option
+{
+	kNoChange,
+	kRewriteSequenceNumber,
+	kRewriteDuration,
+};
+
 static inline int send_packet(struct wif * wi,
 							  void * buf,
 							  size_t count,
-							  bool rewriteSequenceNumber)
+							  enum Send_Packet_Option option)
 {
 	REQUIRE(buf != NULL);
 	REQUIRE(count > 0 && count < INT_MAX);
+	REQUIRE(option >= kNoChange && option <= kRewriteDuration);
 
 	uint8_t * pkt = (uint8_t *) buf;
 
-	if (rewriteSequenceNumber && (count > 24) && (pkt[1] & 0x04) == 0
+	if ((option & kRewriteSequenceNumber) != 0 && (count > 24)
+		&& (pkt[1] & 0x04) == 0
 		&& (pkt[22] & 0x0F) == 0)
 	{
 		pkt[22] = (uint8_t)((nb_pkt_sent & 0x0000000F) << 4);
 		pkt[23] = (uint8_t)((nb_pkt_sent & 0x00000FF0) >> 4);
 	}
-	else if (rewriteSequenceNumber && count > 24)
+
+	if ((option & kRewriteDuration) != 0 && count > 24)
 	{
 		// Set the duration...
 		pkt[2] = 0x3A;

@@ -770,7 +770,7 @@ static int addMACfile(pMAC_t pMAC, char * filename)
 
 static int my_send_packet(void * buf, size_t count)
 {
-	int rc = send_packet(_wi_out, buf, count, false);
+	int rc = send_packet(_wi_out, buf, count, kNoChange);
 
 	ALLEGE(pthread_mutex_lock(&mx_cap) == 0);
 	if (lopt.record_data) capture_packet(buf, (int) count);

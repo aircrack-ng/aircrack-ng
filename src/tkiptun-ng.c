@@ -1773,7 +1773,8 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 
 			errno = 0;
 
-			if (send_packet(_wi_out, h80211, (size_t) data_end - 1, false) != 0)
+			if (send_packet(_wi_out, h80211, (size_t) data_end - 1, kNoChange)
+				!= 0)
 			{
 				free(chopped);
 				return (1);
@@ -2232,14 +2233,14 @@ static int getHDSK(void)
 		memcpy(h80211 + 4, lopt.wpa.stmac, 6);
 		memcpy(h80211 + 10, opt.r_bssid, 6);
 
-		if (send_packet(_wi_out, h80211, 26, false) < 0) return (1);
+		if (send_packet(_wi_out, h80211, 26, kNoChange) < 0) return (1);
 
 		usleep(2000);
 
 		memcpy(h80211 + 4, opt.r_bssid, 6);
 		memcpy(h80211 + 10, lopt.wpa.stmac, 6);
 
-		if (send_packet(_wi_out, h80211, 26, false) < 0) return (1);
+		if (send_packet(_wi_out, h80211, 26, kNoChange) < 0) return (1);
 
 		usleep(100000);
 
@@ -3068,7 +3069,7 @@ int main(int argc, char * argv[])
 
 	build_arp_request(
 		h80211, &caplen, 0); // writes encrypted tkip arp request into h80211
-	send_packet(_wi_out, h80211, (size_t) caplen, false);
+	send_packet(_wi_out, h80211, (size_t) caplen, kNoChange);
 	PCT;
 	printf("Sent encrypted tkip ARP request to the client.\n");
 
