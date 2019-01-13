@@ -8,13 +8,6 @@ if [ $(id -u) -ne 0 ]; then
 	exit 77
 fi
 
-# Check hostapd is present
-hash hostapd 2>&1 >/dev/null
-if [ $? -ne 0 ]; then
-	echo "HostAPd is not installed, skipping"
-	exit 77
-fi
-
 # Load module
 LOAD_MODULE=0
 if [ $(lsmod | egrep mac80211_hwsim | wc -l) -eq 0 ]; then
