@@ -79,7 +79,7 @@ if [ -z "$(grep 'Injection is working!' ${OUTPUT_TEMP})" ]; then
 	return 1
 fi
 
-if [ -z "(grep '30/30' ${OUTPUT_TEMP})" ]; then
+if [ -z "$(grep '30/30' ${OUTPUT_TEMP})" ]; then
 	echo "AP not present or failure injecting" >2
 	return 1
 fi
