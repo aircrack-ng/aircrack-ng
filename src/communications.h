@@ -51,6 +51,33 @@
 #include "aircrack-util/common.h"
 #include "include/ieee80211.h"
 
+#define RATE_1M 1000000
+#define RATE_2M 2000000
+#define RATE_5_5M 5500000
+#define RATE_11M 11000000
+
+#define RATE_6M 6000000
+#define RATE_9M 9000000
+#define RATE_12M 12000000
+#define RATE_18M 18000000
+#define RATE_24M 24000000
+#define RATE_36M 36000000
+#define RATE_48M 48000000
+#define RATE_54M 54000000
+
+static const int bitrates[] = {RATE_1M,
+							   RATE_2M,
+							   RATE_5_5M,
+							   RATE_6M,
+							   RATE_9M,
+							   RATE_11M,
+							   RATE_12M,
+							   RATE_18M,
+							   RATE_24M,
+							   RATE_36M,
+							   RATE_48M,
+							   RATE_54M};
+
 struct communication_options
 {
 	uint8_t f_bssid[6];
@@ -354,5 +381,6 @@ int set_clear_ip(uint8_t * buf, size_t ip_len);
 int set_final_ip(uint8_t * buf, uint8_t * mymac);
 int msleep(int msec);
 int read_prga(unsigned char ** dest, char * file);
+int set_bitrate(struct wif * wi, int rate);
 
 #endif //AIRCRACK_NG_COMMUNICATIONS_H

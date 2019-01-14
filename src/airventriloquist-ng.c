@@ -115,35 +115,6 @@
 	"\x40\x00\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF\xCC\xCC\xCC\xCC\xCC\xCC"         \
 	"\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00"
 
-#define RATE_NUM 12
-
-#define RATE_1M 1000000
-#define RATE_2M 2000000
-#define RATE_5_5M 5500000
-#define RATE_11M 11000000
-
-#define RATE_6M 6000000
-#define RATE_9M 9000000
-#define RATE_12M 12000000
-#define RATE_18M 18000000
-#define RATE_24M 24000000
-#define RATE_36M 36000000
-#define RATE_48M 48000000
-#define RATE_54M 54000000
-
-static const int bitrates[RATE_NUM] = {RATE_1M,
-									   RATE_2M,
-									   RATE_5_5M,
-									   RATE_6M,
-									   RATE_9M,
-									   RATE_11M,
-									   RATE_12M,
-									   RATE_18M,
-									   RATE_24M,
-									   RATE_36M,
-									   RATE_48M,
-									   RATE_54M};
-
 static char * progname = NULL;
 
 static const char usage[]
@@ -222,61 +193,6 @@ struct APt
 unsigned long nb_pkt_sent;
 u_int8_t h80211[4096];
 static u_int8_t tmpbuf[4096];
-
-static int set_bitrate(struct wif * wi, int rate)
-{
-	int i, newrate;
-
-	if (wi_set_rate(wi, rate)) return (1);
-
-	// Workaround for buggy drivers (rt73) that do not accept 5.5M, but 5M
-	// instead
-	if (rate == 5500000 && wi_get_rate(wi) != 5500000)
-	{
-		if (wi_set_rate(wi, 5000000)) return (1);
-	}
-
-	newrate = wi_get_rate(wi);
-	for (i = 0; i < RATE_NUM; i++)
-	{
-		if (bitrates[i] == rate) break;
-	}
-	if (i == RATE_NUM) i = -1;
-	if (newrate != rate)
-	{
-		if (i != -1)
-		{
-			if (i > 0)
-			{
-				if (bitrates[i - 1] >= newrate)
-				{
-					printf(
-						"Couldn't set rate to %.1fMBit. (%.1fMBit instead)\n",
-						(rate / 1000000.0),
-						(wi_get_rate(wi) / 1000000.0));
-					return (1);
-				}
-			}
-			if (i < RATE_NUM - 1)
-			{
-				if (bitrates[i + 1] <= newrate)
-				{
-					printf(
-						"Couldn't set rate to %.1fMBit. (%.1fMBit instead)\n",
-						(rate / 1000000.0),
-						(wi_get_rate(wi) / 1000000.0));
-					return (1);
-				}
-			}
-			return (0);
-		}
-		printf("Couldn't set rate to %.1fMBit. (%.1fMBit instead)\n",
-			   (rate / 1000000.0),
-			   (wi_get_rate(wi) / 1000000.0));
-		return (1);
-	}
-	return (0);
-}
 
 static int tcp_test(const char * ip_str, const short port)
 {

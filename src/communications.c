@@ -1596,3 +1596,73 @@ int read_prga(unsigned char ** dest, char * file)
 
 	return (EXIT_SUCCESS);
 }
+
+int set_bitrate(struct wif * wi, int rate)
+{
+	size_t j;
+	int i;
+	int newrate;
+
+	if (wi_set_rate(wi, rate)) return (1);
+
+	// Workaround for buggy drivers (rt73) that do not accept 5.5M, but 5M
+	// instead
+	if (rate == 5500000 && wi_get_rate(wi) != 5500000)
+	{
+		if (wi_set_rate(wi, 5000000)) return (1);
+	}
+
+	newrate = wi_get_rate(wi);
+
+	for (j = 0; j < ArrayCount(bitrates); j++)
+	{
+		if (bitrates[j] == rate) break;
+	}
+
+	if (j == ArrayCount(bitrates))
+		i = -1;
+	else
+		i = (int) j;
+
+	if (newrate != rate)
+	{
+		if (i != -1)
+		{
+			if (i > 0)
+			{
+				if (bitrates[i - 1] >= newrate)
+				{
+					printf(
+						"Couldn't set rate to %.1fMBit. (%.1fMBit instead)\n",
+						(rate / 1000000.0),
+						(wi_get_rate(wi) / 1000000.0));
+
+					return (1);
+				}
+			}
+
+			if (i < (int) ArrayCount(bitrates) - 1)
+			{
+				if (bitrates[i + 1] <= newrate)
+				{
+					printf(
+						"Couldn't set rate to %.1fMBit. (%.1fMBit instead)\n",
+						(rate / 1000000.0),
+						(wi_get_rate(wi) / 1000000.0));
+
+					return (1);
+				}
+			}
+
+			return (0);
+		}
+
+		printf("Couldn't set rate to %.1fMBit. (%.1fMBit instead)\n",
+			   (rate / 1000000.0),
+			   (wi_get_rate(wi) / 1000000.0));
+
+		return (1);
+	}
+
+	return (0);
+}
