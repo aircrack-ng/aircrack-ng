@@ -664,7 +664,7 @@ static int write_cap_packet(unsigned char * packet, const int length)
 	return (0);
 }
 
-static int read_prga(unsigned char ** dest, const char * file)
+static int read_prga_xor_ivs2(unsigned char ** dest, const char * file)
 {
 	FILE * f;
 	int size;
@@ -1055,7 +1055,7 @@ int main(int argc, char * argv[])
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (EXIT_FAILURE);
 				}
-				if (read_prga(&(opt.prga), optarg) != 0)
+				if (read_prga_xor_ivs2(&(opt.prga), optarg) != 0)
 				{
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (EXIT_FAILURE);

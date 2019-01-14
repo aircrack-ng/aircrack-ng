@@ -1535,3 +1535,64 @@ int msleep(int msec)
 
 	return (0);
 }
+
+int read_prga(unsigned char ** dest, char * file)
+{
+	FILE * f;
+	ssize_t size;
+
+	if (file == NULL) return (EXIT_FAILURE);
+	if (*dest == NULL)
+	{
+		*dest = (unsigned char *) malloc(1501);
+		ALLEGE(*dest != NULL);
+	}
+
+	if (memcmp(file + (strlen(file) - 4), ".xor", 4) != 0)
+	{
+		printf("Is this really a PRGA file: %s?\n", file);
+	}
+
+	f = fopen(file, "r");
+
+	if (f == NULL)
+	{
+		printf("Error opening %s\n", file);
+
+		return (EXIT_FAILURE);
+	}
+
+	fseek(f, 0, SEEK_END);
+	size = ftell(f);
+	if (size == -1)
+	{
+		fclose(f);
+		fprintf(stderr, "ftell failed\n");
+
+		return (EXIT_FAILURE);
+	}
+	rewind(f);
+
+	if (size > 1500) size = 1500;
+
+	if (fread((*dest), (size_t) size, 1, f) != 1)
+	{
+		fclose(f);
+		fprintf(stderr, "fread failed\n");
+
+		return (EXIT_FAILURE);
+	}
+
+	if ((*dest)[3] > 0x03)
+	{
+		printf("Are you really sure that this is a valid key-stream? Because "
+			   "the index is out of range (0-3): %02X\n",
+			   (*dest)[3]);
+	}
+
+	opt.prgalen = (size_t) size;
+
+	fclose(f);
+
+	return (EXIT_SUCCESS);
+}

@@ -353,5 +353,6 @@ int set_final_arp(uint8_t * buf, uint8_t * mymac);
 int set_clear_ip(uint8_t * buf, size_t ip_len);
 int set_final_ip(uint8_t * buf, uint8_t * mymac);
 int msleep(int msec);
+int read_prga(unsigned char ** dest, char * file);
 
 #endif //AIRCRACK_NG_COMMUNICATIONS_H

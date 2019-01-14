@@ -436,51 +436,6 @@ xor_keystream(unsigned char * ph80211, unsigned char * keystream, int len)
 	return 0;
 }
 
-static int read_prga(unsigned char ** dest, char * file)
-{
-	FILE * f;
-	int size;
-
-	if (file == NULL) return (EXIT_FAILURE);
-	if (*dest == NULL)
-	{
-		*dest = (unsigned char *) malloc(1501);
-		ALLEGE(*dest != NULL);
-	}
-
-	f = fopen(file, "r");
-
-	if (f == NULL)
-	{
-		printf("Error opening %s\n", file);
-		return (EXIT_FAILURE);
-	}
-
-	fseek(f, 0, SEEK_END);
-	size = ftell(f);
-	if (size == -1)
-	{
-		fclose(f);
-		fprintf(stderr, "ftell failed\n");
-		return (EXIT_FAILURE);
-	}
-	rewind(f);
-
-	if (size > 1500) size = 1500;
-
-	if (fread((*dest), size, 1, f) != 1)
-	{
-		fclose(f);
-		fprintf(stderr, "fread failed\n");
-		return (EXIT_FAILURE);
-	}
-
-	opt.prgalen = size;
-
-	fclose(f);
-	return (EXIT_SUCCESS);
-}
-
 static void my_read_sleep_cb(void)
 {
 	read_packet(_wi_in, h80211, sizeof(h80211), NULL);

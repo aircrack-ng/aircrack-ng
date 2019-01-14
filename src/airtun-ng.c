@@ -238,57 +238,6 @@ static int is_filtered_netmask(unsigned char * bssid)
 	return (0);
 }
 
-static int read_prga(unsigned char ** dest, char * file)
-{
-	FILE * f;
-	int size;
-
-	if (file == NULL) return (1);
-	if (*dest == NULL)
-	{
-		*dest = (unsigned char *) malloc(1501);
-		ALLEGE(*dest != NULL);
-	}
-
-	if (memcmp(file + (strlen(file) - 4), ".xor", 4) != 0)
-	{
-		printf("Is this really a PRGA file: %s?\n", file);
-	}
-
-	f = fopen(file, "r");
-
-	if (f == NULL)
-	{
-		printf("Error opening %s\n", file);
-		return (1);
-	}
-
-	fseek(f, 0, SEEK_END);
-	size = ftell(f);
-	rewind(f);
-
-	if (size > 1500) size = 1500;
-
-	if (fread((*dest), size, 1, f) != 1)
-	{
-		fclose(f);
-		fprintf(stderr, "fread failed\n");
-		return (1);
-	}
-
-	if ((*dest)[3] > 0x03)
-	{
-		printf("Are you really sure that this is a valid keystream? Because "
-			   "the index is out of range (0-3): %02X\n",
-			   (*dest)[3]);
-	}
-
-	opt.prgalen = size;
-
-	fclose(f);
-	return (0);
-}
-
 #define IEEE80211_LLC_SNAP                                                     \
 	"\x08\x00\x00\x00\xDD\xDD\xDD\xDD\xDD\xDD\xBB\xBB\xBB\xBB\xBB\xBB"         \
 	"\xCC\xCC\xCC\xCC\xCC\xCC\xE0\x32\xAA\xAA\x03\x00\x00\x00\x08\x00"
