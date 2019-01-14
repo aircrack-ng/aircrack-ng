@@ -246,6 +246,56 @@ static inline void trim(char * str)
 	rtrim(str);
 }
 
+/* See if a string contains a character in the first "n" bytes.
+ *
+ * Returns a pointer to the first occurrence of the character, or NULL
+ * if the character is not present in the string.
+ *
+ * Breaks the str* naming convention to avoid a name collision if we're
+ * compiling on a system that has strnchr()
+ */
+static inline char * strchr_n(char * str, int c, size_t n)
+{
+	size_t count = 0;
+
+	if (str == NULL || n == 0)
+	{
+		return (NULL);
+	}
+
+	while (*str != c && *str != '\0' && count < n)
+	{
+		str++;
+		count++;
+	}
+
+	return (*str == c) ? (str) : (NULL);
+}
+
+/* Remove a newline-terminated block of data from a buffer, replacing
+ * the newline with a '\0'.
+ *
+ * Returns the number of characters left in the buffer, or -1 if the
+ * buffer did not contain a newline.
+ */
+static inline ssize_t
+get_line_from_buffer(char * buffer, size_t size, char * line)
+{
+	char * cursor = strchr_n(buffer, 0x0A, size);
+
+	if (NULL != cursor)
+	{
+		*cursor = '\0';
+		cursor++;
+		strcpy(line, buffer);
+		memmove(buffer, cursor, size - (strlen(line) + 1));
+
+		return (size - (strlen(line) + 1));
+	}
+
+	return (-1);
+}
+
 #ifdef __cplusplus
 };
 #endif

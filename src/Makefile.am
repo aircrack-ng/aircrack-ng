@@ -55,7 +55,7 @@ SRC_AC_ALL  = aircrack-ng.c
 SRC_AD		= airdecap-ng.c
 SRC_PF		= packetforge-ng.c communications.c
 SRC_AR		= aireplay-ng.c communications.c
-SRC_ADU		= airodump-ng.c dump_write.c
+SRC_ADU		= airodump-ng.c communications.c dump_write.c
 
 SRC_AT		= airtun-ng.c fragments.c communications.c
 SRC_IV		= ivstools.c

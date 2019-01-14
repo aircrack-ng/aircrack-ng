@@ -866,81 +866,266 @@ int capture_ask_packet(int * caplen, int just_grab)
 	return (EXIT_SUCCESS);
 }
 
-int dump_initialize(char * prefix)
+#define AIRODUMP_NG_CSV_EXT "csv"
+#define KISMET_CSV_EXT "kismet.csv"
+#define KISMET_NETXML_EXT "kismet.netxml"
+#define AIRODUMP_NG_GPS_EXT "gps"
+#define AIRODUMP_NG_CAP_EXT "cap"
+#define AIRODUMP_NG_LOG_CSV_EXT "log.csv"
+
+static const char * f_ext[] = {AIRODUMP_NG_CSV_EXT,
+							   AIRODUMP_NG_GPS_EXT,
+							   AIRODUMP_NG_CAP_EXT,
+							   IVS2_EXTENSION,
+							   KISMET_CSV_EXT,
+							   KISMET_NETXML_EXT,
+							   AIRODUMP_NG_LOG_CSV_EXT};
+
+/* setup the output files */
+int dump_initialize_multi_format(char * prefix, int ivs_only)
 {
-	const size_t ADDED_LENGTH = 7;
-	FILE * f;
-	char * ofn;
+	REQUIRE(prefix != NULL);
+	REQUIRE(strlen(prefix) > 0);
+
+	const size_t ADDED_LENGTH = 17;
+	size_t i;
 	size_t ofn_len;
-	struct pcap_file_header pfh;
+	FILE * f;
+	char * ofn = NULL;
 
-	if (prefix == NULL)
-	{
-		return (0);
-	}
+	/* If you only want to see what happening, send all data to /dev/null */
 
+	/* Create a buffer of the length of the prefix + '-' + 2 numbers + '.'
+	   + longest extension ("kismet.netxml") + terminating 0. */
 	ofn_len = strlen(prefix) + ADDED_LENGTH + 1;
 	ofn = (char *) calloc(1, ofn_len);
 	ALLEGE(ofn != NULL);
 
-	/* Get the index for the filename so we don't overwrite an existing file */
 	opt.f_index = 1;
 
+	/* Make sure no file with the same name & all possible file extensions. */
 	do
 	{
-		snprintf(ofn, ofn_len, "%s-%02d.%s", prefix, opt.f_index, "cap");
-
-		if ((f = fopen(ofn, "rb+")) != NULL)
+		for (i = 0; i < ArrayCount(f_ext); i++)
 		{
-			fclose(f);
-			opt.f_index++;
-			continue;
+			memset(ofn, 0, ofn_len);
+			snprintf(ofn, ofn_len, "%s-%02d.%s", prefix, opt.f_index, f_ext[i]);
+
+			if ((f = fopen(ofn, "rb+")) != NULL)
+			{
+				fclose(f);
+				opt.f_index++;
+				break;
+			}
 		}
-		break;
-	} while (1);
+	}
+	/* If we did all extensions then no file with that name or extension exist
+	   so we can use that number */
+	while (i < ArrayCount(f_ext));
 
 	opt.prefix = (char *) calloc(1, strlen(prefix) + 1);
 	ALLEGE(opt.prefix != NULL);
 	memcpy(opt.prefix, prefix, strlen(prefix) + 1);
 
+	/* create the output CSV file */
+
+	if (opt.output_format_csv)
+	{
+		memset(ofn, 0, ofn_len);
+		snprintf(ofn,
+				 ofn_len,
+				 "%s-%02d.%s",
+				 prefix,
+				 opt.f_index,
+				 AIRODUMP_NG_CSV_EXT);
+
+		if ((opt.f_txt = fopen(ofn, "wb+")) == NULL)
+		{
+			perror("fopen failed");
+			fprintf(stderr, "Could not create \"%s\".\n", ofn);
+			free(ofn);
+
+			return (1);
+		}
+	}
+
+	/* create the output for a rolling log CSV file */
+	if (opt.output_format_log_csv)
+	{
+		memset(ofn, 0, ofn_len);
+		snprintf(ofn,
+				 ofn_len,
+				 "%s-%02d.%s",
+				 prefix,
+				 opt.f_index,
+				 AIRODUMP_NG_LOG_CSV_EXT);
+
+		if ((opt.f_logcsv = fopen(ofn, "wb+")) == NULL)
+		{
+			perror("fopen failed");
+			fprintf(stderr, "Could not create \"%s\".\n", ofn);
+			free(ofn);
+
+			return (1);
+		}
+
+		fprintf(opt.f_logcsv,
+				"LocalTime, GPSTime, ESSID, BSSID, Power, "
+				"Security, Latitude, Longitude, Latitude Error, "
+				"Longitude Error, Type\r\n");
+	}
+
+	/* create the output Kismet CSV file */
+	if (opt.output_format_kismet_csv)
+	{
+		memset(ofn, 0, ofn_len);
+		snprintf(
+			ofn, ofn_len, "%s-%02d.%s", prefix, opt.f_index, KISMET_CSV_EXT);
+
+		if ((opt.f_kis = fopen(ofn, "wb+")) == NULL)
+		{
+			perror("fopen failed");
+			fprintf(stderr, "Could not create \"%s\".\n", ofn);
+			free(ofn);
+
+			return (1);
+		}
+	}
+
+	/* create the output GPS file */
+	if (opt.usegpsd)
+	{
+		memset(ofn, 0, ofn_len);
+		snprintf(ofn,
+				 ofn_len,
+				 "%s-%02d.%s",
+				 prefix,
+				 opt.f_index,
+				 AIRODUMP_NG_GPS_EXT);
+
+		if ((opt.f_gps = fopen(ofn, "wb+")) == NULL)
+		{
+			perror("fopen failed");
+			fprintf(stderr, "Could not create \"%s\".\n", ofn);
+			free(ofn);
+
+			return (1);
+		}
+	}
+
+	/* Create the output kismet.netxml file */
+	if (opt.output_format_kismet_netxml)
+	{
+		memset(ofn, 0, ofn_len);
+		snprintf(
+			ofn, ofn_len, "%s-%02d.%s", prefix, opt.f_index, KISMET_NETXML_EXT);
+
+		if ((opt.f_kis_xml = fopen(ofn, "wb+")) == NULL)
+		{
+			perror("fopen failed");
+			fprintf(stderr, "Could not create \"%s\".\n", ofn);
+			free(ofn);
+
+			return (1);
+		}
+	}
+
 	/* create the output packet capture file */
-
-	snprintf(ofn, ofn_len, "%s-%02d.cap", prefix, opt.f_index);
-
-	if ((opt.f_cap = fopen(ofn, "wb+")) == NULL)
+	if (opt.output_format_pcap)
 	{
-		perror("fopen failed");
-		fprintf(stderr, "Could not create \"%s\".\n", ofn);
+		struct pcap_file_header pfh;
+
+		memset(ofn, 0, ofn_len);
+		snprintf(ofn,
+				 ofn_len,
+				 "%s-%02d.%s",
+				 prefix,
+				 opt.f_index,
+				 AIRODUMP_NG_CAP_EXT);
+
+		if ((opt.f_cap = fopen(ofn, "wb+")) == NULL)
+		{
+			perror("fopen failed");
+			fprintf(stderr, "Could not create \"%s\".\n", ofn);
+			free(ofn);
+
+			return (1);
+		}
+
+		opt.f_cap_name = (char *) calloc(1, strlen(ofn) + 1);
+		ALLEGE(opt.f_cap_name != NULL);
+		memcpy(opt.f_cap_name, ofn, strlen(ofn) + 1);
 		free(ofn);
-		return (1);
+
+		pfh.magic = TCPDUMP_MAGIC;
+		pfh.version_major = PCAP_VERSION_MAJOR;
+		pfh.version_minor = PCAP_VERSION_MINOR;
+		pfh.thiszone = 0;
+		pfh.sigfigs = 0;
+		pfh.snaplen = 65535;
+		pfh.linktype = LINKTYPE_IEEE802_11;
+
+		if (fwrite(&pfh, 1, sizeof(pfh), opt.f_cap) != (size_t) sizeof(pfh))
+		{
+			perror("fwrite(pcap file header) failed");
+
+			return (1);
+		}
+
+		if (!opt.quiet)
+		{
+			PCT;
+			printf("Created capture file \"%s\".\n", ofn);
+		}
 	}
-
-	opt.f_cap_name = ofn;
-
-	pfh.magic = TCPDUMP_MAGIC;
-	pfh.version_major = PCAP_VERSION_MAJOR;
-	pfh.version_minor = PCAP_VERSION_MINOR;
-	pfh.thiszone = 0;
-	pfh.sigfigs = 0;
-	pfh.snaplen = 65535;
-	pfh.linktype = LINKTYPE_IEEE802_11;
-
-	if (fwrite(&pfh, 1, sizeof(pfh), opt.f_cap) != (size_t) sizeof(pfh))
+	else if (ivs_only)
 	{
-		perror("fwrite(pcap file header) failed");
+		struct ivs2_filehdr fivs2;
+
+		fivs2.version = IVS2_VERSION;
+
+		memset(ofn, 0, ofn_len);
+		snprintf(
+			ofn, ofn_len, "%s-%02d.%s", prefix, opt.f_index, IVS2_EXTENSION);
+
+		if ((opt.f_ivs = fopen(ofn, "wb+")) == NULL)
+		{
+			perror("fopen failed");
+			fprintf(stderr, "Could not create \"%s\".\n", ofn);
+			free(ofn);
+
+			return (1);
+		}
 		free(ofn);
-		return (1);
-	}
 
-	if (!opt.quiet)
+		if (fwrite(IVS2_MAGIC, 1, 4, opt.f_ivs) != (size_t) 4)
+		{
+			perror("fwrite(IVs file MAGIC) failed");
+
+			return (1);
+		}
+
+		if (fwrite(&fivs2, 1, sizeof(struct ivs2_filehdr), opt.f_ivs)
+			!= (size_t) sizeof(struct ivs2_filehdr))
+		{
+			perror("fwrite(IVs file header) failed");
+
+			return (1);
+		}
+	}
+	else
 	{
-		PCT;
-		printf("Created capture file \"%s\".\n", ofn);
+		free(ofn);
 	}
-
-	free(ofn);
 
 	return (0);
+}
+
+int dump_initialize(char * prefix)
+{
+	opt.output_format_pcap = 1;
+
+	return dump_initialize_multi_format(prefix, 0);
 }
 
 int check_shared_key(const uint8_t * h80211, size_t caplen)
