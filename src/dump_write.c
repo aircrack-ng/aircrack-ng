@@ -267,8 +267,11 @@ int dump_write_csv(struct AP_info * ap_1st,
 		else
 		{
 			temp = format_text_for_csv(ap_cur->essid, ap_cur->ssid_length);
-			fprintf(opt.f_txt, "%s, ", temp);
-			free(temp);
+			if (temp != NULL)
+			{
+				fprintf(opt.f_txt, "%s, ", temp);
+				free(temp);
+			}
 		}
 
 		if (ap_cur->key != NULL)
@@ -363,6 +366,7 @@ int dump_write_csv(struct AP_info * ap_1st,
 			{
 				temp = format_text_for_csv((unsigned char *) st_cur->probes[i],
 										   st_cur->ssid_length[i]);
+				ALLEGE(temp != NULL);
 			}
 
 			if (probes_written == 0)

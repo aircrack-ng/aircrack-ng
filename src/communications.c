@@ -1055,7 +1055,6 @@ int dump_initialize_multi_format(char * prefix, int ivs_only)
 		opt.f_cap_name = (char *) calloc(1, strlen(ofn) + 1);
 		ALLEGE(opt.f_cap_name != NULL);
 		memcpy(opt.f_cap_name, ofn, strlen(ofn) + 1);
-		free(ofn);
 
 		pfh.magic = TCPDUMP_MAGIC;
 		pfh.version_major = PCAP_VERSION_MAJOR;
@@ -1068,6 +1067,7 @@ int dump_initialize_multi_format(char * prefix, int ivs_only)
 		if (fwrite(&pfh, 1, sizeof(pfh), opt.f_cap) != (size_t) sizeof(pfh))
 		{
 			perror("fwrite(pcap file header) failed");
+			free(ofn);
 
 			return (1);
 		}
@@ -1077,6 +1077,8 @@ int dump_initialize_multi_format(char * prefix, int ivs_only)
 			PCT;
 			printf("Created capture file \"%s\".\n", ofn);
 		}
+
+		free(ofn);
 	}
 	else if (ivs_only)
 	{

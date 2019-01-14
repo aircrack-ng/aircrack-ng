@@ -897,7 +897,7 @@ static int update_dataps(void)
 #if defined(__x86_64__) && defined(__CYGWIN__)
 		pause = (((sec * (0.0f + 1000000) + usec)) / ((0.0f + 1000000)));
 #else
-		pause = (((sec * 1000000.0f + usec)) / (1000000.0f));
+		pause = ((sec * 1000000.0f + usec)) / (1000000.0f);
 #endif
 		if (pause > 2.0f)
 		{
@@ -1282,9 +1282,9 @@ static int dump_add_packet(unsigned char * h80211,
 
 		ap_cur->data_root = NULL;
 		ap_cur->EAP_detected = 0;
-		memcpy(ap_cur->gps_loc_min, lopt.gps_loc, sizeof(float) * 5);
-		memcpy(ap_cur->gps_loc_max, lopt.gps_loc, sizeof(float) * 5);
-		memcpy(ap_cur->gps_loc_best, lopt.gps_loc, sizeof(float) * 5);
+		memcpy(ap_cur->gps_loc_min, lopt.gps_loc, sizeof(float) * 5); //-V512
+		memcpy(ap_cur->gps_loc_max, lopt.gps_loc, sizeof(float) * 5); //-V512
+		memcpy(ap_cur->gps_loc_best, lopt.gps_loc, sizeof(float) * 5); //-V512
 
 		/* 802.11n and ac */
 		ap_cur->channel_width = CHANNEL_22MHZ; // 20MHz by default
@@ -1339,7 +1339,9 @@ static int dump_add_packet(unsigned char * h80211,
 			if (ap_cur->avg_power > ap_cur->best_power)
 			{
 				ap_cur->best_power = ap_cur->avg_power;
-				memcpy(ap_cur->gps_loc_best, lopt.gps_loc, sizeof(float) * 5);
+				memcpy(ap_cur->gps_loc_best, //-V512
+					   lopt.gps_loc,
+					   sizeof(float) * 5);
 			}
 		}
 		else
@@ -1491,10 +1493,16 @@ static int dump_add_packet(unsigned char * h80211,
 
 		gettimeofday(&(st_cur->ftimer), NULL);
 
-		memcpy(st_cur->gps_loc_min, lopt.gps_loc, sizeof(st_cur->gps_loc_min));
-		memcpy(st_cur->gps_loc_max, lopt.gps_loc, sizeof(st_cur->gps_loc_max));
-		memcpy(
-			st_cur->gps_loc_best, lopt.gps_loc, sizeof(st_cur->gps_loc_best));
+		memcpy(st_cur->gps_loc_min,
+			   lopt.gps_loc,
+			   sizeof(st_cur->gps_loc_min)); //-V512
+		memcpy(st_cur->gps_loc_max, //-V512
+			   lopt.gps_loc,
+			   sizeof(st_cur->gps_loc_max));
+		memcpy( //-V512
+			st_cur->gps_loc_best,
+			lopt.gps_loc,
+			sizeof(st_cur->gps_loc_best));
 
 		for (i = 0; i < NB_PRB; i++)
 		{
@@ -1509,7 +1517,7 @@ static int dump_add_packet(unsigned char * h80211,
 		st_cur->base = ap_cur;
 
 	// update bitrate to station
-	if ((st_cur != NULL) && (h80211[1] & 3) == 2) st_cur->rate_to = ri->ri_rate;
+	if ((h80211[1] & 3) == 2) st_cur->rate_to = ri->ri_rate;
 
 	/* update the last time seen */
 
@@ -1527,7 +1535,7 @@ static int dump_add_packet(unsigned char * h80211,
 		if (ri->ri_power > st_cur->best_power)
 		{
 			st_cur->best_power = ri->ri_power;
-			memcpy(ap_cur->gps_loc_best,
+			memcpy(ap_cur->gps_loc_best, //-V512
 				   lopt.gps_loc,
 				   sizeof(st_cur->gps_loc_best));
 		}
@@ -1610,7 +1618,8 @@ skip_station:
 					for (i = 0; i < n; i++)
 					{
 						c = p[2 + i];
-						if (c == 0 || (c > 0 && c < 32) || (c > 126 && c < 160))
+						if (c == 0 || (c > 0 && c < 32) //-V560
+							|| (c > 126 && c < 160))
 							c = '.';
 						st_cur->probes[st_cur->probe_index][i] = c;
 					}
@@ -4200,7 +4209,7 @@ static inline ssize_t
 read_line(int sock, char * buffer, size_t pos, size_t size)
 {
 	ssize_t status = 1;
-	if (pos < 0 || size < 1 || pos >= size || buffer == NULL || sock < 0)
+	if (size < 1 || pos >= size || buffer == NULL || sock < 0)
 	{
 		return (-1);
 	}
@@ -5135,9 +5144,8 @@ static int getchannels(const char * optarg)
 	lopt.own_channels
 		= (int *) malloc(sizeof(int) * (chan_max - chan_remain + 1));
 	ALLEGE(lopt.own_channels != NULL);
-	ALLEGE(lopt.own_channels != NULL);
 
-	for (i = 0; i < (chan_max - chan_remain); i++)
+	for (i = 0; chan_max >= chan_remain && i < (chan_max - chan_remain); i++)
 	{
 		lopt.own_channels[i] = tmp_channels[i];
 	}
@@ -5276,7 +5284,7 @@ static int getfrequencies(const char * optarg)
 		= (int *) malloc(sizeof(int) * (freq_max - freq_remain + 1));
 	ALLEGE(lopt.own_frequencies != NULL);
 
-	for (i = 0; i < (freq_max - freq_remain); i++)
+	for (i = 0; freq_max >= freq_remain && i < (freq_max - freq_remain); i++)
 	{
 		lopt.own_frequencies[i] = tmp_frequencies[i];
 	}
