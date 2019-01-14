@@ -296,6 +296,8 @@ get_line_from_buffer(char * buffer, size_t size, char * line)
 	return (-1);
 }
 
+int station_compare(const void * a, const void * b);
+
 #ifdef __cplusplus
 };
 #endif

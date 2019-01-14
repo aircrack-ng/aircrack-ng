@@ -105,14 +105,6 @@ GCRY_THREAD_OPTION_PTHREAD_IMPL;
 #define DYNAMIC 1
 #endif
 
-static int station_compare(const void * a, const void * b)
-{
-	REQUIRE(a != NULL);
-	REQUIRE(b != NULL);
-
-	return (memcmp(a, b, 6));
-}
-
 /* stats global data */
 
 static volatile int wpa_cracked = 0;

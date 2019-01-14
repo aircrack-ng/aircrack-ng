@@ -203,14 +203,6 @@ write_packet(FILE * f_out, struct pcap_pkthdr * pkh, unsigned char * h80211)
 	return (EXIT_SUCCESS);
 }
 
-static int station_compare(const void * a, const void * b)
-{
-	REQUIRE(a != NULL);
-	REQUIRE(b != NULL);
-
-	return memcmp(a, b, 6);
-}
-
 int main(int argc, char * argv[])
 {
 	time_t tt;

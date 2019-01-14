@@ -32,6 +32,7 @@
  *  files in the program, then also delete it here.
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -58,6 +59,9 @@
 #endif
 
 #include "defs.h"
+#include "aircrack-osdep/osdep.h"
+#include "aircrack-osdep/common.h"
+#include "include/ethernet.h"
 
 #define isHex(c) (hexToInt(c) != -1)
 #define HEX_BASE 16
@@ -689,4 +693,12 @@ int is_background(void)
 
 	// Background
 	return 1;
+}
+
+int station_compare(const void * a, const void * b)
+{
+	REQUIRE(a != NULL);
+	REQUIRE(b != NULL);
+
+	return (memcmp(a, b, ETHER_ADDR_LEN));
 }
