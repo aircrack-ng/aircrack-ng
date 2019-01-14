@@ -945,9 +945,6 @@ int dump_initialize(char * prefix)
 
 int check_shared_key(const uint8_t * h80211, size_t caplen)
 {
-	REQUIRE(h80211 != NULL);
-	REQUIRE(caplen > 0 && caplen < (int) sizeof(opt.sharedkey[0]));
-
 	int m_bmac = 16;
 	int m_smac = 10;
 	int m_dmac = 4;
@@ -958,6 +955,12 @@ int check_shared_key(const uint8_t * h80211, size_t caplen)
 	uint8_t text[4096];
 	uint8_t prga[4096];
 	unsigned int long crc = 0xFFFFFFFF;
+
+	if (!(h80211 != NULL && caplen > 0
+		  && caplen < (int) sizeof(opt.sharedkey[0])))
+	{
+		return (1);
+	}
 
 	if (time(NULL) - opt.sk_start > 5)
 	{
