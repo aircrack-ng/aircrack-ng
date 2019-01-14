@@ -2181,28 +2181,6 @@ static struct client * client_update(struct network * n,
 	return (c);
 }
 
-static int eapol_handshake_step(unsigned char * eapol, int len)
-{
-	REQUIRE(eapol != NULL);
-
-	int eapol_size = 4 + 1 + 2 + 2 + 8 + 32 + 16 + 8 + 8 + 16 + 2;
-
-	if (len < eapol_size) return (0);
-
-	/* not pairwise */
-	if ((eapol[6] & 0x08) == 0) return (0);
-
-	/* 1: has no mic */
-	if ((eapol[5] & 1) == 0) return (1);
-
-	/* 3: has ack */
-	if ((eapol[6] & 0x80) != 0) return (3);
-
-	if (*((uint16_t *) &eapol[eapol_size - 2]) == 0) return (4);
-
-	return (2);
-}
-
 static void process_eapol(struct network * n,
 						  struct client * c,
 						  unsigned char * p,
