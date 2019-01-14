@@ -1482,3 +1482,56 @@ int set_final_ip(uint8_t * buf, uint8_t * mymac)
 
 	return (0);
 }
+
+int msleep(int msec)
+{
+	struct timeval tv, tv2;
+	float f, ticks;
+	int n;
+	ssize_t rc;
+
+	if (msec == 0) msec = 1;
+
+	ticks = 0;
+
+	while (1)
+	{
+		/* wait for the next timer interrupt, or sleep */
+
+		if (dev.fd_rtc >= 0)
+		{
+			if ((rc = read(dev.fd_rtc, &n, sizeof(n))) < 0)
+			{
+				perror("read(/dev/rtc) failed");
+			}
+			else if (rc == 0)
+			{
+				perror("EOF encountered on /dev/rtc");
+			}
+			else
+			{
+				ticks++;
+			}
+		}
+		else
+		{
+			/* we can't trust usleep, since it depends on the HZ */
+
+			gettimeofday(&tv, NULL);
+			usleep(1024);
+			gettimeofday(&tv2, NULL);
+
+			f = 1000000 * (float) (tv2.tv_sec - tv.tv_sec)
+				+ (float) (tv2.tv_usec - tv.tv_usec);
+
+			ticks += f / 1024;
+		}
+
+		if ((ticks / 1024 * 1000) < msec) continue;
+
+		/* threshold reached */
+		break;
+	}
+
+	return (0);
+}

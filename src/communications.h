@@ -352,5 +352,6 @@ int set_clear_arp(uint8_t * buf, uint8_t * smac, uint8_t * dmac);
 int set_final_arp(uint8_t * buf, uint8_t * mymac);
 int set_clear_ip(uint8_t * buf, size_t ip_len);
 int set_final_ip(uint8_t * buf, uint8_t * mymac);
+int msleep(int msec);
 
 #endif //AIRCRACK_NG_COMMUNICATIONS_H
