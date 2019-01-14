@@ -639,6 +639,8 @@ int main(int argc, char * argv[])
 
 	if (opt.store_bad)
 	{
+		ALLEGE(f_bad != NULL);
+
 		if (fwrite(&pfh, 1, n, f_bad) != (size_t) n)
 		{
 			perror("fwrite(pcap file header) failed");
@@ -679,7 +681,7 @@ int main(int argc, char * argv[])
 
 		if (n <= 0 || n > 65535)
 		{
-			printf("Corrupted file? Invalid packet length %d.\n", n);
+			printf("Corrupted file? Invalid packet length %u.\n", n);
 			break;
 		}
 
@@ -732,7 +734,7 @@ int main(int argc, char * argv[])
 			if (n == 24 && le16_to_cpu(*(unsigned short *) (h80211 + 8)) == 2)
 				n = 32;
 
-			if (n <= 0 || n >= (unsigned) pkh.caplen) continue;
+			if (n <= 0 || n >= (unsigned) pkh.caplen) continue; //-V560
 
 			h80211 += n;
 			pkh.caplen -= n;
@@ -998,7 +1000,8 @@ int main(int argc, char * argv[])
 
 				st_cur->eapol_size = (h80211[z + 2] << 8) + h80211[z + 3] + 4;
 
-				if (pkh.len - z < st_cur->eapol_size || st_cur->eapol_size == 0
+				if (pkh.len - z < st_cur->eapol_size
+					|| st_cur->eapol_size == 0 //-V560
 					|| st_cur->eapol_size > sizeof(st_cur->eapol))
 				{
 					// Ignore the packet trying to crash us.
@@ -1032,7 +1035,8 @@ int main(int argc, char * argv[])
 
 				st_cur->eapol_size = (h80211[z + 2] << 8) + h80211[z + 3] + 4;
 
-				if (pkh.len - z < st_cur->eapol_size || st_cur->eapol_size == 0
+				if (pkh.len - z < st_cur->eapol_size
+					|| st_cur->eapol_size == 0 //-V560
 					|| st_cur->eapol_size > sizeof(st_cur->eapol))
 				{
 					// Ignore the packet trying to crash us.
@@ -1066,7 +1070,7 @@ int main(int argc, char * argv[])
 
 	fclose(f_in);
 	fclose(f_out);
-	if (opt.store_bad) fclose(f_bad);
+	if (f_bad != NULL) fclose(f_bad);
 
 	/* write some statistics */
 

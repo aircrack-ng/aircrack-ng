@@ -897,7 +897,7 @@ static int update_dataps(void)
 #if defined(__x86_64__) && defined(__CYGWIN__)
 		pause = (((sec * (0.0f + 1000000) + usec)) / ((0.0f + 1000000)));
 #else
-		pause = ((sec * 1000000.0f + usec)) / (1000000.0f);
+		pause = (sec * 1000000.0f + usec) / (1000000.0f);
 #endif
 		if (pause > 2.0f)
 		{
@@ -1493,9 +1493,9 @@ static int dump_add_packet(unsigned char * h80211,
 
 		gettimeofday(&(st_cur->ftimer), NULL);
 
-		memcpy(st_cur->gps_loc_min,
+		memcpy(st_cur->gps_loc_min, //-V512
 			   lopt.gps_loc,
-			   sizeof(st_cur->gps_loc_min)); //-V512
+			   sizeof(st_cur->gps_loc_min));
 		memcpy(st_cur->gps_loc_max, //-V512
 			   lopt.gps_loc,
 			   sizeof(st_cur->gps_loc_max));
@@ -2591,7 +2591,7 @@ skip_probe:
 						= (uint32_t)((h80211[z + 2] << 8) + h80211[z + 3] + 4);
 
 					if (caplen - z < st_cur->wpa.eapol_size
-						|| st_cur->wpa.eapol_size == 0
+						|| st_cur->wpa.eapol_size == 0 //-V560
 						|| caplen - z < 81 + 16
 						|| st_cur->wpa.eapol_size > sizeof(st_cur->wpa.eapol))
 					{
@@ -2626,7 +2626,7 @@ skip_probe:
 					st_cur->wpa.eapol_size
 						= (h80211[z + 2] << 8) + h80211[z + 3] + 4u;
 
-					if (st_cur->wpa.eapol_size == 0
+					if (st_cur->wpa.eapol_size == 0 //-V560
 						|| st_cur->wpa.eapol_size
 							   >= sizeof(st_cur->wpa.eapol) - 16)
 					{
@@ -3197,6 +3197,7 @@ static char * getBatteryString(void)
 	}
 
 	batt_string = getStringTimeFromSec((double) batt_time);
+	ALLEGE(batt_string != NULL);
 
 	ret = (char *) calloc(1, 256);
 	ALLEGE(ret != NULL);
@@ -3876,7 +3877,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 	if (lopt.show_sta)
 	{
-		memcpy(strbuf,
+		memcpy(strbuf, //-V512
 			   " BSSID              STATION "
 			   "           PWR   Rate    Lost    Frames  Probes",
 			   (size_t) columns_sta);
@@ -5142,9 +5143,12 @@ static int getchannels(const char * optarg)
 		= (int *) malloc(sizeof(int) * (chan_max - chan_remain + 1));
 	ALLEGE(lopt.own_channels != NULL);
 
-	for (i = 0; chan_max >= chan_remain && i < (chan_max - chan_remain); i++)
+	if (chan_max > 0 && chan_max >= chan_remain)
 	{
-		lopt.own_channels[i] = tmp_channels[i];
+		for (i = 0; i < (chan_max - chan_remain); i++) //-V658
+		{
+			lopt.own_channels[i] = tmp_channels[i];
+		}
 	}
 
 	lopt.own_channels[i] = 0;
@@ -5281,9 +5285,12 @@ static int getfrequencies(const char * optarg)
 		= (int *) malloc(sizeof(int) * (freq_max - freq_remain + 1));
 	ALLEGE(lopt.own_frequencies != NULL);
 
-	for (i = 0; freq_max >= freq_remain && i < (freq_max - freq_remain); i++)
+	if (freq_max > 0 && freq_max >= freq_remain)
 	{
-		lopt.own_frequencies[i] = tmp_frequencies[i];
+		for (i = 0; i < (freq_max - freq_remain); i++) //-V658
+		{
+			lopt.own_frequencies[i] = tmp_frequencies[i];
+		}
 	}
 
 	lopt.own_frequencies[i] = 0;

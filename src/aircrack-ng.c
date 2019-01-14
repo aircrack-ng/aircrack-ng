@@ -1624,7 +1624,7 @@ skip_station:
 			st_cur->wpa.eapol_size
 				= (uint32_t)((h80211[z + 2] << 8) + h80211[z + 3] + 4);
 
-			if (st_cur->wpa.eapol_size == 0
+			if (st_cur->wpa.eapol_size == 0 //-V560
 				|| st_cur->wpa.eapol_size > sizeof(st_cur->wpa.eapol)
 				|| pkh->len - z < st_cur->wpa.eapol_size)
 			{
@@ -1666,7 +1666,7 @@ skip_station:
 			st_cur->wpa.eapol_size
 				= (uint32_t)((h80211[z + 2] << 8) + h80211[z + 3] + 4);
 
-			if (st_cur->wpa.eapol_size == 0
+			if (st_cur->wpa.eapol_size == 0 //-V560
 				|| st_cur->wpa.eapol_size > sizeof(st_cur->wpa.eapol)
 				|| pkh->len - z < st_cur->wpa.eapol_size)
 			{
@@ -4445,10 +4445,8 @@ static int do_make_wkp(struct AP_info * ap_cur)
 	memcpy(frametmp, wkp_frame, WKP_FRAME_LENGTH * sizeof(char));
 
 	// Make sure the filename contains the extension
-	if ((strstr(opt.wkp, ".wkp") == NULL
-		 || strlen(strstr(opt.wkp, ".wkp")) != 4)
-		&& (strstr(opt.wkp, ".WKP") == NULL
-			|| strlen(strstr(opt.wkp, ".WKP")) != 4))
+	if (!(string_has_suffix(opt.wkp, ".wkp")
+		  || string_has_suffix(opt.wkp, ".WKP")))
 	{
 		strcat(opt.wkp, ".wkp");
 	}
@@ -4548,7 +4546,7 @@ __attribute__((unused)) static struct AP_info * hccap_to_ap(hccap_t * hccap)
 	ALLEGE(ap != NULL);
 	memset(&ap, 0, sizeof(ap));
 
-	memcpy(&ap->essid, &hccap->essid, sizeof(ap->essid));
+	memcpy(&ap->essid, &hccap->essid, sizeof(ap->essid)); //-V512
 	memcpy(&ap->bssid, &hccap->mac1, sizeof(ap->bssid));
 	memcpy(&ap->wpa.stmac, &hccap->mac2, sizeof(hccap->mac2));
 	memcpy(&ap->wpa.snonce, &hccap->nonce1, sizeof(hccap->nonce1));
@@ -4651,7 +4649,7 @@ static hccapx_t ap_to_hccapx(struct AP_info * ap)
 	ssid_len = (uint8_t) strlen(ap->essid);
 	memcpy(&hx.essid_len, &ssid_len, sizeof(ssid_len));
 
-	memcpy(&hx.essid, &ap->essid, sizeof(ap->essid) - 1);
+	memcpy(&hx.essid, &ap->essid, sizeof(ap->essid) - 1); //-V512
 	memcpy(&hx.mac_ap, &ap->bssid, sizeof(ap->bssid));
 	memcpy(&hx.mac_sta, &ap->wpa.stmac, sizeof(ap->wpa.stmac));
 	memcpy(&hx.keyver, &ap->wpa.keyver, sizeof(ap->wpa.keyver));
@@ -5238,7 +5236,7 @@ static int perform_wep_crack(struct AP_info * ap_cur)
 
 	opt.do_brute += j;
 
-	if (opt.ffact == 0)
+	if (opt.ffact <= FLT_EPSILON)
 	{
 		if (opt.do_ptw)
 			opt.ffact = 2;
