@@ -732,10 +732,10 @@ static int addESSIDfile(char * filename)
 	while (fgets(essid, 256, list) != NULL)
 	{
 		// trim trailing whitespace
-		x = strlen(essid) - 1;
-		while (x >= 0 && isspace((int) essid[x])) essid[x--] = 0;
+		rtrim(essid);
 
-		if (strlen(essid)) addESSID(essid, strlen(essid), 0);
+		x = (int) strlen(essid);
+		if (x > 0) addESSID(essid, x, 0);
 	}
 
 	fclose(list);

@@ -376,21 +376,6 @@ static void input_thread(void * arg)
 	}
 }
 
-static void trim(char * str)
-{
-	REQUIRE(str != NULL);
-
-	int i;
-	int begin = 0;
-	int end = strlen(str) - 1;
-
-	while (isspace((int) str[begin])) begin++;
-	while ((end >= begin) && isspace((int) str[end])) end--;
-	// Shift all characters back to the start of the string array.
-	for (i = begin; i <= end; i++) str[i - begin] = str[i];
-	str[i - begin] = '\0'; // Null terminate string.
-}
-
 static FILE * open_oui_file(void)
 {
 	int i;

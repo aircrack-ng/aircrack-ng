@@ -30,6 +30,7 @@
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
+#include <ctype.h>
 #include <stdbool.h>
 #include <time.h>
 #include <sys/time.h>
@@ -94,9 +95,6 @@ void calctime(time_t t, float calc);
 
 /// Retrieves the working directory.
 char * get_current_working_directory(void);
-
-/// Trim excess whitespace from the right-most of \a line.
-void rtrim(char * line);
 
 int is_string_number(const char * str);
 
@@ -205,6 +203,47 @@ static inline int time_diff(struct timeval * past, struct timeval * now)
 	p += past->tv_usec;
 
 	return (int) (n - p);
+}
+
+/// Return \a str with all leading whitespace removed.
+static inline void ltrim(char * str)
+{
+	REQUIRE(str != NULL);
+
+	size_t i;
+	size_t begin = 0u;
+	size_t end = strlen(str) - 1u;
+
+	while (isspace((int) str[begin])) begin++;
+
+	// Shift all characters back to the start of the string array.
+	for (i = begin; i <= end; i++) str[i - begin] = str[i];
+
+	// Ensure the string is null terminated.
+	str[i - begin] = '\0';
+}
+
+/// Return \a str with all trailing whitespace removed.
+static inline void rtrim(char * str)
+{
+	REQUIRE(str != NULL);
+
+	size_t begin = 0u;
+	size_t end = strlen(str) - 1u;
+
+	while ((end >= begin) && isspace((int) str[end])) end--;
+
+	// Ensure the string is null terminated.
+	str[end + 1] = '\0';
+}
+
+/// Return \a str with all leading and trailing whitespace removed.
+static inline void trim(char * str)
+{
+	REQUIRE(str != NULL);
+
+	ltrim(str);
+	rtrim(str);
 }
 
 #ifdef __cplusplus
