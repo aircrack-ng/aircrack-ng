@@ -1057,8 +1057,8 @@ int check_shared_key(const uint8_t * h80211, size_t caplen)
 		if (!opt.quiet)
 		{
 			PCT;
-			printf("Broken SKA: %02X:%02X:%02X:%02X:%02X:%02X (expected: %lu, "
-				   "got %lu bytes)\n",
+			printf("Broken SKA: %02X:%02X:%02X:%02X:%02X:%02X (expected: %zu, "
+				   "got %zu bytes)\n",
 				   *(opt.sharedkey[0] + m_dmac),
 				   *(opt.sharedkey[0] + m_dmac + 1),
 				   *(opt.sharedkey[0] + m_dmac + 2),
@@ -1140,7 +1140,7 @@ int check_shared_key(const uint8_t * h80211, size_t caplen)
 	if (!opt.quiet)
 	{
 		PCT;
-		printf("Got %lu bytes keystream: %02X:%02X:%02X:%02X:%02X:%02X\n",
+		printf("Got %zu bytes keystream: %02X:%02X:%02X:%02X:%02X:%02X\n",
 			   textlen + 4,
 			   *(opt.sharedkey[0] + m_dmac),
 			   *(opt.sharedkey[0] + m_dmac + 1),
@@ -1172,7 +1172,7 @@ int encrypt_data(uint8_t * data, size_t length)
 	if (opt.prgalen - 4 < length && opt.crypt != CRYPT_WEP)
 	{
 		printf(
-			"Please specify a longer PRGA file (-y) with at least %lu bytes.\n",
+			"Please specify a longer PRGA file (-y) with at least %zu bytes.\n",
 			(length + 4));
 		return (1);
 	}
