@@ -3328,7 +3328,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 	memset(strbuf, '\0', sizeof(strbuf));
 	strbuf[ws_col - 1] = '\0';
-	fprintf(stderr, "%s\n", strbuf);
+	printf("%s\n", strbuf);
 
 	if (lopt.freqoption)
 	{
@@ -3432,7 +3432,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			(512 - strlen(strbuf) - 1));
 
 	strbuf[ws_col - 1] = '\0';
-	fprintf(stderr, "%s\n", strbuf);
+	printf("%s\n", strbuf);
 
 	/* print some information about each detected AP */
 
@@ -3442,7 +3442,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 	memset(strbuf, ' ', ws_col - 1u);
 	strbuf[ws_col - 1] = '\0';
-	fprintf(stderr, "%s\n", strbuf);
+	printf("%s\n", strbuf);
 
 	if (lopt.show_ap)
 	{
@@ -3495,11 +3495,11 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			}
 		}
 		strbuf[ws_col - 1] = '\0';
-		fprintf(stderr, "%s\n", strbuf);
+		printf("%s\n", strbuf);
 
 		memset(strbuf, ' ', ws_col - 1u);
 		strbuf[ws_col - 1] = '\0';
-		fprintf(stderr, "%s\n", strbuf);
+		printf("%s\n", strbuf);
 
 		ap_cur = lopt.ap_end;
 
@@ -3731,7 +3731,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				textcolor_fg(ap_cur->marked_color);
 			}
 
-			fprintf(stderr, "%s", strbuf);
+			printf("%s", strbuf);
 
 			if (ws_col > (columns_ap - 4))
 			{
@@ -3849,10 +3849,10 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				// end the string at the end of the column
 				strbuf[ws_col - (columns_ap - 4)] = '\0';
 
-				fprintf(stderr, "  %s", strbuf);
+				printf("  %s", strbuf);
 			}
 
-			fprintf(stderr, "\n");
+			printf("\n");
 
 			if ((lopt.p_selected_ap && (lopt.p_selected_ap == ap_cur))
 				|| (ap_cur->marked))
@@ -3871,7 +3871,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 		memset(strbuf, ' ', (size_t) ws_col - 1);
 		strbuf[ws_col - 1] = '\0';
-		fprintf(stderr, "%s\n", strbuf);
+		printf("%s\n", strbuf);
 	}
 
 	if (lopt.show_sta)
@@ -3881,11 +3881,11 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			   "           PWR   Rate    Lost    Frames  Probes",
 			   (size_t) columns_sta);
 		strbuf[ws_col - 1] = '\0';
-		fprintf(stderr, "%s\n", strbuf);
+		printf("%s\n", strbuf);
 
 		memset(strbuf, ' ', (size_t) ws_col - 1);
 		strbuf[ws_col - 1] = '\0';
-		fprintf(stderr, "%s\n", strbuf);
+		printf("%s\n", strbuf);
 
 		ap_cur = lopt.ap_end;
 
@@ -3953,33 +3953,31 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				if (ws_row != 0 && nlines >= ws_row) return;
 
 				if (!memcmp(ap_cur->bssid, BROADCAST, 6))
-					fprintf(stderr, " (not associated) ");
+					printf(" (not associated) ");
 				else
-					fprintf(stderr,
-							" %02X:%02X:%02X:%02X:%02X:%02X",
-							ap_cur->bssid[0],
-							ap_cur->bssid[1],
-							ap_cur->bssid[2],
-							ap_cur->bssid[3],
-							ap_cur->bssid[4],
-							ap_cur->bssid[5]);
+					printf(" %02X:%02X:%02X:%02X:%02X:%02X",
+						   ap_cur->bssid[0],
+						   ap_cur->bssid[1],
+						   ap_cur->bssid[2],
+						   ap_cur->bssid[3],
+						   ap_cur->bssid[4],
+						   ap_cur->bssid[5]);
 
-				fprintf(stderr,
-						"  %02X:%02X:%02X:%02X:%02X:%02X",
-						st_cur->stmac[0],
-						st_cur->stmac[1],
-						st_cur->stmac[2],
-						st_cur->stmac[3],
-						st_cur->stmac[4],
-						st_cur->stmac[5]);
+				printf("  %02X:%02X:%02X:%02X:%02X:%02X",
+					   st_cur->stmac[0],
+					   st_cur->stmac[1],
+					   st_cur->stmac[2],
+					   st_cur->stmac[3],
+					   st_cur->stmac[4],
+					   st_cur->stmac[5]);
 
-				fprintf(stderr, "  %3d ", st_cur->power);
-				fprintf(stderr, "  %2d", st_cur->rate_to / 1000000);
-				fprintf(stderr, "%c", (st_cur->qos_fr_ds) ? 'e' : ' ');
-				fprintf(stderr, "-%2d", st_cur->rate_from / 1000000);
-				fprintf(stderr, "%c", (st_cur->qos_to_ds) ? 'e' : ' ');
-				fprintf(stderr, "  %4d", st_cur->missed);
-				fprintf(stderr, " %8lu", st_cur->nb_pkt);
+				printf("  %3d ", st_cur->power);
+				printf("  %2d", st_cur->rate_to / 1000000);
+				printf("%c", (st_cur->qos_fr_ds) ? 'e' : ' ');
+				printf("-%2d", st_cur->rate_from / 1000000);
+				printf("%c", (st_cur->qos_to_ds) ? 'e' : ' ');
+				printf("  %4d", st_cur->missed);
+				printf(" %8lu", st_cur->nb_pkt);
 
 				if (ws_col > (columns_sta - 6))
 				{
@@ -4006,10 +4004,10 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 						? abort()
 						: (void) 0;
 					strbuf[ws_col - (columns_sta - 6)] = '\0';
-					fprintf(stderr, " %s", strbuf);
+					printf(" %s", strbuf);
 				}
 
-				fprintf(stderr, "\n");
+				printf("\n");
 
 				st_cur = st_cur->prev;
 			}
@@ -4035,18 +4033,18 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 		memset(strbuf, ' ', (size_t) ws_col - 1);
 		strbuf[ws_col - 1] = '\0';
-		fprintf(stderr, "%s\n", strbuf);
+		printf("%s\n", strbuf);
 
 		memcpy(strbuf,
 			   " MAC       "
 			   "          CH PWR    ACK ACK/s    CTS RTS_RX RTS_TX  OTHER",
 			   (size_t) columns_na);
 		strbuf[ws_col - 1] = '\0';
-		fprintf(stderr, "%s\n", strbuf);
+		printf("%s\n", strbuf);
 
 		memset(strbuf, ' ', (size_t) ws_col - 1);
 		strbuf[ws_col - 1] = '\0';
-		fprintf(stderr, "%s\n", strbuf);
+		printf("%s\n", strbuf);
 
 		na_cur = lopt.na_1st;
 
@@ -4064,25 +4062,24 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 			if (ws_row != 0 && nlines >= ws_row) return;
 
-			fprintf(stderr,
-					" %02X:%02X:%02X:%02X:%02X:%02X",
-					na_cur->namac[0],
-					na_cur->namac[1],
-					na_cur->namac[2],
-					na_cur->namac[3],
-					na_cur->namac[4],
-					na_cur->namac[5]);
+			printf(" %02X:%02X:%02X:%02X:%02X:%02X",
+				   na_cur->namac[0],
+				   na_cur->namac[1],
+				   na_cur->namac[2],
+				   na_cur->namac[3],
+				   na_cur->namac[4],
+				   na_cur->namac[5]);
 
-			fprintf(stderr, "  %3d", na_cur->channel);
-			fprintf(stderr, " %3d", na_cur->power);
-			fprintf(stderr, " %6d", na_cur->ack);
-			fprintf(stderr, "  %4d", na_cur->ackps);
-			fprintf(stderr, " %6d", na_cur->cts);
-			fprintf(stderr, " %6d", na_cur->rts_r);
-			fprintf(stderr, " %6d", na_cur->rts_t);
-			fprintf(stderr, " %6d", na_cur->other);
+			printf("  %3d", na_cur->channel);
+			printf(" %3d", na_cur->power);
+			printf(" %6d", na_cur->ack);
+			printf("  %4d", na_cur->ackps);
+			printf(" %6d", na_cur->cts);
+			printf(" %6d", na_cur->rts_r);
+			printf(" %6d", na_cur->rts_t);
+			printf(" %6d", na_cur->other);
 
-			fprintf(stderr, "\n");
+			printf("\n");
 
 			na_cur = na_cur->next;
 		}
