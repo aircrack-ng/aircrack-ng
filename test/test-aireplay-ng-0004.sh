@@ -38,6 +38,7 @@ fi
 WI_IFACE=$("${top_builddir}/scripts/airmon-ng" 2>/dev/null | egrep hwsim | head -n 1 | awk '{print $2}')
 WI_IFACE2=$("${top_builddir}/scripts/airmon-ng" 2>/dev/null | egrep hwsim | tail -n 1 | awk '{print $2}')
 if [ -z "${WI_IFACE}" ] || [ -z "${WI_IFACE2}" ]; then
+	echo "Failed getting interface names" >2
 	[ ${LOAD_MODULE} -eq 1 ] && rmmod mac80211_hwsim 2>&1 >/dev/null
 	return 1
 fi
@@ -51,12 +52,14 @@ interface=${WI_IFACE}
 channel=1
 hw_mode=g
 ssid=${SSID}
+# Test 4
 EOF
 
 # Start it
 TEMP_HOSTAPD_PID="/tmp/hostapd_pid_$(date +%s)"
 hostapd -B ${TEMP_HOSTAPD_CONF} -P ${TEMP_HOSTAPD_PID} 2>&1 >/dev/null
 if test $? -ne 0; then
+	echo "Failed starting hostapd" >2
 	[ ${LOAD_MODULE} -eq 1 ] && rmmod mac80211_hwsim 2>&1 >/dev/null
 	exit 1
 fi
@@ -74,19 +77,20 @@ OUTPUT_TEMP=$(mktemp)
     ${WI_IFACE2} \
 	2>&1 > ${OUTPUT_TEMP}
 
+# Some cleanup
+kill -9 $(cat ${TEMP_HOSTAPD_PID} ) 2>&1 >/dev/null
+[ ${LOAD_MODULE} -eq 1 ] && rmmod mac80211_hwsim 2>&1 >/dev/null
+
 if [ -z "$(grep 'Injection is working!' ${OUTPUT_TEMP})" ]; then
 	echo "Injection is not working" >2
+	rm -f ${OUTPUT_TEMP}
 	return 1
 fi
 
 if [ -z "$(grep '30/30' ${OUTPUT_TEMP})" ]; then
 	echo "AP not present or failure injecting" >2
+	rm -f ${OUTPUT_TEMP}
 	return 1
 fi
 
-# Cleanup
-rm -f ${OUTPUT_TEMP}
-kill -9 $(cat ${TEMP_HOSTAPD_PID} ) 2>&1 >/dev/null
-[ ${LOAD_MODULE} -eq 1 ] && rmmod mac80211_hwsim 2>&1 >/dev/null
-
-exit $?
+exit 0
