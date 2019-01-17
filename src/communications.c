@@ -63,7 +63,6 @@ int read_packet(struct wif * wi,
 				struct rx_info * ri)
 {
 	REQUIRE(buf != NULL && count > 0);
-	REQUIRE(ri != NULL);
 
 	int rc;
 
