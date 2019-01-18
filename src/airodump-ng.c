@@ -1322,30 +1322,18 @@ static int dump_add_packet(unsigned char * h80211,
 		ap_cur->power_index = (ap_cur->power_index + 1) % NB_PWR;
 		ap_cur->power_lvl[ap_cur->power_index] = ri->ri_power;
 
-		ap_cur->avg_power = 0;
+		// Moving exponential average
+		// ma_new = alpha * new_sample + (1-alpha) * ma_old;
+		ap_cur->avg_power
+			= (int) (0.99f * ri->ri_power + (1.f - 0.99f) * ap_cur->avg_power);
 
-		for (i = 0, n = 0; i < NB_PWR; i++)
+		if (ap_cur->avg_power > ap_cur->best_power)
 		{
-			if (ap_cur->power_lvl[i] != -1)
-			{
-				ap_cur->avg_power += ap_cur->power_lvl[i];
-				n++;
-			}
+			ap_cur->best_power = ap_cur->avg_power;
+			memcpy(ap_cur->gps_loc_best, //-V512
+				   lopt.gps_loc,
+				   sizeof(float) * 5);
 		}
-
-		if (n > 0)
-		{
-			ap_cur->avg_power /= n;
-			if (ap_cur->avg_power > ap_cur->best_power)
-			{
-				ap_cur->best_power = ap_cur->avg_power;
-				memcpy(ap_cur->gps_loc_best, //-V512
-					   lopt.gps_loc,
-					   sizeof(float) * 5);
-			}
-		}
-		else
-			ap_cur->avg_power = -1;
 
 		/* every packet in here comes from the AP */
 
@@ -3749,7 +3737,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 						{
 							snprintf(strbuf + len,
 									 sizeof(strbuf) - len,
-									 "%u.%d",
+									 " %u.%d",
 									 ap_cur->wps.version >> 4,
 									 ap_cur->wps.version & 0xF); // Version
 							if (ap_cur->wps.meth) // WPS Config Methods
@@ -3828,7 +3816,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 					else
 						snprintf(strbuf + len,
 								 sizeof(strbuf) - len,
-								 "<length:%3d>%s",
+								 " <length:%3d>%s",
 								 ap_cur->ssid_length,
 								 "\x00");
 				}
@@ -3854,7 +3842,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 					snprintf(strbuf + len,
 							 sizeof(strbuf) - len - 1,
-							 "%s",
+							 " %s",
 							 ap_cur->manuf);
 				}
 			}
@@ -3866,7 +3854,6 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 			strbuf[ws_col - 1] = '\0';
 			puts(strbuf);
-			putchar('\n');
 
 			if ((lopt.p_selected_ap && (lopt.p_selected_ap == ap_cur))
 				|| (ap_cur->marked))
