@@ -3458,12 +3458,16 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 						 " ESSID");
 				if (lopt.show_manufacturer)
 				{
-					snprintf(strbuf + columns_ap + lopt.maxsize_wps_seen - 6
+					memset(strbuf + columns_ap + lopt.maxsize_wps_seen,
+						   32,
+						   sizeof(strbuf) - columns_ap - lopt.maxsize_wps_seen
+							   - 1);
+					snprintf(strbuf + columns_ap + lopt.maxsize_wps_seen
 								 + lopt.maxsize_essid_seen
-								 - 5,
+								 - 6,
 							 15,
 							 "%s",
-							 "  MANUFACTURER");
+							 "MANUFACTURER");
 				}
 			}
 		}
@@ -3474,10 +3478,8 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			if (lopt.show_manufacturer && (ws_col > (columns_ap - 4)))
 			{
 				// write spaces (32).
-				memset(strbuf + columns_ap,
-					   32,
-					   lopt.maxsize_essid_seen - 5); // 5 is the len of "ESSID"
-				snprintf(strbuf + columns_ap + lopt.maxsize_essid_seen - 5,
+				memset(strbuf + columns_ap, 32, lopt.maxsize_essid_seen - 5);
+				snprintf(strbuf + columns_ap + lopt.maxsize_essid_seen - 8,
 						 15,
 						 "%s",
 						 "  MANUFACTURER");
@@ -3687,10 +3689,6 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 						 parse_timestamp(ap_cur->timestamp));
 				len = strlen(strbuf);
 			}
-			else
-			{
-				len = strlen(strbuf);
-			}
 
 			if (lopt.p_selected_ap && (lopt.p_selected_ap == ap_cur))
 			{
@@ -3740,6 +3738,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 									 " %u.%d",
 									 ap_cur->wps.version >> 4,
 									 ap_cur->wps.version & 0xF); // Version
+							len = strlen(strbuf);
 							if (ap_cur->wps.meth) // WPS Config Methods
 							{
 								char tbuf[64];
@@ -3768,7 +3767,6 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 										 sizeof(strbuf) - len,
 										 " %s",
 										 tbuf);
-								len = strlen(strbuf);
 #undef T
 							}
 						}
@@ -4004,7 +4002,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 							< 0
 						? abort()
 						: (void) 0;
-					strbuf[MAX(ws_col - 75 - 1, 0)] = '\0';
+					strbuf[MAX(ws_col - 75, 0)] = '\0';
 					printf(" %s", strbuf);
 				}
 
