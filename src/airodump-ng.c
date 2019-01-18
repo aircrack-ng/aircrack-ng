@@ -3318,6 +3318,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	memset(strbuf, '\0', sizeof(strbuf));
 
 	erase_display(0);
+	putchar('\n');
 
 	if (lopt.freqoption)
 	{
