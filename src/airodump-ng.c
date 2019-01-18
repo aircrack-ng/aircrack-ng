@@ -3328,8 +3328,8 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	 */
 
 	memset(strbuf, '\0', sizeof(strbuf));
-	strbuf[ws_col - 1] = '\0';
-	printf("%s\n", strbuf);
+
+	erase_display(0);
 
 	if (lopt.freqoption)
 	{
@@ -3447,7 +3447,6 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 	if (lopt.show_ap)
 	{
-
 		strbuf[0] = 0;
 		strcat(strbuf, " BSSID              PWR ");
 
@@ -3462,17 +3461,18 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			strcat(strbuf, "WPS   ");
 			if (ws_col > (columns_ap - 4))
 			{
-				memset(strbuf + columns_ap, 32, lopt.maxsize_wps_seen - 6);
+				memset(strbuf + strlen(strbuf),
+					   32,
+					   sizeof(strbuf) - strlen(strbuf) - 1);
 				snprintf(strbuf + columns_ap + lopt.maxsize_wps_seen - 6,
-						 9,
+						 7,
 						 "%s",
-						 "   ESSID");
+						 " ESSID");
 				if (lopt.show_manufacturer)
 				{
-					memset(strbuf + columns_ap + lopt.maxsize_wps_seen + 2,
-						   32,
-						   lopt.maxsize_essid_seen - 5);
-					snprintf(strbuf + columns_ap + lopt.maxsize_essid_seen - 5,
+					snprintf(strbuf + columns_ap + lopt.maxsize_wps_seen - 6
+								 + lopt.maxsize_essid_seen
+								 - 5,
 							 15,
 							 "%s",
 							 "  MANUFACTURER");
@@ -3689,6 +3689,8 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			else if (ap_cur->security & AUTH_OPN)
 				snprintf(strbuf + len, sizeof(strbuf) - len, "OPN");
 
+			len = strlen(strbuf);
+
 			if (lopt.show_uptime)
 			{
 				snprintf(strbuf + len,
@@ -3701,8 +3703,6 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			{
 				len = strlen(strbuf);
 			}
-
-			strbuf[ws_col - 1] = '\0';
 
 			if (lopt.p_selected_ap && (lopt.p_selected_ap == ap_cur))
 			{
@@ -3732,21 +3732,23 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				textcolor_fg(ap_cur->marked_color);
 			}
 
-			printf("%s", strbuf);
+			memset(strbuf + len, 32, sizeof(strbuf) - len - 1);
 
 			if (ws_col > (columns_ap - 4))
 			{
-				memset(strbuf, 0, sizeof(strbuf));
 				if (lopt.show_wps)
 				{
+					ssize_t wps_len = len;
+
 					if (ap_cur->wps.state != 0xFF)
 					{
 						if (ap_cur->wps.ap_setup_locked) // AP setup locked
-							snprintf(strbuf, sizeof(strbuf) - 1, "Locked");
+							snprintf(
+								strbuf + len, sizeof(strbuf) - len, "Locked");
 						else
 						{
-							snprintf(strbuf,
-									 sizeof(strbuf) - 1,
+							snprintf(strbuf + len,
+									 sizeof(strbuf) - len,
 									 "%u.%d",
 									 ap_cur->wps.version >> 4,
 									 ap_cur->wps.version & 0xF); // Version
@@ -3774,86 +3776,97 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 								T(6, "NFCINTF"); // NFC Interface
 								T(7, "PBC"); // Push Button
 								T(8, "KPAD"); // Keypad
-								snprintf(strbuf + strlen(strbuf),
-										 sizeof(strbuf) - strlen(strbuf),
+								snprintf(strbuf + len,
+										 sizeof(strbuf) - len,
 										 " %s",
 										 tbuf);
+								len = strlen(strbuf);
 #undef T
 							}
 						}
 					}
 					else
 					{
-						snprintf(strbuf, sizeof(strbuf) - 1, " ");
+						snprintf(strbuf + len, sizeof(strbuf) - len, " ");
 					}
-					if (lopt.maxsize_wps_seen <= strlen(strbuf))
-						lopt.maxsize_wps_seen = (u_int) strlen(strbuf);
-					else // write spaces (32)
-						memset(strbuf + strlen(strbuf),
-							   32,
-							   (lopt.maxsize_wps_seen - strlen(strbuf)));
+					len = strlen(strbuf);
+
+					if (lopt.maxsize_wps_seen <= len - wps_len)
+						lopt.maxsize_wps_seen = (u_int) MAX(len - wps_len, 6);
+					else
+					{
+						// pad output
+						memset(strbuf + len, 32, sizeof(strbuf) - len - 1);
+						len += lopt.maxsize_wps_seen - (len - wps_len);
+						strbuf[len] = '\0';
+					}
 				}
+
+				ssize_t essid_len = len;
+
 				if (ap_cur->essid[0] != 0x00)
 				{
 					if (lopt.show_wps)
-						snprintf(strbuf + lopt.maxsize_wps_seen,
-								 sizeof(strbuf) - lopt.maxsize_wps_seen,
+						snprintf(strbuf + len,
+								 sizeof(strbuf) - len - 1,
 								 "  %s",
 								 ap_cur->essid);
 					else
-						snprintf(
-							strbuf, sizeof(strbuf) - 1, "%s", ap_cur->essid);
+						snprintf(strbuf + len,
+								 sizeof(strbuf) - len,
+								 " %s",
+								 ap_cur->essid);
 				}
 				else
 				{
 					if (lopt.show_wps)
-						snprintf(strbuf + lopt.maxsize_wps_seen,
-								 sizeof(strbuf) - lopt.maxsize_wps_seen,
+						snprintf(strbuf + len,
+								 sizeof(strbuf) - len - 1,
 								 "  <length:%3d>%s",
 								 ap_cur->ssid_length,
 								 "\x00");
 					else
-						snprintf(strbuf,
-								 sizeof(strbuf) - 1,
+						snprintf(strbuf + len,
+								 sizeof(strbuf) - len,
 								 "<length:%3d>%s",
 								 ap_cur->ssid_length,
 								 "\x00");
 				}
+				len = strlen(strbuf);
 
 				if (lopt.show_manufacturer)
 				{
-
-					if (lopt.maxsize_essid_seen <= strlen(strbuf))
-						lopt.maxsize_essid_seen = (u_int) strlen(strbuf);
-					else // write spaces (32)
-						memset(
-							strbuf + strlen(strbuf),
-							32,
-							(size_t)(lopt.maxsize_essid_seen - strlen(strbuf)));
+					if (lopt.maxsize_essid_seen <= len - essid_len)
+						lopt.maxsize_essid_seen
+							= (u_int) MAX(len - essid_len, 5);
+					else
+					{
+						// pad output
+						memset(strbuf + len, 32, sizeof(strbuf) - len - 1);
+						len += lopt.maxsize_essid_seen - (len - essid_len);
+						strbuf[len] = '\0';
+					}
 
 					if (ap_cur->manuf == NULL)
 						ap_cur->manuf = get_manufacturer(ap_cur->bssid[0],
 														 ap_cur->bssid[1],
 														 ap_cur->bssid[2]);
 
-					snprintf(strbuf + lopt.maxsize_essid_seen,
-							 sizeof(strbuf) - lopt.maxsize_essid_seen,
-							 "  %s",
+					snprintf(strbuf + len,
+							 sizeof(strbuf) - len - 1,
+							 "%s",
 							 ap_cur->manuf);
 				}
-
-				// write spaces (32) until the end of column
-				memset(strbuf + strlen(strbuf),
-					   32,
-					   (size_t) ws_col - (columns_ap - 4));
-
-				// end the string at the end of the column
-				strbuf[ws_col - (columns_ap - 4)] = '\0';
-
-				printf("  %s", strbuf);
 			}
 
-			printf("\n");
+			len = strlen(strbuf);
+
+			// write spaces (32) until the end of column
+			memset(strbuf + len, 32, (size_t) ws_col - 1);
+
+			strbuf[ws_col - 1] = '\0';
+			puts(strbuf);
+			putchar('\n');
 
 			if ((lopt.p_selected_ap && (lopt.p_selected_ap == ap_cur))
 				|| (ap_cur->marked))
@@ -4004,7 +4017,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 							< 0
 						? abort()
 						: (void) 0;
-					strbuf[ws_col - (columns_sta - 6)] = '\0';
+					strbuf[MAX(ws_col - 75 - 1, 0)] = '\0';
 					printf(" %s", strbuf);
 				}
 
@@ -6901,12 +6914,9 @@ int main(int argc, char * argv[])
 
 			if (ioctl(0, TIOCGWINSZ, &(lopt.ws)) < 0)
 			{
-				lopt.ws.ws_row = 50;
-				lopt.ws.ws_col = 120;
+				lopt.ws.ws_row = 25;
+				lopt.ws.ws_col = 80;
 			}
-
-			if (lopt.ws.ws_col < 1) lopt.ws.ws_col = 1;
-			if (lopt.ws.ws_col > 300) lopt.ws.ws_col = 300;
 
 			/* display the list of access points we have */
 
