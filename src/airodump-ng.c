@@ -398,9 +398,7 @@ static void input_thread(void * arg)
 					lopt.message, sizeof(lopt.message), "][ paused output");
 				ALLEGE(pthread_mutex_lock(&(lopt.mx_print)) == 0);
 
-				moveto(1, 1);
 				dump_print(lopt.ws.ws_row, lopt.ws.ws_col, lopt.num_cards);
-				erase_display(0);
 
 				ALLEGE(pthread_mutex_unlock(&(lopt.mx_print)) == 0);
 			}
@@ -532,9 +530,7 @@ static void input_thread(void * arg)
 		{
 			ALLEGE(pthread_mutex_lock(&(lopt.mx_print)) == 0);
 
-			moveto(1, 1);
 			dump_print(lopt.ws.ws_row, lopt.ws.ws_col, lopt.num_cards);
-			erase_display(0);
 
 			ALLEGE(pthread_mutex_unlock(&(lopt.mx_print)) == 0);
 		}
@@ -3317,6 +3313,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 	memset(strbuf, '\0', sizeof(strbuf));
 
+	moveto(1, 1);
 	erase_display(0);
 	putchar('\n');
 
@@ -4084,6 +4081,8 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			na_cur = na_cur->next;
 		}
 	}
+
+	fflush(stdout);
 }
 
 #define OUI_STR_SIZE 8
@@ -6910,9 +6909,7 @@ int main(int argc, char * argv[])
 			{
 				ALLEGE(pthread_mutex_lock(&(lopt.mx_print)) == 0);
 
-				moveto(1, 1);
 				dump_print(lopt.ws.ws_row, lopt.ws.ws_col, lopt.num_cards);
-				erase_display(0);
 
 				ALLEGE(pthread_mutex_unlock(&(lopt.mx_print)) == 0);
 			}
