@@ -66,7 +66,7 @@ int read_packet(struct wif * wi,
 
 	int rc;
 
-	rc = wi_read(wi, buf, count, ri);
+	rc = wi_read(wi, NULL, NULL, buf, count, ri);
 	if (rc == -1)
 	{
 		switch (errno)

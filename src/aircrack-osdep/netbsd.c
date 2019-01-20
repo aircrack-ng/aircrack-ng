@@ -45,6 +45,10 @@
 
 #include "osdep.h"
 
+#ifndef LINKTYPE_IEEE802_11
+#define LINKTYPE_IEEE802_11 105
+#endif
+
 #ifndef IEEE80211_RADIOTAP_F_FCS
 #define IEEE80211_RADIOTAP_F_FCS 0x10 /* Frame includes FCS */
 #endif
@@ -236,8 +240,12 @@ static int nbsd_set_channel(struct wif * wi, int chan)
 	return 0;
 }
 
-static int
-nbsd_read(struct wif * wi, unsigned char * h80211, int len, struct rx_info * ri)
+static int nbsd_read(struct wif * wi,
+					 struct timespec * ts,
+					 int * dlt,
+					 unsigned char * h80211,
+					 int len,
+					 struct rx_info * ri)
 {
 	struct priv_nbsd * pn = wi_priv(wi);
 	unsigned char * wh;
@@ -263,18 +271,33 @@ nbsd_read(struct wif * wi, unsigned char * h80211, int len, struct rx_info * ri)
 	assert(plen > 0);
 	memcpy(h80211, wh, plen);
 
+	if (dlt)
+	{
+		*dlt = LINKTYPE_IEEE802_11;
+	}
+
+	if (ts)
+	{
+		clock_gettime(CLOCK_REALTIME, ts);
+	}
+
 	if (ri && !ri->ri_channel) ri->ri_channel = wi_get_channel(wi);
 
 	return plen;
 }
 
 static int nbsd_write(struct wif * wi,
+					  struct timespec * ts,
+					  int dlt,
 					  unsigned char * h80211,
 					  int len,
 					  struct tx_info * ti)
 {
 	struct priv_nbsd * pn = wi_priv(wi);
 	int rc;
+
+	(void) ts;
+	(void) dlt;
 
 	/* XXX make use of ti */
 	if (ti)

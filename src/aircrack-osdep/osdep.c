@@ -27,18 +27,26 @@
 
 extern struct wif * file_open(char * iface);
 
-EXPORT int
-wi_read(struct wif * wi, unsigned char * h80211, int len, struct rx_info * ri)
+EXPORT int wi_read(struct wif * wi,
+				   struct timespec * ts,
+				   int * dlt,
+				   unsigned char * h80211,
+				   int len,
+				   struct rx_info * ri)
 {
 	assert(wi->wi_read);
-	return wi->wi_read(wi, h80211, len, ri);
+	return wi->wi_read(wi, ts, dlt, h80211, len, ri);
 }
 
-EXPORT int
-wi_write(struct wif * wi, unsigned char * h80211, int len, struct tx_info * ti)
+EXPORT int wi_write(struct wif * wi,
+					struct timespec * ts,
+					int dlt,
+					unsigned char * h80211,
+					int len,
+					struct tx_info * ti)
 {
 	assert(wi->wi_write);
-	return wi->wi_write(wi, h80211, len, ti);
+	return wi->wi_write(wi, ts, dlt, h80211, len, ti);
 }
 
 EXPORT int wi_set_ht_channel(struct wif * wi, int chan, unsigned int htval)

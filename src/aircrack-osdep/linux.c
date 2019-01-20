@@ -597,8 +597,12 @@ static int linux_get_mtu(struct wif * wi)
 	return ifr.ifr_mtu;
 }
 
-static int
-linux_read(struct wif * wi, unsigned char * buf, int count, struct rx_info * ri)
+static int linux_read(struct wif * wi,
+					  struct timespec * ts,
+					  int * dlt,
+					  unsigned char * buf,
+					  int count,
+					  struct rx_info * ri)
 {
 	struct priv_linux * dev = wi_priv(wi);
 	unsigned char tmpbuf[4096] __attribute__((aligned(8)));
@@ -630,6 +634,17 @@ linux_read(struct wif * wi, unsigned char * buf, int count, struct rx_info * ri)
 
 	/* XXX */
 	if (ri) memset(ri, 0, sizeof(*ri));
+
+	if (dlt)
+	{
+		// TODO(jbenden): Future code could receive the actual linktype received.
+		*dlt = LINKTYPE_IEEE802_11;
+	}
+
+	if (ts)
+	{
+		clock_gettime(CLOCK_REALTIME, ts);
+	}
 
 	if (dev->arptype_in == ARPHRD_IEEE80211_PRISM)
 	{
@@ -802,6 +817,8 @@ linux_read(struct wif * wi, unsigned char * buf, int count, struct rx_info * ri)
 }
 
 static int linux_write(struct wif * wi,
+					   struct timespec * ts,
+					   int dlt,
 					   unsigned char * buf,
 					   int count,
 					   struct tx_info * ti)
@@ -837,6 +854,9 @@ static int linux_write(struct wif * wi,
 	if (ti)
 	{
 	}
+
+	(void) ts;
+	(void) dlt;
 
 	rate = dev->rate;
 

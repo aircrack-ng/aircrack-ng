@@ -4749,7 +4749,7 @@ static int send_probe_request(struct wif * wi)
 
 	memcpy(p + 10, r_smac, 6);
 
-	if (wi_write(wi, p, len, NULL) == -1)
+	if (wi_write(wi, NULL, LINKTYPE_IEEE802_11, p, len, NULL) == -1)
 	{
 		switch (errno)
 		{
@@ -6927,7 +6927,8 @@ int main(int argc, char * argv[])
 
 					memset(buffer, 0, sizeof(buffer));
 					h80211 = buffer;
-					if ((caplen = wi_read(wi[i], h80211, sizeof(buffer), &ri))
+					if ((caplen = wi_read(
+							 wi[i], NULL, NULL, h80211, sizeof(buffer), &ri))
 						== -1)
 					{
 						wi_read_failed++;

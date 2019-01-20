@@ -275,8 +275,12 @@ static int queue_get(struct priv_net * pn, void * buf, int len)
 	return q->q_len;
 }
 
-static int
-net_read(struct wif * wi, unsigned char * h80211, int len, struct rx_info * ri)
+static int net_read(struct wif * wi,
+					struct timespec * ts,
+					int * dlt,
+					unsigned char * h80211,
+					int len,
+					struct rx_info * ri)
 {
 	struct priv_net * pn = wi_priv(wi);
 	uint32_t buf[512]; // 512 * 4 = 2048
@@ -320,6 +324,16 @@ net_read(struct wif * wi, unsigned char * h80211, int len, struct rx_info * ri)
 	if (l > len) l = len;
 	memcpy(h80211, &bufc[sz], l);
 
+	if (dlt)
+	{
+		*dlt = LINKTYPE_IEEE802_11;
+	}
+
+	if (ts)
+	{
+		clock_gettime(CLOCK_REALTIME, ts);
+	}
+
 	return l;
 }
 
@@ -343,13 +357,20 @@ static int net_get_mac(struct wif * wi, unsigned char * mac)
 	return 0;
 }
 
-static int
-net_write(struct wif * wi, unsigned char * h80211, int len, struct tx_info * ti)
+static int net_write(struct wif * wi,
+					 struct timespec * ts,
+					 int dlt,
+					 unsigned char * h80211,
+					 int len,
+					 struct tx_info * ti)
 {
 	struct priv_net * pn = wi_priv(wi);
 	int sz = sizeof(*ti);
 	unsigned char buf[2048];
 	unsigned char * ptr = buf;
+
+	(void) ts;
+	(void) dlt;
 
 	/* XXX */
 	if (ti)

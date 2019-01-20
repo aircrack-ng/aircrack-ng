@@ -41,6 +41,7 @@
 #include "defs.h"
 #include "aircrack-osdep/osdep.h"
 #include "aircrack-osdep/network.h"
+#include "pcap.h"
 #include "version.h"
 
 static void sighandler(int signum)
@@ -177,7 +178,8 @@ card_read(struct sstate * ss, void * buf, int len, struct rx_info * ri)
 {
 	int rc;
 
-	if ((rc = wi_read(ss->ss_wi, buf, len, ri)) == -1) err(1, "wi_read()");
+	if ((rc = wi_read(ss->ss_wi, NULL, NULL, buf, len, ri)) == -1)
+		err(1, "wi_read()");
 
 	return (rc);
 }
@@ -185,7 +187,7 @@ card_read(struct sstate * ss, void * buf, int len, struct rx_info * ri)
 static int
 card_write(struct sstate * ss, void * buf, int len, struct tx_info * ti)
 {
-	return (wi_write(ss->ss_wi, buf, len, ti));
+	return (wi_write(ss->ss_wi, NULL, LINKTYPE_IEEE802_11, buf, len, ti));
 }
 
 static int card_get_mac(struct sstate * ss, unsigned char * mac)

@@ -1464,7 +1464,7 @@ static void read_wifi(struct east_state * es)
 	unsigned char buf[8192];
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 
-	const int len = wi_read(es->es_wi, buf, sizeof(buf), NULL);
+	const int len = wi_read(es->es_wi, NULL, NULL, buf, sizeof(buf), NULL);
 	if (len < 0 || (size_t) len > sizeof(buf)) err(1, "wi_read()");
 
 	/* XXX: I don't do any length chex */
@@ -1556,7 +1556,7 @@ static void send_frame(struct east_state * es, void * buf, int len)
 	REQUIRE(es != NULL);
 	REQUIRE(buf != NULL);
 
-	int rc = wi_write(es->es_wi, buf, len, NULL);
+	int rc = wi_write(es->es_wi, NULL, LINKTYPE_IEEE802_11, buf, len, NULL);
 	if (rc == -1) err(1, "wi_write()");
 	if (rc != len)
 	{

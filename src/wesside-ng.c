@@ -354,7 +354,7 @@ static void hexdump(unsigned char * ptr, int len)
 
 static void inject(struct wif * wi, void * buf, int len)
 {
-	int rc = wi_write(wi, buf, len, NULL);
+	int rc = wi_write(wi, NULL, LINKTYPE_IEEE802_11, buf, len, NULL);
 
 	if (rc == -1)
 	{
@@ -1982,7 +1982,7 @@ static void do_input(struct wstate * ws)
 	unsigned char buf[4096];
 	int rd;
 
-	rd = wi_read(ws->ws_wi, buf, sizeof(buf), NULL);
+	rd = wi_read(ws->ws_wi, NULL, NULL, buf, sizeof(buf), NULL);
 	if (rd == 0) return;
 	if (rd == -1)
 	{

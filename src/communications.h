@@ -334,7 +334,7 @@ static inline int send_packet(struct wif * wi,
 		pkt[1] = (uint8_t)(pkt[1] & ~0x4);
 	}
 
-	if (wi_write(wi, buf, (int) count, NULL) == -1)
+	if (wi_write(wi, NULL, LINKTYPE_IEEE802_11, buf, (int) count, NULL) == -1)
 	{
 		switch (errno)
 		{

@@ -48,6 +48,10 @@
 
 #include "osdep.h"
 
+#ifndef LINKTYPE_IEEE802_11
+#define LINKTYPE_IEEE802_11 105
+#endif
+
 struct priv_fbsd
 {
 	/* iface */
@@ -254,8 +258,12 @@ static int fbsd_get_channel(struct wif * wi)
 	return pf->pf_ireq.i_val;
 }
 
-static int
-fbsd_read(struct wif * wi, unsigned char * h80211, int len, struct rx_info * ri)
+static int fbsd_read(struct wif * wi,
+					 struct timespec * ts,
+					 int * dlt,
+					 unsigned char * h80211,
+					 int len,
+					 struct rx_info * ri)
 {
 	struct priv_fbsd * pf = wi_priv(wi);
 	unsigned char * wh;
@@ -281,12 +289,24 @@ fbsd_read(struct wif * wi, unsigned char * h80211, int len, struct rx_info * ri)
 	assert(plen > 0);
 	memcpy(h80211, wh, plen);
 
+	if (dlt)
+	{
+		*dlt = LINKTYPE_IEEE802_11;
+	}
+
+	if (ts)
+	{
+		clock_gettime(CLOCK_REALTIME, ts);
+	}
+
 	if (ri && !ri->ri_channel) ri->ri_channel = wi_get_channel(wi);
 
 	return plen;
 }
 
 static int fbsd_write(struct wif * wi,
+					  struct timespec * ts,
+					  int dlt,
 					  unsigned char * h80211,
 					  int len,
 					  struct tx_info * ti)
@@ -294,6 +314,9 @@ static int fbsd_write(struct wif * wi,
 	struct iovec iov[2];
 	struct priv_fbsd * pf = wi_priv(wi);
 	int rc;
+
+	(void) ts;
+	(void) dlt;
 
 	/* XXX make use of ti */
 	if (ti)

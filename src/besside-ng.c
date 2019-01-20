@@ -632,7 +632,7 @@ static void wifi_send(void * p, int len)
 
 	memset(&tx, 0, sizeof(tx));
 
-	rc = wi_write(_state.s_wi, p, len, &tx);
+	rc = wi_write(_state.s_wi, NULL, LINKTYPE_IEEE802_11, p, len, &tx);
 	if (rc == -1) err(1, "wi_write()");
 }
 
@@ -2588,7 +2588,7 @@ static void wifi_read(void)
 
 	memset(buf, 0, sizeof(buf));
 
-	rd = wi_read(s->s_wi, buf, sizeof(buf), &ri);
+	rd = wi_read(s->s_wi, NULL, NULL, buf, sizeof(buf), &ri);
 	if (rd < 0) err(1, "wi_read()");
 
 	if (rd < (int) sizeof(struct ieee80211_frame))

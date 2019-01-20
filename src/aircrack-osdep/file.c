@@ -46,8 +46,12 @@ struct priv_file
 	unsigned char pf_mac[6];
 };
 
-static int
-file_read(struct wif * wi, unsigned char * h80211, int len, struct rx_info * ri)
+static int file_read(struct wif * wi,
+					 struct timespec * ts,
+					 int * dlt,
+					 unsigned char * h80211,
+					 int len,
+					 struct rx_info * ri)
 {
 	struct priv_file * pf = wi_priv(wi);
 	struct pcap_pkthdr pkh;
@@ -137,6 +141,17 @@ file_read(struct wif * wi, unsigned char * h80211, int len, struct rx_info * ri)
 
 	if (rc > len) rc = len;
 
+	if (dlt)
+	{
+		*dlt = LINKTYPE_IEEE802_11;
+	}
+
+	if (ts)
+	{
+		ts->tv_sec = pkh.tv_sec;
+		ts->tv_nsec = pkh.tv_usec * 1000UL;
+	}
+
 	memcpy(h80211, &buf[off], rc);
 
 	return rc;
@@ -152,13 +167,15 @@ static int file_get_mac(struct wif * wi, unsigned char * mac)
 }
 
 static int file_write(struct wif * wi,
+					  struct timespec * ts,
+					  int dlt,
 					  unsigned char * h80211,
 					  int len,
 					  struct tx_info * ti)
 {
 	struct priv_file * pn = wi_priv(wi);
 
-	if (h80211 && ti && pn)
+	if (h80211 && ti && pn && ts && dlt)
 	{
 	}
 
