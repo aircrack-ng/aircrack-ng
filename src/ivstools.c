@@ -592,7 +592,7 @@ skip_station:
 						ivs2.flags |= IVS2_XOR;
 						ivs2.len += clen + 4;
 						/* reveal keystream (plain^encrypted) */
-						for (n = 0; n < (ivs2.len - 4); n++)
+						for (n = 0; n < (size_t)(ivs2.len - 4); n++)
 						{
 							clear[n] = (uint8_t)((clear[n] ^ h80211[z + 4 + n])
 												 & 0xFF);
@@ -613,7 +613,7 @@ skip_station:
 						/* reveal keystream (plain^encrypted) */
 						for (o = 0; o < num_xor; o++)
 						{
-							for (n = 0; n < (ivs2.len - 4); n++)
+							for (n = 0; n < (size_t)(ivs2.len - 4); n++)
 							{
 								clear[2 + n + o * 32] = (uint8_t)(
 									(clear[2 + n + o * 32] ^ h80211[z + 4 + n])

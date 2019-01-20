@@ -195,6 +195,7 @@ static void fix_beacon(struct network * n)
 
 static void check_network(struct timespec * ts, int * dlt, struct network * n)
 {
+	UNUSED_PARAM(dlt);
 	REQUIRE(n != NULL);
 
 	if (!n->n_beaconlen || !n->n_handshake || !n->n_ssid[0]) return;
@@ -466,6 +467,8 @@ static void process_eapol(struct timespec * ts,
 						  struct ieee80211_frame * wh,
 						  const int totlen)
 {
+	UNUSED_PARAM(dlt);
+
 	int num, i;
 
 	num = eapol_handshake_step(p, len);

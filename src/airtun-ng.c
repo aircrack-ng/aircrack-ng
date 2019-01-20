@@ -274,7 +274,7 @@ my_encrypt_data(unsigned char * dest, unsigned char * data, int length)
 		return (1);
 	}
 
-	if (opt.prgalen - 4 < length)
+	if (opt.prgalen - 4 < (size_t) length)
 	{
 		printf(
 			"Please specify a longer PRGA file (-y) with at least %i bytes.\n",

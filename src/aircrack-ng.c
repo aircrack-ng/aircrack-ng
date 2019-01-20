@@ -5833,7 +5833,7 @@ int main(int argc, char * argv[])
 
 		int option_index = 0;
 
-		const static struct option long_options[]
+		static const struct option long_options[]
 			= {{"bssid", 1, 0, 'b'},
 			   {"debug", 1, 0, 'd'},
 			   {"combine", 0, 0, 'C'},

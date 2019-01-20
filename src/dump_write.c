@@ -1333,6 +1333,8 @@ int dump_write_kismet_csv(struct AP_info * ap_1st,
 						  struct ST_info * st_1st,
 						  int f_encrypt)
 {
+	UNUSED_PARAM(st_1st);
+
 	int i, k;
 	struct AP_info * ap_cur;
 
