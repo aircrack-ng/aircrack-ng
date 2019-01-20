@@ -5291,7 +5291,7 @@ static int perform_wep_crack(struct AP_info * ap_cur)
 				}
 			}
 			if (ret) usleep(10000);
-		} while (ret != 0);
+		} while (!close_aircrack && ret != 0);
 	}
 
 	else if (opt.dict != NULL)
