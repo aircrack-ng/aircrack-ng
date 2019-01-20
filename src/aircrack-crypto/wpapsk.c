@@ -114,7 +114,7 @@
 #define SIMDSHA1body SSESHA1body
 #endif
 
-char itoa64[64]
+static char itoa64[64]
 	= "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 char atoi64[0x100];
 
