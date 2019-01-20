@@ -257,16 +257,11 @@ static int cygwin_set_freq(struct wif * wi, int freq)
  * @return -1 in case of failure or the number of bytes received
  */
 static int cygwin_read_packet(struct priv_cygwin * priv,
-							  struct timespec * ts,
-							  int * dlt,
 							  void * buf,
 							  int len,
 							  struct rx_info * ri)
 {
 	int rd;
-
-	(void) ts;
-	(void) dlt;
 
 	memset(ri, 0, sizeof(*ri));
 
@@ -347,6 +342,8 @@ int cygwin_read_reader(int fd, int plen, void * dst, int len)
 }
 
 static int cygwin_read(struct wif * wi,
+					   struct timespec * ts,
+					   int * dlt,
 					   unsigned char * h80211,
 					   int len,
 					   struct rx_info * ri)
@@ -354,6 +351,9 @@ static int cygwin_read(struct wif * wi,
 	struct priv_cygwin * pc = wi_priv(wi);
 	struct rx_info tmp;
 	int plen;
+
+	(void) ts;
+	(void) dlt;
 
 	if (pc->pc_running == -1) return -1;
 
