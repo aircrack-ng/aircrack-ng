@@ -115,9 +115,9 @@ static const double eval[] = {0.00534392069257663,
 							  0.00495094196451801,
 							  0.0048983441590402};
 
-int tried, max_tries;
-int depth[KEYHSBYTES];
-PTW_tableentry keytable[KEYHSBYTES][n];
+static int tried, max_tries;
+static int depth[KEYHSBYTES];
+static PTW_tableentry keytable[KEYHSBYTES][n];
 
 // Check if optmizied RC4 for AMD64 has to be compiled
 #if defined(__amd64) && defined(__SSE2__)                                      \

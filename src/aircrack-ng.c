@@ -289,7 +289,7 @@ static char * progname = NULL;
 
 static inline float chrono(struct timeval * start, int reset);
 static ssize_t safe_write(int fd, void * buf, size_t len);
-struct AP_info * hccapx_to_ap(struct hccapx * hx);
+static struct AP_info * hccapx_to_ap(struct hccapx * hx);
 
 static inline int append_ap(struct AP_info * new_ap)
 {
