@@ -14,6 +14,8 @@ struct WPA_hdsk
 	uint32_t eapol_size; /* eapol frame size         */
 	uint8_t keyver; /* key version (TKIP / AES) */
 	uint8_t state; /* handshake completion     */
+	uint8_t found;
+	uint8_t eapol_source;
 };
 
 #endif // _NET_EAPOL_H_

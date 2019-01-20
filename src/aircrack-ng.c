@@ -1579,6 +1579,8 @@ skip_station:
 		/* authenticator nonce set */
 		st_cur->wpa.state = 1;
 
+		st_cur->wpa.found |= 1 << 1;
+
 		if (h80211[z + 99] == 0xdd) // RSN
 		{
 			if (h80211[z + 101] == 0x00 && h80211[z + 102] == 0x0f
@@ -1612,6 +1614,19 @@ skip_station:
 			st_cur->wpa.state |= 2;
 		}
 
+		// uint16_t key_len = ((h80211[z + 7] << 8u) + h80211[z + 8]);
+		uint16_t key_data_len
+			= (h80211[z + 81 + 16] << 8u) + h80211[z + 81 + 17];
+
+		if (key_data_len == 0)
+		{
+			st_cur->wpa.found |= 1 << 4; // frame 4
+		}
+		else
+		{
+			st_cur->wpa.found |= 1 << 2; // frame 2
+		}
+
 		if ((st_cur->wpa.state & 4) != 4)
 		{
 			/* copy the MIC & eapol frame */
@@ -1632,6 +1647,15 @@ skip_station:
 			memcpy(st_cur->wpa.eapol, &h80211[z], st_cur->wpa.eapol_size);
 			memset(st_cur->wpa.eapol + 81, 0, 16);
 
+			if (key_data_len == 0)
+			{
+				st_cur->wpa.eapol_source |= 1 << 4; // frame 4
+			}
+			else
+			{
+				st_cur->wpa.eapol_source |= 1 << 2; // frame 2
+			}
+
 			/* eapol frame & keymic set */
 			st_cur->wpa.state |= 4;
 
@@ -1646,6 +1670,8 @@ skip_station:
 		&& (h80211[z + 6] & 0x80) != 0
 		&& (h80211[z + 5] & 0x01) != 0)
 	{
+		st_cur->wpa.found |= 1 << 3;
+
 		if (memcmp(&h80211[z + 17], ZERO, sizeof(st_cur->wpa.anonce)) != 0)
 		{
 			memcpy(st_cur->wpa.anonce,
@@ -1675,6 +1701,8 @@ skip_station:
 			memcpy(st_cur->wpa.keymic, &h80211[z + 81], 16);
 			memcpy(st_cur->wpa.eapol, &h80211[z], st_cur->wpa.eapol_size);
 			memset(st_cur->wpa.eapol + 81, 0, 16);
+
+			st_cur->wpa.eapol_source |= 1 << 3;
 
 			/* eapol frame & keymic set */
 			st_cur->wpa.state |= 4;
@@ -4630,6 +4658,21 @@ struct AP_info * hccapx_to_ap(struct hccapx * hx)
 	return (ap);
 }
 
+// See: https://hashcat.net/wiki/doku.php?id=hccapx
+static struct MessagePairLUT
+{
+	uint8_t found_mask;
+	uint8_t eapol_mask;
+	uint8_t message_pair;
+} message_pair_lookup_table[] = {
+	{(1 << 1) + (1 << 2), (1 << 2), 128},
+	{(1 << 1) + (1 << 4), (1 << 4), 129},
+	{(1 << 2) + (1 << 3), (1 << 2), 130},
+	{(1 << 2) + (1 << 3), (1 << 3), 131},
+	{(1 << 3) + (1 << 4), (1 << 3), 132},
+	{(1 << 3) + (1 << 4), (1 << 4), 133},
+};
+
 static hccapx_t ap_to_hccapx(struct AP_info * ap)
 {
 	REQUIRE(ap != NULL);
@@ -4644,7 +4687,18 @@ static hccapx_t ap_to_hccapx(struct AP_info * ap)
 	memcpy(&hx.signature, &temp, sizeof(temp));
 	temp = cpu_to_le32(HCCAPX_CURRENT_VERSION);
 	memcpy(&hx.version, &temp, sizeof(temp));
-	hx.message_pair = 0; // Temporary (see docs)
+
+	hx.message_pair = 0;
+	for (size_t i = 0; i < ArrayCount(message_pair_lookup_table); ++i)
+	{
+		const struct MessagePairLUT * item = &message_pair_lookup_table[i];
+		if ((ap->wpa.found & item->found_mask) == item->found_mask
+			&& (ap->wpa.eapol_source & item->eapol_mask) != 0)
+		{
+			hx.message_pair = item->message_pair;
+		}
+	}
+	ALLEGE(hx.message_pair > 0);
 
 	ssid_len = (uint8_t) strlen(ap->essid);
 	memcpy(&hx.essid_len, &ssid_len, sizeof(ssid_len));
