@@ -57,10 +57,8 @@ AM_TESTS_ENVIRONMENT = \
 
 TESTS_ENVIRONMENT ?= $(AM_TESTS_ENVIRONMENT)
 
-LIBAC	= ../src/libaclib.la
 LIBAC_LIBS = -L../src -laclib
 
-LIBAIRCRACK_UTIL	= ../src/aircrack-util/libaircrack-util.la
 LIBAIRCRACK_UTIL_LIBS = -L../src/aircrack-util -laircrack-util
 
 test_hex_string_to_array_SOURCES = test-hex_string_to_array.c
