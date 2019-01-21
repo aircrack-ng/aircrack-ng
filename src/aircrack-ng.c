@@ -108,9 +108,18 @@ GCRY_THREAD_OPTION_PTHREAD_IMPL;
 #define DYNAMIC 1
 #endif
 
+#define H16800_PMKID_LEN 32
+#define H16800_BSSID_LEN 12
+#define H16800_STMAC_LEN 12
+
 /* stats global data */
 
 static volatile int wpa_cracked = 0;
+static int _pmkid_16800 = 0;
+static uint8_t _pmkid_16800_str[H16800_PMKID_LEN + H16800_BSSID_LEN
+								+ H16800_STMAC_LEN
+								+ MAX_PASSPHRASE_LENGTH
+								+ 3];
 static int _speed_test;
 static long _speed_test_length = 15;
 static struct timeval t_begin; /* time at start of attack      */
@@ -5910,7 +5919,7 @@ int main(int argc, char * argv[])
 		option = getopt_long(
 			nbarg,
 			((restore_session) ? cracking_session->argv : argv),
-			"r:a:e:b:p:qcthd:l:E:J:m:n:i:f:k:x::XysZ:w:0HKC:M:DP:zV1Suj:N:R:",
+			"r:a:e:b:p:qcthd:l:E:J:m:n:i:f:k:x::XysZ:w:0HKC:M:DP:zV1Suj:N:R:I:",
 			long_options,
 			&option_index);
 
@@ -5959,6 +5968,14 @@ int main(int argc, char * argv[])
 
 			case 'S':
 				_speed_test = 1;
+				break;
+
+			case 'I':
+				_pmkid_16800 = 1;
+				memset((char *) _pmkid_16800_str, 0, sizeof(_pmkid_16800_str));
+				strncpy((char *) _pmkid_16800_str,
+						optarg,
+						sizeof(_pmkid_16800_str));
 				break;
 
 			case 'Z':
@@ -6468,7 +6485,7 @@ int main(int argc, char * argv[])
 		"Aircrack-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 
 	if ((cracking_session && cracking_session->argc - optind < 1)
-		|| (!cracking_session && argc - optind < 1))
+		|| (!cracking_session && !_pmkid_16800 && argc - optind < 1))
 	{
 		if (nbarg == 1)
 		{
@@ -6498,6 +6515,7 @@ int main(int argc, char * argv[])
 			printf("\"%s --help\" for help.\n", argv[0]);
 		}
 		clean_exit(ret);
+		return ret;
 	}
 
 	if (opt.amode >= 2 && opt.dict == NULL)
@@ -6517,6 +6535,64 @@ int main(int argc, char * argv[])
 	old = optind;
 	n = nbarg - optind;
 	id = 0;
+
+	if (_pmkid_16800)
+	{
+		size_t remaining = strlen((char *) _pmkid_16800_str);
+
+		if (remaining
+			< H16800_PMKID_LEN + H16800_BSSID_LEN + H16800_STMAC_LEN + 19)
+		{
+			ret = EXIT_FAILURE;
+			fprintf(stderr, "Input is too short!\n");
+			goto exit_main;
+		}
+
+		opt.amode = 3;
+		opt.bssid_set = 1;
+
+		ap_cur = malloc(sizeof(*ap_cur));
+		if (!ap_cur) err(1, "malloc()");
+
+		memset(ap_cur, 0, sizeof(*ap_cur));
+
+		// PMKID * BSSID * STMAC * ESSID
+		// c2ea9449c142e84a0479041702526532*0012bf77162d*0021e924a5e7*574c414e2d373731363938 // WLAN-771698
+
+		ap_cur->crypt = 4;
+		ap_cur->target = 1;
+		ap_cur->wpa.state = 5;
+		ap_cur->wpa.keyver = (uint8_t)(opt.amode & 0xFF);
+
+		hexStringToArray((char *) _pmkid_16800_str,
+						 H16800_PMKID_LEN,
+						 ap_cur->wpa.pmkid,
+						 sizeof(ap_cur->wpa.pmkid));
+		hexStringToArray((char *) _pmkid_16800_str + H16800_PMKID_LEN + 1,
+						 H16800_BSSID_LEN,
+						 ap_cur->bssid,
+						 sizeof(ap_cur->bssid));
+		hexStringToArray((char *) _pmkid_16800_str + H16800_PMKID_LEN + 1
+							 + H16800_BSSID_LEN
+							 + 1,
+						 H16800_STMAC_LEN,
+						 ap_cur->wpa.stmac,
+						 sizeof(ap_cur->wpa.stmac));
+		hexStringToArray((char *) _pmkid_16800_str + H16800_PMKID_LEN + 1
+							 + H16800_BSSID_LEN
+							 + 1
+							 + H16800_STMAC_LEN
+							 + 1,
+						 remaining - H16800_PMKID_LEN + 1 + H16800_BSSID_LEN + 1
+							 + H16800_STMAC_LEN
+							 + 1,
+						 (uint8_t *) ap_cur->essid,
+						 sizeof(ap_cur->essid));
+
+		c_avl_insert(targets, ap_cur->bssid, ap_cur);
+
+		goto __start;
+	}
 
 	if (!opt.bssid_set)
 	{
