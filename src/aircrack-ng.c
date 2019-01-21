@@ -251,6 +251,7 @@ static const char usage[]
 	  "      -w <words> : path to wordlist(s) filename(s)\n"
 	  "      -N <file>  : path to new session filename\n"
 	  "      -R <file>  : path to existing session filename\n"
+	  "      -I <str>   : PMKID string (hashcat -m 16800)\n"
 	  "\n"
 	  "  WPA-PSK options:\n"
 	  "\n"
