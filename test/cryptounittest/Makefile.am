@@ -42,11 +42,11 @@ AM_CPPFLAGS = -I$(top_srcdir) \
               -I$(top_srcdir)/src \
               $(CRYPTO_INCLUDES)
 
-LIBAC_LIBS = -L../../src -laclib
+LIBAC_LIBS = ../../src/libaclib.la
 
-LIBAIRCRACK_CRYPTO_LIBS = -L../../src/aircrack-crypto -laircrack-crypto
+LIBAIRCRACK_CRYPTO_LIBS = ../../src/aircrack-crypto/libaircrack-crypto.la
 
-LIBAIRCRACK_UTIL_LIBS = -L../../src/aircrack-util -laircrack-util
+LIBAIRCRACK_UTIL_LIBS = ../../src/aircrack-util/libaircrack-util.la
 
 SRCS_TEST_EWEP  = test-encrypt-wep.c
 SRCS_TEST_CPMK  = test-calc-pmk.c

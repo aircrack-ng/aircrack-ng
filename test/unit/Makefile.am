@@ -49,11 +49,11 @@ AM_TESTS_ENVIRONMENT= \
 
 LIBAIRCRACK_CRYPTO_PATH = $(abs_top_builddir)/src/aircrack-crypto/
 
-LIBAC_LIBS = -L../../src -laclib
+LIBAC_LIBS = ../../src/libaclib.la
 
-LIBAIRCRACK_CRYPTO_LIBS = -L../../src/aircrack-crypto -laircrack-crypto
+LIBAIRCRACK_CRYPTO_LIBS = ../../src/aircrack-crypto/libaircrack-crypto.la
 
-LIBAIRCRACK_UTIL_LIBS = -L../../src/aircrack-util -laircrack-util
+LIBAIRCRACK_UTIL_LIBS = ../../src/aircrack-util/libaircrack-util.la
 
 COMMON_CFLAGS = $(PTHREAD_CFLAGS) \
 				$(CRYPTO_CFLAGS) \

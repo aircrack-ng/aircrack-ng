@@ -100,17 +100,17 @@ SRC_BS          += sha1-git.c
 SRC_AV          += sha1-git.c
 endif
 
-LIBAIRCRACK_CRYPTO_LIBS = -Laircrack-crypto -laircrack-crypto
+LIBAIRCRACK_CRYPTO_LIBS = aircrack-crypto/libaircrack-crypto.la
 
-LIBAIRCRACK_CRYPTO_X86_AVX2_LIBS = -Laircrack-crypto -laircrack-crypto-x86-avx2
+LIBAIRCRACK_CRYPTO_X86_AVX2_LIBS = aircrack-crypto/libaircrack-crypto-x86-avx2.la
 
-LIBAIRCRACK_CRYPTO_X86_AVX_LIBS = -Laircrack-crypto -laircrack-crypto-x86-avx
+LIBAIRCRACK_CRYPTO_X86_AVX_LIBS = aircrack-crypto/libaircrack-crypto-x86-avx.la
 
-LIBAIRCRACK_CRYPTO_X86_SSE2_LIBS = -Laircrack-crypto -laircrack-crypto-x86-sse2
+LIBAIRCRACK_CRYPTO_X86_SSE2_LIBS = aircrack-crypto/libaircrack-crypto-x86-sse2.la
 
-LIBAIRCRACK_UTIL_LIBS = -Laircrack-util -laircrack-util
+LIBAIRCRACK_UTIL_LIBS = aircrack-util/libaircrack-util.la
 
-LIBAIRCRACK_OSDEP_LIBS	= -Laircrack-osdep -laircrack-osdep
+LIBAIRCRACK_OSDEP_LIBS	= aircrack-osdep/libaircrack-osdep.la
 if CYGWIN
 LIBAIRCRACK_OSDEP_LIBS	+= -liphlpapi -lsetupapi -luuid
 endif
