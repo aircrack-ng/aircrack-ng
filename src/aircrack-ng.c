@@ -4710,6 +4710,13 @@ static hccapx_t ap_to_hccapx(struct AP_info * ap)
 	}
 	ALLEGE(hx.message_pair > 0);
 
+	if ((ap->wpa.eapol_source & (1 << 3)) != 0)
+	{
+		fprintf(stderr,
+				"WARNING: The created HCCAPX file will not be able to "
+				"properly convert back to PCAP format.\n");
+	}
+
 	ssid_len = (uint8_t) strlen(ap->essid);
 	memcpy(&hx.essid_len, &ssid_len, sizeof(ssid_len));
 
