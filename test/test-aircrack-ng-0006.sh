@@ -2,27 +2,27 @@
 
 set -ef
 
-echo "asciipsk" > ${abs_srcdir}/1word
+echo "asciipsk" > ${abs_builddir}/1word
 
-cat > ${abs_srcdir}/session << EOF
-${abs_srcdir}
+cat > ${abs_builddir}/session << EOF
+${abs_builddir}
 00:0D:93:EB:B0:8C
 1 0 0
 4
 ${top_builddir}/src/aircrack-ng${EXEEXT}
 ${abs_srcdir}/wpa.cap
 -w
-${abs_srcdir}/1word,${abs_srcdir}/password.lst
+${abs_builddir}/1word,${abs_srcdir}/password.lst
 EOF
 
 "${top_builddir}/src/aircrack-ng${EXEEXT}" \
-    -R ${abs_srcdir}/session | \
+    -R ${abs_builddir}/session | \
         grep 'KEY FOUND! \[ biscotte \]'
 
-rm -f ${abs_srcdir}/1word
+rm -f ${abs_builddir}/1word
 
-if [ -f ${abs_srcdir}/session ]; then
-	rm ${abs_srcdir}/session
+if [ -f ${abs_builddir}/session ]; then
+	rm ${abs_builddir}/session
 fi
 
 exit 0
