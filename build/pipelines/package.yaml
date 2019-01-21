@@ -183,12 +183,12 @@
                 script: |
                   {% set path = "{{ www }}/{{ artifacts }}/development/{{ commit_id }}/{{ item.pkg_type }}" %}
                   {% set prefix = "{{ www }}/{{ artifacts }}" %}
-                  mkdir -p {{ path }}
+                  mkdir -p "{{ path }}"
                   chmod 777 "{{ www }}/{{ artifacts }}/development/{{ commit_id }}"
-                  chmod 777 {{ path }}
-                  ( cd {{ prefix }}/development && ln -sfnd {{ commit_id }} {{ branch }} )
-                  cp -p {{ item.pkg }} {{ path }}
-                  chmod 664 {{ path }}/{{ item.pkg }}
+                  chmod 777 "{{ path }}"
+                  ( cd "{{ prefix }}/development" && ln -sfnd "{{ commit_id }}" "{{ branch }}" )
+                  cp -p "{{ item.pkg }}" "{{ path }}"
+                  chmod 664 "{{ path }}/{{ item.pkg }}"
               with_items: "{{ pkg }}"
 
             - name: Deploying development package manifest
@@ -196,8 +196,8 @@
                 - www
               shell:
                 script: |
-                  mkdir -p {{ www }}/{{ artifacts }}
-                  cat > {{ www }}/{{ artifacts }}/development.json <<-EOF
+                  mkdir -p "{{ www }}/{{ artifacts }}"
+                  cat > "{{ www }}/{{ artifacts }}/development.json" <<-EOF
                   {
                     "build": "development",
                     "commit": "{{ commit_id }}",
@@ -213,9 +213,9 @@
               shell:
                 script: |
                   {% set prefix = "{{ www }}/{{ artifacts }}" %}
-                  mkdir -p {{ prefix }}/stable
-                  chmod 777 {{ prefix }}/stable
-                  ( cd {{ prefix }}/stable && ln -sfnd ../development/{{ commit_id }} {{ exact_tag }} )
+                  mkdir -p "{{ prefix }}/stable"
+                  chmod 777 "{{ prefix }}/stable"
+                  ( cd "{{ prefix }}/stable" && ln -sfnd "../development/{{ commit_id }}" "{{ exact_tag }}" )
               when: "exact_tag | trim | count > 0"
 
             - name: Deploying stable package manifest
@@ -223,7 +223,7 @@
                 - www
               shell:
                 script: |
-                  cat > {{ www }}/{{ artifacts }}/stable.json <<-EOF
+                  cat > "{{ www }}/{{ artifacts }}/stable.json" <<-EOF
                   {
                     "build": "stable",
                     "commit": "{{ commit_id }}",
