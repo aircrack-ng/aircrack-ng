@@ -4715,6 +4715,13 @@ static hccapx_t ap_to_hccapx(struct AP_info * ap)
 		fprintf(stderr,
 				"WARNING: The created HCCAPX file will not be able to "
 				"properly convert back to PCAP format.\n");
+
+		if (ap->wpa.eapol_size >= sizeof(hx.eapol))
+		{
+			fprintf(stderr,
+					"FATAL: EAPOL data from M3 exceeds maximum size of "
+					"255 bytes.\n");
+		}
 	}
 
 	ssid_len = (uint8_t) strlen(ap->essid);
