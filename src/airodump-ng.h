@@ -35,7 +35,9 @@
 #include "eapol.h"
 #include "pcap.h"
 #include <sys/ioctl.h>
-//#include <termios.h>
+#if !defined(TIOCGWINSZ) && !defined(linux)
+#include <sys/termios.h>
+#endif
 
 /* some constants */
 

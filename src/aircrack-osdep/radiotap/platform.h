@@ -31,8 +31,6 @@
 	#include <endian.h>
 #endif
 
-#define le16_to_cpu		le16toh
-#define le32_to_cpu		le32toh
 #define get_unaligned(p)					\
 ({								\
 	struct packed_dummy_struct {				\

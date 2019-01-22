@@ -214,6 +214,8 @@ typedef uint8_t u_int8_t;
 #define __cpu_to_le16(x) ___my_swab16(x)
 
 #define AIRCRACK_NG_BYTE_ORDER_DEFINED
+#define BIG_ENDIAN 1
+#define BYTE_ORDER BIG_ENDIAN
 #else
 #define AIRCRACK_NG_BYTE_ORDER 1
 #define LITTLE_ENDIAN 1

@@ -12,6 +12,7 @@
  * license, see COPYING for more details.
  */
 #include "radiotap_iter.h"
+#include "../byteorder.h"
 #include "platform.h"
 
 /* function prototypes and related defs are in radiotap_iter.h */
