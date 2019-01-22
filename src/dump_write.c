@@ -1316,7 +1316,7 @@ int dump_write_kismet_netxml(struct AP_info * ap_1st,
 	{
 		return (0);
 	}
-	(void) ftruncate(fp, fpos);
+	IGNORE_NZ(ftruncate(fp, fpos));
 
 	return (0);
 }

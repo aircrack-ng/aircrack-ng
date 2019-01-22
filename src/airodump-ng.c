@@ -4667,13 +4667,15 @@ static void sighandler(int signum)
 		}
 
 		if (lopt.freqoption)
-			(void) read(lopt.ch_pipe[0], &(lopt.frequency[card]), sizeof(int));
+			IGNORE_NZ(
+				read(lopt.ch_pipe[0], &(lopt.frequency[card]), sizeof(int)));
 		else
-			(void) read(lopt.ch_pipe[0], &(lopt.channel[card]), sizeof(int));
+			IGNORE_NZ(
+				read(lopt.ch_pipe[0], &(lopt.channel[card]), sizeof(int)));
 	}
 
 	if (signum == SIGUSR2)
-		(void) read(lopt.gc_pipe[0], &lopt.gps_loc, sizeof(lopt.gps_loc));
+		IGNORE_NZ(read(lopt.gc_pipe[0], &lopt.gps_loc, sizeof(lopt.gps_loc)));
 
 	if (signum == SIGINT || signum == SIGTERM)
 	{
@@ -4860,8 +4862,8 @@ channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 				{
 					ch = wi_get_channel(wi[card]);
 					lopt.channel[card] = ch;
-					(void) write(lopt.cd_pipe[1], &card, sizeof(int));
-					(void) write(lopt.ch_pipe[1], &ch, sizeof(int));
+					IGNORE_NZ(write(lopt.cd_pipe[1], &card, sizeof(int)));
+					IGNORE_NZ(write(lopt.ch_pipe[1], &ch, sizeof(int)));
 					kill(parent, SIGUSR1);
 					usleep(1000);
 				}
@@ -4879,8 +4881,8 @@ channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 #endif
 			{
 				lopt.channel[card] = ch;
-				(void) write(lopt.cd_pipe[1], &card, sizeof(int));
-				(void) write(lopt.ch_pipe[1], &ch, sizeof(int));
+				IGNORE_NZ(write(lopt.cd_pipe[1], &card, sizeof(int)));
+				IGNORE_NZ(write(lopt.ch_pipe[1], &ch, sizeof(int)));
 				if (lopt.active_scan_sim > 0) send_probe_request(wi[card]);
 				kill(parent, SIGUSR1);
 				usleep(1000);
@@ -4963,8 +4965,8 @@ frequency_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 				{
 					ch = wi_get_freq(wi[card]);
 					lopt.frequency[card] = ch;
-					(void) write(lopt.cd_pipe[1], &card, sizeof(int));
-					(void) write(lopt.ch_pipe[1], &ch, sizeof(int));
+					IGNORE_NZ(write(lopt.cd_pipe[1], &card, sizeof(int)));
+					IGNORE_NZ(write(lopt.ch_pipe[1], &ch, sizeof(int)));
 					kill(parent, SIGUSR1);
 					usleep(1000);
 				}
@@ -4978,8 +4980,8 @@ frequency_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 			if (wi_set_freq(wi[card], ch) == 0)
 			{
 				lopt.frequency[card] = ch;
-				(void) write(lopt.cd_pipe[1], &card, sizeof(int));
-				(void) write(lopt.ch_pipe[1], &ch, sizeof(int));
+				IGNORE_NZ(write(lopt.cd_pipe[1], &card, sizeof(int)));
+				IGNORE_NZ(write(lopt.ch_pipe[1], &ch, sizeof(int)));
 				kill(parent, SIGUSR1);
 				usleep(1000);
 			}
@@ -6435,8 +6437,8 @@ int main(int argc, char * argv[])
 
 			if (lopt.frequency[0] == 0)
 			{
-				(void) pipe(lopt.ch_pipe);
-				(void) pipe(lopt.cd_pipe);
+				IGNORE_NZ(pipe(lopt.ch_pipe));
+				IGNORE_NZ(pipe(lopt.cd_pipe));
 
 				signal(SIGUSR1, sighandler);
 
@@ -6490,8 +6492,8 @@ int main(int argc, char * argv[])
 
 			if (lopt.channel[0] == 0)
 			{
-				(void) pipe(lopt.ch_pipe);
-				(void) pipe(lopt.cd_pipe);
+				IGNORE_NZ(pipe(lopt.ch_pipe));
+				IGNORE_NZ(pipe(lopt.cd_pipe));
 
 				signal(SIGUSR1, sighandler);
 

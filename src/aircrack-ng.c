@@ -6946,12 +6946,12 @@ int main(int argc, char * argv[])
 
 	for (i = 0; i < opt.nbcpu; i++)
 	{
-		(void) pipe(mc_pipe[i]);
-		(void) pipe(cm_pipe[i]);
+		IGNORE_NZ(pipe(mc_pipe[i]));
+		IGNORE_NZ(pipe(cm_pipe[i]));
 
 		if (opt.amode <= 1 && opt.nbcpu > 1 && opt.do_brute && opt.do_mt_brute)
 		{
-			(void) pipe(bf_pipe[i]);
+			IGNORE_NZ(pipe(bf_pipe[i]));
 			bf_nkeys[i] = 0;
 		}
 	}
