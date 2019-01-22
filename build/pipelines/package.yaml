@@ -164,6 +164,9 @@
       - name: Staging Installation
         command: "make install-strip DESTDIR={{ destdir }}"
 
+      - name: Produce dist artifacts
+        command: make dist
+
       - name: Packaging
         shell:
           script: "{{ fpm }}"
@@ -190,6 +193,11 @@
                   cp -p "{{ item.pkg }}" "{{ path }}"
                   chmod 664 "{{ path }}/{{ item.pkg }}"
               with_items: "{{ pkg }}"
+
+            - shell:
+                script: |
+                  {% set path = "{{ www }}/{{ artifacts }}/development/{{ commit_id }}" %}
+                  cp -p "aircrack-ng*.zip" "aircrack-ng*.tar.*" "{{ path }}"
 
             - name: Deploying development package manifest
               tags:
