@@ -78,8 +78,7 @@ SRC_WC		= wpaclean.c
 SRC_AV		= airventriloquist-ng.c
 
 SRC_ACLIB	= crypto.c $(SSEC_INT) uniqueiv.c session.c
-LIBAC	= libaclib.la
-LIBAC_LIBS = libaclib.la
+LIBAC_LIBS	= libaclib.la
 
 AC_COMMON = crypto.c uniqueiv.c session.c
 
@@ -101,23 +100,17 @@ SRC_BS          += sha1-git.c
 SRC_AV          += sha1-git.c
 endif
 
-LIBAIRCRACK_CRYPTO = aircrack-crypto/libaircrack-crypto.la
-LIBAIRCRACK_CRYPTO_LIBS = -Laircrack-crypto -laircrack-crypto
+LIBAIRCRACK_CRYPTO_LIBS = aircrack-crypto/libaircrack-crypto.la
 
-LIBAIRCRACK_CRYPTO_X86_AVX2 = aircrack-crypto/libaircrack-crypto-x86-avx2.la
-LIBAIRCRACK_CRYPTO_X86_AVX2_LIBS = -Laircrack-crypto -laircrack-crypto-x86-avx2
+LIBAIRCRACK_CRYPTO_X86_AVX2_LIBS = aircrack-crypto/libaircrack-crypto-x86-avx2.la
 
-LIBAIRCRACK_CRYPTO_X86_AVX = aircrack-crypto/libaircrack-crypto-x86-avx.la
-LIBAIRCRACK_CRYPTO_X86_AVX_LIBS = -Laircrack-crypto -laircrack-crypto-x86-avx
+LIBAIRCRACK_CRYPTO_X86_AVX_LIBS = aircrack-crypto/libaircrack-crypto-x86-avx.la
 
-LIBAIRCRACK_CRYPTO_X86_SSE2 = aircrack-crypto/libaircrack-crypto-x86-sse2.la
-LIBAIRCRACK_CRYPTO_X86_SSE2_LIBS = -Laircrack-crypto -laircrack-crypto-x86-sse2
+LIBAIRCRACK_CRYPTO_X86_SSE2_LIBS = aircrack-crypto/libaircrack-crypto-x86-sse2.la
 
-LIBAIRCRACK_UTIL = aircrack-util/libaircrack-util.la
-LIBAIRCRACK_UTIL_LIBS = -Laircrack-util -laircrack-util
+LIBAIRCRACK_UTIL_LIBS = aircrack-util/libaircrack-util.la
 
-LIBAIRCRACK_OSDEP		= aircrack-osdep/libaircrack-osdep.la
-LIBAIRCRACK_OSDEP_LIBS	= -Laircrack-osdep -laircrack-osdep
+LIBAIRCRACK_OSDEP_LIBS	= aircrack-osdep/libaircrack-osdep.la
 if CYGWIN
 LIBAIRCRACK_OSDEP_LIBS	+= -liphlpapi -lsetupapi -luuid
 endif
@@ -164,7 +157,7 @@ sbin_PROGRAMS += besside-ng \
 endif
 endif
 
-aircrack_ng_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT) $(LIBAIRCRACK_UTIL)
+aircrack_ng_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT)
 aircrack_ng_CFLAGS = $(COMMON_CFLAGS) $(SQLITE3_CFLAGS) $(LIBPTW_CFLAGS)
 aircrack_ng_LDADD = $(LIBAIRCRACK_UTIL_LIBS) $(LIBAC_LIBS) $(SQLITE3_LDFLAGS) $(SQLITE3_LIBS) $(LIBPTW_LIBS) $(COMMON_LDADD) $(CRYPTO_LIBS) $(HWLOC_LIBS)
 
@@ -175,31 +168,31 @@ else
 aircrack_ng_LDFLAGS = -rdynamic
 endif
 
-airdecap_ng_SOURCES = $(SRC_AD) $(LIBAIRCRACK_UTIL)
+airdecap_ng_SOURCES = $(SRC_AD)
 airdecap_ng_CFLAGS = $(COMMON_CFLAGS)
 airdecap_ng_LDADD = $(COMMON_LDADD) $(LIBAC_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
-packetforge_ng_SOURCES = $(SRC_PF) $(LIBAIRCRACK_UTIL)
+packetforge_ng_SOURCES = $(SRC_PF)
 packetforge_ng_CFLAGS = $(COMMON_CFLAGS)
 packetforge_ng_LDADD = $(COMMON_LDADD) $(LIBAC_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
-aireplay_ng_SOURCES = $(SRC_AR) $(LIBAIRCRACK_OSDEP) $(LIBAIRCRACK_UTIL)
+aireplay_ng_SOURCES = $(SRC_AR)
 aireplay_ng_CFLAGS = $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
 aireplay_ng_LDADD = $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
-airodump_ng_SOURCES = $(SRC_ADU) $(LIBAIRCRACK_OSDEP) $(LIBMCS) $(LIBAIRCRACK_UTIL)
+airodump_ng_SOURCES = $(SRC_ADU) $(LIBMCS)
 airodump_ng_CFLAGS = $(COMMON_CFLAGS) $(PCRE_CFLAGS) $(LIBNL_CFLAGS)
 airodump_ng_LDADD = $(COMMON_LDADD) $(PCRE_LIBS) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
-airserv_ng_SOURCES = $(SRC_AS) $(LIBAIRCRACK_OSDEP) $(LIBAIRCRACK_UTIL)
+airserv_ng_SOURCES = $(SRC_AS)
 airserv_ng_CFLAGS = $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
 airserv_ng_LDADD = $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
-airtun_ng_SOURCES = $(SRC_AT) $(LIBAIRCRACK_OSDEP) $(LIBAIRCRACK_UTIL)
+airtun_ng_SOURCES = $(SRC_AT)
 airtun_ng_CFLAGS = $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
 airtun_ng_LDADD = $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
-ivstools_SOURCES = $(SRC_IV) $(LIBAIRCRACK_UTIL)
+ivstools_SOURCES = $(SRC_IV)
 ivstools_CFLAGS = $(COMMON_CFLAGS)
 ivstools_LDADD = $(COMMON_LDADD) $(LIBAC_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
@@ -207,19 +200,19 @@ kstats_SOURCES = kstats.c
 kstats_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS)
 kstats_LDADD = $(COMMON_LDADD) $(LIBAC_LIBS)
 
-wesside_ng_SOURCES = $(SRC_WS) $(LIBAIRCRACK_OSDEP) $(LIBAIRCRACK_UTIL)
+wesside_ng_SOURCES = $(SRC_WS)
 wesside_ng_CFLAGS = $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
 wesside_ng_LDADD = $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(LIBPTW_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
-easside_ng_SOURCES = $(SRC_ES) $(LIBAIRCRACK_OSDEP) $(LIBAIRCRACK_UTIL)
+easside_ng_SOURCES = $(SRC_ES)
 easside_ng_CFLAGS = $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
 easside_ng_LDADD = $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
-buddy_ng_SOURCES = $(SRC_BUDDY) $(LIBAIRCRACK_UTIL)
+buddy_ng_SOURCES = $(SRC_BUDDY)
 buddy_ng_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS)
 buddy_ng_LDADD = $(COMMON_LDADD) $(LIBAC_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
-besside_ng_SOURCES = $(SRC_BS) $(LIBAIRCRACK_OSDEP) $(LIBAIRCRACK_UTIL)
+besside_ng_SOURCES = $(SRC_BS)
 besside_ng_CFLAGS = $(COMMON_CFLAGS) $(PCRE_CFLAGS) $(LIBNL_CFLAGS)
 besside_ng_LDADD = $(COMMON_LDADD) $(PCRE_LIBS) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(LIBPTW_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
@@ -227,31 +220,31 @@ besside_ng_crawler_SOURCES = $(SRC_BC)
 besside_ng_crawler_CFLAGS = $(COMMON_CFLAGS) $(PCAP_CFLAGS)
 besside_ng_crawler_LDADD = $(COMMON_LDADD) $(PCAP_LIBS) $(LIBAC_LIBS) $(CRYPTO_LIBS)
 
-makeivs_ng_SOURCES = $(SRC_MI) $(LIBAIRCRACK_UTIL)
+makeivs_ng_SOURCES = $(SRC_MI)
 makeivs_ng_CFLAGS = $(COMMON_CFLAGS)
 makeivs_ng_LDADD = $(COMMON_LDADD) $(LIBAC_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
-airolib_ng_SOURCES = $(SRC_AL) $(LIBCOW) $(LIBAIRCRACK_UTIL)
+airolib_ng_SOURCES = $(SRC_AL) $(LIBCOW)
 airolib_ng_CFLAGS = $(COMMON_CFLAGS) $(SQLITE3_CFLAGS) -DHAVE_REGEXP
 airolib_ng_LDADD = $(COMMON_LDADD) $(SQLITE3_LDFLAGS) $(SQLITE3_LIBS) $(LIBAC_LIBS) $(LIBCOW_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
-airbase_ng_SOURCES = $(SRC_AB) $(LIBAIRCRACK_OSDEP) $(LIBAIRCRACK_UTIL)
+airbase_ng_SOURCES = $(SRC_AB)
 airbase_ng_CFLAGS = $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
 airbase_ng_LDADD = $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
-airdecloak_ng_SOURCES = $(SRC_AU) $(LIBAIRCRACK_OSDEP) $(LIBAIRCRACK_UTIL)
+airdecloak_ng_SOURCES = $(SRC_AU)
 airdecloak_ng_CFLAGS = $(COMMON_CFLAGS)
 airdecloak_ng_LDADD = $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
-tkiptun_ng_SOURCES = $(SRC_TT) $(LIBAIRCRACK_OSDEP) $(LIBAIRCRACK_UTIL)
+tkiptun_ng_SOURCES = $(SRC_TT)
 tkiptun_ng_CFLAGS = $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
 tkiptun_ng_LDADD = $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
-wpaclean_SOURCES = $(SRC_WC) $(LIBAIRCRACK_OSDEP)
+wpaclean_SOURCES = $(SRC_WC)
 wpaclean_CFLAGS = $(COMMON_CFLAGS) $(LIBNL_CFLAGS) $(LIBAIRCRACK_UTIL_CFLAGS)
 wpaclean_LDADD = $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
-airventriloquist_ng_SOURCES = $(SRC_AV) $(LIBAIRCRACK_OSDEP) $(LIBAIRCRACK_UTIL)
+airventriloquist_ng_SOURCES = $(SRC_AV)
 airventriloquist_ng_CFLAGS = $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
 airventriloquist_ng_LDADD = $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 

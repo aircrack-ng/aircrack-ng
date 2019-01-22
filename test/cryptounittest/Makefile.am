@@ -42,14 +42,11 @@ AM_CPPFLAGS = -I$(top_srcdir) \
               -I$(top_srcdir)/src \
               $(CRYPTO_INCLUDES)
 
-LIBAC	= ../../src/libaclib.la
-LIBAC_LIBS = -L../../src -laclib
+LIBAC_LIBS = ../../src/libaclib.la
 
-LIBAIRCRACK_CRYPTO = ../../src/aircrack-crypto/libaircrack-crypto.la
-LIBAIRCRACK_CRYPTO_LIBS = -L../../src/aircrack-crypto -laircrack-crypto
+LIBAIRCRACK_CRYPTO_LIBS = ../../src/aircrack-crypto/libaircrack-crypto.la
 
-LIBAIRCRACK_UTIL	= ../../src/aircrack-util/libaircrack-util.la
-LIBAIRCRACK_UTIL_LIBS = -L../../src/aircrack-util -laircrack-util
+LIBAIRCRACK_UTIL_LIBS = ../../src/aircrack-util/libaircrack-util.la
 
 SRCS_TEST_EWEP  = test-encrypt-wep.c
 SRCS_TEST_CPMK  = test-calc-pmk.c
@@ -67,9 +64,7 @@ test_encrypt_wep_LDADD   = $(LIBAC_LIBS) \
 						   $(CRYPTO_LIBS) \
 						   $(ZLIB_LIBS)
 
-test_calc_pmk_SOURCES = $(SRCS_TEST_CPMK) \
-						$(LIBAIRCRACK_UTIL) \
-						$(LIBAIRCRACK_CRYPTO)
+test_calc_pmk_SOURCES = $(SRCS_TEST_CPMK)
 test_calc_pmk_CFLAGS  = $(AM_CPPFLAGS) \
 						$(PTHREAD_CFLAGS) \
 						$(CRYPTO_CFLAGS)

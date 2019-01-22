@@ -12,5 +12,7 @@ fi
     "${abs_srcdir}/wpa.cap" | \
         grep 'Net 00:0d:93:eb:b0:8c test'
 
+rm -f "$(basename $0).out.log"
+
 exit 0
 
