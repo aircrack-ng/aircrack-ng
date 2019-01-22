@@ -83,7 +83,7 @@ typedef uint8_t u_int8_t;
 /*
 	 * Cygwin
 	 */
-#if defined(__CYGWIN32__)
+#if defined(__CYGWIN32__) || defined(CYGWIN)
 #include <asm/byteorder.h>
 #include <unistd.h>
 
