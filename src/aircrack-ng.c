@@ -343,11 +343,8 @@ static void destroy_ap(struct AP_info * ap)
 	REQUIRE(ap != NULL);
 
 	struct ST_info * st_tmp = NULL;
-	if (ap->ivbuf != NULL)
-	{
-		free(ap->ivbuf);
-		ap->ivbuf = NULL;
-	}
+
+	destroy(ap->ivbuf, free);
 
 	if (ap->stations != NULL)
 	{
@@ -362,33 +359,13 @@ static void destroy_ap(struct AP_info * ap)
 		ap->stations = NULL;
 	}
 
-	if (ap->uiv_root != NULL)
-	{
-		uniqueiv_wipe(ap->uiv_root);
-		ap->uiv_root = NULL;
-	}
+	destroy(ap->uiv_root, uniqueiv_wipe);
 
-	if (ap->ptw_clean != NULL)
-	{
-		if (ap->ptw_clean->allsessions != NULL)
-		{
-			free(ap->ptw_clean->allsessions);
-			ap->ptw_clean->allsessions = NULL;
-		}
-		free(ap->ptw_clean);
-		ap->ptw_clean = NULL;
-	}
+	if (ap->ptw_clean) destroy(ap->ptw_clean->allsessions, free);
+	destroy(ap->ptw_clean, free);
 
-	if (ap->ptw_vague != NULL)
-	{
-		if (ap->ptw_vague->allsessions != NULL)
-		{
-			free(ap->ptw_vague->allsessions);
-			ap->ptw_vague->allsessions = NULL;
-		}
-		free(ap->ptw_vague);
-		ap->ptw_vague = NULL;
-	}
+	if (ap->ptw_vague) destroy(ap->ptw_vague->allsessions, free);
+	destroy(ap->ptw_vague, free);
 }
 
 static void ac_aplist_free(void)
@@ -402,8 +379,7 @@ static void ac_aplist_free(void)
 	{
 		INVARIANT(ap_cur != NULL);
 
-		destroy_ap(ap_cur);
-		free(ap_cur);
+		destroy(ap_cur, destroy_ap);
 	}
 
 	ALLEGE(pthread_mutex_unlock(&mx_apl) == 0);
@@ -705,16 +681,8 @@ static void clean_exit(int ret)
 
 	for (i = 0; i < opt.nbcpu; i++)
 	{
-		if (wpa_data[i].cqueue)
-		{
-			circular_queue_free(wpa_data[i].cqueue);
-			wpa_data[i].cqueue = NULL;
-		}
-		if (wpa_data[i].key_buffer != NULL)
-		{
-			free(wpa_data[i].key_buffer);
-			wpa_data[i].key_buffer = NULL;
-		}
+		destroy(wpa_data[i].cqueue, circular_queue_free);
+		destroy(wpa_data[i].key_buffer, free);
 		if (wpa_data[i].thread == i)
 		{
 			/* ALLEGE(*/ pthread_mutex_destroy(&(wpa_data[i].mutex)) /* == 0)*/;
@@ -734,53 +702,25 @@ static void clean_exit(int ret)
 	{
 		for (i = 0; i < opt.totaldicts; i++)
 		{
-			if (opt.dicts[i] != NULL)
-			{
-				free(opt.dicts[i]);
-				opt.dicts[i] = NULL;
-			}
+			destroy(opt.dicts[i], free);
 		}
 	}
 
-	if (wep.ivbuf != NULL)
-	{
-		free(wep.ivbuf);
-		wep.ivbuf = NULL;
-	}
+	destroy(wep.ivbuf, free);
 
-	if (opt.logKeyToFile != NULL)
-	{
-		free(opt.logKeyToFile);
-		opt.logKeyToFile = NULL;
-	}
+	destroy(opt.logKeyToFile, free);
 
 	ac_aplist_free();
 
-	if (access_points != NULL)
-	{
-		c_avl_destroy(access_points);
-		access_points = NULL;
-	}
+	destroy(access_points, c_avl_destroy);
 
-	if (targets != NULL)
-	{
-		c_avl_destroy(targets);
-		targets = NULL;
-	}
+	destroy(targets, c_avl_destroy);
 
 #ifdef HAVE_SQLITE
-	if (db != NULL)
-	{
-		sqlite3_close(db);
-		db = NULL;
-	}
+	destroy(db, sqlite3_close);
 #endif
 
-	if (progname != NULL)
-	{
-		free(progname);
-		progname = NULL;
-	}
+	destroy(progname, free);
 
 	if (cracking_session)
 	{
@@ -2263,23 +2203,9 @@ done_reading:
 	++nb_eof;
 
 read_fail:
-	if (buffer != NULL)
-	{
-		free(buffer);
-		buffer = NULL;
-	}
-
-	if (rb.buf1 != NULL)
-	{
-		free(rb.buf1);
-		rb.buf1 = NULL;
-	}
-
-	if (rb.buf2 != NULL)
-	{
-		free(rb.buf2);
-		rb.buf2 = NULL;
-	}
+	destroy(buffer, free);
+	destroy(rb.buf1, free);
+	destroy(rb.buf2, free);
 
 	if (fd != -1) close(fd);
 
@@ -3059,11 +2985,7 @@ static int update_ivbuf(void)
 
 		ALLEGE(pthread_mutex_lock(&mx_ivb) == 0);
 
-		if (wep.ivbuf != NULL)
-		{
-			free(wep.ivbuf);
-			wep.ivbuf = NULL;
-		}
+		destroy(wep.ivbuf, free);
 
 		wep.nb_ivs = 0;
 
@@ -6878,11 +6800,7 @@ int main(int argc, char * argv[])
 		ap_cur->nb_ivs = 0;
 		ap_cur->ivbuf_size = 0;
 
-		if (ap_cur->ivbuf != NULL)
-		{
-			free(ap_cur->ivbuf);
-			ap_cur->ivbuf = NULL;
-		}
+		destroy(ap_cur->ivbuf, free);
 	}
 
 	do

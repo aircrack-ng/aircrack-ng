@@ -163,6 +163,16 @@ static inline size_t ustrlen(const uint8_t * s1)
 	return strlen((const char *) s1);
 }
 
+#define destroy(var, fn)                                                       \
+	({                                                                         \
+		if ((var) != NULL)                                                     \
+		{                                                                      \
+			fn((__typeof__(var))(var));                                        \
+                                                                               \
+			(var) = NULL;                                                      \
+		}                                                                      \
+	})
+
 #ifdef __cplusplus
 }
 #endif
