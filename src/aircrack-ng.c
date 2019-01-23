@@ -362,8 +362,11 @@ static void destroy_ap(struct AP_info * ap)
 		ap->stations = NULL;
 	}
 
-	uniqueiv_wipe(ap->uiv_root);
-	ap->uiv_root = NULL;
+	if (ap->uiv_root != NULL)
+	{
+		uniqueiv_wipe(ap->uiv_root);
+		ap->uiv_root = NULL;
+	}
 
 	if (ap->ptw_clean != NULL)
 	{
@@ -440,7 +443,8 @@ static void ap_avl_release_unused(struct AP_info * ap_cur)
 	ALLEGE(pthread_mutex_unlock(&mx_apl) == 0);
 }
 
-static int add_wep_iv(struct AP_info * ap, unsigned char * buffer)
+static int
+add_wep_iv(struct AP_info * ap, unsigned char * buffer, packet_reader_t * me)
 {
 	REQUIRE(ap != NULL);
 	REQUIRE(buffer != NULL);
@@ -450,25 +454,29 @@ static int add_wep_iv(struct AP_info * ap, unsigned char * buffer)
 
 	if (uniqueiv_check(ap->uiv_root, buffer) == 0)
 	{
-		/* add the IV & first two encrypted bytes */
-
-		long n = ap->nb_ivs * 5;
-
-		if (n + 5 > ap->ivbuf_size || ap->ivbuf == NULL)
+		if (me->mode == PACKET_READER_READ_MODE)
 		{
-			/* enlarge the IVs buffer */
+			/* add the IV & first two encrypted bytes */
 
-			ap->ivbuf_size += 131072;
-			uint8_t * tmp_ivbuf = realloc(ap->ivbuf, (size_t) ap->ivbuf_size);
-			if (tmp_ivbuf == NULL)
+			long n = ap->nb_ivs * 5;
+
+			if (n + 5 > ap->ivbuf_size || ap->ivbuf == NULL)
 			{
-				perror("realloc failed");
-				return (-1);
-			}
-			ap->ivbuf = tmp_ivbuf;
-		}
+				/* enlarge the IVs buffer */
 
-		memcpy(ap->ivbuf + n, buffer, 5);
+				ap->ivbuf_size += 131072;
+				uint8_t * tmp_ivbuf
+					= realloc(ap->ivbuf, (size_t) ap->ivbuf_size);
+				if (tmp_ivbuf == NULL)
+				{
+					perror("realloc failed");
+					return (-1);
+				}
+				ap->ivbuf = tmp_ivbuf;
+			}
+
+			memcpy(ap->ivbuf + n, buffer, 5);
+		}
 
 		uniqueiv_mark(ap->uiv_root, buffer);
 		ap->nb_ivs++;
@@ -479,7 +487,8 @@ static int add_wep_iv(struct AP_info * ap, unsigned char * buffer)
 
 static int parse_ivs2(struct AP_info * ap_cur,
 					  struct ivs2_pkthdr * pivs2,
-					  unsigned char * buffer)
+					  unsigned char * buffer,
+					  packet_reader_t * me)
 {
 	REQUIRE(ap_cur != NULL);
 	REQUIRE(pivs2 != NULL);
@@ -532,26 +541,29 @@ static int parse_ivs2(struct AP_info * ap_cur,
 
 		if (uniqueiv_check(ap_cur->uiv_root, buffer) == 0)
 		{
-			/* add the IV & first two encrypted bytes */
-
-			n = ap_cur->nb_ivs * 5;
-
-			if (n + 5 > ap_cur->ivbuf_size)
+			if (me->mode == PACKET_READER_READ_MODE)
 			{
-				/* enlarge the IVs buffer */
+				/* add the IV & first two encrypted bytes */
 
-				ap_cur->ivbuf_size += 131072;
-				uint8_t * tmp_ivbuf
-					= realloc(ap_cur->ivbuf, (size_t) ap_cur->ivbuf_size);
-				if (tmp_ivbuf == NULL)
+				n = ap_cur->nb_ivs * 5;
+
+				if (n + 5 > ap_cur->ivbuf_size)
 				{
-					perror("realloc failed");
-					return (-1);
-				}
-				ap_cur->ivbuf = tmp_ivbuf;
-			}
+					/* enlarge the IVs buffer */
 
-			memcpy(ap_cur->ivbuf + n, buffer, 5);
+					ap_cur->ivbuf_size += 131072;
+					uint8_t * tmp_ivbuf
+						= realloc(ap_cur->ivbuf, (size_t) ap_cur->ivbuf_size);
+					if (tmp_ivbuf == NULL)
+					{
+						perror("realloc failed");
+						return (-1);
+					}
+					ap_cur->ivbuf = tmp_ivbuf;
+				}
+
+				memcpy(ap_cur->ivbuf + n, buffer, 5);
+			}
 			uniqueiv_mark(ap_cur->uiv_root, buffer);
 			ap_cur->nb_ivs++;
 		}
@@ -593,26 +605,29 @@ static int parse_ivs2(struct AP_info * ap_cur,
 
 		if (uniqueiv_check(ap_cur->uiv_root, buffer) == 0)
 		{
-			/* add the IV & first two encrypted bytes */
-
-			n = ap_cur->nb_ivs * 5;
-
-			if (n + 5 > ap_cur->ivbuf_size)
+			if (me->mode == PACKET_READER_READ_MODE)
 			{
-				/* enlarge the IVs buffer */
+				/* add the IV & first two encrypted bytes */
 
-				ap_cur->ivbuf_size += 131072;
-				uint8_t * tmp_ivbuf
-					= realloc(ap_cur->ivbuf, (size_t) ap_cur->ivbuf_size);
-				if (tmp_ivbuf == NULL)
+				n = ap_cur->nb_ivs * 5;
+
+				if (n + 5 > ap_cur->ivbuf_size)
 				{
-					perror("realloc failed");
-					return (-1);
-				}
-				ap_cur->ivbuf = tmp_ivbuf;
-			}
+					/* enlarge the IVs buffer */
 
-			memcpy(ap_cur->ivbuf + n, buffer, 5);
+					ap_cur->ivbuf_size += 131072;
+					uint8_t * tmp_ivbuf
+						= realloc(ap_cur->ivbuf, (size_t) ap_cur->ivbuf_size);
+					if (tmp_ivbuf == NULL)
+					{
+						perror("realloc failed");
+						return (-1);
+					}
+					ap_cur->ivbuf = tmp_ivbuf;
+				}
+
+				memcpy(ap_cur->ivbuf + n, buffer, 5);
+			}
 			uniqueiv_mark(ap_cur->uiv_root, buffer);
 			ap_cur->nb_ivs++;
 		}
@@ -1359,13 +1374,12 @@ static int packet_reader__update_ap_info(struct AP_info * ap_cur,
 	if (fmt == FORMAT_IVS)
 	{
 		ap_cur->crypt = 2;
-		if (me->mode == PACKET_READER_READ_MODE) add_wep_iv(ap_cur, buffer);
+		add_wep_iv(ap_cur, buffer, me);
 		return (0);
 	}
 	else if (fmt == FORMAT_IVS2)
 	{
-		if (me->mode == PACKET_READER_READ_MODE)
-			parse_ivs2(ap_cur, ivs2, buffer);
+		parse_ivs2(ap_cur, ivs2, buffer, me);
 		return (0);
 	}
 
@@ -1534,7 +1548,7 @@ skip_station:
 			buffer[4] = (uint8_t)((buffer[4] ^ 0x42) ^ 0xAA);
 		}
 
-		if (me->mode == PACKET_READER_READ_MODE) add_wep_iv(ap_cur, buffer);
+		add_wep_iv(ap_cur, buffer, me);
 
 		return (0);
 	}
@@ -3056,7 +3070,7 @@ static int update_ivbuf(void)
 		it = c_avl_get_iterator(access_points);
 		while (c_avl_iterator_next(it, &key, (void **) &ap_cur) == 0)
 		{
-			if (ap_cur->crypt == 2 && ap_cur->target)
+			if (ap_cur->ivbuf != NULL && ap_cur->crypt == 2 && ap_cur->target)
 			{
 				n = (size_t) ap_cur->nb_ivs;
 
@@ -6851,6 +6865,24 @@ int main(int argc, char * argv[])
 	{
 		printf("Reading packets, please wait...\r");
 		fflush(stdout);
+	}
+
+	if (ap_cur != NULL)
+	{
+		if (ap_cur->uiv_root != NULL)
+		{
+			uniqueiv_wipe(ap_cur->uiv_root);
+			ap_cur->uiv_root = NULL;
+		}
+
+		ap_cur->nb_ivs = 0;
+		ap_cur->ivbuf_size = 0;
+
+		if (ap_cur->ivbuf != NULL)
+		{
+			free(ap_cur->ivbuf);
+			ap_cur->ivbuf = NULL;
+		}
 	}
 
 	do
