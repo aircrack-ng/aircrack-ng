@@ -56,35 +56,7 @@
 #define WPA 2
 #define ESSID 3
 
-/* linked list of detected access points */
-
-struct AP_info
-{
-	struct AP_info * prev; /* prev. AP in list         */
-	struct AP_info * next; /* next  AP in list         */
-
-	int ssid_length; /* length of ssid           */
-
-	unsigned char bssid[6]; /* the access point's MAC   */
-	unsigned char essid[256]; /* ascii network identifier */
-
-	unsigned char ** uiv_root; /* unique iv root structure */
-	/* if wep-encrypted network */
-
-	int wpa_stored; /* wpa stored in ivs file?   */
-	int essid_stored; /* essid stored in ivs file? */
-};
-
-/* linked list of detected clients */
-
-struct ST_info
-{
-	struct ST_info * prev; /* the prev client in list   */
-	struct ST_info * next; /* the next client in list   */
-	struct AP_info * base; /* AP this client belongs to */
-	unsigned char stmac[6]; /* the client's MAC address  */
-	struct WPA_hdsk wpa; /* WPA handshake data        */
-};
+#include "station.h"
 
 /* bunch of global stuff */
 
@@ -425,7 +397,7 @@ skip_station:
 
 				n = p[1];
 
-				memset(ap_cur->essid, 0, 256);
+				memset(ap_cur->essid, 0, ESSID_LENGTH + 1);
 				memcpy(ap_cur->essid, p + 2, n);
 
 				if (G.f_ivs != NULL && !ap_cur->essid_stored)
@@ -842,8 +814,8 @@ int main(int argc, char * argv[])
 		return (EXIT_FAILURE);
 	}
 
-	memset(bssid_cur, 0, 6);
-	memset(bssid_prv, 0, 6);
+	memset(bssid_cur, 0, sizeof(bssid_cur)); //-V597
+	memset(bssid_prv, 0, sizeof(bssid_prv)); //-V597
 
 	/* check the input pcap file */
 

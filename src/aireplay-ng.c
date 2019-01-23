@@ -646,7 +646,6 @@ static int do_attack_fake_auth(void)
 				{
 					if (retry == opt.f_retry)
 					{
-						abort = 1;
 						return (EXIT_FAILURE);
 					}
 					++retry;
@@ -933,11 +932,10 @@ static int do_attack_fake_auth(void)
 				memcpy(h80211 + 10, opt.r_smac, 6);
 				memcpy(h80211 + 16, opt.r_bssid, 6);
 
-				n = strlen(opt.r_essid);
-				if (n > 32) n = 32;
+				n = (int) strlen(opt.r_essid);
 
 				h80211[28] = 0x00;
-				h80211[29] = n;
+				h80211[29] = (uint8_t) n;
 
 				memcpy(h80211 + 30, opt.r_essid, n);
 				memcpy(h80211 + 30 + n, RATES, 16);
@@ -1052,11 +1050,10 @@ static int do_attack_fake_auth(void)
 				memcpy(h80211 + 10, opt.r_smac, 6);
 				memcpy(h80211 + 16, opt.r_bssid, 6);
 
-				n = strlen(opt.r_essid);
-				if (n > 32) n = 32;
+				n = (int) strlen(opt.r_essid);
 
 				h80211[34] = 0x00;
-				h80211[35] = n;
+				h80211[35] = (uint8_t) n;
 
 				memcpy(h80211 + 36, opt.r_essid, n);
 				memcpy(h80211 + 36 + n, RATES, 16);

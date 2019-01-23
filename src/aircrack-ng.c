@@ -3991,7 +3991,7 @@ static int crack_wpa_thread(void * arg)
 	data = (struct WPA_data *) arg;
 	ap = data->ap;
 	threadid = data->threadid;
-	strncpy(essid, ap->essid, ESSID_LENGTH);
+	memcpy(essid, ap->essid, ESSID_LENGTH + 1);
 
 	// The attack below requires a full handshake.
 	ALLEGE(ap->wpa.state == 7);
@@ -4115,7 +4115,7 @@ static int crack_wpa_pmkid_thread(void * arg)
 	data = (struct WPA_data *) arg;
 	ap = data->ap;
 	threadid = data->threadid;
-	strncpy(essid, ap->essid, ESSID_LENGTH);
+	memcpy(essid, ap->essid, ESSID_LENGTH + 1);
 
 	// Check some pre-conditions.
 	ALLEGE(ap->wpa.state > 0 && ap->wpa.state < 7);
@@ -4407,12 +4407,11 @@ static int display_wpa_hash_information(struct AP_info * ap_cur)
 
 	if (opt.essid_set && ap_cur->essid[0] == '\0')
 	{
-		memset(ap_cur->essid, 0, sizeof(ap_cur->essid));
-		strncpy(ap_cur->essid, opt.essid, sizeof(ap_cur->essid) - 1);
+		memcpy(ap_cur->essid, opt.essid, sizeof(ap_cur->essid));
 	}
 
 	printf("[*] ESSID (length: %d): %s\n",
-		   (int) strlen(ap_cur->essid),
+		   (int) ustrlen(ap_cur->essid),
 		   ap_cur->essid);
 
 	printf("[*] Key version: %d\n", ap_cur->wpa.keyver);
@@ -4511,7 +4510,7 @@ static int do_make_wkp(struct AP_info * ap_cur)
 	memcpy(&frametmp[0x520], ap_cur->essid, sizeof(ap_cur->essid));
 
 	// ESSID length
-	frametmp[0x540] = (uint8_t) strlen(ap_cur->essid);
+	frametmp[0x540] = (uint8_t) ustrlen(ap_cur->essid);
 
 	// WPA Key version
 	frametmp[0x544] = ap_cur->wpa.keyver;
@@ -4724,10 +4723,10 @@ static hccapx_t ap_to_hccapx(struct AP_info * ap)
 		}
 	}
 
-	ssid_len = (uint8_t) strlen(ap->essid);
+	ssid_len = (uint8_t) ustrlen(ap->essid);
 	memcpy(&hx.essid_len, &ssid_len, sizeof(ssid_len));
 
-	memcpy(&hx.essid, &ap->essid, sizeof(ap->essid) - 1); //-V512
+	memcpy(&hx.essid, &ap->essid, sizeof(hx.essid)); //-V512
 	memcpy(&hx.mac_ap, &ap->bssid, sizeof(ap->bssid));
 	memcpy(&hx.mac_sta, &ap->wpa.stmac, sizeof(ap->wpa.stmac));
 	memcpy(&hx.keyver, &ap->wpa.keyver, sizeof(ap->wpa.keyver));
@@ -5543,11 +5542,10 @@ static int perform_wpa_crack(struct AP_info * ap_cur)
 
 	if (opt.essid_set && ap_cur->essid[0] == '\0')
 	{
-		memset(ap_cur->essid, 0, sizeof(ap_cur->essid));
-		strncpy(ap_cur->essid, opt.essid, sizeof(ap_cur->essid) - 1);
+		memcpy(ap_cur->essid, opt.essid, sizeof(ap_cur->essid));
 	}
 
-	dso_ac_crypto_engine_set_essid(&engine, (uint8_t *) ap_cur->essid);
+	dso_ac_crypto_engine_set_essid(&engine, ap_cur->essid);
 
 	if (db == NULL)
 	{
@@ -6084,7 +6082,8 @@ int main(int argc, char * argv[])
 			case 'e':
 
 				memset(opt.essid, 0, sizeof(opt.essid));
-				strncpy(opt.essid, optarg, sizeof(opt.essid) - 1);
+				memcpy(
+					opt.essid, optarg, MIN(strlen(optarg), sizeof(opt.essid)));
 				opt.essid_set = 1;
 				break;
 
@@ -6478,7 +6477,7 @@ int main(int argc, char * argv[])
 		ap_cur->target = 1;
 		ap_cur->wpa.state = 7;
 		ap_cur->wpa.keyver = (uint8_t)(opt.amode & 0xFF);
-		strcpy(ap_cur->essid, "sorbo");
+		strcpy((char *) ap_cur->essid, "sorbo");
 		strcpy((char *) ap_cur->bssid, "deadb");
 		c_avl_insert(targets, ap_cur->bssid, ap_cur);
 
@@ -6601,7 +6600,7 @@ int main(int argc, char * argv[])
 						 remaining - H16800_PMKID_LEN + 1 + H16800_BSSID_LEN + 1
 							 + H16800_STMAC_LEN
 							 + 1,
-						 (uint8_t *) ap_cur->essid,
+						 ap_cur->essid,
 						 sizeof(ap_cur->essid));
 
 		c_avl_insert(targets, ap_cur->bssid, ap_cur);
@@ -6901,7 +6900,8 @@ int main(int argc, char * argv[])
 		if (memcmp(opt.maddr, BROADCAST, ETHER_ADDR_LEN) == 0
 			|| (opt.bssid_set
 				&& !memcmp(opt.bssid, ap_cur->bssid, ETHER_ADDR_LEN))
-			|| (opt.essid_set && !strcmp(opt.essid, ap_cur->essid)))
+			|| (opt.essid_set
+				&& !memcmp(opt.essid, ap_cur->essid, ESSID_LENGTH)))
 		{
 			ap_cur->target = 1;
 		}
@@ -6931,7 +6931,7 @@ int main(int argc, char * argv[])
 		{
 			case 0:
 				printf("Target '%s' network doesn't seem encrypted.\n",
-					   ap_cur->essid);
+					   (char *) ap_cur->essid);
 				break;
 
 			default:

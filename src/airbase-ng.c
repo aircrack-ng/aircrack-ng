@@ -83,7 +83,6 @@ GCRY_THREAD_OPTION_PTHREAD_IMPL;
 #define EXT_IN 0x01
 #define EXT_OUT 0x02
 
-#define NB_PRB 10 /* size of probed ESSID ring buffer */
 #define MAX_CF_XMIT 100
 
 #define TI_MTU 1500
@@ -291,32 +290,7 @@ struct MAC_list
 	pMAC_t next;
 };
 
-/* linked list of detected clients */
-
-struct ST_info
-{
-	struct ST_info * prev; /* the prev client in list   */
-	struct ST_info * next; /* the next client in list   */
-	struct AP_info * base; /* AP this client belongs to */
-	time_t tinit, tlast; /* first and last time seen  */
-	unsigned long nb_pkt; /* total number of packets   */
-	unsigned char stmac[6]; /* the client's MAC address  */
-	char essid[256]; /* last associated essid     */
-	int essid_length; /* essid length of last asso */
-	int probe_index; /* probed ESSIDs ring index  */
-	char probes[NB_PRB][256]; /* probed ESSIDs ring buffer */
-	int ssid_length[NB_PRB]; /* ssid lengths ring buffer  */
-	int power; /* last signal power         */
-	int rate_to; /* last bitrate to station   */
-	int rate_from; /* last bitrate from station */
-	struct timeval ftimer; /* time of restart           */
-	int missed; /* number of missed packets  */
-	unsigned int lastseq; /* last seen sequnce number  */
-	struct WPA_hdsk wpa; /* WPA handshake data        */
-	int wpatype; /* 1=wpa1 2=wpa2             */
-	int wpahash; /* 1=md5(tkip) 2=sha1(ccmp)  */
-	int wep; /* capability encryption bit */
-};
+#include "station.h"
 
 typedef struct CF_packet * pCF_t;
 struct CF_packet
@@ -1686,7 +1660,7 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 			st_cur->ssid_length[i] = 0;
 		}
 
-		memset(st_cur->essid, 0, 256);
+		memset(st_cur->essid, 0, ESSID_LENGTH + 1);
 		st_cur->essid_length = 0;
 
 		st_cur->wpatype = 0;
@@ -1906,7 +1880,7 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 						(packet[z + 8 + 2] << 8) + packet[z + 8 + 3] + 4);
 
 					if ((unsigned) length - z - 10 < st_cur->wpa.eapol_size
-						|| st_cur->wpa.eapol_size == 0
+						|| st_cur->wpa.eapol_size == 0 //-V560
 						|| st_cur->wpa.eapol_size > sizeof(st_cur->wpa.eapol))
 					{
 						// Ignore the packet trying to crash us.
@@ -2588,11 +2562,11 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 				printf("\n");
 			}
 
-			memset(st_cur->essid, 0, 256);
-			memcpy(st_cur->essid, essid, 255);
-			st_cur->essid_length = (int) strlen((char *) essid);
+			memset(st_cur->essid, 0, ESSID_LENGTH + 1);
+			memcpy(st_cur->essid, essid, ESSID_LENGTH + 1);
+			st_cur->essid_length = (int) ustrlen(essid);
 
-			memset(essid, 0, 256);
+			memset(essid, 0, sizeof(essid)); //-V597
 
 			/* either specified or determined */
 			if ((lopt.sendeapol && (lopt.wpa1type || lopt.wpa2type))
@@ -2799,7 +2773,7 @@ static void beacon_thread(void * arg)
 				= (uint8_t)((apc.interval * MAX(getESSIDcount(), 1))
 							& 0xFF); // beacon interval
 			beacon[beacon_len + 9] = (uint8_t)(
-				(apc.interval * MAX(getESSIDcount(), 1) >> 8) & 0xFF);
+				((apc.interval * MAX(getESSIDcount(), 1)) >> 8) & 0xFF);
 			memcpy(beacon + beacon_len + 10, apc.capa, 2); // capability
 			beacon_len += 12;
 
@@ -4215,7 +4189,7 @@ int main(int argc, char * argv[])
 					&& le16_to_cpu(*(unsigned short *) (h80211 + 8)) == 2)
 					n = 32;
 
-				if (n <= 0 || n >= (int) caplen) continue;
+				if (n <= 0 || n >= (int) caplen) continue; //-V560
 
 				memcpy(tmpbuf, h80211, caplen);
 				caplen -= n;

@@ -1266,7 +1266,7 @@ static int dump_add_packet(unsigned char * h80211,
 
 		ap_cur->ssid_length = 0;
 		ap_cur->essid_stored = 0;
-		memset(ap_cur->essid, 0, MAX_IE_ELEMENT_SIZE);
+		memset(ap_cur->essid, 0, ESSID_LENGTH + 1);
 		ap_cur->timestamp = 0;
 
 		ap_cur->decloak_detect = lopt.decloak;
@@ -1651,7 +1651,7 @@ skip_probe:
 				//                n = ( p[1] > 32 ) ? 32 : p[1];
 				n = p[1];
 
-				memset(ap_cur->essid, 0, 256);
+				memset(ap_cur->essid, 0, ESSID_LENGTH + 1);
 				memcpy(ap_cur->essid, p + 2, n);
 
 				if (opt.f_ivs != NULL && !ap_cur->essid_stored)
@@ -3873,7 +3873,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 	if (lopt.show_sta)
 	{
-		memcpy(strbuf, //-V512
+		memcpy(strbuf, //-V512,V666
 			   " BSSID              STATION "
 			   "           PWR   Rate    Lost    Frames  Probes",
 			   (size_t) columns_sta);
@@ -3947,7 +3947,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 				nlines++;
 
-				if (ws_row != 0 && nlines >= ws_row) return;
+				if (nlines >= ws_row) return;
 
 				if (!memcmp(ap_cur->bssid, BROADCAST, 6))
 					printf(" (not associated) ");
@@ -4057,7 +4057,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 			nlines++;
 
-			if (ws_row != 0 && nlines >= ws_row) return;
+			if (nlines >= ws_row) return;
 
 			printf(" %02X:%02X:%02X:%02X:%02X:%02X",
 				   na_cur->namac[0],

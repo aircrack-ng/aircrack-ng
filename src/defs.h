@@ -158,6 +158,11 @@
 extern "C" {
 #endif
 
+static inline size_t ustrlen(const uint8_t * s1)
+{
+	return strlen((const char *) s1);
+}
+
 #ifdef __cplusplus
 }
 #endif

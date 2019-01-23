@@ -319,7 +319,8 @@ EXTRA_DIST = wpaclean.c \
 			 fragments.h \
 			 fragments.c \
 			 communications.h \
-			 communications.c
+			 communications.c \
+			 station.h
 
 
 @CODE_COVERAGE_RULES@
