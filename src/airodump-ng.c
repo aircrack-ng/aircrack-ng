@@ -2569,6 +2569,20 @@ skip_probe:
 							/* copy the key descriptor version */
 							st_cur->wpa.keyver = (uint8_t)(h80211[z + 6] & 7);
 
+							memcpy(st_cur->wpa.stmac, st_cur->stmac, 6);
+							memcpy(lopt.wpa_bssid, ap_cur->bssid, 6);
+							memset(lopt.message, '\x00', sizeof(lopt.message));
+							snprintf(lopt.message,
+									 sizeof(lopt.message) - 1,
+									 "][ PMKID found: "
+									 "%02X:%02X:%02X:%02X:%02X:%02X ",
+									 lopt.wpa_bssid[0],
+									 lopt.wpa_bssid[1],
+									 lopt.wpa_bssid[2],
+									 lopt.wpa_bssid[3],
+									 lopt.wpa_bssid[4],
+									 lopt.wpa_bssid[5]);
+
 							goto write_packet;
 						}
 					}
