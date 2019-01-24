@@ -4008,7 +4008,10 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				printf("%c", (st_cur->qos_to_ds) ? 'e' : ' ');
 				printf("  %4d", st_cur->missed);
 				printf(" %8lu", st_cur->nb_pkt);
-				printf("  %-5s", (st_cur->wpa.pmkid[0] != 0) ? "PMKID" : "");
+				printf("  %-5s",
+					   (st_cur->wpa.pmkid[0] != 0)
+						   ? "PMKID"
+						   : (st_cur->wpa.state == 7 ? "EAPOL" : ""));
 
 				if (ws_col > (columns_sta - 6))
 				{
