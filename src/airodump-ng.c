@@ -2553,7 +2553,26 @@ skip_probe:
 				&& (h80211[z + 5] & 0x01) == 0)
 			{
 				memcpy(st_cur->wpa.anonce, &h80211[z + 17], 32);
+
 				st_cur->wpa.state = 1;
+
+				if (h80211[z + 99] == 0xdd) // RSN
+				{
+					if (h80211[z + 101] == 0x00 && h80211[z + 102] == 0x0f
+						&& h80211[z + 103] == 0xac) // OUI: IEEE8021
+					{
+						if (h80211[z + 104] == 0x04) // OUI SUBTYPE
+						{
+							// Got a PMKID value?!
+							memcpy(st_cur->wpa.pmkid, &h80211[z + 105], 16);
+
+							/* copy the key descriptor version */
+							st_cur->wpa.keyver = (uint8_t)(h80211[z + 6] & 7);
+
+							goto write_packet;
+						}
+					}
+				}
 			}
 
 			/* frame 2 or 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1 */
@@ -3874,10 +3893,9 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 	if (lopt.show_sta)
 	{
-		memcpy(strbuf, //-V512,V666
+		strcpy(strbuf,
 			   " BSSID              STATION "
-			   "           PWR   Rate    Lost    Frames  Probes",
-			   (size_t) columns_sta);
+			   "           PWR   Rate    Lost    Frames  Notes  Probes");
 		strbuf[ws_col - 1] = '\0';
 		printf("%s\n", strbuf);
 
@@ -3976,6 +3994,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				printf("%c", (st_cur->qos_to_ds) ? 'e' : ' ');
 				printf("  %4d", st_cur->missed);
 				printf(" %8lu", st_cur->nb_pkt);
+				printf("  %-5s", (st_cur->wpa.pmkid[0] != 0) ? "PMKID" : "");
 
 				if (ws_col > (columns_sta - 6))
 				{
