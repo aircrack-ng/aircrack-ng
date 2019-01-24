@@ -124,6 +124,22 @@
 
 #define ArrayCount(a) (sizeof((a)) / sizeof((a)[0]))
 
+#define IGNORE_LTZ(c)                                                          \
+	do                                                                         \
+	{                                                                          \
+		int __rc = (c);                                                        \
+		if (__rc < 0)                                                          \
+		{                                                                      \
+			fprintf(stderr,                                                    \
+					"%s:%d:Function failed(%d:%d): %s\n",                      \
+					__FILE__,                                                  \
+					__LINE__,                                                  \
+					__rc,                                                      \
+					errno,                                                     \
+					#c);                                                       \
+		}                                                                      \
+	} while (0)
+
 #define IGNORE_NZ(c)                                                           \
 	do                                                                         \
 	{                                                                          \

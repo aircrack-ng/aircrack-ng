@@ -4667,15 +4667,15 @@ static void sighandler(int signum)
 		}
 
 		if (lopt.freqoption)
-			IGNORE_NZ(
+			IGNORE_LTZ(
 				read(lopt.ch_pipe[0], &(lopt.frequency[card]), sizeof(int)));
 		else
-			IGNORE_NZ(
+			IGNORE_LTZ(
 				read(lopt.ch_pipe[0], &(lopt.channel[card]), sizeof(int)));
 	}
 
 	if (signum == SIGUSR2)
-		IGNORE_NZ(read(lopt.gc_pipe[0], &lopt.gps_loc, sizeof(lopt.gps_loc)));
+		IGNORE_LTZ(read(lopt.gc_pipe[0], &lopt.gps_loc, sizeof(lopt.gps_loc)));
 
 	if (signum == SIGINT || signum == SIGTERM)
 	{
@@ -4862,8 +4862,8 @@ channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 				{
 					ch = wi_get_channel(wi[card]);
 					lopt.channel[card] = ch;
-					IGNORE_NZ(write(lopt.cd_pipe[1], &card, sizeof(int)));
-					IGNORE_NZ(write(lopt.ch_pipe[1], &ch, sizeof(int)));
+					IGNORE_LTZ(write(lopt.cd_pipe[1], &card, sizeof(int)));
+					IGNORE_LTZ(write(lopt.ch_pipe[1], &ch, sizeof(int)));
 					kill(parent, SIGUSR1);
 					usleep(1000);
 				}
@@ -4881,8 +4881,8 @@ channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 #endif
 			{
 				lopt.channel[card] = ch;
-				IGNORE_NZ(write(lopt.cd_pipe[1], &card, sizeof(int)));
-				IGNORE_NZ(write(lopt.ch_pipe[1], &ch, sizeof(int)));
+				IGNORE_LTZ(write(lopt.cd_pipe[1], &card, sizeof(int)));
+				IGNORE_LTZ(write(lopt.ch_pipe[1], &ch, sizeof(int)));
 				if (lopt.active_scan_sim > 0) send_probe_request(wi[card]);
 				kill(parent, SIGUSR1);
 				usleep(1000);
@@ -4965,8 +4965,8 @@ frequency_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 				{
 					ch = wi_get_freq(wi[card]);
 					lopt.frequency[card] = ch;
-					IGNORE_NZ(write(lopt.cd_pipe[1], &card, sizeof(int)));
-					IGNORE_NZ(write(lopt.ch_pipe[1], &ch, sizeof(int)));
+					IGNORE_LTZ(write(lopt.cd_pipe[1], &card, sizeof(int)));
+					IGNORE_LTZ(write(lopt.ch_pipe[1], &ch, sizeof(int)));
 					kill(parent, SIGUSR1);
 					usleep(1000);
 				}
@@ -4980,8 +4980,8 @@ frequency_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 			if (wi_set_freq(wi[card], ch) == 0)
 			{
 				lopt.frequency[card] = ch;
-				IGNORE_NZ(write(lopt.cd_pipe[1], &card, sizeof(int)));
-				IGNORE_NZ(write(lopt.ch_pipe[1], &ch, sizeof(int)));
+				IGNORE_LTZ(write(lopt.cd_pipe[1], &card, sizeof(int)));
+				IGNORE_LTZ(write(lopt.ch_pipe[1], &ch, sizeof(int)));
 				kill(parent, SIGUSR1);
 				usleep(1000);
 			}
