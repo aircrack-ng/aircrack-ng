@@ -1830,12 +1830,13 @@ skip_probe:
 				ap_cur->ac_channel.short_gi_80 = (uint8_t)((p[3] / 32) % 2);
 				ap_cur->ac_channel.short_gi_160 = (uint8_t)((p[3] / 64) % 2);
 
-				ap_cur->ac_channel.mu_mimo
-					= ((p[3] / 524288) % 2) || ((p[3] / 1048576) % 2);
+				ap_cur->ac_channel.mu_mimo = (uint8_t)((p[4] & 0b11000) % 2);
 
 				// A few things indicate Wave 2: MU-MIMO, 80+80 Channels
-				ap_cur->ac_channel.wave_2 = ap_cur->ac_channel.mu_mimo
-											|| ap_cur->ac_channel.split_chan;
+				ap_cur->ac_channel.wave_2
+					= (uint8_t)((ap_cur->ac_channel.mu_mimo
+								 || ap_cur->ac_channel.split_chan)
+								% 2);
 
 				// Maximum rates (16 bit)
 				uint16_t tx_mcs = 0;
