@@ -85,6 +85,7 @@ TESTS = test-hex_string_to_array.sh \
 		test-aircrack-ng-0016.sh \
 		test-aircrack-ng-0017.sh \
 		test-aircrack-ng-0018.sh \
+		test-aircrack-ng-0019.sh \
 		test-airdecap-ng-0001.sh \
 		test-airdecap-ng-0002.sh \
 		test-airdecap-ng-0003.sh \
@@ -123,6 +124,7 @@ EXTRA_DIST = test-hex_string_to_array.sh \
 			 test-aircrack-ng-0016.sh \
 			 test-aircrack-ng-0017.sh \
 			 test-aircrack-ng-0018.sh \
+			 test-aircrack-ng-0019.sh \
 			 test-airdecap-ng-0001.sh \
 			 test-airdecap-ng-0002.sh \
 			 test-airdecap-ng-0003.sh \
@@ -154,7 +156,9 @@ EXTRA_DIST = test-hex_string_to_array.sh \
              Chinese-SSID-Name.pcap \
              passphrases.db \
 			 test-airdecap-ng.sh \
-			 test-airolib-sqlite.sh
+			 test-airolib-sqlite.sh \
+			 MOM1.cap \
+			 pass.txt
 
 if LINUX
 EXTRA_DIST += test-aireplay-ng-0002.sh \

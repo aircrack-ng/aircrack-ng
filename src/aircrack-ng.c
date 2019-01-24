@@ -69,6 +69,7 @@
 #include "aircrack-crypto/wpapsk.h"
 #include "aircrack-ng.h"
 #include "aircrack-osdep/byteorder.h"
+#include "aircrack-osdep/radiotap/platform.h"
 #include "aircrack-util/avl_tree.h"
 #include "aircrack-util/common.h"
 #include "aircrack-util/console.h"
@@ -1532,6 +1533,9 @@ skip_station:
 		return (1);
 	}
 
+	uint64_t replay_counter
+		= be64_to_cpu(get_unaligned((uint64_t *) (&h80211[z + 9])));
+
 	/* frame 1: Pairwise == 1, Install == 0, Ack == 1, MIC == 0 */
 
 	if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
@@ -1544,6 +1548,8 @@ skip_station:
 		st_cur->wpa.state = 1;
 
 		st_cur->wpa.found |= 1 << 1;
+
+		st_cur->wpa.replay = replay_counter;
 
 		if (h80211[z + 99] == 0xdd) // RSN
 		{
@@ -1566,7 +1572,8 @@ skip_station:
 
 	if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
 		&& (h80211[z + 6] & 0x80) == 0
-		&& (h80211[z + 5] & 0x01) != 0)
+		&& (h80211[z + 5] & 0x01) != 0
+		&& st_cur->wpa.replay == replay_counter)
 	{
 		if (memcmp(&h80211[z + 17], ZERO, sizeof(st_cur->wpa.snonce)) != 0)
 		{
@@ -1632,7 +1639,8 @@ skip_station:
 
 	if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) != 0
 		&& (h80211[z + 6] & 0x80) != 0
-		&& (h80211[z + 5] & 0x01) != 0)
+		&& (h80211[z + 5] & 0x01) != 0
+		&& st_cur->wpa.replay == replay_counter)
 	{
 		st_cur->wpa.found |= 1 << 3;
 

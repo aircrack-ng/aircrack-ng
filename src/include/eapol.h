@@ -16,6 +16,7 @@ struct WPA_hdsk
 	uint8_t state; /* handshake completion     */
 	uint8_t found;
 	uint8_t eapol_source;
+	uint64_t replay;
 };
 
 #endif // _NET_EAPOL_H_
