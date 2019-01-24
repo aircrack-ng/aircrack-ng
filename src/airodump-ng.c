@@ -3458,9 +3458,9 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 		if (lopt.singlechan) strcat(strbuf, "RXQ ");
 
-		strcat(strbuf, " Beacons    #Data, #/s  CH  MB   ENC  CIPHER AUTH ");
+		strcat(strbuf, " Beacons    #Data, #/s  CH   MB   ENC CIPHER AUTH ");
 
-		if (lopt.show_uptime) strcat(strbuf, "       UPTIME  ");
+		if (lopt.show_uptime) strcat(strbuf, "        UPTIME ");
 
 		if (lopt.show_wps)
 		{
@@ -3471,18 +3471,18 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 					   32,
 					   sizeof(strbuf) - strlen(strbuf) - 1);
 				snprintf(strbuf + columns_ap + lopt.maxsize_wps_seen - 6,
-						 7,
+						 8,
 						 "%s",
-						 " ESSID");
+						 "  ESSID");
 				if (lopt.show_manufacturer)
 				{
-					memset(strbuf + columns_ap + lopt.maxsize_wps_seen,
+					memset(strbuf + columns_ap + lopt.maxsize_wps_seen + 1,
 						   32,
 						   sizeof(strbuf) - columns_ap - lopt.maxsize_wps_seen
 							   - 1);
 					snprintf(strbuf + columns_ap + lopt.maxsize_wps_seen
 								 + lopt.maxsize_essid_seen
-								 - 6,
+								 - 5,
 							 15,
 							 "%s",
 							 "MANUFACTURER");
@@ -3497,7 +3497,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			{
 				// write spaces (32).
 				memset(strbuf + columns_ap, 32, lopt.maxsize_essid_seen - 5);
-				snprintf(strbuf + columns_ap + lopt.maxsize_essid_seen - 8,
+				snprintf(strbuf + columns_ap + lopt.maxsize_essid_seen - 7,
 						 15,
 						 "%s",
 						 "  MANUFACTURER");
@@ -3627,7 +3627,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				// Short or long preamble is not that useful anymore.
 				snprintf(strbuf + len,
 						 sizeof(strbuf) - len,
-						 " %3d %4d  ",
+						 " %3d %4d   ",
 						 ap_cur->channel,
 						 ap_cur->max_speed);
 			}
@@ -3635,7 +3635,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			{
 				snprintf(strbuf + len,
 						 sizeof(strbuf) - len,
-						 " %3d %3d%c%c ",
+						 " %3d %4d%c%c ",
 						 ap_cur->channel,
 						 ap_cur->max_speed,
 						 (ap_cur->security & STD_QOS) ? 'e' : ' ',
