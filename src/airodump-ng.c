@@ -2055,6 +2055,7 @@ skip_probe:
 							break;
 						case 0x02:
 							ap_cur->security |= ENC_TKIP;
+							ap_cur->security &= ~STD_WPA2;
 							break;
 						case 0x03:
 							ap_cur->security |= ENC_WRAP;
