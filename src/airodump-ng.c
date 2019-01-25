@@ -1202,7 +1202,7 @@ static int dump_add_packet(unsigned char * h80211,
 
 	if (ap_cur == NULL)
 	{
-		if (!(ap_cur = (struct AP_info *) malloc(sizeof(struct AP_info))))
+		if (!(ap_cur = (struct AP_info *) calloc(1, sizeof(struct AP_info))))
 		{
 			perror("malloc failed");
 			return (1);
@@ -1210,8 +1210,6 @@ static int dump_add_packet(unsigned char * h80211,
 
 		/* if mac is listed as unknown, remove it */
 		remove_namac(bssid);
-
-		memset(ap_cur, 0, sizeof(struct AP_info));
 
 		if (lopt.ap_1st == NULL)
 			lopt.ap_1st = ap_cur;
@@ -1241,6 +1239,8 @@ static int dump_add_packet(unsigned char * h80211,
 		ap_cur->max_speed = -1;
 		ap_cur->security = 0;
 
+		ap_cur->ivbuf = NULL;
+		ap_cur->ivbuf_size = 0;
 		ap_cur->uiv_root = uniqueiv_init();
 
 		ap_cur->nb_data = 0;
@@ -1652,7 +1652,7 @@ skip_probe:
 				n = p[1];
 
 				memset(ap_cur->essid, 0, ESSID_LENGTH + 1);
-				memcpy(ap_cur->essid, p + 2, n);
+				memcpy(ap_cur->essid, p + 2, MIN(ESSID_LENGTH, n));
 
 				if (opt.f_ivs != NULL && !ap_cur->essid_stored)
 				{
@@ -2013,7 +2013,6 @@ skip_probe:
 				// RSN => WPA2
 				if (type == 0x30)
 				{
-					ap_cur->security |= STD_WPA2;
 					offset = 0;
 				}
 
@@ -2063,6 +2062,7 @@ skip_probe:
 						case 0x0A:
 						case 0x04:
 							ap_cur->security |= ENC_CCMP;
+							ap_cur->security |= STD_WPA2;
 							break;
 						case 0x05:
 							ap_cur->security |= ENC_WEP104;
@@ -2070,6 +2070,7 @@ skip_probe:
 						case 0x08:
 						case 0x09:
 							ap_cur->security |= ENC_GCMP;
+							ap_cur->security |= STD_WPA2;
 							break;
 						default:
 							break;
@@ -2211,9 +2212,9 @@ skip_probe:
 
 				n = (p[1] > 32) ? 32 : p[1];
 
-				memset(ap_cur->essid, 0, 33);
-				memcpy(ap_cur->essid, p + 2, n);
-				ap_cur->ssid_length = n;
+				memset(ap_cur->essid, 0, ESSID_LENGTH + 1);
+				memcpy(ap_cur->essid, p + 2, MIN(ESSID_LENGTH, n));
+				ap_cur->ssid_length = (int) MIN(ESSID_LENGTH, n);
 
 				if (opt.f_ivs != NULL && !ap_cur->essid_stored)
 				{
