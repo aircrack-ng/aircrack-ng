@@ -311,7 +311,7 @@ static inline int append_ap(struct AP_info * new_ap)
 
 static long load_hccapx_file(int fd)
 {
-	REQUIRE(fd != -1 && fd >= 0);
+	REQUIRE(fd >= 0);
 
 	hccapx_t hx;
 	struct AP_info * ap_cur = NULL;
@@ -335,7 +335,6 @@ static struct AP_info * get_first_target(void)
 	c_avl_iterator_t * it = c_avl_get_iterator(targets);
 	c_avl_iterator_next(it, &key, (void **) &target);
 	c_avl_iterator_destroy(it);
-	it = NULL;
 	return (target);
 }
 
@@ -636,7 +635,7 @@ static void clean_exit(int ret)
 	if (ret)
 	{
 		// Clear all circular queues for faster shutdown.
-		for (int i = 0; i < opt.nbcpu; ++i)
+		for (i = 0; i < opt.nbcpu; ++i)
 		{
 			if (wpa_data[i].cqueue != NULL)
 			{
@@ -901,7 +900,7 @@ static int checkbssids(const char * bssidlist)
 	if (bssidlist == NULL) return (-1);
 
 #define IS_X(x) ((x) == 'X' || (x) == 'x')
-#define VALID_CHAR(x) ((IS_X(x)) || hexCharToInt(x) > -1)
+#define VALID_CHAR(x) ((IS_X(x)) || hexCharToInt((char) x) > -1)
 
 #define VALID_SEP(arg) (((arg) == '_') || ((arg) == '-') || ((arg) == ':'))
 	frontlist = list = strdup(bssidlist);
@@ -2243,7 +2242,7 @@ static inline float chrono(struct timeval * start, int reset)
 
 static ssize_t safe_read(int fd, void * buf, size_t len)
 {
-	REQUIRE(fd != -1 && fd >= 0);
+	REQUIRE(fd >= 0);
 	REQUIRE(buf != NULL);
 	REQUIRE(len > 0);
 
@@ -2269,7 +2268,7 @@ static ssize_t safe_read(int fd, void * buf, size_t len)
 
 static ssize_t safe_write(int fd, void * buf, size_t len)
 {
-	REQUIRE(fd != -1 && fd >= 0);
+	REQUIRE(fd >= 0);
 	REQUIRE(buf != NULL);
 	REQUIRE(len > 0);
 
@@ -2307,15 +2306,13 @@ static int crack_wep_thread(void * arg)
 
 	int i, j, B = 0, cid = (int) ((long) arg);
 	int votes[N_ATTACKS][256];
-	int first = 1, first2 = 1, oldB = 0, oldq = 0;
+	int first = 1, first2, oldB = 0, oldq = 0;
 
 	memcpy(S, R, 256);
 	memcpy(Si, R, 256);
 
 	while (1)
 	{
-		if (!first) oldB = B;
-
 		if (safe_read(mc_pipe[cid][0], (void *) &B, sizeof(int)) != sizeof(int))
 		{
 			perror("read failed");
@@ -2595,9 +2592,9 @@ void show_wep_stats(int B,
 
 	delta = chrono(&t_begin, 0);
 
-	et_h = delta / 3600;
-	et_m = (delta - et_h * 3600) / 60;
-	et_s = delta - et_h * 3600 - et_m * 60;
+	et_h = (int) (delta / 3600);
+	et_m = (int) ((delta - et_h * 3600) / 60);
+	et_s = (int) (delta - et_h * 3600 - et_m * 60);
 
 	if (is_cleared == 0)
 	{
@@ -2981,7 +2978,6 @@ static int update_ivbuf(void)
 		}
 	}
 	c_avl_iterator_destroy(it);
-	it = NULL;
 
 	/* 2nd pass: create the main IVs buffer if necessary */
 
@@ -3020,7 +3016,6 @@ static int update_ivbuf(void)
 			}
 		}
 		c_avl_iterator_destroy(it);
-		it = NULL;
 
 		ALLEGE(pthread_mutex_unlock(&mx_ivb) == 0);
 
@@ -3213,7 +3208,7 @@ get_ivs:
 					// If it's not a number, reask
 					// Check if inputted value is correct (from 0 to and
 					// inferior to opt.keylen)
-					remove_keybyte_nr = atoi(user_guess);
+					remove_keybyte_nr = (int) strtol(user_guess, NULL, 10);
 					if (isdigit((int) user_guess[0]) == 0
 						|| remove_keybyte_nr < 0
 						|| remove_keybyte_nr >= opt.keylen)
@@ -3638,7 +3633,7 @@ static void show_wpa_stats(char * key,
 		if (delta0 <= FLT_EPSILON) goto __out;
 
 		ALLEGE(pthread_mutex_lock(&mx_nb) == 0);
-		nb_kprev *= (delta / delta0);
+		nb_kprev *= (long long) (delta / delta0);
 		cur_nb_kprev = nb_kprev;
 		ALLEGE(pthread_mutex_unlock(&mx_nb) == 0);
 	}
@@ -5563,7 +5558,7 @@ static int perform_wpa_crack(struct AP_info * ap_cur)
 		int ret = do_wpa_crack(); // we feed keys to the cracking threads
 
 		// Shutdown the circular queue.
-		bool shutdown = true;
+		bool shutdown;
 		do
 		{
 			shutdown = true;
@@ -6536,16 +6531,16 @@ int main(int argc, char * argv[])
 						 H16800_STMAC_LEN,
 						 ap_cur->wpa.stmac,
 						 sizeof(ap_cur->wpa.stmac));
-		hexStringToArray((char *) _pmkid_16800_str + H16800_PMKID_LEN + 1
-							 + H16800_BSSID_LEN
-							 + 1
-							 + H16800_STMAC_LEN
-							 + 1,
-						 remaining - H16800_PMKID_LEN + 1 + H16800_BSSID_LEN + 1
-							 + H16800_STMAC_LEN
-							 + 1,
-						 ap_cur->essid,
-						 sizeof(ap_cur->essid));
+		hexStringToArray(
+			(char *) _pmkid_16800_str + H16800_PMKID_LEN + 1 + H16800_BSSID_LEN
+				+ 1
+				+ H16800_STMAC_LEN
+				+ 1,
+			(int) remaining - H16800_PMKID_LEN + 1 + H16800_BSSID_LEN + 1
+				+ H16800_STMAC_LEN
+				+ 1,
+			ap_cur->essid,
+			sizeof(ap_cur->essid));
 
 		c_avl_insert(targets, ap_cur->bssid, ap_cur);
 
@@ -6727,10 +6722,10 @@ int main(int argc, char * argv[])
 					ret1 = 0;
 					while (!ret1) ret1 = scanf("%127s", buf);
 
-					if ((z = atoi(buf)) < 1) continue;
+					if ((z = (int) strtol(buf, NULL, 10)) < 1) continue;
 
 					i = 1;
-					c_avl_iterator_t * it = c_avl_get_iterator(access_points);
+					it = c_avl_get_iterator(access_points);
 					while (c_avl_iterator_next(it, &key, (void **) &ap_cur) == 0
 						   && i < z)
 					{
@@ -6748,7 +6743,7 @@ int main(int argc, char * argv[])
 			else if (c_avl_size(access_points) == 1)
 			{
 				printf("Choosing first network as target.\n");
-				c_avl_iterator_t * it = c_avl_get_iterator(access_points);
+				it = c_avl_get_iterator(access_points);
 				c_avl_iterator_next(it, &key, (void **) &ap_cur);
 				c_avl_iterator_destroy(it);
 				it = NULL;
@@ -6920,10 +6915,8 @@ __start:
 	// Start cracking session
 	if (cracking_session)
 	{
-		if (pthread_create(&cracking_session_tid,
-						   NULL,
-						   (void *) session_save_thread,
-						   (void *) NULL)
+		if (pthread_create(
+				&cracking_session_tid, NULL, (void *) session_save_thread, NULL)
 			!= 0)
 		{
 			perror("pthread_create failed");
