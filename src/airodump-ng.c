@@ -142,7 +142,7 @@ static struct local_options
 {
 	struct AP_info *ap_1st, *ap_end;
 	struct ST_info *st_1st, *st_end;
-	struct NA_info *na_1st, *na_end;
+	struct NA_info * na_1st;
 	struct oui * manufList;
 
 	unsigned char prev_bssid[6];
@@ -165,17 +165,12 @@ static struct local_options
 	int gps_valid_interval; /* how many seconds until we consider the GPS data invalid if we dont get new data */
 
 	int * channels;
-	//     int *frequencies;
 	int singlechan; /* channel hopping set 1*/
 	int singlefreq; /* frequency hopping: 1 */
 	int chswitch; /* switching method     */
 	int f_encrypt; /* encryption filter    */
 	int update_s; /* update delay in sec  */
 
-	int is_wlanng[MAX_CARDS]; /* set if wlan-ng       */
-	int is_orinoco[MAX_CARDS]; /* set if orinoco       */
-	int is_madwifing[MAX_CARDS]; /* set if madwifi-ng    */
-	int is_zd1211rw[MAX_CARDS]; /* set if zd1211rw    */
 	volatile int do_exit; /* interrupt flag       */
 	struct winsize ws; /* console window size  */
 
@@ -191,7 +186,6 @@ static struct local_options
 	char * iwpriv;
 	char * iwconfig;
 	char * wlanctlng;
-	char * wl;
 
 	unsigned char wpa_bssid[6]; /* the wpa handshake bssid   */
 	char message[512];
@@ -231,7 +225,6 @@ static struct local_options
 
 	int hopfreq;
 
-	char * s_file; /* source file to read packets */
 	char * s_iface; /* source interface to read from */
 	FILE * f_cap_in;
 	struct pcap_file_header pfh_in;
@@ -258,11 +251,8 @@ static struct local_options
 		selection_direction_up,
 		selection_direction_no
 	} en_selection_direction;
-	int selected_sta;
-	int selection_sta;
 	int mark_cur_ap;
 	int num_cards;
-	int skip_columns;
 	int do_pause;
 	int do_sort_always;
 
@@ -294,11 +284,8 @@ static void resetSelection(void)
 	lopt.start_print_ap = 1;
 	lopt.start_print_sta = 1;
 	lopt.p_selected_ap = NULL;
-	lopt.selected_sta = 1;
 	lopt.en_selection_direction = selection_direction_no;
-	lopt.selection_sta = 0;
 	lopt.mark_cur_ap = 0;
-	lopt.skip_columns = 0;
 	lopt.do_pause = 0;
 	lopt.do_sort_always = 0;
 	memset(lopt.selected_bssid, '\x00', 6);
@@ -317,7 +304,6 @@ static void input_thread(void * arg)
 		if (keycode == KEY_s)
 		{
 			lopt.sort_by++;
-			lopt.selection_sta = 0;
 
 			if (lopt.sort_by > MAX_SORT) lopt.sort_by = 0;
 
@@ -582,7 +568,8 @@ static struct oui * load_oui_file(void)
 		memset(c, 0x00, sizeof(c));
 		// Remove leading/trailing whitespaces.
 		trim(buffer);
-		if (sscanf(buffer, "%2c-%2c-%2c", a, b, c) == 3)
+		if (sscanf(buffer, "%2c-%2c-%2c", (char *) a, (char *) b, (char *) c)
+			== 3)
 		{
 			if (oui_ptr == NULL)
 			{
@@ -715,7 +702,7 @@ static void airodump_usage(void)
 	free(l_usage);
 }
 
-static int is_filtered_netmask(unsigned char * bssid)
+static int is_filtered_netmask(const uint8_t * bssid)
 {
 	REQUIRE(bssid != NULL);
 
@@ -737,7 +724,7 @@ static int is_filtered_netmask(unsigned char * bssid)
 	return (0);
 }
 
-int is_filtered_essid(unsigned char * essid)
+int is_filtered_essid(const uint8_t * essid)
 {
 	REQUIRE(essid != NULL);
 
@@ -748,8 +735,7 @@ int is_filtered_essid(unsigned char * essid)
 	{
 		for (i = 0; i < lopt.f_essid_count; i++)
 		{
-			if (strncmp((char *) essid, lopt.f_essid[i], MAX_IE_ELEMENT_SIZE)
-				== 0)
+			if (strncmp((char *) essid, lopt.f_essid[i], ESSID_LENGTH) == 0)
 			{
 				return (0);
 			}
@@ -764,7 +750,7 @@ int is_filtered_essid(unsigned char * essid)
 		return pcre_exec(lopt.f_essid_regex,
 						 NULL,
 						 (char *) essid,
-						 (int) strnlen((char *) essid, MAX_IE_ELEMENT_SIZE),
+						 (int) strnlen((char *) essid, ESSID_LENGTH),
 						 0,
 						 0,
 						 NULL,
@@ -827,16 +813,15 @@ static void update_rx_quality(void)
 				if (capt_time > 0 && miss_time > 200000)
 				{
 					missed_frames
-						= (int) ((float) ((float) miss_time / (float) capt_time)
+						= (int) (((float) miss_time / (float) capt_time)
 								 * ((float) ap_cur->fcapt
 									+ (float) ap_cur->fmiss));
 					ap_cur->fmiss += missed_frames;
 				}
 
 				ap_cur->rx_quality
-					= (int) ((float) ((float) ap_cur->fcapt
-									  / ((float) ap_cur->fcapt
-										 + (float) ap_cur->fmiss))
+					= (int) (((float) ap_cur->fcapt
+							  / ((float) ap_cur->fcapt + (float) ap_cur->fmiss))
 							 *
 #if defined(__x86_64__) && defined(__CYGWIN__)
 							 (0.0f + 100));
@@ -895,7 +880,7 @@ static int update_dataps(void)
 		sec = (tv.tv_sec - ap_cur->tv.tv_sec);
 		usec = (tv.tv_usec - ap_cur->tv.tv_usec);
 #if defined(__x86_64__) && defined(__CYGWIN__)
-		pause = (((sec * (0.0f + 1000000) + usec)) / ((0.0f + 1000000)));
+		pause = (((sec * (0.0f + 1000000.0f) + usec)) / ((0.0f + 1000000.0f)));
 #else
 		pause = (sec * 1000000.0f + usec) / (1000000.0f);
 #endif
@@ -917,10 +902,9 @@ static int update_dataps(void)
 		sec = (tv.tv_sec - na_cur->tv.tv_sec);
 		usec = (tv.tv_usec - na_cur->tv.tv_usec);
 #if defined(__x86_64__) && defined(__CYGWIN__)
-		pause
-			= (((float) (sec * (0.0f + 1000000) + usec)) / ((0.0f + 1000000)));
+		pause = (((sec * (0.0f + 1000000.0f) + usec)) / ((0.0f + 1000000.0f)));
 #else
-		pause = (((float) (sec * 1000000.0f + usec)) / (1000000.0f));
+		pause = (sec * 1000000.0f + usec) / (1000000.0f);
 #endif
 		if (pause > 2.0f)
 		{
@@ -995,7 +979,7 @@ list_add_packet(struct pkt_buf ** list, int length, unsigned char * packet)
  * so with the same IV it should always be encrypted to the same thing.
  */
 static int
-list_check_decloak(struct pkt_buf ** list, int length, unsigned char * packet)
+list_check_decloak(struct pkt_buf ** list, int length, const uint8_t * packet)
 {
 	struct pkt_buf * next;
 	struct timeval tv1;
@@ -1175,6 +1159,8 @@ static int dump_add_packet(unsigned char * h80211,
 		case IEEE80211_FC1_DIR_DSTODS:
 			memcpy(bssid, h80211 + 10, 6);
 			break; // WDS -> Transmitter taken as BSSID
+		default:
+			abort();
 	}
 
 	if (memcmp(opt.f_bssid, NULL_MAC, 6) != 0)
@@ -1383,6 +1369,9 @@ static int dump_add_packet(unsigned char * h80211,
 			ap_cur->wps.state = 0xFF;
 			ap_cur->wps.ap_setup_locked = 0;
 			break;
+
+		default:
+			break;
 	}
 
 	ap_cur->nb_pkt++;
@@ -1417,6 +1406,9 @@ static int dump_add_packet(unsigned char * h80211,
 
 		case IEEE80211_FC1_DIR_DSTODS:
 			goto skip_station;
+
+		default:
+			abort();
 	}
 
 	/* update our chained list of wireless stations */
@@ -1782,6 +1774,8 @@ skip_probe:
 								break;
 						}
 						break;
+					default:
+						break;
 				}
 
 				ap_cur->n_channel.any_chan_width = (uint8_t)((p[3] / 4) % 2);
@@ -1871,6 +1865,8 @@ skip_probe:
 							// support of MCS 0-9
 							ap_cur->ac_channel.mcs_index[stream_idx] = 9;
 							break;
+						default:
+							break;
 					}
 
 					// Next spatial stream
@@ -1901,6 +1897,8 @@ skip_probe:
 						// 80+80MHz
 						ap_cur->channel_width = CHANNEL_80_80MHZ;
 						ap_cur->ac_channel.split_chan = 1;
+						break;
+					default:
 						break;
 				}
 
@@ -2099,10 +2097,6 @@ skip_probe:
 							break;
 					}
 				}
-
-				p += 2 + 4 * numauth;
-
-				if (type == 0x30) p += 2;
 
 				p = org_p + length + 2;
 			}
@@ -2687,7 +2681,6 @@ skip_probe:
 				{
 					memset(&ivs2, '\x00', sizeof(struct ivs2_pkthdr));
 					ivs2.flags = 0;
-					ivs2.len = 0;
 
 					ivs2.len = sizeof(struct WPA_hdsk);
 					ivs2.flags |= IVS2_WPA;
@@ -2800,13 +2793,11 @@ write_packet:
 				{
 					/* check AP list */
 					ap_cur = lopt.ap_1st;
-					ap_prv = NULL;
 
 					while (ap_cur != NULL)
 					{
 						if (!memcmp(ap_cur->bssid, namac, 6)) break;
 
-						ap_prv = ap_cur;
 						ap_cur = ap_cur->next;
 					}
 
@@ -2820,13 +2811,11 @@ write_packet:
 
 					/* check ST list */
 					st_cur = lopt.st_1st;
-					st_prv = NULL;
 
 					while (st_cur != NULL)
 					{
 						if (!memcmp(st_cur->stmac, namac, 6)) break;
 
-						st_prv = st_cur;
 						st_cur = st_cur->next;
 					}
 
@@ -3065,7 +3054,7 @@ static void dump_sort(void)
 					case SORT_BY_ESSID:
 						if ((strncasecmp((char *) ap_cur->essid,
 										 (char *) ap_min->essid,
-										 MAX_IE_ELEMENT_SIZE))
+										 ESSID_LENGTH))
 								* lopt.sort_inv
 							< 0)
 							ap_min = ap_cur;
@@ -3383,7 +3372,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	if (lopt.gps_loc[0] || (opt.usegpsd))
 	{
 		// If using GPS then check if we have a valid fix or not and report accordingly
-		if (lopt.gps_loc[0] != 0)
+		if (lopt.gps_loc[0] != 0) //-V550
 		{
 			struct tm * gtime = &lopt.gps_time;
 			snprintf(buffer,
@@ -3816,7 +3805,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 					}
 					len = strlen(strbuf);
 
-					if (lopt.maxsize_wps_seen <= len - wps_len)
+					if ((ssize_t) lopt.maxsize_wps_seen <= len - wps_len)
 						lopt.maxsize_wps_seen = (u_int) MAX(len - wps_len, 6);
 					else
 					{
@@ -4189,7 +4178,12 @@ get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2)
 				memset(a, 0x00, sizeof(a));
 				memset(b, 0x00, sizeof(b));
 				memset(c, 0x00, sizeof(c));
-				if (sscanf(buffer, "%2c-%2c-%2c", a, b, c) == 3)
+				if (sscanf(buffer,
+						   "%2c-%2c-%2c",
+						   (char *) a,
+						   (char *) b,
+						   (char *) c)
+					== 3)
 				{
 					snprintf(temp,
 							 sizeof(temp),
@@ -4231,7 +4225,7 @@ get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2)
 	rmanuf = (char *) realloc(manuf, (strlen(manuf) + 1) * sizeof(char));
 	ALLEGE(rmanuf != NULL);
 
-	return (rmanuf) ? (rmanuf) : (manuf);
+	return (rmanuf);
 }
 #undef OUI_STR_SIZE
 #undef MANUF_SIZE
@@ -4389,8 +4383,7 @@ static void * gps_tracker_thread(void * arg)
 	char line[1537], buffer[1537], data[1537];
 	char * temp;
 	struct sockaddr_in gpsd_addr;
-	int ret, is_json;
-	int mode;
+	int is_json;
 	ssize_t pos;
 	int gpsd_tried_connection = 0;
 	fd_set read_fd;
@@ -4533,7 +4526,7 @@ static void * gps_tracker_thread(void * arg)
 				* Either 2 or 3 may also have speed and heading data.
 				*/
 				if (!json_get_value_for_name(line, "mode", data)
-					|| (mode = atoi(data)) < 2)
+					|| (strtol(data, NULL, 10)) < 2)
 				{
 					/* No GPS fix, so there are no coordinates to extract. */
 					continue;
@@ -4562,7 +4555,8 @@ static void * gps_tracker_thread(void * arg)
 				// Latitude
 				if (json_get_value_for_name(line, "lat", data))
 				{
-					if (1 != sscanf(data, "%f", &lopt.gps_loc[0]))
+					lopt.gps_loc[0] = strtof(data, NULL);
+					if (errno == EINVAL || errno == ERANGE)
 					{
 						lopt.gps_loc[0] = 0;
 					}
@@ -4571,7 +4565,8 @@ static void * gps_tracker_thread(void * arg)
 				// Longitude
 				if (json_get_value_for_name(line, "lon", data))
 				{
-					if (1 != sscanf(data, "%f", &lopt.gps_loc[1]))
+					lopt.gps_loc[1] = strtof(data, NULL);
+					if (errno == EINVAL || errno == ERANGE)
 					{
 						lopt.gps_loc[1] = 0;
 					}
@@ -4580,7 +4575,8 @@ static void * gps_tracker_thread(void * arg)
 				// Longitude Error
 				if (json_get_value_for_name(line, "epx", data))
 				{
-					if (1 != sscanf(data, "%f", &lopt.gps_loc[6]))
+					lopt.gps_loc[6] = strtof(data, NULL);
+					if (errno == EINVAL || errno == ERANGE)
 					{
 						lopt.gps_loc[6] = 0;
 					}
@@ -4589,7 +4585,8 @@ static void * gps_tracker_thread(void * arg)
 				// Latitude Error
 				if (json_get_value_for_name(line, "epy", data))
 				{
-					if (1 != sscanf(data, "%f", &lopt.gps_loc[5]))
+					lopt.gps_loc[5] = strtof(data, NULL);
+					if (errno == EINVAL || errno == ERANGE)
 					{
 						lopt.gps_loc[5] = 0;
 					}
@@ -4598,7 +4595,8 @@ static void * gps_tracker_thread(void * arg)
 				// Vertical Error
 				if (json_get_value_for_name(line, "epv", data))
 				{
-					if (1 != sscanf(data, "%f", &lopt.gps_loc[7]))
+					lopt.gps_loc[7] = strtof(data, NULL);
+					if (errno == EINVAL || errno == ERANGE)
 					{
 						lopt.gps_loc[7] = 0;
 					}
@@ -4607,7 +4605,8 @@ static void * gps_tracker_thread(void * arg)
 				// Altitude
 				if (json_get_value_for_name(line, "alt", data))
 				{
-					if (1 != sscanf(data, "%f", &lopt.gps_loc[4]))
+					lopt.gps_loc[4] = strtof(data, NULL);
+					if (errno == EINVAL || errno == ERANGE)
 					{
 						lopt.gps_loc[4] = 0;
 					}
@@ -4616,7 +4615,8 @@ static void * gps_tracker_thread(void * arg)
 				// Speed
 				if (json_get_value_for_name(line, "speed", data))
 				{
-					if (1 != sscanf(data, "%f", &lopt.gps_loc[2]))
+					lopt.gps_loc[2] = strtof(data, NULL);
+					if (errno == EINVAL || errno == ERANGE)
 					{
 						lopt.gps_loc[2] = 0;
 					}
@@ -4625,7 +4625,8 @@ static void * gps_tracker_thread(void * arg)
 				// Heading
 				if (json_get_value_for_name(line, "track", data))
 				{
-					if (1 != sscanf(data, "%f", &lopt.gps_loc[3]))
+					lopt.gps_loc[3] = strtof(data, NULL);
+					if (errno == EINVAL || errno == ERANGE)
 					{
 						lopt.gps_loc[3] = 0;
 					}
@@ -4650,20 +4651,25 @@ static void * gps_tracker_thread(void * arg)
 
 				if (line[7] == '?') continue;
 
+				int ret;
 				updateTime = time(NULL);
 				ret = sscanf(line + 7,
 							 "%f %f",
 							 &lopt.gps_loc[0],
 							 &lopt.gps_loc[1]); /* lat lon */
+				if (ret == EOF) fprintf(stderr, "Failed to parse lat lon.\n");
 
 				if ((temp = strstr(line, "V=")) == NULL) continue;
 				ret = sscanf(temp + 2, "%f", &lopt.gps_loc[2]); /* speed */
+				if (ret == EOF) fprintf(stderr, "Failed to parse speed.\n");
 
 				if ((temp = strstr(line, "T=")) == NULL) continue;
 				ret = sscanf(temp + 2, "%f", &lopt.gps_loc[3]); /* heading */
+				if (ret == EOF) fprintf(stderr, "Failed to parse heading.\n");
 
 				if ((temp = strstr(line, "A=")) == NULL) continue;
 				ret = sscanf(temp + 2, "%f", &lopt.gps_loc[4]); /* altitude */
+				if (ret == EOF) fprintf(stderr, "Failed to parse altitude.\n");
 			}
 
 			lopt.save_gps = 1;
@@ -5122,7 +5128,7 @@ static int getchannels(const char * optarg)
 					}
 				}
 
-				if (sscanf(token, "%d-%d", &chan_first, &chan_last) != EOF)
+				if (sscanf(token, "%u-%u", &chan_first, &chan_last) != EOF)
 				{
 					if (chan_first > chan_last)
 					{
@@ -5166,7 +5172,7 @@ static int getchannels(const char * optarg)
 				}
 			}
 
-			if (sscanf(token, "%d", &chan_cur) != EOF)
+			if (sscanf(token, "%u", &chan_cur) != EOF)
 			{
 				if ((!invalid_channel(chan_cur)) && (chan_remain > 0))
 				{
@@ -5187,7 +5193,7 @@ static int getchannels(const char * optarg)
 		= (int *) malloc(sizeof(int) * (chan_max - chan_remain + 1));
 	ALLEGE(lopt.own_channels != NULL);
 
-	if (chan_max > 0 && chan_max >= chan_remain)
+	if (chan_max > 0 && chan_max >= chan_remain) //-V560
 	{
 		for (i = 0; i < (chan_max - chan_remain); i++) //-V658
 		{
@@ -5249,7 +5255,7 @@ static int getfrequencies(const char * optarg)
 					}
 				}
 
-				if (sscanf(token, "%d-%d", &freq_first, &freq_last) != EOF)
+				if (sscanf(token, "%u-%u", &freq_first, &freq_last) != EOF)
 				{
 					if (freq_first > freq_last)
 					{
@@ -5293,7 +5299,7 @@ static int getfrequencies(const char * optarg)
 				}
 			}
 
-			if (sscanf(token, "%d", &freq_cur) != EOF)
+			if (sscanf(token, "%u", &freq_cur) != EOF)
 			{
 				if ((!invalid_frequency(freq_cur)) && (freq_remain > 0))
 				{
@@ -5329,7 +5335,7 @@ static int getfrequencies(const char * optarg)
 		= (int *) malloc(sizeof(int) * (freq_max - freq_remain + 1));
 	ALLEGE(lopt.own_frequencies != NULL);
 
-	if (freq_max > 0 && freq_max >= freq_remain)
+	if (freq_max > 0 && freq_max >= freq_remain) //-V560
 	{
 		for (i = 0; i < (freq_max - freq_remain); i++) //-V658
 		{
@@ -5474,7 +5480,8 @@ static int check_channel(struct wif * wi[], int cards)
 					 wi_get_ifname(wi[i]),
 					 chan);
 #ifdef CONFIG_LIBNL
-			wi_set_ht_channel(wi[i], lopt.channel[i], lopt.htval);
+			wi_set_ht_channel(
+				wi[i], lopt.channel[i], (unsigned int) lopt.htval);
 #else
 			wi_set_channel(wi[i], lopt.channel[i]);
 #endif
@@ -5572,10 +5579,9 @@ static int rearrange_frequencies(void)
 	int * freqs;
 	int count, left, pos;
 	int width, last_used = 0;
-	int cur_freq, last_freq, round_done;
+	int cur_freq, round_done;
 
 	width = DEFAULT_CWIDTH;
-	cur_freq = 0;
 
 	count = getfreqcount(0);
 	left = count;
@@ -5588,7 +5594,6 @@ static int rearrange_frequencies(void)
 
 	while (left > 0)
 	{
-		last_freq = cur_freq;
 		cur_freq = lopt.own_frequencies[pos % count];
 
 		if (cur_freq == last_used) round_done = 1;
@@ -5621,10 +5626,9 @@ int main(int argc, char * argv[])
 {
 	long time_slept, cycle_time, cycle_time2;
 	char * output_format_string;
-	int caplen = 0, i, j, fdh, fd_is_set, chan_count, freq_count;
+	int caplen = 0, i, j, fdh, chan_count, freq_count;
 	int fd_raw[MAX_CARDS], arptype[MAX_CARDS];
 	int ivs_only, found;
-	int valid_channel;
 	int freq[2];
 	int num_opts = 0;
 	int option = 0;
@@ -5638,14 +5642,14 @@ int main(int argc, char * argv[])
 	int pcreerroffset;
 #endif
 
-	struct AP_info *ap_cur, *ap_prv, *ap_next;
+	struct AP_info *ap_cur, *ap_next;
 	struct ST_info *st_cur, *st_next;
 	struct NA_info *na_cur, *na_next;
 	struct oui *oui_cur, *oui_next;
 
 	struct pcap_pkthdr pkh;
 
-	time_t tt1, tt2, tt3, start_time;
+	time_t tt1, tt2, start_time;
 
 	struct wif * wi[MAX_CARDS];
 	struct rx_info ri;
@@ -5730,12 +5734,9 @@ int main(int argc, char * argv[])
 	lopt.freqoption = 0;
 	lopt.num_cards = 0;
 	fdh = 0;
-	fd_is_set = 0;
-	chan_count = 0;
 	time_slept = 0;
 	lopt.batt = NULL;
 	lopt.chswitch = 0;
-	valid_channel = 0;
 	opt.usegpsd = 0;
 	lopt.channels = (int *) bg_chans;
 	lopt.one_beacon = 1;
@@ -5775,7 +5776,7 @@ int main(int argc, char * argv[])
 	lopt.show_manufacturer = 0;
 	lopt.show_uptime = 0;
 	lopt.hopfreq = DEFAULT_HOPFREQ;
-	lopt.s_file = NULL;
+	opt.s_file = NULL;
 	lopt.s_iface = NULL;
 	lopt.f_cap_in = NULL;
 	lopt.detect_anomaly = 0;
@@ -5938,7 +5939,7 @@ int main(int argc, char * argv[])
 					exit(EXIT_FAILURE);
 				}
 
-				lopt.file_write_interval = atoi(optarg);
+				lopt.file_write_interval = (int) strtol(optarg, NULL, 10);
 
 				if (lopt.file_write_interval <= 0)
 				{
@@ -6047,7 +6048,7 @@ int main(int argc, char * argv[])
 
 			case 'b':
 
-				if (lopt.chanoption == 1 && option != 'c')
+				if (lopt.chanoption == 1)
 				{
 					printf("Notice: Channel range already given\n");
 					break;
@@ -6137,7 +6138,7 @@ int main(int argc, char * argv[])
 
 			case 's':
 
-				if (atoi(optarg) > 2)
+				if (strtol(optarg, NULL, 10) > 2 || errno == EINVAL)
 				{
 					airodump_usage();
 					return (EXIT_FAILURE);
@@ -6147,12 +6148,12 @@ int main(int argc, char * argv[])
 					printf("Notice: switching method already given\n");
 					break;
 				}
-				lopt.chswitch = atoi(optarg);
+				lopt.chswitch = (int) strtol(optarg, NULL, 10);
 				break;
 
 			case 'u':
 
-				lopt.update_s = atoi(optarg);
+				lopt.update_s = (int) strtol(optarg, NULL, 10);
 
 				/* If failed to parse or value <= 0, use default, 100ms */
 				if (lopt.update_s <= 0) lopt.update_s = REFRESH_RATE;
@@ -6161,7 +6162,7 @@ int main(int argc, char * argv[])
 
 			case 'f':
 
-				lopt.hopfreq = atoi(optarg);
+				lopt.hopfreq = (int) strtol(optarg, NULL, 10);
 
 				/* If failed to parse or value <= 0, use default, 100ms */
 				if (lopt.hopfreq <= 0) lopt.hopfreq = DEFAULT_HOPFREQ;
@@ -6171,7 +6172,7 @@ int main(int argc, char * argv[])
 			case 'B':
 
 				lopt.is_berlin = 1;
-				lopt.berlin = atoi(optarg);
+				lopt.berlin = (int) strtol(optarg, NULL, 10);
 
 				if (lopt.berlin <= 0) lopt.berlin = 120;
 
@@ -6387,7 +6388,7 @@ int main(int argc, char * argv[])
 
 			case 'x':
 
-				lopt.active_scan_sim = atoi(optarg);
+				lopt.active_scan_sim = (int) strtol(optarg, NULL, 10);
 
 				if (lopt.active_scan_sim <= 0) lopt.active_scan_sim = 0;
 				break;
@@ -6585,7 +6586,8 @@ int main(int argc, char * argv[])
 				for (i = 0; i < lopt.num_cards; i++)
 				{
 #ifdef CONFIG_LIBNL
-					wi_set_ht_channel(wi[i], lopt.channel[0], lopt.htval);
+					wi_set_ht_channel(
+						wi[i], lopt.channel[0], (unsigned int) lopt.htval);
 #else
 					wi_set_channel(wi[i], lopt.channel[0]);
 #endif
@@ -6684,7 +6686,6 @@ int main(int argc, char * argv[])
 	start_time = time(NULL);
 	tt1 = time(NULL);
 	tt2 = time(NULL);
-	tt3 = time(NULL);
 	gettimeofday(&tv3, NULL);
 	gettimeofday(&tv4, NULL);
 
@@ -6857,7 +6858,7 @@ int main(int argc, char * argv[])
 				else
 					n = *(int *) (h80211 + 4); //-V1032
 
-				if (n < 8 || n >= (int) caplen) continue;
+				if (n < 8 || n >= caplen) continue;
 
 				memcpy(tmpbuf, h80211, (size_t) caplen);
 				caplen -= n;
@@ -6870,7 +6871,7 @@ int main(int argc, char * argv[])
 
 				n = *(unsigned short *) (h80211 + 2);
 
-				if (n <= 0 || n >= (int) caplen) continue;
+				if (n <= 0 || n >= caplen) continue;
 
 				memcpy(tmpbuf, h80211, (size_t) caplen);
 				caplen -= n;
@@ -6883,14 +6884,14 @@ int main(int argc, char * argv[])
 
 				n = le16_to_cpu(*(unsigned short *) (h80211 + 2));
 
-				if (n <= 0 || n >= (int) caplen) continue;
+				if (n <= 0 || n >= caplen) continue;
 
 				/* for a while Kismet logged broken PPI headers */
 				if (n == 24
 					&& le16_to_cpu(*(unsigned short *) (h80211 + 8)) == 2)
 					n = 32;
 
-				if (n <= 0 || n >= (int) caplen) continue;
+				if (n <= 0 || n >= caplen) continue; //-V560
 
 				memcpy(tmpbuf, h80211, (size_t) caplen);
 				caplen -= n;
@@ -6972,8 +6973,6 @@ int main(int argc, char * argv[])
 
 		if (opt.s_file == NULL && lopt.s_iface != NULL)
 		{
-			fd_is_set = 0;
-
 			for (i = 0; i < lopt.num_cards; i++)
 			{
 				if (FD_ISSET(fd_raw[i], &rfds))
@@ -7085,7 +7084,6 @@ int main(int argc, char * argv[])
 		unlink((char *) buffer);
 	}
 
-	ap_prv = NULL;
 	ap_cur = lopt.ap_1st;
 
 	while (ap_cur != NULL)
@@ -7099,7 +7097,6 @@ int main(int argc, char * argv[])
 
 		if (lopt.detect_anomaly) data_wipe(ap_cur->data_root);
 
-		ap_prv = ap_cur;
 		ap_cur = ap_cur->next;
 	}
 
@@ -7114,7 +7111,6 @@ int main(int argc, char * argv[])
 	}
 
 	st_cur = lopt.st_1st;
-	st_next = NULL;
 
 	while (st_cur != NULL)
 	{
@@ -7125,7 +7121,6 @@ int main(int argc, char * argv[])
 	}
 
 	na_cur = lopt.na_1st;
-	na_next = NULL;
 
 	while (na_cur != NULL)
 	{
