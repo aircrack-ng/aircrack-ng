@@ -282,6 +282,8 @@ static struct local_options
 	int htval;
 #endif
 	int background_mode;
+
+	unsigned long min_pkts;
 } lopt;
 
 static void resetSelection(void)
@@ -674,6 +676,8 @@ static const char usage[] =
 	"      --write-interval\n"
 	"                  <seconds> : Output file(s) write interval in seconds\n"
 	"      --background <enable> : Override background detection.\n"
+	"      -n              <int> : Minimum AP packets recv'd before\n"
+	"                              for displaying it\n"
 	"\n"
 	"  Filter options:\n"
 	"      --encrypt   <suite>   : Filter APs by cipher suite\n"
@@ -3264,7 +3268,8 @@ static int IsAp2BeSkipped(struct AP_info * ap_cur)
 {
 	REQUIRE(ap_cur != NULL);
 
-	if (ap_cur->nb_pkt < 2 || time(NULL) - ap_cur->tlast > lopt.berlin
+	if (ap_cur->nb_pkt < lopt.min_pkts
+		|| time(NULL) - ap_cur->tlast > lopt.berlin
 		|| memcmp(ap_cur->bssid, BROADCAST, 6) == 0)
 	{
 		return (1);
@@ -5692,6 +5697,7 @@ int main(int argc, char * argv[])
 		   {"write-interval", 1, 0, 'I'},
 		   {"wps", 0, 0, 'W'},
 		   {"background", 1, 0, 'K'},
+		   {"min-packets", 1, 0, 'n'},
 		   {0, 0, 0, 0}};
 
 	pid_t main_pid = getpid();
@@ -5788,6 +5794,7 @@ int main(int argc, char * argv[])
 	lopt.show_wps = 0;
 	lopt.background_mode = -1;
 	lopt.do_exit = 0;
+	lopt.min_pkts = 2;
 #ifdef CONFIG_LIBNL
 	lopt.htval = CHANNEL_NO_HT;
 #endif
@@ -5884,11 +5891,12 @@ int main(int argc, char * argv[])
 	{
 		option_index = 0;
 
-		option = getopt_long(argc,
-							 argv,
-							 "b:c:egiw:s:t:u:m:d:N:R:aHDB:Ahf:r:EC:o:x:MUI:WK:",
-							 long_options,
-							 &option_index);
+		option
+			= getopt_long(argc,
+						  argv,
+						  "b:c:egiw:s:t:u:m:d:N:R:aHDB:Ahf:r:EC:o:x:MUI:WK:n:",
+						  long_options,
+						  &option_index);
 
 		if (option < 0) break;
 
@@ -6240,6 +6248,11 @@ int main(int argc, char * argv[])
 			case 't':
 
 				set_encryption_filter(optarg);
+				break;
+
+			case 'n':
+
+				lopt.min_pkts = strtoul(optarg, NULL, 10);
 				break;
 
 			case 'o':
