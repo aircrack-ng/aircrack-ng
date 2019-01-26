@@ -610,7 +610,7 @@ static int linux_read(struct wif * wi,
 
 	int caplen, n, got_signal, got_noise, got_channel, fcs_removed;
 
-	caplen = n = got_signal = got_noise = got_channel = fcs_removed = 0;
+	n = got_signal = got_noise = got_channel = fcs_removed = 0;
 
 	if ((unsigned) count > sizeof(tmpbuf)) return (-1);
 
@@ -905,7 +905,7 @@ static int linux_write(struct wif * wi,
 					memset(tmpbuf + 30, 0, 16);
 
 					tmpbuf[30] = (count - 30) & 0xFF;
-					tmpbuf[31] = (count - 30) >> 8;
+					tmpbuf[31] = (count - 30) >> 8; //-V610
 
 					memcpy(tmpbuf + 46, buf + 30, count - 30);
 
@@ -1447,6 +1447,7 @@ static int set_monitor(struct priv_linux * dev, char * iface, int fd)
 			close(1);
 			close(2);
 			IGNORE_NZ(chdir("/"));
+			ALLEGE(dev->wl != NULL);
 			execl(dev->wl, "wl", "monitor", "1", NULL);
 			exit(1);
 		}
@@ -1602,6 +1603,8 @@ static int openraw(struct priv_linux * dev,
 				   int * arptype,
 				   unsigned char * mac)
 {
+	REQUIRE(iface != NULL);
+
 	struct ifreq ifr;
 	struct ifreq ifr2;
 	struct iwreq wrq;
@@ -1610,7 +1613,7 @@ static int openraw(struct priv_linux * dev,
 	struct sockaddr_ll sll;
 	struct sockaddr_ll sll2;
 
-	if (iface == NULL || strlen(iface) >= sizeof(ifr.ifr_name))
+	if (strlen(iface) >= sizeof(ifr.ifr_name))
 	{
 		printf("Interface name too long: %s\n", iface);
 		return (1);
@@ -1676,8 +1679,10 @@ static int openraw(struct priv_linux * dev,
 			sll2.sll_ifindex = ifr2.ifr_ifindex;
 			sll2.sll_protocol = htons(ETH_P_ALL);
 
-			if (bind(dev->fd_main, (struct sockaddr *) &sll2, sizeof(sll2))
-				< 0) //-V641
+			if (bind(dev->fd_main, //-V641
+					 (struct sockaddr *) &sll2, //-V641
+					 sizeof(sll2)) //-V641
+				< 0)
 			{
 				printf("Interface %s: \n", dev->main_if);
 				perror("bind(ETH_P_ALL) failed");
@@ -2160,76 +2165,73 @@ static int do_linux_open(struct wif * wi, char * iface)
 		}
 
 		net_ifaces = opendir("/sys/class/net");
-		if (net_ifaces != NULL)
+		while (net_ifaces != NULL && (this_iface = readdir(net_ifaces)) != NULL)
 		{
-			while ((this_iface = readdir(net_ifaces)) != NULL)
+			if (this_iface->d_name[0] == '.') continue;
+
+			char * new_r_file = (char *) realloc(
+				r_file, (33 + strlen(this_iface->d_name) + 1) * sizeof(char));
+			if (!new_r_file)
 			{
-				if (this_iface->d_name[0] == '.') continue;
+				continue;
+			}
+			r_file = new_r_file;
+			snprintf(r_file,
+					 33 + strlen(this_iface->d_name) + 1,
+					 "/sys/class/net/%s/device/rtap_iface",
+					 this_iface->d_name);
 
-				char * new_r_file = (char *) realloc(
-					r_file,
-					(33 + strlen(this_iface->d_name) + 1) * sizeof(char));
-				if (!new_r_file)
+			if ((acpi = fopen(r_file, "r")) == NULL) continue;
+			dev->drivertype = DT_IPW2200;
+
+			memset(buf, 0, 128);
+			IGNORE_ZERO(fgets(buf, 128, acpi));
+			if (n == 0) // interface exists
+			{
+				if (strncmp(buf, iface, 5) == 0)
 				{
-					continue;
+					fclose(acpi);
+					acpi = NULL;
+					closedir(net_ifaces);
+					net_ifaces = NULL;
+					dev->main_if
+						= (char *) malloc(strlen(this_iface->d_name) + 1);
+					if (dev->main_if == NULL) continue;
+					strcpy(dev->main_if, this_iface->d_name);
+					break;
 				}
-				r_file = new_r_file;
-				snprintf(r_file,
-						 33 + strlen(this_iface->d_name) + 1,
-						 "/sys/class/net/%s/device/rtap_iface",
-						 this_iface->d_name);
-
-				if ((acpi = fopen(r_file, "r")) == NULL) continue;
-				dev->drivertype = DT_IPW2200;
-
-				memset(buf, 0, 128);
-				IGNORE_ZERO(fgets(buf, 128, acpi));
-				if (n == 0) // interface exists
+			}
+			else // need to create interface
+			{
+				if (strncmp(buf, "-1", 2) == 0)
 				{
+					// repoen for writing
+					fclose(acpi);
+					if ((acpi = fopen(r_file, "w")) == NULL) continue;
+					fputs("1", acpi);
+					// reopen for reading
+					fclose(acpi);
+					if ((acpi = fopen(r_file, "r")) == NULL) continue;
+					IGNORE_ZERO(fgets(buf, 128, acpi));
 					if (strncmp(buf, iface, 5) == 0)
 					{
-						fclose(acpi);
-						acpi = NULL;
 						closedir(net_ifaces);
 						net_ifaces = NULL;
 						dev->main_if
 							= (char *) malloc(strlen(this_iface->d_name) + 1);
 						if (dev->main_if == NULL) continue;
 						strcpy(dev->main_if, this_iface->d_name);
+						fclose(acpi);
+						acpi = NULL;
 						break;
 					}
 				}
-				else // need to create interface
-				{
-					if (strncmp(buf, "-1", 2) == 0)
-					{
-						// repoen for writing
-						fclose(acpi);
-						if ((acpi = fopen(r_file, "w")) == NULL) continue;
-						fputs("1", acpi);
-						// reopen for reading
-						fclose(acpi);
-						if ((acpi = fopen(r_file, "r")) == NULL) continue;
-						IGNORE_ZERO(fgets(buf, 128, acpi));
-						if (strncmp(buf, iface, 5) == 0)
-						{
-							closedir(net_ifaces);
-							net_ifaces = NULL;
-							dev->main_if = (char *) malloc(
-								strlen(this_iface->d_name) + 1);
-							if (dev->main_if == NULL) continue;
-							strcpy(dev->main_if, this_iface->d_name);
-							fclose(acpi);
-							acpi = NULL;
-							break;
-						}
-					}
-				}
-				fclose(acpi);
-				acpi = NULL;
 			}
-			if (net_ifaces != NULL) closedir(net_ifaces);
+			fclose(acpi);
+			acpi = NULL;
 		}
+
+		if (net_ifaces != NULL) closedir(net_ifaces);
 	}
 
 	if (openraw(dev, iface, dev->fd_out, &dev->arptype_out, dev->pl_mac) != 0)
@@ -2499,7 +2501,7 @@ EXPORT int get_battery_state(void)
 			unsigned charging, ac;
 
 			ret = sscanf(battery_data,
-						 "%*s %*d.%*d %*x %x %x %x %*d%% %d %s\n",
+						 "%*s %*d.%*d %*x %x %x %x %*d%% %d %31s\n",
 						 &ac,
 						 &charging,
 						 &flag,
@@ -2526,7 +2528,7 @@ EXPORT int get_battery_state(void)
 		FILE *acpi, *info;
 		char battery_state[28 + sizeof(this_adapter->d_name) + 1];
 		char battery_info[24 + sizeof(this_battery->d_name) + 1];
-		int rate = 1, remain = 0, current = 0;
+		int rate = 1, remain = 0;
 		static int total_remain = 0, total_cap = 0;
 		int batno = 0;
 		static int info_timer = 0;
@@ -2620,8 +2622,6 @@ EXPORT int get_battery_state(void)
 					remain = atoi(buf + 25);
 					total_remain += remain;
 				}
-				else if (strncmp(buf, "present voltage:", 17) == 0)
-					current = atoi(buf + 25);
 			}
 			total_cap += batt_full_capacity[batno];
 			fclose(acpi);

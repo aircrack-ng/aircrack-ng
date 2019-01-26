@@ -301,6 +301,8 @@ static void input_thread(void * arg)
 
 		keycode = mygetch();
 
+		if (keycode == KEY_q || keycode == KEY_ESCAPE) lopt.do_exit = 1;
+
 		if (keycode == KEY_s)
 		{
 			lopt.sort_by++;
@@ -1148,7 +1150,7 @@ static int dump_add_packet(unsigned char * h80211,
 	switch (h80211[1] & IEEE80211_FC1_DIR_MASK)
 	{
 		case IEEE80211_FC1_DIR_NODS:
-			memcpy(bssid, h80211 + 16, 6);
+			memcpy(bssid, h80211 + 16, 6); //-V525
 			break; // Adhoc
 		case IEEE80211_FC1_DIR_TODS:
 			memcpy(bssid, h80211 + 4, 6);
@@ -1203,7 +1205,7 @@ static int dump_add_packet(unsigned char * h80211,
 
 		if (lopt.ap_1st == NULL)
 			lopt.ap_1st = ap_cur;
-		else
+		else if (ap_prv != NULL)
 			ap_prv->next = ap_cur;
 
 		memcpy(ap_cur->bssid, bssid, 6);
@@ -4639,11 +4641,18 @@ static void * gps_tracker_thread(void * arg)
 				memset(line, 0, sizeof(line));
 
 				snprintf(line, sizeof(line) - 1, "PVTAD\r\n");
-				if (send(gpsd_sock, line, 7, 0) != 7) return return_error;
+				if (send(gpsd_sock, line, 7, 0) != 7)
+				{
+					free(return_success);
+					return (return_error);
+				}
 
 				memset(line, 0, sizeof(line));
 				if (recv(gpsd_sock, line, sizeof(line) - 1, 0) <= 0)
-					return return_error;
+				{
+					free(return_success);
+					return (return_error);
+				}
 
 				if (memcmp(line, "GPSD,P=", 7) != 0) continue;
 
@@ -4683,6 +4692,7 @@ static void * gps_tracker_thread(void * arg)
 		}
 	}
 
+	free(return_error);
 	return (return_success);
 }
 
@@ -6212,8 +6222,9 @@ int main(int argc, char * argv[])
 			case 'N':
 
 				lopt.f_essid_count++;
-				lopt.f_essid = (char **) realloc(
-					lopt.f_essid, lopt.f_essid_count * sizeof(char *));
+				lopt.f_essid = (char **) realloc( //-V701
+					lopt.f_essid,
+					lopt.f_essid_count * sizeof(char *));
 				ALLEGE(lopt.f_essid != NULL);
 				lopt.f_essid[lopt.f_essid_count - 1] = optarg;
 				break;
@@ -6706,7 +6717,7 @@ int main(int argc, char * argv[])
 	strncpy(lopt.airodump_start_time, ctime(&start_time), 1000 - 1);
 	lopt.airodump_start_time[strlen(lopt.airodump_start_time) - 1]
 		= 0; // remove new line
-	lopt.airodump_start_time = (char *) realloc(
+	lopt.airodump_start_time = (char *) realloc( //-V701
 		lopt.airodump_start_time,
 		sizeof(char) * (strlen(lopt.airodump_start_time) + 1));
 	ALLEGE(lopt.airodump_start_time != NULL);
@@ -7082,6 +7093,18 @@ int main(int argc, char * argv[])
 	{
 		snprintf((char *) buffer, 4096, "%s-%02d.gps", argv[2], opt.f_index);
 		unlink((char *) buffer);
+	}
+
+	if (opt.usegpsd)
+	{
+		void * retval = NULL;
+		pthread_join(lopt.gps_tid, &retval);
+		if (retval != NULL) free(retval);
+	}
+
+	if (!lopt.background_mode)
+	{
+		pthread_join(lopt.input_tid, NULL);
 	}
 
 	ap_cur = lopt.ap_1st;

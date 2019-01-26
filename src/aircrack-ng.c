@@ -1751,7 +1751,7 @@ static int packet_reader_process_packet(packet_reader_t * me,
 		switch (h80211[1] & IEEE80211_FC1_DIR_MASK)
 		{
 			case IEEE80211_FC1_DIR_NODS:
-				memcpy(bssid, h80211 + 16, ETHER_ADDR_LEN);
+				memcpy(bssid, h80211 + 16, ETHER_ADDR_LEN); //-V525
 				break; // Adhoc
 			case IEEE80211_FC1_DIR_TODS:
 				memcpy(bssid, h80211 + 4, ETHER_ADDR_LEN);
@@ -4513,6 +4513,7 @@ static hccap_t ap_to_hccap(struct AP_info * ap)
 	return (hccap);
 }
 
+#if 0
 // Caller must free
 __attribute__((unused)) static struct AP_info * hccap_to_ap(hccap_t * hccap)
 {
@@ -4534,6 +4535,7 @@ __attribute__((unused)) static struct AP_info * hccap_to_ap(hccap_t * hccap)
 
 	return (ap);
 }
+#endif
 
 static int do_make_hccap(struct AP_info * ap_cur)
 {
@@ -5785,7 +5787,6 @@ int main(int argc, char * argv[])
 	}
 
 	db = NULL;
-	j = 0;
 	/* check the arguments */
 
 	opt.nbdict = 0;

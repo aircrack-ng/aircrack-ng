@@ -69,6 +69,7 @@
  * Character codes for common keyboard keys.
  */
 #define KEY_TAB 0x09
+#define KEY_ESCAPE 0x1B
 #define KEY_SPACE 0x20
 #define KEY_ARROW_UP 0x41
 #define KEY_ARROW_DOWN 0x42
@@ -80,6 +81,7 @@
 #define KEY_i 0x69
 #define KEY_m 0x6D
 #define KEY_n 0x6E
+#define KEY_q 0x71
 #define KEY_r 0x72
 #define KEY_s 0x73
 

@@ -13,7 +13,7 @@ static void test_radiotap_unaligned_access(void ** state)
 
 	const char bytes[] = {0x00, 0x01, 0x02, 0x00};
 
-	assert_true(get_unaligned_le16(bytes + 1) == 0x0201);
+	assert_true(get_unaligned_le16(bytes + 1) == 0x0201); //-V1032
 }
 
 static void test_string_has_suffix(void ** state)

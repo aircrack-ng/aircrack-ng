@@ -365,7 +365,7 @@ int filter_packet(unsigned char * h80211, int caplen)
 {
 	REQUIRE(h80211 != NULL);
 
-	int z, mi_b, mi_s, mi_d, ext = 0, qos;
+	int z, mi_b, mi_s, mi_d, ext = 0;
 
 	if (caplen <= 0) return (1);
 
@@ -374,7 +374,7 @@ int filter_packet(unsigned char * h80211, int caplen)
 	if ((h80211[0] & IEEE80211_FC0_SUBTYPE_BEACON)
 		== IEEE80211_FC0_SUBTYPE_BEACON)
 	{
-		qos = 1; /* 802.11e QoS */
+		/* 802.11e QoS */
 		z += 2;
 	}
 
@@ -1436,7 +1436,7 @@ int set_final_arp(uint8_t * buf, uint8_t * mymac)
 
 	// shifted by 10bytes to set source IP as target IP :)
 
-	buf[0] = 0x08; // IP
+	buf[0] = 0x08; //-V525 // IP
 	buf[1] = 0x00;
 	buf[2] = 0x06; // hardware size
 	buf[3] = 0x04; // protocol size

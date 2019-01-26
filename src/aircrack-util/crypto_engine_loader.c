@@ -459,8 +459,11 @@ EXPORT int ac_crypto_engine_loader_load(int flags)
 	module = dlopen(module_filename, RTLD_LAZY);
 	if (!module)
 	{
-		fprintf(
-			stderr, "Could not open '%s': %s\n", module_filename, dlerror());
+		const char * msg = dlerror();
+		fprintf(stderr,
+				"Could not open '%s': %s\n",
+				module_filename,
+				msg ? msg : "<none reported>");
 		free(module_filename);
 		return 1;
 	}

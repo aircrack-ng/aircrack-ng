@@ -346,7 +346,8 @@ int get_nb_cpus(void)
 				if (pos == s)
 				{
 					pos = strchr(s, ':');
-					number = atoi(pos + 1);
+
+					if (pos != NULL) number = atoi(pos + 1);
 				}
 			}
 

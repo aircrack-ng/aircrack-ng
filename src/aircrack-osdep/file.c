@@ -76,7 +76,7 @@ static int file_read(struct wif * wi,
 		return 0;
 	}
 
-	assert(pkh.caplen <= sizeof(buf));
+	assert(pkh.caplen <= sizeof(buf)); //-V547
 
 	rc = read(pf->pf_fd, buf, pkh.caplen);
 	if (rc != (int) pkh.caplen) return -1;

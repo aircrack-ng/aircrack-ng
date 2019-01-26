@@ -43,6 +43,8 @@
 #include <alloca.h>
 #endif
 #include <limits.h>
+#include <math.h>
+#include <float.h>
 
 #include "pcap.h"
 #include "defs.h"
@@ -151,7 +153,7 @@ static int comparedoublesorthelper(const void * ina, const void * inb)
 	{
 		return 1;
 	}
-	else if (a->difference == b->difference)
+	else if (fabs(a->difference - b->difference) < FLT_EPSILON)
 	{
 		return 0;
 	}
@@ -498,7 +500,7 @@ static void getdrv(PTW_tableentry orgtable[][n],
 		}
 		for (j = 0; j < n; j++)
 		{
-			if (j == maxi)
+			if (fabs(maxi - j) < FLT_EPSILON)
 			{
 				help = (1.0 - orgtable[i][j].votes / emax);
 			}

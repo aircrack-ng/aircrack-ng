@@ -318,7 +318,7 @@ EXPORT void ac_crypto_engine_calc_pke(ac_crypto_engine_t * engine,
 {
 	uint8_t * pke = engine->thread_data[threadid]->pke;
 
-	assert(pke != NULL);
+	assert(pke != NULL); //-V547
 
 	/* pre-compute the key expansion buffer */
 	memcpy(pke, "Pairwise key expansion", 23);
@@ -602,7 +602,7 @@ EXPORT void ac_crypto_engine_set_pmkid_salt(ac_crypto_engine_t * engine,
 {
 	uint8_t * pke = engine->thread_data[threadid]->pke;
 
-	assert(pke != NULL);
+	assert(pke != NULL); //-V547
 
 	/* pre-compute the PMKID salt buffer */
 	memcpy(pke, "PMK Name", 8);

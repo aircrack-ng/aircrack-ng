@@ -310,7 +310,7 @@ static int cpuid_findcpusensorpath(const char * path)
 
 	snprintf(sensor, sizeof(sensor), "temp%d", sensorx);
 
-	while (cnt < MAX_SENSOR_PATHS && (dp = readdir(dirp)) != NULL)
+	while (cnt < (MAX_SENSOR_PATHS - 1) && (dp = readdir(dirp)) != NULL)
 	{
 		if (!strncmp(dp->d_name, sensor, 5))
 		{
@@ -326,7 +326,11 @@ static int cpuid_findcpusensorpath(const char * path)
 			return sensorx;
 		}
 		else if (!strncmp(dp->d_name, "temp", 4))
-			sprintf(tbuf[cnt++], "%*s", 31, dp->d_name);
+		{
+			strncpy(tbuf[cnt], dp->d_name, 31);
+			tbuf[cnt][31] = '\0'; // ensure NULL termination
+			if (cnt < (MAX_SENSOR_PATHS - 1)) ++cnt; //-V547
+		}
 	}
 
 	(void) closedir(dirp);
@@ -597,8 +601,8 @@ int cpuid_getinfo()
 	cpuinfo.model = cpuid_modelinfo();
 	cpuinfo.flags = cpuid_featureflags();
 
-	printf("Model           = %s\n", cpuinfo.model);
-	printf("Features        = %s\n", cpuinfo.flags);
+	if (cpuinfo.model != NULL) printf("Model           = %s\n", cpuinfo.model);
+	if (cpuinfo.flags != NULL) printf("Features        = %s\n", cpuinfo.flags);
 
 	// this shouldn't happen but prepare for the worst.
 	if (cpuinfo.cores == 0) cpuinfo.cores = cpu_count;
@@ -622,7 +626,8 @@ int cpuid_getinfo()
 			   cpuinfo.cpufreq_max);
 
 	cpu_temp = cpuid_getcoretemp();
-	if (cpu_temp != 0.0) printf("CPU temperature = %2.2f C\n", cpu_temp);
+	if (cpu_temp != 0.0) //-V550
+		printf("CPU temperature = %2.2f C\n", cpu_temp);
 
 	if (cpuinfo.htt) printf("Logical CPUs    = %d\n", cpuinfo.maxlogic);
 

@@ -180,6 +180,8 @@ static int getip(char * s, unsigned char * ip, unsigned short * port)
 
 	if (i != 4) return (1);
 
+	ALLEGE(s != NULL);
+
 	if ((s = strchr(s, ':')) != NULL)
 	{
 		s++;
@@ -189,7 +191,7 @@ static int getip(char * s, unsigned char * ip, unsigned short * port)
 		}
 	}
 
-	return (i != 4);
+	return (0);
 }
 
 static unsigned short ip_chksum(unsigned short * addr, int count)

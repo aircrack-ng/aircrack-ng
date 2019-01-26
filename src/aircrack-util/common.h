@@ -228,10 +228,9 @@ static inline void rtrim(char * str)
 {
 	REQUIRE(str != NULL);
 
-	size_t begin = 0u;
 	size_t end = strlen(str) - 1u;
 
-	while ((end >= begin) && isspace((int) str[end])) end--;
+	while ((end != 0) && isspace((int) str[end])) end--;
 
 	// Ensure the string is null terminated.
 	str[end + 1] = '\0';
