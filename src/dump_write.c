@@ -442,15 +442,16 @@ int dump_write_airodump_ng_logcsv_add_ap(const struct AP_info * ap_cur,
 
 	// Network Security
 	if ((ap_cur->security & (STD_OPN | STD_WEP | STD_WPA | STD_WPA2)) == 0)
-		fputs(",", opt.f_logcsv);
-	else if (ap_cur->security & STD_WPA2)
-		fputs("WPA2,", opt.f_logcsv);
-	else if (ap_cur->security & STD_WPA)
-		fputs("WPA,", opt.f_logcsv);
-	else if (ap_cur->security & STD_WEP)
-		fputs("WEP,", opt.f_logcsv);
-	else if (ap_cur->security & STD_OPN)
-		fputs("OPN,", opt.f_logcsv);
+		fputs(" ", opt.f_logcsv);
+	else
+	{
+		if (ap_cur->security & STD_WPA2) fputs(" WPA2 ", opt.f_logcsv);
+		if (ap_cur->security & STD_WPA) fputs(" WPA ", opt.f_logcsv);
+		if (ap_cur->security & STD_WEP) fputs(" WEP ", opt.f_logcsv);
+		if (ap_cur->security & STD_OPN) fputs(" OPN", opt.f_logcsv);
+	}
+
+	fputs(",", opt.f_logcsv);
 
 	// Lat, Lon, Lat Error, Lon Error
 	fprintf(opt.f_logcsv,

@@ -3659,14 +3659,17 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			if ((ap_cur->security & (STD_OPN | STD_WEP | STD_WPA | STD_WPA2))
 				== 0)
 				snprintf(strbuf + len, sizeof(strbuf) - len, "    ");
-			else if (ap_cur->security & STD_WPA2)
-				snprintf(strbuf + len, sizeof(strbuf) - len, "WPA2");
-			else if (ap_cur->security & STD_WPA)
-				snprintf(strbuf + len, sizeof(strbuf) - len, "WPA ");
-			else if (ap_cur->security & STD_WEP)
-				snprintf(strbuf + len, sizeof(strbuf) - len, "WEP ");
-			else if (ap_cur->security & STD_OPN)
-				snprintf(strbuf + len, sizeof(strbuf) - len, "OPN ");
+			else
+			{
+				if (ap_cur->security & STD_WPA2)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "WPA2");
+				if (ap_cur->security & STD_WPA)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "WPA ");
+				if (ap_cur->security & STD_WEP)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "WEP ");
+				if (ap_cur->security & STD_OPN)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "OPN ");
+			}
 
 			strncat(strbuf, " ", sizeof(strbuf) - strlen(strbuf) - 1);
 
@@ -3678,35 +3681,41 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 					| ENC_GCMP))
 				== 0)
 				snprintf(strbuf + len, sizeof(strbuf) - len, "       ");
-			else if (ap_cur->security & ENC_CCMP)
-				snprintf(strbuf + len, sizeof(strbuf) - len, "CCMP   ");
-			else if (ap_cur->security & ENC_WRAP)
-				snprintf(strbuf + len, sizeof(strbuf) - len, "WRAP   ");
-			else if (ap_cur->security & ENC_TKIP)
-				snprintf(strbuf + len, sizeof(strbuf) - len, "TKIP   ");
-			else if (ap_cur->security & ENC_WEP104)
-				snprintf(strbuf + len, sizeof(strbuf) - len, "WEP104 ");
-			else if (ap_cur->security & ENC_WEP40)
-				snprintf(strbuf + len, sizeof(strbuf) - len, "WEP40  ");
-			else if (ap_cur->security & ENC_WEP)
-				snprintf(strbuf + len, sizeof(strbuf) - len, "WEP    ");
-			else if (ap_cur->security & ENC_GCMP)
-				snprintf(strbuf + len, sizeof(strbuf) - len, "GCMP   ");
+			else
+			{
+				if (ap_cur->security & ENC_CCMP)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "CCMP   ");
+				if (ap_cur->security & ENC_WRAP)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "WRAP   ");
+				if (ap_cur->security & ENC_TKIP)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "TKIP   ");
+				if (ap_cur->security & ENC_WEP104)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "WEP104 ");
+				if (ap_cur->security & ENC_WEP40)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "WEP40  ");
+				if (ap_cur->security & ENC_WEP)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "WEP    ");
+				if (ap_cur->security & ENC_GCMP)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "GCMP   ");
+			}
 
 			len = strlen(strbuf);
 
 			if ((ap_cur->security & (AUTH_OPN | AUTH_PSK | AUTH_MGT)) == 0)
 				snprintf(strbuf + len, sizeof(strbuf) - len, "   ");
-			else if (ap_cur->security & AUTH_MGT)
-				snprintf(strbuf + len, sizeof(strbuf) - len, "MGT");
-			else if (ap_cur->security & AUTH_PSK)
+			else
 			{
-				if (ap_cur->security & STD_WEP)
-					snprintf(strbuf + len, sizeof(strbuf) - len, "SKA");
-				else
-					snprintf(strbuf + len, sizeof(strbuf) - len, "PSK");
+				if (ap_cur->security & AUTH_MGT)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "MGT");
+				if (ap_cur->security & AUTH_PSK)
+				{
+					if (ap_cur->security & STD_WEP)
+						snprintf(strbuf + len, sizeof(strbuf) - len, "SKA");
+					else
+						snprintf(strbuf + len, sizeof(strbuf) - len, "PSK");
+				}
 			}
-			else if (ap_cur->security & AUTH_OPN)
+			if (ap_cur->security & AUTH_OPN)
 				snprintf(strbuf + len, sizeof(strbuf) - len, "OPN");
 
 			len = strlen(strbuf);
