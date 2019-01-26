@@ -135,6 +135,7 @@ static void dump_sort(void);
 static void dump_print(int ws_row, int ws_col, int if_num);
 static char *
 get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2);
+int is_filtered_essid(const uint8_t * essid);
 
 /* bunch of global stuff */
 struct communication_options opt;
@@ -291,6 +292,87 @@ static void resetSelection(void)
 	memset(lopt.selected_bssid, '\x00', 6);
 }
 
+static void color_off(void)
+{
+	struct AP_info * ap_cur;
+
+	ap_cur = lopt.ap_1st;
+	while (ap_cur != NULL)
+	{
+		ap_cur->marked = 0;
+		ap_cur->marked_color = 0;
+		ap_cur = ap_cur->next;
+	}
+
+	textcolor_normal();
+	textcolor_fg(TEXT_WHITE);
+}
+
+static void color_on(void)
+{
+	struct AP_info * ap_cur;
+	struct ST_info * st_cur;
+	int color = 1;
+
+	color_off();
+
+	ap_cur = lopt.ap_end;
+
+	while (ap_cur != NULL)
+	{
+		if (ap_cur->nb_pkt < 2 || time(NULL) - ap_cur->tlast > lopt.berlin)
+		{
+			ap_cur = ap_cur->prev;
+			continue;
+		}
+
+		if (ap_cur->security != 0 && lopt.f_encrypt != 0
+			&& ((ap_cur->security & lopt.f_encrypt) == 0))
+		{
+			ap_cur = ap_cur->prev;
+			continue;
+		}
+
+		// Don't filter unassociated clients by ESSID
+		if (memcmp(ap_cur->bssid, BROADCAST, 6) != 0
+			&& is_filtered_essid(ap_cur->essid))
+		{
+			ap_cur = ap_cur->prev;
+			continue;
+		}
+
+		st_cur = lopt.st_end;
+
+		while (st_cur != NULL)
+		{
+			if (st_cur->base != ap_cur
+				|| time(NULL) - st_cur->tlast > lopt.berlin)
+			{
+				st_cur = st_cur->prev;
+				continue;
+			}
+
+			if (!memcmp(ap_cur->bssid, BROADCAST, 6) && lopt.asso_client)
+			{
+				st_cur = st_cur->prev;
+				continue;
+			}
+
+			if (!ap_cur->marked)
+			{
+				ap_cur->marked = 1;
+				if (!memcmp(ap_cur->bssid, BROADCAST, 6))
+					ap_cur->marked_color = 0;
+				else
+					ap_cur->marked_color = color++;
+			}
+			st_cur = st_cur->prev;
+		}
+
+		ap_cur = ap_cur->prev;
+	}
+}
+
 static void input_thread(void * arg)
 {
 	UNUSED_PARAM(arg);
@@ -302,6 +384,18 @@ static void input_thread(void * arg)
 		keycode = mygetch();
 
 		if (keycode == KEY_q || keycode == KEY_ESCAPE) lopt.do_exit = 1;
+
+		if (keycode == KEY_o)
+		{
+			color_on();
+			snprintf(lopt.message, sizeof(lopt.message), "][ color on");
+		}
+
+		if (keycode == KEY_p)
+		{
+			color_off();
+			snprintf(lopt.message, sizeof(lopt.message), "][ color off");
+		}
 
 		if (keycode == KEY_s)
 		{
