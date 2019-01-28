@@ -3539,11 +3539,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 	strbuf[ws_col - 1] = '\0';
 
-	for (int i = 0; i < ws_col - 1; ++i)
-		if (strbuf[i] == '\n') strbuf[i] = ' ';
-
 	ALLEGE(strchr(strbuf, '\n') == NULL);
-
 	console_puts(strbuf);
 
 	/* print some information about each detected AP */
