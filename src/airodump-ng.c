@@ -3439,9 +3439,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 	memset(strbuf, '\0', sizeof(strbuf));
 
-	moveto(1, 1);
-	erase_display(0);
-	putchar('\n');
+	moveto(1, 2);
 
 	if (lopt.freqoption)
 	{
@@ -3539,13 +3537,14 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 		strncat(strbuf, lopt.message, (512 - strlen(strbuf) - 1));
 	}
 
-	// add traling spaces to overwrite previous messages
-	strncat(strbuf,
-			"                                        ",
-			(512 - strlen(strbuf) - 1));
-
 	strbuf[ws_col - 1] = '\0';
-	printf("%s\n", strbuf);
+
+	for (int i = 0; i < ws_col - 1; ++i)
+		if (strbuf[i] == '\n') strbuf[i] = ' ';
+
+	ALLEGE(strchr(strbuf, '\n') == NULL);
+
+	console_puts(strbuf);
 
 	/* print some information about each detected AP */
 
@@ -3553,9 +3552,8 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 	if (nlines >= ws_row) return;
 
-	memset(strbuf, ' ', ws_col - 1u);
-	strbuf[ws_col - 1] = '\0';
-	printf("%s\n", strbuf);
+	erase_line(0);
+	move(CURSOR_DOWN, 1);
 
 	if (lopt.show_ap)
 	{
@@ -3610,11 +3608,10 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			}
 		}
 		strbuf[ws_col - 1] = '\0';
-		printf("%s\n", strbuf);
+		console_puts(strbuf);
 
-		memset(strbuf, ' ', ws_col - 1u);
-		strbuf[ws_col - 1] = '\0';
-		printf("%s\n", strbuf);
+		erase_line(0);
+		move(CURSOR_DOWN, 1);
 
 		ap_cur = lopt.ap_end;
 
@@ -3984,7 +3981,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			memset(strbuf + len, 32, (size_t) ws_col - 1);
 
 			strbuf[ws_col - 1] = '\0';
-			puts(strbuf);
+			console_puts(strbuf);
 
 			if ((lopt.p_selected_ap && (lopt.p_selected_ap == ap_cur))
 				|| (ap_cur->marked))
@@ -4001,9 +3998,8 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 		if (nlines >= (ws_row - 1)) return;
 
-		memset(strbuf, ' ', (size_t) ws_col - 1);
-		strbuf[ws_col - 1] = '\0';
-		printf("%s\n", strbuf);
+		erase_line(0);
+		move(CURSOR_DOWN, 1);
 	}
 
 	if (lopt.show_sta)
@@ -4012,11 +4008,10 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			   " BSSID              STATION "
 			   "           PWR   Rate    Lost    Frames  Notes  Probes");
 		strbuf[ws_col - 1] = '\0';
-		printf("%s\n", strbuf);
+		console_puts(strbuf);
 
-		memset(strbuf, ' ', (size_t) ws_col - 1);
-		strbuf[ws_col - 1] = '\0';
-		printf("%s\n", strbuf);
+		erase_line(0);
+		move(CURSOR_DOWN, 1);
 
 		ap_cur = lopt.ap_end;
 
@@ -4142,7 +4137,8 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 					printf(" %s", strbuf);
 				}
 
-				printf("\n");
+				erase_line(0);
+				putchar('\n');
 
 				st_cur = st_cur->prev;
 			}
@@ -4166,20 +4162,19 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 		if (nlines >= (ws_row - 1)) return;
 
-		memset(strbuf, ' ', (size_t) ws_col - 1);
-		strbuf[ws_col - 1] = '\0';
-		printf("%s\n", strbuf);
+		erase_line(0);
+		move(CURSOR_DOWN, 1);
 
 		memcpy(strbuf,
 			   " MAC       "
 			   "          CH PWR    ACK ACK/s    CTS RTS_RX RTS_TX  OTHER",
 			   (size_t) columns_na);
 		strbuf[ws_col - 1] = '\0';
-		printf("%s\n", strbuf);
+		console_puts(strbuf);
 
 		memset(strbuf, ' ', (size_t) ws_col - 1);
 		strbuf[ws_col - 1] = '\0';
-		printf("%s\n", strbuf);
+		console_puts(strbuf);
 
 		na_cur = lopt.na_1st;
 
@@ -4214,13 +4209,14 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			printf(" %6d", na_cur->rts_t);
 			printf(" %6d", na_cur->other);
 
-			printf("\n");
+			erase_line(0);
+			putchar('\n');
 
 			na_cur = na_cur->next;
 		}
 	}
 
-	fflush(stdout);
+	erase_display(0);
 }
 
 #define OUI_STR_SIZE 8

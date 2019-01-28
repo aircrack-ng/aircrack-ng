@@ -145,4 +145,11 @@ void reset_term(void);
 /// console.
 int mygetch(void);
 
+static inline void console_puts(const char * msg)
+{
+	printf("%s", msg);
+	erase_line(0);
+	putchar('\n');
+}
+
 #endif // AIRCRACK_NG_CONSOLE_H
