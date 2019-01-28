@@ -3615,45 +3615,26 @@ static void show_wpa_stats(char * key,
 	delta = chrono(&t_begin, 0);
 	if (delta <= FLT_EPSILON) goto __out;
 
-	et_h = (int) (delta / 3600.f);
-	et_m = (int) ((delta - (et_h * 3600.f)) / 60.f);
-	et_s = (int) ((delta - (et_h * 3600.f)) - (et_m * 60.f));
-
-	float orig_delta = delta;
-
-	if ((delta = chrono(&t_kprev, 0)) >= 6.f)
-	{
-		float delta0;
-		delta0 = delta;
-
-		t_kprev.tv_sec += 6;
-		delta = chrono(&t_kprev, 0);
-
-		if (delta <= FLT_EPSILON) goto __out;
-		if (delta0 <= FLT_EPSILON) goto __out;
-
-		ALLEGE(pthread_mutex_lock(&mx_nb) == 0);
-		nb_kprev *= (long long) (delta / delta0);
-		cur_nb_kprev = nb_kprev;
-		ALLEGE(pthread_mutex_unlock(&mx_nb) == 0);
-	}
+	et_s = (int) lrintf(fmodf(delta, 59.f));
+	et_m = (int) lrintf(fmodf(((delta - et_s) / 60.0), 59.0f));
+	if (delta >= 60.f * 60.f)
+		et_h = (int) lrintf((delta - et_s - et_m) / (60.f * 60.f));
 	else
-	{
-		ALLEGE(pthread_mutex_lock(&mx_nb) == 0);
-		cur_nb_kprev = nb_kprev;
-		ALLEGE(pthread_mutex_unlock(&mx_nb) == 0);
-	}
+		et_h = 0;
 
-	if (delta <= FLT_EPSILON) goto __out;
+	ALLEGE(pthread_mutex_lock(&mx_nb) == 0);
+	cur_nb_kprev = nb_kprev;
+	ALLEGE(pthread_mutex_unlock(&mx_nb) == 0);
+
+	ksec = (float) cur_nb_kprev / delta;
+	if (ksec <= FLT_EPSILON) goto __out;
 
 	if (_speed_test)
 	{
-		float ks = ((float) cur_nb_kprev / delta);
-
-		printf("%0.3f k/s   \r", ks);
+		printf("%0.3f k/s   \r", ksec);
 		fflush(stdout);
 
-		if (_speed_test_length > 0 && orig_delta >= (float) _speed_test_length)
+		if (_speed_test_length > 0 && delta >= (float) _speed_test_length)
 		{
 			printf("\n");
 			exit(EXIT_SUCCESS);
@@ -3661,10 +3642,6 @@ static void show_wpa_stats(char * key,
 
 		goto __out;
 	}
-
-	ksec = (float) cur_nb_kprev / delta;
-
-	if (ksec <= FLT_EPSILON) goto __out;
 
 	moveto(0, 3);
 	erase_display(0);
@@ -3702,7 +3679,7 @@ static void show_wpa_stats(char * key,
 		printf("Time left: ");
 		if (opt.wordcount != 0 && ksec > FLT_EPSILON)
 		{
-			calc = ((float) nb_tried / (float) opt.wordcount) * 100;
+			calc = ((float) nb_tried / (float) opt.wordcount) * 100.0f;
 			remain = (opt.wordcount - nb_tried);
 			eta = (remain / (long long int) ksec);
 
