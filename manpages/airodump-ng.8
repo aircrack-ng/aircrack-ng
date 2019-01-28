@@ -100,6 +100,9 @@ It will only show networks, matching the given bssid ^ netmask combination. Need
 .I -a
 It will only show associated clients.
 .TP
+.I -n <int>, --min-packets <int>
+The minimum number of packets received by an AP before displaying it.
+.TP
 .I -N, --essid
 Filter APs by ESSID. Can be used several times to match a set of ESSID.
 .TP
@@ -122,6 +125,15 @@ Invert sorting algorithm
 .I m
 Mark the selected AP or cycle through different colors if the selected AP is already marked
 .TP
+.I o
+Enable colored display of APs and their stations.
+.TP
+.I p
+Disable colored display.
+.TP
+.I q
+Quit program.
+.TP
 .I r
 (De-)Activate realtime sorting - applies sorting algorithm every time the display will be redrawn
 .TP
@@ -139,6 +151,9 @@ Select the AP prior to the currently marked AP in the displayed list if availabl
 .TP
 .I DOWN
 Select the AP after the currently marked AP if available
+.TP
+.I ESC
+Quit program.
 .PP
 If an AP is selected or marked, all the connected stations will also be selected or marked with the same color as the corresponding Access Point. 
 .SH EXAMPLES
