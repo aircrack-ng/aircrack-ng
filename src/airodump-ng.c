@@ -6924,7 +6924,7 @@ int main(int argc, char * argv[])
 				memset(lopt.message, '\x00', sizeof(lopt.message));
 				snprintf(lopt.message,
 						 sizeof(lopt.message),
-						 "][ Finished reading input file %s.\n",
+						 "][ Finished reading input file %s.",
 						 opt.s_file);
 				opt.s_file = NULL;
 				continue;
@@ -6946,7 +6946,7 @@ int main(int argc, char * argv[])
 				memset(lopt.message, '\x00', sizeof(lopt.message));
 				snprintf(lopt.message,
 						 sizeof(lopt.message),
-						 "][ Finished reading input file %s.\n",
+						 "][ Finished reading input file %s.",
 						 opt.s_file);
 				opt.s_file = NULL;
 				continue;
@@ -6957,7 +6957,7 @@ int main(int argc, char * argv[])
 				memset(lopt.message, '\x00', sizeof(lopt.message));
 				snprintf(lopt.message,
 						 sizeof(lopt.message),
-						 "][ Finished reading input file %s.\n",
+						 "][ Finished reading input file %s.",
 						 opt.s_file);
 				opt.s_file = NULL;
 				continue;
