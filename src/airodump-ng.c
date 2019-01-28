@@ -4838,15 +4838,9 @@ static void sighandler(int signum)
 
 	if (signum == SIGINT || signum == SIGTERM)
 	{
-		reset_term();
 		alarm(1);
 		lopt.do_exit = 1;
 		signal(SIGALRM, sighandler);
-#if defined(__sun__)
-		fprintf(stdout, "\n");
-#else
-		dprintf(STDOUT_FILENO, "\n");
-#endif
 	}
 
 	if (signum == SIGSEGV)
@@ -4857,6 +4851,14 @@ static void sighandler(int signum)
 		show_cursor();
 		fflush(stdout);
 		exit(1);
+	}
+
+	if (signum == SIGALRM && lopt.do_exit == 1)
+	{
+		show_cursor();
+		reset_term();
+		_exit(1);
+		return;
 	}
 
 	if (signum == SIGALRM)
@@ -7262,6 +7264,7 @@ int main(int argc, char * argv[])
 		}
 	}
 
+	reset_term();
 	show_cursor();
 
 	return (EXIT_SUCCESS);
