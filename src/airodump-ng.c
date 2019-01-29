@@ -383,7 +383,7 @@ static void input_thread(void * arg)
 
 		keycode = mygetch();
 
-		if (keycode == KEY_q || keycode == KEY_ESCAPE) lopt.do_exit = 1;
+		if (keycode == KEY_q) lopt.do_exit = 1;
 
 		if (keycode == KEY_o)
 		{
