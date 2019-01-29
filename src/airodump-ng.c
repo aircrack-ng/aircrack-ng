@@ -300,7 +300,7 @@ static void color_off(void)
 	while (ap_cur != NULL)
 	{
 		ap_cur->marked = 0;
-		ap_cur->marked_color = 0;
+		ap_cur->marked_color = 1;
 		ap_cur = ap_cur->next;
 	}
 
@@ -320,7 +320,8 @@ static void color_on(void)
 
 	while (ap_cur != NULL)
 	{
-		if (ap_cur->nb_pkt < 2 || time(NULL) - ap_cur->tlast > lopt.berlin)
+		if (ap_cur->nb_pkt < lopt.min_pkts
+			|| time(NULL) - ap_cur->tlast > lopt.berlin)
 		{
 			ap_cur = ap_cur->prev;
 			continue;
@@ -358,14 +359,19 @@ static void color_on(void)
 				continue;
 			}
 
+			if (color > TEXT_MAX_COLOR) color++;
+
 			if (!ap_cur->marked)
 			{
 				ap_cur->marked = 1;
 				if (!memcmp(ap_cur->bssid, BROADCAST, 6))
-					ap_cur->marked_color = 0;
+					ap_cur->marked_color = 1;
 				else
 					ap_cur->marked_color = color++;
 			}
+			else
+				ap_cur->marked_color = 1;
+
 			st_cur = st_cur->prev;
 		}
 
@@ -3440,6 +3446,8 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	memset(strbuf, '\0', sizeof(strbuf));
 
 	moveto(1, 2);
+	textcolor_normal();
+	textcolor_fg(TEXT_WHITE);
 
 	if (lopt.freqoption)
 	{
@@ -3827,7 +3835,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 					else
 					{
 						ap_cur->marked_color++;
-						if (ap_cur->marked_color > (TEXT_MAX_COLOR - 1))
+						if (ap_cur->marked_color > TEXT_MAX_COLOR)
 						{
 							ap_cur->marked_color = 1;
 							ap_cur->marked = 0;
