@@ -152,6 +152,7 @@ static int bf_nkeys[256];
 static unsigned char bf_wepkey[64];
 static volatile int wepkey_crack_success = 0;
 static volatile int close_aircrack = 0;
+static volatile int close_aircrack_fast = 0;
 static int id = 0; //-V707
 static pthread_t tid[MAX_THREADS] = {0};
 static pthread_t cracking_session_tid;
@@ -628,20 +629,13 @@ static void clean_exit(int ret)
 	close_aircrack = 1;
 	if (ret && !opt.is_quiet)
 	{
-		printf("\nQuitting aircrack-ng...\n");
-		fflush(stdout);
-	}
-
-	if (ret)
-	{
-		// Clear all circular queues for faster shutdown.
-		for (i = 0; i < opt.nbcpu; ++i)
+		if (!opt.is_quiet)
 		{
-			if (wpa_data[i].cqueue != NULL)
-			{
-				circular_queue_reset(wpa_data[i].cqueue);
-			}
+			printf("\nQuitting aircrack-ng...\n");
+			fflush(stdout);
 		}
+
+		close_aircrack_fast = 1;
 
 		return;
 	}
@@ -858,6 +852,12 @@ wpa_send_passphrase(char * key, struct WPA_data * data, int lock)
 {
 	REQUIRE(key != NULL);
 	REQUIRE(data != NULL);
+
+	if (close_aircrack)
+	{
+		circular_queue_reset(data->cqueue);
+		return (0);
+	}
 
 	if (lock)
 	{
@@ -5545,6 +5545,11 @@ static int perform_wpa_crack(struct AP_info * ap_cur)
 			for (int i = 0; i < opt.nbcpu; ++i)
 			{
 				int active;
+
+				if (close_aircrack_fast)
+				{
+					circular_queue_reset(wpa_data[i].cqueue);
+				}
 
 				ALLEGE(pthread_mutex_lock(&(wpa_data[i].mutex)) == 0);
 				active = wpa_data[i].active;
