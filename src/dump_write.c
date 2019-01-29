@@ -213,11 +213,7 @@ int dump_write_csv(struct AP_info * ap_1st,
 
 		fprintf(opt.f_txt, ",");
 
-		if ((ap_cur->security
-			 & (ENC_WEP | ENC_TKIP | ENC_WRAP | ENC_CCMP | ENC_WEP104
-				| ENC_WEP40
-				| ENC_GCMP))
-			== 0)
+		if ((ap_cur->security & ENC_FIELD) == 0)
 			fprintf(opt.f_txt, " ");
 		else
 		{
@@ -232,11 +228,12 @@ int dump_write_csv(struct AP_info * ap_1st,
 
 		fprintf(opt.f_txt, ",");
 
-		if ((ap_cur->security & (AUTH_OPN | AUTH_PSK | AUTH_MGT)) == 0)
+		if ((ap_cur->security & AUTH_FIELD) == 0)
 			fprintf(opt.f_txt, "   ");
 		else
 		{
 			if (ap_cur->security & AUTH_MGT) fprintf(opt.f_txt, " MGT");
+			if (ap_cur->security & AUTH_CMAC) fprintf(opt.f_txt, " CMAC");
 			if (ap_cur->security & AUTH_PSK)
 			{
 				if (ap_cur->security & STD_WEP)
@@ -946,6 +943,11 @@ int dump_write_kismet_netxml(struct AP_info * ap_1st,
 			if (ap_cur->security & AUTH_PSK)
 				fprintf(
 					opt.f_kis_xml, NETXML_ENCRYPTION_TAG, "\t\t\t", "WPA+PSK");
+			if (ap_cur->security & AUTH_CMAC)
+				fprintf(opt.f_kis_xml,
+						NETXML_ENCRYPTION_TAG,
+						"\t\t\t",
+						"WPA+PSK+CMAC");
 			if (ap_cur->security & ENC_CCMP)
 				fprintf(opt.f_kis_xml,
 						NETXML_ENCRYPTION_TAG,
@@ -1413,11 +1415,7 @@ int dump_write_kismet_csv(struct AP_info * ap_1st,
 			if (ap_cur->security & STD_OPN) fprintf(opt.f_kis, "OPN,");
 		}
 
-		if ((ap_cur->security
-			 & (ENC_WEP | ENC_TKIP | ENC_WRAP | ENC_CCMP | ENC_WEP104
-				| ENC_WEP40
-				| ENC_GCMP))
-			== 0)
+		if ((ap_cur->security & ENC_FIELD) == 0)
 			fprintf(opt.f_kis, "None,");
 		else
 		{

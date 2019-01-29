@@ -2209,6 +2209,10 @@ skip_probe:
 						case 0x02:
 							ap_cur->security |= AUTH_PSK;
 							break;
+						case 0x06:
+						case 0x0d:
+							ap_cur->security |= AUTH_CMAC;
+							break;
 						default:
 							break;
 					}
@@ -3580,7 +3584,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 		if (lopt.singlechan) strcat(strbuf, "RXQ ");
 
-		strcat(strbuf, " Beacons    #Data, #/s  CH   MB   ENC CIPHER AUTH ");
+		strcat(strbuf, " Beacons    #Data, #/s  CH   MB   ENC CIPHER  AUTH ");
 
 		if (lopt.show_uptime) strcat(strbuf, "        UPTIME ");
 
@@ -3592,7 +3596,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				memset(strbuf + strlen(strbuf),
 					   32,
 					   sizeof(strbuf) - strlen(strbuf) - 1);
-				snprintf(strbuf + columns_ap + lopt.maxsize_wps_seen - 6,
+				snprintf(strbuf + columns_ap + lopt.maxsize_wps_seen - 5,
 						 8,
 						 "%s",
 						 "  ESSID");
@@ -3604,7 +3608,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 							   - 1);
 					snprintf(strbuf + columns_ap + lopt.maxsize_wps_seen
 								 + lopt.maxsize_essid_seen
-								 - 5,
+								 - 4,
 							 15,
 							 "%s",
 							 "MANUFACTURER");
@@ -3770,62 +3774,58 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				snprintf(strbuf + len, sizeof(strbuf) - len, "    ");
 			else
 			{
-				if (ap_cur->security & STD_WPA2)
-					snprintf(strbuf + len, sizeof(strbuf) - len, "WPA2");
-				if (ap_cur->security & STD_WPA)
-					snprintf(strbuf + len, sizeof(strbuf) - len, "WPA ");
-				if (ap_cur->security & STD_WEP)
-					snprintf(strbuf + len, sizeof(strbuf) - len, "WEP ");
 				if (ap_cur->security & STD_OPN)
 					snprintf(strbuf + len, sizeof(strbuf) - len, "OPN ");
+				else if (ap_cur->security & STD_WEP)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "WEP ");
+				else if (ap_cur->security & STD_WPA)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "WPA ");
+				else if (ap_cur->security & STD_WPA2)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "WPA2");
 			}
 
 			strncat(strbuf, " ", sizeof(strbuf) - strlen(strbuf) - 1);
 
 			len = strlen(strbuf);
 
-			if ((ap_cur->security
-				 & (ENC_WEP | ENC_TKIP | ENC_WRAP | ENC_CCMP | ENC_WEP104
-					| ENC_WEP40
-					| ENC_GCMP))
-				== 0)
+			if ((ap_cur->security & ENC_FIELD) == 0)
 				snprintf(strbuf + len, sizeof(strbuf) - len, "       ");
 			else
 			{
 				if (ap_cur->security & ENC_CCMP)
 					snprintf(strbuf + len, sizeof(strbuf) - len, "CCMP   ");
-				if (ap_cur->security & ENC_WRAP)
+				else if (ap_cur->security & ENC_WRAP)
 					snprintf(strbuf + len, sizeof(strbuf) - len, "WRAP   ");
-				if (ap_cur->security & ENC_TKIP)
+				else if (ap_cur->security & ENC_TKIP)
 					snprintf(strbuf + len, sizeof(strbuf) - len, "TKIP   ");
-				if (ap_cur->security & ENC_WEP104)
+				else if (ap_cur->security & ENC_WEP104)
 					snprintf(strbuf + len, sizeof(strbuf) - len, "WEP104 ");
-				if (ap_cur->security & ENC_WEP40)
+				else if (ap_cur->security & ENC_WEP40)
 					snprintf(strbuf + len, sizeof(strbuf) - len, "WEP40  ");
-				if (ap_cur->security & ENC_WEP)
+				else if (ap_cur->security & ENC_WEP)
 					snprintf(strbuf + len, sizeof(strbuf) - len, "WEP    ");
-				if (ap_cur->security & ENC_GCMP)
-					snprintf(strbuf + len, sizeof(strbuf) - len, "GCMP   ");
 			}
 
 			len = strlen(strbuf);
 
-			if ((ap_cur->security & (AUTH_OPN | AUTH_PSK | AUTH_MGT)) == 0)
-				snprintf(strbuf + len, sizeof(strbuf) - len, "   ");
+			if ((ap_cur->security & AUTH_FIELD) == 0)
+				snprintf(strbuf + len, sizeof(strbuf) - len, "    ");
 			else
 			{
 				if (ap_cur->security & AUTH_MGT)
-					snprintf(strbuf + len, sizeof(strbuf) - len, "MGT");
+					snprintf(strbuf + len, sizeof(strbuf) - len, "MGT ");
+				if (ap_cur->security & AUTH_CMAC)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "CMAC");
 				if (ap_cur->security & AUTH_PSK)
 				{
 					if (ap_cur->security & STD_WEP)
-						snprintf(strbuf + len, sizeof(strbuf) - len, "SKA");
+						snprintf(strbuf + len, sizeof(strbuf) - len, "SKA ");
 					else
-						snprintf(strbuf + len, sizeof(strbuf) - len, "PSK");
+						snprintf(strbuf + len, sizeof(strbuf) - len, "PSK ");
 				}
 			}
 			if (ap_cur->security & AUTH_OPN)
-				snprintf(strbuf + len, sizeof(strbuf) - len, "OPN");
+				snprintf(strbuf + len, sizeof(strbuf) - len, "OPN ");
 
 			len = strlen(strbuf);
 
