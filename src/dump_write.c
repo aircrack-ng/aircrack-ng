@@ -224,6 +224,7 @@ int dump_write_csv(struct AP_info * ap_1st,
 			if (ap_cur->security & ENC_WEP40) fprintf(opt.f_txt, " WEP40");
 			if (ap_cur->security & ENC_WEP) fprintf(opt.f_txt, " WEP");
 			if (ap_cur->security & ENC_GCMP) fprintf(opt.f_txt, " GCMP");
+			if (ap_cur->security & ENC_GMAC) fprintf(opt.f_txt, " GMAC");
 		}
 
 		fprintf(opt.f_txt, ",");
@@ -961,6 +962,9 @@ int dump_write_kismet_netxml(struct AP_info * ap_1st,
 			if (ap_cur->security & ENC_GCMP)
 				fprintf(
 					opt.f_kis_xml, NETXML_ENCRYPTION_TAG, "\t\t\t", "WPA+GCMP");
+			if (ap_cur->security & ENC_GMAC)
+				fprintf(
+					opt.f_kis_xml, NETXML_ENCRYPTION_TAG, "\t\t\t", "WPA+GMAC");
 		}
 		else if (ap_cur->security & ENC_WEP104)
 			fprintf(opt.f_kis_xml, NETXML_ENCRYPTION_TAG, "\t\t\t", "WEP104");
@@ -1425,6 +1429,7 @@ int dump_write_kismet_csv(struct AP_info * ap_1st,
 			if (ap_cur->security & ENC_WEP104) fprintf(opt.f_kis, "WEP104,");
 			if (ap_cur->security & ENC_WEP40) fprintf(opt.f_kis, "WEP40,");
 			if (ap_cur->security & ENC_GCMP) fprintf(opt.f_kis, "GCMP,");
+			if (ap_cur->security & ENC_GMAC) fprintf(opt.f_kis, "GMAC,");
 		}
 
 		fseek(opt.f_kis, -1, SEEK_CUR);

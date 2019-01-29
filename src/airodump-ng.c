@@ -2191,6 +2191,11 @@ skip_probe:
 							ap_cur->security |= ENC_GCMP;
 							ap_cur->security |= STD_WPA2;
 							break;
+						case 0x0B:
+						case 0x0C:
+							ap_cur->security |= ENC_GMAC;
+							ap_cur->security |= STD_WPA2;
+							break;
 						default:
 							break;
 					}
