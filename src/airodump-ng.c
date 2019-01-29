@@ -131,6 +131,9 @@ static const int a_chans[]
 
 static int * frequencies;
 
+static volatile int quitting = 0;
+static volatile time_t quitting_event_ts = 0;
+
 static void dump_sort(void);
 static void dump_print(int ws_row, int ws_col, int if_num);
 static char *
@@ -389,7 +392,18 @@ static void input_thread(void * arg)
 
 		keycode = mygetch();
 
-		if (keycode == KEY_q) lopt.do_exit = 1;
+		if (keycode == KEY_q)
+		{
+			quitting_event_ts = time(NULL);
+
+			if (++quitting > 1)
+				lopt.do_exit = 1;
+			else
+				snprintf(
+					lopt.message,
+					sizeof(lopt.message),
+					"][ Are you sure you want to quit? Press Q again to quit.");
+		}
 
 		if (keycode == KEY_o)
 		{
@@ -7145,6 +7159,13 @@ int main(int argc, char * argv[])
 		else if (opt.s_file != NULL)
 		{
 			dump_add_packet(h80211, caplen, &ri, i);
+		}
+
+		if (quitting && time(NULL) - quitting_event_ts > 3)
+		{
+			quitting_event_ts = 0;
+			quitting = 0;
+			snprintf(lopt.message, sizeof(lopt.message), "]");
 		}
 	}
 
