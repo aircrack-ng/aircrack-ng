@@ -4019,7 +4019,11 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 		nlines += 3;
 
-		if (nlines >= (ws_row - 1)) return;
+		if (nlines >= (ws_row - 1))
+		{
+			erase_display(0);
+			return;
+		}
 
 		erase_line(0);
 		move(CURSOR_DOWN, 1);
@@ -4183,7 +4187,11 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 		nlines += 3;
 
-		if (nlines >= (ws_row - 1)) return;
+		if (nlines >= (ws_row - 1))
+		{
+			erase_display(0);
+			return;
+		}
 
 		erase_line(0);
 		move(CURSOR_DOWN, 1);
