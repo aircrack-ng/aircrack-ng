@@ -117,7 +117,7 @@ struct AP_info
 	int power_index; /* index in power ring buf. */
 	int power_lvl[NB_PWR]; /* signal power ring buffer */
 	int preamble; /* 0 = long, 1 = short      */
-	int security; /* ENC_*, AUTH_*, STD_*     */
+	unsigned int security; /* ENC_*, AUTH_*, STD_*     */
 	int beacon_logged; /* We need 1 beacon per AP  */
 	int dict_started; /* 1 if dict attack started */
 	int ssid_length; /* length of ssid           */
@@ -143,7 +143,7 @@ struct AP_info
 	long nb_ivs; /* total number of unique IVs   */
 	long nb_ivs_clean; /* total number of unique IVs   */
 	long nb_ivs_vague; /* total number of unique IVs   */
-	int crypt; /* encryption algorithm         */
+	unsigned int crypt; /* encryption algorithm         */
 	int eapol; /* set if EAPOL is present      */
 	int target; /* flag set if AP is a target   */
 	struct ST_info * st_1st; /* DEPRECATED: linked list of stations */

@@ -39,6 +39,7 @@
 #include <sys/ioctl.h>
 #include <sys/wait.h>
 #include <sys/time.h>
+#include <time.h>
 
 #ifndef TIOCGWINSZ
 #include <sys/termios.h>
@@ -172,7 +173,7 @@ static struct local_options
 	int singlechan; /* channel hopping set 1*/
 	int singlefreq; /* frequency hopping: 1 */
 	int chswitch; /* switching method     */
-	int f_encrypt; /* encryption filter    */
+	unsigned int f_encrypt; /* encryption filter    */
 	int update_s; /* update delay in sec  */
 
 	volatile int do_exit; /* interrupt flag       */
@@ -273,7 +274,7 @@ static struct local_options
 	int show_wps;
 	struct tm gps_time; /* the timestamp from the gps data */
 #ifdef CONFIG_LIBNL
-	int htval;
+	unsigned int htval;
 #endif
 	int background_mode;
 
@@ -3162,22 +3163,22 @@ static void dump_sort(void)
 							ap_min = ap_cur;
 						break;
 					case SORT_BY_ENC:
-						if (((ap_cur->security & STD_FIELD)
-							 - (ap_min->security & STD_FIELD))
+						if (((int) (ap_cur->security & STD_FIELD)
+							 - (int) (ap_min->security & STD_FIELD))
 								* lopt.sort_inv
 							< 0)
 							ap_min = ap_cur;
 						break;
 					case SORT_BY_CIPHER:
-						if (((ap_cur->security & ENC_FIELD)
-							 - (ap_min->security & ENC_FIELD))
+						if (((int) (ap_cur->security & ENC_FIELD)
+							 - (int) (ap_min->security & ENC_FIELD))
 								* lopt.sort_inv
 							< 0)
 							ap_min = ap_cur;
 						break;
 					case SORT_BY_AUTH:
-						if (((ap_cur->security & AUTH_FIELD)
-							 - (ap_min->security & AUTH_FIELD))
+						if (((int) (ap_cur->security & AUTH_FIELD)
+							 - (int) (ap_min->security & AUTH_FIELD))
 								* lopt.sort_inv
 							< 0)
 							ap_min = ap_cur;
@@ -3917,22 +3918,22 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 #define T(bit, name)                                                           \
 	do                                                                         \
 	{                                                                          \
-		if (ap_cur->wps.meth & (1 << (bit)))                                   \
+		if (ap_cur->wps.meth & (1u << (bit)))                                  \
 		{                                                                      \
 			if (sep) strcat(tbuf, ",");                                        \
 			sep = 1;                                                           \
 			strncat(tbuf, (name), (64 - strlen(tbuf) - 1));                    \
 		}                                                                      \
 	} while (0)
-								T(0, "USB"); // USB method
-								T(1, "ETHER"); // Ethernet
-								T(2, "LAB"); // Label
-								T(3, "DISP"); // Display
-								T(4, "EXTNFC"); // Ext. NFC Token
-								T(5, "INTNFC"); // Int. NFC Token
-								T(6, "NFCINTF"); // NFC Interface
-								T(7, "PBC"); // Push Button
-								T(8, "KPAD"); // Keypad
+								T(0u, "USB"); // USB method
+								T(1u, "ETHER"); // Ethernet
+								T(2u, "LAB"); // Label
+								T(3u, "DISP"); // Display
+								T(4u, "EXTNFC"); // Ext. NFC Token
+								T(5u, "INTNFC"); // Int. NFC Token
+								T(6u, "NFCINTF"); // NFC Interface
+								T(7u, "PBC"); // Push Button
+								T(8u, "KPAD"); // Keypad
 								snprintf(strbuf + len,
 										 sizeof(strbuf) - len,
 										 " %s",
@@ -4569,7 +4570,7 @@ static void * gps_tracker_thread(void * arg)
 		// 2.92+ immediately sends version information
 		// < 2.92 requires to send PVTAD command
 		FD_ZERO(&read_fd);
-		FD_SET(gpsd_sock, &read_fd);
+		FD_SET(gpsd_sock, &read_fd); // NOLINT(hicpp-signed-bitwise)
 		timeout.tv_sec = 1;
 		timeout.tv_usec = 0;
 		is_json = select(gpsd_sock + 1, &read_fd, NULL, NULL, &timeout);
@@ -4940,11 +4941,21 @@ static int send_probe_request(struct wif * wi)
 	len += 16;
 
 	r_smac[0] = 0x00;
-	r_smac[1] = (uint8_t)(rand() & 0xFF);
-	r_smac[2] = (uint8_t)(rand() & 0xFF);
-	r_smac[3] = (uint8_t)(rand() & 0xFF);
-	r_smac[4] = (uint8_t)(rand() & 0xFF);
-	r_smac[5] = (uint8_t)(rand() & 0xFF);
+	r_smac[1] = (uint8_t)(
+		rand() // NOLINT(cert-msc30-c,cert-msc50-cpp,hicpp-signed-bitwise)
+		& 0xFF);
+	r_smac[2] = (uint8_t)(
+		rand() // NOLINT(cert-msc30-c,cert-msc50-cpp,hicpp-signed-bitwise)
+		& 0xFF);
+	r_smac[3] = (uint8_t)(
+		rand() // NOLINT(cert-msc30-c,cert-msc50-cpp,hicpp-signed-bitwise)
+		& 0xFF);
+	r_smac[4] = (uint8_t)(
+		rand() // NOLINT(cert-msc30-c,cert-msc50-cpp,hicpp-signed-bitwise)
+		& 0xFF);
+	r_smac[5] = (uint8_t)(
+		rand() // NOLINT(cert-msc30-c,cert-msc50-cpp,hicpp-signed-bitwise)
+		& 0xFF);
 
 	memcpy(p + 10, r_smac, 6);
 
@@ -4956,6 +4967,8 @@ static int send_probe_request(struct wif * wi)
 			case ENOBUFS:
 				usleep(10000);
 				return (0); /* XXX not sure I like this... -sorbo */
+			default:
+				break;
 		}
 
 		perror("wi_write()");
@@ -5011,7 +5024,7 @@ static void
 channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 {
 	int ch, ch_idx = 0, card = 0, chi = 0, cai = 0, j = 0, k = 0, first = 1,
-			again = 1;
+			again;
 	int dropped = 0;
 
 	while (0 == kill(parent, 0))
@@ -5113,7 +5126,7 @@ static void
 frequency_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 {
 	int ch, ch_idx = 0, card = 0, chi = 0, cai = 0, j = 0, k = 0, first = 1,
-			again = 1;
+			again;
 	int dropped = 0;
 
 	while (0 == kill(parent, 0))
@@ -5627,8 +5640,7 @@ static int check_channel(struct wif * wi[], int cards)
 					 wi_get_ifname(wi[i]),
 					 chan);
 #ifdef CONFIG_LIBNL
-			wi_set_ht_channel(
-				wi[i], lopt.channel[i], (unsigned int) lopt.htval);
+			wi_set_ht_channel(wi[i], lopt.channel[i], lopt.htval);
 #else
 			wi_set_channel(wi[i], lopt.channel[i]);
 #endif
@@ -5872,7 +5884,7 @@ int main(int argc, char * argv[])
 
 	/* initialize a bunch of variables */
 
-	srand(time(NULL));
+	srand(time(NULL)); // NOLINT(cert-msc32-c,cert-msc51-cpp)
 	memset(&opt, 0, sizeof(opt));
 	memset(&lopt, 0, sizeof(lopt));
 
@@ -6740,8 +6752,7 @@ int main(int argc, char * argv[])
 				for (i = 0; i < lopt.num_cards; i++)
 				{
 #ifdef CONFIG_LIBNL
-					wi_set_ht_channel(
-						wi[i], lopt.channel[0], (unsigned int) lopt.htval);
+					wi_set_ht_channel(wi[i], lopt.channel[0], lopt.htval);
 #else
 					wi_set_channel(wi[i], lopt.channel[0]);
 #endif
@@ -7064,7 +7075,8 @@ int main(int argc, char * argv[])
 				pkt_tv.tv_sec = pkh.tv_sec;
 				pkt_tv.tv_usec = pkh.tv_usec;
 
-				int usec_diff = time_diff(&prev_tv, &pkt_tv);
+				const useconds_t usec_diff
+					= (useconds_t) time_diff(&prev_tv, &pkt_tv);
 
 				if (usec_diff > 0) usleep(usec_diff);
 			}
@@ -7082,7 +7094,7 @@ int main(int argc, char * argv[])
 			FD_ZERO(&rfds);
 			for (i = 0; i < lopt.num_cards; i++)
 			{
-				FD_SET(fd_raw[i], &rfds);
+				FD_SET(fd_raw[i], &rfds); // NOLINT(hicpp-signed-bitwise)
 			}
 
 			tv0.tv_sec = lopt.update_s;
@@ -7148,7 +7160,7 @@ int main(int argc, char * argv[])
 		{
 			for (i = 0; i < lopt.num_cards; i++)
 			{
-				if (FD_ISSET(fd_raw[i], &rfds))
+				if (FD_ISSET(fd_raw[i], &rfds)) // NOLINT(hicpp-signed-bitwise)
 				{
 
 					memset(buffer, 0, sizeof(buffer));

@@ -57,17 +57,13 @@ extern int getFrequencyFromChannel(int channel); // "aircrack-osdep/common.h"
 
 extern int is_filtered_essid(unsigned char * essid); // airodump-ng.c
 
-static char * format_text_for_csv(const unsigned char * input, int len)
+static char * format_text_for_csv(const unsigned char * input, size_t len)
 {
 	// Unix style encoding
 	char *ret, *rret;
-	int i, pos, contains_space_end;
+	size_t i, pos;
+	int contains_space_end;
 	const char * hex_table = "0123456789ABCDEF";
-
-	if (len < 0)
-	{
-		return (NULL);
-	}
 
 	if (len == 0 || input == NULL)
 	{
@@ -104,7 +100,8 @@ static char * format_text_for_csv(const unsigned char * input, int len)
 		else if (input[i] == '\n' || input[i] == '\r' || input[i] == '\t')
 		{
 			ret[pos++]
-				= (input[i] == '\n') ? 'n' : (input[i] == '\t') ? 't' : 'r';
+				= (char) ((input[i] == '\n') ? 'n' : (input[i] == '\t') ? 't'
+																		: 'r');
 		}
 		else
 		{
@@ -128,9 +125,9 @@ static char * format_text_for_csv(const unsigned char * input, int len)
 
 int dump_write_csv(struct AP_info * ap_1st,
 				   struct ST_info * st_1st,
-				   int f_encrypt)
+				   unsigned int f_encrypt)
 {
-	int i, n, probes_written;
+	int i, probes_written;
 	struct tm * ltime;
 	struct AP_info * ap_cur;
 	struct ST_info * st_cur;
@@ -264,8 +261,9 @@ int dump_write_csv(struct AP_info * ap_1st,
 			fprintf(opt.f_txt, "%s, ", ap_cur->essid);
 		else
 		{
-			temp = format_text_for_csv(ap_cur->essid, ap_cur->ssid_length);
-			if (temp != NULL)
+			temp = format_text_for_csv(ap_cur->essid,
+									   (size_t) ap_cur->ssid_length);
+			if (temp != NULL) //-V547
 			{
 				fprintf(opt.f_txt, "%s, ", temp);
 				free(temp);
@@ -349,7 +347,7 @@ int dump_write_csv(struct AP_info * ap_1st,
 					ap_cur->bssid[5]);
 
 		probes_written = 0;
-		for (i = 0, n = 0; i < NB_PRB; i++)
+		for (i = 0; i < NB_PRB; i++)
 		{
 			if (st_cur->ssid_length[i] == 0) continue;
 
@@ -358,13 +356,13 @@ int dump_write_csv(struct AP_info * ap_1st,
 				temp = (char *) calloc(
 					1, (st_cur->ssid_length[i] + 1) * sizeof(char));
 				ALLEGE(temp != NULL);
-				memcpy(temp, st_cur->probes[i], st_cur->ssid_length[i] + 1);
+				memcpy(temp, st_cur->probes[i], st_cur->ssid_length[i] + 1u);
 			}
 			else
 			{
 				temp = format_text_for_csv((unsigned char *) st_cur->probes[i],
-										   st_cur->ssid_length[i]);
-				ALLEGE(temp != NULL);
+										   (size_t) st_cur->ssid_length[i]);
+				ALLEGE(temp != NULL); //-V547
 			}
 
 			if (probes_written == 0)
@@ -402,7 +400,7 @@ int dump_write_airodump_ng_logcsv_add_ap(const struct AP_info * ap_cur,
 	}
 
 	// Local computer time
-	struct tm * ltime = localtime(&ap_cur->tlast);
+	const struct tm * ltime = localtime(&ap_cur->tlast);
 	fprintf(opt.f_logcsv,
 			"%04d-%02d-%02d %02d:%02d:%02d,",
 			1900 + ltime->tm_year,
@@ -527,9 +525,9 @@ int dump_write_airodump_ng_logcsv_add_client(const struct AP_info * ap_cur,
 	return (0);
 }
 
-static char * sanitize_xml(unsigned char * text, int length)
+static char * sanitize_xml(unsigned char * text, size_t length)
 {
-	int i;
+	size_t i;
 	size_t len, current_text_len;
 	unsigned char * pos;
 	char * newtext = NULL;
@@ -719,7 +717,7 @@ static int dump_write_kismet_netxml_client_info(struct ST_info * client,
 				"\t\t\t\t<packets>1</packets>\n"
 				"\t\t\t\t<encryption>None</encryption>\n");
 		essid = sanitize_xml((unsigned char *) client->probes[i],
-							 client->ssid_length[i]);
+							 (size_t) client->ssid_length[i]);
 		if (essid != NULL)
 		{
 			fprintf(opt.f_kis_xml, "\t\t\t\t<ssid>%s</ssid>\n", essid);
@@ -848,11 +846,12 @@ static int dump_write_kismet_netxml_client_info(struct ST_info * client,
 #define NETXML_ENCRYPTION_TAG "%s<encryption>%s</encryption>\n"
 int dump_write_kismet_netxml(struct AP_info * ap_1st,
 							 struct ST_info * st_1st,
-							 int f_encrypt,
+							 unsigned int f_encrypt,
 							 char * airodump_start_time)
 {
 	int network_number, average_power, client_max_rate, max_power, client_nbr,
-		fp, fpos;
+		fp;
+	off_t fpos;
 	struct AP_info * ap_cur;
 	struct ST_info * st_cur;
 	char first_time[TIME_STR_LENGTH];
@@ -975,7 +974,7 @@ int dump_write_kismet_netxml(struct AP_info * ap_1st,
 		fprintf(opt.f_kis_xml,
 				"\t\t\t<essid cloaked=\"%s\">",
 				(ap_cur->essid[0] == 0) ? "true" : "false");
-		essid = sanitize_xml(ap_cur->essid, ap_cur->ssid_length);
+		essid = sanitize_xml(ap_cur->essid, (size_t) ap_cur->ssid_length);
 		if (essid != NULL)
 		{
 			fprintf(opt.f_kis_xml, "%s", essid);
@@ -1338,7 +1337,7 @@ int dump_write_kismet_netxml(struct AP_info * ap_1st,
 
 int dump_write_kismet_csv(struct AP_info * ap_1st,
 						  struct ST_info * st_1st,
-						  int f_encrypt)
+						  unsigned int f_encrypt)
 {
 	UNUSED_PARAM(st_1st);
 

@@ -627,7 +627,7 @@ static void clean_exit(int ret)
 	memset(tmpbuf, 0, 128);
 
 	close_aircrack = 1;
-	if (ret && !opt.is_quiet)
+	if (ret)
 	{
 		if (!opt.is_quiet)
 		{
@@ -1369,7 +1369,7 @@ skip_station:
 	if (h80211[0] == IEEE80211_FC0_SUBTYPE_BEACON
 		|| h80211[0] == IEEE80211_FC0_SUBTYPE_PROBE_RESP)
 	{
-		if (ap_cur->crypt < 0) ap_cur->crypt = (h80211[34] & 0x10) >> 4;
+		if (ap_cur->crypt == 0) ap_cur->crypt = (h80211[34] & 0x10u) >> 4u;
 
 		p = h80211 + 36;
 
@@ -1492,8 +1492,6 @@ skip_station:
 
 		return (0);
 	}
-
-	if (ap_cur->crypt < 0) ap_cur->crypt = 0; /* no encryption */
 
 	/* if ethertype == IPv4, find the LAN address */
 

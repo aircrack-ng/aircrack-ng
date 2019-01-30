@@ -34,7 +34,7 @@
 
 int dump_write_csv(struct AP_info * ap_1st,
 				   struct ST_info * st_1st,
-				   int f_encrypt);
+				   unsigned int f_encrypt);
 int dump_write_airodump_ng_logcsv_add_ap(const struct AP_info * ap_cur,
 										 const int32_t ri_power,
 										 struct tm * tm_gpstime,
@@ -47,10 +47,10 @@ int dump_write_airodump_ng_logcsv_add_client(const struct AP_info * ap_cur,
 char * get_manufacturer_from_string(char * buffer);
 int dump_write_kismet_netxml(struct AP_info * ap_1st,
 							 struct ST_info * st_1st,
-							 int f_encrypt,
+							 unsigned int f_encrypt,
 							 char * airodump_start_time);
 int dump_write_kismet_csv(struct AP_info * ap_1st,
 						  struct ST_info * st_1st,
-						  int f_encrypt);
+						  unsigned int f_encrypt);
 
 #endif /* _AIRODUMP_NG_DUMP_WRITE_H_ */

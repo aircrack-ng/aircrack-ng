@@ -49,35 +49,35 @@
 
 #define MAX_CARDS 8 /* maximum number of cards to capture from */
 
-#define STD_OPN 0x0001
-#define STD_WEP 0x0002
-#define STD_WPA 0x0004
-#define STD_WPA2 0x0008
+#define STD_OPN 0x0001u
+#define STD_WEP 0x0002u
+#define STD_WPA 0x0004u
+#define STD_WPA2 0x0008u
 
 #define STD_FIELD (STD_OPN | STD_WEP | STD_WPA | STD_WPA2)
 
-#define ENC_WEP 0x0010
-#define ENC_TKIP 0x0020
-#define ENC_WRAP 0x0040
-#define ENC_CCMP 0x0080
-#define ENC_WEP40 0x1000
-#define ENC_WEP104 0x0100
-#define ENC_GCMP 0x4000
-#define ENC_GMAC 0x8000
+#define ENC_WEP 0x0010u
+#define ENC_TKIP 0x0020u
+#define ENC_WRAP 0x0040u
+#define ENC_CCMP 0x0080u
+#define ENC_WEP40 0x1000u
+#define ENC_WEP104 0x0100u
+#define ENC_GCMP 0x4000u
+#define ENC_GMAC 0x8000u
 
 #define ENC_FIELD                                                              \
 	(ENC_WEP | ENC_TKIP | ENC_WRAP | ENC_CCMP | ENC_WEP40 | ENC_WEP104         \
 	 | ENC_GCMP                                                                \
 	 | ENC_GMAC)
 
-#define AUTH_OPN 0x0200
-#define AUTH_PSK 0x0400
-#define AUTH_MGT 0x0800
-#define AUTH_CMAC 0x2000
+#define AUTH_OPN 0x0200u
+#define AUTH_PSK 0x0400u
+#define AUTH_MGT 0x0800u
+#define AUTH_CMAC 0x2000u
 
 #define AUTH_FIELD (AUTH_OPN | AUTH_PSK | AUTH_CMAC | AUTH_MGT)
 
-#define STD_QOS 0x2000
+#define STD_QOS 0x2000u
 
 #define QLT_TIME 5
 #define QLT_COUNT 25
