@@ -278,6 +278,8 @@ static struct local_options
 	int background_mode;
 
 	unsigned long min_pkts;
+
+	int relative_time; /* read PCAP in psuedo-real-time */
 } lopt;
 
 static void resetSelection(void)
@@ -285,6 +287,7 @@ static void resetSelection(void)
 	lopt.sort_by = SORT_BY_POWER;
 	lopt.sort_inv = 1;
 
+	lopt.relative_time = 0;
 	lopt.start_print_ap = 1;
 	lopt.start_print_sta = 1;
 	lopt.p_selected_ap = NULL;
@@ -766,6 +769,9 @@ static const char usage[] =
 	"                              from the screen when no more packets\n"
 	"                              are received (Default: 120 seconds)\n"
 	"      -r             <file> : Read packets from that file\n"
+	"      -T                    : While reading packets from a file,\n"
+	"                              simulate the arrival rate of them\n"
+	"                              as if they were \"live\"."
 	"      -x            <msecs> : Active Scanning Simulation\n"
 	"      --manufacturer        : Display manufacturer from IEEE OUI list\n"
 	"      --uptime              : Display AP Uptime from Beacon Timestamp\n"
@@ -5843,6 +5849,7 @@ int main(int argc, char * argv[])
 		   {"wps", 0, 0, 'W'},
 		   {"background", 1, 0, 'K'},
 		   {"min-packets", 1, 0, 'n'},
+		   {"real-time", 0, 0, 'T'},
 		   {0, 0, 0, 0}};
 
 	pid_t main_pid = getpid();
@@ -5937,6 +5944,7 @@ int main(int argc, char * argv[])
 	lopt.background_mode = -1;
 	lopt.do_exit = 0;
 	lopt.min_pkts = 2;
+	lopt.relative_time = 0;
 #ifdef CONFIG_LIBNL
 	lopt.htval = CHANNEL_NO_HT;
 #endif
@@ -6036,7 +6044,7 @@ int main(int argc, char * argv[])
 		option
 			= getopt_long(argc,
 						  argv,
-						  "b:c:egiw:s:t:u:m:d:N:R:aHDB:Ahf:r:EC:o:x:MUI:WK:n:",
+						  "b:c:egiw:s:t:u:m:d:N:R:aHDB:Ahf:r:EC:o:x:MUI:WK:n:T",
 						  long_options,
 						  &option_index);
 
@@ -6088,6 +6096,10 @@ int main(int argc, char * argv[])
 						   "Aborting.\n");
 					exit(EXIT_FAILURE);
 				}
+				break;
+
+			case 'T':
+				lopt.relative_time = 1;
 				break;
 
 			case 'E':
@@ -6946,6 +6958,8 @@ int main(int argc, char * argv[])
 
 		if (opt.s_file != NULL)
 		{
+			static struct timeval prev_tv = {0, 0};
+
 			/* Read one packet */
 			n = sizeof(pkh);
 
@@ -7042,7 +7056,24 @@ int main(int argc, char * argv[])
 
 			read_pkts++;
 
-			if (read_pkts % 10 == 0) usleep(1);
+			if (lopt.relative_time && prev_tv.tv_sec != 0
+				&& prev_tv.tv_usec != 0)
+			{
+				// handle delaying this packet
+				struct timeval pkt_tv;
+				pkt_tv.tv_sec = pkh.tv_sec;
+				pkt_tv.tv_usec = pkh.tv_usec;
+
+				int usec_diff = time_diff(&prev_tv, &pkt_tv);
+
+				if (usec_diff > 0) usleep(usec_diff);
+			}
+			else if (read_pkts % 10 == 0)
+				usleep(1);
+
+			// track the packet's timestamp
+			prev_tv.tv_sec = pkh.tv_sec;
+			prev_tv.tv_usec = pkh.tv_usec;
 		}
 		else if (lopt.s_iface != NULL)
 		{
