@@ -174,16 +174,16 @@ BSSID              PWR RXQ  Beacons    #Data, #/s  CH  MB  ENC  CIPHER AUTH ESSI
 00:14:6C:7E:40:80   32 100      752       73    2   9  54  WPA  TKIP   PSK  teddy
 .br
 .PP
-BSSID              STATION            PWR   Rate   Lost   Frames  Probes
+BSSID              STATION            PWR   Rate   Lost   Frames  Notes  Probes
 .br
 .PP
-00:14:6C:7A:41:81  00:0F:B5:32:31:31   51   11-11     2       14  bigbear
+00:14:6C:7A:41:81  00:0F:B5:32:31:31   51   11-11     2       14         bigbear
 .br
-(not associated)   00:14:A4:3F:8D:13   19   11-11     0        4  mossy
+(not associated)   00:14:A4:3F:8D:13   19   11-11     0        4         mossy
 .br
-00:14:6C:7A:41:81  00:0C:41:52:D1:D1   \-1    11-2     0        5  bigbear
+00:14:6C:7A:41:81  00:0C:41:52:D1:D1   \-1    11-2     0        5         bigbear
 .br
-00:14:6C:7E:40:80  00:0F:B5:FD:FB:C2   35   36-24     0       99  teddy
+00:14:6C:7E:40:80  00:0F:B5:FD:FB:C2   35   36-24     0       99         teddy
 .br
 -----------------------------------------------------------------------
 .br
@@ -236,6 +236,9 @@ This is only displayed when using a single channel. The first number is the last
 .TP
 .I Lost
 It means lost packets coming from the client. To determine the number of packets lost, there is a sequence field on every non-control frame, so you can subtract the second last sequence number from the last sequence number and you know how many packets you have lost.
+.TP
+.I Notes
+Additional information about the client, such as captured EAPOL or PMKID.
 .TP
 .I Packets
 The number of data packets sent by the client.
