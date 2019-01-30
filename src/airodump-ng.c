@@ -3403,6 +3403,17 @@ static int IsAp2BeSkipped(struct AP_info * ap_cur)
 	return (0);
 }
 
+#define CHECK_END_OF_SCREEN()                                                  \
+	do                                                                         \
+	{                                                                          \
+		++nlines;                                                              \
+		if (nlines >= (ws_row - 1))                                            \
+		{                                                                      \
+			erase_display(0);                                                  \
+			return;                                                            \
+		};                                                                     \
+	} while (0)
+
 static void dump_print(int ws_row, int ws_col, int if_num)
 {
 	time_t tt;
@@ -3572,15 +3583,13 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 	ALLEGE(strchr(strbuf, '\n') == NULL);
 	console_puts(strbuf);
+	CHECK_END_OF_SCREEN();
 
 	/* print some information about each detected AP */
 
-	nlines += 3;
-
-	if (nlines >= ws_row) return;
-
 	erase_line(0);
 	move(CURSOR_DOWN, 1);
+	CHECK_END_OF_SCREEN();
 
 	if (lopt.show_ap)
 	{
@@ -3636,9 +3645,11 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 		}
 		strbuf[ws_col - 1] = '\0';
 		console_puts(strbuf);
+		CHECK_END_OF_SCREEN();
 
 		erase_line(0);
 		move(CURSOR_DOWN, 1);
+		CHECK_END_OF_SCREEN();
 
 		ap_cur = lopt.ap_end;
 
@@ -4017,16 +4028,9 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 		/* print some information about each detected station */
 
-		nlines += 3;
-
-		if (nlines >= (ws_row - 1))
-		{
-			erase_display(0);
-			return;
-		}
-
 		erase_line(0);
 		move(CURSOR_DOWN, 1);
+		CHECK_END_OF_SCREEN();
 	}
 
 	if (lopt.show_sta)
@@ -4036,9 +4040,11 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			   "           PWR   Rate    Lost    Frames  Notes  Probes");
 		strbuf[ws_col - 1] = '\0';
 		console_puts(strbuf);
+		CHECK_END_OF_SCREEN();
 
 		erase_line(0);
 		move(CURSOR_DOWN, 1);
+		CHECK_END_OF_SCREEN();
 
 		ap_cur = lopt.ap_end;
 
@@ -4103,7 +4109,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 				nlines++;
 
-				if (nlines >= ws_row) return;
+				if (nlines >= (ws_row - 1)) return;
 
 				if (!memcmp(ap_cur->bssid, BROADCAST, 6))
 					printf(" (not associated) ");
@@ -4185,16 +4191,9 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	{
 		/* print some information about each unknown station */
 
-		nlines += 3;
-
-		if (nlines >= (ws_row - 1))
-		{
-			erase_display(0);
-			return;
-		}
-
 		erase_line(0);
 		move(CURSOR_DOWN, 1);
+		CHECK_END_OF_SCREEN();
 
 		memcpy(strbuf,
 			   " MAC       "
@@ -4202,10 +4201,12 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			   (size_t) columns_na);
 		strbuf[ws_col - 1] = '\0';
 		console_puts(strbuf);
+		CHECK_END_OF_SCREEN();
 
 		memset(strbuf, ' ', (size_t) ws_col - 1);
 		strbuf[ws_col - 1] = '\0';
 		console_puts(strbuf);
+		CHECK_END_OF_SCREEN();
 
 		na_cur = lopt.na_1st;
 
@@ -4217,11 +4218,9 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				continue;
 			}
 
-			if (nlines >= (ws_row - 1)) return;
-
 			nlines++;
 
-			if (nlines >= ws_row) return;
+			if (nlines >= (ws_row - 1)) return;
 
 			printf(" %02X:%02X:%02X:%02X:%02X:%02X",
 				   na_cur->namac[0],
