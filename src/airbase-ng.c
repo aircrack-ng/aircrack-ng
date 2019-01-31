@@ -901,7 +901,7 @@ static int packet_xmit_external(unsigned char * packet,
 	if (length < 40 || length > 3000) return (1);
 
 	memset(buf, 0, 4096);
-	if (memcmp(packet, buf, 11) != 0)
+	if (memcmp(packet, buf, 11) != 0) //-V512
 	{
 		// Wrong header
 		return (1);
@@ -1232,7 +1232,7 @@ static int addCF(unsigned char * packet, size_t length)
 		frag2[1] |= 0x04; // more frags
 		frag3[1] |= 0x04; // more frags
 
-		memcpy(frag1 + z + 4, S_LLC_SNAP_ARP, 4);
+		memcpy(frag1 + z + 4, S_LLC_SNAP_ARP, 4); //-V512
 		add_crc32(frag1 + z + 4, 4);
 		for (i = 0; i < 8; i++) (frag1 + z + 4)[i] ^= keystream[i];
 
@@ -1241,7 +1241,7 @@ static int addCF(unsigned char * packet, size_t length)
 		for (i = 0; i < 8; i++) (frag2 + z + 4)[i] ^= keystream[i];
 		frag2[22] = 0xD1; // frag = 1;
 
-		frag3[z + 4 + 0] = 0x00;
+		frag3[z + 4 + 0] = 0x00; //-V525
 		frag3[z + 4 + 1] = 0x01; // ether
 		frag3[z + 4 + 2] = 0x08; // IP
 		frag3[z + 4 + 3] = 0x00;
@@ -2417,7 +2417,7 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 					memcpy(packet + 10, dmac, 6);
 
 					packet[z] = 0x01; // shared key
-					packet[z + 1] = 0x00;
+					packet[z + 1] = 0x00; //-V525
 					packet[z + 2] = 0x04; // sequence 4
 					packet[z + 3] = 0x00;
 					packet[z + 4] = 0x00; // successful
@@ -3146,6 +3146,7 @@ static void cfrag_thread(void)
 int main(int argc, char * argv[])
 {
 	int ret_val, len, i, n;
+	unsigned int un;
 	struct pcap_pkthdr pkh;
 	fd_set read_fds;
 	unsigned char buffer[4096];
@@ -3591,16 +3592,16 @@ int main(int argc, char * argv[])
 				buf[1] = s[1];
 				buf[2] = '\0';
 
-				while (sscanf(buf, "%x", &n) == 1)
+				while (sscanf(buf, "%x", &un) == 1)
 				{
-					if (n < 0 || n > 255)
+					if (un > 255)
 					{
 						printf("Invalid WEP key.\n");
 						printf("\"%s --help\" for help.\n", argv[0]);
 						return (EXIT_FAILURE);
 					}
 
-					opt.wepkey[i++] = (uint8_t) n;
+					opt.wepkey[i++] = (uint8_t) un;
 
 					if (i >= 64) break;
 

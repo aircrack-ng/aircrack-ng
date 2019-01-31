@@ -239,7 +239,7 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 	switch (h80211[1] & IEEE80211_FC1_DIR_MASK)
 	{
 		case IEEE80211_FC1_DIR_NODS:
-			memcpy(bssid, h80211 + 16, 6);
+			memcpy(bssid, h80211 + 16, 6); //-V525
 			break; // Adhoc
 		case IEEE80211_FC1_DIR_TODS:
 			memcpy(bssid, h80211 + 4, 6);
@@ -295,6 +295,7 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 		ap_cur->essid_stored = 0;
 	}
 
+#if 0
 	/* find wpa handshake */
 	if (h80211[0] == 0x10)
 	{
@@ -302,6 +303,7 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 
 		if (st_cur != NULL && st_cur->wpa.state != 0xFF) st_cur->wpa.state = 0;
 	}
+#endif
 
 	/* locate the station MAC in the 802.11 header */
 
@@ -538,8 +540,6 @@ skip_station:
 
 		if (z + 26 > caplen) return (FAILURE);
 
-		if (z + 10 > caplen) return (FAILURE);
-
 		// check if WEP bit set and extended iv
 		if ((h80211[1] & IEEE80211_FC1_WEP) != 0 && (h80211[z + 3] & 0x20) == 0)
 		{
@@ -692,7 +692,7 @@ skip_station:
 				st_cur->wpa.eapol_size
 					= (h80211[z + 2] << 8) + h80211[z + 3] + 4u;
 
-				if (st_cur->wpa.eapol_size == 0
+				if (st_cur->wpa.eapol_size == 0 //-V560
 					|| st_cur->wpa.eapol_size >= sizeof(st_cur->wpa.eapol) - 16)
 				{
 					// ignore packet trying to crash us
@@ -720,8 +720,6 @@ skip_station:
 					{
 						memset(&ivs2, '\x00', sizeof(struct ivs2_pkthdr));
 						ivs2.flags = 0;
-						ivs2.len = 0;
-
 						ivs2.len = sizeof(struct WPA_hdsk);
 						ivs2.flags |= IVS2_WPA;
 
@@ -795,7 +793,7 @@ int main(int argc, char * argv[])
 	{
 		return (merge(argc, argv));
 	}
-	if (strcmp(argv[1], "--convert"))
+	if (strcmp(argv[1], "--convert") != 0)
 	{
 		usage(EXIT_FAILURE);
 		return (EXIT_FAILURE);
@@ -957,7 +955,7 @@ int main(int argc, char * argv[])
 			if (n == 24 && le16_to_cpu(*(unsigned short *) (h80211 + 8)) == 2)
 				n = 32;
 
-			if (n <= 0 || n >= (int) pkh.caplen) continue;
+			if (n >= (int) pkh.caplen) continue;
 
 			h80211 += n;
 			pkh.caplen -= n;

@@ -813,7 +813,7 @@ static int packet_recv(unsigned char * packet, int length)
 		switch (packet[1] & 3)
 		{
 			case 1:
-				memcpy(h80211, packet + 16, 6); // DST_MAC
+				memcpy(h80211, packet + 16, 6); //-V525
 				memcpy(h80211 + 6, packet + 10, 6); // SRC_MAC
 				break;
 			case 2:
@@ -876,6 +876,7 @@ static int packet_recv(unsigned char * packet, int length)
 int main(int argc, char * argv[])
 {
 	int ret_val, len, i, n, ret;
+	unsigned int un;
 	struct pcap_pkthdr pkh;
 	fd_set read_fds;
 	unsigned char buffer[4096];
@@ -1050,16 +1051,16 @@ int main(int argc, char * argv[])
 				buf[1] = s[1];
 				buf[2] = '\0';
 
-				while (sscanf(buf, "%x", &n) == 1)
+				while (sscanf(buf, "%x", &un) == 1)
 				{
-					if (n < 0 || n > 255)
+					if (un > 255)
 					{
 						printf("Invalid WEP key.\n");
 						printf("\"%s --help\" for help.\n", argv[0]);
 						return (EXIT_FAILURE);
 					}
 
-					lopt.wepkey[i++] = n;
+					lopt.wepkey[i++] = (uint8_t) un;
 
 					if (i >= 64) break;
 

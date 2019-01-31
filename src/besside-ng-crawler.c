@@ -324,8 +324,8 @@ static void process_directory(const char * dir, time_t begin)
 	DIR * curdir;
 	struct dirent * curent;
 	struct stat curstat;
-	char * fullname;
-	size_t fullname_size;
+	char * fullname = NULL;
+	size_t fullname_size = 0;
 
 	stats_dirs++;
 
@@ -349,9 +349,10 @@ static void process_directory(const char * dir, time_t begin)
 		}
 
 		fullname_size = strlen(dir) + strlen(curent->d_name) + 2;
+		ALLEGE(fullname == NULL);
 		fullname = malloc(fullname_size);
 		ALLEGE(fullname != NULL);
-		memcpy(fullname, dir, strlen(dir) + 1);
+		strncpy(fullname, dir, strlen(dir) + 1);
 		strncat(fullname, "/", fullname_size - 1);
 		strncat(fullname, curent->d_name, fullname_size - 1);
 
@@ -387,8 +388,11 @@ static void process_directory(const char * dir, time_t begin)
 		}
 
 		free(fullname);
+		fullname = NULL;
 		curent = readdir(curdir);
 	}
+
+	ALLEGE(fullname == NULL);
 
 	if (errno) perror("Reading directory failed");
 
@@ -427,13 +431,13 @@ int main(int argc, char * argv[])
 	pcap_close(dumphandle);
 
 	printf("DONE. Statistics:\n");
-	printf("Files scanned:      %12d\n", stats_files);
-	printf("Directories scanned:%12d\n", stats_dirs);
-	printf("Dumpfiles found:    %12d\n", stats_caps);
-	printf("Skipped files:      %12d\n", stats_noncaps);
-	printf("Packets processed:  %12d\n", stats_packets);
-	printf("EAPOL packets:      %12d\n", stats_eapols);
-	printf("WPA Network count:  %12d\n", stats_networks);
+	printf("Files scanned:      %12u\n", stats_files);
+	printf("Directories scanned:%12u\n", stats_dirs);
+	printf("Dumpfiles found:    %12u\n", stats_caps);
+	printf("Skipped files:      %12u\n", stats_noncaps);
+	printf("Packets processed:  %12u\n", stats_packets);
+	printf("EAPOL packets:      %12u\n", stats_eapols);
+	printf("WPA Network count:  %12u\n", stats_networks);
 
 	return (EXIT_SUCCESS);
 }

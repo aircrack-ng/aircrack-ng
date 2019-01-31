@@ -469,16 +469,12 @@ static int check_received(unsigned char * packet, unsigned length)
 							return (1);
 						}
 
-						if (ivs2.flags & IVS2_BSSID)
+						if (fwrite(opt.r_bssid, 1, 6, lopt.f_ivs) != (size_t) 6)
 						{
-							if (fwrite(opt.r_bssid, 1, 6, lopt.f_ivs)
-								!= (size_t) 6)
-							{
-								perror("fwrite(IV bssid) failed");
-								return (1);
-							}
-							ivs2.len -= 6;
+							perror("fwrite(IV bssid) failed");
+							return (1);
 						}
+						ivs2.len -= 6;
 
 						if (fwrite(&(lopt.wpa),
 								   1,
@@ -1650,7 +1646,7 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 				printf("Enabling standard workaround: "
 					   "ARP header re-creation.\n");
 
-				chopped[26 + 8 + 6] = srcbuf[26 + 8 + 6] ^ 0x08;
+				chopped[26 + 8 + 6] = srcbuf[26 + 8 + 6] ^ 0x08; //-V525
 				chopped[26 + 8 + 7] = srcbuf[26 + 8 + 7] ^ 0x06;
 				chopped[26 + 8 + 8] = srcbuf[26 + 8 + 8] ^ 0x00;
 				chopped[26 + 8 + 9] = srcbuf[26 + 8 + 9] ^ 0x01;

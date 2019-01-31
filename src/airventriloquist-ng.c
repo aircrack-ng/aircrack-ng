@@ -910,7 +910,7 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 					= ntohs(p_d1x->length) + 4; // 4 is sizeof radius header
 
 				if (length < lopt.st_cur->eapol_size
-					|| lopt.st_cur->eapol_size == 0
+					|| lopt.st_cur->eapol_size == 0 //-V560
 					|| lopt.st_cur->eapol_size > sizeof(lopt.st_cur->eapol))
 				{
 					// Ignore the packet trying to crash us.
@@ -949,7 +949,7 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 					= ntohs(p_d1x->length) + 4; // 4 is sizeof radius header
 
 				if (length < lopt.st_cur->eapol_size
-					|| lopt.st_cur->eapol_size == 0
+					|| lopt.st_cur->eapol_size == 0 //-V560
 					|| lopt.st_cur->eapol_size > sizeof(lopt.st_cur->eapol))
 				{
 					// Ignore the packet trying to crash us.

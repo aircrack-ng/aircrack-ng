@@ -213,7 +213,7 @@ int main(int argc, char * argv[])
 	int i = 0, linktype;
 	unsigned n;
 	unsigned z;
-	unsigned char * h80211;
+	unsigned char * h80211 = NULL;
 	unsigned char bssid[6], stmac[6];
 
 	c_avl_tree_t * stations = c_avl_create(station_compare);
@@ -769,7 +769,7 @@ int main(int argc, char * argv[])
 		switch (h80211[1] & 3)
 		{
 			case 0:
-				memcpy(bssid, h80211 + 16, sizeof(bssid));
+				memcpy(bssid, h80211 + 16, sizeof(bssid)); //-V525
 				break; // Adhoc
 			case 1:
 				memcpy(bssid, h80211 + 4, sizeof(bssid));
@@ -790,7 +790,7 @@ int main(int argc, char * argv[])
 		switch (h80211[1] & 3)
 		{
 			case 1:
-				memcpy(stmac, h80211 + 10, sizeof(stmac));
+				memcpy(stmac, h80211 + 10, sizeof(stmac)); //-V525
 				break;
 			case 2:
 				memcpy(stmac, h80211 + 4, sizeof(stmac));

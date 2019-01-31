@@ -116,8 +116,8 @@ struct AP_info;
 void calc_pmk(char * key, char * essid, unsigned char pmk[40]);
 int decrypt_wep(unsigned char * data, int len, unsigned char * key, int keylen);
 int encrypt_wep(unsigned char * data, int len, unsigned char * key, int keylen);
-int check_crc_buf(unsigned char * buf, int len);
-int calc_crc_buf(unsigned char * buf, int len);
+int check_crc_buf(const unsigned char * buf, int len);
+int calc_crc_buf(const unsigned char * buf, int len);
 void calc_mic(struct AP_info * ap,
 			  unsigned char * pmk,
 			  unsigned char * ptk,

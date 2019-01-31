@@ -246,7 +246,7 @@ void calc_mic(struct AP_info * ap,
 	}
 }
 
-static inline unsigned long calc_crc(unsigned char * buf, int len)
+static inline unsigned long calc_crc(const unsigned char * buf, int len)
 {
 	REQUIRE(buf != NULL);
 
@@ -273,7 +273,7 @@ static inline unsigned long calc_crc_plain(unsigned char * buf, int len)
 
 /* CRC checksum verification routine */
 
-int check_crc_buf(unsigned char * buf, int len)
+int check_crc_buf(const unsigned char * buf, int len)
 {
 	REQUIRE(buf != NULL);
 
@@ -320,7 +320,7 @@ int add_crc32_plain(unsigned char * data, int length)
 	return (0);
 }
 
-int calc_crc_buf(unsigned char * buf, int len)
+int calc_crc_buf(const unsigned char * buf, int len)
 {
 	REQUIRE(buf != NULL);
 

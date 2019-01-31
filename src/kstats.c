@@ -61,7 +61,7 @@ static void calc_votes(unsigned char * ivbuf,
 
 	for (xv = 0; xv < nb_ivs; xv += 5)
 	{
-		memcpy(K, &ivbuf[xv], 3);
+		memcpy(K, &ivbuf[xv], 3); //-V512
 		memcpy(S, R, 256);
 		memcpy(Si, R, 256);
 
@@ -260,6 +260,7 @@ int main(int argc, char * argv[])
 	FILE * f;
 	long nb_ivs;
 	int i, n, B, *vi;
+	unsigned int un;
 	int votes[N_ATTACKS][256];
 
 	unsigned char *ivbuf, *s;
@@ -281,15 +282,15 @@ int main(int argc, char * argv[])
 	buffer[1] = s[1];
 	buffer[2] = '\0';
 
-	while (sscanf((char *) buffer, "%x", &n) == 1)
+	while (sscanf((char *) buffer, "%x", &un) == 1)
 	{
-		if (n < 0 || n > 255)
+		if (un > 255)
 		{
 			fprintf(stderr, "Invalid wep key.\n");
 			return (EXIT_FAILURE);
 		}
 
-		wepkey[i++] = n;
+		wepkey[i++] = (uint8_t) un;
 
 		if (i >= 16) break;
 
@@ -351,7 +352,7 @@ int main(int argc, char * argv[])
 
 		if (fread(buffer, 1, 5, f) != 5) break;
 
-		memcpy(ivbuf + nb_ivs * 5, buffer, 5);
+		memcpy(ivbuf + nb_ivs * 5, buffer, 5); //-V512
 
 		nb_ivs++;
 	}

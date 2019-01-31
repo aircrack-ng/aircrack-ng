@@ -697,9 +697,9 @@ static int do_attack_fake_auth(void)
 				/* attempt to authenticate */
 
 				memcpy(h80211, AUTH_REQ, 30);
-				memcpy(h80211 + 4, opt.r_bssid, 6);
-				memcpy(h80211 + 10, opt.r_smac, 6);
-				memcpy(h80211 + 16, opt.r_bssid, 6);
+				memcpy(h80211 + 4, opt.r_bssid, 6); //-V525
+				memcpy(h80211 + 10, opt.r_smac, 6); //-V525
+				memcpy(h80211 + 16, opt.r_bssid, 6); //-V525
 				if (ska) h80211[24] = 0x01;
 
 				printf("\n");
@@ -791,9 +791,9 @@ static int do_attack_fake_auth(void)
 				/* attempt to authenticate using ska */
 
 				memcpy(h80211, AUTH_REQ, 30);
-				memcpy(h80211 + 4, opt.r_bssid, 6);
-				memcpy(h80211 + 10, opt.r_smac, 6);
-				memcpy(h80211 + 16, opt.r_bssid, 6);
+				memcpy(h80211 + 4, opt.r_bssid, 6); //-V525
+				memcpy(h80211 + 10, opt.r_smac, 6); //-V525
+				memcpy(h80211 + 16, opt.r_bssid, 6); //-V525
 				h80211[1] |= 0x40; // set wep bit, as this frame is encrypted
 				memcpy(h80211 + 24, iv, 4);
 				memcpy(h80211 + 28, challenge, challengelen);
@@ -928,9 +928,9 @@ static int do_attack_fake_auth(void)
 				/* attempt to associate */
 
 				memcpy(h80211, ASSOC_REQ, 28);
-				memcpy(h80211 + 4, opt.r_bssid, 6);
-				memcpy(h80211 + 10, opt.r_smac, 6);
-				memcpy(h80211 + 16, opt.r_bssid, 6);
+				memcpy(h80211 + 4, opt.r_bssid, 6); //-V525
+				memcpy(h80211 + 10, opt.r_smac, 6); //-V525
+				memcpy(h80211 + 16, opt.r_bssid, 6); //-V525
 
 				n = (int) strlen(opt.r_essid);
 
@@ -1017,9 +1017,9 @@ static int do_attack_fake_auth(void)
 					gotack = 0;
 
 					memcpy(h80211, NULL_DATA, 24);
-					memcpy(h80211 + 4, opt.r_bssid, 6);
-					memcpy(h80211 + 10, opt.r_smac, 6);
-					memcpy(h80211 + 16, opt.r_bssid, 6);
+					memcpy(h80211 + 4, opt.r_bssid, 6); //-V525
+					memcpy(h80211 + 10, opt.r_smac, 6); //-V525
+					memcpy(h80211 + 16, opt.r_bssid, 6); //-V525
 
 					if (opt.npackets > 0)
 						kas = opt.npackets;
@@ -1046,9 +1046,9 @@ static int do_attack_fake_auth(void)
 				/* attempt to reassociate */
 
 				memcpy(h80211, REASSOC_REQ, 34);
-				memcpy(h80211 + 4, opt.r_bssid, 6);
-				memcpy(h80211 + 10, opt.r_smac, 6);
-				memcpy(h80211 + 16, opt.r_bssid, 6);
+				memcpy(h80211 + 4, opt.r_bssid, 6); //-V525
+				memcpy(h80211 + 10, opt.r_smac, 6); //-V525
+				memcpy(h80211 + 16, opt.r_bssid, 6); //-V525
 
 				n = (int) strlen(opt.r_essid);
 
@@ -1289,7 +1289,7 @@ static int do_attack_fake_auth(void)
 							read_sleep(dev.fd_in,
 									   2 * 1000000,
 									   my_read_sleep_cb); // read sleep 2s
-							challengelen = 0;
+							challengelen = 0; //-V519
 							continue;
 						default:
 							break;
@@ -1913,14 +1913,12 @@ static int do_attack_arp_resend(void)
 
 				n = le16_to_cpu(*(unsigned short *) (h80211 + 2));
 
-				if (n <= 0 || n >= (int) caplen) continue;
+				if (n <= 0 || n >= caplen) continue;
 
 				/* for a while Kismet logged broken PPI headers */
 				if (n == 24
 					&& le16_to_cpu(*(unsigned short *) (h80211 + 8)) == 2)
 					n = 32;
-
-				if (n <= 0 || n >= (int) caplen) continue;
 
 				memcpy(tmpbuf, h80211, caplen);
 				caplen -= n;
@@ -2384,8 +2382,6 @@ static int do_attack_caffe_latte(void)
 				if (n == 24
 					&& le16_to_cpu(*(unsigned short *) (h80211 + 8)) == 2)
 					n = 32;
-
-				if (n <= 0 || n >= (int) caplen) continue;
 
 				memcpy(tmpbuf, h80211, caplen);
 				caplen -= n;
@@ -2878,8 +2874,6 @@ static int do_attack_migmode(void)
 					&& le16_to_cpu(*(unsigned short *) (h80211 + 8)) == 2)
 					n = 32;
 
-				if (n <= 0 || n >= (int) caplen) continue;
-
 				memcpy(tmpbuf, h80211, caplen);
 				caplen -= n;
 				memcpy(h80211, tmpbuf + n, caplen);
@@ -3236,7 +3230,7 @@ read_packets:
 		for (i = 0; i < 8; i++) (frag2 + z + 4)[i] ^= keystream[i];
 		frag2[22] = 0xD1; // frag = 1;
 
-		frag3[z + 4 + 0] = 0x00;
+		frag3[z + 4 + 0] = 0x00; //-V525
 		frag3[z + 4 + 1] = 0x01; // ether
 		frag3[z + 4 + 2] = 0x08; // IP
 		frag3[z + 4 + 3] = 0x00;
@@ -3688,7 +3682,7 @@ static int do_attack_chopchop(void)
 				printf("Enabling standard workaround: "
 					   "ARP header re-creation.\n");
 
-				chopped[24 + 10] = srcbuf[srcz + 10] ^ 0x08;
+				chopped[24 + 10] = srcbuf[srcz + 10] ^ 0x08; //-V525
 				chopped[24 + 11] = srcbuf[srcz + 11] ^ 0x06;
 				chopped[24 + 12] = srcbuf[srcz + 12] ^ 0x00;
 				chopped[24 + 13] = srcbuf[srcz + 13] ^ 0x01;
@@ -4715,7 +4709,7 @@ static int do_attack_fragment(void)
 							"Still nothing, quitting with 384 bytes? [y/n] \n");
 						fflush(stdout);
 						ret = 0;
-						while (!ret) ret = scanf("%1s", tmpbuf);
+						while (!ret) ret = scanf("%1s", (char *) tmpbuf);
 
 						printf("\n");
 
@@ -5298,7 +5292,7 @@ static int do_attack_test(void)
 	}
 
 	PCT;
-	printf("Found %d AP%c\n", found, ((found == 1) ? ' ' : 's'));
+	printf("Found %u AP%c\n", found, ((found == 1) ? ' ' : 's'));
 
 	if (found > 0)
 	{
@@ -5774,7 +5768,7 @@ static int do_attack_test(void)
 			}
 			else if (i == 2) // attack -1 (psk)
 			{
-				memcpy(h80211, ska_auth3, 24);
+				memcpy(h80211, ska_auth3, 24); //-V512
 				memcpy(h80211 + 4, opt.f_dmac, 6);
 				memcpy(h80211 + 10, opt.f_smac, 6);
 				memcpy(h80211 + 16, opt.f_bssid, 6);
@@ -6254,7 +6248,7 @@ int main(int argc, char * argv[])
 			case 'p':
 
 				ret = sscanf(optarg, "%x", &opt.r_fctrl);
-				if (opt.r_fctrl < 0 || opt.r_fctrl > 65535 || ret != 1)
+				if (opt.r_fctrl > 65535 || ret != 1)
 				{
 					printf("Invalid frame control word. [0-65535]\n");
 					printf("\"%s --help\" for help.\n", argv[0]);

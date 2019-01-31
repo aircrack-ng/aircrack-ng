@@ -231,8 +231,10 @@ static BOOLEAN initialize_linked_list(void)
 {
 	_packet_elt_head
 		= (struct packet_elt_header *) malloc(sizeof(struct packet_elt_header));
+	ALLEGE(_packet_elt_head != NULL);
 	_packet_elt_head->first
 		= (struct packet_elt *) malloc(sizeof(struct packet_elt));
+	ALLEGE(_packet_elt_head->first != NULL);
 	_packet_elt_head->last = _packet_elt_head->first;
 	_packet_elt_head->current = _packet_elt_head->first;
 	_packet_elt_head->current->complete = 0;
@@ -249,6 +251,7 @@ static BOOLEAN add_node_if_not_complete(void)
 		// Allocate new packet
 		_packet_elt_head->current->next
 			= (struct packet_elt *) malloc(sizeof(struct packet_elt));
+		ALLEGE(_packet_elt_head->current->next != NULL);
 		_packet_elt_head->current->next->prev = _packet_elt_head->current;
 		_packet_elt_head->current = _packet_elt_head->current->next;
 
@@ -579,7 +582,7 @@ static BOOLEAN read_packets(void)
 #endif
 
 		// Filter out packets not belonging to our BSSID
-		if (memcmp(_packet_elt_head->current->bssid, _bssid, 6))
+		if (memcmp(_packet_elt_head->current->bssid, _bssid, 6) != 0)
 		{
 			// Not the BSSID we are looking for
 			// printf("It's not the BSSID we are looking for.\n");
@@ -1081,7 +1084,7 @@ static int CFC_filter_signal(void)
 						_packet_elt_head->current->is_cloaked = CLOAKED_FRAME;
 						++nb_packets;
 						break;
-					}
+					} //-V796
 #if __GNUC__ >= 7
 					__attribute__((fallthrough));
 #endif
@@ -1239,7 +1242,7 @@ static int CFC_filter_duplicate_iv(void)
 					{
 						_packet_elt_head->current->is_cloaked = CLOAKED_FRAME;
 						++nb_packets;
-					}
+					} //-V796
 #if __GNUC__ >= 7
 					__attribute__((fallthrough));
 #endif
@@ -1430,7 +1433,11 @@ static BOOLEAN write_packets(void)
 		{
 			fclose(_output_cloaked_packets_file);
 		}
-		fclose(invalid_status_file);
+		if (invalid_status_file)
+		{
+			fclose(invalid_status_file);
+			invalid_status_file = NULL;
+		}
 		return false;
 	}
 
@@ -1439,7 +1446,11 @@ static BOOLEAN write_packets(void)
 	{
 		printf("FATAL ERROR: Failed to open pcap for cloaked packets\n");
 		fclose(_output_clean_capture_file);
-		fclose(invalid_status_file);
+		if (invalid_status_file)
+		{
+			fclose(invalid_status_file);
+			invalid_status_file = NULL;
+		}
 		return false;
 	}
 
@@ -1474,7 +1485,7 @@ static BOOLEAN write_packets(void)
 	// Close files
 	fclose(_output_cloaked_packets_file);
 	fclose(_output_clean_capture_file);
-	fclose(invalid_status_file);
+	if (invalid_status_file) fclose(invalid_status_file);
 	return true;
 }
 
