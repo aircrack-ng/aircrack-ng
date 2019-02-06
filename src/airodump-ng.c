@@ -1317,7 +1317,7 @@ static int dump_add_packet(unsigned char * h80211,
 	{
 		if (!(ap_cur = (struct AP_info *) calloc(1, sizeof(struct AP_info))))
 		{
-			perror("malloc failed");
+			perror("calloc failed");
 			return (1);
 		}
 
@@ -1553,7 +1553,7 @@ static int dump_add_packet(unsigned char * h80211,
 	{
 		if (!(st_cur = (struct ST_info *) calloc(1, sizeof(struct ST_info))))
 		{
-			perror("malloc failed");
+			perror("calloc failed");
 			return (1);
 		}
 
