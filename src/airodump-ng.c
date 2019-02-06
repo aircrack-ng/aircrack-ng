@@ -1816,7 +1816,7 @@ skip_probe:
 
 				if (verifyssid(ap_cur->essid) == 0)
 					for (i = 0; i < n; i++)
-						if ((ap_cur->essid[i] > 0 && ap_cur->essid[i] < 32))
+						if ((ap_cur->essid[i] >= 0 && ap_cur->essid[i] < 32))
 							ap_cur->essid[i] = '.';
 			}
 
@@ -2387,7 +2387,7 @@ skip_probe:
 
 				if (verifyssid(ap_cur->essid) == 0)
 					for (i = 0; i < n; i++)
-						if ((ap_cur->essid[i] > 0 && ap_cur->essid[i] < 32))
+						if ((ap_cur->essid[i] >= 0 && ap_cur->essid[i] < 32))
 							ap_cur->essid[i] = '.';
 			}
 
