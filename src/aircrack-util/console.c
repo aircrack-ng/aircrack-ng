@@ -197,7 +197,8 @@ void console_utf8_enable(void)
 {
 	setlocale(LC_CTYPE, "");
 
-	if (strcmp(nl_langinfo(CODESET), "UTF-8") != 0)
+	char * codepage = nl_langinfo(CODESET);
+	if (codepage != NULL && strcmp(codepage, "UTF-8") != 0)
 	{
 		fprintf(stderr,
 				"Warning: Detected you are using a non-UNICODE "
