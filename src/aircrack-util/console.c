@@ -31,10 +31,13 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <locale.h>
+#include <langinfo.h>
 #include <termios.h>
 #if !defined(TIOCGWINSZ) && !defined(linux)
 #include <sys/termios.h>
 #endif
+#include <string.h>
 #include <unistd.h>
 
 #include "console.h"
@@ -188,4 +191,17 @@ int mygetch(void)
 	tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
 
 	return ch;
+}
+
+void console_utf8_enable(void)
+{
+	setlocale(LC_CTYPE, "");
+
+	if (strcmp(nl_langinfo(CODESET), "UTF-8") != 0)
+	{
+		fprintf(stderr,
+				"Warning: Detected you are using a non-UNICODE "
+				"terminal character encoding.\n");
+		sleep(1);
+	}
 }

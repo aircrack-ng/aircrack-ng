@@ -145,6 +145,8 @@ void reset_term(void);
 /// console.
 int mygetch(void);
 
+void console_utf8_enable(void);
+
 static inline void console_puts(const char * msg)
 {
 	printf("%s", msg);

@@ -1721,9 +1721,7 @@ skip_station:
 					for (i = 0; i < n; i++)
 					{
 						c = p[2 + i];
-						if (c == 0 || (c > 0 && c < 32) //-V560
-							|| (c > 126 && c < 160))
-							c = '.';
+						if (c >= 0 && c < 32) c = '.';
 						st_cur->probes[st_cur->probe_index][i] = c;
 					}
 			}
@@ -1821,9 +1819,7 @@ skip_probe:
 
 				if (verifyssid(ap_cur->essid) == 0)
 					for (i = 0; i < n; i++)
-						if ((ap_cur->essid[i] > 0 && ap_cur->essid[i] < 32)
-							|| (ap_cur->essid[i] > 126
-								&& ap_cur->essid[i] < 160))
+						if ((ap_cur->essid[i] > 0 && ap_cur->essid[i] < 32))
 							ap_cur->essid[i] = '.';
 			}
 
@@ -2395,9 +2391,7 @@ skip_probe:
 
 				if (verifyssid(ap_cur->essid) == 0)
 					for (i = 0; i < n; i++)
-						if ((ap_cur->essid[i] > 0 && ap_cur->essid[i] < 32)
-							|| (ap_cur->essid[i] > 126
-								&& ap_cur->essid[i] < 160))
+						if ((ap_cur->essid[i] > 0 && ap_cur->essid[i] < 32))
 							ap_cur->essid[i] = '.';
 			}
 
@@ -5857,6 +5851,8 @@ int main(int argc, char * argv[])
 		   {0, 0, 0, 0}};
 
 	pid_t main_pid = getpid();
+
+	console_utf8_enable();
 
 #ifdef USE_GCRYPT
 // Register callback functions to ensure proper locking in the sensitive parts
