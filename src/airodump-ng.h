@@ -73,7 +73,7 @@
 #define AUTH_OPN 0x0200u
 #define AUTH_PSK 0x0400u
 #define AUTH_MGT 0x0800u
-#define AUTH_CMAC 0x2000u
+#define AUTH_CMAC 0x10000u
 
 #define AUTH_FIELD (AUTH_OPN | AUTH_PSK | AUTH_CMAC | AUTH_MGT)
 
