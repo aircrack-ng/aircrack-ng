@@ -1720,7 +1720,7 @@ skip_station:
 					for (i = 0; i < n; i++)
 					{
 						c = p[2 + i];
-						if (c >= 0 && c < 32) c = '.';
+						if (c < 32) c = '.';
 						st_cur->probes[st_cur->probe_index][i] = c;
 					}
 			}
@@ -1816,8 +1816,7 @@ skip_probe:
 
 				if (verifyssid(ap_cur->essid) == 0)
 					for (i = 0; i < n; i++)
-						if ((ap_cur->essid[i] >= 0 && ap_cur->essid[i] < 32))
-							ap_cur->essid[i] = '.';
+						if (ap_cur->essid[i] < 32) ap_cur->essid[i] = '.';
 			}
 
 			/* get the maximum speed in Mb and the AP's channel */
@@ -2387,8 +2386,7 @@ skip_probe:
 
 				if (verifyssid(ap_cur->essid) == 0)
 					for (i = 0; i < n; i++)
-						if ((ap_cur->essid[i] >= 0 && ap_cur->essid[i] < 32))
-							ap_cur->essid[i] = '.';
+						if (ap_cur->essid[i] < 32) ap_cur->essid[i] = '.';
 			}
 
 			p += 2 + p[1];
