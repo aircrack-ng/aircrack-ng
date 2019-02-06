@@ -772,7 +772,7 @@ static const char usage[] =
 	"      -r             <file> : Read packets from that file\n"
 	"      -T                    : While reading packets from a file,\n"
 	"                              simulate the arrival rate of them\n"
-	"                              as if they were \"live\"."
+	"                              as if they were \"live\".\n"
 	"      -x            <msecs> : Active Scanning Simulation\n"
 	"      --manufacturer        : Display manufacturer from IEEE OUI list\n"
 	"      --uptime              : Display AP Uptime from Beacon Timestamp\n"
