@@ -1696,8 +1696,7 @@ skip_station:
 			if (p[0] == 0x00 && p[1] > 0 && p[2] != '\0'
 				&& (p[1] > 1 || p[2] != ' '))
 			{
-				//                n = ( p[1] > 32 ) ? 32 : p[1];
-				n = p[1];
+				n = MIN(ESSID_LENGTH, p[1]);
 
 				for (i = 0; i < n; i++)
 					if (p[2 + i] > 0 && p[2 + i] < ' ') goto skip_probe;
@@ -1764,12 +1763,10 @@ skip_probe:
 				&& (p[1] > 1 || p[2] != ' '))
 			{
 				/* found a non-cloaked ESSID */
-
-				//                n = ( p[1] > 32 ) ? 32 : p[1];
-				n = p[1];
+				n = MIN(ESSID_LENGTH, p[1]);
 
 				memset(ap_cur->essid, 0, ESSID_LENGTH + 1);
-				memcpy(ap_cur->essid, p + 2, MIN(ESSID_LENGTH, n));
+				memcpy(ap_cur->essid, p + 2, n);
 
 				if (opt.f_ivs != NULL && !ap_cur->essid_stored)
 				{
@@ -2336,12 +2333,11 @@ skip_probe:
 				&& (p[1] > 1 || p[2] != ' '))
 			{
 				/* found a non-cloaked ESSID */
-
-				n = (p[1] > 32) ? 32 : p[1];
+				n = MIN(ESSID_LENGTH, p[1]);
 
 				memset(ap_cur->essid, 0, ESSID_LENGTH + 1);
-				memcpy(ap_cur->essid, p + 2, MIN(ESSID_LENGTH, n));
-				ap_cur->ssid_length = (int) MIN(ESSID_LENGTH, n);
+				memcpy(ap_cur->essid, p + 2, n);
+				ap_cur->ssid_length = (int) n;
 
 				if (opt.f_ivs != NULL && !ap_cur->essid_stored)
 				{
