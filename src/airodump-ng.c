@@ -1551,7 +1551,7 @@ static int dump_add_packet(unsigned char * h80211,
 
 	if (st_cur == NULL)
 	{
-		if (!(st_cur = (struct ST_info *) malloc(sizeof(struct ST_info))))
+		if (!(st_cur = (struct ST_info *) calloc(1, sizeof(struct ST_info))))
 		{
 			perror("malloc failed");
 			return (1);
