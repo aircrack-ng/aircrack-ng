@@ -3782,19 +3782,18 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 			len = strlen(strbuf);
 
-			if ((ap_cur->security & (STD_OPN | STD_WEP | STD_WPA | STD_WPA2))
-				== 0)
+			if ((ap_cur->security & STD_FIELD) == 0)
 				snprintf(strbuf + len, sizeof(strbuf) - len, "    ");
 			else
 			{
-				if (ap_cur->security & STD_OPN)
-					snprintf(strbuf + len, sizeof(strbuf) - len, "OPN ");
-				else if (ap_cur->security & STD_WEP)
-					snprintf(strbuf + len, sizeof(strbuf) - len, "WEP ");
+				if (ap_cur->security & STD_WPA2)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "WPA2");
 				else if (ap_cur->security & STD_WPA)
 					snprintf(strbuf + len, sizeof(strbuf) - len, "WPA ");
-				else if (ap_cur->security & STD_WPA2)
-					snprintf(strbuf + len, sizeof(strbuf) - len, "WPA2");
+				else if (ap_cur->security & STD_WEP)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "WEP ");
+				else if (ap_cur->security & STD_OPN)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "OPN ");
 			}
 
 			strncat(strbuf, " ", sizeof(strbuf) - strlen(strbuf) - 1);
