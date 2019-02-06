@@ -132,7 +132,6 @@ then
     AX_CHECK_COMPILE_FLAG([-maltivec], [
         AX_APPEND_FLAG(-maltivec, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
         AC_SUBST(ppc_altivec_[]_AC_LANG_ABBREV[]flags)
-        ALTIVEC_FOUND=1
     ])
 
     AX_CHECK_COMPILE_FLAG([-mabi=altivec], [
@@ -153,11 +152,15 @@ then
     ])
     AS_IF([test x"AS_VAR_GET(CACHEVAR)" = xyes],
         [
+            ALTIVEC_FOUND=1
             POWER8_FOUND=1
             AX_APPEND_FLAG(-mvsx, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
             AX_APPEND_FLAG(-mpower8-vector, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
             AC_SUBST(ppc_altivec_[]_AC_LANG_ABBREV[]flags)
-        ], [POWER8_FOUND=0])
+        ], [
+            ALTIVEC_FOUND=0
+            POWER8_FOUND=0
+        ])
     AS_VAR_POPDEF([CACHEVAR])
 fi
 
