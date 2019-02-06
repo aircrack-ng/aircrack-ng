@@ -4835,7 +4835,6 @@ static void * gps_tracker_thread(void * arg)
 static void sighandler(int signum)
 {
 	int card = 0;
-	signal(signum, sighandler);
 
 	if (signum == SIGUSR1)
 	{
@@ -4875,9 +4874,10 @@ static void sighandler(int signum)
 
 	if (signum == SIGINT || signum == SIGTERM)
 	{
-		alarm(1);
 		lopt.do_exit = 1;
-		signal(SIGALRM, sighandler);
+		show_cursor();
+		reset_term();
+		fprintf(stdout, "Quitting...\n");
 	}
 
 	if (signum == SIGSEGV)
@@ -4888,14 +4888,6 @@ static void sighandler(int signum)
 		show_cursor();
 		fflush(stdout);
 		exit(1);
-	}
-
-	if (signum == SIGALRM && lopt.do_exit == 1)
-	{
-		show_cursor();
-		reset_term();
-		_exit(1);
-		return;
 	}
 
 	if (signum == SIGALRM)
@@ -6659,7 +6651,13 @@ int main(int argc, char * argv[])
 				IGNORE_NZ(pipe(lopt.ch_pipe));
 				IGNORE_NZ(pipe(lopt.cd_pipe));
 
-				signal(SIGUSR1, sighandler);
+				struct sigaction action;
+				action.sa_flags = 0;
+				action.sa_handler = &sighandler;
+				sigemptyset(&action.sa_mask);
+
+				if (sigaction(SIGUSR1, &action, NULL) == -1)
+					perror("sigaction(SIGUSR1)");
 
 				if (!fork())
 				{
@@ -6714,7 +6712,13 @@ int main(int argc, char * argv[])
 				IGNORE_NZ(pipe(lopt.ch_pipe));
 				IGNORE_NZ(pipe(lopt.cd_pipe));
 
-				signal(SIGUSR1, sighandler);
+				struct sigaction action;
+				action.sa_flags = 0;
+				action.sa_handler = &sighandler;
+				sigemptyset(&action.sa_mask);
+
+				if (sigaction(SIGUSR1, &action, NULL) == -1)
+					perror("sigaction(SIGUSR1)");
 
 				if (!fork())
 				{
@@ -6818,12 +6822,15 @@ int main(int argc, char * argv[])
 		if (dump_initialize_multi_format(lopt.dump_prefix, ivs_only))
 			return (EXIT_FAILURE);
 
-	signal(SIGINT, sighandler);
-	signal(SIGSEGV, sighandler);
-	signal(SIGTERM, sighandler);
-	signal(SIGWINCH, sighandler);
+	struct sigaction action;
+	action.sa_flags = 0;
+	action.sa_handler = &sighandler;
+	sigemptyset(&action.sa_mask);
 
-	sighandler(SIGWINCH);
+	if (sigaction(SIGINT, &action, NULL) == -1) perror("sigaction(SIGINT)");
+	if (sigaction(SIGSEGV, &action, NULL) == -1) perror("sigaction(SIGSEGV)");
+	if (sigaction(SIGTERM, &action, NULL) == -1) perror("sigaction(SIGTERM)");
+	if (sigaction(SIGWINCH, &action, NULL) == -1) perror("sigaction(SIGWINCH)");
 
 	/* fill oui struct if ram is greater than 32 MB */
 	if (get_ram_size() > MIN_RAM_SIZE_LOAD_OUI_RAM)

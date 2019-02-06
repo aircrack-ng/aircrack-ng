@@ -173,13 +173,18 @@ void show_cursor(void)
 int mygetch(void)
 {
 	struct termios oldt, newt;
-	int ch;
+	int ch = EOF;
 
 	tcgetattr(STDIN_FILENO, &oldt);
 	newt = oldt;
 	newt.c_lflag &= ~(ICANON | ECHO);
+	newt.c_cc[VMIN] = 0; /* require no keypress */
+	newt.c_cc[VTIME] = 2; /* 20 ms delay */
 	tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-	ch = getchar();
+
+	char c;
+	if (read(STDIN_FILENO, &c, sizeof(char)) > 0) ch = (int) c;
+
 	tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
 
 	return ch;
