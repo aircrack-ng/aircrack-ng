@@ -140,16 +140,25 @@ then
         AC_SUBST(ppc_altivec_[]_AC_LANG_ABBREV[]flags)
     ])
 
-    AX_CHECK_COMPILE_FLAG([-mvsx], [
-        AX_APPEND_FLAG(-mvsx, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
-        AC_SUBST(ppc_altivec_[]_AC_LANG_ABBREV[]flags)
+    AS_VAR_PUSHDEF([CACHEVAR], [ax_cv_altivec_[]_AC_LANG_ABBREV[]flags])
+    AC_CACHE_CHECK([whether _AC_LANG compiler supports VSX instructions], CACHEVAR, [
+        ax_check_save_flags=$[]_AC_LANG_PREFIX[]FLAGS
+        _AC_LANG_PREFIX[]FLAGS="$ppc_altivec_[]_AC_LANG_ABBREV[]flags -mvsx -mpower8-vector $[]_AC_LANG_PREFIX[]FLAGS"
+        AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+#if !defined(__VSX__) && !defined(__POWER8_VECTOR__)
+#error macro not defined
+#endif
+        ]])], [AS_VAR_SET(CACHEVAR,[yes])], [AS_VAR_SET(CACHEVAR,[no])])
+        _AC_LANG_PREFIX[]FLAGS=$ax_check_save_flags
     ])
-
-    AX_CHECK_COMPILE_FLAG([-mpower8-vector], [
-        AX_APPEND_FLAG(-mpower8-vector, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
-        AC_SUBST(ppc_altivec_[]_AC_LANG_ABBREV[]flags)
-        POWER8_FOUND=1
-    ])
+    AS_IF([test x"AS_VAR_GET(CACHEVAR)" = xyes],
+        [
+            POWER8_FOUND=1
+            AX_APPEND_FLAG(-mvsx, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
+            AX_APPEND_FLAG(-mpower8-vector, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
+            AC_SUBST(ppc_altivec_[]_AC_LANG_ABBREV[]flags)
+        ], [POWER8_FOUND=0])
+    AS_VAR_POPDEF([CACHEVAR])
 fi
 
 if test $IS_X86 -eq 0
