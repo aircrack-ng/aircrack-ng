@@ -8,7 +8,6 @@
 [![Armel Kali Linux Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng-armel.png?left_text=Armel%20Kali%20Linux%20Build)](https://buildbot.aircrack-ng.org/)
 [![Armhf Kali Linux Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng-armhf.png?left_text=Armhf%20Kali%20Linux%20Build)](https://buildbot.aircrack-ng.org/)
 [![DragonFly BSD Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng-dfly.png?left_text=DragonFly%20Build)](https://buildbot.aircrack-ng.org/)
-[![FreeBSD Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng-bsd.png?left_text=FreeBSD%20Build)](https://buildbot.aircrack-ng.org/)
 [![FreeBSD 11 Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng-fbsd-11.png?left_text=FreeBSD%2011%20Build)](https://buildbot.aircrack-ng.org/)
 [![FreeBSD 12 Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng-fbsd-12.png?left_text=FreeBSD%2012%20Build)](https://buildbot.aircrack-ng.org/)
 [![OpenBSD 6 Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng-obsd.png?left_text=OpenBSD%20Build)](https://buildbot.aircrack-ng.org/)
