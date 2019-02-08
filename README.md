@@ -11,6 +11,7 @@
 [![FreeBSD Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng-bsd.png?left_text=FreeBSD%20Build)](https://buildbot.aircrack-ng.org/)
 [![FreeBSD 11 Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng-fbsd-11.png?left_text=FreeBSD%2011%20Build)](https://buildbot.aircrack-ng.org/)
 [![FreeBSD 12 Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng-fbsd-12.png?left_text=FreeBSD%2012%20Build)](https://buildbot.aircrack-ng.org/)
+[![OpenBSD 6 Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng-obsd.png?left_text=OpenBSD%20Build)](https://buildbot.aircrack-ng.org/)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/aircrack-ng/badge.svg)](https://scan.coverity.com/projects/aircrack-ng)
 [![PackageCloud DEB](https://img.shields.io/badge/deb-packagecloud.io-844fec.svg)](https://packagecloud.io/aircrack-ng/git/install#bash-deb)
 [![PackageCloud RPM](https://img.shields.io/badge/rpm-packagecloud.io-844fec.svg)](https://packagecloud.io/aircrack-ng/git/install#bash-rpm)
