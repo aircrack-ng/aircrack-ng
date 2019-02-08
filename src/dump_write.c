@@ -40,6 +40,7 @@
 #include <ctype.h>
 #include <unistd.h> // ftruncate
 #include <sys/types.h> // ftruncate
+#include <sys/time.h>
 #ifdef HAVE_PCRE
 #include <pcre.h>
 #endif
