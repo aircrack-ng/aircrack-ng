@@ -6846,6 +6846,7 @@ int main(int argc, char * argv[])
 	} while (++optind < nbarg);
 
 	/* wait until threads re-read the original packets read in first pass */
+	ALLEGE(pthread_mutex_lock(&mx_eof) == 0);
 	if (!opt.bssid_set)
 	{
 		while (nb_prev_pkt != nb_pkt) pthread_cond_wait(&cv_eof, &mx_eof);
@@ -6854,6 +6855,7 @@ int main(int argc, char * argv[])
 	{
 		while (nb_eof != id) pthread_cond_wait(&cv_eof, &mx_eof);
 	}
+	ALLEGE(pthread_mutex_unlock(&mx_eof) == 0);
 
 	if (!opt.is_quiet && !opt.no_stdin)
 	{
