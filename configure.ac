@@ -64,6 +64,13 @@ AC_SUBST([ACLOCAL_AMFLAGS], ["-I build/m4/stubs -I build/m4 \${ACLOCAL_FLAGS}"])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 #
+# Ensure MAKE is GNU compatible
+#
+if ! ${MAKE-make} --version /cannot/make/this >/dev/null 2>&1; then
+    AC_MSG_ERROR([you don't seem to have GNU make; it is required])
+fi
+
+#
 # Find tooling
 #
 AIRCRACK_NG_PROG_CC
