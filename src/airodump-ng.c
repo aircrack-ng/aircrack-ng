@@ -3824,18 +3824,18 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			{
 				if (ap_cur->security & AUTH_MGT)
 					snprintf(strbuf + len, sizeof(strbuf) - len, "MGT ");
-				if (ap_cur->security & AUTH_CMAC)
+				else if (ap_cur->security & AUTH_CMAC)
 					snprintf(strbuf + len, sizeof(strbuf) - len, "CMAC");
-				if (ap_cur->security & AUTH_PSK)
+				else if (ap_cur->security & AUTH_PSK)
 				{
 					if (ap_cur->security & STD_WEP)
 						snprintf(strbuf + len, sizeof(strbuf) - len, "SKA ");
 					else
 						snprintf(strbuf + len, sizeof(strbuf) - len, "PSK ");
 				}
+				else if (ap_cur->security & AUTH_OPN)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "OPN ");
 			}
-			if (ap_cur->security & AUTH_OPN)
-				snprintf(strbuf + len, sizeof(strbuf) - len, "OPN ");
 
 			len = strlen(strbuf);
 
