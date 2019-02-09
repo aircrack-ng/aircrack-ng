@@ -38,7 +38,7 @@ struct tip_fbsd
 	int tf_fd;
 	int tf_ioctls;
 	struct ifreq tf_ifr;
-	char tf_name[MAX_IFACE_NAME];
+	char tf_name[IFNAMSIZ];
 	int tf_destroy;
 };
 
@@ -67,9 +67,6 @@ static int ti_do_open_fbsd(struct tif * ti, char * name)
 			 sizeof(priv->tf_name) - 1,
 			 "%s",
 			 devname(st.st_rdev, S_IFCHR));
-
-	/* ensure name does not exceed length permitted */
-	ALLEGE(strlen(priv->tf_name) < sizeof(ifr->ifr_name));
 
 	/* bring iface up */
 	s = socket(PF_INET, SOCK_DGRAM, 0);
