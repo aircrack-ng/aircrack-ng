@@ -34,7 +34,7 @@
 
 #include <errno.h>
 #include <stdint.h>
-#include <sys/signal.h>
+#include <signal.h>
 #include <sys/time.h>
 #include <sys/types.h>
 
