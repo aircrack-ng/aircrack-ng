@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "defs.h"
 #include "osdep.h"
 
 struct tip_fbsd
@@ -66,6 +67,9 @@ static int ti_do_open_fbsd(struct tif * ti, char * name)
 			 sizeof(priv->tf_name) - 1,
 			 "%s",
 			 devname(st.st_rdev, S_IFCHR));
+
+	/* ensure name does not exceed length permitted */
+	ALLEGE(strlen(priv->tf_name) < sizeof(ifr->ifr_name));
 
 	/* bring iface up */
 	s = socket(PF_INET, SOCK_DGRAM, 0);
