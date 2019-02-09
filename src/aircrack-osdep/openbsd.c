@@ -345,7 +345,7 @@ static int do_obsd_open(struct wif * wi, char * iface)
 	int s;
 	unsigned int flags;
 	struct ifmediareq ifmr;
-	int * mwords;
+	uint64_t * mwords;
 	struct priv_obsd * po = wi_priv(wi);
 	unsigned int size = sizeof(po->po_buf);
 
@@ -376,7 +376,7 @@ static int do_obsd_open(struct wif * wi, char * iface)
 
 	assert(ifmr.ifm_count != 0);
 
-	mwords = (int *) malloc(ifmr.ifm_count * sizeof(int));
+	mwords = (uint64_t *) malloc(ifmr.ifm_count * sizeof(uint64_t));
 	if (!mwords) goto close_sock;
 	ifmr.ifm_ulist = mwords;
 	if (ioctl(s, SIOCGIFMEDIA, &ifmr) == -1)
