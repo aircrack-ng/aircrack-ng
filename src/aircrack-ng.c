@@ -5425,6 +5425,10 @@ static int perform_wep_crack(struct AP_info * ap_cur)
 		}
 	}
 
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-overflow"
+#endif
 	ALLEGE(ret >= 0 && ret <= RESTART);
 	if (opt.is_quiet != 1 && ret == FAILURE)
 	{
@@ -5441,6 +5445,9 @@ static int perform_wep_crack(struct AP_info * ap_cur)
 		printf("KEY NOT FOUND\n");
 		moveto(0, 24);
 	}
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 	return (ret);
 }
