@@ -41,9 +41,13 @@
 #include <errno.h>
 #include <sys/stat.h>
 
-#include <pcap/pcap.h>
+#include <pcap.h>
 
 #include "defs.h"
+
+#ifndef DLT_PRISM_HEADER
+#define DLT_PRISM_HEADER 119
+#endif
 
 // Statistics
 static uint32_t stats_files = 0;
