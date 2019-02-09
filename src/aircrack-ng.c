@@ -3103,7 +3103,7 @@ get_ivs:
 		else
 		{
 			printf(
-				"Read %ld packets, got %ld IVs...\r", nb_pkt, wep.nb_ivs_now);
+				"Read %ld packets, got %ld IVs...\n", nb_pkt, wep.nb_ivs_now);
 			fflush(stdout);
 
 			sleep(1);
@@ -6532,7 +6532,7 @@ int main(int argc, char * argv[])
 	{
 		if (!opt.is_quiet)
 		{
-			printf("Reading packets, please wait...\r");
+			printf("Reading packets, please wait...\n");
 			fflush(stdout);
 		}
 
@@ -6769,7 +6769,7 @@ int main(int argc, char * argv[])
 
 	if (!opt.is_quiet)
 	{
-		printf("Reading packets, please wait...\r");
+		printf("Reading packets, please wait...\n");
 		fflush(stdout);
 	}
 
