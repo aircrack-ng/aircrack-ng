@@ -145,6 +145,7 @@ static pthread_mutex_t mx_dic; /* lock access to opt.dict      */
 static pthread_cond_t cv_eof; /* read EOF condition variable  */
 static int nb_eof = 0; /* # of threads who reached eof */
 static long nb_pkt = 0; /* # of packets read so far     */
+static long nb_prev_pkt = 0; /* # of packets read in prior pass */
 static int mc_pipe[256][2]; /* master->child control pipe   */
 static int cm_pipe[256][2]; /* child->master results pipe   */
 static int bf_pipe[256][2]; /* bruteforcer 'queue' pipe	 */
@@ -173,6 +174,7 @@ typedef struct
 
 typedef struct
 {
+	int tail;
 	int off1;
 	int off2;
 	void * buf1;
@@ -621,7 +623,6 @@ static int parse_ivs2(struct AP_info * ap_cur,
 static void clean_exit(int ret)
 {
 	int i = 0;
-	int child_pid;
 
 	char tmpbuf[128];
 	memset(tmpbuf, 0, 128);
@@ -683,6 +684,8 @@ static void clean_exit(int ret)
 		}
 	}
 
+	ALLEGE(pthread_cond_destroy(&cv_eof) == 0);
+
 	dso_ac_crypto_engine_destroy(&engine);
 	ac_crypto_engine_loader_unload();
 
@@ -727,21 +730,7 @@ static void clean_exit(int ret)
 		ac_session_free(&cracking_session);
 	}
 
-	// FIXME: Is this necessary anymore?
-	child_pid = fork();
-
-	if (child_pid == -1)
-	{
-		/* do error stuff here */
-	}
-	if (child_pid != 0)
-	{
-		/* The parent process exits here. */
-
-		exit(EXIT_SUCCESS);
-	}
-
-	_exit(ret);
+	exit(EXIT_SUCCESS);
 }
 
 static void sighandler(int signum)
@@ -1159,13 +1148,39 @@ static int mergebssids(const char * bssidlist, unsigned char * bssid)
 	return (list_cur->convert);
 }
 
+static ssize_t may_read(int fd)
+{
+	struct timeval tv;
+	fd_set rfds;
+
+	FD_ZERO(&rfds);
+	FD_SET(fd, &rfds);
+
+	tv.tv_sec = 0;
+	tv.tv_usec = 250000;
+
+	while (select(fd + 1, &rfds, NULL, NULL, &tv) < 0)
+	{
+		if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) continue;
+		perror("select");
+		abort();
+	}
+
+	if (FD_ISSET(fd, &rfds))
+	{
+		return (1);
+	}
+
+	return (0);
+}
+
 /* fread isn't atomic, sadly */
 
 static int atomic_read(read_buf * rb, int fd, int len, void * buf)
 {
 	ssize_t n;
 
-	if (close_aircrack) return (CLOSE_IT);
+	if (close_aircrack) return (0);
 
 	if (rb->buf1 == NULL)
 	{
@@ -1196,7 +1211,17 @@ static int atomic_read(read_buf * rb, int fd, int len, void * buf)
 	}
 	else
 	{
-		n = read(fd, (char *) rb->buf1 + rb->off2, (size_t)(65536 - rb->off2));
+		do
+		{
+			if (may_read(fd))
+			{
+				n = read(fd,
+						 (char *) rb->buf1 + rb->off2,
+						 (size_t)(65536 - rb->off2));
+			}
+
+			if (close_aircrack) return (0);
+		} while (rb->tail && n == 0);
 
 		if (n <= 0) return (0);
 
@@ -1935,6 +1960,10 @@ static void packet_reader_thread(void * arg)
 
 	ALLEGE(signal(SIGINT, sighandler) != SIG_ERR);
 
+	rb.tail
+		= ((request->mode == PACKET_READER_READ_MODE && !opt.bssid_set) ? 1
+																		: 0);
+
 	if ((buffer = (unsigned char *) malloc(65536)) == NULL)
 	{
 		/* there is no buffer */
@@ -2054,13 +2083,6 @@ static void packet_reader_thread(void * arg)
 					"or use airodump-ng >= 1.0\n");
 			goto read_fail;
 		}
-	}
-
-	/* avoid blocking on reading the file */
-	if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
-	{
-		perror("fcntl(O_NONBLOCK) failed");
-		goto read_fail;
 	}
 
 	while (1)
@@ -2202,10 +2224,16 @@ static void packet_reader_thread(void * arg)
 				goto done_reading;
 			}
 		}
+
+		if (request->mode == PACKET_READER_READ_MODE && nb_prev_pkt == nb_pkt)
+		{
+			pthread_cond_signal(&cv_eof);
+		}
 	}
 
 done_reading:
 	++nb_eof;
+	pthread_cond_signal(&cv_eof);
 
 read_fail:
 	destroy(buffer, free);
@@ -2250,10 +2278,17 @@ static ssize_t safe_read(int fd, void * buf, size_t len)
 
 	while (sum < len)
 	{
-		if (!(n = read(fd, (void *) off, len - sum)))
+		n = 0;
+
+		if (may_read(fd))
 		{
-			return (0);
+			if (!(n = read(fd, (void *) off, len - sum)))
+			{
+				return (0);
+			}
 		}
+		if (close_aircrack) return (-1);
+
 		if (n < 0 && errno == EINTR) continue;
 		if (n < 0) return (n);
 
@@ -2313,9 +2348,7 @@ static int crack_wep_thread(void * arg)
 	{
 		if (safe_read(mc_pipe[cid][0], (void *) &B, sizeof(int)) != sizeof(int))
 		{
-			perror("read failed");
-			kill(0, SIGTERM);
-			_exit(EXIT_FAILURE);
+			return (FAILURE);
 		}
 		if (close_aircrack) break;
 
@@ -2907,9 +2940,7 @@ static int calc_poll(int B)
 
 		if ((size_t) safe_read(cm_pipe[cid][0], votes, n) != n)
 		{
-			perror("read failed");
-			kill(0, SIGTERM);
-			_exit(EXIT_FAILURE);
+			return (FAILURE);
 		}
 
 		for (n = 0, vi = (int *) votes; n < N_ATTACKS; n++)
@@ -3077,6 +3108,7 @@ static int do_wep_crack1(int B)
 	char user_guess[4];
 
 get_ivs:
+	if (wepkey_crack_success) return (SUCCESS);
 
 	switch (update_ivbuf())
 	{
@@ -3493,9 +3525,7 @@ inner_bruteforcer_thread_start:
 	 */
 	if (safe_read(bf_pipe[nthread][0], (void *) wepkey, 64) != 64)
 	{
-		perror("read failed");
-		kill(0, SIGTERM);
-		_exit(EXIT_FAILURE);
+		return (FAILURE);
 	}
 
 	if (close_aircrack) return (ret);
@@ -5283,9 +5313,12 @@ static int perform_wep_crack(struct AP_info * ap_cur)
 					printf("Failed. Next try with %d IVs.\n", opt.next_ptw_try);
 				}
 			}
-			if (ret) usleep(10000);
+			if (ret) usleep(1000);
 		} while (!close_aircrack && ret != 0);
 	}
+
+	if (close_aircrack)
+		return (FAILURE);
 
 	else if (opt.dict != NULL)
 	{
@@ -6742,7 +6775,6 @@ int main(int argc, char * argv[])
 			ap_avl_release_unused(ap_cur);
 
 			memcpy(opt.bssid, ap_cur->bssid, ETHER_ADDR_LEN);
-			opt.bssid_set = 1;
 
 			// Copy BSSID to the cracking session
 			if (cracking_session && opt.dict != NULL)
@@ -6762,6 +6794,7 @@ int main(int argc, char * argv[])
 	}
 
 	id = 0;
+	nb_prev_pkt = nb_pkt;
 	nb_pkt = 0;
 	nb_eof = 0;
 
@@ -6812,12 +6845,14 @@ int main(int argc, char * argv[])
 		if (id >= MAX_THREADS) break;
 	} while (++optind < nbarg);
 
-	/* wait until each thread reaches EOF */
-
-	for (i = 0; i < id; i++)
+	/* wait until threads re-read the original packets read in first pass */
+	if (!opt.bssid_set)
 	{
-		ALLEGE(pthread_join(tid[i], NULL) == 0);
-		tid[i] = 0;
+		while (nb_prev_pkt != nb_pkt) pthread_cond_wait(&cv_eof, &mx_eof);
+	}
+	else
+	{
+		while (nb_eof != id) pthread_cond_wait(&cv_eof, &mx_eof);
 	}
 
 	if (!opt.is_quiet && !opt.no_stdin)
