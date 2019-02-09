@@ -81,7 +81,7 @@
 #include "crypto.h"
 #include "hashcat.h"
 #include "linecount.h"
-#include "pcap.h"
+#include "pcap_local.h"
 #include "session.h"
 #include "uniqueiv.h"
 #include "version.h"

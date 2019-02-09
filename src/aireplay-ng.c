@@ -68,7 +68,7 @@
 #include <netinet/tcp.h>
 
 #include "version.h"
-#include "pcap.h"
+#include "pcap_local.h"
 #include "defs.h"
 #include "aircrack-osdep/osdep.h"
 #include "communications.h"

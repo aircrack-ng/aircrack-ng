@@ -62,7 +62,7 @@
 #include <ctype.h>
 
 #include "version.h"
-#include "pcap.h"
+#include "pcap_local.h"
 #include "crypto.h"
 #include "aircrack-util/common.h"
 #include "eapol.h"

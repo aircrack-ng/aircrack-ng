@@ -46,7 +46,7 @@
 #include <math.h>
 #include <float.h>
 
-#include "pcap.h"
+#include "pcap_local.h"
 #include "defs.h"
 #include "aircrack-ptw-lib.h"
 #include "aircrack-ng.h"

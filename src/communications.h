@@ -46,7 +46,7 @@
 #include <unistd.h>
 
 #include "defs.h"
-#include "pcap.h"
+#include "pcap_local.h"
 #include "aircrack-osdep/osdep.h"
 #include "aircrack-util/common.h"
 #include "include/ieee80211.h"

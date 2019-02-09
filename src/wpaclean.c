@@ -47,7 +47,7 @@
 #include "aircrack-osdep/osdep.h"
 #include "ieee80211.h"
 #include "crypto.h"
-#include "pcap.h"
+#include "pcap_local.h"
 #include "aircrack-util/common.h"
 
 struct packet

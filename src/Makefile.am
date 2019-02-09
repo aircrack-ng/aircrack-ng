@@ -292,7 +292,7 @@ EXTRA_DIST = wpaclean.c \
              easside.h \
              aireplay-ng.c \
              ivstools.c \
-             pcap.h \
+             pcap_local.h \
              aircrack-ng.c \
              airodump-ng.c \
              crypto.c \

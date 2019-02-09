@@ -70,7 +70,7 @@
 
 #include "defs.h"
 #include "version.h"
-#include "pcap.h"
+#include "pcap_local.h"
 #include "uniqueiv.h"
 #include "communications.h"
 #include "crypto.h"

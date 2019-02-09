@@ -34,7 +34,7 @@
 
 #include <stdbool.h>
 
-#include "pcap.h"
+#include "pcap_local.h"
 #include "aircrack-util/common.h"
 
 typedef bool BOOLEAN;

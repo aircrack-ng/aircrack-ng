@@ -63,7 +63,7 @@
 		 * - since linux does not include it in userspace headers
 		 */
 #include "osdep.h"
-#include "pcap.h"
+#include "pcap_local.h"
 #include "crctable_osdep.h"
 #include "common.h"
 #include "byteorder.h"
