@@ -1162,6 +1162,7 @@ static ssize_t may_read(int fd)
 	while (select(fd + 1, &rfds, NULL, NULL, &tv) < 0)
 	{
 		if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) continue;
+		if (errno == EBADF) return (0);
 		perror("select");
 		abort();
 	}
