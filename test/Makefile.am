@@ -94,6 +94,10 @@ TESTS = test-hex_string_to_array.sh \
 		test-wpaclean-0002.sh \
 		test-alltools.sh
 
+if EXPECT
+TESTS += test-aircrack-ng-0020.sh
+endif
+
 if LINUX
 TESTS += test-aireplay-ng-0002.sh \
 		test-aireplay-ng-0004.sh \

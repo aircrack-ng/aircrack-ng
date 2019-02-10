@@ -104,6 +104,7 @@ AIRCRACK_NG_LIBNL
 # Optional
 #
 AIRCRACK_NG_AIRPCAP
+AIRCRACK_NG_EXPECT
 AIRCRACK_NG_EXPERIMENTAL
 AIRCRACK_NG_EXT_SCRIPTS
 AIRCRACK_NG_HWLOC
@@ -171,6 +172,7 @@ AM_CONDITIONAL([MULTIBIN], [test "$with_multibin" = yes])
 AM_CONDITIONAL([ENABLE_INSTALLED_TESTS], [test "nope" = yes]) # for glib tests
 AM_CONDITIONAL([CMOCKA], [test "$CMOCKA_FOUND" = yes])
 AM_CONDITIONAL([STATIC_BUILD], [test "$enable_static" = yes])
+AM_CONDITIONAL([EXPECT], [test "$EXPECT_FOUND" = yes])
 
 #
 # Save flags for build summary
