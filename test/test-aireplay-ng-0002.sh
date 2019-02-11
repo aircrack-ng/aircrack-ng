@@ -72,9 +72,9 @@ sleep 3
 # Unload hwsim module
 [ ${LOAD_MODULE} -eq 1 ] && rmmod mac80211_hwsim 2>&1 >/dev/null
 
-# There should be exactly 256 deauth
+# There should be exactly 128 deauth
 AMOUNT_PACKETS=$(tcpdump -r ${TEMP_PCAP} 2>/dev/null | grep "DeAuthentication (${AP_MAC}" | wc -l)
 rm ${TEMP_PCAP}
-[ ${AMOUNT_PACKETS} -eq 256 ] && exit 0
+[ ${AMOUNT_PACKETS} -eq 128 ] && exit 0
 
 exit 1
