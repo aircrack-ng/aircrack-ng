@@ -101,4 +101,6 @@ if [ -z "$(grep 'Probing at 54.0 Mbps:	30/30: 100%' ${OUTPUT_TEMP})" ]; then
 	return 1
 fi
 
+rm ${OUTPUT_TEMP}
+
 exit 0

@@ -62,9 +62,9 @@ CLIENT_MAC="00:13:37:00:11:22"
 	${WI_IFACE} \
 		2>&1 >/dev/null
 
-# Wait a second so data can be written to file
+# Wait a few seconds so data can be written to file
 # Without it, it does not have time to write it and file is empty
-sleep 1
+sleep 3
 
 # Kill tcpdump and remove hwsim module
 kill -9 ${TCPDUMP_PID}
