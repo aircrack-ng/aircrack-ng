@@ -35,6 +35,7 @@
 #include "osdep.h"
 #include "pcap_local.h"
 #include "radiotap/radiotap_iter.h"
+#include "common.h"
 
 struct priv_file
 {
@@ -56,10 +57,12 @@ static int file_read(struct wif * wi,
 	struct priv_file * pf = wi_priv(wi);
 	struct pcap_pkthdr pkh;
 	int rc;
+	int got_signal = 0;
+	int got_noise = 0;
 	unsigned char buf[4096] __attribute__((aligned(8)));
 	int off = 0;
 	struct ieee80211_radiotap_header * rh;
-	struct ieee80211_radiotap_iterator iter;
+	struct ieee80211_radiotap_iterator iterator;
 
 	rc = read(pf->pf_fd, &pkh, sizeof(pkh));
 	if (rc != sizeof(pkh)) return -1;
@@ -93,15 +96,84 @@ static int file_read(struct wif * wi,
 			rh = (struct ieee80211_radiotap_header *) buf;
 			off = le16_to_cpu(rh->it_len);
 
-			if (ieee80211_radiotap_iterator_init(&iter, rh, rc, NULL) < 0)
+			if (ieee80211_radiotap_iterator_init(&iterator, rh, rc, NULL) < 0)
 				return -1;
 
-			while (ieee80211_radiotap_iterator_next(&iter) >= 0)
+			while (ieee80211_radiotap_iterator_next(&iterator) >= 0)
 			{
-				switch (iter.this_arg_index)
+				switch (iterator.this_arg_index)
 				{
+					case IEEE80211_RADIOTAP_TSFT:
+						if (ri)
+							ri->ri_mactime = le64_to_cpu(
+								*((uint64_t *) iterator.this_arg));
+						break;
+
+					case IEEE80211_RADIOTAP_DBM_ANTSIGNAL:
+						if (ri && !got_signal)
+						{
+							if (*iterator.this_arg < 127)
+								ri->ri_power = *iterator.this_arg;
+							else
+								ri->ri_power = *iterator.this_arg - 255;
+
+							got_signal = 1;
+						}
+						break;
+
+					case IEEE80211_RADIOTAP_DB_ANTSIGNAL:
+						if (ri && !got_signal)
+						{
+							if (*iterator.this_arg < 127)
+								ri->ri_power = *iterator.this_arg;
+							else
+								ri->ri_power = *iterator.this_arg - 255;
+
+							got_signal = 1;
+						}
+						break;
+
+					case IEEE80211_RADIOTAP_DBM_ANTNOISE:
+						if (ri && !got_noise)
+						{
+							if (*iterator.this_arg < 127)
+								ri->ri_noise = *iterator.this_arg;
+							else
+								ri->ri_noise = *iterator.this_arg - 255;
+
+							got_noise = 1;
+						}
+						break;
+
+					case IEEE80211_RADIOTAP_DB_ANTNOISE:
+						if (ri && !got_noise)
+						{
+							if (*iterator.this_arg < 127)
+								ri->ri_noise = *iterator.this_arg;
+							else
+								ri->ri_noise = *iterator.this_arg - 255;
+
+							got_noise = 1;
+						}
+						break;
+
+					case IEEE80211_RADIOTAP_ANTENNA:
+						if (ri) ri->ri_antenna = *iterator.this_arg;
+						break;
+
+					case IEEE80211_RADIOTAP_CHANNEL:
+						if (ri)
+							ri->ri_channel = getChannelFromFrequency(
+								le16toh(*(uint16_t *) iterator.this_arg));
+						break;
+
+					case IEEE80211_RADIOTAP_RATE:
+						if (ri) ri->ri_rate = (*iterator.this_arg) * 500000;
+						break;
+
 					case IEEE80211_RADIOTAP_FLAGS:
-						if (*iter.this_arg & IEEE80211_RADIOTAP_F_FCS) rc -= 4;
+						if (*iterator.this_arg & IEEE80211_RADIOTAP_F_FCS)
+							rc -= 4;
 						break;
 				}
 			}
@@ -109,9 +181,34 @@ static int file_read(struct wif * wi,
 
 		case LINKTYPE_PRISM_HEADER:
 			if (buf[7] == 0x40)
+			{
 				off = 0x40;
+
+				if (ri)
+				{
+					ri->ri_power = -(*(int *) (buf + 0x33));
+					ri->ri_noise = *(unsigned int *) (buf + 0x33 + 12); //-V1032
+					ri->ri_rate
+						= (*(unsigned int *) (buf + 0x33 + 24)) * 500000;
+
+					got_signal = 1;
+					got_noise = 1;
+				}
+			}
 			else
+			{
 				off = le32_to_cpu(*(unsigned int *) (buf + 4)); //-V1032
+
+				if (ri)
+				{
+					ri->ri_mactime = *(u_int64_t *) (buf + 0x5C - 48);
+					ri->ri_channel = *(unsigned int *) (buf + 0x5C - 36);
+					ri->ri_power = -(*(int *) (buf + 0x5C));
+					ri->ri_noise = *(unsigned int *) (buf + 0x5C + 12);
+					ri->ri_rate
+						= (*(unsigned int *) (buf + 0x5C + 24)) * 500000;
+				}
+			}
 
 			rc -= 4;
 			break;
