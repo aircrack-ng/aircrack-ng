@@ -186,10 +186,9 @@ static int file_read(struct wif * wi,
 
 				if (ri)
 				{
-					ri->ri_power = -(*(int *) (buf + 0x33));
-					ri->ri_noise = *(unsigned int *) (buf + 0x33 + 12); //-V1032
-					ri->ri_rate
-						= (*(unsigned int *) (buf + 0x33 + 24)) * 500000;
+					ri->ri_power = -((int32_t) load32_le(buf + 0x33));
+					ri->ri_noise = (int32_t) load32_le(buf + 0x33 + 12);
+					ri->ri_rate = load32_le(buf + 0x33 + 24) * 500000;
 
 					got_signal = 1;
 					got_noise = 1;
@@ -197,16 +196,15 @@ static int file_read(struct wif * wi,
 			}
 			else
 			{
-				off = le32_to_cpu(*(unsigned int *) (buf + 4)); //-V1032
+				off = load32_le(buf + 4);
 
 				if (ri)
 				{
-					ri->ri_mactime = *(u_int64_t *) (buf + 0x5C - 48);
-					ri->ri_channel = *(unsigned int *) (buf + 0x5C - 36);
-					ri->ri_power = -(*(int *) (buf + 0x5C));
-					ri->ri_noise = *(unsigned int *) (buf + 0x5C + 12);
-					ri->ri_rate
-						= (*(unsigned int *) (buf + 0x5C + 24)) * 500000;
+					ri->ri_mactime = load64_le(buf + 0x5C - 48);
+					ri->ri_channel = load32_le(buf + 0x5C - 36);
+					ri->ri_power = -((int32_t) load32_le(buf + 0x5C));
+					ri->ri_noise = (int32_t) load32_le(buf + 0x5C + 12);
+					ri->ri_rate = load32_le(buf + 0x5C + 24) * 500000;
 				}
 			}
 
@@ -214,11 +212,10 @@ static int file_read(struct wif * wi,
 			break;
 
 		case LINKTYPE_PPI_HDR:
-			off = le16_to_cpu(*(unsigned short *) (buf + 2));
+			off = load16_le(buf + 2);
 
 			/* for a while Kismet logged broken PPI headers */
-			if (off == 24 && le16_to_cpu(*(unsigned short *) (buf + 8)) == 2)
-				off = 32;
+			if (off == 24 && load16_le(buf + 8) == 2) off = 32;
 
 			break;
 

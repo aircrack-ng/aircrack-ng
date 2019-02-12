@@ -7021,21 +7021,18 @@ int main(int argc, char * argv[])
 				if (h80211[7] == 0x40)
 				{
 					n = 64;
-					ri.ri_power = -(*(int *) (h80211 + 0x33));
-					ri.ri_noise
-						= *(unsigned int *) (h80211 + 0x33 + 12); //-V1032
-					ri.ri_rate
-						= (*(unsigned int *) (h80211 + 0x33 + 24)) * 500000;
+					ri.ri_power = -((int32_t) load32_le(h80211 + 0x33));
+					ri.ri_noise = (int32_t) load32_le(h80211 + 0x33 + 12);
+					ri.ri_rate = load32_le(h80211 + 0x33 + 24) * 500000;
 				}
 				else
 				{
-					n = le32_to_cpu(*(unsigned int *) (h80211 + 4)); //-V1032
-					ri.ri_mactime = *(u_int64_t *) (h80211 + 0x5C - 48);
-					ri.ri_channel = *(unsigned int *) (h80211 + 0x5C - 36);
-					ri.ri_power = -(*(int *) (h80211 + 0x5C));
-					ri.ri_noise = *(unsigned int *) (h80211 + 0x5C + 12);
-					ri.ri_rate
-						= (*(unsigned int *) (h80211 + 0x5C + 24)) * 500000;
+					n = load32_le(h80211 + 4);
+					ri.ri_mactime = load64_le(h80211 + 0x5C - 48);
+					ri.ri_channel = load32_le(h80211 + 0x5C - 36);
+					ri.ri_power = -((int32_t) load32_le(h80211 + 0x5C));
+					ri.ri_noise = (int32_t) load32_le(h80211 + 0x5C + 12);
+					ri.ri_rate = load32_le(h80211 + 0x5C + 24) * 500000;
 				}
 
 				if (n < 8 || n >= caplen) continue;
@@ -7049,7 +7046,7 @@ int main(int argc, char * argv[])
 			{
 				/* remove the radiotap header */
 
-				n = *(unsigned short *) (h80211 + 2);
+				n = load16_le(h80211 + 2);
 
 				if (n <= 0 || n >= caplen) continue;
 
@@ -7150,14 +7147,12 @@ int main(int argc, char * argv[])
 			{
 				/* remove the PPI header */
 
-				n = le16_to_cpu(*(unsigned short *) (h80211 + 2));
+				n = load16_le(h80211 + 2);
 
 				if (n <= 0 || n >= caplen) continue;
 
 				/* for a while Kismet logged broken PPI headers */
-				if (n == 24
-					&& le16_to_cpu(*(unsigned short *) (h80211 + 8)) == 2)
-					n = 32;
+				if (n == 24 && load16_le(h80211 + 8) == 2) n = 32;
 
 				if (n <= 0 || n >= caplen) continue; //-V560
 

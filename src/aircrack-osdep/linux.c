@@ -655,9 +655,9 @@ static int linux_read(struct wif * wi,
 			/* prism54 uses a different format */
 			if (ri)
 			{
-				ri->ri_power = tmpbuf[0x33];
-				ri->ri_noise = *(unsigned int *) (tmpbuf + 0x33 + 12); //-V1032
-				ri->ri_rate = (*(unsigned int *) (tmpbuf + 0x33 + 24)) * 500000;
+				ri->ri_power = -((int32_t) load32_le(tmpbuf + 0x33));
+				ri->ri_noise = (int32_t) load32_le(tmpbuf + 0x33 + 12);
+				ri->ri_rate = load32_le(buf + 0x33 + 24) * 500000;
 
 				got_signal = 1;
 				got_noise = 1;
@@ -669,24 +669,22 @@ static int linux_read(struct wif * wi,
 		{
 			if (ri)
 			{
-				ri->ri_mactime = *(u_int64_t *) (tmpbuf + 0x5C - 48);
-				ri->ri_channel = *(unsigned int *) (tmpbuf + 0x5C - 36);
-				ri->ri_power = *(unsigned int *) (tmpbuf + 0x5C);
-				ri->ri_noise = *(unsigned int *) (tmpbuf + 0x5C + 12);
-				ri->ri_rate = (*(unsigned int *) (tmpbuf + 0x5C + 24)) * 500000;
+				ri->ri_mactime = load64_le(tmpbuf + 0x5C - 48);
+				ri->ri_channel = load32_le(tmpbuf + 0x5C - 36);
+				ri->ri_power = -((int32_t) load32_le(tmpbuf + 0x5C));
+				ri->ri_noise = (int32_t) load32_le(tmpbuf + 0x5C + 12);
+				ri->ri_rate = load32_le(tmpbuf + 0x5C + 24) * 500000;
 
-				//                if( ! memcmp( iface[i], "ath", 3 ) )
-				if (dev->drivertype == DT_MADWIFI)
-					ri->ri_power -= *(int *) (tmpbuf + 0x68);
-				if (dev->drivertype == DT_MADWIFING)
-					ri->ri_power -= *(int *) (tmpbuf + 0x68);
+				if (dev->drivertype == DT_MADWIFI
+					|| dev->drivertype == DT_MADWIFING)
+					ri->ri_power -= (int32_t) load32_le(tmpbuf + 0x68);
 
 				got_channel = 1;
 				got_signal = 1;
 				got_noise = 1;
 			}
 
-			n = *(int *) (tmpbuf + 4);
+			n = load32_le(tmpbuf + 4);
 		}
 
 		if (n < 8 || n >= caplen) return (0);
@@ -697,7 +695,7 @@ static int linux_read(struct wif * wi,
 		struct ieee80211_radiotap_iterator iterator;
 		struct ieee80211_radiotap_header * rthdr;
 
-		rthdr = (struct ieee80211_radiotap_header *) tmpbuf;
+		rthdr = (struct ieee80211_radiotap_header *) tmpbuf; //-V1032
 
 		if (ieee80211_radiotap_iterator_init(&iterator, rthdr, caplen, NULL)
 			< 0)

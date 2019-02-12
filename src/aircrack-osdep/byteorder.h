@@ -35,6 +35,8 @@
 #ifndef _AIRCRACK_NG_BYTEORDER_H_
 #define _AIRCRACK_NG_BYTEORDER_H_
 
+#include <string.h>
+
 #define ___my_swab16(x)                                                        \
 	((u_int16_t)((((u_int16_t)(x) & (u_int16_t) 0x00ffU) << 8u)                \
 				 | (((u_int16_t)(x) & (u_int16_t) 0xff00U) >> 8u)))
@@ -444,5 +446,50 @@ typedef uint8_t u_int8_t;
 #ifndef ntohl
 #define ntohl be32_to_cpu
 #endif
+
+/* Loads and stores. These avoid undefined behavior due to unaligned memory
+ * accesses, via memcpy. */
+
+inline static uint16_t load16(uint8_t * b)
+{
+	uint16_t x;
+	memcpy(&x, b, 2);
+	return x;
+}
+
+inline static uint32_t load32(uint8_t * b)
+{
+	uint32_t x;
+	memcpy(&x, b, 4);
+	return x;
+}
+
+inline static uint64_t load64(uint8_t * b)
+{
+	uint64_t x;
+	memcpy(&x, b, 8);
+	return x;
+}
+
+inline static void store16(uint8_t * b, uint16_t i) { memcpy(b, &i, 2); }
+
+inline static void store32(uint8_t * b, uint32_t i) { memcpy(b, &i, 4); }
+
+inline static void store64(uint8_t * b, uint64_t i) { memcpy(b, &i, 8); }
+
+#define load16_le(b) (le16toh(load16(b)))
+#define store16_le(b, i) (store16(b, htole16(i)))
+#define load16_be(b) (be16toh(load16(b)))
+#define store16_be(b, i) (store16(b, htobe16(i)))
+
+#define load32_le(b) (le32toh(load32(b)))
+#define store32_le(b, i) (store32(b, htole32(i)))
+#define load32_be(b) (be32toh(load32(b)))
+#define store32_be(b, i) (store32(b, htobe32(i)))
+
+#define load64_le(b) (le64toh(load64(b)))
+#define store64_le(b, i) (store64(b, htole64(i)))
+#define load64_be(b) (be64toh(load64(b)))
+#define store64_be(b, i) (store64(b, htobe64(i)))
 
 #endif

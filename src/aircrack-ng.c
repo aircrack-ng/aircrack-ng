@@ -2157,7 +2157,7 @@ static void packet_reader_thread(void * arg)
 					n = 64;
 				else
 				{
-					n = le32_to_cpu(*(int *) (h80211 + 4));
+					n = load32_le(h80211 + 4);
 				}
 
 				if (n < 8 || n >= (int) pkh.caplen) continue;
@@ -2169,7 +2169,7 @@ static void packet_reader_thread(void * arg)
 			else if (pfh.linktype == LINKTYPE_RADIOTAP_HDR)
 			{
 				/* remove the radiotap header */
-				n = le16_to_cpu(*(unsigned short *) (h80211 + 2));
+				n = load16_le(h80211 + 2);
 
 				if (n <= 0 || n >= (int) pkh.caplen) continue;
 
@@ -2180,14 +2180,12 @@ static void packet_reader_thread(void * arg)
 			else if (pfh.linktype == LINKTYPE_PPI_HDR)
 			{
 				/* Remove the PPI header */
-				n = le16_to_cpu(*(unsigned short *) (h80211 + 2));
+				n = load16_le(h80211 + 2);
 
 				if (n <= 0 || n >= (int) pkh.caplen) continue;
 
 				/* for a while Kismet logged broken PPI headers */
-				if (n == 24
-					&& le16_to_cpu(*(unsigned short *) (h80211 + 8)) == 2)
-					n = 32;
+				if (n == 24 && load16_le(h80211 + 8) == 2) n = 32;
 
 				h80211 += n;
 				pkh.caplen -= n;
