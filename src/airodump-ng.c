@@ -84,6 +84,8 @@
 #include "aircrack-util/mcs_index_rates.h"
 #include "aircrack-util/verifyssid.h"
 #include "aircrack-util/console.h"
+#include "aircrack-osdep/radiotap/radiotap.h"
+#include "aircrack-osdep/radiotap/radiotap_iter.h"
 
 // libgcrypt thread callback definition for libgcrypt < 1.6.0
 #ifdef USE_GCRYPT
@@ -7017,9 +7019,24 @@ int main(int argc, char * argv[])
 			if (lopt.pfh_in.linktype == LINKTYPE_PRISM_HEADER)
 			{
 				if (h80211[7] == 0x40)
+				{
 					n = 64;
+					ri.ri_power = -(*(int *) (h80211 + 0x33));
+					ri.ri_noise
+						= *(unsigned int *) (h80211 + 0x33 + 12); //-V1032
+					ri.ri_rate
+						= (*(unsigned int *) (h80211 + 0x33 + 24)) * 500000;
+				}
 				else
-					n = *(int *) (h80211 + 4); //-V1032
+				{
+					n = le32_to_cpu(*(unsigned int *) (h80211 + 4)); //-V1032
+					ri.ri_mactime = *(u_int64_t *) (h80211 + 0x5C - 48);
+					ri.ri_channel = *(unsigned int *) (h80211 + 0x5C - 36);
+					ri.ri_power = -(*(int *) (h80211 + 0x5C));
+					ri.ri_noise = *(unsigned int *) (h80211 + 0x5C + 12);
+					ri.ri_rate
+						= (*(unsigned int *) (h80211 + 0x5C + 24)) * 500000;
+				}
 
 				if (n < 8 || n >= caplen) continue;
 
@@ -7035,6 +7052,94 @@ int main(int argc, char * argv[])
 				n = *(unsigned short *) (h80211 + 2);
 
 				if (n <= 0 || n >= caplen) continue;
+
+				int got_signal = 0;
+				int got_noise = 0;
+				struct ieee80211_radiotap_iterator iterator;
+				struct ieee80211_radiotap_header * rthdr;
+
+				rthdr = (struct ieee80211_radiotap_header *) h80211;
+
+				if (ieee80211_radiotap_iterator_init(
+						&iterator, rthdr, caplen, NULL)
+					< 0)
+					continue;
+
+				/* go through the radiotap arguments we have been given
+				 * by the driver
+				 */
+
+				while (ieee80211_radiotap_iterator_next(&iterator) >= 0)
+				{
+					switch (iterator.this_arg_index)
+					{
+						case IEEE80211_RADIOTAP_TSFT:
+							ri.ri_mactime = le64_to_cpu(
+								*((uint64_t *) iterator.this_arg));
+							break;
+
+						case IEEE80211_RADIOTAP_DBM_ANTSIGNAL:
+							if (!got_signal)
+							{
+								if (*iterator.this_arg < 127)
+									ri.ri_power = *iterator.this_arg;
+								else
+									ri.ri_power = *iterator.this_arg - 255;
+
+								got_signal = 1;
+							}
+							break;
+
+						case IEEE80211_RADIOTAP_DB_ANTSIGNAL:
+							if (!got_signal)
+							{
+								if (*iterator.this_arg < 127)
+									ri.ri_power = *iterator.this_arg;
+								else
+									ri.ri_power = *iterator.this_arg - 255;
+
+								got_signal = 1;
+							}
+							break;
+
+						case IEEE80211_RADIOTAP_DBM_ANTNOISE:
+							if (!got_noise)
+							{
+								if (*iterator.this_arg < 127)
+									ri.ri_noise = *iterator.this_arg;
+								else
+									ri.ri_noise = *iterator.this_arg - 255;
+
+								got_noise = 1;
+							}
+							break;
+
+						case IEEE80211_RADIOTAP_DB_ANTNOISE:
+							if (!got_noise)
+							{
+								if (*iterator.this_arg < 127)
+									ri.ri_noise = *iterator.this_arg;
+								else
+									ri.ri_noise = *iterator.this_arg - 255;
+
+								got_noise = 1;
+							}
+							break;
+
+						case IEEE80211_RADIOTAP_ANTENNA:
+							ri.ri_antenna = *iterator.this_arg;
+							break;
+
+						case IEEE80211_RADIOTAP_CHANNEL:
+							ri.ri_channel = getChannelFromFrequency(
+								le16toh(*(uint16_t *) iterator.this_arg));
+							break;
+
+						case IEEE80211_RADIOTAP_RATE:
+							ri.ri_rate = (*iterator.this_arg) * 500000;
+							break;
+					}
+				}
 
 				memcpy(tmpbuf, h80211, (size_t) caplen);
 				caplen -= n;
