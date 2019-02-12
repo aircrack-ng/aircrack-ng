@@ -1179,7 +1179,7 @@ static ssize_t may_read(int fd)
 
 static int atomic_read(read_buf * rb, int fd, int len, void * buf)
 {
-	ssize_t n;
+	ssize_t n = 0;
 
 	if (close_aircrack) return (0);
 
