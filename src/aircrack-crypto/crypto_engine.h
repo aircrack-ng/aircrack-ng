@@ -126,19 +126,25 @@ struct ac_crypto_engine_perthread
 						   (64 + 20) * MAX_KEYS_PER_CRYPT_SUPPORTED,
 						   CACHELINE_SIZE);
 
+#ifndef AVX512F_FOUND
+#define CRYPT_PADDING CACHELINE_SIZE/2
+#else
+#define CRYPT_PADDING CACHELINE_SIZE
+#endif
 	/// Holds a 20-byte buffer for a SHA1 digest. Half cache-line size is to
 	/// compact with the next.
 	CACHELINE_PADDED_FIELD(uint8_t,
 						   crypt1,
 						   20 * MAX_KEYS_PER_CRYPT_SUPPORTED,
-						   CACHELINE_SIZE / 2);
+						   CRYPT_PADDING);
 
 	/// Holds a 20-byte buffer for a SHA1 digest. Half cache-line size is to
 	/// compact with the previous.
 	CACHELINE_PADDED_FIELD(uint8_t,
 						   crypt2,
 						   20 * MAX_KEYS_PER_CRYPT_SUPPORTED,
-						   CACHELINE_SIZE / 2);
+						   CRYPT_PADDING);
+#undef CRYPT_PADDING
 
 	/// Holds a 20-byte buffer for a SHA1 digest. Double cache-line size is to
 	/// space the next field futher out.

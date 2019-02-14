@@ -226,6 +226,8 @@ then
 					])
 					;;
 			esac
+
+			AC_DEFINE_UNQUOTED([AVX512F_FOUND], [$AVX512F_FOUND], [Define to enable AVX-512F buffers.])
 			;;
 	esac
 
