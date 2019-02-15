@@ -40,6 +40,6 @@ dnl program, then also delete it here.
 AC_DEFUN([AIRCRACK_NG_REVISION], [
 AC_ARG_VAR([_REVISION], [specifies the Aircrack-ng revision number])
 AC_DEFINE([_REVISION],
-    m4_translit(m4_esyscmd([./evalrev . quoted]),m4_newline),
+    m4_translit(m4_esyscmd([$(pwd)/evalrev . quoted || echo]),m4_newline),
     [specifies the Aircrack-ng revision number, [default auto-detects]])
 ])
