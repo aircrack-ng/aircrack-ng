@@ -59,17 +59,22 @@ AP_MAC="00:11:22:33:44:55"
 	${WI_IFACE} \
 		2>&1 >/dev/null
 
-# Wait a second so data can be written to file
-# Without it, it does not have time to write it and file is empty
+# Wait a second
 sleep 1
 
-# Kill tcpdump and remove hwsim module
-kill -9 ${TCPDUMP_PID}
+# Kill tcpdump (SIGTERM)
+kill -15 ${TCPDUMP_PID}
+
+# Wait a few seconds so it exits gracefully and writes the frames
+# to the file
+sleep 3
+
+# Unload hwsim module
 [ ${LOAD_MODULE} -eq 1 ] && rmmod mac80211_hwsim 2>&1 >/dev/null
 
-# There should be exactly 256 deauth
+# There should be exactly 128 deauth
 AMOUNT_PACKETS=$(tcpdump -r ${TEMP_PCAP} 2>/dev/null | grep "DeAuthentication (${AP_MAC}" | wc -l)
 rm ${TEMP_PCAP}
-[ ${AMOUNT_PACKETS} -eq 256 ] && exit 0
+[ ${AMOUNT_PACKETS} -eq 128 ] && exit 0
 
 exit 1
