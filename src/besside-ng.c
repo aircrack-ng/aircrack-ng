@@ -2362,7 +2362,7 @@ do_wep_crack(struct cracker * c, struct network * n, int len, int limit)
 	if (PTW_computeKey(n->n_ptw, key, len, limit, PTW_DEFAULTBF, all, 0) != 1)
 		return;
 
-	(void) write(c->cr_pipe[1], key, len);
+	IGNORE_LTZ(write(c->cr_pipe[1], key, len));
 }
 
 static inline void crack_wep64(struct cracker * c, struct network * n)
