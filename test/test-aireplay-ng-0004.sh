@@ -40,7 +40,7 @@ WI_IFACE2=$("${top_builddir}/scripts/airmon-ng" 2>/dev/null | egrep hwsim | tail
 if [ -z "${WI_IFACE}" ] || [ -z "${WI_IFACE2}" ]; then
 	echo "Failed getting interface names" >2
 	[ ${LOAD_MODULE} -eq 1 ] && rmmod mac80211_hwsim 2>&1 >/dev/null
-	return 1
+	exit 1
 fi
 
 # Set-up hostapd
@@ -84,13 +84,13 @@ kill -9 $(cat ${TEMP_HOSTAPD_PID} ) 2>&1 >/dev/null
 if [ -z "$(grep 'Injection is working!' ${OUTPUT_TEMP})" ]; then
 	echo "Injection is not working" >2
 	rm -f ${OUTPUT_TEMP}
-	return 1
+	exit 1
 fi
 
 if [ -z "$(grep '30/30' ${OUTPUT_TEMP})" ]; then
 	echo "AP not present or failure injecting" >2
 	rm -f ${OUTPUT_TEMP}
-	return 1
+	exit 1
 fi
 
 exit 0

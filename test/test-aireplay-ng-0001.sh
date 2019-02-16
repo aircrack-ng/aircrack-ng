@@ -38,7 +38,7 @@ WI_IFACE=$("${top_builddir}/scripts/airmon-ng" 2>/dev/null | egrep hwsim | awk '
 if [ -z "${WI_IFACE}" ]; then
 	echo "Failed grabbing interface name" >2
 	[ ${LOAD_MODULE} -eq 1 ] && rmmod mac80211_hwsim 2>&1 >/dev/null
-	return 1
+	exit 1
 fi
 
 # Set-up hostapd
