@@ -45,11 +45,12 @@ fi
 
 # Set-up hostapd
 SSID=thisrocks
+CHANNEL=1
 TEMP_HOSTAPD_CONF=$(mktemp)
-cat >> ${TEMP_HOSTAPD_CONF} << EOF
+cat <<EOF > ${TEMP_HOSTAPD_CONF}
 driver=nl80211
 interface=${WI_IFACE}
-channel=1
+channel=${CHANNEL}
 hw_mode=g
 ssid=${SSID}
 # Test 4
@@ -69,6 +70,7 @@ fi
 ip link set ${WI_IFACE2} down
 iw dev ${WI_IFACE2} set monitor none
 ip link set ${WI_IFACE2} up
+iw dev ${WI_IFACE2} set channel ${CHANNEL}
 
 # Run actual test
 OUTPUT_TEMP=$(mktemp)

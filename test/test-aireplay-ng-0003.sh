@@ -79,7 +79,7 @@ sleep 3
 AMOUNT_PACKETS_AP=$(tcpdump -r ${TEMP_PCAP} 2>/dev/null | grep "DeAuthentication (${AP_MAC}" | wc -l)
 AMOUNT_PACKETS_CLIENT=$(tcpdump -r ${TEMP_PCAP} 2>/dev/null | grep "DeAuthentication (${CLIENT_MAC}" | wc -l)
 rm ${TEMP_PCAP}
-[ ${AMOUNT_PACKETS_CLIENT} -ne 128 ] && exit 1
-[ ${AMOUNT_PACKETS_AP} -ne 128 ] && exit 1
+[ ${AMOUNT_PACKETS_CLIENT} -ne 64 ] && exit 1
+[ ${AMOUNT_PACKETS_AP} -ne 64 ] && exit 1
 
 exit 0
