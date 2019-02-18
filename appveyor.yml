@@ -46,6 +46,9 @@ matrix:
 cache:
 - '%AIRCRACK_CI_CACHE%'
 
+init:
+- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+
 install:
 - ps: |
     function Exec-External {
