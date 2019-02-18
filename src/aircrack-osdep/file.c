@@ -64,6 +64,8 @@ static int file_read(struct wif * wi,
 	struct ieee80211_radiotap_header * rh;
 	struct ieee80211_radiotap_iterator iterator;
 
+	memset(&iterator, 0, sizeof(iterator));
+
 	rc = read(pf->pf_fd, &pkh, sizeof(pkh));
 	if (rc != sizeof(pkh)) return -1;
 
