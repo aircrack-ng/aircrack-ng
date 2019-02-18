@@ -99,7 +99,9 @@ TESTS += test-aircrack-ng-0020.sh
 endif
 
 if LINUX
-TESTS += test-aireplay-ng-0002.sh \
+TESTS += test-aireplay-ng-0001.sh \
+		test-aireplay-ng-0002.sh \
+		test-aireplay-ng-0003.sh \
 		test-aireplay-ng-0004.sh \
 		test-aireplay-ng-0005.sh \
 		test-aireplay-ng-0006.sh
@@ -165,7 +167,9 @@ EXTRA_DIST = test-hex_string_to_array.sh \
 			 pass.txt
 
 if LINUX
-EXTRA_DIST += test-aireplay-ng-0002.sh \
+EXTRA_DIST += test-aireplay-ng-0001.sh \
+		test-aireplay-ng-0002.sh \
+		test-aireplay-ng-0003.sh \
 		test-aireplay-ng-0004.sh \
 		test-aireplay-ng-0005.sh \
 		test-aireplay-ng-0006.sh

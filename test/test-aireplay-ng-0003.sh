@@ -31,7 +31,7 @@ fi
 WI_IFACE=$("${top_builddir}/scripts/airmon-ng" 2>/dev/null | egrep hwsim | awk '{print $2}')
 if [ -z "${WI_IFACE}" ]; then
 	[ ${LOAD_MODULE} -eq 1 ] && rmmod mac80211_hwsim 2>&1 >/dev/null
-	return 1
+	exit 1
 fi
 
 # Put interface in monitor so tcpdump captures in the correct mode
@@ -42,7 +42,7 @@ ip link set ${WI_IFACE} up
 # Check it is in monitor mode
 if [ -z "$(iw dev ${WI_IFACE} info | egrep 'type monitor')" ]; then
 	[ ${LOAD_MODULE} -eq 1 ] && rmmod mac80211_hwsim 2>&1 >/dev/null
-	return 1
+	exit 1
 fi
 
 # Start capture in the background
@@ -79,7 +79,7 @@ sleep 3
 AMOUNT_PACKETS_AP=$(tcpdump -r ${TEMP_PCAP} 2>/dev/null | grep "DeAuthentication (${AP_MAC}" | wc -l)
 AMOUNT_PACKETS_CLIENT=$(tcpdump -r ${TEMP_PCAP} 2>/dev/null | grep "DeAuthentication (${CLIENT_MAC}" | wc -l)
 rm ${TEMP_PCAP}
-[ ${AMOUNT_PACKETS_CLIENT} -ne 128 ] && exit 1
-[ ${AMOUNT_PACKETS_AP} -ne 128 ] && exit 1
+[ ${AMOUNT_PACKETS_CLIENT} -ne 64 ] && exit 1
+[ ${AMOUNT_PACKETS_AP} -ne 64 ] && exit 1
 
 exit 0
