@@ -48,8 +48,10 @@ cache:
 
 # Uncomment to enable debugging on AppVeyor equipment
 #
-# init:
+init:
 # - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+- git config --global core.autocrlf input
+- git config --global core.eol lf
 
 install:
 - ps: |
