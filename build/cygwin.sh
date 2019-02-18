@@ -30,7 +30,7 @@ RETRY=0
 while [ $RETRY -lt 3 ];
 do
 	# ./autogen.sh "$@" && break
-	autoreconf -vi && break
+	autoreconf -vi && ./configure "$@" && break
 
 	echo "W: failed to run autogen.sh, will retry..."
 	RETRY=$(($RETRY + 1))
