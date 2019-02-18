@@ -43,8 +43,8 @@ matrix:
     - TARGET: cygwin64
       COMPILER: clang
 
-cache:
-- '%AIRCRACK_CI_CACHE%'
+# cache:
+# - '%AIRCRACK_CI_CACHE%'
 
 # Uncomment to enable debugging on AppVeyor equipment
 #
