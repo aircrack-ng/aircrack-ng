@@ -641,10 +641,14 @@ get_victim_ssid(struct wstate * ws, struct ieee80211_frame * wh, int len)
 		memcpy(ws->ws_bss, wh->i_addr3, 6);
 		set_chan(ws, ws->ws_apchan);
 		ws->ws_state = FOUND_VICTIM;
+
+		char * mac = mac2string(ws->ws_bss);
+		ALLEGE(mac != NULL);
 		time_print("Found SSID(%s) BSS=(%s) chan=%d\n",
 				   ws->ws_ssid,
-				   mac2string(ws->ws_bss),
+				   mac,
 				   ws->ws_apchan);
+		free(mac);
 		return (1);
 	}
 
@@ -876,9 +880,10 @@ static void proc_data(struct wstate * ws, struct ieee80211_frame * wh, int len)
 
 	if (!(wh->i_fc[1] & IEEE80211_FC1_WEP))
 	{
-		time_print("WARNING: Got NON wep packet from %s dlen %d\n",
-				   mac2string(wh->i_addr2),
-				   dlen);
+		char * mac = mac2string(wh->i_addr2);
+		ALLEGE(mac != NULL);
+		time_print("WARNING: Got NON wep packet from %s dlen %d\n", mac, dlen);
+		free(mac);
 		return;
 	}
 
@@ -896,7 +901,11 @@ static void proc_data(struct wstate * ws, struct ieee80211_frame * wh, int len)
 		}
 
 		memcpy(ws->ws_rtrmac, wh->i_addr3, 6);
-		time_print("Got arp reply from (%s)\n", mac2string(ws->ws_rtrmac));
+
+		char * mac = mac2string(ws->ws_rtrmac);
+		ALLEGE(mac != NULL);
+		time_print("Got arp reply from (%s)\n", mac);
+		free(mac);
 	}
 }
 
@@ -989,7 +998,11 @@ decrypt_arpreq(struct wstate * ws, struct ieee80211_frame * wh, int rd)
 	}
 
 	ws->ws_dpi.pi_len = i;
-	time_print("Got ARP request from (%s)\n", mac2string(wh->i_addr3));
+
+	char * mac = mac2string(wh->i_addr3);
+	ALLEGE(mac != NULL);
+	time_print("Got ARP request from (%s)\n", mac);
+	free(mac);
 }
 
 static void log_wep(struct wstate * ws, struct ieee80211_frame * wh, int len)
@@ -1234,7 +1247,11 @@ stuff_for_net(struct wstate * ws, struct ieee80211_frame * wh, int rd)
 			if (mac[0] == 0xff || mac[0] == 0x1) return;
 
 			memcpy(ws->ws_mymac, mac, 6);
-			time_print("Trying to use MAC=(%s)\n", mac2string(ws->ws_mymac));
+
+			char * mac_p = mac2string(ws->ws_mymac);
+			ALLEGE(mac_p != NULL);
+			time_print("Trying to use MAC=(%s)\n", mac_p);
+			free(mac_p);
 			ws->ws_state = FOUND_VICTIM;
 			return;
 		}
@@ -2120,7 +2137,11 @@ static void start(struct wstate * ws, char * dev)
 	{
 		if (wi_set_mac(wi, ws->ws_mymac) == -1) printf("Can't set mac\n");
 	}
-	time_print("Using mac %s\n", mac2string(ws->ws_mymac));
+
+	char * mac = mac2string(ws->ws_mymac);
+	ALLEGE(mac != NULL);
+	time_print("Using mac %s\n", mac);
+	free(mac);
 
 	ws->ws_ptw = PTW_newattackstate();
 	if (!ws->ws_ptw) err(1, "PTW_newattackstate()");

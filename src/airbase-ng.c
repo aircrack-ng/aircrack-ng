@@ -975,8 +975,10 @@ static int remove_tag(unsigned char * flags, unsigned char type, int * length)
 	return (0);
 }
 
-static unsigned char *
-parse_tags(unsigned char * flags, unsigned char type, int length, int * taglen)
+static unsigned char * parse_tags(unsigned char * flags,
+								  unsigned char type,
+								  int length,
+								  size_t * taglen)
 {
 	int cur_type = 0, cur_len = 0, len = 0;
 	unsigned char * pos;
@@ -997,7 +999,7 @@ parse_tags(unsigned char * flags, unsigned char type, int length, int * taglen)
 		{
 			if (cur_len > 0)
 			{
-				*taglen = cur_len;
+				*taglen = (size_t) cur_len;
 				return pos + 2;
 			}
 			else
@@ -1687,12 +1689,8 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 					opt.crypt,
 					opt.wepkey,
 					(int) opt.weplen);
-			buffer = getCompleteFrag(smac,
-									 seqnum,
-									 (int *) &len,
-									 opt.crypt,
-									 opt.wepkey,
-									 (int) opt.weplen);
+			buffer = getCompleteFrag(
+				smac, seqnum, &len, opt.crypt, opt.wepkey, (int) opt.weplen);
 			timeoutFrag();
 
 			/* we got frag, no compelete packet avail -> do nothing */
@@ -2026,7 +2024,7 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 		// probe, ignore it.
 		if (packet[0] == 0x40)
 		{
-			tag = parse_tags(packet + z, 0, (int) (length - z), (int *) &len);
+			tag = parse_tags(packet + z, 0, (int) (length - z), &len);
 			if (tag != NULL && tag[0] >= 32 && len <= 255) // directed probe
 			{
 				if (lopt.promiscuous || !lopt.f_essid
@@ -2455,10 +2453,8 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 
 			st_cur->wep = (packet[z] & 0x10) >> 4;
 
-			tag = parse_tags(packet + z + fixed,
-							 0,
-							 (int) (length - z - fixed),
-							 (int *) &len);
+			tag = parse_tags(
+				packet + z + fixed, 0, (int) (length - z - fixed), &len);
 			if (tag != NULL && tag[0] >= 32 && len < 256)
 			{
 				memcpy(essid, tag, len);
@@ -2470,32 +2466,24 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 			st_cur->wpatype = 0;
 			st_cur->wpahash = 0;
 
-			tag = parse_tags(packet + z + fixed,
-							 0xDD,
-							 (int) (length - z - fixed),
-							 (int *) &len);
+			tag = parse_tags(
+				packet + z + fixed, 0xDD, (int) (length - z - fixed), &len);
 			while (tag != NULL)
 			{
 				wpa_client(st_cur, tag - 2, (int) (len + 2u));
 				tag += (tag - 2)[1] + 2;
-				tag = parse_tags(tag - 2,
-								 0xDD,
-								 (int) (length - (tag - packet) + 2u),
-								 (int *) &len);
+				tag = parse_tags(
+					tag - 2, 0xDD, (int) (length - (tag - packet) + 2u), &len);
 			}
 
-			tag = parse_tags(packet + z + fixed,
-							 0x30,
-							 (int) (length - z - fixed),
-							 (int *) &len);
+			tag = parse_tags(
+				packet + z + fixed, 0x30, (int) (length - z - fixed), &len);
 			while (tag != NULL)
 			{
 				wpa_client(st_cur, tag - 2, (int) (len + 2u));
 				tag += (tag - 2)[1] + 2;
-				tag = parse_tags(tag - 2,
-								 0x30,
-								 (int) (length - (tag - packet) + 2u),
-								 (int *) &len);
+				tag = parse_tags(
+					tag - 2, 0x30, (int) (length - (tag - packet) + 2u), &len);
 			}
 
 			if (!reasso)

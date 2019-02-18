@@ -68,7 +68,7 @@ int delFrag(unsigned char * smac, int sequence);
 
 unsigned char * getCompleteFrag(unsigned char * smac,
 								int sequence,
-								int * packetlen,
+								size_t * packetlen,
 								int crypt,
 								unsigned char * wepkey,
 								int weplen);

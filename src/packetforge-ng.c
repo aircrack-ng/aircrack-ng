@@ -726,8 +726,8 @@ static int read_prga_xor_ivs2(unsigned char ** dest, const char * file)
 		}
 
 		lopt.ivs2 = f;
-		fseek(
-			f, sizeof(IVS2_MAGIC) + sizeof(struct ivs2_filehdr) - 1, SEEK_SET);
+		IGNORE_LTZ(fseek(
+			f, sizeof(IVS2_MAGIC) + sizeof(struct ivs2_filehdr) - 1, SEEK_SET));
 	}
 	else
 	{

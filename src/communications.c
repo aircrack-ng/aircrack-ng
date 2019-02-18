@@ -1139,7 +1139,7 @@ int check_shared_key(const uint8_t * h80211, size_t caplen)
 	int maybe_broken;
 	char ofn[1024];
 	uint8_t text[4096];
-	uint8_t prga[4096];
+	uint8_t prga[4096 + 4];
 	unsigned int long crc = 0xFFFFFFFF;
 
 	if (!(h80211 != NULL && caplen > 0

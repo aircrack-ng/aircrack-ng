@@ -466,7 +466,7 @@ static int packet_xmit(unsigned char * packet, int length)
 	return (0);
 }
 
-static int packet_recv(unsigned char * packet, int length)
+static int packet_recv(unsigned char * packet, size_t length)
 {
 	REQUIRE(packet != NULL);
 
@@ -475,8 +475,8 @@ static int packet_recv(unsigned char * packet, int length)
 	unsigned char * buffer;
 	unsigned long crc;
 
-	int len;
-	int z;
+	size_t len;
+	size_t z;
 	int fragnum, seqnum, morefrag;
 	int process_packet;
 
@@ -745,7 +745,7 @@ static int packet_recv(unsigned char * packet, int length)
 
 				st_cur->eapol_size = (packet[z + 2] << 8) + packet[z + 3] + 4;
 
-				if (length - z < (int) st_cur->eapol_size
+				if (length - z < st_cur->eapol_size
 					|| st_cur->eapol_size > sizeof(st_cur->eapol))
 				{
 					// Ignore the packet trying to crash us.
@@ -779,7 +779,7 @@ static int packet_recv(unsigned char * packet, int length)
 
 				st_cur->eapol_size = (packet[z + 2] << 8) + packet[z + 3] + 4;
 
-				if (length - z < (int) st_cur->eapol_size
+				if (length - z < st_cur->eapol_size
 					|| st_cur->eapol_size > sizeof(st_cur->eapol))
 				{
 					// Ignore the packet trying to crash us.
@@ -875,14 +875,14 @@ static int packet_recv(unsigned char * packet, int length)
 
 int main(int argc, char * argv[])
 {
-	int ret_val, len, i, n, ret;
+	int ret_val, i, n, ret;
 	unsigned int un;
 	struct pcap_pkthdr pkh;
 	fd_set read_fds;
 	unsigned char buffer[4096];
 	unsigned char bssid[6];
 	char *s, buf[128];
-	int caplen;
+	size_t caplen, len;
 
 #ifdef USE_GCRYPT
 	// Disable secure memory.
