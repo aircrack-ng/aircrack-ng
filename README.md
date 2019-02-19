@@ -68,7 +68,7 @@ Below are instructions for installing the basic requirements to build
 
 #### Fedora/CentOS/RHEL
 
-    sudo yum install libtool pkgconfig sqlite-devel autoconf automake openssl-devel libpcap-devel pcre-devel rfkill libnl3-devel gcc gcc-c++ ethtool hwloc-devel libcmocka-devel make hostapd
+    sudo yum install libtool pkgconfig sqlite-devel autoconf automake openssl-devel libpcap-devel pcre-devel rfkill libnl3-devel gcc gcc-c++ ethtool hwloc-devel libcmocka-devel make hostapd iw usbutils
 
 ### BSD
 
