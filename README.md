@@ -54,24 +54,24 @@ All tools are command line which allows for heavy scripting. A lot of GUIs have 
  * For best performance on FreeBSD (50-70% more), install gcc5 (or better) via: pkg install gcc8
  * rfkill
  * For best performance on SMP machines, ensure the hwloc library and headers are installed. It is strongly recommended on high core count systems, it may give a serious speed boost
- * CMocka for unit testing
+ * CMocka, tcpdump (Linux only) and HostAPd (Linux only) for unit testing
 
 ## Installing required and optional dependencies
 
 Below are instructions for installing the basic requirements to build
 `aircrack-ng` for a number of operating systems.
 
-**Note**: CMocka should not be a dependency when packaging Aircrack-ng.
+**Note**: CMocka, tcpdump and HostAPd should not be dependencies when packaging Aircrack-ng.
 
 ### Linux
 
 #### Debian/Ubuntu
 
-    sudo apt-get install build-essential autoconf automake libtool pkg-config libnl-3-dev libnl-genl-3-dev libssl-dev ethtool shtool rfkill zlib1g-dev libpcap-dev libsqlite3-dev libpcre3-dev libhwloc-dev libcmocka-dev
+    sudo apt-get install build-essential autoconf automake libtool pkg-config libnl-3-dev libnl-genl-3-dev libssl-dev ethtool shtool rfkill zlib1g-dev libpcap-dev libsqlite3-dev libpcre3-dev libhwloc-dev libcmocka-dev hostapd tcpdump
 
 #### Fedora/CentOS/RHEL
 
-    sudo yum install libtool pkgconfig sqlite-devel autoconf automake openssl-devel libpcap-devel pcre-devel rfkill libnl3-devel gcc gcc-c++ ethtool hwloc-devel libcmocka-devel git make file expect
+    sudo yum install libtool pkgconfig sqlite-devel autoconf automake openssl-devel libpcap-devel pcre-devel rfkill libnl3-devel gcc gcc-c++ ethtool hwloc-devel libcmocka-devel git make file expect hostapd iw usbutils tcpdump
 
 ### BSD
 

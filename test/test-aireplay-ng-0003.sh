@@ -9,6 +9,24 @@ if [ $(id -u) -ne 0 ]; then
 	exit 77
 fi
 
+hash iw 2>&1 >/dev/null
+if [ $? -ne 0 ]; then
+	echo "iw is not installed, skipping"
+	exit 77
+fi
+
+hash lsusb 2>&1 >/dev/null
+if [ $? -ne 0 ]; then
+	echo "lsusb is not installed, skipping"
+	exit 77
+fi
+
+hash tcpdump 2>&1 >/dev/null
+if [ $? -ne 0 ]; then
+	echo "tcpdump is not installed, skipping"
+	exit 77
+fi
+
 # Load module
 LOAD_MODULE=0
 if [ $(lsmod | egrep mac80211_hwsim | wc -l) -eq 0 ]; then
@@ -22,8 +40,9 @@ if [ $(lsmod | egrep mac80211_hwsim | wc -l) -eq 0 ]; then
 fi
 
 # Check if there is only one radio
-if [ $("${top_builddir}/scripts/airmon-ng" | egrep hwsim | wc -l) -gt 1 ]; then
-	echo "More than one radio, hwsim may be in use by something else, skipping"
+AMOUNT_RADIOS=$("${top_builddir}/scripts/airmon-ng" | egrep hwsim | wc -l)
+if [ ${AMOUNT_RADIOS} -ne 1 ]; then
+	echo "Expected one radio, got ${AMOUNT_RADIOS}, hwsim may be in use by something else, skipping"
 	exit 77
 fi
 
