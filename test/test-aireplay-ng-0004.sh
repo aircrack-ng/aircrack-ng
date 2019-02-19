@@ -29,8 +29,9 @@ if [ $(lsmod | egrep mac80211_hwsim | wc -l) -eq 0 ]; then
 fi
 
 # Check there are two radios
-if [ $("${top_builddir}/scripts/airmon-ng" | egrep hwsim | wc -l) -ne 2 ]; then
-	echo "Expected two radios but got a different amount, hwsim may be in use by something else, skipping"
+AMOUNT_RADIOS=$("${top_builddir}/scripts/airmon-ng" | egrep hwsim | wc -l)
+if [ ${AMOUNT_RADIOS} -ne 2 ]; then
+	echo "Expected two radios, got ${AMOUNT_RADIOS}, hwsim may be in use by something else, skipping"
 	exit 77
 fi
 
