@@ -21,6 +21,7 @@ then
 	export CC CXX LIBS
 fi
 
+CPUS=$((`grep processor /proc/cpuinfo | wc -l` * 3 / 2))
 CFLAGS="-O2 -DNDEBUG"
 CXXFLAGS="-O2 -DNDEBUG"
 export CFLAGS CXXFLAGS
@@ -43,7 +44,7 @@ then
 	exit 1
 fi
 
-make
+make -j ${CPUS:-1}
 make check || { find test -name 'test-suite.log' -exec cat {} ';' && exit 1; }
 make clean
 
