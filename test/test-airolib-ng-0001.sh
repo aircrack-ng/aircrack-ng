@@ -2,7 +2,7 @@
 
 set -ef
 
-"${abs_srcdir}/test-airolib-sqlite.sh" "${top_builddir}/src"
+"${abs_srcdir}/test-airolib-sqlite.sh" "${abs_builddir}/.."
 
 exit 0
 

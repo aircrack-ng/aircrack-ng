@@ -37,23 +37,12 @@
 # If you delete this exception statement from all source files in the
 # program, then also delete it here.
 
-AM_CPPFLAGS = -I$(top_srcdir) \
-              -I$(top_srcdir)/src/include \
-              -I$(top_srcdir)/src \
-              $(CRYPTO_INCLUDES)
-
-LIBAC_LIBS = ../../src/libaclib.la
-
-LIBAIRCRACK_CRYPTO_LIBS = ../../src/aircrack-crypto/libaircrack-crypto.la
-
-LIBAIRCRACK_UTIL_LIBS = ../../src/aircrack-util/libaircrack-util.la
-
-SRCS_TEST_EWEP  = test-encrypt-wep.c
-SRCS_TEST_CPMK  = test-calc-pmk.c
-SRCS_TEST_CMIC  = test-calc-mic.c
-SRCS_TEST_CPTK  = test-calc-ptk.c
-SRCS_TEST_DCMP  = test-decrypt-ccmp.c
-SRCS_TEST_ECMP  = test-encrypt-ccmp.c
+SRCS_TEST_EWEP  = %D%/test-encrypt-wep.c
+SRCS_TEST_CPMK  = %D%/test-calc-pmk.c
+SRCS_TEST_CMIC  = %D%/test-calc-mic.c
+SRCS_TEST_CPTK  = %D%/test-calc-ptk.c
+SRCS_TEST_DCMP  = %D%/test-decrypt-ccmp.c
+SRCS_TEST_ECMP  = %D%/test-encrypt-ccmp.c
 
 test_encrypt_wep_SOURCES = $(SRCS_TEST_EWEP)
 test_encrypt_wep_CFLAGS  = $(AM_CPPFLAGS) \
@@ -111,23 +100,18 @@ test_decrypt_ccmp_LDADD   = $(LIBAC_LIBS) \
 							$(ZLIB_LIBS)
 
 
-TESTS           = test-encrypt-wep \
-                  test-calc-pmk \
-                  test-calc-mic \
-                  test-calc-ptk \
-                  test-encrypt-ccmp \
-                  test-decrypt-ccmp
+TESTS +=	test-encrypt-wep \
+			test-calc-pmk \
+			test-calc-mic \
+			test-calc-ptk \
+			test-encrypt-ccmp \
+			test-decrypt-ccmp
 
-check_PROGRAMS	= test-encrypt-wep \
-                  test-calc-pmk \
-                  test-calc-mic \
-                  test-calc-ptk \
-                  test-encrypt-ccmp \
-                  test-decrypt-ccmp
+check_PROGRAMS +=	test-encrypt-wep \
+					test-calc-pmk \
+					test-calc-mic \
+					test-calc-ptk \
+					test-encrypt-ccmp \
+					test-decrypt-ccmp
 
-EXTRA_DIST = tests.h
-
-
-@CODE_COVERAGE_RULES@
-
-@VALGRIND_CHECK_RULES@
+EXTRA_DIST += %D%/tests.h

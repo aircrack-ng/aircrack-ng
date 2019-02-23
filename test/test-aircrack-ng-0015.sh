@@ -2,7 +2,7 @@
 
 set -ef
 
-echo "staytogether" | "${top_builddir}/src/aircrack-ng${EXEEXT}" \
+echo "staytogether" | "${abs_builddir}/../aircrack-ng${EXEEXT}" \
     ${AIRCRACK_NG_ARGS} \
     -e "Stay Alfred" \
     -w - \

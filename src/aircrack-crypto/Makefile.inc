@@ -37,17 +37,11 @@
 # If you delete this exception statement from all source files in the
 # program, then also delete it here.
 
-AM_CPPFLAGS = -I$(top_srcdir) \
-              -I$(top_srcdir)/src/include \
-              -I$(top_srcdir)/src \
-              $(CRYPTO_INCLUDES) \
-              $(GLIB_CFLAGS)
-
 COMMON_ARCH_FILES =
 if X86
-COMMON_ARCH_FILES += sha1-sse2.S
+COMMON_ARCH_FILES += %D%/sha1-sse2.S
 endif
-LIBAIRCRACK_CRYPTO_SRCS = memory.c sha1-git.c $(COMMON_ARCH_FILES) simd-intrinsics.c wpapsk.c crypto_engine.c
+LIBAIRCRACK_CRYPTO_SRCS = %D%/memory.c %D%/sha1-git.c $(COMMON_ARCH_FILES) %D%/simd-intrinsics.c %D%/wpapsk.c %D%/crypto_engine.c
 
 #
 # Intel/AMD
@@ -111,10 +105,10 @@ endif
 # Generic library
 ARCH_FILES =
 if X86
-ARCH_FILES += sha1-sse2.S
+ARCH_FILES += %D%/sha1-sse2.S
 endif
 libaircrack_crypto_la_CFLAGS = $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
-libaircrack_crypto_la_SOURCES = memory.c sha1-git.c wpapsk.c crypto_engine.c $(ARCH_FILES)
+libaircrack_crypto_la_SOURCES = %D%/memory.c %D%/sha1-git.c %D%/wpapsk.c %D%/crypto_engine.c $(ARCH_FILES)
 libaircrack_crypto_la_LDFLAGS = -release 1.3.0 -no-undefined
 if !STATIC_CRYPTO
 libaircrack_crypto_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
@@ -123,7 +117,7 @@ endif
 #
 # Build librarie(s)
 #
-lib_LTLIBRARIES = libaircrack-crypto.la
+lib_LTLIBRARIES += libaircrack-crypto.la
 
 if ARM
 if NEON
@@ -145,28 +139,25 @@ endif
 lib_LTLIBRARIES += libaircrack-crypto-x86-avx2.la libaircrack-crypto-x86-avx.la libaircrack-crypto-x86-sse2.la
 endif
 
-EXTRA_DIST =	aligned.h \
-				arch.h \
-				crypto_engine.c \
-				crypto_engine.h \
-				jcommon.h \
-				johnswap.h \
-				md5.h \
-				MD5_std.h \
-				memdbg.h \
-				memory.c \
-				memory.h \
-				misc.h \
-				pseudo_intrinsics.h \
-				sha1-git.c \
-				sha1-git.h \
-				sha1-sse2.h \
-				sha1-sse2.S \
-				simd-intrinsics.c \
-				simd-intrinsics.h \
-				simd-intrinsics-load-flags.h \
-				wpapsk.c \
-				wpapsk.h
-
-
-@CODE_COVERAGE_RULES@
+EXTRA_DIST +=	%D%/aligned.h \
+				%D%/arch.h \
+				%D%/crypto_engine.c \
+				%D%/crypto_engine.h \
+				%D%/jcommon.h \
+				%D%/johnswap.h \
+				%D%/md5.h \
+				%D%/MD5_std.h \
+				%D%/memdbg.h \
+				%D%/memory.c \
+				%D%/memory.h \
+				%D%/misc.h \
+				%D%/pseudo_intrinsics.h \
+				%D%/sha1-git.c \
+				%D%/sha1-git.h \
+				%D%/sha1-sse2.h \
+				%D%/sha1-sse2.S \
+				%D%/simd-intrinsics.c \
+				%D%/simd-intrinsics.h \
+				%D%/simd-intrinsics-load-flags.h \
+				%D%/wpapsk.c \
+				%D%/wpapsk.h

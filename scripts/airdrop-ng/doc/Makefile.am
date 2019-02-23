@@ -43,6 +43,3 @@ docdir = $(datadir)/doc/@PACKAGE@
 doc_DATA = Apple.sample.txt dropRules.conf.example
 
 EXTRA_DIST = $(doc_DATA)
-
-
-@CODE_COVERAGE_RULES@

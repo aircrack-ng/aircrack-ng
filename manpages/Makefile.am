@@ -101,6 +101,3 @@ EXTRA_DIST = airmon-ng.8 \
              airodump-ng.8 \
              airserv-ng.8 \
              airtun-ng.8
-
-
-@CODE_COVERAGE_RULES@

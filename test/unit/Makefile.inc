@@ -37,90 +37,68 @@
 # If you delete this exception statement from all source files in the
 # program, then also delete it here.
 
-AM_CPPFLAGS = -I$(top_srcdir) \
-              -I$(top_srcdir)/src/include \
-              -I$(top_srcdir)/src \
-              $(CRYPTO_INCLUDES)
+UNIT_COMMON_CFLAGS = $(AM_CPPFLAGS) $(PTHREAD_CFLAGS) \
+					 $(CRYPTO_CFLAGS) \
+					 $(ZLIB_CFLAGS) \
+					 $(CMOCKA_CFLAGS)
 
-AM_TESTS_ENVIRONMENT= \
-	TEST_SRCDIR="$(abs_srcdir)" 		\
-	TEST_BUILDDIR="$(abs_builddir)" 	\
-	CMOCKA_MESSAGE_OUTPUT=TAP
+UNIT_COMMON_LDADD  = $(PTHREAD_LIBS) \
+					 $(CRYPTO_LIBS) \
+					 $(ZLIB_LIBS) \
+					 $(CMOCKA_LIBS)
 
-LIBAIRCRACK_CRYPTO_PATH = $(abs_top_builddir)/src/aircrack-crypto/
-
-LIBAC_LIBS = ../../src/libaclib.la
-
-LIBAIRCRACK_CRYPTO_LIBS = ../../src/aircrack-crypto/libaircrack-crypto.la
-
-LIBAIRCRACK_UTIL_LIBS = ../../src/aircrack-util/libaircrack-util.la
-
-COMMON_CFLAGS = $(PTHREAD_CFLAGS) \
-				$(CRYPTO_CFLAGS) \
-				$(ZLIB_CFLAGS) \
-				$(CMOCKA_CFLAGS)
-COMMON_LDADD  = $(PTHREAD_LIBS) \
-			    $(CRYPTO_LIBS) \
-			    $(ZLIB_LIBS) \
-			    $(CMOCKA_LIBS)
-
-test_calc_one_pmk_SOURCES = test-calc-one-pmk.c
-test_calc_one_pmk_CFLAGS  = $(COMMON_CFLAGS)
+test_calc_one_pmk_SOURCES = %D%/test-calc-one-pmk.c
+test_calc_one_pmk_CFLAGS  = $(UNIT_COMMON_CFLAGS)
 test_calc_one_pmk_LDFLAGS = -rdynamic
 test_calc_one_pmk_LDADD   = $(LIBAIRCRACK_CRYPTO_LIBS) \
-						    $(COMMON_LDADD)
+						    $(UNIT_COMMON_LDADD)
 
-test_circular_buffer_SOURCES = test-circular-buffer.c
-test_circular_buffer_CFLAGS  = $(COMMON_CFLAGS)
+test_circular_buffer_SOURCES = %D%/test-circular-buffer.c
+test_circular_buffer_CFLAGS  = $(UNIT_COMMON_CFLAGS)
 test_circular_buffer_LDFLAGS = -rdynamic
-test_circular_buffer_LDADD   = $(LIBAIRCRACK_UTIL_LIBS) $(COMMON_LDADD)
+test_circular_buffer_LDADD   = $(LIBAIRCRACK_UTIL_LIBS) $(UNIT_COMMON_LDADD)
 
-test_circular_queue_SOURCES = test-circular-queue.c
-test_circular_queue_CFLAGS  = $(COMMON_CFLAGS)
+test_circular_queue_SOURCES = %D%/test-circular-queue.c
+test_circular_queue_CFLAGS  = $(UNIT_COMMON_CFLAGS)
 test_circular_queue_LDFLAGS = -rdynamic
-test_circular_queue_LDADD   = $(LIBAIRCRACK_UTIL_LIBS) $(COMMON_LDADD)
+test_circular_queue_LDADD   = $(LIBAIRCRACK_UTIL_LIBS) $(UNIT_COMMON_LDADD)
 
-test_string_has_suffix_SOURCES = test-string-has-suffix.c
-test_string_has_suffix_CFLAGS  = $(COMMON_CFLAGS)
+test_string_has_suffix_SOURCES = %D%/test-string-has-suffix.c
+test_string_has_suffix_CFLAGS  = $(UNIT_COMMON_CFLAGS)
 test_string_has_suffix_LDFLAGS = -rdynamic
-test_string_has_suffix_LDADD   = $(LIBAIRCRACK_UTIL_LIBS) $(COMMON_LDADD)
+test_string_has_suffix_LDADD   = $(LIBAIRCRACK_UTIL_LIBS) $(UNIT_COMMON_LDADD)
 
-test_wpapsk_SOURCES = test-wpapsk.c
+test_wpapsk_SOURCES = %D%/test-wpapsk.c
 test_wpapsk_CFLAGS  = "-DLIBAIRCRACK_CRYPTO_PATH=\"$(LIBAIRCRACK_CRYPTO_PATH)\"" \
 					  "-DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"" \
 					  "-DABS_TOP_BUILDDIR=\"$(abs_top_builddir)\"" \
 					  "-DLIBDIR=\"$(libdir)\"" \
-					  $(COMMON_CFLAGS)
+					  $(UNIT_COMMON_CFLAGS)
 test_wpapsk_LDFLAGS = -rdynamic
 test_wpapsk_LDADD   = $(LIBAIRCRACK_CRYPTO_LIBS) \
 					  $(LIBAIRCRACK_UTIL_LIBS) \
-					  $(COMMON_LDADD)
+					  $(UNIT_COMMON_LDADD)
 
-test_wpapsk_cmac_SOURCES = test-wpapsk-cmac.c
-test_wpapsk_cmac_CFLAGS = "-DLIBAIRCRACK_CRYPTO_PATH=\"$(LIBAIRCRACK_CRYPTO_PATH)\"" \
-						  "-DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"" \
-						  "-DABS_TOP_BUILDDIR=\"$(abs_top_builddir)\"" \
-						  "-DLIBDIR=\"$(libdir)\"" \
-						  $(COMMON_CFLAGS)
+test_wpapsk_cmac_SOURCES = %D%/test-wpapsk-cmac.c
+test_wpapsk_cmac_CFLAGS  = "-DLIBAIRCRACK_CRYPTO_PATH=\"$(LIBAIRCRACK_CRYPTO_PATH)\"" \
+						   "-DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"" \
+						   "-DABS_TOP_BUILDDIR=\"$(abs_top_builddir)\"" \
+						   "-DLIBDIR=\"$(libdir)\"" \
+						   $(UNIT_COMMON_CFLAGS)
 test_wpapsk_cmac_LDFLAGS = -rdynamic
 test_wpapsk_cmac_LDADD   = $(LIBAIRCRACK_UTIL_LIBS) \
-						   $(COMMON_LDADD)
+						   $(UNIT_COMMON_LDADD)
 
-TESTS = test-calc-one-pmk test-circular-buffer test-circular-queue test-string-has-suffix
+TESTS += test-calc-one-pmk test-circular-buffer test-circular-queue test-string-has-suffix
 
 if !STATIC_BUILD
 TESTS += test-wpapsk
 TESTS += test-wpapsk-cmac
 endif
 
-check_PROGRAMS = test-calc-one-pmk test-circular-buffer test-circular-queue test-string-has-suffix
+check_PROGRAMS += test-calc-one-pmk test-circular-buffer test-circular-queue test-string-has-suffix
 
 if !STATIC_BUILD
 check_PROGRAMS += test-wpapsk
 check_PROGRAMS += test-wpapsk-cmac
 endif
-
-
-@CODE_COVERAGE_RULES@
-
-@VALGRIND_CHECK_RULES@

@@ -1,0 +1,73 @@
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:allocate_dtv
+   fun:_dl_allocate_tls
+   fun:allocate_stack
+   fun:pthread_create@@GLIBC_2.2.5
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:hwloc_bitmap_dup
+   fun:hwloc_distrib
+   fun:hwloc_distrib
+   fun:hwloc_distrib
+   fun:hwloc_distrib
+   fun:hwloc_distrib
+   fun:hwloc_distrib
+   fun:hwloc_distrib
+   fun:ac_cpuset_distribute
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   fun:hwloc_bitmap_dup
+   fun:hwloc_distrib
+   fun:hwloc_distrib
+   fun:hwloc_distrib
+   fun:hwloc_distrib
+   fun:hwloc_distrib
+   fun:hwloc_distrib
+   fun:hwloc_distrib
+   fun:ac_cpuset_distribute
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:_dlerror_run
+   fun:dlopen@@GLIBC_2.2.5
+   fun:ac_crypto_engine_loader_load
+   fun:load_aircrack_crypto_dso
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:numa_bitmask_alloc
+   ...
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:call_init.part.0
+   fun:call_init
+   fun:_dl_init
+   ...
+}
+

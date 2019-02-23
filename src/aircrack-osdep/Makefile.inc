@@ -37,27 +37,18 @@
 # If you delete this exception statement from all source files in the
 # program, then also delete it here.
 
-SUBDIRS = radiotap
+include %D%/radiotap/Makefile.inc
 
-AM_CPPFLAGS = -I$(top_srcdir) \
-              -I$(top_srcdir)/src/include \
-              -I$(top_srcdir)/src \
-              $(LIBNL_CFLAGS)
-
-SRCS_COMMON = network.c file.c
-SRCS = osdep.c $(SRCS_COMMON)
-
-SRCS_APCAP = airpcap.c
-
-SRCS_OBSD = $(SRCS) openbsd.c openbsd_tap.c common.c
-SRCS_NBSD	= $(SRCS) netbsd.c netbsd_tap.c common.c
-SRCS_FBSD	= $(SRCS) freebsd.c freebsd_tap.c common.c
-SRCS_LINUX	= $(SRCS) linux.c linux_tap.c common.c
-SRCS_DUMMY	= $(SRCS) dummy.c dummy_tap.c common.c
-SRCS_CYGWIN	= $(SRCS) cygwin.c cygwin_tap.c common.c
-SRCS_DARWIN = $(SRCS) darwin.c darwin_tap.c common.c
-
-LIBRADIOTAP_LIBS = radiotap/libradiotap.la
+SRCS_COMMON = %D%/network.c %D%/file.c
+SRCS        = %D%/osdep.c $(SRCS_COMMON)
+SRCS_APCAP  = %D%/airpcap.c
+SRCS_OBSD   = $(SRCS) %D%/openbsd.c %D%/openbsd_tap.c %D%/common.c
+SRCS_NBSD	= $(SRCS) %D%/netbsd.c %D%/netbsd_tap.c %D%/common.c
+SRCS_FBSD	= $(SRCS) %D%/freebsd.c %D%/freebsd_tap.c %D%/common.c
+SRCS_LINUX	= $(SRCS) %D%/linux.c %D%/linux_tap.c %D%/common.c
+SRCS_DUMMY	= $(SRCS) %D%/dummy.c %D%/dummy_tap.c %D%/common.c
+SRCS_CYGWIN	= $(SRCS) %D%/cygwin.c %D%/cygwin_tap.c %D%/common.c
+SRCS_DARWIN = $(SRCS) %D%/darwin.c %D%/darwin_tap.c %D%/common.c
 
 if AIRPCAP
 SRCS_CYGWIN    += $(SRCS_APCAP)
@@ -105,37 +96,34 @@ libaircrack_osdep_la_LIBADD += -lsetupapi -liphlpapi
 endif
 endif
 
-lib_LTLIBRARIES = libaircrack-osdep.la
+lib_LTLIBRARIES += libaircrack-osdep.la
 libaircrack_osdep_la_LDFLAGS = -release 1.3.0 -no-undefined
 
-EXTRA_DIST = openbsd.c \
-             darwin.c \
-             crctable_osdep.h \
-             common.c \
-             darwin_tap.c \
-             cygwin.c \
-             aircrack_ng_airpcap.h \
-             linux.c \
-             file.c \
-             network.h \
-             osdep.h \
-             byteorder.h \
-             linux_tap.c \
-             common.h \
-             airpcap.c \
-             cygwin.h \
-             netbsd.c \
-             packed.h \
-             freebsd_tap.c \
-             freebsd.c \
-             osdep.c \
-             dummy_tap.c \
-             openbsd_tap.c \
-             dummy.c \
-             netbsd_tap.c \
-             network.c \
-             cygwin_tap.c \
-             channel.h
-
-
-@CODE_COVERAGE_RULES@
+EXTRA_DIST +=     %D%/openbsd.c \
+                  %D%/darwin.c \
+                  %D%/crctable_osdep.h \
+                  %D%/common.c \
+                  %D%/darwin_tap.c \
+                  %D%/cygwin.c \
+                  %D%/aircrack_ng_airpcap.h \
+                  %D%/linux.c \
+                  %D%/file.c \
+                  %D%/network.h \
+                  %D%/osdep.h \
+                  %D%/byteorder.h \
+                  %D%/linux_tap.c \
+                  %D%/common.h \
+                  %D%/airpcap.c \
+                  %D%/cygwin.h \
+                  %D%/netbsd.c \
+                  %D%/packed.h \
+                  %D%/freebsd_tap.c \
+                  %D%/freebsd.c \
+                  %D%/osdep.c \
+                  %D%/dummy_tap.c \
+                  %D%/openbsd_tap.c \
+                  %D%/dummy.c \
+                  %D%/netbsd_tap.c \
+                  %D%/network.c \
+                  %D%/cygwin_tap.c \
+                  %D%/channel.h

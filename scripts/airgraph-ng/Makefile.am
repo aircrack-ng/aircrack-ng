@@ -66,6 +66,3 @@ EXTRA_DIST = airgraph-ng \
 			 graphviz \
 			 README \
 			 test
-
-
-@CODE_COVERAGE_RULES@

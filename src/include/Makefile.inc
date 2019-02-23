@@ -37,17 +37,9 @@
 # If you delete this exception statement from all source files in the
 # program, then also delete it here.
 
-AM_CPPFLAGS = -I$(top_srcdir) \
-              -I$(top_srcdir)/src/include \
-              -I$(top_srcdir)/src \
-              $(LIBNL_CFLAGS)
-
-EXTRA_DIST = ieee80211.h \
-             if_arp.h \
-             eapol.h \
-             ethernet.h \
-             if_llc.h \
-             hashcat.h
-
-
-@CODE_COVERAGE_RULES@
+EXTRA_DIST += %D%/ieee80211.h \
+              %D%/if_arp.h \
+              %D%/eapol.h \
+              %D%/ethernet.h \
+              %D%/if_llc.h \
+              %D%/hashcat.h

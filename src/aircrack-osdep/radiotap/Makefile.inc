@@ -37,18 +37,9 @@
 # If you delete this exception statement from all source files in the
 # program, then also delete it here.
 
-AM_CPPFLAGS = -I$(top_srcdir) \
-              -I$(top_srcdir)/src/include \
-              -I$(top_srcdir)/src \
-              $(LIBNL_CFLAGS) \
-              $(GLIB_CFLAGS)
-
-libradiotap_la_SOURCES = radiotap.c
+libradiotap_la_SOURCES = %D%/radiotap.c
 libradiotap_la_LDFLAGS = -no-undefined
 
-noinst_LTLIBRARIES = libradiotap.la
+noinst_LTLIBRARIES += libradiotap.la
 
-EXTRA_DIST = radiotap.h radiotap_iter.h platform.h
-
-
-@CODE_COVERAGE_RULES@
+EXTRA_DIST += %D%/radiotap.h %D%/radiotap_iter.h %D%/platform.h

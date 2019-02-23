@@ -2,7 +2,7 @@
 
 set -ef
 
-"${top_builddir}/src/airdecap-ng${EXEEXT}" \
+"${abs_builddir}/../airdecap-ng${EXEEXT}" \
     -e test \
     -p biscotte \
     "${abs_srcdir}/wpa.cap" \

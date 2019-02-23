@@ -37,94 +37,67 @@
 # If you delete this exception statement from all source files in the
 # program, then also delete it here.
 
-SUBDIRS = aircrack-crypto aircrack-util include aircrack-osdep
+SRC_LINECOUNT	= %D%/linecount.cpp
 
-AM_CPPFLAGS = -I$(top_srcdir) \
-              -I$(top_srcdir)/src/include \
-              $(CRYPTO_INCLUDES)
+SRC_PTW			= %D%/aircrack-ptw-lib.c
 
-SRC_LINECOUNT	= linecount.cpp
-LIBLINECOUNT_LIBS = liblinecount.la
+SRC_AC			= %D%/aircrack-ng.c
+SRC_AC_ALL  	= %D%/aircrack-ng.c
 
-SRC_PTW		= aircrack-ptw-lib.c
-LIBPTW_LIBS	= libptw.la
+SRC_AD			= %D%/airdecap-ng.c
+SRC_PF			= %D%/packetforge-ng.c
+SRC_AR			= %D%/aireplay-ng.c
+SRC_ADU			= %D%/airodump-ng.c
 
-SRC_AC		= aircrack-ng.c
-SRC_AC_ALL  = aircrack-ng.c
+SRC_AT			= %D%/airtun-ng.c
+SRC_IV			= %D%/ivstools.c
+SRC_AS			= %D%/airserv-ng.c
+SRC_WS			= %D%/wesside-ng.c
+SRC_BS			= %D%/besside-ng.c
+SRC_BC			= %D%/besside-ng-crawler.c
+SRC_AL			= %D%/airolib-ng.c
 
-SRC_AD		= airdecap-ng.c
-SRC_PF		= packetforge-ng.c communications.c
-SRC_AR		= aireplay-ng.c communications.c
-SRC_ADU		= airodump-ng.c communications.c dump_write.c
+SRC_COW			= %D%/cowpatty.c
 
-SRC_AT		= airtun-ng.c fragments.c communications.c
-SRC_IV		= ivstools.c
-SRC_AS		= airserv-ng.c
-SRC_WS		= wesside-ng.c communications.c
-SRC_BS		= besside-ng.c
-SRC_BC		= besside-ng-crawler.c
-SRC_AL		= airolib-ng.c
+SRC_ES			= %D%/easside-ng.c
+SRC_BUDDY		= %D%/buddy-ng.c
+SRC_MI			= %D%/makeivs-ng.c
+SRC_AB			= %D%/airbase-ng.c
+SRC_AU			= %D%/airdecloak-ng.c
+SRC_TT			= %D%/tkiptun-ng.c
+SRC_WC			= %D%/wpaclean.c
+SRC_AV			= %D%/airventriloquist-ng.c
 
-LIBCOW_LIBS	= libcow.la
-SRC_COW		= cowpatty.c
-
-SRC_ES		= easside-ng.c
-SRC_BUDDY	= buddy-ng.c
-SRC_MI		= makeivs-ng.c
-SRC_AB		= airbase-ng.c communications.c fragments.c
-SRC_AU		= airdecloak-ng.c
-SRC_TT		= tkiptun-ng.c communications.c
-SRC_WC		= wpaclean.c
-SRC_AV		= airventriloquist-ng.c communications.c
-
-SRC_ACLIB	= crypto.c $(SSEC_INT) uniqueiv.c session.c
-LIBAC_LIBS	= libaclib.la
-
-AC_COMMON = crypto.c uniqueiv.c session.c
+SRC_ACLIB		= %D%/crypto.c $(SSEC_INT) %D%/uniqueiv.c %D%/session.c %D%/fragments.c %D%/communications.c %D%/dump_write.c
 
 if LIBGCRYPT
-SRC_AC          += sha1-git.c
-SRC_AC_ALL              += sha1-git.c
-SRC_ACLIB               += sha1-git.c
-SRC_AD          += sha1-git.c
-SRC_PF          += sha1-git.c
-SRC_IV          += sha1-git.c
-SRC_AR          += sha1-git.c
-SRC_ADU         += sha1-git.c
-SRC_AT          += sha1-git.c
-SRC_AB          += sha1-git.c
-SRC_AL          += sha1-git.c
-SRC_WS          += sha1-git.c
-SRC_TT          += sha1-git.c
-SRC_BS          += sha1-git.c
-SRC_AV          += sha1-git.c
-endif
-
-LIBAIRCRACK_CRYPTO_LIBS = aircrack-crypto/libaircrack-crypto.la
-
-LIBAIRCRACK_CRYPTO_X86_AVX2_LIBS = aircrack-crypto/libaircrack-crypto-x86-avx2.la
-
-LIBAIRCRACK_CRYPTO_X86_AVX_LIBS = aircrack-crypto/libaircrack-crypto-x86-avx.la
-
-LIBAIRCRACK_CRYPTO_X86_SSE2_LIBS = aircrack-crypto/libaircrack-crypto-x86-sse2.la
-
-LIBAIRCRACK_UTIL_LIBS = aircrack-util/libaircrack-util.la
-
-LIBAIRCRACK_OSDEP_LIBS	= aircrack-osdep/libaircrack-osdep.la
-if CYGWIN
-LIBAIRCRACK_OSDEP_LIBS	+= -liphlpapi -lsetupapi -luuid
+SRC_AC			+= %D%/aircrack-crypto/sha1-git.c
+SRC_AC_ALL 		+= %D%/aircrack-crypto/sha1-git.c
+SRC_ACLIB 		+= %D%/aircrack-crypto/sha1-git.c
+SRC_AD 			+= %D%/aircrack-crypto/sha1-git.c
+SRC_PF 			+= %D%/aircrack-crypto/sha1-git.c
+SRC_IV 			+= %D%/aircrack-crypto/sha1-git.c
+SRC_AR 			+= %D%/aircrack-crypto/sha1-git.c
+SRC_ADU 		+= %D%/aircrack-crypto/sha1-git.c
+SRC_AT 			+= %D%/aircrack-crypto/sha1-git.c
+SRC_AB 			+= %D%/aircrack-crypto/sha1-git.c
+SRC_AL 			+= %D%/aircrack-crypto/sha1-git.c
+SRC_WS 			+= %D%/aircrack-crypto/sha1-git.c
+SRC_TT 			+= %D%/aircrack-crypto/sha1-git.c
+SRC_BS 			+= %D%/aircrack-crypto/sha1-git.c
+SRC_AV 			+= %D%/aircrack-crypto/sha1-git.c
 endif
 
 COMMON_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
 COMMON_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 
-bin_PROGRAMS = aircrack-ng \
-               airdecap-ng \
-               packetforge-ng \
-               ivstools \
-               kstats \
-               makeivs-ng \
-               airdecloak-ng
+bin_PROGRAMS += aircrack-ng \
+                airdecap-ng \
+                packetforge-ng \
+                ivstools \
+                kstats \
+                makeivs-ng \
+                airdecloak-ng
 
 if EXPERIMENTAL
 if HAVE_PCAP
@@ -134,11 +107,11 @@ endif
 
 bin_PROGRAMS += wpaclean
 
-sbin_PROGRAMS = airbase-ng \
-                aireplay-ng \
-                airodump-ng \
-                airserv-ng \
-                airtun-ng
+sbin_PROGRAMS += airbase-ng \
+                 aireplay-ng \
+                 airodump-ng \
+                 airserv-ng \
+                 airtun-ng
 
 if HAVE_SQLITE3
 bin_PROGRAMS += airolib-ng
@@ -174,7 +147,7 @@ airdecap_ng_LDADD = $(COMMON_LDADD) $(LIBAC_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRY
 
 packetforge_ng_SOURCES = $(SRC_PF)
 packetforge_ng_CFLAGS = $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
-packetforge_ng_LDADD = $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
+packetforge_ng_LDADD = $(COMMON_LDADD) $(LIBAC_LIBS) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
 aireplay_ng_SOURCES = $(SRC_AR)
 aireplay_ng_CFLAGS = $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
@@ -196,7 +169,7 @@ ivstools_SOURCES = $(SRC_IV)
 ivstools_CFLAGS = $(COMMON_CFLAGS)
 ivstools_LDADD = $(COMMON_LDADD) $(LIBAC_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
-kstats_SOURCES = kstats.c
+kstats_SOURCES = %D%/kstats.c
 kstats_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS)
 kstats_LDADD = $(COMMON_LDADD) $(LIBAC_LIBS)
 
@@ -249,8 +222,8 @@ airventriloquist_ng_CFLAGS = $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
 airventriloquist_ng_LDADD = $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
 libaclib_la_SOURCES = $(SRC_ACLIB)
-libaclib_la_CFLAGS = $(COMMON_CFLAGS) $(LIBAIRCRACK_UTIL_CFLAGS)
-libaclib_la_LIBADD = $(LIBAIRCRACK_UTIL_LIBS)
+libaclib_la_CFLAGS = $(COMMON_CFLAGS) $(PCRE_CFLAGS) $(LIBAIRCRACK_UTIL_CFLAGS)
+libaclib_la_LIBADD = $(PCRE_LIBS) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 if !STATIC_CRYPTO
 libaclib_la_LIBADD += $(LIBAIRCRACK_UTIL_LIBS)
 endif
@@ -267,60 +240,60 @@ if !STATIC_CRYPTO
 libptw_la_LIBADD = $(COMMON_LDADD)
 endif
 
-noinst_LTLIBRARIES = libaclib.la libptw.la libcow.la
+noinst_LTLIBRARIES += libaclib.la libptw.la libcow.la
 
-EXTRA_DIST = wpaclean.c \
-             buddy-ng.c \
-             aircrack-ng.h \
-             version.h \
-             airventriloquist-ng.h \
-             airdecloak-ng.h \
-             airserv-ng.c \
-             besside-ng.c \
-             wkp-frame.h \
-             airolib-ng.c \
-             aircrack-ptw-lib.h \
-             makeivs-ng.c \
-             easside-ng.c \
-             crctable.h \
-             airdecap-ng.c \
-             airodump-ng.h \
-             airbase-ng.c \
-             besside-ng-crawler.c \
-             tkiptun-ng.c \
-             kstats.c \
-             easside.h \
-             aireplay-ng.c \
-             ivstools.c \
-             pcap_local.h \
-             aircrack-ng.c \
-             airodump-ng.c \
-             crypto.c \
-             airdecloak-ng.c \
-             packetforge-ng.c \
-             airventriloquist-ng.c \
-             uniqueiv.c \
-             gcrypt-openssl-wrapper.h \
-             uniqueiv.h \
-             wesside-ng.c \
-             airtun-ng.c \
-             linecount.h \
-             aircrack-ptw-lib.c \
-             crypto.h \
-             sha1-git.c \
-             sha1-git.h \
-             cowpatty.c \
-             cowpatty.h \
-             session.c \
-             session.h \
-			 defs.h \
-			 dump_write.h \
-			 dump_write.c \
-			 fragments.h \
-			 fragments.c \
-			 communications.h \
-			 communications.c \
-			 station.h
+EXTRA_DIST +=	%D%/wpaclean.c \
+				%D%/buddy-ng.c \
+				%D%/aircrack-ng.h \
+				%D%/version.h \
+				%D%/airventriloquist-ng.h \
+				%D%/airdecloak-ng.h \
+				%D%/airserv-ng.c \
+				%D%/besside-ng.c \
+				%D%/wkp-frame.h \
+				%D%/airolib-ng.c \
+				%D%/aircrack-ptw-lib.h \
+				%D%/makeivs-ng.c \
+				%D%/easside-ng.c \
+				%D%/crctable.h \
+				%D%/airdecap-ng.c \
+				%D%/airodump-ng.h \
+				%D%/airbase-ng.c \
+				%D%/besside-ng-crawler.c \
+				%D%/tkiptun-ng.c \
+				%D%/kstats.c \
+				%D%/easside.h \
+				%D%/aireplay-ng.c \
+				%D%/ivstools.c \
+				%D%/pcap_local.h \
+				%D%/aircrack-ng.c \
+				%D%/airodump-ng.c \
+				%D%/crypto.c \
+				%D%/airdecloak-ng.c \
+				%D%/packetforge-ng.c \
+				%D%/airventriloquist-ng.c \
+				%D%/uniqueiv.c \
+				%D%/gcrypt-openssl-wrapper.h \
+				%D%/uniqueiv.h \
+				%D%/wesside-ng.c \
+				%D%/airtun-ng.c \
+				%D%/linecount.h \
+				%D%/aircrack-ptw-lib.c \
+				%D%/crypto.h \
+				%D%/cowpatty.c \
+				%D%/cowpatty.h \
+				%D%/session.c \
+				%D%/session.h \
+				%D%/defs.h \
+				%D%/dump_write.h \
+				%D%/dump_write.c \
+				%D%/fragments.h \
+				%D%/fragments.c \
+				%D%/communications.h \
+				%D%/communications.c \
+				%D%/station.h
 
-
-@CODE_COVERAGE_RULES@
+include %D%/include/Makefile.inc
+include %D%/aircrack-util/Makefile.inc
+include %D%/aircrack-osdep/Makefile.inc
+include %D%/aircrack-crypto/Makefile.inc

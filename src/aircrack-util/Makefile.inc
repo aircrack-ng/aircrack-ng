@@ -37,49 +37,42 @@
 # If you delete this exception statement from all source files in the
 # program, then also delete it here.
 
-AM_CPPFLAGS = -I$(top_srcdir) \
-              -I$(top_srcdir)/src/include \
-              -I$(top_srcdir)/src \
-              $(LIBNL_CFLAGS)
-
-LIBAIRCRACK_CRYPTO_PATH = $(abs_top_builddir)/src/aircrack-crypto/
-
 if ARM
-TRAMPOLINE = trampoline_arm.c
+TRAMPOLINE = %D%/trampoline_arm.c
 endif
 if PPC
-TRAMPOLINE = trampoline_ppc.c
+TRAMPOLINE = %D%/trampoline_ppc.c
 endif
 if X86
-TRAMPOLINE = trampoline_x86.c
+TRAMPOLINE = %D%/trampoline_x86.c
 endif
 
 if !ARM
 if !PPC
 if !X86
-TRAMPOLINE = trampoline_stubs.c
+TRAMPOLINE = %D%/trampoline_stubs.c
 endif
 endif
 endif
 
 if HAVE_HWLOC
-CPUSET = cpuset_hwloc.c
+CPUSET = %D%/cpuset_hwloc.c
 endif
 if !HAVE_HWLOC
-CPUSET = cpuset_pthread.c
+CPUSET = %D%/cpuset_pthread.c
 endif
 
-libaircrack_util_la_SOURCES = circular_buffer.c \
-							  circular_queue.c \
-							  common.c \
-							  console.c \
-							  crypto_engine_loader.c \
-							  mcs_index_rates.c \
-							  simd_cpuid.c \
-							  $(TRAMPOLINE) \
-							  verifyssid.c \
-							  avl_tree.c \
-							  $(CPUSET)
+libaircrack_util_la_SOURCES = %D%/circular_buffer.c \
+                              %D%/circular_queue.c \
+                              %D%/common.c \
+                              %D%/console.c \
+                              %D%/crypto_engine_loader.c \
+                              %D%/mcs_index_rates.c \
+                              %D%/simd_cpuid.c \
+                              $(TRAMPOLINE) \
+                              %D%/verifyssid.c \
+                              %D%/avl_tree.c \
+                              $(CPUSET)
 libaircrack_util_la_CFLAGS  = "-DLIBAIRCRACK_CRYPTO_PATH=\"$(LIBAIRCRACK_CRYPTO_PATH)\"" \
                               "-DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"" \
                               "-DABS_TOP_BUILDDIR=\"$(abs_top_builddir)\"" \
@@ -106,35 +99,32 @@ endif
 endif
 endif
 
-noinst_LTLIBRARIES = libaircrack-util.la
+noinst_LTLIBRARIES += libaircrack-util.la
 
-EXTRA_DIST = circular_buffer.c \
-			 circular_buffer.h \
-			 circular_queue.c \
-			 circular_queue.h \
-			 common.c \
-             common.h \
-             console.c \
-             console.h \
-			 cpuset.h \
-			 cpuset_hwloc.c \
-			 cpuset_pthread.c \
-             crypto_engine_loader.c \
-             crypto_engine_loader.h \
-             mcs_index_rates.c \
-             mcs_index_rates.h \
-             simd_cpuid.c \
-             simd_cpuid.h \
-             trampoline.c \
-             trampoline.h \
-             trampoline_x86.c \
-             trampoline_arm.c \
-             trampoline_ppc.c \
-             trampoline_stubs.c \
-             verifyssid.c \
-             verifyssid.h \
-			 avl_tree.c \
-			 avl_tree.h
-
-
-@CODE_COVERAGE_RULES@
+EXTRA_DIST +=     %D%/circular_buffer.c \
+                  %D%/circular_buffer.h \
+                  %D%/circular_queue.c \
+                  %D%/circular_queue.h \
+                  %D%/common.c \
+                  %D%/common.h \
+                  %D%/console.c \
+                  %D%/console.h \
+                  %D%/cpuset.h \
+                  %D%/cpuset_hwloc.c \
+                  %D%/cpuset_pthread.c \
+                  %D%/crypto_engine_loader.c \
+                  %D%/crypto_engine_loader.h \
+                  %D%/mcs_index_rates.c \
+                  %D%/mcs_index_rates.h \
+                  %D%/simd_cpuid.c \
+                  %D%/simd_cpuid.h \
+                  %D%/trampoline.c \
+                  %D%/trampoline.h \
+                  %D%/trampoline_x86.c \
+                  %D%/trampoline_arm.c \
+                  %D%/trampoline_ppc.c \
+                  %D%/trampoline_stubs.c \
+                  %D%/verifyssid.c \
+                  %D%/verifyssid.h \
+                  %D%/avl_tree.c \
+                  %D%/avl_tree.h

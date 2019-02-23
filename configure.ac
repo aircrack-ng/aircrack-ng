@@ -57,7 +57,7 @@ AC_CANONICAL_TARGET
 AC_CONFIG_AUX_DIR([.])
 AC_CONFIG_MACRO_DIR([build/m4/stubs])
 
-AM_INIT_AUTOMAKE([1.10 dist-bzip2 dist-zip foreign])
+AM_INIT_AUTOMAKE([1.14 dist-bzip2 dist-zip foreign subdir-objects])
 AM_MAINTAINER_MODE([enable])
 AC_SUBST([ACLOCAL_AMFLAGS], ["-I build/m4/stubs -I build/m4 \${ACLOCAL_FLAGS}"])
 
@@ -78,6 +78,7 @@ AIRCRACK_NG_PROG_CXX
 AC_PROG_INSTALL
 AM_PROG_AS
 PKG_PROG_PKG_CONFIG
+AM_PROG_CC_C_O
 
 LT_INIT([win32-dll disable-static shared])
 
@@ -205,17 +206,7 @@ scripts/airgraph-ng/Makefile
 scripts/airgraph-ng/man/Makefile
 scripts/versuck-ng/Makefile
 
-src/Makefile
-src/aircrack-crypto/Makefile
-src/aircrack-util/Makefile
-src/include/Makefile
-src/aircrack-osdep/Makefile
-src/aircrack-osdep/radiotap/Makefile
-
-test/Makefile
 test/test-env.sh
-test/cryptounittest/Makefile
-test/unit/Makefile
 ])
 
 #

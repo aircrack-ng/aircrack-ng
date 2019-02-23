@@ -2,7 +2,7 @@
 
 set -ef
 
-"${top_builddir}/src/aircrack-ng${EXEEXT}" \
+"${abs_builddir}/../aircrack-ng${EXEEXT}" \
     ${AIRCRACK_NG_ARGS} \
     -w "${abs_srcdir}/password-2.lst" \
     -a 3 \

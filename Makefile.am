@@ -40,10 +40,55 @@
 ACLOCAL_AMFLAGS = -I build/m4/stubs -I build/m4
 
 SUBDIRS = manpages \
-		  scripts \
-		  src \
-		  test
+		  scripts
 
+AM_CPPFLAGS = -I$(top_srcdir) \
+			  -I$(top_srcdir)/src \
+			  -I$(top_srcdir)/src/include \
+			  -I$(top_srcdir)/src/aircrack-util \
+			  -I$(top_srcdir)/src/aircrack-crypto \
+			  $(CRYPTO_INCLUDES) \
+			  $(CODE_COVERAGE_CPPFLAGS)
 
-@CODE_COVERAGE_RULES@
+CFLAGS		+= $(CODE_COVERAGE_CFLAGS)
+CXXFLAGS	+=	$(CODE_COVERAGE_CXXFLAGS)
+LIBS		+=	$(CODE_COVERAGE_LIBS)
 
+bin_PROGRAMS =
+sbin_PROGRAMS =
+noinst_LTLIBRARIES =
+lib_LTLIBRARIES =
+EXTRA_DIST =
+check_PROGRAMS =
+TESTS =
+
+LIBAC_LIBS = libaclib.la
+LIBPTW_LIBS = libptw.la
+LIBLINECOUNT_LIBS = liblinecount.la
+LIBCOW_LIBS= libcow.la
+LIBAIRCRACK_CRYPTO_LIBS = libaircrack-crypto.la
+
+LIBAIRCRACK_CRYPTO_X86_AVX2_LIBS = libaircrack-crypto-x86-avx2.la
+
+LIBAIRCRACK_CRYPTO_X86_AVX_LIBS = libaircrack-crypto-x86-avx.la
+
+LIBAIRCRACK_CRYPTO_X86_SSE2_LIBS = libaircrack-crypto-x86-sse2.la
+
+LIBAIRCRACK_UTIL_LIBS = libaircrack-util.la
+
+LIBAIRCRACK_OSDEP_LIBS= libaircrack-osdep.la
+if CYGWIN
+LIBAIRCRACK_OSDEP_LIBS+= -liphlpapi -lsetupapi -luuid
+endif
+
+LIBRADIOTAP_LIBS = libradiotap.la
+
+LIBAIRCRACK_CRYPTO_PATH = $(abs_top_builddir)/
+
+include $(top_srcdir)/src/Makefile.inc
+include $(top_srcdir)/test/Makefile.inc
+
+include $(top_srcdir)/aminclude_static.am
+
+clean-local: code-coverage-clean
+distclean-local: code-coverage-dist-clean
