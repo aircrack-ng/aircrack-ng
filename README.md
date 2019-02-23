@@ -70,6 +70,8 @@ Below are instructions for installing the basic requirements to build
 
     sudo yum install libtool pkgconfig sqlite-devel autoconf automake openssl-devel libpcap-devel pcre-devel rfkill libnl3-devel gcc gcc-c++ ethtool hwloc-devel libcmocka-devel make hostapd iw usbutils tcpdump
 
+**Note**: on CentOS and RedHat, HostAPd requires 'epel' repository to be enabled: sudo yum install epel-release
+
 ### BSD
 
 #### FreeBSD
