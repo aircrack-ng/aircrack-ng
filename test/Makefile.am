@@ -93,7 +93,8 @@ TESTS = test-hex_string_to_array.sh \
 		test-alltools.sh
 
 if LINUX
-TESTS += test-aireplay-ng-0001.sh \
+TESTS += test-airodump-ng-0001.sh \
+		test-aireplay-ng-0001.sh \
 		test-aireplay-ng-0002.sh \
 		test-aireplay-ng-0003.sh \
 		test-aireplay-ng-0004.sh \
@@ -157,7 +158,8 @@ EXTRA_DIST = test-hex_string_to_array.sh \
 			 test-airolib-sqlite.sh
 
 if LINUX
-EXTRA_DIST += test-aireplay-ng-0001.sh \
+EXTRA_DIST += test-airodump-ng-0001.sh \
+		test-aireplay-ng-0001.sh \
 		test-aireplay-ng-0002.sh \
 		test-aireplay-ng-0003.sh \
 		test-aireplay-ng-0004.sh \
