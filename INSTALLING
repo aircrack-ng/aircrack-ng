@@ -27,7 +27,7 @@
  * For best performance on FreeBSD (50-70% more), install gcc5 (or better) via: pkg install gcc8
  * rfkill
  * For best performance on SMP machines, ensure the hwloc library and headers are installed. It is strongly recommended on high core count systems, it may give a serious speed boost
- * CMocka, tcpdump (Linux only) and HostAPd (Linux only) for unit testing
+ * CMocka, tcpdump (Linux only), HostAPd (Linux only) and screen (Linux only) for unit testing
 
 === Installing required and optional dependencies ===
 
@@ -40,11 +40,11 @@ Note: CMocka, tcpdump and HostAPd should not be dependencies when packaging Airc
 
 ===== Debian/Ubuntu =====
 
-    `sudo apt-get install build-essential autoconf automake libtool pkg-config libnl-3-dev libnl-genl-3-dev libssl-dev ethtool shtool rfkill zlib1g-dev libpcap-dev libsqlite3-dev libpcre3-dev libhwloc-dev libcmocka-dev hostapd tcpdump`
+    `sudo apt-get install build-essential autoconf automake libtool pkg-config libnl-3-dev libnl-genl-3-dev libssl-dev ethtool shtool rfkill zlib1g-dev libpcap-dev libsqlite3-dev libpcre3-dev libhwloc-dev libcmocka-dev hostapd tcpdump screen`
 
 ===== Fedora/CentOS/RHEL =====
 
-    `sudo yum install libtool pkgconfig sqlite-devel autoconf automake openssl-devel libpcap-devel pcre-devel rfkill libnl3-devel gcc gcc-c++ ethtool hwloc-devel libcmocka-devel make hostapd iw usbutils tcpdump`
+    `sudo yum install libtool pkgconfig sqlite-devel autoconf automake openssl-devel libpcap-devel pcre-devel rfkill libnl3-devel gcc gcc-c++ ethtool hwloc-devel libcmocka-devel make hostapd iw usbutils tcpdump screen`
 
 Note: on CentOS and RedHat, HostAPd requires 'epel' repository to be enabled: sudo yum install epel-release
 
