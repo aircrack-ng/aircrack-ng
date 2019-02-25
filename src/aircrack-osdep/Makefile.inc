@@ -78,6 +78,7 @@ endif
 
 if LINUX
 libaircrack_osdep_la_SOURCES = $(SRCS_LINUX)
+libaircrack_osdep_la_CFLAGS  = $(AM_CPPFLAGS) $(LIBNL_CFLAGS)
 libaircrack_osdep_la_LIBADD = $(LIBNL_LIBS) $(LIBRADIOTAP_LIBS)
 endif
 

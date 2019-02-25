@@ -50,6 +50,11 @@
  *   Also removed oSSL code: HMAC(EVP_sha1(), ....), and coded what it does
  * (which is simple), inline.
  */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #ifndef USE_GCRYPT
 #include <openssl/sha.h>
 #else

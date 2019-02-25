@@ -38,6 +38,11 @@
 
 /* this is only to get definitions for memcpy(), ntohl() and htonl() */
 //#include "../git-compat-util.h"
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <assert.h>
 #include <stdint.h>
 #include <string.h>

@@ -32,6 +32,10 @@
 
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #ifdef USE_GCRYPT
 #include "gcrypt-openssl-wrapper.h"
 #include "sha1-git.h"

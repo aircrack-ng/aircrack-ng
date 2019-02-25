@@ -31,6 +31,10 @@
  *  files in the program, then also delete it here.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #if defined(linux)
 #include <linux/rtc.h>
 #endif

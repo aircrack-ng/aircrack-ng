@@ -30,6 +30,10 @@
  * files in the program, then also delete it here.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <hwloc.h>
 #include <assert.h>
 #include <limits.h>

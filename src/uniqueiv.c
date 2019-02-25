@@ -39,6 +39,10 @@
  *  2^24/8 (2 MB) and space required by filled index structures is 257 KB.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdlib.h>
 
 #include "defs.h"

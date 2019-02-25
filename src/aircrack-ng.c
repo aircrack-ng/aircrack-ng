@@ -37,6 +37,10 @@
  *  files in the program, then also delete it here.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #define _GNU_SOURCE
 
 #include <ctype.h>

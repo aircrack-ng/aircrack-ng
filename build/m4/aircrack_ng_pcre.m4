@@ -56,6 +56,6 @@ else
 fi
 
 AS_IF([test "x$HAVE_PCRE" = "xyes"], [
-    AC_DEFINE([HAVE_PCRE], [1])
+    AC_DEFINE([HAVE_PCRE], [1], [Define this if you have libpcre on your system])
 ])
 ])

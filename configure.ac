@@ -56,6 +56,7 @@ AC_CANONICAL_TARGET
 #
 AC_CONFIG_AUX_DIR([.])
 AC_CONFIG_MACRO_DIR([build/m4/stubs])
+AC_CONFIG_HEADERS([config.h])
 
 AM_INIT_AUTOMAKE([1.14 dist-bzip2 dist-zip foreign subdir-objects])
 AM_MAINTAINER_MODE([enable])

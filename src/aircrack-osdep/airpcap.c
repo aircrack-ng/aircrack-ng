@@ -30,6 +30,11 @@
    * files in the program, then also delete it here.
    *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
    */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #ifdef HAVE_AIRPCAP
 
 #include <string.h>
