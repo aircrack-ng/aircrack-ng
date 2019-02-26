@@ -18,8 +18,7 @@ fi
 make
 make dist
 
-V=$(./evalrev)
-BN="aircrack-ng-$V"
+BN=$(find . -name '*.tar.gz' | tail -n1 | sed -e 's/\.tar\.gz//g;s/^\.\///g')
 
 [ -d dist_build ] && rm -fr dist_build
 mkdir dist_build
