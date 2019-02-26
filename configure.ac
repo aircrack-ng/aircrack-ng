@@ -37,8 +37,6 @@
 # If you delete this exception statement from all source files in the
 # program, then also delete it here.
 
-# FIXME: MULTIBIN implementation in here and src/Makefile.am
-
 AC_PREREQ(2.52)
 AC_INIT([aircrack-ng],
     [m4_translit(m4_esyscmd([$(pwd)/evalrev || cat $(pwd)/VERSION]),m4_newline)],
