@@ -214,7 +214,7 @@ summary_libs="$LIBS"
 # Set final flags for build
 #
 CFLAGS="$opt_cflags $CFLAGS"
-CPPFLAGS="$opt_cppflags $CPPFLAGS"
+CPPFLAGS="$opt_cppflags -I./src $CPPFLAGS"
 CXXFLAGS="$opt_cxxflags $CXXFLAGS"
 LIBS="$opt_libs $LIBS"
 
