@@ -1,4 +1,4 @@
-.TH MAKEIVS-NG 1 "December 2018" "Version 1.5.2"
+.TH MAKEIVS-NG 1 "@MAN_RELEASE_DATE@" "@MAN_RELEASE_VERSION@"
 
 .SH NAME
 makeivs - generate a dummy IVS dump file with a specific WEP key

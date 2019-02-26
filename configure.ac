@@ -37,9 +37,19 @@
 # If you delete this exception statement from all source files in the
 # program, then also delete it here.
 
+m4_define([version_date], "December 2018")
+m4_define([version_major], 1)
+m4_define([version_minor], 5)
+m4_define([version_micro], 2)
+m4_define([version_beta],  0)
+m4_define([version_rc],    0)
+m4_define([version_scm],[m4_translit(m4_esyscmd([$(pwd)/evalrev . scm || echo]),m4_newline)])
+m4_define([version_triplet],version_major.version_minor.version_micro)
+m4_append([version_triplet],version_scm)
+
 AC_PREREQ(2.52)
 AC_INIT([aircrack-ng],
-    [m4_translit(m4_esyscmd([$(pwd)/evalrev || cat $(pwd)/VERSION]),m4_newline)],
+    [version_triplet],
     [https://forum.aircrack-ng.org])
 
 #
@@ -79,6 +89,24 @@ AM_PROG_AS
 PKG_PROG_PKG_CONFIG
 AM_PROG_CC_C_O
 
+#
+# Set versioning detail
+#
+AC_SUBST([_MAJ], [version_major])
+AC_SUBST([_MIN], [version_minor])
+AC_SUBST([_SUB_MIN], [version_micro])
+AC_SUBST([_BETA], [version_beta])
+AC_SUBST([_RC], [version_rc])
+AC_SUBST([_SCM], [version_scm])
+AC_SUBST([LT_VER], [version_major.version_minor.version_micro])
+AC_SUBST([MAN_RELEASE_DATE], [version_date])
+AC_SUBST([MAN_RELEASE_VERSION], ["Version version_triplet"])
+AC_DEFINE([_REVISION], ["version_triplet"], [The version information of the project])
+AC_DEFINE([LT_CYGWIN_VER], ["-version_major-version_minor-version_micro.dll"], [The Cygwin DLL version string suffix])
+
+#
+# Initialize libtool
+#
 LT_INIT([win32-dll disable-static shared])
 
 #
@@ -194,9 +222,35 @@ LIBS="$opt_libs $LIBS"
 # Generate all build files
 #
 AC_OUTPUT([
+VERSION
+src/version.h
+
 Makefile
 
+manpages/airbase-ng.8
+manpages/aircrack-ng.1
+manpages/airdecap-ng.1
+manpages/airdecloak-ng.1
+manpages/aireplay-ng.8
+manpages/airmon-ng.8
+manpages/airodump-ng.8
+manpages/airodump-ng-oui-update.8
+manpages/airolib-ng.1
+manpages/airserv-ng.8
+manpages/airtun-ng.8
+manpages/airventriloquist-ng.8
+manpages/besside-ng.8
+manpages/besside-ng-crawler.1
+manpages/buddy-ng.1
+manpages/easside-ng.8
+manpages/ivstools.1
+manpages/kstats.1
 manpages/Makefile
+manpages/makeivs-ng.1
+manpages/packetforge-ng.1
+manpages/tkiptun-ng.8
+manpages/wesside-ng.8
+manpages/wpaclean.1
 
 scripts/Makefile
 scripts/airdrop-ng/Makefile

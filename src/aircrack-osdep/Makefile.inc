@@ -98,7 +98,7 @@ endif
 endif
 
 lib_LTLIBRARIES += libaircrack-osdep.la
-libaircrack_osdep_la_LDFLAGS = -release 1.3.0 -no-undefined
+libaircrack_osdep_la_LDFLAGS = -release $(LT_VER) -no-undefined
 
 EXTRA_DIST +=     %D%/openbsd.c \
                   %D%/darwin.c \

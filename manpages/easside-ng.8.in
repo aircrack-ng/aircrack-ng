@@ -1,4 +1,4 @@
-.TH EASSIDE-NG 8 "December 2018" "Version 1.5.2"
+.TH EASSIDE-NG 8 "@MAN_RELEASE_DATE@" "@MAN_RELEASE_VERSION@"
 
 .SH NAME
 easside-ng - an auto-magic tool which allows you to communicate via an WEP-encrypted AP without knowing the key

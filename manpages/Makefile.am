@@ -86,18 +86,18 @@ dist_man8_MANS += airventriloquist-ng.8 \
 endif
 endif
 
-EXTRA_DIST = airmon-ng.8 \
-             airolib-ng.1 \
-             besside-ng-crawler.1 \
-             buddy-ng.1 \
-             airventriloquist-ng.8 \
-             besside-ng.8 \
-             easside-ng.8 \
-             tkiptun-ng.8 \
-             wesside-ng.8 \
-             wpaclean.1 \
-             airbase-ng.8 \
-             aireplay-ng.8 \
-             airodump-ng.8 \
-             airserv-ng.8 \
-             airtun-ng.8
+EXTRA_DIST = airmon-ng.8.in \
+             airolib-ng.1.in \
+             besside-ng-crawler.1.in \
+             buddy-ng.1.in \
+             airventriloquist-ng.8.in \
+             besside-ng.8.in \
+             easside-ng.8.in \
+             tkiptun-ng.8.in \
+             wesside-ng.8.in \
+             wpaclean.1.in \
+             airbase-ng.8.in \
+             aireplay-ng.8.in \
+             airodump-ng.8.in \
+             airserv-ng.8.in \
+             airtun-ng.8.in

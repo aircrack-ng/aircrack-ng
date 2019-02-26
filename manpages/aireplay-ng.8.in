@@ -1,4 +1,4 @@
-.TH AIREPLAY-NG 8 "December 2018" "Version 1.5.2"
+.TH AIREPLAY-NG 8 "@MAN_RELEASE_DATE@" "@MAN_RELEASE_VERSION@"
 
 .SH NAME
 aireplay-ng - inject packets into a wireless network to generate traffic

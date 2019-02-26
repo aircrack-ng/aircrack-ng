@@ -1,4 +1,4 @@
-.TH AIRMON-NG 8 "December 2018" "Version 1.5.2"
+.TH AIRMON-NG 8 "@MAN_RELEASE_DATE@" "@MAN_RELEASE_VERSION@"
 
 .SH NAME
 airmon-ng - POSIX sh script designed to turn wireless cards into monitor mode.
