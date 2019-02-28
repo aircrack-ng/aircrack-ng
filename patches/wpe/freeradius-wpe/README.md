@@ -1,6 +1,6 @@
 # FreeRadius Wireless Pawn Edition
 
-Updated patch for FreeRadius 3.0.12-3.0.17
+Updated patch for FreeRadius 3.0.18
 
 More information about WPE can be found:
 http://www.willhackforsushi.com/?page_id=37
@@ -24,7 +24,7 @@ apt-get install libssl-dev build-essential libtalloc-dev libpcre3-dev
 ### Optional dependencies
 
 ```
-apt-get install libsqlite3-dev libhiredis-dev libykclient-dev libyubikey-dev default-libmysqlclient-dev libcurl4-openssl-dev libperl-dev libpam0g-dev libcap-dev libmemcached-dev libgdbm-dev libiodbc2-dev libpq-dev libwbclient-dev libkrb5-dev libjson-c-dev freetds-dev libwbclient-sssd-dev samba-dev libiodbc2-dev unixodbc-dev
+apt-get install libsqlite3-dev libhiredis-dev libykclient-dev libyubikey-dev default-libmysqlclient-dev libcurl4-openssl-dev libperl-dev libpam0g-dev libcap-dev libmemcached-dev libgdbm-dev libiodbc2-dev libpq-dev libwbclient-dev libkrb5-dev libjson-c-dev freetds-dev libwbclient-sssd-dev samba-dev libiodbc2-dev
 ```
 
 ### Compilation
@@ -56,12 +56,3 @@ If it fails running and complains about OpenSSL being vulnerable, make sure Open
 Now, connect a client. Once a username/password is entered and the certificate accepted, information regarding that session will be stored in ```/usr/local/var/log/radius/freeradius-server-wpe.log```.
 
 **Note**: This file won't be created until the first client connects and authenticates to the access point.
-
-## Note
-
-Debian testing disabled TLS 1.0 and TLS 1.1 which break FreeRADIUS-WPE <= 3.0.15. Although not recommended to use an older version, if compiling FreeRADIUS <= 3.0.15, run the following commands before running `./configure`:
-
-```
-wget https://raw.githubusercontent.com/aircrack-ng/aircrack-ng/master/patches/wpe/freeradius-wpe/freeradius_3_0_15_openssl_1_1_tls_version_fix.diff
-patch -Np1 -i freeradius_3_0_15_openssl_1_1_tls_version_fix.diff
-```
