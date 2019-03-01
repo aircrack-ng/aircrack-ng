@@ -58,7 +58,7 @@ SRC_KS			= %D%/kstats/kstats.c
 SRC_ES			= %D%/easside-ng/easside-ng.c
 SRC_BUDDY		= %D%/buddy-ng/buddy-ng.c
 SRC_MI			= %D%/makeivs-ng/makeivs-ng.c
-SRC_AB			= %D%/airbase-ng.c
+SRC_AB			= %D%/airbase-ng/airbase-ng.c
 SRC_AU			= %D%/airdecloak-ng.c
 SRC_TT			= %D%/tkiptun-ng.c
 SRC_WC			= %D%/wpaclean.c
@@ -199,9 +199,9 @@ airolib_ng_SOURCES	= $(SRC_AL)
 airolib_ng_CFLAGS	= $(COMMON_CFLAGS) $(SQLITE3_CFLAGS) -DHAVE_REGEXP
 airolib_ng_LDADD		= $(COMMON_LDADD) $(SQLITE3_LDFLAGS) $(SQLITE3_LIBS) $(LIBAC_LIBS) $(LIBCOWPATTY_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
-airbase_ng_SOURCES = $(SRC_AB)
-airbase_ng_CFLAGS = $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
-airbase_ng_LDADD = $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
+airbase_ng_SOURCES	= $(SRC_AB)
+airbase_ng_CFLAGS	= $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
+airbase_ng_LDADD		= $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
 airdecloak_ng_SOURCES = $(SRC_AU)
 airdecloak_ng_CFLAGS = $(COMMON_CFLAGS)
