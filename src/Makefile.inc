@@ -52,7 +52,7 @@ SRC_IV			= %D%/ivstools/ivstools.c
 SRC_AS			= %D%/airserv-ng/airserv-ng.c
 SRC_WS			= %D%/wesside-ng/wesside-ng.c
 SRC_BS			= %D%/besside-ng/besside-ng.c
-SRC_BC			= %D%/besside-ng-crawler.c
+SRC_BC			= %D%/besside-ng-crawler/besside-ng-crawler.c
 SRC_AL			= %D%/airolib-ng.c
 SRC_KS			= %D%/kstats/kstats.c
 
@@ -193,9 +193,9 @@ besside_ng_SOURCES	= $(SRC_BS)
 besside_ng_CFLAGS	= $(COMMON_CFLAGS) $(PCRE_CFLAGS) $(LIBNL_CFLAGS)
 besside_ng_LDADD		= $(COMMON_LDADD) $(PCRE_LIBS) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(LIBPTW_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
-besside_ng_crawler_SOURCES = $(SRC_BC)
-besside_ng_crawler_CFLAGS = $(COMMON_CFLAGS) $(PCAP_CFLAGS)
-besside_ng_crawler_LDADD = $(COMMON_LDADD) $(PCAP_LIBS) $(LIBAC_LIBS) $(CRYPTO_LIBS)
+besside_ng_crawler_SOURCES	= $(SRC_BC)
+besside_ng_crawler_CFLAGS	= $(COMMON_CFLAGS) $(PCAP_CFLAGS)
+besside_ng_crawler_LDADD	= $(COMMON_LDADD) $(PCAP_LIBS) $(LIBAC_LIBS) $(CRYPTO_LIBS)
 
 makeivs_ng_SOURCES = $(SRC_MI)
 makeivs_ng_CFLAGS = $(COMMON_CFLAGS)
