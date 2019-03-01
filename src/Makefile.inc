@@ -37,13 +37,11 @@
 # If you delete this exception statement from all source files in the
 # program, then also delete it here.
 
-SRC_LINECOUNT	= %D%/linecount.cpp
+SRC_LINECOUNT	= %D%/aircrack-ng/linecount.cpp
 
 SRC_PTW			= %D%/aircrack-ptw-lib.c
 
-SRC_AC			= %D%/aircrack-ng.c
-SRC_AC_ALL  	= %D%/aircrack-ng.c
-
+SRC_AC			= %D%/aircrack-ng/aircrack-ng.c
 SRC_AD			= %D%/airdecap-ng.c
 SRC_PF			= %D%/packetforge-ng.c
 SRC_AR			= %D%/aireplay-ng.c
@@ -67,13 +65,13 @@ SRC_AU			= %D%/airdecloak-ng.c
 SRC_TT			= %D%/tkiptun-ng.c
 SRC_WC			= %D%/wpaclean.c
 SRC_AV			= %D%/airventriloquist-ng.c
+SRC_SESSION	= %D%/aircrack-ng/session.c
 
-SRC_ACLIB		= %D%/crypto.c $(SSEC_INT) %D%/uniqueiv.c %D%/session.c %D%/fragments.c %D%/communications.c %D%/dump_write.c
+SRC_ACLIB		= %D%/crypto.c $(SSEC_INT) %D%/uniqueiv.c %D%/fragments.c %D%/communications.c %D%/dump_write.c
 
 if LIBGCRYPT
 SRC_AC			+= %D%/aircrack-crypto/sha1-git.c
-SRC_AC_ALL 		+= %D%/aircrack-crypto/sha1-git.c
-SRC_ACLIB 		+= %D%/aircrack-crypto/sha1-git.c
+SRC_ACLIB		+= %D%/aircrack-crypto/sha1-git.c
 SRC_AD 			+= %D%/aircrack-crypto/sha1-git.c
 SRC_PF 			+= %D%/aircrack-crypto/sha1-git.c
 SRC_IV 			+= %D%/aircrack-crypto/sha1-git.c
@@ -88,8 +86,8 @@ SRC_BS 			+= %D%/aircrack-crypto/sha1-git.c
 SRC_AV 			+= %D%/aircrack-crypto/sha1-git.c
 endif
 
-COMMON_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
-COMMON_LDADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
+COMMON_CFLAGS	= $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
+COMMON_LDADD	= $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 
 bin_PROGRAMS += aircrack-ng \
                 airdecap-ng \
@@ -130,15 +128,16 @@ sbin_PROGRAMS += besside-ng \
 endif
 endif
 
-aircrack_ng_SOURCES = $(SRC_AC_ALL) $(SRC_LINECOUNT)
-aircrack_ng_CFLAGS = $(COMMON_CFLAGS) $(SQLITE3_CFLAGS) $(LIBPTW_CFLAGS)
-aircrack_ng_LDADD = $(LIBAIRCRACK_UTIL_LIBS) $(LIBAC_LIBS) $(SQLITE3_LDFLAGS) $(SQLITE3_LIBS) $(LIBPTW_LIBS) $(COMMON_LDADD) $(CRYPTO_LIBS) $(HWLOC_LIBS)
+aircrack_ng_SOURCES		= $(SRC_AC) $(SRC_LINECOUNT) $(SRC_SESSION)
+aircrack_ng_CFLAGS		= $(COMMON_CFLAGS) $(SQLITE3_CFLAGS) $(LIBPTW_CFLAGS)
+aircrack_ng_CPPFLAGS	= $(AM_CPPFLAGS) -I%D%/aircrack-ng
+aircrack_ng_LDADD			= $(LIBAIRCRACK_UTIL_LIBS) $(LIBAC_LIBS) $(SQLITE3_LDFLAGS) $(SQLITE3_LIBS) $(LIBPTW_LIBS) $(COMMON_LDADD) $(CRYPTO_LIBS) $(HWLOC_LIBS)
 
 if STATIC_BUILD
-aircrack_ng_CFLAGS += -DDYNAMIC=0
-aircrack_ng_LDADD += $(LIBAIRCRACK_CRYPTO@SIMD_SUFFIX@_LIBS)
+aircrack_ng_CFLAGS		+= -DDYNAMIC=0
+aircrack_ng_LDADD			+= $(LIBAIRCRACK_CRYPTO@SIMD_SUFFIX@_LIBS)
 else
-aircrack_ng_LDFLAGS = -rdynamic
+aircrack_ng_LDFLAGS		= -rdynamic
 endif
 
 airdecap_ng_SOURCES = $(SRC_AD)
