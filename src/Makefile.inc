@@ -53,7 +53,7 @@ SRC_AS			= %D%/airserv-ng/airserv-ng.c
 SRC_WS			= %D%/wesside-ng/wesside-ng.c
 SRC_BS			= %D%/besside-ng/besside-ng.c
 SRC_BC			= %D%/besside-ng-crawler/besside-ng-crawler.c
-SRC_AL			= %D%/airolib-ng.c
+SRC_AL			= %D%/airolib-ng/airolib-ng.c
 SRC_KS			= %D%/kstats/kstats.c
 
 SRC_COW			= %D%/cowpatty.c
@@ -201,9 +201,9 @@ makeivs_ng_SOURCES	= $(SRC_MI)
 makeivs_ng_CFLAGS	= $(COMMON_CFLAGS)
 makeivs_ng_LDADD		= $(COMMON_LDADD) $(LIBAC_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
-airolib_ng_SOURCES = $(SRC_AL) $(LIBCOW)
-airolib_ng_CFLAGS = $(COMMON_CFLAGS) $(SQLITE3_CFLAGS) -DHAVE_REGEXP
-airolib_ng_LDADD = $(COMMON_LDADD) $(SQLITE3_LDFLAGS) $(SQLITE3_LIBS) $(LIBAC_LIBS) $(LIBCOW_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
+airolib_ng_SOURCES	= $(SRC_AL) $(LIBCOW)
+airolib_ng_CFLAGS	= $(COMMON_CFLAGS) $(SQLITE3_CFLAGS) -DHAVE_REGEXP
+airolib_ng_LDADD		= $(COMMON_LDADD) $(SQLITE3_LDFLAGS) $(SQLITE3_LIBS) $(LIBAC_LIBS) $(LIBCOW_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
 airbase_ng_SOURCES = $(SRC_AB)
 airbase_ng_CFLAGS = $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
