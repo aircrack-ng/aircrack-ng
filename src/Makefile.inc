@@ -50,7 +50,7 @@ SRC_ADU			= %D%/airodump-ng/airodump-ng.c
 SRC_AT			= %D%/airtun-ng/airtun-ng.c
 SRC_IV			= %D%/ivstools/ivstools.c
 SRC_AS			= %D%/airserv-ng/airserv-ng.c
-SRC_WS			= %D%/wesside-ng.c
+SRC_WS			= %D%/wesside-ng/wesside-ng.c
 SRC_BS			= %D%/besside-ng.c
 SRC_BC			= %D%/besside-ng-crawler.c
 SRC_AL			= %D%/airolib-ng.c
@@ -175,9 +175,9 @@ kstats_SOURCES	= $(SRC_KS)
 kstats_CFLAGS		= $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS)
 kstats_LDADD		= $(COMMON_LDADD) $(LIBAC_LIBS)
 
-wesside_ng_SOURCES = $(SRC_WS)
-wesside_ng_CFLAGS = $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
-wesside_ng_LDADD = $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(LIBPTW_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
+wesside_ng_SOURCES	= $(SRC_WS)
+wesside_ng_CFLAGS		= $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
+wesside_ng_LDADD		= $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(LIBPTW_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
 easside_ng_SOURCES = $(SRC_ES)
 easside_ng_CFLAGS = $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
