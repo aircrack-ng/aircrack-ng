@@ -60,7 +60,7 @@ SRC_COW			= %D%/cowpatty.c
 
 SRC_ES			= %D%/easside-ng/easside-ng.c
 SRC_BUDDY		= %D%/buddy-ng/buddy-ng.c
-SRC_MI			= %D%/makeivs-ng.c
+SRC_MI			= %D%/makeivs-ng/makeivs-ng.c
 SRC_AB			= %D%/airbase-ng.c
 SRC_AU			= %D%/airdecloak-ng.c
 SRC_TT			= %D%/tkiptun-ng.c
@@ -197,9 +197,9 @@ besside_ng_crawler_SOURCES	= $(SRC_BC)
 besside_ng_crawler_CFLAGS	= $(COMMON_CFLAGS) $(PCAP_CFLAGS)
 besside_ng_crawler_LDADD	= $(COMMON_LDADD) $(PCAP_LIBS) $(LIBAC_LIBS) $(CRYPTO_LIBS)
 
-makeivs_ng_SOURCES = $(SRC_MI)
-makeivs_ng_CFLAGS = $(COMMON_CFLAGS)
-makeivs_ng_LDADD = $(COMMON_LDADD) $(LIBAC_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
+makeivs_ng_SOURCES	= $(SRC_MI)
+makeivs_ng_CFLAGS	= $(COMMON_CFLAGS)
+makeivs_ng_LDADD		= $(COMMON_LDADD) $(LIBAC_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
 airolib_ng_SOURCES = $(SRC_AL) $(LIBCOW)
 airolib_ng_CFLAGS = $(COMMON_CFLAGS) $(SQLITE3_CFLAGS) -DHAVE_REGEXP
