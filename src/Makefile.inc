@@ -45,7 +45,7 @@ SRC_AC			= %D%/aircrack-ng/aircrack-ng.c
 SRC_AD			= %D%/airdecap-ng/airdecap-ng.c
 SRC_PF			= %D%/packetforge-ng/packetforge-ng.c
 SRC_AR			= %D%/aireplay-ng/aireplay-ng.c
-SRC_ADU			= %D%/airodump-ng.c
+SRC_ADU			= %D%/airodump-ng/airodump-ng.c
 
 SRC_AT			= %D%/airtun-ng.c
 SRC_IV			= %D%/ivstools.c
@@ -66,8 +66,9 @@ SRC_TT			= %D%/tkiptun-ng.c
 SRC_WC			= %D%/wpaclean.c
 SRC_AV			= %D%/airventriloquist-ng.c
 SRC_SESSION	= %D%/aircrack-ng/session.c
+SRC_DWRITE	= %D%/airodump-ng/dump_write.c
 
-SRC_ACLIB		= %D%/crypto.c $(SSEC_INT) %D%/uniqueiv.c %D%/fragments.c %D%/communications.c %D%/dump_write.c
+SRC_ACLIB		= %D%/crypto.c $(SSEC_INT) %D%/uniqueiv.c %D%/fragments.c %D%/communications.c
 
 if LIBGCRYPT
 SRC_AC			+= %D%/aircrack-crypto/sha1-git.c
@@ -152,9 +153,10 @@ aireplay_ng_SOURCES	= $(SRC_AR)
 aireplay_ng_CFLAGS	= $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
 aireplay_ng_LDADD		= $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
-airodump_ng_SOURCES = $(SRC_ADU) $(LIBMCS)
-airodump_ng_CFLAGS = $(COMMON_CFLAGS) $(PCRE_CFLAGS) $(LIBNL_CFLAGS)
-airodump_ng_LDADD = $(COMMON_LDADD) $(PCRE_LIBS) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
+airodump_ng_SOURCES		= $(SRC_ADU) $(SRC_DWRITE)
+airodump_ng_CFLAGS		= $(COMMON_CFLAGS) $(PCRE_CFLAGS) $(LIBNL_CFLAGS)
+airodump_ng_CPPFLAGS	= $(AM_CPPFLAGS) -I%D%/airodump-ng
+airodump_ng_LDADD			= $(COMMON_LDADD) $(PCRE_LIBS) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
 airserv_ng_SOURCES = $(SRC_AS)
 airserv_ng_CFLAGS = $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
