@@ -59,7 +59,7 @@ SRC_ES			= %D%/easside-ng/easside-ng.c
 SRC_BUDDY		= %D%/buddy-ng/buddy-ng.c
 SRC_MI			= %D%/makeivs-ng/makeivs-ng.c
 SRC_AB			= %D%/airbase-ng/airbase-ng.c
-SRC_AU			= %D%/airdecloak-ng.c
+SRC_AU			= %D%/airdecloak-ng/airdecloak-ng.c
 SRC_TT			= %D%/tkiptun-ng.c
 SRC_WC			= %D%/wpaclean.c
 SRC_AV			= %D%/airventriloquist-ng.c
@@ -203,9 +203,10 @@ airbase_ng_SOURCES	= $(SRC_AB)
 airbase_ng_CFLAGS	= $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
 airbase_ng_LDADD		= $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
-airdecloak_ng_SOURCES = $(SRC_AU)
-airdecloak_ng_CFLAGS = $(COMMON_CFLAGS)
-airdecloak_ng_LDADD = $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
+airdecloak_ng_SOURCES		= $(SRC_AU)
+airdecloak_ng_CFLAGS		= $(COMMON_CFLAGS)
+airdecloak_ng_CPPFLAGS	= $(AM_CPPFLAGS) -I%D%/airdecloak-ng
+airdecloak_ng_LDADD		= $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
 tkiptun_ng_SOURCES = $(SRC_TT)
 tkiptun_ng_CFLAGS = $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
