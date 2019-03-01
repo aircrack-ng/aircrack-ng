@@ -59,7 +59,7 @@ SRC_KS			= %D%/kstats/kstats.c
 SRC_COW			= %D%/cowpatty.c
 
 SRC_ES			= %D%/easside-ng/easside-ng.c
-SRC_BUDDY		= %D%/buddy-ng.c
+SRC_BUDDY		= %D%/buddy-ng/buddy-ng.c
 SRC_MI			= %D%/makeivs-ng.c
 SRC_AB			= %D%/airbase-ng.c
 SRC_AU			= %D%/airdecloak-ng.c
@@ -184,10 +184,10 @@ easside_ng_CFLAGS	= $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
 easside_ng_CPPFLAGS	= $(AM_CPPFLAGS) -I%D%/easside-ng
 easside_ng_LDADD	= $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
-buddy_ng_SOURCES = $(SRC_BUDDY)
-buddy_ng_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS)
+buddy_ng_SOURCES	= $(SRC_BUDDY)
+buddy_ng_CFLAGS	= $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS)
 buddy_ng_CPPFLAGS	= $(AM_CPPFLAGS) -I%D%/easside-ng
-buddy_ng_LDADD = $(COMMON_LDADD) $(LIBAC_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
+buddy_ng_LDADD	= $(COMMON_LDADD) $(LIBAC_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
 besside_ng_SOURCES = $(SRC_BS)
 besside_ng_CFLAGS = $(COMMON_CFLAGS) $(PCRE_CFLAGS) $(LIBNL_CFLAGS)
