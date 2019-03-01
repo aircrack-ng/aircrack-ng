@@ -43,7 +43,7 @@ SRC_PTW			= %D%/aircrack-ptw-lib.c
 
 SRC_AC			= %D%/aircrack-ng/aircrack-ng.c
 SRC_AD			= %D%/airdecap-ng/airdecap-ng.c
-SRC_PF			= %D%/packetforge-ng.c
+SRC_PF			= %D%/packetforge-ng/packetforge-ng.c
 SRC_AR			= %D%/aireplay-ng.c
 SRC_ADU			= %D%/airodump-ng.c
 
@@ -144,9 +144,9 @@ airdecap_ng_SOURCES	= $(SRC_AD)
 airdecap_ng_CFLAGS	= $(COMMON_CFLAGS)
 airdecap_ng_LDADD		= $(COMMON_LDADD) $(LIBAC_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
-packetforge_ng_SOURCES = $(SRC_PF)
-packetforge_ng_CFLAGS = $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
-packetforge_ng_LDADD = $(COMMON_LDADD) $(LIBAC_LIBS) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
+packetforge_ng_SOURCES	= $(SRC_PF)
+packetforge_ng_CFLAGS		= $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
+packetforge_ng_LDADD		= $(COMMON_LDADD) $(LIBAC_LIBS) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
 aireplay_ng_SOURCES = $(SRC_AR)
 aireplay_ng_CFLAGS = $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
