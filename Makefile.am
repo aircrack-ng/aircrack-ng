@@ -68,7 +68,6 @@ TESTS =
 
 LIBAC_LIBS = libaclib.la
 LIBPTW_LIBS = libptw.la
-LIBLINECOUNT_LIBS = liblinecount.la
 LIBCOWPATTY_LIBS = libcowpatty.la
 LIBAIRCRACK_CRYPTO_LIBS = libaircrack-crypto.la
 
