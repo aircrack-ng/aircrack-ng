@@ -81,7 +81,7 @@
 #include "aircrack-util/crypto_engine_loader.h"
 #include "aircrack-util/simd_cpuid.h"
 #include "aircrack-util/trampoline.h"
-#include "cowpatty.h"
+#include "aircrack-ng/cowpatty/cowpatty.h"
 #include "crypto.h"
 #include "hashcat.h"
 #include "linecount.h"

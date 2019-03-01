@@ -55,9 +55,6 @@ SRC_BS			= %D%/besside-ng/besside-ng.c
 SRC_BC			= %D%/besside-ng-crawler/besside-ng-crawler.c
 SRC_AL			= %D%/airolib-ng/airolib-ng.c
 SRC_KS			= %D%/kstats/kstats.c
-
-SRC_COW			= %D%/cowpatty.c
-
 SRC_ES			= %D%/easside-ng/easside-ng.c
 SRC_BUDDY		= %D%/buddy-ng/buddy-ng.c
 SRC_MI			= %D%/makeivs-ng/makeivs-ng.c
@@ -87,9 +84,6 @@ SRC_TT 			+= %D%/aircrack-crypto/sha1-git.c
 SRC_BS 			+= %D%/aircrack-crypto/sha1-git.c
 SRC_AV 			+= %D%/aircrack-crypto/sha1-git.c
 endif
-
-COMMON_CFLAGS	= $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
-COMMON_LDADD	= $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 
 bin_PROGRAMS += aircrack-ng \
                 airdecap-ng \
@@ -201,9 +195,9 @@ makeivs_ng_SOURCES	= $(SRC_MI)
 makeivs_ng_CFLAGS	= $(COMMON_CFLAGS)
 makeivs_ng_LDADD		= $(COMMON_LDADD) $(LIBAC_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
-airolib_ng_SOURCES	= $(SRC_AL) $(LIBCOW)
+airolib_ng_SOURCES	= $(SRC_AL)
 airolib_ng_CFLAGS	= $(COMMON_CFLAGS) $(SQLITE3_CFLAGS) -DHAVE_REGEXP
-airolib_ng_LDADD		= $(COMMON_LDADD) $(SQLITE3_LDFLAGS) $(SQLITE3_LIBS) $(LIBAC_LIBS) $(LIBCOW_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
+airolib_ng_LDADD		= $(COMMON_LDADD) $(SQLITE3_LDFLAGS) $(SQLITE3_LIBS) $(LIBAC_LIBS) $(LIBCOWPATTY_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
 airbase_ng_SOURCES = $(SRC_AB)
 airbase_ng_CFLAGS = $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
@@ -232,19 +226,13 @@ if !STATIC_CRYPTO
 libaclib_la_LIBADD += $(LIBAIRCRACK_UTIL_LIBS)
 endif
 
-libcow_la_SOURCES = $(SRC_COW)
-libcow_la_CFLAGS = $(COMMON_CFLAGS) $(LIBCOW_CFLAGS)
-if !STATIC_CRYPTO
-libcow_la_LIBADD = $(COMMON_LDADD)
-endif
-
 libptw_la_SOURCES = $(SRC_PTW)
 libptw_la_CFLAGS = $(COMMON_CFLAGS)
 if !STATIC_CRYPTO
 libptw_la_LIBADD = $(COMMON_LDADD)
 endif
 
-noinst_LTLIBRARIES += libaclib.la libptw.la libcow.la
+noinst_LTLIBRARIES += libaclib.la libptw.la
 
 EXTRA_DIST +=	%D%/wpaclean.c \
 				%D%/buddy-ng.c \
@@ -284,8 +272,6 @@ EXTRA_DIST +=	%D%/wpaclean.c \
 				%D%/linecount.h \
 				%D%/aircrack-ptw-lib.c \
 				%D%/crypto.h \
-				%D%/cowpatty.c \
-				%D%/cowpatty.h \
 				%D%/session.c \
 				%D%/session.h \
 				%D%/defs.h \

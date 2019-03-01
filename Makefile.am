@@ -43,6 +43,7 @@ SUBDIRS = manpages \
 		  scripts
 
 AM_CPPFLAGS = -I$(top_srcdir) \
+			  -I$(top_srcdir)/include \
 			  -I$(top_srcdir)/src \
 			  -I$(top_srcdir)/src/include \
 			  -I$(top_srcdir)/src/aircrack-util \
@@ -53,6 +54,9 @@ AM_CPPFLAGS = -I$(top_srcdir) \
 CFLAGS		+= $(CODE_COVERAGE_CFLAGS)
 CXXFLAGS	+=	$(CODE_COVERAGE_CXXFLAGS)
 LIBS		+=	$(CODE_COVERAGE_LIBS)
+
+COMMON_CFLAGS	= $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
+COMMON_LDADD	= $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 
 bin_PROGRAMS =
 sbin_PROGRAMS =
@@ -65,7 +69,7 @@ TESTS =
 LIBAC_LIBS = libaclib.la
 LIBPTW_LIBS = libptw.la
 LIBLINECOUNT_LIBS = liblinecount.la
-LIBCOW_LIBS= libcow.la
+LIBCOWPATTY_LIBS = libcowpatty.la
 LIBAIRCRACK_CRYPTO_LIBS = libaircrack-crypto.la
 
 LIBAIRCRACK_CRYPTO_X86_AVX2_LIBS = libaircrack-crypto-x86-avx2.la
@@ -85,6 +89,8 @@ LIBRADIOTAP_LIBS = libradiotap.la
 
 LIBAIRCRACK_CRYPTO_PATH = $(abs_top_builddir)/
 
+include $(top_srcdir)/include/Makefile.inc
+include $(top_srcdir)/lib/Makefile.inc
 include $(top_srcdir)/src/Makefile.inc
 include $(top_srcdir)/test/Makefile.inc
 

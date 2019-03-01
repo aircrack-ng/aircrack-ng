@@ -51,7 +51,7 @@
 #include <signal.h>
 
 #include "defs.h"
-#include "cowpatty.h"
+#include "aircrack-ng/cowpatty/cowpatty.h"
 #include "crypto.h"
 #ifdef HAVE_REGEXP
 #include <regex.h>
