@@ -54,6 +54,7 @@ SRC_WS			= %D%/wesside-ng.c
 SRC_BS			= %D%/besside-ng.c
 SRC_BC			= %D%/besside-ng-crawler.c
 SRC_AL			= %D%/airolib-ng.c
+SRC_KS			= %D%/kstats/kstats.c
 
 SRC_COW			= %D%/cowpatty.c
 
@@ -170,9 +171,9 @@ ivstools_SOURCES	= $(SRC_IV)
 ivstools_CFLAGS		= $(COMMON_CFLAGS)
 ivstools_LDADD		= $(COMMON_LDADD) $(LIBAC_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
-kstats_SOURCES = %D%/kstats.c
-kstats_CFLAGS = $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS)
-kstats_LDADD = $(COMMON_LDADD) $(LIBAC_LIBS)
+kstats_SOURCES	= $(SRC_KS)
+kstats_CFLAGS		= $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS)
+kstats_LDADD		= $(COMMON_LDADD) $(LIBAC_LIBS)
 
 wesside_ng_SOURCES = $(SRC_WS)
 wesside_ng_CFLAGS = $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
