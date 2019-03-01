@@ -49,7 +49,7 @@ SRC_ADU			= %D%/airodump-ng/airodump-ng.c
 
 SRC_AT			= %D%/airtun-ng.c
 SRC_IV			= %D%/ivstools.c
-SRC_AS			= %D%/airserv-ng.c
+SRC_AS			= %D%/airserv-ng/airserv-ng.c
 SRC_WS			= %D%/wesside-ng.c
 SRC_BS			= %D%/besside-ng.c
 SRC_BC			= %D%/besside-ng-crawler.c
@@ -158,9 +158,9 @@ airodump_ng_CFLAGS		= $(COMMON_CFLAGS) $(PCRE_CFLAGS) $(LIBNL_CFLAGS)
 airodump_ng_CPPFLAGS	= $(AM_CPPFLAGS) -I%D%/airodump-ng
 airodump_ng_LDADD			= $(COMMON_LDADD) $(PCRE_LIBS) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
-airserv_ng_SOURCES = $(SRC_AS)
-airserv_ng_CFLAGS = $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
-airserv_ng_LDADD = $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
+airserv_ng_SOURCES	= $(SRC_AS)
+airserv_ng_CFLAGS		= $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
+airserv_ng_LDADD		= $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
 airtun_ng_SOURCES = $(SRC_AT)
 airtun_ng_CFLAGS = $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
