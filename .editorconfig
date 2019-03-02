@@ -15,7 +15,7 @@ indent_size=2
 
 [{Makefile.*,Makefile,GNUmakefile,makefile,*.mk}]
 indent_style=tab
-tab_width=4
+tab_width=2
 
 [{*.yml,*.yaml}]
 indent_style=space
