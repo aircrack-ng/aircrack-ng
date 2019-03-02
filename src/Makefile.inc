@@ -174,117 +174,115 @@ wesside_ng_CFLAGS		= $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
 wesside_ng_LDADD		= $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(LIBPTW_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
 easside_ng_SOURCES	= $(SRC_ES)
-easside_ng_CFLAGS	= $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
+easside_ng_CFLAGS		= $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
 easside_ng_CPPFLAGS	= $(AM_CPPFLAGS) -I%D%/easside-ng
-easside_ng_LDADD	= $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
+easside_ng_LDADD		= $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
 buddy_ng_SOURCES	= $(SRC_BUDDY)
-buddy_ng_CFLAGS	= $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS)
+buddy_ng_CFLAGS		= $(LIBAC_CFLAGS) $(PTHREAD_CFLAGS)
 buddy_ng_CPPFLAGS	= $(AM_CPPFLAGS) -I%D%/easside-ng
-buddy_ng_LDADD	= $(COMMON_LDADD) $(LIBAC_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
+buddy_ng_LDADD		= $(COMMON_LDADD) $(LIBAC_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
 besside_ng_SOURCES	= $(SRC_BS)
-besside_ng_CFLAGS	= $(COMMON_CFLAGS) $(PCRE_CFLAGS) $(LIBNL_CFLAGS)
+besside_ng_CFLAGS		= $(COMMON_CFLAGS) $(PCRE_CFLAGS) $(LIBNL_CFLAGS)
 besside_ng_LDADD		= $(COMMON_LDADD) $(PCRE_LIBS) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(LIBPTW_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
 besside_ng_crawler_SOURCES	= $(SRC_BC)
-besside_ng_crawler_CFLAGS	= $(COMMON_CFLAGS) $(PCAP_CFLAGS)
-besside_ng_crawler_LDADD	= $(COMMON_LDADD) $(PCAP_LIBS) $(LIBAC_LIBS) $(CRYPTO_LIBS)
+besside_ng_crawler_CFLAGS		= $(COMMON_CFLAGS) $(PCAP_CFLAGS)
+besside_ng_crawler_LDADD		= $(COMMON_LDADD) $(PCAP_LIBS) $(LIBAC_LIBS) $(CRYPTO_LIBS)
 
 makeivs_ng_SOURCES	= $(SRC_MI)
-makeivs_ng_CFLAGS	= $(COMMON_CFLAGS)
+makeivs_ng_CFLAGS		= $(COMMON_CFLAGS)
 makeivs_ng_LDADD		= $(COMMON_LDADD) $(LIBAC_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
 airolib_ng_SOURCES	= $(SRC_AL)
-airolib_ng_CFLAGS	= $(COMMON_CFLAGS) $(SQLITE3_CFLAGS) -DHAVE_REGEXP
+airolib_ng_CFLAGS		= $(COMMON_CFLAGS) $(SQLITE3_CFLAGS) -DHAVE_REGEXP
 airolib_ng_LDADD		= $(COMMON_LDADD) $(SQLITE3_LDFLAGS) $(SQLITE3_LIBS) $(LIBAC_LIBS) $(LIBCOWPATTY_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
 airbase_ng_SOURCES	= $(SRC_AB)
-airbase_ng_CFLAGS	= $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
+airbase_ng_CFLAGS		= $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
 airbase_ng_LDADD		= $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
 airdecloak_ng_SOURCES		= $(SRC_AU)
 airdecloak_ng_CFLAGS		= $(COMMON_CFLAGS)
 airdecloak_ng_CPPFLAGS	= $(AM_CPPFLAGS) -I%D%/airdecloak-ng
-airdecloak_ng_LDADD		= $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
+airdecloak_ng_LDADD			= $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
-tkiptun_ng_SOURCES = $(SRC_TT)
-tkiptun_ng_CFLAGS = $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
-tkiptun_ng_LDADD = $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
+tkiptun_ng_SOURCES	= $(SRC_TT)
+tkiptun_ng_CFLAGS		= $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
+tkiptun_ng_LDADD		= $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
-wpaclean_SOURCES = $(SRC_WC)
-wpaclean_CFLAGS = $(COMMON_CFLAGS) $(LIBNL_CFLAGS) $(LIBAIRCRACK_UTIL_CFLAGS)
-wpaclean_LDADD = $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
+wpaclean_SOURCES	= $(SRC_WC)
+wpaclean_CFLAGS		= $(COMMON_CFLAGS) $(LIBNL_CFLAGS) $(LIBAIRCRACK_UTIL_CFLAGS)
+wpaclean_LDADD		= $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
-airventriloquist_ng_SOURCES = $(SRC_AV)
-airventriloquist_ng_CFLAGS = $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
-airventriloquist_ng_CPPFLAGS = $(AM_CPPFLAGS) -I%D%/airventriloquist-ng
-airventriloquist_ng_LDADD = $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
+airventriloquist_ng_SOURCES		= $(SRC_AV)
+airventriloquist_ng_CFLAGS		= $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
+airventriloquist_ng_CPPFLAGS	= $(AM_CPPFLAGS) -I%D%/airventriloquist-ng
+airventriloquist_ng_LDADD 		= $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
-libaclib_la_SOURCES = $(SRC_ACLIB)
-libaclib_la_CFLAGS = $(COMMON_CFLAGS) $(PCRE_CFLAGS) $(LIBAIRCRACK_UTIL_CFLAGS)
-libaclib_la_LIBADD = $(PCRE_LIBS) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
+libaclib_la_SOURCES	= $(SRC_ACLIB)
+libaclib_la_CFLAGS	= $(COMMON_CFLAGS) $(PCRE_CFLAGS) $(LIBAIRCRACK_UTIL_CFLAGS)
+libaclib_la_LIBADD	= $(PCRE_LIBS) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 if !STATIC_CRYPTO
-libaclib_la_LIBADD += $(LIBAIRCRACK_UTIL_LIBS)
+libaclib_la_LIBADD	+= $(LIBAIRCRACK_UTIL_LIBS)
 endif
 
-libptw_la_SOURCES = $(SRC_PTW)
-libptw_la_CFLAGS = $(COMMON_CFLAGS)
+libptw_la_SOURCES	= $(SRC_PTW)
+libptw_la_CFLAGS	= $(COMMON_CFLAGS)
 if !STATIC_CRYPTO
-libptw_la_LIBADD = $(COMMON_LDADD)
+libptw_la_LIBADD	= $(COMMON_LDADD)
 endif
 
 noinst_LTLIBRARIES += libaclib.la libptw.la
 
 EXTRA_DIST +=	%D%/wpaclean/wpaclean.c \
-				%D%/buddy-ng/buddy-ng.c \
-				%D%/aircrack-ng.h \
-				%D%/version.h \
-				%D%/airventriloquist-ng.h \
-				%D%/airdecloak-ng.h \
-				%D%/airserv-ng/airserv-ng.c \
-				%D%/besside-ng/besside-ng.c \
-				%D%/wkp-frame.h \
-				%D%/airolib-ng/airolib-ng.c \
-				%D%/aircrack-ptw-lib.h \
-				%D%/makeivs-ng/makeivs-ng.c \
-				%D%/easside-ng/easside-ng.c \
-				%D%/crctable.h \
-				%D%/airdecap-ng/airdecap-ng.c \
-				%D%/airodump-ng/airodump-ng.h \
-				%D%/airbase-ng/airbase-ng.c \
-				%D%/besside-ng-crawler/besside-ng-crawler.c \
-				%D%/tkiptun-ng/tkiptun-ng.c \
-				%D%/kstats/kstats.c \
-				%D%/easside-ng/easside.h \
-				%D%/aireplay-ng/aireplay-ng.c \
-				%D%/ivstools/ivstools.c \
-				%D%/pcap_local.h \
-				%D%/aircrack-ng/aircrack-ng.c \
-				%D%/airodump-ng/airodump-ng.c \
-				%D%/crypto.c \
-				%D%/airdecloak-ng/airdecloak-ng.c \
-				%D%/packetforge-ng/packetforge-ng.c \
-				%D%/airventriloquist-ng/airventriloquist-ng.c \
-				%D%/uniqueiv.c \
-				%D%/gcrypt-openssl-wrapper.h \
-				%D%/uniqueiv.h \
-				%D%/wesside-ng/wesside-ng.c \
-				%D%/airtun-ng/airtun-ng.c \
-				%D%/aircrack-ng/linecount.h \
-				%D%/aircrack-ng/linecount.cpp \
-				%D%/aircrack-ptw-lib.c \
-				%D%/crypto.h \
-				%D%/aircrack-ng/session.c \
-				%D%/aircrack-ng/session.h \
-				%D%/defs.h \
-				%D%/airodump-ng/dump_write.h \
-				%D%/airodump-ng/dump_write.c \
-				%D%/fragments.h \
-				%D%/fragments.c \
-				%D%/communications.h \
-				%D%/communications.c \
-				%D%/station.h
+							%D%/buddy-ng/buddy-ng.c \
+							%D%/version.h \
+							%D%/airventriloquist-ng.h \
+							%D%/airdecloak-ng.h \
+							%D%/airserv-ng/airserv-ng.c \
+							%D%/besside-ng/besside-ng.c \
+							%D%/wkp-frame.h \
+							%D%/airolib-ng/airolib-ng.c \
+							%D%/aircrack-ptw-lib.h \
+							%D%/makeivs-ng/makeivs-ng.c \
+							%D%/easside-ng/easside-ng.c \
+							%D%/crctable.h \
+							%D%/airdecap-ng/airdecap-ng.c \
+							%D%/airodump-ng/airodump-ng.h \
+							%D%/airbase-ng/airbase-ng.c \
+							%D%/besside-ng-crawler/besside-ng-crawler.c \
+							%D%/tkiptun-ng/tkiptun-ng.c \
+							%D%/kstats/kstats.c \
+							%D%/easside-ng/easside.h \
+							%D%/aireplay-ng/aireplay-ng.c \
+							%D%/ivstools/ivstools.c \
+							%D%/pcap_local.h \
+							%D%/aircrack-ng/aircrack-ng.c \
+							%D%/airodump-ng/airodump-ng.c \
+							%D%/crypto.c \
+							%D%/airdecloak-ng/airdecloak-ng.c \
+							%D%/packetforge-ng/packetforge-ng.c \
+							%D%/airventriloquist-ng/airventriloquist-ng.c \
+							%D%/uniqueiv.c \
+							%D%/gcrypt-openssl-wrapper.h \
+							%D%/uniqueiv.h \
+							%D%/wesside-ng/wesside-ng.c \
+							%D%/airtun-ng/airtun-ng.c \
+							%D%/aircrack-ng/linecount.h \
+							%D%/aircrack-ng/linecount.cpp \
+							%D%/aircrack-ptw-lib.c \
+							%D%/crypto.h \
+							%D%/aircrack-ng/session.c \
+							%D%/aircrack-ng/session.h \
+							%D%/airodump-ng/dump_write.h \
+							%D%/airodump-ng/dump_write.c \
+							%D%/fragments.h \
+							%D%/fragments.c \
+							%D%/communications.h \
+							%D%/communications.c \
+							%D%/station.h
 
 include %D%/include/Makefile.inc
 include %D%/aircrack-util/Makefile.inc
