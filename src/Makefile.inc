@@ -235,7 +235,7 @@ EXTRA_DIST +=	%D%/wpaclean/wpaclean.c \
 							%D%/airdecloak-ng.h \
 							%D%/airserv-ng/airserv-ng.c \
 							%D%/besside-ng/besside-ng.c \
-							%D%/wkp-frame.h \
+							%D%/aircrack-ng/wkp-frame.h \
 							%D%/airolib-ng/airolib-ng.c \
 							%D%/makeivs-ng/makeivs-ng.c \
 							%D%/easside-ng/easside-ng.c \
