@@ -41,7 +41,7 @@
 #include "gcrypt-openssl-wrapper.h"
 #endif
 
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 
 #define CRYPT_NONE 0
 #define CRYPT_WEP 1

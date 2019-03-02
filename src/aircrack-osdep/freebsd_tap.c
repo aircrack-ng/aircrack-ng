@@ -34,7 +34,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 #include "osdep.h"
 
 struct tip_fbsd

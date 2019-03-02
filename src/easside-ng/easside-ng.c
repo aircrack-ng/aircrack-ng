@@ -47,7 +47,7 @@
 #include <netinet/udp.h>
 #undef __FAVOR_BSD
 
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 #include "communications.h"
 #include "aircrack-osdep/osdep.h"
 #include "ieee80211.h"

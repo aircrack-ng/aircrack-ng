@@ -47,7 +47,7 @@
 #include "version.h"
 #include "crypto.h"
 #include "pcap_local.h"
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 #include "aircrack-osdep/byteorder.h"
 #include "aircrack-util/avl_tree.h"
 #include "aircrack-util/common.h"

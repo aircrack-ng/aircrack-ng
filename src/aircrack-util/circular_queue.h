@@ -23,7 +23,7 @@
 #ifndef AIRCRACK_UTIL_CIRCULAR_QUEUE_H
 #define AIRCRACK_UTIL_CIRCULAR_QUEUE_H
 
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 
 /**
  * @file circular_queue.h

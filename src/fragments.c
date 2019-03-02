@@ -42,7 +42,7 @@
 #include <time.h>
 #include <sys/time.h>
 
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 #include "fragments.h"
 #include "crypto.h"
 

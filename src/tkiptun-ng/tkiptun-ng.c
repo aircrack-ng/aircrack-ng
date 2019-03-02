@@ -69,7 +69,7 @@
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 #include "version.h"
 #include "pcap_local.h"
 #include "aircrack-osdep/osdep.h"

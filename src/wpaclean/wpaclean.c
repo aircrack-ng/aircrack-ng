@@ -44,7 +44,7 @@
 #include <fcntl.h>
 #include <err.h>
 
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 #include "aircrack-ng.h"
 #include "version.h"
 #include "aircrack-ptw-lib.h"

@@ -48,7 +48,7 @@
 #include <limits.h>
 #include <getopt.h>
 
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 #include "version.h"
 #include "pcap_local.h"
 #include "communications.h"

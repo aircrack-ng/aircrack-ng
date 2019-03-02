@@ -40,7 +40,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 #include "aircrack-ng/cowpatty/cowpatty.h"
 
 void close_free_cowpatty_hashdb(struct cowpatty_file * cf)

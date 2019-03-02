@@ -61,7 +61,7 @@
 #include <pcre.h>
 #endif
 
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 #include "aircrack-ng.h"
 #include "version.h"
 #include "communications.h"

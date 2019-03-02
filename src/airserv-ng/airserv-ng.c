@@ -42,7 +42,7 @@
 #include <sys/select.h>
 #endif
 
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 #include "aircrack-osdep/osdep.h"
 #include "aircrack-osdep/network.h"
 #include "pcap_local.h"

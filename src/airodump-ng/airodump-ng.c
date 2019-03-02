@@ -72,7 +72,7 @@
 #include <pcre.h>
 #endif
 
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 #include "version.h"
 #include "pcap_local.h"
 #include "uniqueiv.h"

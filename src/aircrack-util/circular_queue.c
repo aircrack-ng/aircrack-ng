@@ -12,7 +12,7 @@
 
 #include <pthread.h>
 
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 #include "circular_buffer.h"
 #include "circular_queue.h"
 

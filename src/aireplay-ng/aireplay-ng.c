@@ -73,7 +73,7 @@
 
 #include "version.h"
 #include "pcap_local.h"
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 #include "aircrack-osdep/osdep.h"
 #include "communications.h"
 #include "crypto.h"

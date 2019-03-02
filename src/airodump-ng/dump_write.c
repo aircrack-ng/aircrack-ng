@@ -49,7 +49,7 @@
 #include <pcre.h>
 #endif
 
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 #include "airodump-ng.h"
 #include "communications.h"
 #include "dump_write.h"

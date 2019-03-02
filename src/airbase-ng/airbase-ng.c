@@ -71,7 +71,7 @@
 #include "aircrack-util/common.h"
 #include "eapol.h"
 
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 #include "communications.h"
 #include "fragments.h"
 #include "aircrack-osdep/osdep.h"

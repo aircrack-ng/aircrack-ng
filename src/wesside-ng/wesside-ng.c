@@ -60,7 +60,7 @@
 #include <err.h>
 #include <limits.h>
 
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 #include "communications.h"
 #include "aircrack-osdep/osdep.h"
 #include "pcap_local.h"

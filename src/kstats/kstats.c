@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 #include "aircrack-ng.h"
 #include "aircrack-util/common.h"
 

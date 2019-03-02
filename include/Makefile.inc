@@ -37,4 +37,5 @@
 # If you delete this exception statement from all source files in the
 # program, then also delete it here.
 
-EXTRA_DIST +=	%D%/aircrack-ng/cowpatty/cowpatty.h
+EXTRA_DIST	+=	%D%/aircrack-ng/cowpatty/cowpatty.h \
+								%D%/aircrack-ng/defs.h

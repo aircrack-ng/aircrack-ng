@@ -71,7 +71,7 @@
 #include <fnmatch.h>
 #include <stdbool.h>
 
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 #include "version.h"
 #include "pcap_local.h"
 #include "aircrack-osdep/osdep.h"

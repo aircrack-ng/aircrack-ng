@@ -47,7 +47,7 @@
 
 #include <pcap.h>
 
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 
 #ifndef DLT_PRISM_HEADER
 #define DLT_PRISM_HEADER 119

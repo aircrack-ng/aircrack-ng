@@ -62,7 +62,7 @@
 
 #include <fcntl.h>
 
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 #include "version.h"
 #include "fragments.h"
 #include "pcap_local.h"

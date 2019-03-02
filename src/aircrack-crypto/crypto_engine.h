@@ -37,7 +37,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 
 #define MAX_THREADS 256
 
@@ -127,7 +127,7 @@ struct ac_crypto_engine_perthread
 						   CACHELINE_SIZE);
 
 #ifndef AVX512F_FOUND
-#define CRYPT_PADDING CACHELINE_SIZE/2
+#define CRYPT_PADDING CACHELINE_SIZE / 2
 #else
 #define CRYPT_PADDING CACHELINE_SIZE
 #endif

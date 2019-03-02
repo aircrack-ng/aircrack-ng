@@ -67,7 +67,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 #include "aircrack-crypto/crypto_engine.h"
 #include "aircrack-crypto/sha1-sse2.h"
 #include "aircrack-crypto/wpapsk.h"

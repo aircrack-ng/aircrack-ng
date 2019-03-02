@@ -42,7 +42,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 #include "communications.h"
 #include "crypto.h"
 #include "pcap_local.h"

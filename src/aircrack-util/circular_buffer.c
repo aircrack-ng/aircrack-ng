@@ -32,7 +32,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 #include "circular_buffer.h"
 
 #ifndef NDEBUG

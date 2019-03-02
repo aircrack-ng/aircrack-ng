@@ -41,7 +41,7 @@
 #include <sys/select.h>
 #endif
 
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 #include "easside.h"
 #include "version.h"
 

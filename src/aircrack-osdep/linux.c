@@ -72,7 +72,7 @@
 #include "common.h"
 #include "byteorder.h"
 #include "channel.h"
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 
 #ifdef CONFIG_LIBNL
 struct nl80211_state state;

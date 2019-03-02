@@ -45,7 +45,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 #include "pcap_local.h"
 #include "aircrack-osdep/osdep.h"
 #include "aircrack-util/common.h"

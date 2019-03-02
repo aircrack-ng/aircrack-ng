@@ -30,7 +30,7 @@
 #include <time.h>
 #include <float.h>
 
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 #include "version.h"
 #include "pcap_local.h"
 #include "uniqueiv.h"

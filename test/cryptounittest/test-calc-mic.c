@@ -30,7 +30,8 @@
 #include <string.h>
 #include <strings.h>
 #include <stdlib.h>
-#include "defs.h"
+
+#include "aircrack-ng/defs.h"
 #include "crypto.h"
 #include "tests.h"
 #include "aircrack-ng.h"

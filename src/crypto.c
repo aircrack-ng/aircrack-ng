@@ -52,7 +52,7 @@
 #include <pthread.h>
 #include <stdint.h>
 
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 #include "crypto.h"
 #include "crctable.h"
 #include "aircrack-ng.h"

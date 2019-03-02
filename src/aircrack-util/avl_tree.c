@@ -31,7 +31,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 #include "avl_tree.h"
 
 #define BALANCE(n)                                                             \

@@ -62,7 +62,7 @@
 #include <errno.h>
 #endif
 
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 #include "aircrack-osdep/osdep.h"
 #include "aircrack-osdep/common.h"
 #include "include/ethernet.h"

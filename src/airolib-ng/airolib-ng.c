@@ -50,7 +50,7 @@
 #include <fcntl.h>
 #include <signal.h>
 
-#include "defs.h"
+#include "aircrack-ng/defs.h"
 #include "aircrack-ng/cowpatty/cowpatty.h"
 #include "crypto.h"
 #ifdef HAVE_REGEXP
