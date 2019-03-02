@@ -230,7 +230,6 @@ noinst_LTLIBRARIES += libaclib.la
 
 EXTRA_DIST +=	%D%/wpaclean/wpaclean.c \
 							%D%/buddy-ng/buddy-ng.c \
-							%D%/version.h \
 							%D%/airventriloquist-ng.h \
 							%D%/airdecloak-ng.h \
 							%D%/airserv-ng/airserv-ng.c \
