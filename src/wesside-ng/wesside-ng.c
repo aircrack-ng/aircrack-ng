@@ -70,7 +70,7 @@
 #include "if_arp.h"
 #include "if_llc.h"
 #include "crypto.h"
-#include "version.h"
+#include "aircrack-ng/version.h"
 #include "aircrack-osdep/byteorder.h"
 
 #define FIND_VICTIM 0

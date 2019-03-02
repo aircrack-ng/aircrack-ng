@@ -56,7 +56,7 @@
 #ifdef HAVE_REGEXP
 #include <regex.h>
 #endif
-#include "version.h"
+#include "aircrack-ng/version.h"
 
 #define IMPORT_ESSID "essid"
 #define EXPORT_ESSID IMPORT_ESSID

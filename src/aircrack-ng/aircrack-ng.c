@@ -88,7 +88,7 @@
 #include "pcap_local.h"
 #include "session.h"
 #include "uniqueiv.h"
-#include "version.h"
+#include "aircrack-ng/version.h"
 #include "wkp-frame.h"
 #include "aircrack-osdep/osdep.h"
 #include "include/ieee80211.h"

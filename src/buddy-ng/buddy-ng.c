@@ -43,7 +43,7 @@
 
 #include "aircrack-ng/defs.h"
 #include "easside.h"
-#include "version.h"
+#include "aircrack-ng/version.h"
 
 static unsigned char ids[8192];
 static unsigned short last_id;

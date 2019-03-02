@@ -44,7 +44,7 @@
 #include <time.h>
 #include <getopt.h>
 #include "airdecloak-ng.h"
-#include "version.h"
+#include "aircrack-ng/version.h"
 #include "aircrack-ng/defs.h"
 #include "aircrack-osdep/radiotap/radiotap_iter.h"
 #include "aircrack-util/console.h"

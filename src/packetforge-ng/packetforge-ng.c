@@ -49,7 +49,7 @@
 #include <getopt.h>
 
 #include "aircrack-ng/defs.h"
-#include "version.h"
+#include "aircrack-ng/version.h"
 #include "pcap_local.h"
 #include "communications.h"
 #include "crypto.h"

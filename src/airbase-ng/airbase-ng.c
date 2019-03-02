@@ -65,7 +65,7 @@
 
 #include <ctype.h>
 
-#include "version.h"
+#include "aircrack-ng/version.h"
 #include "pcap_local.h"
 #include "crypto.h"
 #include "aircrack-util/common.h"

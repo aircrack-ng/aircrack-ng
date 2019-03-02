@@ -44,7 +44,7 @@
 #include <time.h>
 #include <getopt.h>
 
-#include "version.h"
+#include "aircrack-ng/version.h"
 #include "crypto.h"
 #include "pcap_local.h"
 #include "aircrack-ng/defs.h"

@@ -43,7 +43,7 @@
 #include <time.h>
 
 #include "aircrack-ng/defs.h"
-#include "version.h"
+#include "aircrack-ng/version.h"
 #include "crypto.h"
 #include "pcap_local.h"
 #include "aircrack-osdep/byteorder.h"

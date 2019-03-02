@@ -73,7 +73,7 @@
 #endif
 
 #include "aircrack-ng/defs.h"
-#include "version.h"
+#include "aircrack-ng/version.h"
 #include "pcap_local.h"
 #include "uniqueiv.h"
 #include "communications.h"

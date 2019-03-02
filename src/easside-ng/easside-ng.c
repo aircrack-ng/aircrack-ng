@@ -54,7 +54,7 @@
 #include "easside.h"
 #include "if_arp.h"
 #include "ethernet.h"
-#include "version.h"
+#include "aircrack-ng/version.h"
 #include "aircrack-osdep/byteorder.h"
 #include "aircrack-util/common.h"
 
