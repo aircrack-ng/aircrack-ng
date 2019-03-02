@@ -53,7 +53,7 @@
 #include "pcap_local.h"
 #include "aircrack-ng/defs.h"
 #include "aircrack-ptw-lib.h"
-#include "aircrack-ng.h"
+#include "aircrack-ng/aircrack-ng.h"
 
 #define n PTW_n
 #define CONTROLSESSIONS PTW_CONTROLSESSIONS

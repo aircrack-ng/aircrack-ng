@@ -38,4 +38,5 @@
 # program, then also delete it here.
 
 EXTRA_DIST	+=	%D%/aircrack-ng/cowpatty/cowpatty.h \
-								%D%/aircrack-ng/defs.h
+								%D%/aircrack-ng/defs.h \
+								%D%/aircrack-ng/aircrack-ng.h

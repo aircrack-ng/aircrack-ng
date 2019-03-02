@@ -62,7 +62,7 @@
 #endif
 
 #include "aircrack-ng/defs.h"
-#include "aircrack-ng.h"
+#include "aircrack-ng/aircrack-ng.h"
 #include "version.h"
 #include "communications.h"
 #include "aircrack-ptw-lib.h"

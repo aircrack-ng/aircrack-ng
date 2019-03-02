@@ -55,7 +55,7 @@
 #include "aircrack-ng/defs.h"
 #include "crypto.h"
 #include "crctable.h"
-#include "aircrack-ng.h"
+#include "aircrack-ng/aircrack-ng.h"
 #include "aircrack-util/common.h"
 
 #define UBTOUL(b) ((unsigned long) (b))

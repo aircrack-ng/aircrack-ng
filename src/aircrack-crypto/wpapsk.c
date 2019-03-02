@@ -63,7 +63,7 @@
 #include <string.h>
 #include <stdint.h>
 #include "simd-intrinsics.h"
-#include "aircrack-ng.h"
+#include "aircrack-ng/aircrack-ng.h"
 #include "arch.h"
 #include "wpapsk.h"
 #include "johnswap.h"
