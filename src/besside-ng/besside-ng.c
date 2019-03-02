@@ -65,7 +65,7 @@
 #include "aircrack-ng/aircrack-ng.h"
 #include "version.h"
 #include "communications.h"
-#include "aircrack-ptw-lib.h"
+#include "aircrack-ng/ptw/aircrack-ptw-lib.h"
 #include "aircrack-osdep/osdep.h"
 #include "ieee80211.h"
 #include "crypto.h"

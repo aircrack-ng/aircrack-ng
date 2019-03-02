@@ -39,8 +39,6 @@
 
 SRC_LINECOUNT	= %D%/aircrack-ng/linecount.cpp
 
-SRC_PTW			= %D%/aircrack-ptw-lib.c
-
 SRC_AC			= %D%/aircrack-ng/aircrack-ng.c
 SRC_AD			= %D%/airdecap-ng/airdecap-ng.c
 SRC_PF			= %D%/packetforge-ng/packetforge-ng.c
@@ -228,13 +226,7 @@ if !STATIC_CRYPTO
 libaclib_la_LIBADD	+= $(LIBAIRCRACK_UTIL_LIBS)
 endif
 
-libptw_la_SOURCES	= $(SRC_PTW)
-libptw_la_CFLAGS	= $(COMMON_CFLAGS)
-if !STATIC_CRYPTO
-libptw_la_LIBADD	= $(COMMON_LDADD)
-endif
-
-noinst_LTLIBRARIES += libaclib.la libptw.la
+noinst_LTLIBRARIES += libaclib.la
 
 EXTRA_DIST +=	%D%/wpaclean/wpaclean.c \
 							%D%/buddy-ng/buddy-ng.c \
@@ -245,7 +237,6 @@ EXTRA_DIST +=	%D%/wpaclean/wpaclean.c \
 							%D%/besside-ng/besside-ng.c \
 							%D%/wkp-frame.h \
 							%D%/airolib-ng/airolib-ng.c \
-							%D%/aircrack-ptw-lib.h \
 							%D%/makeivs-ng/makeivs-ng.c \
 							%D%/easside-ng/easside-ng.c \
 							%D%/crctable.h \
@@ -272,7 +263,6 @@ EXTRA_DIST +=	%D%/wpaclean/wpaclean.c \
 							%D%/airtun-ng/airtun-ng.c \
 							%D%/aircrack-ng/linecount.h \
 							%D%/aircrack-ng/linecount.cpp \
-							%D%/aircrack-ptw-lib.c \
 							%D%/crypto.h \
 							%D%/aircrack-ng/session.c \
 							%D%/aircrack-ng/session.h \

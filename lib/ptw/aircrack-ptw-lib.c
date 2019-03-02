@@ -52,7 +52,7 @@
 
 #include "pcap_local.h"
 #include "aircrack-ng/defs.h"
-#include "aircrack-ptw-lib.h"
+#include "aircrack-ng/ptw/aircrack-ptw-lib.h"
 #include "aircrack-ng/aircrack-ng.h"
 
 #define n PTW_n

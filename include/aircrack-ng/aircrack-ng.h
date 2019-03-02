@@ -44,7 +44,7 @@
 #if defined(__FreeBSD__)
 #include <unistd.h>
 #endif
-#include "aircrack-ptw-lib.h"
+#include "aircrack-ng/ptw/aircrack-ptw-lib.h"
 #include "eapol.h"
 #include "aircrack-crypto/crypto_engine.h"
 

@@ -38,6 +38,7 @@
 # program, then also delete it here.
 
 SRC_COW			= %D%/cowpatty/cowpatty.c
+SRC_PTW			= %D%/ptw/aircrack-ptw-lib.c
 
 libcowpatty_la_SOURCES = $(SRC_COW)
 libcowpatty_la_CFLAGS = $(COMMON_CFLAGS) $(LIBCOW_CFLAGS)
@@ -45,6 +46,12 @@ if !STATIC_CRYPTO
 libcowpatty_la_LIBADD = $(COMMON_LDADD)
 endif
 
-noinst_LTLIBRARIES += libcowpatty.la
+libptw_la_SOURCES	= $(SRC_PTW)
+libptw_la_CFLAGS	= $(COMMON_CFLAGS)
+if !STATIC_CRYPTO
+libptw_la_LIBADD	= $(COMMON_LDADD)
+endif
+
+noinst_LTLIBRARIES += libcowpatty.la libptw.la
 
 EXTRA_DIST +=	%D%/cowpatty/cowpatty.c

@@ -64,7 +64,7 @@
 #include "communications.h"
 #include "aircrack-osdep/osdep.h"
 #include "pcap_local.h"
-#include "aircrack-ptw-lib.h"
+#include "aircrack-ng/ptw/aircrack-ptw-lib.h"
 #include "ieee80211.h"
 #include "ethernet.h"
 #include "if_arp.h"

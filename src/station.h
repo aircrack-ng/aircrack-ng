@@ -35,7 +35,7 @@
 #include "aircrack-crypto/crypto_engine.h"
 #include "aircrack-util/avl_tree.h"
 #include "pcap_local.h"
-#include "aircrack-ptw-lib.h"
+#include "aircrack-ng/ptw/aircrack-ptw-lib.h"
 
 #ifndef AIRCRACK_NG_STATION_H
 #define AIRCRACK_NG_STATION_H
