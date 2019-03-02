@@ -40,7 +40,10 @@ namespace Aircrack_ng
         private StreamWriter debugStream = null;
 
         private string Changelog =
-                  "v1.0.0.9\n"
+                  "v1.0.0.10\n"
+                + "    - Fixed parsing wordlists\n"
+                + "\n"
+                + "v1.0.0.9\n"
                 + "    - Removed WZCook\n"
                 + "    - Fixed failure to start Aircrack-ng when dictionary\n"
                 + "      and ESSID/BSSID is specified\n"
@@ -325,10 +328,10 @@ namespace Aircrack_ng
             {
                 if (this.tbWPADico.Text.Contains(","))
                 {
-                    string [] files = this.tbWPADico.Text.Split(',');
+                    string [] files = this.tbWPADico.Text.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
                     foreach(string file in files)
                     {
-                        if (checkFileExist(file,"File " + file + "\n"
+                        if (checkFileExist(file,"File <" + file + ">\n"
                                                 + "does not exist") == false)
                         {
                             return;
@@ -482,7 +485,7 @@ namespace Aircrack_ng
 
         private void btOpenDico_Click(object sender, EventArgs e)
         {
-            string newfile = this.FileDialog("Wordlist|*.*", 0, true, " ").Trim();
+            string newfile = this.FileDialog("Wordlist|*.*", 0, true, ",").Trim();
             if (this.tbWPADico.Text.Length > 0)
             {
                 this.tbWPADico.Text += ",";
