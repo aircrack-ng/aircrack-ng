@@ -62,7 +62,7 @@ SRC_AB			= %D%/airbase-ng/airbase-ng.c
 SRC_AU			= %D%/airdecloak-ng/airdecloak-ng.c
 SRC_TT			= %D%/tkiptun-ng/tkiptun-ng.c
 SRC_WC			= %D%/wpaclean/wpaclean.c
-SRC_AV			= %D%/airventriloquist-ng.c
+SRC_AV			= %D%/airventriloquist-ng/airventriloquist-ng.c
 SRC_SESSION	= %D%/aircrack-ng/session.c
 SRC_DWRITE	= %D%/airodump-ng/dump_write.c
 
@@ -218,6 +218,7 @@ wpaclean_LDADD = $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPC
 
 airventriloquist_ng_SOURCES = $(SRC_AV)
 airventriloquist_ng_CFLAGS = $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
+airventriloquist_ng_CPPFLAGS = $(AM_CPPFLAGS) -I%D%/airventriloquist-ng
 airventriloquist_ng_LDADD = $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
 libaclib_la_SOURCES = $(SRC_ACLIB)
@@ -235,49 +236,50 @@ endif
 
 noinst_LTLIBRARIES += libaclib.la libptw.la
 
-EXTRA_DIST +=	%D%/wpaclean.c \
-				%D%/buddy-ng.c \
+EXTRA_DIST +=	%D%/wpaclean/wpaclean.c \
+				%D%/buddy-ng/buddy-ng.c \
 				%D%/aircrack-ng.h \
 				%D%/version.h \
 				%D%/airventriloquist-ng.h \
 				%D%/airdecloak-ng.h \
-				%D%/airserv-ng.c \
-				%D%/besside-ng.c \
+				%D%/airserv-ng/airserv-ng.c \
+				%D%/besside-ng/besside-ng.c \
 				%D%/wkp-frame.h \
-				%D%/airolib-ng.c \
+				%D%/airolib-ng/airolib-ng.c \
 				%D%/aircrack-ptw-lib.h \
-				%D%/makeivs-ng.c \
-				%D%/easside-ng.c \
+				%D%/makeivs-ng/makeivs-ng.c \
+				%D%/easside-ng/easside-ng.c \
 				%D%/crctable.h \
-				%D%/airdecap-ng.c \
-				%D%/airodump-ng.h \
-				%D%/airbase-ng.c \
-				%D%/besside-ng-crawler.c \
-				%D%/tkiptun-ng.c \
-				%D%/kstats.c \
-				%D%/easside.h \
-				%D%/aireplay-ng.c \
-				%D%/ivstools.c \
+				%D%/airdecap-ng/airdecap-ng.c \
+				%D%/airodump-ng/airodump-ng.h \
+				%D%/airbase-ng/airbase-ng.c \
+				%D%/besside-ng-crawler/besside-ng-crawler.c \
+				%D%/tkiptun-ng/tkiptun-ng.c \
+				%D%/kstats/kstats.c \
+				%D%/easside-ng/easside.h \
+				%D%/aireplay-ng/aireplay-ng.c \
+				%D%/ivstools/ivstools.c \
 				%D%/pcap_local.h \
-				%D%/aircrack-ng.c \
-				%D%/airodump-ng.c \
+				%D%/aircrack-ng/aircrack-ng.c \
+				%D%/airodump-ng/airodump-ng.c \
 				%D%/crypto.c \
-				%D%/airdecloak-ng.c \
-				%D%/packetforge-ng.c \
-				%D%/airventriloquist-ng.c \
+				%D%/airdecloak-ng/airdecloak-ng.c \
+				%D%/packetforge-ng/packetforge-ng.c \
+				%D%/airventriloquist-ng/airventriloquist-ng.c \
 				%D%/uniqueiv.c \
 				%D%/gcrypt-openssl-wrapper.h \
 				%D%/uniqueiv.h \
-				%D%/wesside-ng.c \
-				%D%/airtun-ng.c \
-				%D%/linecount.h \
+				%D%/wesside-ng/wesside-ng.c \
+				%D%/airtun-ng/airtun-ng.c \
+				%D%/aircrack-ng/linecount.h \
+				%D%/aircrack-ng/linecount.cpp \
 				%D%/aircrack-ptw-lib.c \
 				%D%/crypto.h \
-				%D%/session.c \
-				%D%/session.h \
+				%D%/aircrack-ng/session.c \
+				%D%/aircrack-ng/session.h \
 				%D%/defs.h \
-				%D%/dump_write.h \
-				%D%/dump_write.c \
+				%D%/airodump-ng/dump_write.h \
+				%D%/airodump-ng/dump_write.c \
 				%D%/fragments.h \
 				%D%/fragments.c \
 				%D%/communications.h \
