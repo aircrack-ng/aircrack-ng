@@ -74,12 +74,12 @@
 #include "aircrack-ng/defs.h"
 #include "aircrack-ng/version.h"
 #include "pcap_local.h"
-#include "aircrack-osdep/osdep.h"
+#include "aircrack-ng/osdep/osdep.h"
 #include "communications.h"
 #include "crypto.h"
 #include "aircrack-util/common.h"
 #include "ieee80211.h"
-#include "aircrack-osdep/radiotap/radiotap_iter.h"
+#include "radiotap/radiotap_iter.h"
 #include "airventriloquist-ng.h"
 
 #define RTC_RESOLUTION 8192

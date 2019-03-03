@@ -78,18 +78,18 @@
 #include "uniqueiv.h"
 #include "communications.h"
 #include "crypto.h"
-#include "aircrack-osdep/channel.h"
-#include "aircrack-osdep/osdep.h"
+#include "aircrack-ng/osdep/channel.h"
+#include "aircrack-ng/osdep/osdep.h"
 #include "airodump-ng.h"
 #include "dump_write.h"
-#include "aircrack-osdep/common.h"
+#include "aircrack-ng/osdep/common.h"
 #include "include/ieee80211.h"
 #include "aircrack-util/common.h"
 #include "aircrack-util/mcs_index_rates.h"
 #include "aircrack-util/verifyssid.h"
 #include "aircrack-util/console.h"
-#include "aircrack-osdep/radiotap/radiotap.h"
-#include "aircrack-osdep/radiotap/radiotap_iter.h"
+#include "radiotap/radiotap.h"
+#include "radiotap/radiotap_iter.h"
 
 // libgcrypt thread callback definition for libgcrypt < 1.6.0
 #ifdef USE_GCRYPT

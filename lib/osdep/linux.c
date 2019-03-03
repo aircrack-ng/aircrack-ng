@@ -70,7 +70,6 @@
 #include "pcap_local.h"
 #include "crctable_osdep.h"
 #include "common.h"
-#include "byteorder.h"
 #include "channel.h"
 #include "aircrack-ng/defs.h"
 

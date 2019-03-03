@@ -62,7 +62,7 @@
 
 #include "aircrack-ng/defs.h"
 #include "communications.h"
-#include "aircrack-osdep/osdep.h"
+#include "aircrack-ng/osdep/osdep.h"
 #include "pcap_local.h"
 #include "aircrack-ng/ptw/aircrack-ptw-lib.h"
 #include "ieee80211.h"
@@ -71,7 +71,7 @@
 #include "if_llc.h"
 #include "crypto.h"
 #include "aircrack-ng/version.h"
-#include "aircrack-osdep/byteorder.h"
+#include "aircrack-ng/osdep/byteorder.h"
 
 #define FIND_VICTIM 0
 #define FOUND_VICTIM 1

@@ -47,7 +47,7 @@
 
 #include "aircrack-ng/defs.h"
 #include "pcap_local.h"
-#include "aircrack-osdep/osdep.h"
+#include "aircrack-ng/osdep/osdep.h"
 #include "aircrack-util/common.h"
 #include "include/ieee80211.h"
 

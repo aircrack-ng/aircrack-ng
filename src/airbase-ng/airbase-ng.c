@@ -74,7 +74,7 @@
 #include "aircrack-ng/defs.h"
 #include "communications.h"
 #include "fragments.h"
-#include "aircrack-osdep/osdep.h"
+#include "aircrack-ng/osdep/osdep.h"
 #include "aircrack-util/common.h"
 
 // libgcrypt thread callback definition for libgcrypt < 1.6.0

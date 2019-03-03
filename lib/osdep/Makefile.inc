@@ -37,8 +37,6 @@
 # If you delete this exception statement from all source files in the
 # program, then also delete it here.
 
-include %D%/radiotap/Makefile.inc
-
 SRCS_COMMON = %D%/network.c %D%/file.c
 SRCS        = %D%/osdep.c $(SRCS_COMMON)
 SRCS_APCAP  = %D%/airpcap.c
@@ -57,7 +55,7 @@ endif
 if CYGWIN
 if AIRPCAP
 libaircrack_osdep_la_SOURCES = $(SRCS_CYGWIN)
-libaircrack_osdep_la_CFLAGS = $(AM_CPPFLAGS) $(AIRPCAP_CFLAGS)
+libaircrack_osdep_la_CFLAGS = $(AIRPCAP_CFLAGS)
 libaircrack_osdep_la_LIBADD = $(AIRPCAP_LIBS) $(LIBRADIOTAP_LIBS) -lsetupapi -liphlpapi
 else
 libaircrack_osdep_la_SOURCES = $(SRCS_CYGWIN)
@@ -78,7 +76,7 @@ endif
 
 if LINUX
 libaircrack_osdep_la_SOURCES = $(SRCS_LINUX)
-libaircrack_osdep_la_CFLAGS  = $(AM_CPPFLAGS) $(LIBNL_CFLAGS)
+libaircrack_osdep_la_CFLAGS  = $(LIBNL_CFLAGS)
 libaircrack_osdep_la_LIBADD = $(LIBNL_LIBS) $(LIBRADIOTAP_LIBS)
 endif
 
@@ -99,6 +97,7 @@ endif
 
 lib_LTLIBRARIES += libaircrack-osdep.la
 libaircrack_osdep_la_LDFLAGS = -release 1.3.0 -no-undefined
+libaircrack_osdep_la_CPPFLAGS = -I$(top_srcdir)/include/aircrack-ng/osdep $(AM_CPPFLAGS)
 
 EXTRA_DIST +=     %D%/openbsd.c \
                   %D%/darwin.c \

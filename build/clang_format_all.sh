@@ -66,11 +66,11 @@ if ! valid_clang_format; then
 fi;
 
 # Format all source code
-find src -iname '*.h' -a \( ! -path "src/include/*" -a ! -path "src/aircrack-osdep/radiotap/*" \) | \
+find src -iname '*.h' -a \( ! -path "src/include/*" -a ! -path "lib/radiotap/*" \) | \
     xargs -n1 $CLANG_FORMAT -i -style=file
-find src -iname '*.cpp' -a \( ! -path "src/include/*" -a ! -path "src/aircrack-osdep/radiotap/*" \) | \
+find src -iname '*.cpp' -a \( ! -path "src/include/*" -a ! -path "lib/radiotap/*" \) | \
     xargs -n1 $CLANG_FORMAT -i -style=file
-find src -iname '*.c' -a \( ! -path "src/include/*" -a ! -path "src/aircrack-osdep/radiotap/*" \) | \
+find src -iname '*.c' -a \( ! -path "src/include/*" -a ! -path "lib/radiotap/*" \) | \
     xargs -n1 $CLANG_FORMAT -i -style=file
 $CLANG_FORMAT -i -style=file src/include/eapol.h
 $CLANG_FORMAT -i -style=file src/include/hashcat.h

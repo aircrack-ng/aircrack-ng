@@ -49,8 +49,8 @@
 #include "aircrack-util/console.h"
 #include "aircrack-util/verifyssid.h"
 
-#include "aircrack-osdep/byteorder.h"
-#include "aircrack-osdep/packed.h"
+#include "aircrack-ng/osdep/byteorder.h"
+#include "aircrack-ng/osdep/packed.h"
 #include "include/ethernet.h"
 #include "include/ieee80211.h"
 

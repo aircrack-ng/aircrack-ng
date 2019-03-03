@@ -7,8 +7,8 @@
 #include <setjmp.h>
 #include <cmocka.h>
 
-#include "aircrack-osdep/byteorder.h"
-#include "aircrack-osdep/radiotap/platform.h"
+#include "aircrack-ng/osdep/byteorder.h"
+#include "radiotap/platform.h"
 #include "aircrack-util/common.h"
 
 static void test_radiotap_unaligned_access(void ** state)

@@ -44,7 +44,8 @@ SUBDIRS = manpages \
 
 AM_CPPFLAGS = -I$(top_srcdir) \
 			  -I$(top_srcdir)/include \
-			  -I$(top_srcdir)/src \
+			  -I$(top_srcdir)/lib \
+				-I$(top_srcdir)/src \
 			  -I$(top_srcdir)/src/include \
 			  -I$(top_srcdir)/src/aircrack-util \
 			  -I$(top_srcdir)/src/aircrack-crypto \

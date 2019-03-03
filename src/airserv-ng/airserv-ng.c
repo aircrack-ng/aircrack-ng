@@ -43,8 +43,8 @@
 #endif
 
 #include "aircrack-ng/defs.h"
-#include "aircrack-osdep/osdep.h"
-#include "aircrack-osdep/network.h"
+#include "aircrack-ng/osdep/osdep.h"
+#include "aircrack-ng/osdep/network.h"
 #include "pcap_local.h"
 #include "aircrack-ng/version.h"
 

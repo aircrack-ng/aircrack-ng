@@ -53,7 +53,7 @@
 #include "pcap_local.h"
 #include "communications.h"
 #include "crypto.h"
-#include "aircrack-osdep/byteorder.h"
+#include "aircrack-ng/osdep/byteorder.h"
 #include "include/ethernet.h"
 #include "aircrack-util/common.h"
 #include "aircrack-util/console.h"

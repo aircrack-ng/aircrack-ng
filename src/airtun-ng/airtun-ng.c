@@ -70,7 +70,7 @@
 #include "crypto.h"
 #include "aircrack-util/common.h"
 
-#include "aircrack-osdep/osdep.h"
+#include "aircrack-ng/osdep/osdep.h"
 
 static const char usage[]
 	= "\n"

@@ -7,7 +7,7 @@
 #include <endian.h>
 #include <errno.h>
 #include <string.h>
-#include "radiotap_iter.h"
+#include "radiotap/radiotap_iter.h"
 
 static int fcshdr = 0;
 

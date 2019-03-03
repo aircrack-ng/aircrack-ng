@@ -48,7 +48,7 @@
 #include "crypto.h"
 #include "pcap_local.h"
 #include "aircrack-ng/defs.h"
-#include "aircrack-osdep/byteorder.h"
+#include "aircrack-ng/osdep/byteorder.h"
 #include "aircrack-util/avl_tree.h"
 #include "aircrack-util/common.h"
 #include "aircrack-util/console.h"

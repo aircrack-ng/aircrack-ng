@@ -55,3 +55,6 @@ endif
 noinst_LTLIBRARIES += libcowpatty.la libptw.la
 
 EXTRA_DIST +=	%D%/cowpatty/cowpatty.c
+
+include %D%/radiotap/Makefile.inc
+include %D%/osdep/Makefile.inc

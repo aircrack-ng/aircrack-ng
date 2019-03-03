@@ -49,13 +49,13 @@
 
 #include "aircrack-ng/defs.h"
 #include "communications.h"
-#include "aircrack-osdep/osdep.h"
+#include "aircrack-ng/osdep/osdep.h"
 #include "ieee80211.h"
 #include "easside.h"
 #include "if_arp.h"
 #include "ethernet.h"
 #include "aircrack-ng/version.h"
-#include "aircrack-osdep/byteorder.h"
+#include "aircrack-ng/osdep/byteorder.h"
 #include "aircrack-util/common.h"
 
 #define S_MTU 1500

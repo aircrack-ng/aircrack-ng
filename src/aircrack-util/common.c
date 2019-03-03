@@ -63,8 +63,8 @@
 #endif
 
 #include "aircrack-ng/defs.h"
-#include "aircrack-osdep/osdep.h"
-#include "aircrack-osdep/common.h"
+#include "aircrack-ng/osdep/osdep.h"
+#include "aircrack-ng/osdep/common.h"
 #include "include/ethernet.h"
 
 #define isHex(c) (hexToInt(c) != -1)

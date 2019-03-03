@@ -46,7 +46,7 @@
 #include "airdecloak-ng.h"
 #include "aircrack-ng/version.h"
 #include "aircrack-ng/defs.h"
-#include "aircrack-osdep/radiotap/radiotap_iter.h"
+#include "radiotap/radiotap_iter.h"
 #include "aircrack-util/console.h"
 
 static unsigned char buffer[65536];

@@ -275,5 +275,4 @@ EXTRA_DIST +=	%D%/wpaclean/wpaclean.c \
 
 include %D%/include/Makefile.inc
 include %D%/aircrack-util/Makefile.inc
-include %D%/aircrack-osdep/Makefile.inc
 include %D%/aircrack-crypto/Makefile.inc
