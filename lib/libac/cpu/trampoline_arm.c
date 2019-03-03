@@ -29,7 +29,7 @@
 #error "The wrong CPU architecture file has been included."
 #endif
 
-#include "trampoline.h"
+#include "aircrack-ng/cpu/trampoline.h"
 
 void simd_init(void) {}
 

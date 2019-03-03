@@ -9,7 +9,7 @@
 
 #include "aircrack-ng/osdep/byteorder.h"
 #include "radiotap/platform.h"
-#include "aircrack-util/common.h"
+#include "aircrack-ng/support/common.h"
 
 static void test_radiotap_unaligned_access(void ** state)
 {

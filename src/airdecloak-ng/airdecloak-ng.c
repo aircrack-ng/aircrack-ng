@@ -47,7 +47,7 @@
 #include "aircrack-ng/version.h"
 #include "aircrack-ng/defs.h"
 #include "radiotap/radiotap_iter.h"
-#include "aircrack-util/console.h"
+#include "aircrack-ng/tui/console.h"
 
 static unsigned char buffer[65536];
 

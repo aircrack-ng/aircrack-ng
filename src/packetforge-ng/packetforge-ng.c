@@ -50,13 +50,13 @@
 
 #include "aircrack-ng/defs.h"
 #include "aircrack-ng/version.h"
-#include "pcap_local.h"
-#include "communications.h"
+#include "aircrack-ng/support/pcap_local.h"
+#include "aircrack-ng/support/communications.h"
 #include "crypto.h"
 #include "aircrack-ng/osdep/byteorder.h"
 #include "include/ethernet.h"
-#include "aircrack-util/common.h"
-#include "aircrack-util/console.h"
+#include "aircrack-ng/support/common.h"
+#include "aircrack-ng/tui/console.h"
 
 #define ARP_REQ                                                                \
 	"\x08\x00\x02\x01\xBB\xBB\xBB\xBB\xBB\xBB\xCC\xCC\xCC\xCC\xCC\xCC"         \

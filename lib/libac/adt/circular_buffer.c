@@ -33,7 +33,7 @@
 #include <assert.h>
 
 #include "aircrack-ng/defs.h"
-#include "circular_buffer.h"
+#include "aircrack-ng/adt/circular_buffer.h"
 
 #ifndef NDEBUG
 static inline bool is_power_of_two(size_t n)

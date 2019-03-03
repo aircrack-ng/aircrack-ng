@@ -48,7 +48,7 @@
 #undef __FAVOR_BSD
 
 #include "aircrack-ng/defs.h"
-#include "communications.h"
+#include "aircrack-ng/support/communications.h"
 #include "aircrack-ng/osdep/osdep.h"
 #include "ieee80211.h"
 #include "easside.h"
@@ -56,7 +56,7 @@
 #include "ethernet.h"
 #include "aircrack-ng/version.h"
 #include "aircrack-ng/osdep/byteorder.h"
-#include "aircrack-util/common.h"
+#include "aircrack-ng/support/common.h"
 
 #define S_MTU 1500
 #define S_MCAST "\x01\x00\x5e\x01\x00"

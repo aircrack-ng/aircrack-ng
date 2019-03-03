@@ -45,9 +45,9 @@
 #endif
 
 #include "aircrack-crypto/crypto_engine.h"
-#include "crypto_engine_loader.h"
-#include "common.h"
-#include "trampoline.h"
+#include "aircrack-ng/support/crypto_engine_loader.h"
+#include "aircrack-ng/support/common.h"
+#include "aircrack-ng/cpu/trampoline.h"
 
 #ifndef STATIC_BUILD
 static void * module = NULL;

@@ -46,12 +46,12 @@
 
 #include "aircrack-ng/version.h"
 #include "crypto.h"
-#include "pcap_local.h"
+#include "aircrack-ng/support/pcap_local.h"
 #include "aircrack-ng/defs.h"
 #include "aircrack-ng/osdep/byteorder.h"
-#include "aircrack-util/avl_tree.h"
-#include "aircrack-util/common.h"
-#include "aircrack-util/console.h"
+#include "aircrack-ng/adt/avl_tree.h"
+#include "aircrack-ng/support/common.h"
+#include "aircrack-ng/tui/console.h"
 
 static const char usage[] =
 

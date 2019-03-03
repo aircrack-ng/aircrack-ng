@@ -45,7 +45,7 @@
 #include "aircrack-ng/defs.h"
 #include "aircrack-ng/osdep/osdep.h"
 #include "aircrack-ng/osdep/network.h"
-#include "pcap_local.h"
+#include "aircrack-ng/support/pcap_local.h"
 #include "aircrack-ng/version.h"
 
 static void sighandler(int signum)

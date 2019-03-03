@@ -36,7 +36,7 @@
 #include "config.h"
 #endif
 
-#include "verifyssid.h"
+#include "aircrack-ng/utf8/verifyssid.h"
 
 int verifyssid(const unsigned char * s)
 {

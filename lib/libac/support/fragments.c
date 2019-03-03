@@ -43,7 +43,7 @@
 #include <sys/time.h>
 
 #include "aircrack-ng/defs.h"
-#include "fragments.h"
+#include "aircrack-ng/support/fragments.h"
 #include "crypto.h"
 
 extern pFrag_t rFragment;

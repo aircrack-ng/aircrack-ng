@@ -51,8 +51,8 @@
 #include "aircrack-ng/osdep/osdep.h"
 #include "ieee80211.h"
 #include "crypto.h"
-#include "pcap_local.h"
-#include "aircrack-util/common.h"
+#include "aircrack-ng/support/pcap_local.h"
+#include "aircrack-ng/support/common.h"
 
 struct packet
 {

@@ -33,7 +33,7 @@
 #define _AIRODUMP_NG_H_
 
 #include "eapol.h"
-#include "pcap_local.h"
+#include "aircrack-ng/support/pcap_local.h"
 #include <sys/ioctl.h>
 #if !defined(TIOCGWINSZ) && !defined(linux)
 #include <sys/termios.h>
@@ -132,7 +132,7 @@ struct oui
 	struct oui * next;
 };
 
-#include "station.h"
+#include "aircrack-ng/support/station.h"
 
 /* linked list of detected macs through ack, cts or rts frames */
 

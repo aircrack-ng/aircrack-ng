@@ -48,7 +48,7 @@
 #include <strings.h>
 #endif
 
-#include "trampoline.h"
+#include "aircrack-ng/cpu/trampoline.h"
 
 #ifndef MAX_PATH
 #define MAX_PATH 16536

@@ -5,7 +5,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "aircrack-util/common.h"
+#include "aircrack-ng/support/common.h"
 
 int main(int nbarg, char * argv[])
 {

@@ -50,7 +50,7 @@
 #include <math.h>
 #include <float.h>
 
-#include "pcap_local.h"
+#include "aircrack-ng/support/pcap_local.h"
 #include "aircrack-ng/defs.h"
 #include "aircrack-ng/ptw/aircrack-ptw-lib.h"
 #include "aircrack-ng/aircrack-ng.h"

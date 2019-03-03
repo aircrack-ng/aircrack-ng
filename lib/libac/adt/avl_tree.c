@@ -32,7 +32,7 @@
 #include <stdlib.h>
 
 #include "aircrack-ng/defs.h"
-#include "avl_tree.h"
+#include "aircrack-ng/adt/avl_tree.h"
 
 #define BALANCE(n)                                                             \
 	((((n)->left == NULL) ? 0 : (n)->left->height)                             \

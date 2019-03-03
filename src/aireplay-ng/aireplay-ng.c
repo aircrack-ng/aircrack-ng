@@ -72,14 +72,14 @@
 #include <netinet/tcp.h>
 
 #include "aircrack-ng/version.h"
-#include "pcap_local.h"
+#include "aircrack-ng/support/pcap_local.h"
 #include "aircrack-ng/defs.h"
 #include "aircrack-ng/osdep/osdep.h"
-#include "communications.h"
+#include "aircrack-ng/support/communications.h"
 #include "crypto.h"
-#include "aircrack-util/common.h"
-#include "aircrack-util/verifyssid.h"
-#include "aircrack-util/console.h"
+#include "aircrack-ng/support/common.h"
+#include "aircrack-ng/utf8/verifyssid.h"
+#include "aircrack-ng/tui/console.h"
 
 #define RTC_RESOLUTION 8192
 

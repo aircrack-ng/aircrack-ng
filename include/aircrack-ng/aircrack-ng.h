@@ -49,8 +49,8 @@
 #include "aircrack-crypto/crypto_engine.h"
 
 #include <pthread.h>
-#include "aircrack-util/avl_tree.h"
-#include "aircrack-util/circular_queue.h"
+#include "aircrack-ng/adt/avl_tree.h"
+#include "aircrack-ng/adt/circular_queue.h"
 
 #define SUCCESS 0
 #define FAILURE 1
@@ -212,7 +212,7 @@ struct WEP_data
 	vote poll[64][256]; /* KoreK cryptanalysis results  */
 };
 
-#include "station.h"
+#include "aircrack-ng/support/station.h"
 
 struct mergeBSSID
 {

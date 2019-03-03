@@ -32,9 +32,9 @@
 
 #include "aircrack-ng/defs.h"
 #include "aircrack-ng/version.h"
-#include "pcap_local.h"
+#include "aircrack-ng/support/pcap_local.h"
 #include "uniqueiv.h"
-#include "aircrack-util/common.h"
+#include "aircrack-ng/support/common.h"
 
 #define NULL_MAC "\x00\x00\x00\x00\x00\x00"
 

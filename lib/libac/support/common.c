@@ -50,7 +50,7 @@
 #include <errno.h>
 #include <assert.h>
 
-#include <common.h>
+#include <aircrack-ng/support/common.h>
 
 #if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__)
 #include <sys/sysctl.h>

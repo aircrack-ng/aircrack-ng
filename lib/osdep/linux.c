@@ -67,7 +67,7 @@
 		 * - since linux does not include it in userspace headers
 		 */
 #include "osdep.h"
-#include "pcap_local.h"
+#include "aircrack-ng/support/pcap_local.h"
 #include "crctable_osdep.h"
 #include "common.h"
 #include "channel.h"

@@ -43,11 +43,11 @@
 #include <sys/types.h>
 
 #include "aircrack-ng/defs.h"
-#include "communications.h"
+#include "aircrack-ng/support/communications.h"
 #include "crypto.h"
-#include "pcap_local.h"
-#include "aircrack-util/console.h"
-#include "aircrack-util/verifyssid.h"
+#include "aircrack-ng/support/pcap_local.h"
+#include "aircrack-ng/tui/console.h"
+#include "aircrack-ng/utf8/verifyssid.h"
 
 #include "aircrack-ng/osdep/byteorder.h"
 #include "aircrack-ng/osdep/packed.h"

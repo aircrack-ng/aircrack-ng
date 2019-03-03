@@ -44,7 +44,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "console.h"
+#include "aircrack-ng/tui/console.h"
 
 #define channel stdout
 

@@ -29,7 +29,7 @@
 
 #include "aircrack-ng/defs.h"
 #include "aircrack-ng/aircrack-ng.h"
-#include "aircrack-util/common.h"
+#include "aircrack-ng/support/common.h"
 
 #define IVBUF_SIZE (5UL * 0xFFFFFF)
 

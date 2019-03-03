@@ -34,7 +34,7 @@
 #include <sys/select.h>
 #include <errno.h>
 
-#include "communications.h"
+#include "aircrack-ng/support/communications.h"
 #include "osdep.h"
 #include "network.h"
 

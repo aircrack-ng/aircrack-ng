@@ -9,7 +9,7 @@
 #include <setjmp.h>
 #include <cmocka.h>
 
-#include "aircrack-util/circular_queue.h"
+#include "aircrack-ng/adt/circular_queue.h"
 
 static void test_cqueue_init_and_empty(void ** state)
 {

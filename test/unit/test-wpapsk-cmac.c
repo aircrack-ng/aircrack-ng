@@ -52,10 +52,10 @@
 #include <openssl/sha.h>
 #endif
 
-#include "aircrack-util/common.h"
-#include "aircrack-util/trampoline.h"
+#include "aircrack-ng/support/common.h"
+#include "aircrack-ng/cpu/trampoline.h"
 #include "aircrack-crypto/crypto_engine.h"
-#include "aircrack-util/crypto_engine_loader.h"
+#include "aircrack-ng/support/crypto_engine_loader.h"
 
 /*
  * We must force linking to one of the support crypto libraries; however,

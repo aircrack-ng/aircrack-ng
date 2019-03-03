@@ -44,7 +44,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
-#include "aircrack-util/cpuset.h"
+#include "aircrack-ng/cpu/cpuset.h"
 
 struct ac_cpuset
 {

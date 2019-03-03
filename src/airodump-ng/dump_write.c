@@ -51,10 +51,10 @@
 
 #include "aircrack-ng/defs.h"
 #include "airodump-ng.h"
-#include "communications.h"
+#include "aircrack-ng/support/communications.h"
 #include "dump_write.h"
 #include "crypto.h"
-#include "aircrack-util/verifyssid.h"
+#include "aircrack-ng/utf8/verifyssid.h"
 
 extern struct communication_options opt;
 

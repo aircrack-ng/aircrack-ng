@@ -67,6 +67,7 @@ EXTRA_DIST =
 check_PROGRAMS =
 TESTS =
 
+LIBAIRCRACK_LIBS = libaircrack.la
 LIBAC_LIBS = libaclib.la
 LIBPTW_LIBS = libptw.la
 LIBCOWPATTY_LIBS = libcowpatty.la
@@ -77,8 +78,6 @@ LIBAIRCRACK_CRYPTO_X86_AVX2_LIBS = libaircrack-crypto-x86-avx2.la
 LIBAIRCRACK_CRYPTO_X86_AVX_LIBS = libaircrack-crypto-x86-avx.la
 
 LIBAIRCRACK_CRYPTO_X86_SSE2_LIBS = libaircrack-crypto-x86-sse2.la
-
-LIBAIRCRACK_UTIL_LIBS = libaircrack-util.la
 
 LIBAIRCRACK_OSDEP_LIBS= libaircrack-osdep.la
 if CYGWIN

@@ -53,7 +53,7 @@
 #endif
 #endif
 
-#include "aircrack-util/trampoline.h"
+#include "aircrack-ng/cpu/trampoline.h"
 
 #include "crypto_engine.h"
 

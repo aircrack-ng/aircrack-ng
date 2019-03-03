@@ -20,7 +20,7 @@
 #include "config.h"
 #endif
 
-#include "trampoline.h"
+#include "aircrack-ng/cpu/trampoline.h"
 
 void simd_init(void) {}
 

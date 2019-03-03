@@ -64,14 +64,14 @@
 #include "aircrack-ng/defs.h"
 #include "aircrack-ng/aircrack-ng.h"
 #include "aircrack-ng/version.h"
-#include "communications.h"
+#include "aircrack-ng/support/communications.h"
 #include "aircrack-ng/ptw/aircrack-ptw-lib.h"
 #include "aircrack-ng/osdep/osdep.h"
 #include "ieee80211.h"
 #include "crypto.h"
-#include "pcap_local.h"
-#include "aircrack-util/console.h"
-#include "aircrack-util/common.h"
+#include "aircrack-ng/support/pcap_local.h"
+#include "aircrack-ng/tui/console.h"
+#include "aircrack-ng/support/common.h"
 
 static int PTW_DEFAULTBF[PTW_KEYHSBYTES]
 	= {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,

@@ -37,8 +37,29 @@
 # If you delete this exception statement from all source files in the
 # program, then also delete it here.
 
-EXTRA_DIST	+=	%D%/aircrack-ng/cowpatty/cowpatty.h \
-								%D%/aircrack-ng/defs.h \
-								%D%/aircrack-ng/aircrack-ng.h \
+EXTRA_DIST	+=	%D%/aircrack-ng/aircrack-ng.h \
+								%D%/aircrack-ng/adt/avl_tree.h \
+								%D%/aircrack-ng/adt/circular_queue.h \
+								%D%/aircrack-ng/adt/circular_buffer.h \
 								%D%/aircrack-ng/version.h \
-								%D%/aircrack-ng/ptw/aircrack-ptw-lib.h
+								%D%/aircrack-ng/cpu/trampoline.h \
+								%D%/aircrack-ng/cpu/cpuset.h \
+								%D%/aircrack-ng/cpu/simd_cpuid.h \
+								%D%/aircrack-ng/osdep/network.h \
+								%D%/aircrack-ng/osdep/osdep.h \
+								%D%/aircrack-ng/osdep/byteorder.h \
+								%D%/aircrack-ng/osdep/channel.h \
+								%D%/aircrack-ng/osdep/common.h \
+								%D%/aircrack-ng/osdep/packed.h \
+								%D%/aircrack-ng/tui/console.h \
+								%D%/aircrack-ng/cowpatty/cowpatty.h \
+								%D%/aircrack-ng/defs.h \
+								%D%/aircrack-ng/utf8/verifyssid.h \
+								%D%/aircrack-ng/ptw/aircrack-ptw-lib.h \
+								%D%/aircrack-ng/support/mcs_index_rates.h \
+								%D%/aircrack-ng/support/communications.h \
+								%D%/aircrack-ng/support/crypto_engine_loader.h \
+								%D%/aircrack-ng/support/fragments.h \
+								%D%/aircrack-ng/support/pcap_local.h \
+								%D%/aircrack-ng/support/common.h \
+								%D%/aircrack-ng/support/station.h

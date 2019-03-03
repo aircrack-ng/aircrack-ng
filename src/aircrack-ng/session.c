@@ -48,7 +48,7 @@
 #include <inttypes.h>
 
 #include "aircrack-ng/defs.h"
-#include "aircrack-util/common.h"
+#include "aircrack-ng/support/common.h"
 
 int ac_session_destroy(struct session * s)
 {

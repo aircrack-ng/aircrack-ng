@@ -56,17 +56,17 @@ test_calc_one_pmk_LDADD   = $(LIBAIRCRACK_CRYPTO_LIBS) \
 test_circular_buffer_SOURCES = %D%/test-circular-buffer.c
 test_circular_buffer_CFLAGS  = $(UNIT_COMMON_CFLAGS)
 test_circular_buffer_LDFLAGS = -rdynamic
-test_circular_buffer_LDADD   = $(LIBAIRCRACK_UTIL_LIBS) $(UNIT_COMMON_LDADD)
+test_circular_buffer_LDADD   = $(LIBAIRCRACK_LIBS) $(UNIT_COMMON_LDADD)
 
 test_circular_queue_SOURCES = %D%/test-circular-queue.c
 test_circular_queue_CFLAGS  = $(UNIT_COMMON_CFLAGS)
 test_circular_queue_LDFLAGS = -rdynamic
-test_circular_queue_LDADD   = $(LIBAIRCRACK_UTIL_LIBS) $(UNIT_COMMON_LDADD)
+test_circular_queue_LDADD   = $(LIBAIRCRACK_LIBS) $(UNIT_COMMON_LDADD)
 
 test_string_has_suffix_SOURCES = %D%/test-string-has-suffix.c
 test_string_has_suffix_CFLAGS  = $(UNIT_COMMON_CFLAGS)
 test_string_has_suffix_LDFLAGS = -rdynamic
-test_string_has_suffix_LDADD   = $(LIBAIRCRACK_UTIL_LIBS) $(UNIT_COMMON_LDADD)
+test_string_has_suffix_LDADD   = $(LIBAIRCRACK_LIBS) $(UNIT_COMMON_LDADD)
 
 test_wpapsk_SOURCES = %D%/test-wpapsk.c
 test_wpapsk_CFLAGS  = "-DLIBAIRCRACK_CRYPTO_PATH=\"$(LIBAIRCRACK_CRYPTO_PATH)\"" \
@@ -76,7 +76,7 @@ test_wpapsk_CFLAGS  = "-DLIBAIRCRACK_CRYPTO_PATH=\"$(LIBAIRCRACK_CRYPTO_PATH)\""
 					  $(UNIT_COMMON_CFLAGS)
 test_wpapsk_LDFLAGS = -rdynamic
 test_wpapsk_LDADD   = $(LIBAIRCRACK_CRYPTO_LIBS) \
-					  $(LIBAIRCRACK_UTIL_LIBS) \
+					  $(LIBAIRCRACK_LIBS) \
 					  $(UNIT_COMMON_LDADD)
 
 test_wpapsk_cmac_SOURCES = %D%/test-wpapsk-cmac.c
@@ -86,7 +86,7 @@ test_wpapsk_cmac_CFLAGS  = "-DLIBAIRCRACK_CRYPTO_PATH=\"$(LIBAIRCRACK_CRYPTO_PAT
 						   "-DLIBDIR=\"$(libdir)\"" \
 						   $(UNIT_COMMON_CFLAGS)
 test_wpapsk_cmac_LDFLAGS = -rdynamic
-test_wpapsk_cmac_LDADD   = $(LIBAIRCRACK_UTIL_LIBS) \
+test_wpapsk_cmac_LDADD   = $(LIBAIRCRACK_LIBS) \
 						   $(UNIT_COMMON_LDADD)
 
 TESTS += test-calc-one-pmk test-circular-buffer test-circular-queue test-string-has-suffix

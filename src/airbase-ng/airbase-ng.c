@@ -66,16 +66,16 @@
 #include <ctype.h>
 
 #include "aircrack-ng/version.h"
-#include "pcap_local.h"
+#include "aircrack-ng/support/pcap_local.h"
 #include "crypto.h"
-#include "aircrack-util/common.h"
+#include "aircrack-ng/support/common.h"
 #include "eapol.h"
 
 #include "aircrack-ng/defs.h"
-#include "communications.h"
-#include "fragments.h"
+#include "aircrack-ng/support/communications.h"
+#include "aircrack-ng/support/fragments.h"
 #include "aircrack-ng/osdep/osdep.h"
-#include "aircrack-util/common.h"
+#include "aircrack-ng/support/common.h"
 
 // libgcrypt thread callback definition for libgcrypt < 1.6.0
 #ifdef USE_GCRYPT
@@ -294,7 +294,7 @@ struct MAC_list
 	pMAC_t next;
 };
 
-#include "station.h"
+#include "aircrack-ng/support/station.h"
 
 typedef struct CF_packet * pCF_t;
 struct CF_packet

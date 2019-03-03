@@ -45,22 +45,22 @@
 #include "aircrack-ng/defs.h"
 #include "aircrack-ng/version.h"
 #include "crypto.h"
-#include "pcap_local.h"
+#include "aircrack-ng/support/pcap_local.h"
 #include "aircrack-ng/osdep/byteorder.h"
 #include "aircrack-ng/osdep/packed.h"
 #include "include/ieee80211.h"
 #include "uniqueiv.h"
 #include "aircrack-ng/osdep/byteorder.h"
-#include "aircrack-util/common.h"
+#include "aircrack-ng/support/common.h"
 #include "eapol.h"
-#include "aircrack-util/console.h"
+#include "aircrack-ng/tui/console.h"
 
 #define FAILURE -1
 #define IVS 1
 #define WPA 2
 #define ESSID 3
 
-#include "station.h"
+#include "aircrack-ng/support/station.h"
 
 /* bunch of global stuff */
 

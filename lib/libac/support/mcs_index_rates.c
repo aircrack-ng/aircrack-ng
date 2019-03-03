@@ -36,8 +36,9 @@
 #include "config.h"
 #endif
 
-#include "mcs_index_rates.h"
 #include <stdint.h>
+
+#include "aircrack-ng/support/mcs_index_rates.h"
 
 // http://mcsindex.com/
 

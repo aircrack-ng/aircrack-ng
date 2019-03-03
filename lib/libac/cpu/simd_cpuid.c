@@ -49,8 +49,8 @@
 #endif
 #include <dirent.h>
 
-#include "simd_cpuid.h"
-#include "common.h"
+#include "aircrack-ng/cpu/simd_cpuid.h"
+#include "aircrack-ng/support/common.h"
 
 #ifdef __linux__
 #define CPUFREQ_CPU0C "/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq"

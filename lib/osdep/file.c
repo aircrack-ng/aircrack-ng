@@ -37,7 +37,7 @@
 #include <err.h>
 
 #include "osdep.h"
-#include "pcap_local.h"
+#include "aircrack-ng/support/pcap_local.h"
 #include "radiotap/radiotap_iter.h"
 #include "common.h"
 

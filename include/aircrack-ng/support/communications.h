@@ -46,9 +46,9 @@
 #include <unistd.h>
 
 #include "aircrack-ng/defs.h"
-#include "pcap_local.h"
+#include "aircrack-ng/support/pcap_local.h"
 #include "aircrack-ng/osdep/osdep.h"
-#include "aircrack-util/common.h"
+#include "aircrack-ng/support/common.h"
 #include "include/ieee80211.h"
 
 #define RATE_1M 1000000

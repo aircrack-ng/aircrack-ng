@@ -13,8 +13,8 @@
 #include <pthread.h>
 
 #include "aircrack-ng/defs.h"
-#include "circular_buffer.h"
-#include "circular_queue.h"
+#include "aircrack-ng/adt/circular_buffer.h"
+#include "aircrack-ng/adt/circular_queue.h"
 
 // The definition of our circular queue is hidden from the API user.
 struct circular_queue_t
