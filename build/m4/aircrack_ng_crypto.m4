@@ -49,19 +49,7 @@ if test "x$static_crypto" != "xno"; then
 	AX_EXT_HAVE_STATIC_LIB(ZLIB, ${DEFAULT_STATIC_LIB_SEARCH_PATHS}, z libz, compress)
 	AX_EXT_HAVE_STATIC_LIB(OPENSSL, ${DEFAULT_STATIC_LIB_SEARCH_PATHS}, crypto libcrypto, HMAC, -lz -ldl)
 else
-	AC_CHECK_LIB([crypto], [OPENSSL_init], [
-		OPENSSL_LIBS="-lcrypto"
-		OPENSSL_LDFLAGS=""
-
-		AC_CHECK_HEADERS([openssl/crypto.h], [
-			OPENSSL_FOUND=yes
-			OPENSSL_INCLUDES=""
-		], [
-			AX_CHECK_OPENSSL([OPENSSL_FOUND=yes],[OPENSSL_FOUND=no])
-		])
-	], [
-		AX_CHECK_OPENSSL([OPENSSL_FOUND=yes],[OPENSSL_FOUND=no])
-	])
+	AX_CHECK_OPENSSL([OPENSSL_FOUND=yes],[OPENSSL_FOUND=no])
 
 	AX_LIB_GCRYPT
 fi
