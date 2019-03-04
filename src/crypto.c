@@ -182,7 +182,7 @@ void calc_mic(struct AP_info * ap,
 #endif
 
 #ifdef HMAC_USE_NO_PTR
-	HMAC_CTX ctx;
+	HMAC_CTX ctx = {0};
 #else
 	HMAC_CTX * ctx;
 #endif
