@@ -138,53 +138,53 @@ noinst_LTLIBRARIES += libaircrack-ce-wep.la libcowpatty.la libaccrypto.la libptw
 EXTRA_DIST +=	%D%/ce-wep/uniqueiv.c \
 							%D%/cowpatty/cowpatty.c \
 							%D%/crypto/crypto.c \
+							%D%/libac/adt/avl_tree.c \
+							%D%/libac/adt/circular_buffer.c \
+							%D%/libac/adt/circular_queue.c \
+							%D%/libac/cpu/cpuset_hwloc.c \
+							%D%/libac/cpu/cpuset_pthread.c \
+							%D%/libac/cpu/simd_cpuid.c \
+							%D%/libac/cpu/trampoline.c \
+							%D%/libac/cpu/trampoline_arm.c \
+							%D%/libac/cpu/trampoline_ppc.c \
+							%D%/libac/cpu/trampoline_stubs.c \
+							%D%/libac/cpu/trampoline_x86.c \
+							%D%/libac/support/common.c \
+							%D%/libac/support/communications.c \
+							%D%/libac/support/crypto_engine_loader.c \
+							%D%/libac/support/fragments.c \
+							%D%/libac/support/mcs_index_rates.c \
+							%D%/libac/tui/console.c \
+							%D%/libac/utf8/verifyssid.c \
+							%D%/osdep/aircrack_ng_airpcap.h \
+							%D%/osdep/airpcap.c \
+							%D%/osdep/common.c \
+							%D%/osdep/crctable_osdep.h \
+							%D%/osdep/cygwin.c \
+							%D%/osdep/cygwin.h \
+							%D%/osdep/cygwin_tap.c \
+							%D%/osdep/darwin.c \
+							%D%/osdep/darwin_tap.c \
+							%D%/osdep/dummy.c \
+							%D%/osdep/dummy_tap.c \
+							%D%/osdep/file.c \
+							%D%/osdep/freebsd.c \
+							%D%/osdep/freebsd_tap.c \
+							%D%/osdep/linux.c \
+							%D%/osdep/linux_tap.c \
+							%D%/osdep/netbsd.c \
+							%D%/osdep/netbsd_tap.c \
+							%D%/osdep/network.c \
+							%D%/osdep/openbsd.c \
+							%D%/osdep/openbsd_tap.c \
+							%D%/osdep/osdep.c \
+							%D%/osdep/tap-win32/common.h \
 							%D%/ptw/aircrack-ptw-lib.c \
-							%D%/lib/libac/adt/avl_tree.c \
-							%D%/lib/libac/adt/circular_buffer.c \
-							%D%/lib/libac/adt/circular_queue.c \
-							%D%/lib/libac/cpu/simd_cpuid.c \
-							%D%/lib/libac/cpu/cpuset_hwloc.c \
-							%D%/lib/libac/cpu/trampoline.c \
-							%D%/lib/libac/cpu/trampoline_x86.c \
-							%D%/lib/libac/cpu/trampoline_stubs.c \
-							%D%/lib/libac/cpu/trampoline_arm.c \
-							%D%/lib/libac/cpu/cpuset_pthread.c \
-							%D%/lib/libac/cpu/trampoline_ppc.c \
-							%D%/lib/libac/tui/console.c \
-							%D%/lib/libac/utf8/verifyssid.c \
-							%D%/lib/libac/support/common.c \
-							%D%/lib/libac/support/communications.c \
-							%D%/lib/libac/support/mcs_index_rates.c \
-							%D%/lib/libac/support/fragments.c \
-							%D%/lib/libac/support/crypto_engine_loader.c \
-							%D%/lib/osdep/openbsd.c \
-							%D%/lib/osdep/darwin.c \
-							%D%/lib/osdep/crctable_osdep.h \
-							%D%/lib/osdep/common.c \
-							%D%/lib/osdep/darwin_tap.c \
-							%D%/lib/osdep/cygwin.c \
-							%D%/lib/osdep/aircrack_ng_airpcap.h \
-							%D%/lib/osdep/linux.c \
-							%D%/lib/osdep/file.c \
-							%D%/lib/osdep/linux_tap.c \
-							%D%/lib/osdep/tap-win32/common.h \
-							%D%/lib/osdep/airpcap.c \
-							%D%/lib/osdep/cygwin.h \
-							%D%/lib/osdep/netbsd.c \
-							%D%/lib/osdep/freebsd_tap.c \
-							%D%/lib/osdep/freebsd.c \
-							%D%/lib/osdep/osdep.c \
-							%D%/lib/osdep/dummy_tap.c \
-							%D%/lib/osdep/openbsd_tap.c \
-							%D%/lib/osdep/dummy.c \
-							%D%/lib/osdep/netbsd_tap.c \
-							%D%/lib/osdep/network.c \
-							%D%/lib/osdep/cygwin_tap.c \
-							%D%/lib/radiotap/parse.c \
-							%D%/lib/radiotap/radiotap_iter.h \
-							%D%/lib/radiotap/radiotap.h \
-							%D%/lib/radiotap/radiotap.c \
-							%D%/lib/radiotap/platform.h
+							%D%/radiotap/parse.c \
+							%D%/radiotap/platform.h \
+							%D%/radiotap/radiotap.c \
+							%D%/radiotap/radiotap.h \
+							%D%/radiotap/radiotap_iter.h
 
 include %D%/radiotap/Makefile.inc
 include %D%/osdep/Makefile.inc

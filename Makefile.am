@@ -65,12 +65,16 @@ EXTRA_DIST =
 check_PROGRAMS =
 TESTS =
 
-LIBAIRCRACK_LIBS = libaircrack.la
 LIBACCRYPTO_LIBS = libaccrypto.la
 LIBAIRCRACK_CE_WEP_LIBS = libaircrack-ce-wep.la
-# LIBAC_LIBS = libaclib.la
-LIBPTW_LIBS = libptw.la
+LIBAIRCRACK_LIBS = libaircrack.la
+LIBAIRCRACK_OSDEP_LIBS= libaircrack-osdep.la
+if CYGWIN
+LIBAIRCRACK_OSDEP_LIBS+= -liphlpapi -lsetupapi -luuid
+endif
 LIBCOWPATTY_LIBS = libcowpatty.la
+LIBPTW_LIBS = libptw.la
+LIBRADIOTAP_LIBS = libradiotap.la
 
 LIBAIRCRACK_CRYPTO_LIBS = libaircrack-crypto.la
 
@@ -79,13 +83,6 @@ LIBAIRCRACK_CRYPTO_X86_AVX2_LIBS = libaircrack-crypto-x86-avx2.la
 LIBAIRCRACK_CRYPTO_X86_AVX_LIBS = libaircrack-crypto-x86-avx.la
 
 LIBAIRCRACK_CRYPTO_X86_SSE2_LIBS = libaircrack-crypto-x86-sse2.la
-
-LIBAIRCRACK_OSDEP_LIBS= libaircrack-osdep.la
-if CYGWIN
-LIBAIRCRACK_OSDEP_LIBS+= -liphlpapi -lsetupapi -luuid
-endif
-
-LIBRADIOTAP_LIBS = libradiotap.la
 
 LIBAIRCRACK_CRYPTO_PATH = $(abs_top_builddir)/
 
