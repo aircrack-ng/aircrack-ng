@@ -50,7 +50,7 @@ AC_DEFUN([AX_CHECK_OPENSSL], [
             esac
         ], [
             AC_CHECK_LIB([crypto], [OPENSSL_init], [
-                OPENSSL_LIBS="-lz -lcrypto -lssl"
+                OPENSSL_LIBS="-lcrypto -lssl"
                 OPENSSL_LDFLAGS=""
 
                 AC_CHECK_HEADERS([openssl/crypto.h], [
