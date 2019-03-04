@@ -37,7 +37,9 @@
 # If you delete this exception statement from all source files in the
 # program, then also delete it here.
 
+SRC_CE_WEP	=	%D%/ce-wep/uniqueiv.c
 SRC_COW			= %D%/cowpatty/cowpatty.c
+SRC_CRYPTO	=	%D%/crypto/crypto.c
 SRC_PTW			= %D%/ptw/aircrack-ptw-lib.c
 SRC_LIBAC		= %D%/libac/adt/avl_tree.c \
 							%D%/libac/adt/circular_buffer.c \
@@ -51,6 +53,10 @@ SRC_LIBAC		= %D%/libac/adt/avl_tree.c \
 							%D%/libac/support/mcs_index_rates.c \
 							%D%/libac/tui/console.c \
 							%D%/libac/utf8/verifyssid.c
+
+if LIBGCRYPT
+SRC_CRYPTO	+=	%D%/crypto/sha1-git.c
+endif
 
 libcowpatty_la_SOURCES = $(SRC_COW)
 libcowpatty_la_CFLAGS = $(COMMON_CFLAGS) $(LIBCOW_CFLAGS)
@@ -119,9 +125,19 @@ endif
 endif
 endif
 
-noinst_LTLIBRARIES += libcowpatty.la libptw.la libaircrack.la
+libaccrypto_la_SOURCES	= $(SRC_CRYPTO)
+libaccrypto_la_CFLAGS		= $(COMMON_CFLAGS) $(PCRE_CFLAGS)
+libaccrypto_la_LIBADD		= $(PCRE_LIBS) $(LIBAIRCRACK_OSDEP_LIBS) $(CRYPTO_LIBS)
 
-EXTRA_DIST +=	%D%/cowpatty/cowpatty.c \
+libaircrack_ce_wep_la_SOURCES	= $(SRC_CE_WEP)
+libaircrack_ce_wep_la_CFLAGS	= $(COMMON_CFLAGS)
+libaircrack_ce_wep_la_LIBADD	= $(CRYPTO_LIBS)
+
+noinst_LTLIBRARIES += libaircrack-ce-wep.la libcowpatty.la libaccrypto.la libptw.la libaircrack.la
+
+EXTRA_DIST +=	%D%/ce-wep/uniqueiv.c \
+							%D%/cowpatty/cowpatty.c \
+							%D%/crypto/crypto.c \
 							%D%/ptw/aircrack-ptw-lib.c \
 							%D%/lib/libac/adt/avl_tree.c \
 							%D%/lib/libac/adt/circular_buffer.c \

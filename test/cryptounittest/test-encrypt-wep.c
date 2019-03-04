@@ -29,7 +29,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "crypto.h"
+
+#include "aircrack-ng/crypto/crypto.h"
 #include "tests.h"
 
 #define BLEN 256

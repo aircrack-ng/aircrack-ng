@@ -32,10 +32,9 @@
 #include <stdlib.h>
 
 #include "aircrack-ng/defs.h"
-#include "crypto.h"
-#include "tests.h"
 #include "aircrack-ng/aircrack-ng.h"
-#include <string.h>
+#include "aircrack-ng/crypto/crypto.h"
+#include "tests.h"
 
 int main(int argc, char ** argv)
 {

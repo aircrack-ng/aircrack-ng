@@ -53,8 +53,8 @@
 #include <stdint.h>
 
 #include "aircrack-ng/defs.h"
-#include "crypto.h"
-#include "crctable.h"
+#include "aircrack-ng/crypto/crypto.h"
+#include "aircrack-ng/crypto/crctable.h"
 #include "aircrack-ng/aircrack-ng.h"
 #include "aircrack-ng/support/common.h"
 

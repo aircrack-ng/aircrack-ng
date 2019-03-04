@@ -52,7 +52,7 @@
 #include "aircrack-ng/version.h"
 #include "aircrack-ng/support/pcap_local.h"
 #include "aircrack-ng/support/communications.h"
-#include "crypto.h"
+#include "aircrack-ng/crypto/crypto.h"
 #include "aircrack-ng/osdep/byteorder.h"
 #include "include/ethernet.h"
 #include "aircrack-ng/support/common.h"

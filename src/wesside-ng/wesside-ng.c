@@ -69,7 +69,7 @@
 #include "ethernet.h"
 #include "if_arp.h"
 #include "if_llc.h"
-#include "crypto.h"
+#include "aircrack-ng/crypto/crypto.h"
 #include "aircrack-ng/version.h"
 #include "aircrack-ng/osdep/byteorder.h"
 

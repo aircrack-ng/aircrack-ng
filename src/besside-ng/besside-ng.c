@@ -68,7 +68,7 @@
 #include "aircrack-ng/ptw/aircrack-ptw-lib.h"
 #include "aircrack-ng/osdep/osdep.h"
 #include "ieee80211.h"
-#include "crypto.h"
+#include "aircrack-ng/crypto/crypto.h"
 #include "aircrack-ng/support/pcap_local.h"
 #include "aircrack-ng/tui/console.h"
 #include "aircrack-ng/support/common.h"

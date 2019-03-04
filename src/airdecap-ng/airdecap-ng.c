@@ -45,7 +45,7 @@
 #include <getopt.h>
 
 #include "aircrack-ng/version.h"
-#include "crypto.h"
+#include "aircrack-ng/crypto/crypto.h"
 #include "aircrack-ng/support/pcap_local.h"
 #include "aircrack-ng/defs.h"
 #include "aircrack-ng/osdep/byteorder.h"

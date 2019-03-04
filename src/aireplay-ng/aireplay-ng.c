@@ -76,7 +76,7 @@
 #include "aircrack-ng/defs.h"
 #include "aircrack-ng/osdep/osdep.h"
 #include "aircrack-ng/support/communications.h"
-#include "crypto.h"
+#include "aircrack-ng/crypto/crypto.h"
 #include "aircrack-ng/support/common.h"
 #include "aircrack-ng/utf8/verifyssid.h"
 #include "aircrack-ng/tui/console.h"

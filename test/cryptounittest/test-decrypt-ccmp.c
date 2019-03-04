@@ -30,7 +30,8 @@
 #include <string.h>
 #include <strings.h>
 #include <stdlib.h>
-#include "crypto.h"
+
+#include "aircrack-ng/crypto/crypto.h"
 #include "tests.h"
 
 #define BUFFER_SIZE 65536

@@ -34,7 +34,7 @@
 #ifndef AIRCRACK_NG_FRAGMENTS_H
 #define AIRCRACK_NG_FRAGMENTS_H
 
-#include "crypto.h"
+#include "aircrack-ng/crypto/crypto.h"
 
 // if not all fragments are available 60 seconds after the last fragment was
 // received, they will be removed

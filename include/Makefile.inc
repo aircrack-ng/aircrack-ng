@@ -43,9 +43,13 @@ aircrack_ngheaders_HEADERS = 	%D%/aircrack-ng/aircrack-ng.h \
 															%D%/aircrack-ng/adt/circular_queue.h \
 															%D%/aircrack-ng/adt/circular_buffer.h \
 															%D%/aircrack-ng/version.h \
+															%D%/aircrack-ng/ce-wep/uniqueiv.h \
 															%D%/aircrack-ng/cpu/trampoline.h \
 															%D%/aircrack-ng/cpu/cpuset.h \
 															%D%/aircrack-ng/cpu/simd_cpuid.h \
+															%D%/aircrack-ng/crypto/crctable.h \
+															%D%/aircrack-ng/crypto/gcrypt-openssl-wrapper.h \
+															%D%/aircrack-ng/crypto/crypto.h \
 															%D%/aircrack-ng/osdep/network.h \
 															%D%/aircrack-ng/osdep/osdep.h \
 															%D%/aircrack-ng/osdep/byteorder.h \

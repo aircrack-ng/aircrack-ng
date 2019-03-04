@@ -53,7 +53,7 @@
 #include "airodump-ng.h"
 #include "aircrack-ng/support/communications.h"
 #include "dump_write.h"
-#include "crypto.h"
+#include "aircrack-ng/crypto/crypto.h"
 #include "aircrack-ng/utf8/verifyssid.h"
 
 extern struct communication_options opt;

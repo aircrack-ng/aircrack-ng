@@ -52,7 +52,7 @@
 
 #include "aircrack-ng/defs.h"
 #include "aircrack-ng/cowpatty/cowpatty.h"
-#include "crypto.h"
+#include "aircrack-ng/crypto/crypto.h"
 #ifdef HAVE_REGEXP
 #include <regex.h>
 #endif

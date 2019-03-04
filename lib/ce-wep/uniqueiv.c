@@ -46,7 +46,7 @@
 #include <stdlib.h>
 
 #include "aircrack-ng/defs.h"
-#include "uniqueiv.h"
+#include "aircrack-ng/ce-wep/uniqueiv.h"
 
 /* allocate root structure */
 

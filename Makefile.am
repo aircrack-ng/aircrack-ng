@@ -47,8 +47,6 @@ AM_CPPFLAGS = -I$(top_srcdir) \
 			  -I$(top_srcdir)/lib \
 				-I$(top_srcdir)/src \
 			  -I$(top_srcdir)/src/include \
-			  -I$(top_srcdir)/src/aircrack-util \
-			  -I$(top_srcdir)/src/aircrack-crypto \
 			  $(CRYPTO_INCLUDES) \
 			  $(CODE_COVERAGE_CPPFLAGS)
 
@@ -68,9 +66,12 @@ check_PROGRAMS =
 TESTS =
 
 LIBAIRCRACK_LIBS = libaircrack.la
-LIBAC_LIBS = libaclib.la
+LIBACCRYPTO_LIBS = libaccrypto.la
+LIBAIRCRACK_CE_WEP_LIBS = libaircrack-ce-wep.la
+# LIBAC_LIBS = libaclib.la
 LIBPTW_LIBS = libptw.la
 LIBCOWPATTY_LIBS = libcowpatty.la
+
 LIBAIRCRACK_CRYPTO_LIBS = libaircrack-crypto.la
 
 LIBAIRCRACK_CRYPTO_X86_AVX2_LIBS = libaircrack-crypto-x86-avx2.la

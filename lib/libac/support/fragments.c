@@ -44,7 +44,7 @@
 
 #include "aircrack-ng/defs.h"
 #include "aircrack-ng/support/fragments.h"
-#include "crypto.h"
+#include "aircrack-ng/crypto/crypto.h"
 
 extern pFrag_t rFragment;
 

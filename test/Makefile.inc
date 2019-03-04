@@ -49,7 +49,7 @@ AM_TESTS_ENVIRONMENT = \
 TESTS_ENVIRONMENT ?= $(AM_TESTS_ENVIRONMENT)
 
 test_hex_string_to_array_SOURCES = %D%/test-hex_string_to_array.c
-test_hex_string_to_array_LDADD = $(LIBAC_LIBS) $(LIBAIRCRACK_LIBS)
+test_hex_string_to_array_LDADD = $(LIBACCRYPTO_LIBS) $(LIBAIRCRACK_LIBS)
 
 check_PROGRAMS += test-hex_string_to_array
 
