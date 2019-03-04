@@ -84,6 +84,8 @@ LIBAIRCRACK_CRYPTO_X86_AVX_LIBS = libaircrack-crypto-x86-avx.la
 
 LIBAIRCRACK_CRYPTO_X86_SSE2_LIBS = libaircrack-crypto-x86-sse2.la
 
+## TODO Add remaining SIMD entries for static linking to work
+
 LIBAIRCRACK_CRYPTO_PATH = $(abs_top_builddir)/
 
 include $(top_srcdir)/include/Makefile.inc
