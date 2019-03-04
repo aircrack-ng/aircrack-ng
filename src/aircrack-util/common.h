@@ -205,6 +205,30 @@ static inline int time_diff(struct timeval * past, struct timeval * now)
 	return (int) (n - p);
 }
 
+static inline int elapsed_time_diff(struct timeval * past, struct timeval * now)
+{
+  REQUIRE(past != NULL);
+  REQUIRE(now != NULL);
+
+  time_t el = now->tv_sec - past->tv_sec;
+
+  if (el == 0)
+  {
+    el = now->tv_usec - past->tv_usec;
+  }
+  else
+  {
+    el = (el - 1) * 1000 * 1000;
+    el += 1000 * 1000 - past->tv_usec;
+    el += now->tv_usec;
+  }
+
+  if (el < 0) return (666 * 1000 * 1000);
+  return (int) (el);
+}
+
+#define msec_diff(past, now) (time_diff((past), (now)) / 1000)
+
 /// Return \a str with all leading whitespace removed.
 static inline void ltrim(char * str)
 {
