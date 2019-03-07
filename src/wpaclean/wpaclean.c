@@ -153,7 +153,10 @@ static void save_network(const struct timespec * ts, const struct network * n)
 
 	int i;
 
-	_outfd = open_pcap(_outfilename);
+	if (_outfd == 0)
+	{
+		_outfd = open_pcap(_outfilename);
+	}
 	write_pcap(_outfd, ts, n->n_beacon, n->n_beaconlen);
 
 	for (i = 0; i < 4; i++)
