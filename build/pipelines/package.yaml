@@ -197,7 +197,7 @@
             - shell:
                 script: |
                   {% set path = "{{ www }}/{{ artifacts }}/development/{{ commit_id }}" %}
-                  cp -p "aircrack-ng*.zip" "aircrack-ng*.tar.*" "{{ path }}"
+                  find . -name '*.zip' -o -name '*.tar.*' -print0 | xargs -0 -I {} cp -p {} "{{ path }}"
 
             - name: Deploying development package manifest
               tags:
