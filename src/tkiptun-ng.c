@@ -2884,8 +2884,9 @@ int main(int argc, char * argv[])
 		memcpy(lopt.wpa_sta.bssid, opt.f_bssid, 6);
 		memcpy(lopt.wpa_sta.snonce, lopt.wpa.snonce, 32);
 		memcpy(lopt.wpa_sta.anonce, lopt.wpa.anonce, 32);
+		memset(lopt.wpa_sta.keymic, 0, sizeof(lopt.wpa_sta.keymic));
 		memcpy(
-			lopt.wpa_sta.keymic, lopt.wpa.keymic, sizeof(lopt.wpa_sta.keymic));
+			lopt.wpa_sta.keymic, lopt.wpa.keymic, sizeof(lopt.wpa.keymic));
 		memcpy(lopt.wpa_sta.eapol, lopt.wpa.eapol, 256);
 		lopt.wpa_sta.eapol_size = lopt.wpa.eapol_size;
 		lopt.wpa_sta.keyver = lopt.wpa.keyver;
