@@ -27,6 +27,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include "defs.h"
 #include "avl_tree.h"
 
 #define BALANCE(n)                                                             \
@@ -358,16 +359,16 @@ static int _remove(c_avl_tree_t * t, c_avl_node_t * n)
 		c_avl_node_t * r; /* replacement node */
 		if (BALANCE(n) > 0) /* left subtree is higher */
 		{
-			assert(n->left != NULL);
+			assert(n->left != NULL); //-V547
 			r = c_avl_node_prev(n);
 		}
 		else /* right subtree is higher */
 		{
-			assert(n->right != NULL);
+			assert(n->right != NULL); //-V547
 			r = c_avl_node_next(n);
 		}
 
-		assert((r->left == NULL) || (r->right == NULL));
+		ALLEGE(r != NULL && ((r->left == NULL) || (r->right == NULL)));
 
 		/* copy content */
 		n->key = r->key;
@@ -376,7 +377,7 @@ static int _remove(c_avl_tree_t * t, c_avl_node_t * n)
 		n = r;
 	}
 
-	assert((n->left == NULL) || (n->right == NULL));
+	ALLEGE(n != NULL && ((n->left == NULL) || (n->right == NULL)));
 
 	if ((n->left == NULL) && (n->right == NULL))
 	{
@@ -401,7 +402,7 @@ static int _remove(c_avl_tree_t * t, c_avl_node_t * n)
 	}
 	else if (n->left == NULL)
 	{
-		assert(BALANCE(n) == -1);
+		assert(BALANCE(n) == -1); //-V547
 		assert((n->parent == NULL) || (n->parent->left == n)
 			   || (n->parent->right == n));
 		if (n->parent == NULL)
@@ -417,6 +418,7 @@ static int _remove(c_avl_tree_t * t, c_avl_node_t * n)
 		{
 			n->parent->right = n->right;
 		}
+		ALLEGE(n->right != NULL);
 		n->right->parent = n->parent;
 
 		if (n->parent != NULL) rebalance(t, n->parent);
@@ -426,7 +428,7 @@ static int _remove(c_avl_tree_t * t, c_avl_node_t * n)
 	}
 	else if (n->right == NULL)
 	{
-		assert(BALANCE(n) == 1);
+		assert(BALANCE(n) == 1); //-V547
 		assert((n->parent == NULL) || (n->parent->left == n)
 			   || (n->parent->right == n));
 		if (n->parent == NULL)

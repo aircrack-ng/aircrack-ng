@@ -69,6 +69,7 @@
  * Character codes for common keyboard keys.
  */
 #define KEY_TAB 0x09
+#define KEY_ESCAPE 0x1B
 #define KEY_SPACE 0x20
 #define KEY_ARROW_UP 0x41
 #define KEY_ARROW_DOWN 0x42
@@ -80,8 +81,11 @@
 #define KEY_i 0x69
 #define KEY_m 0x6D
 #define KEY_n 0x6E
+#define KEY_q 0x71
 #define KEY_r 0x72
 #define KEY_s 0x73
+#define KEY_o 0x6F //color on
+#define KEY_p 0x70 //color off
 
 /// Changes the styling, foreground, and background
 /// character color, as shown in the user's terminal
@@ -140,5 +144,14 @@ void reset_term(void);
 /// Wrapper around \a getch to avoid displaying the character on the terminal
 /// console.
 int mygetch(void);
+
+void console_utf8_enable(void);
+
+static inline void console_puts(const char * msg)
+{
+	printf("%s", msg);
+	erase_line(0);
+	putchar('\n');
+}
 
 #endif // AIRCRACK_NG_CONSOLE_H

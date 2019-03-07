@@ -39,6 +39,7 @@
 #include <sys/ioctl.h>
 #include <sys/wait.h>
 #include <sys/time.h>
+#include <time.h>
 
 #ifndef TIOCGWINSZ
 #include <sys/termios.h>
@@ -69,18 +70,22 @@
 
 #include "defs.h"
 #include "version.h"
-#include "pcap.h"
+#include "pcap_local.h"
 #include "uniqueiv.h"
+#include "communications.h"
 #include "crypto.h"
 #include "aircrack-osdep/channel.h"
 #include "aircrack-osdep/osdep.h"
 #include "airodump-ng.h"
 #include "dump_write.h"
 #include "aircrack-osdep/common.h"
+#include "include/ieee80211.h"
 #include "aircrack-util/common.h"
 #include "aircrack-util/mcs_index_rates.h"
 #include "aircrack-util/verifyssid.h"
 #include "aircrack-util/console.h"
+#include "aircrack-osdep/radiotap/radiotap.h"
+#include "aircrack-osdep/radiotap/radiotap_iter.h"
 
 // libgcrypt thread callback definition for libgcrypt < 1.6.0
 #ifdef USE_GCRYPT
@@ -89,24 +94,11 @@ GCRY_THREAD_OPTION_PTHREAD_IMPL;
 #endif
 #endif
 
-#define AIRODUMP_NG_CSV_EXT "csv"
-#define KISMET_CSV_EXT "kismet.csv"
-#define KISMET_NETXML_EXT "kismet.netxml"
-#define AIRODUMP_NG_GPS_EXT "gps"
-#define AIRODUMP_NG_CAP_EXT "cap"
-#define AIRODUMP_NG_LOG_CSV_EXT "log.csv"
+struct devices dev;
+uint8_t h80211[4096] __attribute__((aligned(16)));
+uint8_t tmpbuf[4096] __attribute__((aligned(16)));
 
-#define NB_EXTENSIONS 7
-
-static const char * f_ext[NB_EXTENSIONS] = {AIRODUMP_NG_CSV_EXT,
-											AIRODUMP_NG_GPS_EXT,
-											AIRODUMP_NG_CAP_EXT,
-											IVS2_EXTENSION,
-											KISMET_CSV_EXT,
-											KISMET_NETXML_EXT,
-											AIRODUMP_NG_LOG_CSV_EXT};
-
-static const unsigned char llcnull[4] = {0, 0, 0, 0};
+static const unsigned char llcnull[] = {0, 0, 0, 0};
 
 static const char * OUI_PATHS[]
 	= {"./airodump-ng-oui.txt",
@@ -142,261 +134,517 @@ static const int a_chans[]
 
 static int * frequencies;
 
+static volatile int quitting = 0;
+static volatile time_t quitting_event_ts = 0;
+
 static void dump_sort(void);
 static void dump_print(int ws_row, int ws_col, int if_num);
 static char *
 get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2);
+int is_filtered_essid(const uint8_t * essid);
+
+/* bunch of global stuff */
+struct communication_options opt;
+static struct local_options
+{
+	struct AP_info *ap_1st, *ap_end;
+	struct ST_info *st_1st, *st_end;
+	struct NA_info * na_1st;
+	struct oui * manufList;
+
+	unsigned char prev_bssid[6];
+	char ** f_essid;
+	int f_essid_count;
+#ifdef HAVE_PCRE
+	pcre * f_essid_regex;
+#endif
+	char * dump_prefix;
+	char * keyout;
+
+	char * batt; /* Battery string       */
+	int channel[MAX_CARDS]; /* current channel #    */
+	int frequency[MAX_CARDS]; /* current frequency #    */
+	int ch_pipe[2]; /* current channel pipe */
+	int cd_pipe[2]; /* current card pipe    */
+	int gc_pipe[2]; /* gps coordinates pipe */
+	float gps_loc[8]; /* gps coordinates      */
+	int save_gps; /* keep gps file flag   */
+	int gps_valid_interval; /* how many seconds until we consider the GPS data invalid if we dont get new data */
+
+	int * channels;
+	int singlechan; /* channel hopping set 1*/
+	int singlefreq; /* frequency hopping: 1 */
+	int chswitch; /* switching method     */
+	unsigned int f_encrypt; /* encryption filter    */
+	int update_s; /* update delay in sec  */
+
+	volatile int do_exit; /* interrupt flag       */
+	struct winsize ws; /* console window size  */
+
+	char * elapsed_time; /* capture time			*/
+
+	int one_beacon; /* Record only 1 beacon?*/
+
+	int * own_channels; /* custom channel list  */
+	int * own_frequencies; /* custom frequency list  */
+
+	int asso_client; /* only show associated clients */
+
+	char * iwpriv;
+	char * iwconfig;
+	char * wlanctlng;
+
+	unsigned char wpa_bssid[6]; /* the wpa handshake bssid   */
+	char message[512];
+	char decloak;
+
+	char is_berlin; /* is the switch --berlin set? */
+	int numaps; /* number of APs on the current list */
+	int maxnumaps; /* maximum nubers of APs on the list */
+	int maxaps; /* number of all APs found */
+	int berlin; /* number of seconds it takes in berlin to fill the whole screen
+				   with APs*/
+	/*
+	 * The name for this option may look quite strange, here is the story behind
+	 * it:
+	 * During the CCC2007, 10 august 2007, we (hirte, Mister_X) went to visit
+	 * Berlin
+	 * and couldn't resist to turn on airodump-ng to see how much access point
+	 * we can
+	 * get during the trip from Finowfurt to Berlin. When we were in Berlin, the
+	 * number
+	 * of AP increase really fast, so fast that it couldn't fit in a screen,
+	 * even rotated;
+	 * the list was really huge (we have a picture of that). The 2 minutes
+	 * timeout
+	 * (if the last packet seen is higher than 2 minutes, the AP isn't shown
+	 * anymore)
+	 * wasn't enough, so we decided to create a new option to change that
+	 * timeout.
+	 * We implemented this option in the highest tower (TV Tower) of Berlin,
+	 * eating an ice.
+	 */
+
+	int show_ap;
+	int show_sta;
+	int show_ack;
+	int hide_known;
+
+	int hopfreq;
+
+	char * s_iface; /* source interface to read from */
+	FILE * f_cap_in;
+	struct pcap_file_header pfh_in;
+	int detect_anomaly; /* Detect WIPS protecting WEP in action */
+
+	char * freqstring;
+	int freqoption;
+	int chanoption;
+	int active_scan_sim; /* simulates an active scan, sending probe requests */
+
+	/* Airodump-ng start time: for kismet netxml file */
+	char * airodump_start_time;
+
+	pthread_t input_tid;
+	pthread_t gps_tid;
+	int sort_by;
+	int sort_inv;
+	int start_print_ap;
+	int start_print_sta;
+	struct AP_info * p_selected_ap;
+	enum
+	{
+		selection_direction_down,
+		selection_direction_up,
+		selection_direction_no
+	} en_selection_direction;
+	int mark_cur_ap;
+	int num_cards;
+	int do_pause;
+	int do_sort_always;
+
+	pthread_mutex_t mx_print; /* lock write access to ap LL   */
+	pthread_mutex_t mx_sort; /* lock write access to ap LL   */
+
+	unsigned char selected_bssid[6]; /* bssid that is selected */
+
+	u_int maxsize_essid_seen;
+	int show_manufacturer;
+	int show_uptime;
+	int file_write_interval;
+	u_int maxsize_wps_seen;
+	int show_wps;
+	struct tm gps_time; /* the timestamp from the gps data */
+#ifdef CONFIG_LIBNL
+	unsigned int htval;
+#endif
+	int background_mode;
+
+	unsigned long min_pkts;
+
+	int relative_time; /* read PCAP in psuedo-real-time */
+} lopt;
 
 static void resetSelection(void)
 {
-	G.sort_by = SORT_BY_POWER;
-	G.sort_inv = 1;
+	lopt.sort_by = SORT_BY_POWER;
+	lopt.sort_inv = 1;
 
-	G.start_print_ap = 1;
-	G.start_print_sta = 1;
-	G.p_selected_ap = NULL;
-	G.selected_sta = 1;
-	G.en_selection_direction = selection_direction_no;
-	G.selection_sta = 0;
-	G.mark_cur_ap = 0;
-	G.skip_columns = 0;
-	G.do_pause = 0;
-	G.do_sort_always = 0;
-	memset(G.selected_bssid, '\x00', 6);
+	lopt.relative_time = 0;
+	lopt.start_print_ap = 1;
+	lopt.start_print_sta = 1;
+	lopt.p_selected_ap = NULL;
+	lopt.en_selection_direction = selection_direction_no;
+	lopt.mark_cur_ap = 0;
+	lopt.do_pause = 0;
+	lopt.do_sort_always = 0;
+	memset(lopt.selected_bssid, '\x00', 6);
+}
+
+static void color_off(void)
+{
+	struct AP_info * ap_cur;
+
+	ap_cur = lopt.ap_1st;
+	while (ap_cur != NULL)
+	{
+		ap_cur->marked = 0;
+		ap_cur->marked_color = 1;
+		ap_cur = ap_cur->next;
+	}
+
+	textcolor_normal();
+	textcolor_fg(TEXT_WHITE);
+}
+
+static void color_on(void)
+{
+	struct AP_info * ap_cur;
+	struct ST_info * st_cur;
+	int color = 1;
+
+	color_off();
+
+	ap_cur = lopt.ap_end;
+
+	while (ap_cur != NULL)
+	{
+		if (ap_cur->nb_pkt < lopt.min_pkts
+			|| time(NULL) - ap_cur->tlast > lopt.berlin)
+		{
+			ap_cur = ap_cur->prev;
+			continue;
+		}
+
+		if (ap_cur->security != 0 && lopt.f_encrypt != 0
+			&& ((ap_cur->security & lopt.f_encrypt) == 0))
+		{
+			ap_cur = ap_cur->prev;
+			continue;
+		}
+
+		// Don't filter unassociated clients by ESSID
+		if (memcmp(ap_cur->bssid, BROADCAST, 6) != 0
+			&& is_filtered_essid(ap_cur->essid))
+		{
+			ap_cur = ap_cur->prev;
+			continue;
+		}
+
+		st_cur = lopt.st_end;
+
+		while (st_cur != NULL)
+		{
+			if (st_cur->base != ap_cur
+				|| time(NULL) - st_cur->tlast > lopt.berlin)
+			{
+				st_cur = st_cur->prev;
+				continue;
+			}
+
+			if (!memcmp(ap_cur->bssid, BROADCAST, 6) && lopt.asso_client)
+			{
+				st_cur = st_cur->prev;
+				continue;
+			}
+
+			if (color > TEXT_MAX_COLOR) color++;
+
+			if (!ap_cur->marked)
+			{
+				ap_cur->marked = 1;
+				if (!memcmp(ap_cur->bssid, BROADCAST, 6))
+					ap_cur->marked_color = 1;
+				else
+					ap_cur->marked_color = color++;
+			}
+			else
+				ap_cur->marked_color = 1;
+
+			st_cur = st_cur->prev;
+		}
+
+		ap_cur = ap_cur->prev;
+	}
 }
 
 static void input_thread(void * arg)
 {
 	UNUSED_PARAM(arg);
 
-	while (G.do_exit == 0)
+	while (lopt.do_exit == 0)
 	{
 		int keycode = 0;
 
 		keycode = mygetch();
 
+		if (keycode == KEY_q)
+		{
+			quitting_event_ts = time(NULL);
+
+			if (++quitting > 1)
+				lopt.do_exit = 1;
+			else
+				snprintf(
+					lopt.message,
+					sizeof(lopt.message),
+					"][ Are you sure you want to quit? Press Q again to quit.");
+		}
+
+		if (keycode == KEY_o)
+		{
+			color_on();
+			snprintf(lopt.message, sizeof(lopt.message), "][ color on");
+		}
+
+		if (keycode == KEY_p)
+		{
+			color_off();
+			snprintf(lopt.message, sizeof(lopt.message), "][ color off");
+		}
+
 		if (keycode == KEY_s)
 		{
-			G.sort_by++;
-			G.selection_sta = 0;
+			lopt.sort_by++;
 
-			if (G.sort_by > MAX_SORT) G.sort_by = 0;
+			if (lopt.sort_by > MAX_SORT) lopt.sort_by = 0;
 
-			switch (G.sort_by)
+			switch (lopt.sort_by)
 			{
 				case SORT_BY_NOTHING:
-					snprintf(G.message,
-							 sizeof(G.message),
+					snprintf(lopt.message,
+							 sizeof(lopt.message),
 							 "][ sorting by first seen");
 					break;
 				case SORT_BY_BSSID:
-					snprintf(
-						G.message, sizeof(G.message), "][ sorting by bssid");
+					snprintf(lopt.message,
+							 sizeof(lopt.message),
+							 "][ sorting by bssid");
 					break;
 				case SORT_BY_POWER:
-					snprintf(G.message,
-							 sizeof(G.message),
+					snprintf(lopt.message,
+							 sizeof(lopt.message),
 							 "][ sorting by power level");
 					break;
 				case SORT_BY_BEACON:
-					snprintf(G.message,
-							 sizeof(G.message),
+					snprintf(lopt.message,
+							 sizeof(lopt.message),
 							 "][ sorting by beacon number");
 					break;
 				case SORT_BY_DATA:
-					snprintf(G.message,
-							 sizeof(G.message),
+					snprintf(lopt.message,
+							 sizeof(lopt.message),
 							 "][ sorting by number of data packets");
 					break;
 				case SORT_BY_PRATE:
-					snprintf(G.message,
-							 sizeof(G.message),
+					snprintf(lopt.message,
+							 sizeof(lopt.message),
 							 "][ sorting by packet rate");
 					break;
 				case SORT_BY_CHAN:
-					snprintf(
-						G.message, sizeof(G.message), "][ sorting by channel");
+					snprintf(lopt.message,
+							 sizeof(lopt.message),
+							 "][ sorting by channel");
 					break;
 				case SORT_BY_MBIT:
-					snprintf(G.message,
-							 sizeof(G.message),
+					snprintf(lopt.message,
+							 sizeof(lopt.message),
 							 "][ sorting by max data rate");
 					break;
 				case SORT_BY_ENC:
-					snprintf(G.message,
-							 sizeof(G.message),
+					snprintf(lopt.message,
+							 sizeof(lopt.message),
 							 "][ sorting by encryption");
 					break;
 				case SORT_BY_CIPHER:
-					snprintf(
-						G.message, sizeof(G.message), "][ sorting by cipher");
+					snprintf(lopt.message,
+							 sizeof(lopt.message),
+							 "][ sorting by cipher");
 					break;
 				case SORT_BY_AUTH:
-					snprintf(G.message,
-							 sizeof(G.message),
+					snprintf(lopt.message,
+							 sizeof(lopt.message),
 							 "][ sorting by authentication");
 					break;
 				case SORT_BY_ESSID:
-					snprintf(
-						G.message, sizeof(G.message), "][ sorting by ESSID");
+					snprintf(lopt.message,
+							 sizeof(lopt.message),
+							 "][ sorting by ESSID");
 					break;
 				default:
 					break;
 			}
-			ALLEGE(pthread_mutex_lock(&(G.mx_sort)) == 0);
+			ALLEGE(pthread_mutex_lock(&(lopt.mx_sort)) == 0);
 			dump_sort();
-			ALLEGE(pthread_mutex_unlock(&(G.mx_sort)) == 0);
+			ALLEGE(pthread_mutex_unlock(&(lopt.mx_sort)) == 0);
 		}
 
 		if (keycode == KEY_SPACE)
 		{
-			G.do_pause = (G.do_pause + 1) % 2;
-			if (G.do_pause)
+			lopt.do_pause = (lopt.do_pause + 1) % 2;
+			if (lopt.do_pause)
 			{
-				snprintf(G.message, sizeof(G.message), "][ paused output");
-				ALLEGE(pthread_mutex_lock(&(G.mx_print)) == 0);
+				snprintf(
+					lopt.message, sizeof(lopt.message), "][ paused output");
+				ALLEGE(pthread_mutex_lock(&(lopt.mx_print)) == 0);
 
-				moveto(1, 1);
-				dump_print(G.ws.ws_row, G.ws.ws_col, G.num_cards);
-				erase_display(0);
+				dump_print(lopt.ws.ws_row, lopt.ws.ws_col, lopt.num_cards);
 
-				ALLEGE(pthread_mutex_unlock(&(G.mx_print)) == 0);
+				ALLEGE(pthread_mutex_unlock(&(lopt.mx_print)) == 0);
 			}
 			else
-				snprintf(G.message, sizeof(G.message), "][ resumed output");
+				snprintf(
+					lopt.message, sizeof(lopt.message), "][ resumed output");
 		}
 
 		if (keycode == KEY_r)
 		{
-			G.do_sort_always = (G.do_sort_always + 1) % 2;
-			if (G.do_sort_always)
-				snprintf(G.message,
-						 sizeof(G.message),
+			lopt.do_sort_always = (lopt.do_sort_always + 1) % 2;
+			if (lopt.do_sort_always)
+				snprintf(lopt.message,
+						 sizeof(lopt.message),
 						 "][ realtime sorting activated");
 			else
-				snprintf(G.message,
-						 sizeof(G.message),
+				snprintf(lopt.message,
+						 sizeof(lopt.message),
 						 "][ realtime sorting deactivated");
 		}
 
 		if (keycode == KEY_m)
 		{
-			G.mark_cur_ap = 1;
+			lopt.mark_cur_ap = 1;
 		}
 
 		if (keycode == KEY_ARROW_DOWN)
 		{
-			if (G.p_selected_ap && G.p_selected_ap->prev)
+			if (lopt.p_selected_ap && lopt.p_selected_ap->prev)
 			{
-				G.p_selected_ap = G.p_selected_ap->prev;
-				G.en_selection_direction = selection_direction_down;
+				lopt.p_selected_ap = lopt.p_selected_ap->prev;
+				lopt.en_selection_direction = selection_direction_down;
 			}
 		}
 
 		if (keycode == KEY_ARROW_UP)
 		{
-			if (G.p_selected_ap && G.p_selected_ap->next)
+			if (lopt.p_selected_ap && lopt.p_selected_ap->next)
 			{
-				G.p_selected_ap = G.p_selected_ap->next;
-				G.en_selection_direction = selection_direction_up;
+				lopt.p_selected_ap = lopt.p_selected_ap->next;
+				lopt.en_selection_direction = selection_direction_up;
 			}
 		}
 
 		if (keycode == KEY_i)
 		{
-			G.sort_inv *= -1;
-			if (G.sort_inv < 0)
-				snprintf(
-					G.message, sizeof(G.message), "][ inverted sorting order");
+			lopt.sort_inv *= -1;
+			if (lopt.sort_inv < 0)
+				snprintf(lopt.message,
+						 sizeof(lopt.message),
+						 "][ inverted sorting order");
 			else
-				snprintf(
-					G.message, sizeof(G.message), "][ normal sorting order");
+				snprintf(lopt.message,
+						 sizeof(lopt.message),
+						 "][ normal sorting order");
 		}
 
 		if (keycode == KEY_TAB)
 		{
-			if (G.p_selected_ap == NULL)
+			if (lopt.p_selected_ap == NULL)
 			{
-				G.p_selected_ap = G.ap_end;
-				G.en_selection_direction = selection_direction_down;
-				snprintf(
-					G.message, sizeof(G.message), "][ enabled AP selection");
-				G.sort_by = SORT_BY_NOTHING;
+				lopt.p_selected_ap = lopt.ap_end;
+				lopt.en_selection_direction = selection_direction_down;
+				snprintf(lopt.message,
+						 sizeof(lopt.message),
+						 "][ enabled AP selection");
+				lopt.sort_by = SORT_BY_NOTHING;
 			}
 			else
 			{
-				G.en_selection_direction = selection_direction_no;
-				G.p_selected_ap = NULL;
-				G.sort_by = SORT_BY_NOTHING;
-				snprintf(G.message, sizeof(G.message), "][ disabled selection");
+				lopt.en_selection_direction = selection_direction_no;
+				lopt.p_selected_ap = NULL;
+				lopt.sort_by = SORT_BY_NOTHING;
+				snprintf(lopt.message,
+						 sizeof(lopt.message),
+						 "][ disabled selection");
 			}
 		}
 
 		if (keycode == KEY_a)
 		{
-			if (G.show_ap == 1 && G.show_sta == 1 && G.show_ack == 0)
+			if (lopt.show_ap == 1 && lopt.show_sta == 1 && lopt.show_ack == 0)
 			{
-				G.show_ap = 1;
-				G.show_sta = 1;
-				G.show_ack = 1;
-				snprintf(G.message, sizeof(G.message), "][ display ap+sta+ack");
+				lopt.show_ap = 1;
+				lopt.show_sta = 1;
+				lopt.show_ack = 1;
+				snprintf(lopt.message,
+						 sizeof(lopt.message),
+						 "][ display ap+sta+ack");
 			}
-			else if (G.show_ap == 1 && G.show_sta == 1 && G.show_ack == 1)
+			else if (lopt.show_ap == 1 && lopt.show_sta == 1
+					 && lopt.show_ack == 1)
 			{
-				G.show_ap = 1;
-				G.show_sta = 0;
-				G.show_ack = 0;
-				snprintf(G.message, sizeof(G.message), "][ display ap only");
+				lopt.show_ap = 1;
+				lopt.show_sta = 0;
+				lopt.show_ack = 0;
+				snprintf(
+					lopt.message, sizeof(lopt.message), "][ display ap only");
 			}
-			else if (G.show_ap == 1 && G.show_sta == 0 && G.show_ack == 0)
+			else if (lopt.show_ap == 1 && lopt.show_sta == 0
+					 && lopt.show_ack == 0)
 			{
-				G.show_ap = 0;
-				G.show_sta = 1;
-				G.show_ack = 0;
-				snprintf(G.message, sizeof(G.message), "][ display sta only");
+				lopt.show_ap = 0;
+				lopt.show_sta = 1;
+				lopt.show_ack = 0;
+				snprintf(
+					lopt.message, sizeof(lopt.message), "][ display sta only");
 			}
-			else if (G.show_ap == 0 && G.show_sta == 1 && G.show_ack == 0)
+			else if (lopt.show_ap == 0 && lopt.show_sta == 1
+					 && lopt.show_ack == 0)
 			{
-				G.show_ap = 1;
-				G.show_sta = 1;
-				G.show_ack = 0;
-				snprintf(G.message, sizeof(G.message), "][ display ap+sta");
+				lopt.show_ap = 1;
+				lopt.show_sta = 1;
+				lopt.show_ack = 0;
+				snprintf(
+					lopt.message, sizeof(lopt.message), "][ display ap+sta");
 			}
 		}
 
 		if (keycode == KEY_d)
 		{
 			resetSelection();
-			snprintf(
-				G.message, sizeof(G.message), "][ reset selection to default");
+			snprintf(lopt.message,
+					 sizeof(lopt.message),
+					 "][ reset selection to default");
 		}
 
-		if (G.do_exit == 0 && !G.do_pause)
+		if (lopt.do_exit == 0 && !lopt.do_pause)
 		{
-			ALLEGE(pthread_mutex_lock(&(G.mx_print)) == 0);
+			ALLEGE(pthread_mutex_lock(&(lopt.mx_print)) == 0);
 
-			moveto(1, 1);
-			dump_print(G.ws.ws_row, G.ws.ws_col, G.num_cards);
-			erase_display(0);
+			dump_print(lopt.ws.ws_row, lopt.ws.ws_col, lopt.num_cards);
 
-			ALLEGE(pthread_mutex_unlock(&(G.mx_print)) == 0);
+			ALLEGE(pthread_mutex_unlock(&(lopt.mx_print)) == 0);
 		}
 	}
-}
-
-static void trim(char * str)
-{
-	REQUIRE(str != NULL);
-
-	int i;
-	int begin = 0;
-	int end = strlen(str) - 1;
-
-	while (isspace((int) str[begin])) begin++;
-	while ((end >= begin) && isspace((int) str[end])) end--;
-	// Shift all characters back to the start of the string array.
-	for (i = begin; i <= end; i++) str[i - begin] = str[i];
-	str[i - begin] = '\0'; // Null terminate string.
 }
 
 static FILE * open_oui_file(void)
@@ -442,7 +690,8 @@ static struct oui * load_oui_file(void)
 		memset(c, 0x00, sizeof(c));
 		// Remove leading/trailing whitespaces.
 		trim(buffer);
-		if (sscanf(buffer, "%2c-%2c-%2c", a, b, c) == 3)
+		if (sscanf(buffer, "%2c-%2c-%2c", (char *) a, (char *) b, (char *) c)
+			== 3)
 		{
 			if (oui_ptr == NULL)
 			{
@@ -501,204 +750,6 @@ static struct oui * load_oui_file(void)
 	return (oui_head);
 }
 
-static int check_shared_key(unsigned char * h80211, int caplen)
-{
-	REQUIRE(h80211 != NULL);
-	REQUIRE(caplen > 0 && caplen < (int) sizeof(G.sharedkey[0]));
-
-	int m_bmac, m_smac, m_dmac, n, textlen, maybe_broken;
-	char ofn[1024];
-	char text[4096];
-	char prga[4096];
-	unsigned int long crc;
-
-	if ((unsigned) caplen > sizeof(G.sharedkey[0])) return 1;
-
-	m_bmac = 16;
-	m_smac = 10;
-	m_dmac = 4;
-
-	if (time(NULL) - G.sk_start > 5)
-	{
-		/* timeout(5sec) - remove all packets, restart timer */
-		memset(G.sharedkey, '\x00', sizeof(G.sharedkey));
-		G.sk_start = time(NULL);
-	}
-
-	/* is auth packet */
-	if ((h80211[1] & 0x40) != 0x40)
-	{
-		/* not encrypted */
-		if ((h80211[24] + (h80211[25] << 8)) == 1)
-		{
-			/* Shared-Key Authentication */
-			if ((h80211[26] + (h80211[27] << 8)) == 2)
-			{
-				/* sequence == 2 */
-				memcpy(G.sharedkey[0], h80211, caplen);
-				G.sk_len = caplen - 24;
-			}
-			if ((h80211[26] + (h80211[27] << 8)) == 4)
-			{
-				/* sequence == 4 */
-				memcpy(G.sharedkey[2], h80211, caplen);
-			}
-		}
-		else
-			return (1);
-	}
-	else
-	{
-		/* encrypted */
-		memcpy(G.sharedkey[1], h80211, caplen);
-		G.sk_len2 = caplen - 24 - 4;
-	}
-
-	/* check if the 3 packets form a proper authentication */
-
-	if ((memcmp(G.sharedkey[0] + m_bmac, NULL_MAC, 6) == 0)
-		|| (memcmp(G.sharedkey[1] + m_bmac, NULL_MAC, 6) == 0)
-		|| (memcmp(G.sharedkey[2] + m_bmac, NULL_MAC, 6)
-			== 0)) /* some bssids == zero */
-	{
-		return (1);
-	}
-
-	if ((memcmp(G.sharedkey[0] + m_bmac, G.sharedkey[1] + m_bmac, 6) != 0)
-		|| (memcmp(G.sharedkey[0] + m_bmac, G.sharedkey[2] + m_bmac, 6)
-			!= 0)) /* all bssids aren't equal */
-	{
-		return (1);
-	}
-
-	if ((memcmp(G.sharedkey[0] + m_smac, G.sharedkey[2] + m_smac, 6) != 0)
-		|| (memcmp(G.sharedkey[0] + m_smac, G.sharedkey[1] + m_dmac, 6)
-			!= 0)) /* SA in 2&4 != DA in 3 */
-	{
-		return (1);
-	}
-
-	if ((memcmp(G.sharedkey[0] + m_dmac, G.sharedkey[2] + m_dmac, 6) != 0)
-		|| (memcmp(G.sharedkey[0] + m_dmac, G.sharedkey[1] + m_smac, 6)
-			!= 0)) /* DA in 2&4 != SA in 3 */
-	{
-		return (1);
-	}
-
-	textlen = G.sk_len;
-
-	maybe_broken = 0;
-
-	/* this check is probably either broken or not very reliable,
-	   since there are known cases when it is hit with valid data.
-	   rather than doing a hard exit here, we now set a flag so
-	   the .xor file is only written if not already existing, in
-	   order to make sure we don't overwrite a good .xor file with
-	   a potentially broken one; but on the other hand if none exist
-	   already, we do want it being written. */
-	if (textlen + 4 != G.sk_len2)
-	{
-		snprintf(G.message,
-				 sizeof(G.message),
-				 "][ Broken SKA?: %02X:%02X:%02X:%02X:%02X:%02X ",
-				 *(G.sharedkey[0] + m_bmac),
-				 *(G.sharedkey[0] + m_bmac + 1),
-				 *(G.sharedkey[0] + m_bmac + 2),
-				 *(G.sharedkey[0] + m_bmac + 3),
-				 *(G.sharedkey[0] + m_bmac + 4),
-				 *(G.sharedkey[0] + m_bmac + 5));
-
-		maybe_broken = 1;
-	}
-
-	if ((unsigned) textlen > sizeof(text) - 4) return (1);
-
-	memcpy(text, G.sharedkey[0] + 24, textlen);
-
-	/* increment sequence number from 2 to 3 */
-	text[2] = text[2] + 1;
-
-	crc = 0xFFFFFFFF;
-
-	for (n = 0; n < textlen; n++)
-		crc = crc_tbl[(crc ^ text[n]) & 0xFF] ^ (crc >> 8);
-
-	crc = ~crc;
-
-	/* append crc32 over body */
-	text[textlen] = (crc) &0xFF;
-	text[textlen + 1] = (crc >> 8) & 0xFF;
-	text[textlen + 2] = (crc >> 16) & 0xFF;
-	text[textlen + 3] = (crc >> 24) & 0xFF;
-
-	/* cleartext XOR cipher */
-	for (n = 0; n < (textlen + 4); n++)
-	{
-		prga[4 + n] = (text[n] ^ G.sharedkey[1][28 + n]) & 0xFF;
-	}
-
-	/* write IV+index */
-	prga[0] = G.sharedkey[1][24] & 0xFF;
-	prga[1] = G.sharedkey[1][25] & 0xFF;
-	prga[2] = G.sharedkey[1][26] & 0xFF;
-	prga[3] = G.sharedkey[1][27] & 0xFF;
-
-	if (G.f_xor != NULL)
-	{
-		fclose(G.f_xor);
-		G.f_xor = NULL;
-	}
-
-	snprintf(ofn,
-			 sizeof(ofn) - 1,
-			 "%s-%02d-%02X-%02X-%02X-%02X-%02X-%02X.%s",
-			 G.prefix,
-			 G.f_index,
-			 *(G.sharedkey[0] + m_bmac),
-			 *(G.sharedkey[0] + m_bmac + 1),
-			 *(G.sharedkey[0] + m_bmac + 2),
-			 *(G.sharedkey[0] + m_bmac + 3),
-			 *(G.sharedkey[0] + m_bmac + 4),
-			 *(G.sharedkey[0] + m_bmac + 5),
-			 "xor");
-
-	if (maybe_broken && (G.f_xor = fopen(ofn, "r")))
-	{
-		/* do not overwrite existing .xor file with maybe broken one */
-		fclose(G.f_xor);
-		G.f_xor = NULL;
-		return (1);
-	}
-
-	G.f_xor = fopen(ofn, "w");
-	if (G.f_xor == NULL) return (1);
-
-	for (n = 0; n < textlen + 8; n++) fputc((prga[n] & 0xFF), G.f_xor);
-
-	fflush(G.f_xor);
-
-	if (G.f_xor != NULL)
-	{
-		fclose(G.f_xor);
-		G.f_xor = NULL;
-	}
-
-	snprintf(G.message,
-			 sizeof(G.message),
-			 "][ %d bytes keystream: %02X:%02X:%02X:%02X:%02X:%02X ",
-			 textlen + 4,
-			 *(G.sharedkey[0] + m_bmac),
-			 *(G.sharedkey[0] + m_bmac + 1),
-			 *(G.sharedkey[0] + m_bmac + 2),
-			 *(G.sharedkey[0] + m_bmac + 3),
-			 *(G.sharedkey[0] + m_bmac + 4),
-			 *(G.sharedkey[0] + m_bmac + 5));
-
-	memset(G.sharedkey, '\x00', sizeof(G.sharedkey));
-	/* ok, keystream saved */
-	return (0);
-}
-
 static const char usage[] =
 
 	"\n"
@@ -721,6 +772,9 @@ static const char usage[] =
 	"                              from the screen when no more packets\n"
 	"                              are received (Default: 120 seconds)\n"
 	"      -r             <file> : Read packets from that file\n"
+	"      -T                    : While reading packets from a file,\n"
+	"                              simulate the arrival rate of them\n"
+	"                              as if they were \"live\".\n"
 	"      -x            <msecs> : Active Scanning Simulation\n"
 	"      --manufacturer        : Display manufacturer from IEEE OUI list\n"
 	"      --uptime              : Display AP Uptime from Beacon Timestamp\n"
@@ -734,6 +788,8 @@ static const char usage[] =
 	"      --write-interval\n"
 	"                  <seconds> : Output file(s) write interval in seconds\n"
 	"      --background <enable> : Override background detection.\n"
+	"      -n              <int> : Minimum AP packets recv'd before\n"
+	"                              for displaying it\n"
 	"\n"
 	"  Filter options:\n"
 	"      --encrypt   <suite>   : Filter APs by cipher suite\n"
@@ -771,7 +827,7 @@ static void airodump_usage(void)
 	free(l_usage);
 }
 
-static int is_filtered_netmask(unsigned char * bssid)
+static int is_filtered_netmask(const uint8_t * bssid)
 {
 	REQUIRE(bssid != NULL);
 
@@ -781,8 +837,8 @@ static int is_filtered_netmask(unsigned char * bssid)
 
 	for (i = 0; i < 6; i++)
 	{
-		mac1[i] = bssid[i] & G.f_netmask[i];
-		mac2[i] = G.f_bssid[i] & G.f_netmask[i];
+		mac1[i] = bssid[i] & opt.f_netmask[i];
+		mac2[i] = opt.f_bssid[i] & opt.f_netmask[i];
 	}
 
 	if (memcmp(mac1, mac2, 6) != 0)
@@ -793,18 +849,18 @@ static int is_filtered_netmask(unsigned char * bssid)
 	return (0);
 }
 
-int is_filtered_essid(unsigned char * essid)
+int is_filtered_essid(const uint8_t * essid)
 {
 	REQUIRE(essid != NULL);
 
 	int ret = 0;
 	int i;
 
-	if (G.f_essid)
+	if (lopt.f_essid)
 	{
-		for (i = 0; i < G.f_essid_count; i++)
+		for (i = 0; i < lopt.f_essid_count; i++)
 		{
-			if (strncmp((char *) essid, G.f_essid[i], MAX_IE_ELEMENT_SIZE) == 0)
+			if (strncmp((char *) essid, lopt.f_essid[i], ESSID_LENGTH) == 0)
 			{
 				return (0);
 			}
@@ -814,12 +870,12 @@ int is_filtered_essid(unsigned char * essid)
 	}
 
 #ifdef HAVE_PCRE
-	if (G.f_essid_regex)
+	if (lopt.f_essid_regex)
 	{
-		return pcre_exec(G.f_essid_regex,
+		return pcre_exec(lopt.f_essid_regex,
 						 NULL,
 						 (char *) essid,
-						 strnlen((char *) essid, MAX_IE_ELEMENT_SIZE),
+						 (int) strnlen((char *) essid, ESSID_LENGTH),
 						 0,
 						 0,
 						 NULL,
@@ -833,14 +889,14 @@ int is_filtered_essid(unsigned char * essid)
 
 static void update_rx_quality(void)
 {
-	unsigned int time_diff, capt_time, miss_time;
+	unsigned long time_diff, capt_time, miss_time;
 	int missed_frames;
 	struct AP_info * ap_cur = NULL;
 	struct ST_info * st_cur = NULL;
 	struct timeval cur_time;
 
-	ap_cur = G.ap_1st;
-	st_cur = G.st_1st;
+	ap_cur = lopt.ap_1st;
+	st_cur = lopt.st_1st;
 
 	gettimeofday(&cur_time, NULL);
 
@@ -882,19 +938,20 @@ static void update_rx_quality(void)
 				if (capt_time > 0 && miss_time > 200000)
 				{
 					missed_frames
-						= ((float) ((float) miss_time / (float) capt_time)
-						   * ((float) ap_cur->fcapt + (float) ap_cur->fmiss));
+						= (int) (((float) miss_time / (float) capt_time)
+								 * ((float) ap_cur->fcapt
+									+ (float) ap_cur->fmiss));
 					ap_cur->fmiss += missed_frames;
 				}
 
-				ap_cur->rx_quality = ((float) ((float) ap_cur->fcapt
-											   / ((float) ap_cur->fcapt
-												  + (float) ap_cur->fmiss))
-									  *
+				ap_cur->rx_quality
+					= (int) (((float) ap_cur->fcapt
+							  / ((float) ap_cur->fcapt + (float) ap_cur->fmiss))
+							 *
 #if defined(__x86_64__) && defined(__CYGWIN__)
-									  (0.0f + 100));
+							 (0.0f + 100));
 #else
-									  100.0f);
+							 100.0f);
 #endif
 			}
 			else
@@ -928,237 +985,29 @@ static void update_rx_quality(void)
 	}
 }
 
-/* setup the output files */
-
-static int dump_initialize(char * prefix, int ivs_only)
-{
-	REQUIRE(prefix != NULL);
-	REQUIRE(strlen(prefix) > 0);
-
-	int i, ofn_len;
-	FILE * f;
-	char * ofn = NULL;
-
-	/* If you only want to see what happening, send all data to /dev/null */
-
-	/* Create a buffer of the length of the prefix + '-' + 2 numbers + '.'
-	   + longest extension ("kismet.netxml") + terminating 0. */
-	ofn_len = strlen(prefix) + 1 + 2 + 1 + 13 + 1;
-	ofn = (char *) calloc(1, ofn_len);
-	ALLEGE(ofn != NULL);
-
-	G.f_index = 1;
-
-	/* Make sure no file with the same name & all possible file extensions. */
-	do
-	{
-		for (i = 0; i < NB_EXTENSIONS; i++)
-		{
-			memset(ofn, 0, ofn_len);
-			snprintf(ofn, ofn_len, "%s-%02d.%s", prefix, G.f_index, f_ext[i]);
-
-			if ((f = fopen(ofn, "rb+")) != NULL)
-			{
-				fclose(f);
-				G.f_index++;
-				break;
-			}
-		}
-	}
-	/* If we did all extensions then no file with that name or extension exist
-	   so we can use that number */
-	while (i < NB_EXTENSIONS);
-
-	G.prefix = (char *) malloc(strlen(prefix) + 1);
-	ALLEGE(G.prefix != NULL);
-	memcpy(G.prefix, prefix, strlen(prefix) + 1);
-
-	/* create the output CSV file */
-
-	if (G.output_format_csv)
-	{
-		memset(ofn, 0, ofn_len);
-		snprintf(
-			ofn, ofn_len, "%s-%02d.%s", prefix, G.f_index, AIRODUMP_NG_CSV_EXT);
-
-		if ((G.f_txt = fopen(ofn, "wb+")) == NULL)
-		{
-			perror("fopen failed");
-			fprintf(stderr, "Could not create \"%s\".\n", ofn);
-			free(ofn);
-			return (1);
-		}
-	}
-
-	/* create the output for a rolling log CSV file */
-	if (G.output_format_log_csv)
-	{
-		memset(ofn, 0, ofn_len);
-		snprintf(ofn,
-				 ofn_len,
-				 "%s-%02d.%s",
-				 prefix,
-				 G.f_index,
-				 AIRODUMP_NG_LOG_CSV_EXT);
-
-		if ((G.f_logcsv = fopen(ofn, "wb+")) == NULL)
-		{
-			perror("fopen failed");
-			fprintf(stderr, "Could not create \"%s\".\n", ofn);
-			free(ofn);
-			return (1);
-		}
-
-		fprintf(G.f_logcsv,
-				"LocalTime, GPSTime, ESSID, BSSID, Power, "
-				"Security, Latitude, Longitude, Latitude Error, "
-				"Longitude Error, Type\r\n");
-	}
-
-	/* create the output Kismet CSV file */
-	if (G.output_format_kismet_csv)
-	{
-		memset(ofn, 0, ofn_len);
-		snprintf(ofn, ofn_len, "%s-%02d.%s", prefix, G.f_index, KISMET_CSV_EXT);
-
-		if ((G.f_kis = fopen(ofn, "wb+")) == NULL)
-		{
-			perror("fopen failed");
-			fprintf(stderr, "Could not create \"%s\".\n", ofn);
-			free(ofn);
-			return (1);
-		}
-	}
-
-	/* create the output GPS file */
-	if (G.usegpsd)
-	{
-		memset(ofn, 0, ofn_len);
-		snprintf(
-			ofn, ofn_len, "%s-%02d.%s", prefix, G.f_index, AIRODUMP_NG_GPS_EXT);
-
-		if ((G.f_gps = fopen(ofn, "wb+")) == NULL)
-		{
-			perror("fopen failed");
-			fprintf(stderr, "Could not create \"%s\".\n", ofn);
-			free(ofn);
-			return (1);
-		}
-	}
-
-	/* Create the output kismet.netxml file */
-
-	if (G.output_format_kismet_netxml)
-	{
-		memset(ofn, 0, ofn_len);
-		snprintf(
-			ofn, ofn_len, "%s-%02d.%s", prefix, G.f_index, KISMET_NETXML_EXT);
-
-		if ((G.f_kis_xml = fopen(ofn, "wb+")) == NULL)
-		{
-			perror("fopen failed");
-			fprintf(stderr, "Could not create \"%s\".\n", ofn);
-			free(ofn);
-			return (1);
-		}
-	}
-
-	/* create the output packet capture file */
-	if (G.output_format_pcap)
-	{
-		struct pcap_file_header pfh;
-
-		memset(ofn, 0, ofn_len);
-		snprintf(
-			ofn, ofn_len, "%s-%02d.%s", prefix, G.f_index, AIRODUMP_NG_CAP_EXT);
-
-		if ((G.f_cap = fopen(ofn, "wb+")) == NULL)
-		{
-			perror("fopen failed");
-			fprintf(stderr, "Could not create \"%s\".\n", ofn);
-			free(ofn);
-			return (1);
-		}
-
-		G.f_cap_name = (char *) malloc(strlen(ofn) + 1);
-		ALLEGE(G.f_cap_name != NULL);
-		memcpy(G.f_cap_name, ofn, strlen(ofn) + 1);
-		free(ofn);
-
-		pfh.magic = TCPDUMP_MAGIC;
-		pfh.version_major = PCAP_VERSION_MAJOR;
-		pfh.version_minor = PCAP_VERSION_MINOR;
-		pfh.thiszone = 0;
-		pfh.sigfigs = 0;
-		pfh.snaplen = 65535;
-		pfh.linktype = LINKTYPE_IEEE802_11;
-
-		if (fwrite(&pfh, 1, sizeof(pfh), G.f_cap) != (size_t) sizeof(pfh))
-		{
-			perror("fwrite(pcap file header) failed");
-			return (1);
-		}
-	}
-	else if (ivs_only)
-	{
-		struct ivs2_filehdr fivs2;
-
-		fivs2.version = IVS2_VERSION;
-
-		memset(ofn, 0, ofn_len);
-		snprintf(ofn, ofn_len, "%s-%02d.%s", prefix, G.f_index, IVS2_EXTENSION);
-
-		if ((G.f_ivs = fopen(ofn, "wb+")) == NULL)
-		{
-			perror("fopen failed");
-			fprintf(stderr, "Could not create \"%s\".\n", ofn);
-			free(ofn);
-			return (1);
-		}
-		free(ofn);
-
-		if (fwrite(IVS2_MAGIC, 1, 4, G.f_ivs) != (size_t) 4)
-		{
-			perror("fwrite(IVs file MAGIC) failed");
-			return (1);
-		}
-
-		if (fwrite(&fivs2, 1, sizeof(struct ivs2_filehdr), G.f_ivs)
-			!= (size_t) sizeof(struct ivs2_filehdr))
-		{
-			perror("fwrite(IVs file header) failed");
-			return (1);
-		}
-	}
-	else
-	{
-		free(ofn);
-	}
-
-	return (0);
-}
-
 static int update_dataps(void)
 {
 	struct timeval tv;
 	struct AP_info * ap_cur;
 	struct NA_info * na_cur;
-	int sec, usec, diff, ps;
+	int ps;
+	unsigned long diff;
 	float pause;
+	time_t sec;
+	suseconds_t usec;
 
 	gettimeofday(&tv, NULL);
 
-	ap_cur = G.ap_end;
+	ap_cur = lopt.ap_end;
 
 	while (ap_cur != NULL)
 	{
 		sec = (tv.tv_sec - ap_cur->tv.tv_sec);
 		usec = (tv.tv_usec - ap_cur->tv.tv_usec);
 #if defined(__x86_64__) && defined(__CYGWIN__)
-		pause
-			= (((float) (sec * (0.0f + 1000000) + usec)) / ((0.0f + 1000000)));
+		pause = (((sec * (0.0f + 1000000.0f) + usec)) / ((0.0f + 1000000.0f)));
 #else
-		pause = (((float) (sec * 1000000.0f + usec)) / (1000000.0f));
+		pause = (sec * 1000000.0f + usec) / (1000000.0f);
 #endif
 		if (pause > 2.0f)
 		{
@@ -1171,21 +1020,20 @@ static int update_dataps(void)
 		ap_cur = ap_cur->prev;
 	}
 
-	na_cur = G.na_1st;
+	na_cur = lopt.na_1st;
 
 	while (na_cur != NULL)
 	{
 		sec = (tv.tv_sec - na_cur->tv.tv_sec);
 		usec = (tv.tv_usec - na_cur->tv.tv_usec);
 #if defined(__x86_64__) && defined(__CYGWIN__)
-		pause
-			= (((float) (sec * (0.0f + 1000000) + usec)) / ((0.0f + 1000000)));
+		pause = (((sec * (0.0f + 1000000.0f) + usec)) / ((0.0f + 1000000.0f)));
 #else
-		pause = (((float) (sec * 1000000.0f + usec)) / (1000000.0f));
+		pause = (sec * 1000000.0f + usec) / (1000000.0f);
 #endif
 		if (pause > 2.0f)
 		{
-			diff = na_cur->ack - na_cur->ack_old;
+			diff = (unsigned long) (na_cur->ack - na_cur->ack_old);
 			ps = (int) (((float) diff) / pause);
 			na_cur->ackps = ps;
 			na_cur->ack_old = na_cur->ack;
@@ -1193,6 +1041,7 @@ static int update_dataps(void)
 		}
 		na_cur = na_cur->next;
 	}
+
 	return (0);
 }
 
@@ -1214,11 +1063,8 @@ static int list_tail_free(struct pkt_buf ** list)
 			(*pkts)->packet = NULL;
 		}
 
-		if (*pkts)
-		{
-			free(*pkts);
-			*pkts = NULL;
-		}
+		free(*pkts);
+		*pkts = NULL;
 		*pkts = next;
 	}
 
@@ -1240,12 +1086,12 @@ list_add_packet(struct pkt_buf ** list, int length, unsigned char * packet)
 
 	*list = (struct pkt_buf *) malloc(sizeof(struct pkt_buf));
 	if (*list == NULL) return 1;
-	(*list)->packet = (unsigned char *) malloc(length);
+	(*list)->packet = (unsigned char *) malloc((size_t) length);
 	if ((*list)->packet == NULL) return 1;
 
-	memcpy((*list)->packet, packet, length);
+	memcpy((*list)->packet, packet, (size_t) length);
 	(*list)->next = next;
-	(*list)->length = length;
+	(*list)->length = (uint16_t) length;
 	gettimeofday(&((*list)->ctime), NULL);
 
 	return (0);
@@ -1258,17 +1104,17 @@ list_add_packet(struct pkt_buf ** list, int length, unsigned char * packet)
  * so with the same IV it should always be encrypted to the same thing.
  */
 static int
-list_check_decloak(struct pkt_buf ** list, int length, unsigned char * packet)
+list_check_decloak(struct pkt_buf ** list, int length, const uint8_t * packet)
 {
 	struct pkt_buf * next;
 	struct timeval tv1;
-	int timediff;
+	unsigned long timediff;
 	int i, correct;
 
-	if (packet == NULL) return 1;
-	if (list == NULL) return 1;
-	if (*list == NULL) return 1;
-	if (length <= 0) return 1;
+	if (packet == NULL) return (1);
+	if (list == NULL) return (1);
+	if (*list == NULL) return (1);
+	if (length <= 0) return (1);
 	next = *list;
 
 	gettimeofday(&tv1, NULL);
@@ -1325,7 +1171,7 @@ list_check_decloak(struct pkt_buf ** list, int length, unsigned char * packet)
 					}
 				}
 			}
-			if (correct == 1) return 0; // found decloaking!
+			if (correct == 1) return (0); // found decloaking!
 		}
 		next = next->next;
 	}
@@ -1340,7 +1186,7 @@ static int remove_namac(unsigned char * mac)
 
 	if (mac == NULL) return (-1);
 
-	na_cur = G.na_1st;
+	na_cur = lopt.na_1st;
 	na_prv = NULL;
 
 	while (na_cur != NULL)
@@ -1355,32 +1201,35 @@ static int remove_namac(unsigned char * mac)
 	if (na_cur != NULL)
 	{
 		/* first in linked list */
-		if (na_cur == G.na_1st)
+		if (na_cur == lopt.na_1st)
 		{
-			G.na_1st = na_cur->next;
+			lopt.na_1st = na_cur->next;
 		}
 		else
 		{
 			na_prv->next = na_cur->next;
 		}
 		free(na_cur);
-		na_cur = NULL;
 	}
 
 	return (0);
 }
 
+// NOTE(jbenden): This is also in ivstools.c
 static int dump_add_packet(unsigned char * h80211,
 						   int caplen,
 						   struct rx_info * ri,
 						   int cardnum)
 {
 	REQUIRE(h80211 != NULL);
-	REQUIRE(caplen >= 24);
 
-	int i, n, seq, msd, dlen, offset, clen, o;
+	int seq, msd, offset, clen, o;
+	size_t i;
+	size_t n;
+	size_t dlen;
 	unsigned z;
-	int type, length, numuni = 0, numauth = 0;
+	int type, length, numuni = 0;
+	size_t numauth = 0;
 	struct pcap_pkthdr pkh;
 	struct timeval tv;
 	struct ivs2_pkthdr ivs2;
@@ -1400,15 +1249,16 @@ static int dump_add_packet(unsigned char * h80211,
 	struct NA_info * na_prv = NULL;
 
 	/* skip all non probe response frames in active scanning simulation mode */
-	if (G.active_scan_sim > 0 && h80211[0] != 0x50) return (0);
+	if (lopt.active_scan_sim > 0 && h80211[0] != 0x50) return (0);
 
 	/* skip packets smaller than a 802.11 header */
 
-	if (caplen < 24) goto write_packet;
+	if (caplen < (int) sizeof(struct ieee80211_frame)) goto write_packet;
 
 	/* skip (uninteresting) control frames */
 
-	if ((h80211[0] & 0x0C) == 0x04) goto write_packet;
+	if ((h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_CTL)
+		goto write_packet;
 
 	/* if it's a LLC null packet, just forget it (may change in the future) */
 
@@ -1420,37 +1270,39 @@ static int dump_add_packet(unsigned char * h80211,
 
 	/* locate the access point's MAC address */
 
-	switch (h80211[1] & 3)
+	switch (h80211[1] & IEEE80211_FC1_DIR_MASK)
 	{
-		case 0:
-			memcpy(bssid, h80211 + 16, 6);
+		case IEEE80211_FC1_DIR_NODS:
+			memcpy(bssid, h80211 + 16, 6); //-V525
 			break; // Adhoc
-		case 1:
+		case IEEE80211_FC1_DIR_TODS:
 			memcpy(bssid, h80211 + 4, 6);
 			break; // ToDS
-		case 2:
+		case IEEE80211_FC1_DIR_FROMDS:
 			memcpy(bssid, h80211 + 10, 6);
 			break; // FromDS
-		case 3:
+		case IEEE80211_FC1_DIR_DSTODS:
 			memcpy(bssid, h80211 + 10, 6);
 			break; // WDS -> Transmitter taken as BSSID
+		default:
+			abort();
 	}
 
-	if (memcmp(G.f_bssid, NULL_MAC, 6) != 0)
+	if (memcmp(opt.f_bssid, NULL_MAC, 6) != 0)
 	{
-		if (memcmp(G.f_netmask, NULL_MAC, 6) != 0)
+		if (memcmp(opt.f_netmask, NULL_MAC, 6) != 0)
 		{
 			if (is_filtered_netmask(bssid)) return (1);
 		}
 		else
 		{
-			if (memcmp(G.f_bssid, bssid, 6) != 0) return (1);
+			if (memcmp(opt.f_bssid, bssid, 6) != 0) return (1);
 		}
 	}
 
 	/* update our chained list of access points */
 
-	ap_cur = G.ap_1st;
+	ap_cur = lopt.ap_1st;
 	ap_prv = NULL;
 
 	while (ap_cur != NULL)
@@ -1465,20 +1317,18 @@ static int dump_add_packet(unsigned char * h80211,
 
 	if (ap_cur == NULL)
 	{
-		if (!(ap_cur = (struct AP_info *) malloc(sizeof(struct AP_info))))
+		if (!(ap_cur = (struct AP_info *) calloc(1, sizeof(struct AP_info))))
 		{
-			perror("malloc failed");
+			perror("calloc failed");
 			return (1);
 		}
 
 		/* if mac is listed as unknown, remove it */
 		remove_namac(bssid);
 
-		memset(ap_cur, 0, sizeof(struct AP_info));
-
-		if (G.ap_1st == NULL)
-			G.ap_1st = ap_cur;
-		else
+		if (lopt.ap_1st == NULL)
+			lopt.ap_1st = ap_cur;
+		else if (ap_prv != NULL)
 			ap_prv->next = ap_cur;
 
 		memcpy(ap_cur->bssid, bssid, 6);
@@ -1504,6 +1354,8 @@ static int dump_add_packet(unsigned char * h80211,
 		ap_cur->max_speed = -1;
 		ap_cur->security = 0;
 
+		ap_cur->ivbuf = NULL;
+		ap_cur->ivbuf_size = 0;
 		ap_cur->uiv_root = uniqueiv_init();
 
 		ap_cur->nb_data = 0;
@@ -1515,7 +1367,7 @@ static int dump_add_packet(unsigned char * h80211,
 
 		ap_cur->key = NULL;
 
-		G.ap_end = ap_cur;
+		lopt.ap_end = ap_cur;
 
 		ap_cur->nb_bcn = 0;
 
@@ -1529,10 +1381,10 @@ static int dump_add_packet(unsigned char * h80211,
 
 		ap_cur->ssid_length = 0;
 		ap_cur->essid_stored = 0;
-		memset(ap_cur->essid, 0, MAX_IE_ELEMENT_SIZE);
+		memset(ap_cur->essid, 0, ESSID_LENGTH + 1);
 		ap_cur->timestamp = 0;
 
-		ap_cur->decloak_detect = G.decloak;
+		ap_cur->decloak_detect = lopt.decloak;
 		ap_cur->is_decloak = 0;
 		ap_cur->packets = NULL;
 
@@ -1541,9 +1393,9 @@ static int dump_add_packet(unsigned char * h80211,
 
 		ap_cur->data_root = NULL;
 		ap_cur->EAP_detected = 0;
-		memcpy(ap_cur->gps_loc_min, G.gps_loc, sizeof(float) * 5);
-		memcpy(ap_cur->gps_loc_max, G.gps_loc, sizeof(float) * 5);
-		memcpy(ap_cur->gps_loc_best, G.gps_loc, sizeof(float) * 5);
+		memcpy(ap_cur->gps_loc_min, lopt.gps_loc, sizeof(float) * 5); //-V512
+		memcpy(ap_cur->gps_loc_max, lopt.gps_loc, sizeof(float) * 5); //-V512
+		memcpy(ap_cur->gps_loc_best, lopt.gps_loc, sizeof(float) * 5); //-V512
 
 		/* 802.11n and ac */
 		ap_cur->channel_width = CHANNEL_22MHZ; // 20MHz by default
@@ -1574,66 +1426,58 @@ static int dump_add_packet(unsigned char * h80211,
 	 * the AP: either type == mgmt and SA == BSSID,
 	 * or FromDS == 1 and ToDS == 0 */
 
-	if (((h80211[1] & 3) == 0 && memcmp(h80211 + 10, bssid, 6) == 0)
-		|| ((h80211[1] & 3) == 2))
+	if (((h80211[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_NODS
+		 && memcmp(h80211 + 10, bssid, 6) == 0)
+		|| ((h80211[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_FROMDS))
 	{
 		ap_cur->power_index = (ap_cur->power_index + 1) % NB_PWR;
 		ap_cur->power_lvl[ap_cur->power_index] = ri->ri_power;
 
-		ap_cur->avg_power = 0;
+		// Moving exponential average
+		// ma_new = alpha * new_sample + (1-alpha) * ma_old;
+		ap_cur->avg_power
+			= (int) (0.99f * ri->ri_power + (1.f - 0.99f) * ap_cur->avg_power);
 
-		for (i = 0, n = 0; i < NB_PWR; i++)
+		if (ap_cur->avg_power > ap_cur->best_power)
 		{
-			if (ap_cur->power_lvl[i] != -1)
-			{
-				ap_cur->avg_power += ap_cur->power_lvl[i];
-				n++;
-			}
+			ap_cur->best_power = ap_cur->avg_power;
+			memcpy(ap_cur->gps_loc_best, //-V512
+				   lopt.gps_loc,
+				   sizeof(float) * 5);
 		}
-
-		if (n > 0)
-		{
-			ap_cur->avg_power /= n;
-			if (ap_cur->avg_power > ap_cur->best_power)
-			{
-				ap_cur->best_power = ap_cur->avg_power;
-				memcpy(ap_cur->gps_loc_best, G.gps_loc, sizeof(float) * 5);
-			}
-		}
-		else
-			ap_cur->avg_power = -1;
 
 		/* every packet in here comes from the AP */
 
-		if (G.gps_loc[0] > ap_cur->gps_loc_max[0])
-			ap_cur->gps_loc_max[0] = G.gps_loc[0];
-		if (G.gps_loc[1] > ap_cur->gps_loc_max[1])
-			ap_cur->gps_loc_max[1] = G.gps_loc[1];
-		if (G.gps_loc[2] > ap_cur->gps_loc_max[2])
-			ap_cur->gps_loc_max[2] = G.gps_loc[2];
+		if (lopt.gps_loc[0] > ap_cur->gps_loc_max[0])
+			ap_cur->gps_loc_max[0] = lopt.gps_loc[0];
+		if (lopt.gps_loc[1] > ap_cur->gps_loc_max[1])
+			ap_cur->gps_loc_max[1] = lopt.gps_loc[1];
+		if (lopt.gps_loc[2] > ap_cur->gps_loc_max[2])
+			ap_cur->gps_loc_max[2] = lopt.gps_loc[2];
 
-		if (G.gps_loc[0] < ap_cur->gps_loc_min[0])
-			ap_cur->gps_loc_min[0] = G.gps_loc[0];
-		if (G.gps_loc[1] < ap_cur->gps_loc_min[1])
-			ap_cur->gps_loc_min[1] = G.gps_loc[1];
-		if (G.gps_loc[2] < ap_cur->gps_loc_min[2])
-			ap_cur->gps_loc_min[2] = G.gps_loc[2];
+		if (lopt.gps_loc[0] < ap_cur->gps_loc_min[0])
+			ap_cur->gps_loc_min[0] = lopt.gps_loc[0];
+		if (lopt.gps_loc[1] < ap_cur->gps_loc_min[1])
+			ap_cur->gps_loc_min[1] = lopt.gps_loc[1];
+		if (lopt.gps_loc[2] < ap_cur->gps_loc_min[2])
+			ap_cur->gps_loc_min[2] = lopt.gps_loc[2];
 		//        printf("seqnum: %i\n", seq);
 
 		if (ap_cur->fcapt == 0 && ap_cur->fmiss == 0)
 			gettimeofday(&(ap_cur->ftimef), NULL);
 		if (ap_cur->last_seq != 0)
 			ap_cur->fmiss += (seq - ap_cur->last_seq - 1);
-		ap_cur->last_seq = seq;
+		ap_cur->last_seq = (uint16_t) seq;
 		ap_cur->fcapt++;
 		gettimeofday(&(ap_cur->ftimel), NULL);
 
 		/* if we are writing to a file and want to make a continuous rolling log save the data here */
-		if (G.record_data && G.output_format_log_csv)
+		if (opt.record_data && opt.output_format_log_csv)
 		{
 			/* Write out our rolling log every time we see data from an AP */
 
-			dump_write_airodump_ng_logcsv_add_ap(ap_cur, ri->ri_power);
+			dump_write_airodump_ng_logcsv_add_ap(
+				ap_cur, ri->ri_power, &lopt.gps_time, lopt.gps_loc);
 		}
 
 		//         if(ap_cur->fcapt >= QLT_COUNT) update_rx_quality();
@@ -1641,13 +1485,17 @@ static int dump_add_packet(unsigned char * h80211,
 
 	switch (h80211[0])
 	{
-		case 0x80:
+		case IEEE80211_FC0_SUBTYPE_BEACON:
 			ap_cur->nb_bcn++;
 			break;
-		case 0x50:
+
+		case IEEE80211_FC0_SUBTYPE_PROBE_RESP:
 			/* reset the WPS state */
 			ap_cur->wps.state = 0xFF;
 			ap_cur->wps.ap_setup_locked = 0;
+			break;
+
+		default:
 			break;
 	}
 
@@ -1655,9 +1503,9 @@ static int dump_add_packet(unsigned char * h80211,
 
 	/* locate the station MAC in the 802.11 header */
 
-	switch (h80211[1] & 3)
+	switch (h80211[1] & IEEE80211_FC1_DIR_MASK)
 	{
-		case 0:
+		case IEEE80211_FC1_DIR_NODS:
 
 			/* if management, check that SA != BSSID */
 
@@ -1666,14 +1514,14 @@ static int dump_add_packet(unsigned char * h80211,
 			memcpy(stmac, h80211 + 10, 6);
 			break;
 
-		case 1:
+		case IEEE80211_FC1_DIR_TODS:
 
 			/* ToDS packet, must come from a client */
 
 			memcpy(stmac, h80211 + 10, 6);
 			break;
 
-		case 2:
+		case IEEE80211_FC1_DIR_FROMDS:
 
 			/* FromDS packet, reject broadcast MACs */
 
@@ -1681,13 +1529,16 @@ static int dump_add_packet(unsigned char * h80211,
 			memcpy(stmac, h80211 + 4, 6);
 			break;
 
-		default:
+		case IEEE80211_FC1_DIR_DSTODS:
 			goto skip_station;
+
+		default:
+			abort();
 	}
 
 	/* update our chained list of wireless stations */
 
-	st_cur = G.st_1st;
+	st_cur = lopt.st_1st;
 	st_prv = NULL;
 
 	while (st_cur != NULL)
@@ -1702,9 +1553,9 @@ static int dump_add_packet(unsigned char * h80211,
 
 	if (st_cur == NULL)
 	{
-		if (!(st_cur = (struct ST_info *) malloc(sizeof(struct ST_info))))
+		if (!(st_cur = (struct ST_info *) calloc(1, sizeof(struct ST_info))))
 		{
-			perror("malloc failed");
+			perror("calloc failed");
 			return (1);
 		}
 
@@ -1713,8 +1564,8 @@ static int dump_add_packet(unsigned char * h80211,
 
 		memset(st_cur, 0, sizeof(struct ST_info));
 
-		if (G.st_1st == NULL)
-			G.st_1st = st_cur;
+		if (lopt.st_1st == NULL)
+			lopt.st_1st = st_cur;
 		else
 			st_prv->next = st_cur;
 
@@ -1747,9 +1598,16 @@ static int dump_add_packet(unsigned char * h80211,
 
 		gettimeofday(&(st_cur->ftimer), NULL);
 
-		memcpy(st_cur->gps_loc_min, G.gps_loc, sizeof(st_cur->gps_loc_min));
-		memcpy(st_cur->gps_loc_max, G.gps_loc, sizeof(st_cur->gps_loc_max));
-		memcpy(st_cur->gps_loc_best, G.gps_loc, sizeof(st_cur->gps_loc_best));
+		memcpy(st_cur->gps_loc_min, //-V512
+			   lopt.gps_loc,
+			   sizeof(st_cur->gps_loc_min));
+		memcpy(st_cur->gps_loc_max, //-V512
+			   lopt.gps_loc,
+			   sizeof(st_cur->gps_loc_max));
+		memcpy( //-V512
+			st_cur->gps_loc_best,
+			lopt.gps_loc,
+			sizeof(st_cur->gps_loc_best));
 
 		for (i = 0; i < NB_PRB; i++)
 		{
@@ -1757,14 +1615,14 @@ static int dump_add_packet(unsigned char * h80211,
 			st_cur->ssid_length[i] = 0;
 		}
 
-		G.st_end = st_cur;
+		lopt.st_end = st_cur;
 	}
 
 	if (st_cur->base == NULL || memcmp(ap_cur->bssid, BROADCAST, 6) != 0)
 		st_cur->base = ap_cur;
 
 	// update bitrate to station
-	if ((st_cur != NULL) && (h80211[1] & 3) == 2) st_cur->rate_to = ri->ri_rate;
+	if ((h80211[1] & 3) == 2) st_cur->rate_to = ri->ri_rate;
 
 	/* update the last time seen */
 
@@ -1774,50 +1632,52 @@ static int dump_add_packet(unsigned char * h80211,
 	 * client: either type == Mgmt and SA != BSSID,
 	 * or FromDS == 0 and ToDS == 1 */
 
-	if (((h80211[1] & 3) == 0 && memcmp(h80211 + 10, bssid, 6) != 0)
-		|| ((h80211[1] & 3) == 1))
+	if (((h80211[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_NODS
+		 && memcmp(h80211 + 10, bssid, 6) != 0)
+		|| ((h80211[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_TODS))
 	{
 		st_cur->power = ri->ri_power;
 		if (ri->ri_power > st_cur->best_power)
 		{
 			st_cur->best_power = ri->ri_power;
-			memcpy(
-				ap_cur->gps_loc_best, G.gps_loc, sizeof(st_cur->gps_loc_best));
+			memcpy(ap_cur->gps_loc_best, //-V512
+				   lopt.gps_loc,
+				   sizeof(st_cur->gps_loc_best));
 		}
 
 		st_cur->rate_from = ri->ri_rate;
 		if (ri->ri_channel > 0 && ri->ri_channel <= HIGHEST_CHANNEL)
 			st_cur->channel = ri->ri_channel;
 		else
-			st_cur->channel = G.channel[cardnum];
+			st_cur->channel = lopt.channel[cardnum];
 
-		if (G.gps_loc[0] > st_cur->gps_loc_max[0])
-			st_cur->gps_loc_max[0] = G.gps_loc[0];
-		if (G.gps_loc[1] > st_cur->gps_loc_max[1])
-			st_cur->gps_loc_max[1] = G.gps_loc[1];
-		if (G.gps_loc[2] > st_cur->gps_loc_max[2])
-			st_cur->gps_loc_max[2] = G.gps_loc[2];
+		if (lopt.gps_loc[0] > st_cur->gps_loc_max[0])
+			st_cur->gps_loc_max[0] = lopt.gps_loc[0];
+		if (lopt.gps_loc[1] > st_cur->gps_loc_max[1])
+			st_cur->gps_loc_max[1] = lopt.gps_loc[1];
+		if (lopt.gps_loc[2] > st_cur->gps_loc_max[2])
+			st_cur->gps_loc_max[2] = lopt.gps_loc[2];
 
-		if (G.gps_loc[0] < st_cur->gps_loc_min[0])
-			st_cur->gps_loc_min[0] = G.gps_loc[0];
-		if (G.gps_loc[1] < st_cur->gps_loc_min[1])
-			st_cur->gps_loc_min[1] = G.gps_loc[1];
-		if (G.gps_loc[2] < st_cur->gps_loc_min[2])
-			st_cur->gps_loc_min[2] = G.gps_loc[2];
+		if (lopt.gps_loc[0] < st_cur->gps_loc_min[0])
+			st_cur->gps_loc_min[0] = lopt.gps_loc[0];
+		if (lopt.gps_loc[1] < st_cur->gps_loc_min[1])
+			st_cur->gps_loc_min[1] = lopt.gps_loc[1];
+		if (lopt.gps_loc[2] < st_cur->gps_loc_min[2])
+			st_cur->gps_loc_min[2] = lopt.gps_loc[2];
 
 		if (st_cur->lastseq != 0)
 		{
 			msd = seq - st_cur->lastseq - 1;
 			if (msd > 0 && msd < 1000) st_cur->missed += msd;
 		}
-		st_cur->lastseq = seq;
+		st_cur->lastseq = (uint16_t) seq;
 
 		/* if we are writing to a file and want to make a continuous rolling log save the data here */
-		if (G.record_data && G.output_format_log_csv)
+		if (opt.record_data && opt.output_format_log_csv)
 		{
 			/* Write out our rolling log every time we see data from a client */
 			dump_write_airodump_ng_logcsv_add_client(
-				ap_cur, st_cur, ri->ri_power);
+				ap_cur, st_cur, ri->ri_power, &lopt.gps_time, lopt.gps_loc);
 		}
 	}
 
@@ -1827,7 +1687,7 @@ skip_station:
 
 	/* packet parsing: Probe Request */
 
-	if (h80211[0] == 0x40 && st_cur != NULL)
+	if (h80211[0] == IEEE80211_FC0_SUBTYPE_PROBE_REQ && st_cur != NULL)
 	{
 		p = h80211 + 24;
 
@@ -1838,8 +1698,7 @@ skip_station:
 			if (p[0] == 0x00 && p[1] > 0 && p[2] != '\0'
 				&& (p[1] > 1 || p[2] != ' '))
 			{
-				//                n = ( p[1] > 32 ) ? 32 : p[1];
-				n = p[1];
+				n = MIN(ESSID_LENGTH, p[1]);
 
 				for (i = 0; i < n; i++)
 					if (p[2 + i] > 0 && p[2 + i] < ' ') goto skip_probe;
@@ -1855,7 +1714,7 @@ skip_station:
 				memset(st_cur->probes[st_cur->probe_index], 0, 256);
 				memcpy(
 					st_cur->probes[st_cur->probe_index], p + 2, n); // twice?!
-				st_cur->ssid_length[st_cur->probe_index] = n;
+				st_cur->ssid_length[st_cur->probe_index] = (int) n;
 
 				if (verifyssid((const unsigned char *)
 								   st_cur->probes[st_cur->probe_index])
@@ -1863,8 +1722,7 @@ skip_station:
 					for (i = 0; i < n; i++)
 					{
 						c = p[2 + i];
-						if (c == 0 || (c > 0 && c < 32) || (c > 126 && c < 160))
-							c = '.';
+						if (c < 32) c = '.';
 						st_cur->probes[st_cur->probe_index][i] = c;
 					}
 			}
@@ -1877,7 +1735,8 @@ skip_probe:
 
 	/* packet parsing: Beacon or Probe Response */
 
-	if (h80211[0] == 0x80 || h80211[0] == 0x50)
+	if (h80211[0] == IEEE80211_FC0_SUBTYPE_BEACON
+		|| h80211[0] == IEEE80211_FC0_SUBTYPE_PROBE_RESP)
 	{
 		if (!(ap_cur->security & (STD_OPN | STD_WEP | STD_WPA | STD_WPA2)))
 		{
@@ -1906,28 +1765,26 @@ skip_probe:
 				&& (p[1] > 1 || p[2] != ' '))
 			{
 				/* found a non-cloaked ESSID */
+				n = MIN(ESSID_LENGTH, p[1]);
 
-				//                n = ( p[1] > 32 ) ? 32 : p[1];
-				n = p[1];
-
-				memset(ap_cur->essid, 0, 256);
+				memset(ap_cur->essid, 0, ESSID_LENGTH + 1);
 				memcpy(ap_cur->essid, p + 2, n);
 
-				if (G.f_ivs != NULL && !ap_cur->essid_stored)
+				if (opt.f_ivs != NULL && !ap_cur->essid_stored)
 				{
 					memset(&ivs2, '\x00', sizeof(struct ivs2_pkthdr));
 					ivs2.flags |= IVS2_ESSID;
 					ivs2.len += ap_cur->ssid_length;
 
-					if (memcmp(G.prev_bssid, ap_cur->bssid, 6) != 0)
+					if (memcmp(lopt.prev_bssid, ap_cur->bssid, 6) != 0)
 					{
 						ivs2.flags |= IVS2_BSSID;
 						ivs2.len += 6;
-						memcpy(G.prev_bssid, ap_cur->bssid, 6);
+						memcpy(lopt.prev_bssid, ap_cur->bssid, 6);
 					}
 
 					/* write header */
-					if (fwrite(&ivs2, 1, sizeof(struct ivs2_pkthdr), G.f_ivs)
+					if (fwrite(&ivs2, 1, sizeof(struct ivs2_pkthdr), opt.f_ivs)
 						!= (size_t) sizeof(struct ivs2_pkthdr))
 					{
 						perror("fwrite(IV header) failed");
@@ -1937,7 +1794,8 @@ skip_probe:
 					/* write BSSID */
 					if (ivs2.flags & IVS2_BSSID)
 					{
-						if (fwrite(ap_cur->bssid, 1, 6, G.f_ivs) != (size_t) 6)
+						if (fwrite(ap_cur->bssid, 1, 6, opt.f_ivs)
+							!= (size_t) 6)
 						{
 							perror("fwrite(IV bssid) failed");
 							return (1);
@@ -1945,7 +1803,10 @@ skip_probe:
 					}
 
 					/* write essid */
-					if (fwrite(ap_cur->essid, 1, ap_cur->ssid_length, G.f_ivs)
+					if (fwrite(ap_cur->essid,
+							   1,
+							   (size_t) ap_cur->ssid_length,
+							   opt.f_ivs)
 						!= (size_t) ap_cur->ssid_length)
 					{
 						perror("fwrite(IV essid) failed");
@@ -1957,10 +1818,7 @@ skip_probe:
 
 				if (verifyssid(ap_cur->essid) == 0)
 					for (i = 0; i < n; i++)
-						if ((ap_cur->essid[i] > 0 && ap_cur->essid[i] < 32)
-							|| (ap_cur->essid[i] > 126
-								&& ap_cur->essid[i] < 160))
-							ap_cur->essid[i] = '.';
+						if (ap_cur->essid[i] < 32) ap_cur->essid[i] = '.';
 			}
 
 			/* get the maximum speed in Mb and the AP's channel */
@@ -2033,9 +1891,11 @@ skip_probe:
 								break;
 						}
 						break;
+					default:
+						break;
 				}
 
-				ap_cur->n_channel.any_chan_width = ((p[3] / 4) % 2);
+				ap_cur->n_channel.any_chan_width = (uint8_t)((p[3] / 4) % 2);
 			}
 
 			// HT capabilities
@@ -2047,8 +1907,8 @@ skip_probe:
 				}
 
 				// Short GI for 20/40MHz
-				ap_cur->n_channel.short_gi_20 = (p[3] / 32) % 2;
-				ap_cur->n_channel.short_gi_40 = (p[3] / 64) % 2;
+				ap_cur->n_channel.short_gi_20 = (uint8_t)((p[3] / 32) % 2);
+				ap_cur->n_channel.short_gi_40 = (uint8_t)((p[3] / 64) % 2);
 
 				// Parse MCS rate
 				/*
@@ -2080,17 +1940,18 @@ skip_probe:
 				// Standard is AC
 				strcpy(ap_cur->standard, "ac");
 
-				ap_cur->ac_channel.split_chan = (p[3] / 4) % 4;
+				ap_cur->ac_channel.split_chan = (uint8_t)((p[3] / 4) % 4);
 
-				ap_cur->ac_channel.short_gi_80 = (p[3] / 32) % 2;
-				ap_cur->ac_channel.short_gi_160 = (p[3] / 64) % 2;
+				ap_cur->ac_channel.short_gi_80 = (uint8_t)((p[3] / 32) % 2);
+				ap_cur->ac_channel.short_gi_160 = (uint8_t)((p[3] / 64) % 2);
 
-				ap_cur->ac_channel.mu_mimo
-					= ((p[3] / 524288) % 2) || ((p[3] / 1048576) % 2);
+				ap_cur->ac_channel.mu_mimo = (uint8_t)((p[4] & 0b11000) % 2);
 
 				// A few things indicate Wave 2: MU-MIMO, 80+80 Channels
-				ap_cur->ac_channel.wave_2 = ap_cur->ac_channel.mu_mimo
-											|| ap_cur->ac_channel.split_chan;
+				ap_cur->ac_channel.wave_2
+					= (uint8_t)((ap_cur->ac_channel.mu_mimo
+								 || ap_cur->ac_channel.split_chan)
+								% 2);
 
 				// Maximum rates (16 bit)
 				uint16_t tx_mcs = 0;
@@ -2120,6 +1981,8 @@ skip_probe:
 						case 2:
 							// support of MCS 0-9
 							ap_cur->ac_channel.mcs_index[stream_idx] = 9;
+							break;
+						default:
 							break;
 					}
 
@@ -2151,6 +2014,8 @@ skip_probe:
 						// 80+80MHz
 						ap_cur->channel_width = CHANNEL_80_80MHZ;
 						ap_cur->ac_channel.split_chan = 1;
+						break;
+					default:
 						break;
 				}
 
@@ -2228,7 +2093,9 @@ skip_probe:
 
 	/* packet parsing: Beacon & Probe response */
 	/* TODO: Merge this if and the one above */
-	if ((h80211[0] == 0x80 || h80211[0] == 0x50) && caplen > 38)
+	if ((h80211[0] == IEEE80211_FC0_SUBTYPE_BEACON
+		 || h80211[0] == IEEE80211_FC0_SUBTYPE_PROBE_RESP)
+		&& caplen > 38)
 	{
 		p = h80211 + 36; // ignore hdr + fixed params
 
@@ -2265,7 +2132,6 @@ skip_probe:
 				// RSN => WPA2
 				if (type == 0x30)
 				{
-					ap_cur->security |= STD_WPA2;
 					offset = 0;
 				}
 
@@ -2299,7 +2165,7 @@ skip_probe:
 				}
 
 				// Get the list of cipher suites
-				for (i = 0; i < numuni; i++)
+				for (i = 0; i < (size_t) numuni; i++)
 				{
 					switch (p[i * 4 + 3])
 					{
@@ -2308,6 +2174,7 @@ skip_probe:
 							break;
 						case 0x02:
 							ap_cur->security |= ENC_TKIP;
+							ap_cur->security &= ~STD_WPA2;
 							break;
 						case 0x03:
 							ap_cur->security |= ENC_WRAP;
@@ -2315,6 +2182,7 @@ skip_probe:
 						case 0x0A:
 						case 0x04:
 							ap_cur->security |= ENC_CCMP;
+							ap_cur->security |= STD_WPA2;
 							break;
 						case 0x05:
 							ap_cur->security |= ENC_WEP104;
@@ -2322,6 +2190,12 @@ skip_probe:
 						case 0x08:
 						case 0x09:
 							ap_cur->security |= ENC_GCMP;
+							ap_cur->security |= STD_WPA2;
+							break;
+						case 0x0B:
+						case 0x0C:
+							ap_cur->security |= ENC_GMAC;
+							ap_cur->security |= STD_WPA2;
 							break;
 						default:
 							break;
@@ -2341,14 +2215,14 @@ skip_probe:
 						case 0x02:
 							ap_cur->security |= AUTH_PSK;
 							break;
+						case 0x06:
+						case 0x0d:
+							ap_cur->security |= AUTH_CMAC;
+							break;
 						default:
 							break;
 					}
 				}
-
-				p += 2 + 4 * numauth;
-
-				if (type == 0x30) p += 2;
 
 				p = org_p + length + 2;
 			}
@@ -2431,7 +2305,7 @@ skip_probe:
 
 	/* packet parsing: Authentication Response */
 
-	if (h80211[0] == 0xB0 && caplen >= 30)
+	if (h80211[0] == IEEE80211_FC0_SUBTYPE_AUTH && caplen >= 30)
 	{
 		if (ap_cur->security & STD_WEP)
 		{
@@ -2448,7 +2322,7 @@ skip_probe:
 
 	/* packet parsing: Association Request */
 
-	if (h80211[0] == 0x00 && caplen > 28)
+	if (h80211[0] == IEEE80211_FC0_SUBTYPE_ASSOC_REQ && caplen > 28)
 	{
 		p = h80211 + 28;
 
@@ -2460,28 +2334,27 @@ skip_probe:
 				&& (p[1] > 1 || p[2] != ' '))
 			{
 				/* found a non-cloaked ESSID */
+				n = MIN(ESSID_LENGTH, p[1]);
 
-				n = (p[1] > 32) ? 32 : p[1];
-
-				memset(ap_cur->essid, 0, 33);
+				memset(ap_cur->essid, 0, ESSID_LENGTH + 1);
 				memcpy(ap_cur->essid, p + 2, n);
-				ap_cur->ssid_length = n;
+				ap_cur->ssid_length = (int) n;
 
-				if (G.f_ivs != NULL && !ap_cur->essid_stored)
+				if (opt.f_ivs != NULL && !ap_cur->essid_stored)
 				{
 					memset(&ivs2, '\x00', sizeof(struct ivs2_pkthdr));
 					ivs2.flags |= IVS2_ESSID;
 					ivs2.len += ap_cur->ssid_length;
 
-					if (memcmp(G.prev_bssid, ap_cur->bssid, 6) != 0)
+					if (memcmp(lopt.prev_bssid, ap_cur->bssid, 6) != 0)
 					{
 						ivs2.flags |= IVS2_BSSID;
 						ivs2.len += 6;
-						memcpy(G.prev_bssid, ap_cur->bssid, 6);
+						memcpy(lopt.prev_bssid, ap_cur->bssid, 6);
 					}
 
 					/* write header */
-					if (fwrite(&ivs2, 1, sizeof(struct ivs2_pkthdr), G.f_ivs)
+					if (fwrite(&ivs2, 1, sizeof(struct ivs2_pkthdr), opt.f_ivs)
 						!= (size_t) sizeof(struct ivs2_pkthdr))
 					{
 						perror("fwrite(IV header) failed");
@@ -2491,7 +2364,8 @@ skip_probe:
 					/* write BSSID */
 					if (ivs2.flags & IVS2_BSSID)
 					{
-						if (fwrite(ap_cur->bssid, 1, 6, G.f_ivs) != (size_t) 6)
+						if (fwrite(ap_cur->bssid, 1, 6, opt.f_ivs)
+							!= (size_t) 6)
 						{
 							perror("fwrite(IV bssid) failed");
 							return (1);
@@ -2499,7 +2373,10 @@ skip_probe:
 					}
 
 					/* write essid */
-					if (fwrite(ap_cur->essid, 1, ap_cur->ssid_length, G.f_ivs)
+					if (fwrite(ap_cur->essid,
+							   1,
+							   (size_t) ap_cur->ssid_length,
+							   opt.f_ivs)
 						!= (size_t) ap_cur->ssid_length)
 					{
 						perror("fwrite(IV essid) failed");
@@ -2511,10 +2388,7 @@ skip_probe:
 
 				if (verifyssid(ap_cur->essid) == 0)
 					for (i = 0; i < n; i++)
-						if ((ap_cur->essid[i] > 0 && ap_cur->essid[i] < 32)
-							|| (ap_cur->essid[i] > 126
-								&& ap_cur->essid[i] < 160))
-							ap_cur->essid[i] = '.';
+						if (ap_cur->essid[i] < 32) ap_cur->essid[i] = '.';
 			}
 
 			p += 2 + p[1];
@@ -2524,7 +2398,7 @@ skip_probe:
 
 	/* packet parsing: some data */
 
-	if ((h80211[0] & 0x0C) == 0x08)
+	if ((h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_DATA)
 	{
 		/* update the channel if we didn't get any beacon */
 
@@ -2533,12 +2407,14 @@ skip_probe:
 			if (ri->ri_channel > 0 && ri->ri_channel <= HIGHEST_CHANNEL)
 				ap_cur->channel = ri->ri_channel;
 			else
-				ap_cur->channel = G.channel[cardnum];
+				ap_cur->channel = lopt.channel[cardnum];
 		}
 
 		/* check the SNAP header to see if data is encrypted */
 
-		z = ((h80211[1] & 3) != 3) ? 24 : 30;
+		z = ((h80211[1] & IEEE80211_FC1_DIR_MASK) != IEEE80211_FC1_DIR_DSTODS)
+				? 24
+				: 30;
 
 		/* Check if 802.11e (QoS) */
 		if ((h80211[0] & 0x80) == 0x80)
@@ -2574,9 +2450,9 @@ skip_probe:
 				ap_cur->is_decloak = 1;
 				ap_cur->decloak_detect = 0;
 				list_tail_free(&(ap_cur->packets));
-				memset(G.message, '\x00', sizeof(G.message));
-				snprintf(G.message,
-						 sizeof(G.message) - 1,
+				memset(lopt.message, '\x00', sizeof(lopt.message));
+				snprintf(lopt.message,
+						 sizeof(lopt.message) - 1,
 						 "][ Decloak: %02X:%02X:%02X:%02X:%02X:%02X ",
 						 ap_cur->bssid[0],
 						 ap_cur->bssid[1],
@@ -2645,7 +2521,7 @@ skip_probe:
 			{
 				/* first time seen IVs */
 
-				if (G.f_ivs != NULL)
+				if (opt.f_ivs != NULL)
 				{
 					memset(&ivs2, '\x00', sizeof(struct ivs2_pkthdr));
 					ivs2.flags = 0;
@@ -2661,9 +2537,10 @@ skip_probe:
 						ivs2.flags |= IVS2_XOR;
 						ivs2.len += clen + 4;
 						/* reveal keystream (plain^encrypted) */
-						for (n = 0; n < (ivs2.len - 4); n++)
+						for (n = 0; n < (size_t)(ivs2.len - 4); n++)
 						{
-							clear[n] = (clear[n] ^ h80211[z + 4 + n]) & 0xFF;
+							clear[n] = (uint8_t)((clear[n] ^ h80211[z + 4 + n])
+												 & 0xFF);
 						}
 						// clear is now the keystream
 					}
@@ -2676,16 +2553,16 @@ skip_probe:
 						// len = 4(iv+idx) + 1(num of keystreams) + 1(len per
 						// keystream) + 32*num_xor + 16*sizeof(int)(weight[16])
 						ivs2.len += 4 + 1 + 1 + 32 * num_xor + 16 * sizeof(int);
-						clear[0] = num_xor;
-						clear[1] = clen;
+						clear[0] = (uint8_t) num_xor;
+						clear[1] = (uint8_t) clen;
 						/* reveal keystream (plain^encrypted) */
 						for (o = 0; o < num_xor; o++)
 						{
-							for (n = 0; n < (ivs2.len - 4); n++)
+							for (n = 0; n < (size_t)(ivs2.len - 4); n++)
 							{
-								clear[2 + n + o * 32] = (clear[2 + n + o * 32]
-														 ^ h80211[z + 4 + n])
-														& 0xFF;
+								clear[2 + n + o * 32] = (uint8_t)(
+									(clear[2 + n + o * 32] ^ h80211[z + 4 + n])
+									& 0xFF);
 							}
 						}
 						memcpy(clear + 4 + 1 + 1 + 32 * num_xor,
@@ -2694,23 +2571,24 @@ skip_probe:
 						// clear is now the keystream
 					}
 
-					if (memcmp(G.prev_bssid, ap_cur->bssid, 6) != 0)
+					if (memcmp(lopt.prev_bssid, ap_cur->bssid, 6) != 0)
 					{
 						ivs2.flags |= IVS2_BSSID;
 						ivs2.len += 6;
-						memcpy(G.prev_bssid, ap_cur->bssid, 6);
+						memcpy(lopt.prev_bssid, ap_cur->bssid, 6);
 					}
 
-					if (fwrite(&ivs2, 1, sizeof(struct ivs2_pkthdr), G.f_ivs)
+					if (fwrite(&ivs2, 1, sizeof(struct ivs2_pkthdr), opt.f_ivs)
 						!= (size_t) sizeof(struct ivs2_pkthdr))
 					{
 						perror("fwrite(IV header) failed");
-						return (1);
+						return (EXIT_FAILURE);
 					}
 
 					if (ivs2.flags & IVS2_BSSID)
 					{
-						if (fwrite(ap_cur->bssid, 1, 6, G.f_ivs) != (size_t) 6)
+						if (fwrite(ap_cur->bssid, 1, 6, opt.f_ivs)
+							!= (size_t) 6)
 						{
 							perror("fwrite(IV bssid) failed");
 							return (1);
@@ -2718,18 +2596,18 @@ skip_probe:
 						ivs2.len -= 6;
 					}
 
-					if (fwrite(h80211 + z, 1, 4, G.f_ivs) != (size_t) 4)
+					if (fwrite(h80211 + z, 1, 4, opt.f_ivs) != (size_t) 4)
 					{
 						perror("fwrite(IV iv+idx) failed");
-						return (1);
+						return (EXIT_FAILURE);
 					}
 					ivs2.len -= 4;
 
-					if (fwrite(clear, 1, ivs2.len, G.f_ivs)
+					if (fwrite(clear, 1, ivs2.len, opt.f_ivs)
 						!= (size_t) ivs2.len)
 					{
 						perror("fwrite(IV keystream) failed");
-						return (1);
+						return (EXIT_FAILURE);
 					}
 				}
 
@@ -2739,7 +2617,7 @@ skip_probe:
 			}
 
 			// Record all data linked to IV to detect WEP Cloaking
-			if (G.f_ivs == NULL && G.detect_anomaly)
+			if (opt.f_ivs == NULL && lopt.detect_anomaly)
 			{
 				// Only allocate this when seeing WEP AP
 				if (ap_cur->data_root == NULL) ap_cur->data_root = data_init();
@@ -2751,9 +2629,9 @@ skip_probe:
 				{
 
 					// If no EAP/EAP was detected, indicate WEP cloaking
-					memset(G.message, '\x00', sizeof(G.message));
-					snprintf(G.message,
-							 sizeof(G.message) - 1,
+					memset(lopt.message, '\x00', sizeof(lopt.message));
+					snprintf(lopt.message,
+							 sizeof(lopt.message) - 1,
 							 "][ WEP Cloaking: %02X:%02X:%02X:%02X:%02X:%02X ",
 							 ap_cur->bssid[0],
 							 ap_cur->bssid[1],
@@ -2769,7 +2647,9 @@ skip_probe:
 			ap_cur->nb_data++;
 		}
 
-		z = ((h80211[1] & 3) != 3) ? 24 : 30;
+		z = ((h80211[1] & IEEE80211_FC1_DIR_MASK) != IEEE80211_FC1_DIR_DSTODS)
+				? 24
+				: 30;
 
 		/* Check if 802.11e (QoS) */
 		if ((h80211[0] & 0x80) == 0x80) z += 2;
@@ -2795,7 +2675,40 @@ skip_probe:
 				&& (h80211[z + 5] & 0x01) == 0)
 			{
 				memcpy(st_cur->wpa.anonce, &h80211[z + 17], 32);
+
 				st_cur->wpa.state = 1;
+
+				if (h80211[z + 99] == 0xdd) // RSN
+				{
+					if (h80211[z + 101] == 0x00 && h80211[z + 102] == 0x0f
+						&& h80211[z + 103] == 0xac) // OUI: IEEE8021
+					{
+						if (h80211[z + 104] == 0x04) // OUI SUBTYPE
+						{
+							// Got a PMKID value?!
+							memcpy(st_cur->wpa.pmkid, &h80211[z + 105], 16);
+
+							/* copy the key descriptor version */
+							st_cur->wpa.keyver = (uint8_t)(h80211[z + 6] & 7);
+
+							memcpy(st_cur->wpa.stmac, st_cur->stmac, 6);
+							memcpy(lopt.wpa_bssid, ap_cur->bssid, 6);
+							memset(lopt.message, '\x00', sizeof(lopt.message));
+							snprintf(lopt.message,
+									 sizeof(lopt.message) - 1,
+									 "][ PMKID found: "
+									 "%02X:%02X:%02X:%02X:%02X:%02X ",
+									 lopt.wpa_bssid[0],
+									 lopt.wpa_bssid[1],
+									 lopt.wpa_bssid[2],
+									 lopt.wpa_bssid[3],
+									 lopt.wpa_bssid[4],
+									 lopt.wpa_bssid[5]);
+
+							goto write_packet;
+						}
+					}
+				}
 			}
 
 			/* frame 2 or 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1 */
@@ -2815,10 +2728,10 @@ skip_probe:
 				if ((st_cur->wpa.state & 4) != 4)
 				{
 					st_cur->wpa.eapol_size
-						= (h80211[z + 2] << 8) + h80211[z + 3] + 4;
+						= (uint32_t)((h80211[z + 2] << 8) + h80211[z + 3] + 4);
 
 					if (caplen - z < st_cur->wpa.eapol_size
-						|| st_cur->wpa.eapol_size == 0
+						|| st_cur->wpa.eapol_size == 0 //-V560
 						|| caplen - z < 81 + 16
 						|| st_cur->wpa.eapol_size > sizeof(st_cur->wpa.eapol))
 					{
@@ -2832,7 +2745,7 @@ skip_probe:
 						st_cur->wpa.eapol, &h80211[z], st_cur->wpa.eapol_size);
 					memset(st_cur->wpa.eapol + 81, 0, 16);
 					st_cur->wpa.state |= 4;
-					st_cur->wpa.keyver = h80211[z + 6] & 7;
+					st_cur->wpa.keyver = (uint8_t)(h80211[z + 6] & 7);
 				}
 			}
 
@@ -2851,12 +2764,11 @@ skip_probe:
 				if ((st_cur->wpa.state & 4) != 4)
 				{
 					st_cur->wpa.eapol_size
-						= (h80211[z + 2] << 8) + h80211[z + 3] + 4;
+						= (h80211[z + 2] << 8) + h80211[z + 3] + 4u;
 
-					if (caplen - (unsigned) z < st_cur->wpa.eapol_size
-						|| st_cur->wpa.eapol_size == 0
-						|| caplen - (unsigned) z < 81 + 16
-						|| st_cur->wpa.eapol_size > sizeof(st_cur->wpa.eapol))
+					if (st_cur->wpa.eapol_size == 0 //-V560
+						|| st_cur->wpa.eapol_size
+							   >= sizeof(st_cur->wpa.eapol) - 16)
 					{
 						// Ignore the packet trying to crash us.
 						st_cur->wpa.eapol_size = 0;
@@ -2868,64 +2780,66 @@ skip_probe:
 						st_cur->wpa.eapol, &h80211[z], st_cur->wpa.eapol_size);
 					memset(st_cur->wpa.eapol + 81, 0, 16);
 					st_cur->wpa.state |= 4;
-					st_cur->wpa.keyver = h80211[z + 6] & 7;
+					st_cur->wpa.keyver = (uint8_t)(h80211[z + 6] & 7);
 				}
 			}
 
 			if (st_cur->wpa.state == 7 && !is_filtered_essid(ap_cur->essid))
 			{
 				memcpy(st_cur->wpa.stmac, st_cur->stmac, 6);
-				memcpy(G.wpa_bssid, ap_cur->bssid, 6);
-				memset(G.message, '\x00', sizeof(G.message));
-				snprintf(G.message,
-						 sizeof(G.message) - 1,
+				memcpy(lopt.wpa_bssid, ap_cur->bssid, 6);
+				memset(lopt.message, '\x00', sizeof(lopt.message));
+				snprintf(lopt.message,
+						 sizeof(lopt.message) - 1,
 						 "][ WPA handshake: %02X:%02X:%02X:%02X:%02X:%02X ",
-						 G.wpa_bssid[0],
-						 G.wpa_bssid[1],
-						 G.wpa_bssid[2],
-						 G.wpa_bssid[3],
-						 G.wpa_bssid[4],
-						 G.wpa_bssid[5]);
+						 lopt.wpa_bssid[0],
+						 lopt.wpa_bssid[1],
+						 lopt.wpa_bssid[2],
+						 lopt.wpa_bssid[3],
+						 lopt.wpa_bssid[4],
+						 lopt.wpa_bssid[5]);
 
-				if (G.f_ivs != NULL)
+				if (opt.f_ivs != NULL)
 				{
 					memset(&ivs2, '\x00', sizeof(struct ivs2_pkthdr));
 					ivs2.flags = 0;
-					ivs2.len = 0;
 
 					ivs2.len = sizeof(struct WPA_hdsk);
 					ivs2.flags |= IVS2_WPA;
 
-					if (memcmp(G.prev_bssid, ap_cur->bssid, 6) != 0)
+					if (memcmp(lopt.prev_bssid, ap_cur->bssid, 6) != 0)
 					{
 						ivs2.flags |= IVS2_BSSID;
 						ivs2.len += 6;
-						memcpy(G.prev_bssid, ap_cur->bssid, 6);
+						memcpy(lopt.prev_bssid, ap_cur->bssid, 6);
 					}
 
-					if (fwrite(&ivs2, 1, sizeof(struct ivs2_pkthdr), G.f_ivs)
+					if (fwrite(&ivs2, 1, sizeof(struct ivs2_pkthdr), opt.f_ivs)
 						!= (size_t) sizeof(struct ivs2_pkthdr))
 					{
 						perror("fwrite(IV header) failed");
-						return (1);
+						return (EXIT_FAILURE);
 					}
 
 					if (ivs2.flags & IVS2_BSSID)
 					{
-						if (fwrite(ap_cur->bssid, 1, 6, G.f_ivs) != (size_t) 6)
+						if (fwrite(ap_cur->bssid, 1, 6, opt.f_ivs)
+							!= (size_t) 6)
 						{
 							perror("fwrite(IV bssid) failed");
-							return (1);
+							return (EXIT_FAILURE);
 						}
 						ivs2.len -= 6;
 					}
 
-					if (fwrite(
-							&(st_cur->wpa), 1, sizeof(struct WPA_hdsk), G.f_ivs)
+					if (fwrite(&(st_cur->wpa),
+							   1,
+							   sizeof(struct WPA_hdsk),
+							   opt.f_ivs)
 						!= (size_t) sizeof(struct WPA_hdsk))
 					{
 						perror("fwrite(IV wpa_hdsk) failed");
-						return (1);
+						return (EXIT_FAILURE);
 					}
 				}
 			}
@@ -2936,7 +2850,7 @@ write_packet:
 
 	if (ap_cur != NULL)
 	{
-		if (h80211[0] == 0x80 && G.one_beacon)
+		if (h80211[0] == 0x80 && lopt.one_beacon)
 		{
 			if (!ap_cur->beacon_logged)
 				ap_cur->beacon_logged = 1;
@@ -2945,19 +2859,19 @@ write_packet:
 		}
 	}
 
-	if (G.record_data)
+	if (opt.record_data)
 	{
 		if (((h80211[0] & 0x0C) == 0x00) && ((h80211[0] & 0xF0) == 0xB0))
 		{
 			/* authentication packet */
-			check_shared_key(h80211, caplen);
+			check_shared_key(h80211, (size_t) caplen);
 		}
 	}
 
 	if (ap_cur != NULL)
 	{
-		if (ap_cur->security != 0 && G.f_encrypt != 0
-			&& ((ap_cur->security & G.f_encrypt) == 0))
+		if (ap_cur->security != 0 && lopt.f_encrypt != 0
+			&& ((ap_cur->security & lopt.f_encrypt) == 0))
 		{
 			return (1);
 		}
@@ -2997,17 +2911,15 @@ write_packet:
 					continue;
 				}
 
-				if (G.hide_known)
+				if (lopt.hide_known)
 				{
 					/* check AP list */
-					ap_cur = G.ap_1st;
-					ap_prv = NULL;
+					ap_cur = lopt.ap_1st;
 
 					while (ap_cur != NULL)
 					{
 						if (!memcmp(ap_cur->bssid, namac, 6)) break;
 
-						ap_prv = ap_cur;
 						ap_cur = ap_cur->next;
 					}
 
@@ -3020,14 +2932,12 @@ write_packet:
 					}
 
 					/* check ST list */
-					st_cur = G.st_1st;
-					st_prv = NULL;
+					st_cur = lopt.st_1st;
 
 					while (st_cur != NULL)
 					{
 						if (!memcmp(st_cur->stmac, namac, 6)) break;
 
-						st_prv = st_cur;
 						st_cur = st_cur->next;
 					}
 
@@ -3042,7 +2952,7 @@ write_packet:
 
 				/* not found in either AP list or ST list, look through NA list
 				 */
-				na_cur = G.na_1st;
+				na_cur = lopt.na_1st;
 				na_prv = NULL;
 
 				while (na_cur != NULL)
@@ -3067,8 +2977,8 @@ write_packet:
 
 					memset(na_cur, 0, sizeof(struct NA_info));
 
-					if (G.na_1st == NULL)
-						G.na_1st = na_cur;
+					if (lopt.na_1st == NULL)
+						lopt.na_1st = na_cur;
 					else
 						na_prv->next = na_cur;
 
@@ -3122,18 +3032,18 @@ write_packet:
 		}
 	}
 
-	if (G.f_cap != NULL && caplen >= 10)
+	if (opt.f_cap != NULL && caplen >= 10)
 	{
-		pkh.caplen = pkh.len = caplen;
+		pkh.len = pkh.caplen = (uint32_t) caplen;
 
 		gettimeofday(&tv, NULL);
 
-		pkh.tv_sec = tv.tv_sec;
-		pkh.tv_usec = (tv.tv_usec & ~0x1ff) + ri->ri_power + 64;
+		pkh.tv_sec = (int32_t) tv.tv_sec;
+		pkh.tv_usec = (int32_t)((tv.tv_usec & ~0x1ff) + ri->ri_power + 64);
 
 		n = sizeof(pkh);
 
-		if (fwrite(&pkh, 1, n, G.f_cap) != (size_t) n)
+		if (fwrite(&pkh, 1, n, opt.f_cap) != (size_t) n)
 		{
 			perror("fwrite(packet header) failed");
 			return (1);
@@ -3143,7 +3053,7 @@ write_packet:
 
 		n = pkh.caplen;
 
-		if (fwrite(h80211, 1, n, G.f_cap) != (size_t) n)
+		if (fwrite(h80211, 1, n, opt.f_cap) != (size_t) n)
 		{
 			perror("fwrite(packet data) failed");
 			return (1);
@@ -3172,10 +3082,10 @@ static void dump_sort(void)
 
 	/* sort the aps by WHATEVER first */
 
-	while (G.ap_1st)
+	while (lopt.ap_1st)
 	{
 		ap_min = NULL;
-		ap_cur = G.ap_1st;
+		ap_cur = lopt.ap_1st;
 
 		while (ap_cur != NULL)
 		{
@@ -3186,7 +3096,7 @@ static void dump_sort(void)
 
 		if (ap_min == NULL)
 		{
-			ap_min = ap_cur = G.ap_1st;
+			ap_min = ap_cur = lopt.ap_1st;
 
 			/*#define SORT_BY_BSSID	1
 #define SORT_BY_POWER	2
@@ -3202,67 +3112,72 @@ static void dump_sort(void)
 
 			while (ap_cur != NULL)
 			{
-				switch (G.sort_by)
+				switch (lopt.sort_by)
 				{
 					case SORT_BY_BSSID:
-						if (memcmp(ap_cur->bssid, ap_min->bssid, 6) * G.sort_inv
+						if (memcmp(ap_cur->bssid, ap_min->bssid, 6)
+								* lopt.sort_inv
 							< 0)
 							ap_min = ap_cur;
 						break;
 					case SORT_BY_POWER:
-						if ((ap_cur->avg_power - ap_min->avg_power) * G.sort_inv
+						if ((ap_cur->avg_power - ap_min->avg_power)
+								* lopt.sort_inv
 							< 0)
 							ap_min = ap_cur;
 						break;
 					case SORT_BY_BEACON:
-						if ((ap_cur->nb_bcn < ap_min->nb_bcn) && G.sort_inv)
+						if ((ap_cur->nb_bcn < ap_min->nb_bcn) && lopt.sort_inv)
 							ap_min = ap_cur;
 						break;
 					case SORT_BY_DATA:
-						if ((ap_cur->nb_data < ap_min->nb_data) && G.sort_inv)
+						if ((ap_cur->nb_data < ap_min->nb_data)
+							&& lopt.sort_inv)
 							ap_min = ap_cur;
 						break;
 					case SORT_BY_PRATE:
-						if ((ap_cur->nb_dataps - ap_min->nb_dataps) * G.sort_inv
+						if ((ap_cur->nb_dataps - ap_min->nb_dataps)
+								* lopt.sort_inv
 							< 0)
 							ap_min = ap_cur;
 						break;
 					case SORT_BY_CHAN:
-						if ((ap_cur->channel - ap_min->channel) * G.sort_inv
+						if ((ap_cur->channel - ap_min->channel) * lopt.sort_inv
 							< 0)
 							ap_min = ap_cur;
 						break;
 					case SORT_BY_MBIT:
-						if ((ap_cur->max_speed - ap_min->max_speed) * G.sort_inv
+						if ((ap_cur->max_speed - ap_min->max_speed)
+								* lopt.sort_inv
 							< 0)
 							ap_min = ap_cur;
 						break;
 					case SORT_BY_ENC:
-						if (((ap_cur->security & STD_FIELD)
-							 - (ap_min->security & STD_FIELD))
-								* G.sort_inv
+						if (((int) (ap_cur->security & STD_FIELD)
+							 - (int) (ap_min->security & STD_FIELD))
+								* lopt.sort_inv
 							< 0)
 							ap_min = ap_cur;
 						break;
 					case SORT_BY_CIPHER:
-						if (((ap_cur->security & ENC_FIELD)
-							 - (ap_min->security & ENC_FIELD))
-								* G.sort_inv
+						if (((int) (ap_cur->security & ENC_FIELD)
+							 - (int) (ap_min->security & ENC_FIELD))
+								* lopt.sort_inv
 							< 0)
 							ap_min = ap_cur;
 						break;
 					case SORT_BY_AUTH:
-						if (((ap_cur->security & AUTH_FIELD)
-							 - (ap_min->security & AUTH_FIELD))
-								* G.sort_inv
+						if (((int) (ap_cur->security & AUTH_FIELD)
+							 - (int) (ap_min->security & AUTH_FIELD))
+								* lopt.sort_inv
 							< 0)
 							ap_min = ap_cur;
 						break;
 					case SORT_BY_ESSID:
 						if ((strncasecmp((char *) ap_cur->essid,
 										 (char *) ap_min->essid,
-										 MAX_IE_ELEMENT_SIZE))
-								* G.sort_inv
+										 ESSID_LENGTH))
+								* lopt.sort_inv
 							< 0)
 							ap_min = ap_cur;
 						break;
@@ -3275,9 +3190,9 @@ static void dump_sort(void)
 			}
 		}
 
-		if (ap_min == G.ap_1st) G.ap_1st = ap_min->next;
+		if (ap_min == lopt.ap_1st) lopt.ap_1st = ap_min->next;
 
-		if (ap_min == G.ap_end) G.ap_end = ap_min->prev;
+		if (ap_min == lopt.ap_end) lopt.ap_end = ap_min->prev;
 
 		if (ap_min->next) ap_min->next->prev = ap_min->prev;
 
@@ -3297,15 +3212,15 @@ static void dump_sort(void)
 		}
 	}
 
-	G.ap_1st = new_ap_1st;
-	G.ap_end = new_ap_end;
+	lopt.ap_1st = new_ap_1st;
+	lopt.ap_end = new_ap_end;
 
 	/* now sort the stations */
 
-	while (G.st_1st)
+	while (lopt.st_1st)
 	{
 		st_min = NULL;
-		st_cur = G.st_1st;
+		st_cur = lopt.st_1st;
 
 		while (st_cur != NULL)
 		{
@@ -3316,7 +3231,7 @@ static void dump_sort(void)
 
 		if (st_min == NULL)
 		{
-			st_min = st_cur = G.st_1st;
+			st_min = st_cur = lopt.st_1st;
 
 			while (st_cur != NULL)
 			{
@@ -3326,9 +3241,9 @@ static void dump_sort(void)
 			}
 		}
 
-		if (st_min == G.st_1st) G.st_1st = st_min->next;
+		if (st_min == lopt.st_1st) lopt.st_1st = st_min->next;
 
-		if (st_min == G.st_end) G.st_end = st_min->prev;
+		if (st_min == lopt.st_end) lopt.st_end = st_min->prev;
 
 		if (st_min->next) st_min->next->prev = st_min->prev;
 
@@ -3348,8 +3263,8 @@ static void dump_sort(void)
 		}
 	}
 
-	G.st_1st = new_st_1st;
-	G.st_end = new_st_end;
+	lopt.st_1st = new_st_1st;
+	lopt.st_end = new_st_end;
 }
 
 static int getBatteryState(void) { return get_battery_state(); }
@@ -3417,6 +3332,7 @@ static char * getBatteryString(void)
 	}
 
 	batt_string = getStringTimeFromSec((double) batt_time);
+	ALLEGE(batt_string != NULL);
 
 	ret = (char *) calloc(1, 256);
 	ALLEGE(ret != NULL);
@@ -3445,7 +3361,7 @@ static char * parse_timestamp(unsigned long long timestamp)
 	memset(s, 0, TSTP_LEN);
 
 	// Calculate days, hours, mins and secs
-	days = timestamp / TSTP_DAY;
+	days = (uint8_t)(timestamp / TSTP_DAY);
 	rem = timestamp % TSTP_DAY;
 	hours = (unsigned char) (rem / TSTP_HOUR);
 	rem %= TSTP_HOUR;
@@ -3463,14 +3379,15 @@ static int IsAp2BeSkipped(struct AP_info * ap_cur)
 {
 	REQUIRE(ap_cur != NULL);
 
-	if (ap_cur->nb_pkt < 2 || time(NULL) - ap_cur->tlast > G.berlin
+	if (ap_cur->nb_pkt < lopt.min_pkts
+		|| time(NULL) - ap_cur->tlast > lopt.berlin
 		|| memcmp(ap_cur->bssid, BROADCAST, 6) == 0)
 	{
 		return (1);
 	}
 
-	if (ap_cur->security != 0 && G.f_encrypt != 0
-		&& ((ap_cur->security & G.f_encrypt) == 0))
+	if (ap_cur->security != 0 && lopt.f_encrypt != 0
+		&& ((ap_cur->security & lopt.f_encrypt) == 0))
 	{
 		return (1);
 	}
@@ -3482,6 +3399,17 @@ static int IsAp2BeSkipped(struct AP_info * ap_cur)
 
 	return (0);
 }
+
+#define CHECK_END_OF_SCREEN()                                                  \
+	do                                                                         \
+	{                                                                          \
+		++nlines;                                                              \
+		if (nlines >= (ws_row - 1))                                            \
+		{                                                                      \
+			erase_display(0);                                                  \
+			return;                                                            \
+		};                                                                     \
+	} while (0)
 
 static void dump_print(int ws_row, int ws_col, int if_num)
 {
@@ -3502,43 +3430,43 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	int num_ap;
 	int num_sta;
 
-	if (!G.singlechan) columns_ap -= 4; // no RXQ in scan mode
-	if (G.show_uptime) columns_ap += 15; // show uptime needs more space
+	if (!lopt.singlechan) columns_ap -= 4; // no RXQ in scan mode
+	if (lopt.show_uptime) columns_ap += 15; // show uptime needs more space
 
 	nlines = 2;
 
 	if (nlines >= ws_row) return;
 
-	if (G.do_sort_always)
+	if (lopt.do_sort_always)
 	{
-		ALLEGE(pthread_mutex_lock(&(G.mx_sort)) == 0);
+		ALLEGE(pthread_mutex_lock(&(lopt.mx_sort)) == 0);
 		dump_sort();
-		ALLEGE(pthread_mutex_unlock(&(G.mx_sort)) == 0);
+		ALLEGE(pthread_mutex_unlock(&(lopt.mx_sort)) == 0);
 	}
 
 	tt = time(NULL);
 	lt = localtime(&tt);
 
-	if (G.is_berlin)
+	if (lopt.is_berlin)
 	{
-		G.maxaps = 0;
-		G.numaps = 0;
-		ap_cur = G.ap_end;
+		lopt.maxaps = 0;
+		lopt.numaps = 0;
+		ap_cur = lopt.ap_end;
 
 		while (ap_cur != NULL)
 		{
-			G.maxaps++;
-			if (ap_cur->nb_pkt < 2 || time(NULL) - ap_cur->tlast > G.berlin
+			lopt.maxaps++;
+			if (ap_cur->nb_pkt < 2 || time(NULL) - ap_cur->tlast > lopt.berlin
 				|| memcmp(ap_cur->bssid, BROADCAST, 6) == 0)
 			{
 				ap_cur = ap_cur->prev;
 				continue;
 			}
-			G.numaps++;
+			lopt.numaps++;
 			ap_cur = ap_cur->prev;
 		}
 
-		if (G.numaps > G.maxnumaps) G.maxnumaps = G.numaps;
+		if (lopt.numaps > lopt.maxnumaps) lopt.maxnumaps = lopt.numaps;
 	}
 
 	/*
@@ -3547,48 +3475,50 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	 */
 
 	memset(strbuf, '\0', sizeof(strbuf));
-	strbuf[ws_col - 1] = '\0';
-	fprintf(stderr, "%s\n", strbuf);
 
-	if (G.freqoption)
+	moveto(1, 2);
+	textcolor_normal();
+	textcolor_fg(TEXT_WHITE);
+
+	if (lopt.freqoption)
 	{
-		snprintf(strbuf, sizeof(strbuf) - 1, " Freq %4d", G.frequency[0]);
+		snprintf(strbuf, sizeof(strbuf) - 1, " Freq %4d", lopt.frequency[0]);
 		for (i = 1; i < if_num; i++)
 		{
 			memset(buffer, '\0', sizeof(buffer));
-			snprintf(buffer, sizeof(buffer), ",%4d", G.frequency[i]);
+			snprintf(buffer, sizeof(buffer), ",%4d", lopt.frequency[i]);
 			strncat(strbuf, buffer, sizeof(strbuf) - strlen(strbuf) - 1);
 		}
 	}
 	else
 	{
-		snprintf(strbuf, sizeof(strbuf) - 1, " CH %2d", G.channel[0]);
+		snprintf(strbuf, sizeof(strbuf) - 1, " CH %2d", lopt.channel[0]);
 		for (i = 1; i < if_num; i++)
 		{
 			memset(buffer, '\0', sizeof(buffer));
-			snprintf(buffer, sizeof(buffer), ",%2d", G.channel[i]);
+			snprintf(buffer, sizeof(buffer), ",%2d", lopt.channel[i]);
 			strncat(strbuf, buffer, sizeof(strbuf) - strlen(strbuf) - 1);
 		}
 	}
 	memset(buffer, '\0', sizeof(buffer));
 
-	if (G.gps_loc[0] || (G.usegpsd))
+	if (lopt.gps_loc[0] || (opt.usegpsd))
 	{
 		// If using GPS then check if we have a valid fix or not and report accordingly
-		if (G.gps_loc[0] != 0)
+		if (lopt.gps_loc[0] != 0) //-V550
 		{
-			struct tm * gtime = &G.gps_time;
+			struct tm * gtime = &lopt.gps_time;
 			snprintf(buffer,
 					 sizeof(buffer) - 1,
 					 " %s[ GPS %3.6f,%3.6f %02d:%02d:%02d ][ Elapsed: %s ][ "
 					 "%04d-%02d-%02d %02d:%02d ",
-					 G.batt,
-					 G.gps_loc[0],
-					 G.gps_loc[1],
+					 lopt.batt,
+					 lopt.gps_loc[0],
+					 lopt.gps_loc[1],
 					 gtime->tm_hour,
 					 gtime->tm_min,
 					 gtime->tm_sec,
-					 G.elapsed_time,
+					 lopt.elapsed_time,
 					 1900 + lt->tm_year,
 					 1 + lt->tm_mon,
 					 lt->tm_mday,
@@ -3601,9 +3531,9 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				buffer,
 				sizeof(buffer) - 1,
 				" %s[ GPS %-29s ][ Elapsed: %s ][ %04d-%02d-%02d %02d:%02d ",
-				G.batt,
+				lopt.batt,
 				" *** No Fix! ***",
-				G.elapsed_time,
+				lopt.elapsed_time,
 				1900 + lt->tm_year,
 				1 + lt->tm_mon,
 				lt->tm_mday,
@@ -3616,8 +3546,8 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 		snprintf(buffer,
 				 sizeof(buffer) - 1,
 				 " %s[ Elapsed: %s ][ %04d-%02d-%02d %02d:%02d ",
-				 G.batt,
-				 G.elapsed_time,
+				 lopt.batt,
+				 lopt.elapsed_time,
 				 1900 + lt->tm_year,
 				 1 + lt->tm_mon,
 				 lt->tm_mday,
@@ -3625,76 +3555,74 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				 lt->tm_min);
 	}
 
-	strncat(strbuf, buffer, (512 - strlen(strbuf)));
+	strncat(strbuf, buffer, (512 - strlen(strbuf) - 1));
 	memset(buffer, '\0', 512);
 
-	if (G.is_berlin)
+	if (lopt.is_berlin)
 	{
 		snprintf(buffer,
 				 sizeof(buffer) - 1,
 				 " ][%3d/%3d/%4d ",
-				 G.numaps,
-				 G.maxnumaps,
-				 G.maxaps);
+				 lopt.numaps,
+				 lopt.maxnumaps,
+				 lopt.maxaps);
 	}
 
-	strncat(strbuf, buffer, (512 - strlen(strbuf)));
+	strncat(strbuf, buffer, (512 - strlen(strbuf) - 1));
 	memset(buffer, '\0', 512);
 
-	if (strlen(G.message) > 0)
+	if (strlen(lopt.message) > 0)
 	{
-		strncat(strbuf, G.message, (512 - strlen(strbuf)));
+		strncat(strbuf, lopt.message, (512 - strlen(strbuf) - 1));
 	}
 
-	// add traling spaces to overwrite previous messages
-	strncat(strbuf,
-			"                                        ",
-			(512 - strlen(strbuf)));
-
 	strbuf[ws_col - 1] = '\0';
-	fprintf(stderr, "%s\n", strbuf);
+
+	ALLEGE(strchr(strbuf, '\n') == NULL);
+	console_puts(strbuf);
+	CHECK_END_OF_SCREEN();
 
 	/* print some information about each detected AP */
 
-	nlines += 3;
+	erase_line(0);
+	move(CURSOR_DOWN, 1);
+	CHECK_END_OF_SCREEN();
 
-	if (nlines >= ws_row) return;
-
-	memset(strbuf, ' ', ws_col - 1);
-	strbuf[ws_col - 1] = '\0';
-	fprintf(stderr, "%s\n", strbuf);
-
-	if (G.show_ap)
+	if (lopt.show_ap)
 	{
-
 		strbuf[0] = 0;
 		strcat(strbuf, " BSSID              PWR ");
 
-		if (G.singlechan) strcat(strbuf, "RXQ ");
+		if (lopt.singlechan) strcat(strbuf, "RXQ ");
 
-		strcat(strbuf, " Beacons    #Data, #/s  CH  MB   ENC  CIPHER AUTH ");
+		strcat(strbuf, " Beacons    #Data, #/s  CH   MB   ENC CIPHER  AUTH ");
 
-		if (G.show_uptime) strcat(strbuf, "       UPTIME  ");
+		if (lopt.show_uptime) strcat(strbuf, "        UPTIME ");
 
-		if (G.show_wps)
+		if (lopt.show_wps)
 		{
 			strcat(strbuf, "WPS   ");
 			if (ws_col > (columns_ap - 4))
 			{
-				memset(strbuf + columns_ap, 32, G.maxsize_wps_seen - 6);
-				snprintf(strbuf + columns_ap + G.maxsize_wps_seen - 6,
-						 9,
+				memset(strbuf + strlen(strbuf),
+					   32,
+					   sizeof(strbuf) - strlen(strbuf) - 1);
+				snprintf(strbuf + columns_ap + lopt.maxsize_wps_seen - 5,
+						 8,
 						 "%s",
-						 "   ESSID");
-				if (G.show_manufacturer)
+						 "  ESSID");
+				if (lopt.show_manufacturer)
 				{
-					memset(strbuf + columns_ap + G.maxsize_wps_seen + 2,
+					memset(strbuf + columns_ap + lopt.maxsize_wps_seen + 1,
 						   32,
-						   G.maxsize_essid_seen - 5);
-					snprintf(strbuf + columns_ap + G.maxsize_essid_seen - 5,
+						   sizeof(strbuf) - columns_ap - lopt.maxsize_wps_seen
+							   - 1);
+					snprintf(strbuf + columns_ap + lopt.maxsize_wps_seen
+								 + lopt.maxsize_essid_seen
+								 - 4,
 							 15,
 							 "%s",
-							 "  MANUFACTURER");
+							 "MANUFACTURER");
 				}
 			}
 		}
@@ -3702,26 +3630,25 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 		{
 			strcat(strbuf, "ESSID");
 
-			if (G.show_manufacturer && (ws_col > (columns_ap - 4)))
+			if (lopt.show_manufacturer && (ws_col > (columns_ap - 4)))
 			{
 				// write spaces (32).
-				memset(strbuf + columns_ap,
-					   32,
-					   G.maxsize_essid_seen - 5); // 5 is the len of "ESSID"
-				snprintf(strbuf + columns_ap + G.maxsize_essid_seen - 5,
+				memset(strbuf + columns_ap, 32, lopt.maxsize_essid_seen - 5);
+				snprintf(strbuf + columns_ap + lopt.maxsize_essid_seen - 7,
 						 15,
 						 "%s",
 						 "  MANUFACTURER");
 			}
 		}
 		strbuf[ws_col - 1] = '\0';
-		fprintf(stderr, "%s\n", strbuf);
+		console_puts(strbuf);
+		CHECK_END_OF_SCREEN();
 
-		memset(strbuf, ' ', ws_col - 1);
-		strbuf[ws_col - 1] = '\0';
-		fprintf(stderr, "%s\n", strbuf);
+		erase_line(0);
+		move(CURSOR_DOWN, 1);
+		CHECK_END_OF_SCREEN();
 
-		ap_cur = G.ap_end;
+		ap_cur = lopt.ap_end;
 
 		num_ap = 0;
 
@@ -3731,16 +3658,16 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 		* always skip if bssid == broadcast */
 			if (IsAp2BeSkipped(ap_cur))
 			{
-				if (G.p_selected_ap == ap_cur)
+				if (lopt.p_selected_ap == ap_cur)
 				{ //the selected AP is skipped (will not be printed), we have to go to the next printable AP
 					struct AP_info * ap_tmp;
 					if (selection_direction_up
-						== G.en_selection_direction) //UP arrow was last pressed
+						== lopt.en_selection_direction) //UP arrow was last pressed
 					{
 						ap_tmp = ap_cur->next;
 						if (ap_tmp)
 						{
-							while ((0 != (G.p_selected_ap = ap_tmp))
+							while ((0 != (lopt.p_selected_ap = ap_tmp))
 								   && IsAp2BeSkipped(ap_tmp))
 								ap_tmp = ap_tmp->next;
 						}
@@ -3749,7 +3676,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 							ap_tmp = ap_cur->prev;
 							if (ap_tmp)
 							{
-								while ((0 != (G.p_selected_ap = ap_tmp))
+								while ((0 != (lopt.p_selected_ap = ap_tmp))
 									   && IsAp2BeSkipped(ap_tmp))
 									ap_tmp = ap_tmp->prev;
 							}
@@ -3757,12 +3684,12 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 					}
 					else if (
 						selection_direction_down
-						== G.en_selection_direction) //DOWN arrow was last pressed
+						== lopt.en_selection_direction) //DOWN arrow was last pressed
 					{
 						ap_tmp = ap_cur->prev;
 						if (ap_tmp)
 						{
-							while ((0 != (G.p_selected_ap = ap_tmp))
+							while ((0 != (lopt.p_selected_ap = ap_tmp))
 								   && IsAp2BeSkipped(ap_tmp))
 								ap_tmp = ap_tmp->prev;
 						}
@@ -3771,7 +3698,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 							ap_tmp = ap_cur->next;
 							if (ap_tmp)
 							{
-								while ((0 != (G.p_selected_ap = ap_tmp))
+								while ((0 != (lopt.p_selected_ap = ap_tmp))
 									   && IsAp2BeSkipped(ap_tmp))
 									ap_tmp = ap_tmp->next;
 							}
@@ -3784,7 +3711,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 			num_ap++;
 
-			if (num_ap < G.start_print_ap)
+			if (num_ap < lopt.start_print_ap)
 			{
 				ap_cur = ap_cur->prev;
 				continue;
@@ -3808,7 +3735,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 			len = strlen(strbuf);
 
-			if (G.singlechan)
+			if (lopt.singlechan)
 			{
 				snprintf(strbuf + len,
 						 sizeof(strbuf) - len,
@@ -3838,7 +3765,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				// Short or long preamble is not that useful anymore.
 				snprintf(strbuf + len,
 						 sizeof(strbuf) - len,
-						 " %3d %4d  ",
+						 " %3d %4d   ",
 						 ap_cur->channel,
 						 ap_cur->max_speed);
 			}
@@ -3846,7 +3773,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			{
 				snprintf(strbuf + len,
 						 sizeof(strbuf) - len,
-						 " %3d %3d%c%c ",
+						 " %3d %4d%c%c ",
 						 ap_cur->channel,
 						 ap_cur->max_speed,
 						 (ap_cur->security & STD_QOS) ? 'e' : ' ',
@@ -3855,60 +3782,66 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 			len = strlen(strbuf);
 
-			if ((ap_cur->security & (STD_OPN | STD_WEP | STD_WPA | STD_WPA2))
-				== 0)
+			if ((ap_cur->security & STD_FIELD) == 0)
 				snprintf(strbuf + len, sizeof(strbuf) - len, "    ");
-			else if (ap_cur->security & STD_WPA2)
-				snprintf(strbuf + len, sizeof(strbuf) - len, "WPA2");
-			else if (ap_cur->security & STD_WPA)
-				snprintf(strbuf + len, sizeof(strbuf) - len, "WPA ");
-			else if (ap_cur->security & STD_WEP)
-				snprintf(strbuf + len, sizeof(strbuf) - len, "WEP ");
-			else if (ap_cur->security & STD_OPN)
-				snprintf(strbuf + len, sizeof(strbuf) - len, "OPN ");
+			else
+			{
+				if (ap_cur->security & STD_WPA2)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "WPA2");
+				else if (ap_cur->security & STD_WPA)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "WPA ");
+				else if (ap_cur->security & STD_WEP)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "WEP ");
+				else if (ap_cur->security & STD_OPN)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "OPN ");
+			}
 
 			strncat(strbuf, " ", sizeof(strbuf) - strlen(strbuf) - 1);
 
 			len = strlen(strbuf);
 
-			if ((ap_cur->security
-				 & (ENC_WEP | ENC_TKIP | ENC_WRAP | ENC_CCMP | ENC_WEP104
-					| ENC_WEP40
-					| ENC_GCMP))
-				== 0)
+			if ((ap_cur->security & ENC_FIELD) == 0)
 				snprintf(strbuf + len, sizeof(strbuf) - len, "       ");
-			else if (ap_cur->security & ENC_CCMP)
-				snprintf(strbuf + len, sizeof(strbuf) - len, "CCMP   ");
-			else if (ap_cur->security & ENC_WRAP)
-				snprintf(strbuf + len, sizeof(strbuf) - len, "WRAP   ");
-			else if (ap_cur->security & ENC_TKIP)
-				snprintf(strbuf + len, sizeof(strbuf) - len, "TKIP   ");
-			else if (ap_cur->security & ENC_WEP104)
-				snprintf(strbuf + len, sizeof(strbuf) - len, "WEP104 ");
-			else if (ap_cur->security & ENC_WEP40)
-				snprintf(strbuf + len, sizeof(strbuf) - len, "WEP40  ");
-			else if (ap_cur->security & ENC_WEP)
-				snprintf(strbuf + len, sizeof(strbuf) - len, "WEP    ");
-			else if (ap_cur->security & ENC_GCMP)
-				snprintf(strbuf + len, sizeof(strbuf) - len, "GCMP   ");
+			else
+			{
+				if (ap_cur->security & ENC_CCMP)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "CCMP   ");
+				else if (ap_cur->security & ENC_WRAP)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "WRAP   ");
+				else if (ap_cur->security & ENC_TKIP)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "TKIP   ");
+				else if (ap_cur->security & ENC_WEP104)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "WEP104 ");
+				else if (ap_cur->security & ENC_WEP40)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "WEP40  ");
+				else if (ap_cur->security & ENC_WEP)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "WEP    ");
+			}
 
 			len = strlen(strbuf);
 
-			if ((ap_cur->security & (AUTH_OPN | AUTH_PSK | AUTH_MGT)) == 0)
-				snprintf(strbuf + len, sizeof(strbuf) - len, "   ");
-			else if (ap_cur->security & AUTH_MGT)
-				snprintf(strbuf + len, sizeof(strbuf) - len, "MGT");
-			else if (ap_cur->security & AUTH_PSK)
+			if ((ap_cur->security & AUTH_FIELD) == 0)
+				snprintf(strbuf + len, sizeof(strbuf) - len, "    ");
+			else
 			{
-				if (ap_cur->security & STD_WEP)
-					snprintf(strbuf + len, sizeof(strbuf) - len, "SKA");
-				else
-					snprintf(strbuf + len, sizeof(strbuf) - len, "PSK");
+				if (ap_cur->security & AUTH_MGT)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "MGT ");
+				else if (ap_cur->security & AUTH_CMAC)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "CMAC");
+				else if (ap_cur->security & AUTH_PSK)
+				{
+					if (ap_cur->security & STD_WEP)
+						snprintf(strbuf + len, sizeof(strbuf) - len, "SKA ");
+					else
+						snprintf(strbuf + len, sizeof(strbuf) - len, "PSK ");
+				}
+				else if (ap_cur->security & AUTH_OPN)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "OPN ");
 			}
-			else if (ap_cur->security & AUTH_OPN)
-				snprintf(strbuf + len, sizeof(strbuf) - len, "OPN");
 
-			if (G.show_uptime)
+			len = strlen(strbuf);
+
+			if (lopt.show_uptime)
 			{
 				snprintf(strbuf + len,
 						 sizeof(strbuf) - len,
@@ -3916,16 +3849,10 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 						 parse_timestamp(ap_cur->timestamp));
 				len = strlen(strbuf);
 			}
-			else
-			{
-				len = strlen(strbuf);
-			}
 
-			strbuf[ws_col - 1] = '\0';
-
-			if (G.p_selected_ap && (G.p_selected_ap == ap_cur))
+			if (lopt.p_selected_ap && (lopt.p_selected_ap == ap_cur))
 			{
-				if (G.mark_cur_ap)
+				if (lopt.mark_cur_ap)
 				{
 					if (ap_cur->marked == 0)
 					{
@@ -3934,16 +3861,16 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 					else
 					{
 						ap_cur->marked_color++;
-						if (ap_cur->marked_color > (TEXT_MAX_COLOR - 1))
+						if (ap_cur->marked_color > TEXT_MAX_COLOR)
 						{
 							ap_cur->marked_color = 1;
 							ap_cur->marked = 0;
 						}
 					}
-					G.mark_cur_ap = 0;
+					lopt.mark_cur_ap = 0;
 				}
 				textstyle(TEXT_REVERSE);
-				memcpy(G.selected_bssid, ap_cur->bssid, 6);
+				memcpy(lopt.selected_bssid, ap_cur->bssid, 6);
 			}
 
 			if (ap_cur->marked)
@@ -3951,24 +3878,27 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				textcolor_fg(ap_cur->marked_color);
 			}
 
-			fprintf(stderr, "%s", strbuf);
+			memset(strbuf + len, 32, sizeof(strbuf) - len - 1);
 
 			if (ws_col > (columns_ap - 4))
 			{
-				memset(strbuf, 0, sizeof(strbuf));
-				if (G.show_wps)
+				if (lopt.show_wps)
 				{
+					ssize_t wps_len = len;
+
 					if (ap_cur->wps.state != 0xFF)
 					{
 						if (ap_cur->wps.ap_setup_locked) // AP setup locked
-							snprintf(strbuf, sizeof(strbuf) - 1, "Locked");
+							snprintf(
+								strbuf + len, sizeof(strbuf) - len, "Locked");
 						else
 						{
-							snprintf(strbuf,
-									 sizeof(strbuf) - 1,
-									 "%u.%d",
+							snprintf(strbuf + len,
+									 sizeof(strbuf) - len,
+									 " %u.%d",
 									 ap_cur->wps.version >> 4,
 									 ap_cur->wps.version & 0xF); // Version
+							len = strlen(strbuf);
 							if (ap_cur->wps.meth) // WPS Config Methods
 							{
 								char tbuf[64];
@@ -3977,24 +3907,24 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 #define T(bit, name)                                                           \
 	do                                                                         \
 	{                                                                          \
-		if (ap_cur->wps.meth & (1 << (bit)))                                   \
+		if (ap_cur->wps.meth & (1u << (bit)))                                  \
 		{                                                                      \
 			if (sep) strcat(tbuf, ",");                                        \
 			sep = 1;                                                           \
-			strncat(tbuf, (name), (64 - strlen(tbuf)));                        \
+			strncat(tbuf, (name), (64 - strlen(tbuf) - 1));                    \
 		}                                                                      \
 	} while (0)
-								T(0, "USB"); // USB method
-								T(1, "ETHER"); // Ethernet
-								T(2, "LAB"); // Label
-								T(3, "DISP"); // Display
-								T(4, "EXTNFC"); // Ext. NFC Token
-								T(5, "INTNFC"); // Int. NFC Token
-								T(6, "NFCINTF"); // NFC Interface
-								T(7, "PBC"); // Push Button
-								T(8, "KPAD"); // Keypad
-								snprintf(strbuf + strlen(strbuf),
-										 sizeof(strbuf) - strlen(strbuf),
+								T(0u, "USB"); // USB method
+								T(1u, "ETHER"); // Ethernet
+								T(2u, "LAB"); // Label
+								T(3u, "DISP"); // Display
+								T(4u, "EXTNFC"); // Ext. NFC Token
+								T(5u, "INTNFC"); // Int. NFC Token
+								T(6u, "NFCINTF"); // NFC Interface
+								T(7u, "PBC"); // Push Button
+								T(8u, "KPAD"); // Keypad
+								snprintf(strbuf + len,
+										 sizeof(strbuf) - len,
 										 " %s",
 										 tbuf);
 #undef T
@@ -4003,77 +3933,87 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 					}
 					else
 					{
-						snprintf(strbuf, sizeof(strbuf) - 1, " ");
+						snprintf(strbuf + len, sizeof(strbuf) - len, " ");
 					}
-					if (G.maxsize_wps_seen <= strlen(strbuf))
-						G.maxsize_wps_seen = (u_int) strlen(strbuf);
-					else // write spaces (32)
-						memset(strbuf + strlen(strbuf),
-							   32,
-							   (G.maxsize_wps_seen - strlen(strbuf)));
+					len = strlen(strbuf);
+
+					if ((ssize_t) lopt.maxsize_wps_seen <= len - wps_len)
+						lopt.maxsize_wps_seen = (u_int) MAX(len - wps_len, 6);
+					else
+					{
+						// pad output
+						memset(strbuf + len, 32, sizeof(strbuf) - len - 1);
+						len += lopt.maxsize_wps_seen - (len - wps_len);
+						strbuf[len] = '\0';
+					}
 				}
+
+				ssize_t essid_len = len;
+
 				if (ap_cur->essid[0] != 0x00)
 				{
-					if (G.show_wps)
-						snprintf(strbuf + G.maxsize_wps_seen,
-								 sizeof(strbuf) - G.maxsize_wps_seen,
+					if (lopt.show_wps)
+						snprintf(strbuf + len,
+								 sizeof(strbuf) - len - 1,
 								 "  %s",
 								 ap_cur->essid);
 					else
-						snprintf(
-							strbuf, sizeof(strbuf) - 1, "%s", ap_cur->essid);
+						snprintf(strbuf + len,
+								 sizeof(strbuf) - len,
+								 " %s",
+								 ap_cur->essid);
 				}
 				else
 				{
-					if (G.show_wps)
-						snprintf(strbuf + G.maxsize_wps_seen,
-								 sizeof(strbuf) - G.maxsize_wps_seen,
+					if (lopt.show_wps)
+						snprintf(strbuf + len,
+								 sizeof(strbuf) - len - 1,
 								 "  <length:%3d>%s",
 								 ap_cur->ssid_length,
 								 "\x00");
 					else
-						snprintf(strbuf,
-								 sizeof(strbuf) - 1,
-								 "<length:%3d>%s",
+						snprintf(strbuf + len,
+								 sizeof(strbuf) - len,
+								 " <length:%3d>%s",
 								 ap_cur->ssid_length,
 								 "\x00");
 				}
+				len = strlen(strbuf);
 
-				if (G.show_manufacturer)
+				if (lopt.show_manufacturer)
 				{
-
-					if (G.maxsize_essid_seen <= strlen(strbuf))
-						G.maxsize_essid_seen = (u_int) strlen(strbuf);
-					else // write spaces (32)
-						memset(strbuf + strlen(strbuf),
-							   32,
-							   (size_t)(G.maxsize_essid_seen - strlen(strbuf)));
+					if (lopt.maxsize_essid_seen <= len - essid_len)
+						lopt.maxsize_essid_seen
+							= (u_int) MAX(len - essid_len, 5);
+					else
+					{
+						// pad output
+						memset(strbuf + len, 32, sizeof(strbuf) - len - 1);
+						len += lopt.maxsize_essid_seen - (len - essid_len);
+						strbuf[len] = '\0';
+					}
 
 					if (ap_cur->manuf == NULL)
 						ap_cur->manuf = get_manufacturer(ap_cur->bssid[0],
 														 ap_cur->bssid[1],
 														 ap_cur->bssid[2]);
 
-					snprintf(strbuf + G.maxsize_essid_seen,
-							 sizeof(strbuf) - G.maxsize_essid_seen,
-							 "  %s",
+					snprintf(strbuf + len,
+							 sizeof(strbuf) - len - 1,
+							 " %s",
 							 ap_cur->manuf);
 				}
-
-				// write spaces (32) until the end of column
-				memset(strbuf + strlen(strbuf),
-					   32,
-					   (size_t) ws_col - (columns_ap - 4));
-
-				// end the string at the end of the column
-				strbuf[ws_col - (columns_ap - 4)] = '\0';
-
-				fprintf(stderr, "  %s", strbuf);
 			}
 
-			fprintf(stderr, "\n");
+			len = strlen(strbuf);
 
-			if ((G.p_selected_ap && (G.p_selected_ap == ap_cur))
+			// write spaces (32) until the end of column
+			memset(strbuf + len, 32, (size_t) ws_col - 1);
+
+			strbuf[ws_col - 1] = '\0';
+			console_puts(strbuf);
+
+			if ((lopt.p_selected_ap && (lopt.p_selected_ap == ap_cur))
 				|| (ap_cur->marked))
 			{
 				textstyle(TEXT_RESET);
@@ -4084,42 +4024,38 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 		/* print some information about each detected station */
 
-		nlines += 3;
-
-		if (nlines >= (ws_row - 1)) return;
-
-		memset(strbuf, ' ', (size_t) ws_col - 1);
-		strbuf[ws_col - 1] = '\0';
-		fprintf(stderr, "%s\n", strbuf);
+		erase_line(0);
+		move(CURSOR_DOWN, 1);
+		CHECK_END_OF_SCREEN();
 	}
 
-	if (G.show_sta)
+	if (lopt.show_sta)
 	{
-		memcpy(strbuf,
+		strcpy(strbuf,
 			   " BSSID              STATION "
-			   "           PWR   Rate    Lost    Frames  Probes",
-			   columns_sta);
+			   "           PWR   Rate    Lost    Frames  Notes  Probes");
 		strbuf[ws_col - 1] = '\0';
-		fprintf(stderr, "%s\n", strbuf);
+		console_puts(strbuf);
+		CHECK_END_OF_SCREEN();
 
-		memset(strbuf, ' ', (size_t) ws_col - 1);
-		strbuf[ws_col - 1] = '\0';
-		fprintf(stderr, "%s\n", strbuf);
+		erase_line(0);
+		move(CURSOR_DOWN, 1);
+		CHECK_END_OF_SCREEN();
 
-		ap_cur = G.ap_end;
+		ap_cur = lopt.ap_end;
 
 		num_sta = 0;
 
 		while (ap_cur != NULL)
 		{
-			if (ap_cur->nb_pkt < 2 || time(NULL) - ap_cur->tlast > G.berlin)
+			if (ap_cur->nb_pkt < 2 || time(NULL) - ap_cur->tlast > lopt.berlin)
 			{
 				ap_cur = ap_cur->prev;
 				continue;
 			}
 
-			if (ap_cur->security != 0 && G.f_encrypt != 0
-				&& ((ap_cur->security & G.f_encrypt) == 0))
+			if (ap_cur->security != 0 && lopt.f_encrypt != 0
+				&& ((ap_cur->security & lopt.f_encrypt) == 0))
 			{
 				ap_cur = ap_cur->prev;
 				continue;
@@ -4135,10 +4071,10 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 			if (nlines >= (ws_row - 1)) return;
 
-			st_cur = G.st_end;
+			st_cur = lopt.st_end;
 
-			if (G.p_selected_ap
-				&& (memcmp(G.selected_bssid, ap_cur->bssid, 6) == 0))
+			if (lopt.p_selected_ap
+				&& (memcmp(lopt.selected_bssid, ap_cur->bssid, 6) == 0))
 			{
 				textstyle(TEXT_REVERSE);
 			}
@@ -4151,13 +4087,13 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			while (st_cur != NULL)
 			{
 				if (st_cur->base != ap_cur
-					|| time(NULL) - st_cur->tlast > G.berlin)
+					|| time(NULL) - st_cur->tlast > lopt.berlin)
 				{
 					st_cur = st_cur->prev;
 					continue;
 				}
 
-				if (!memcmp(ap_cur->bssid, BROADCAST, 6) && G.asso_client)
+				if (!memcmp(ap_cur->bssid, BROADCAST, 6) && lopt.asso_client)
 				{
 					st_cur = st_cur->prev;
 					continue;
@@ -4165,40 +4101,42 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 				num_sta++;
 
-				if (G.start_print_sta > num_sta) continue;
+				if (lopt.start_print_sta > num_sta) continue;
 
 				nlines++;
 
-				if (ws_row != 0 && nlines >= ws_row) return;
+				if (nlines >= (ws_row - 1)) return;
 
 				if (!memcmp(ap_cur->bssid, BROADCAST, 6))
-					fprintf(stderr, " (not associated) ");
+					printf(" (not associated) ");
 				else
-					fprintf(stderr,
-							" %02X:%02X:%02X:%02X:%02X:%02X",
-							ap_cur->bssid[0],
-							ap_cur->bssid[1],
-							ap_cur->bssid[2],
-							ap_cur->bssid[3],
-							ap_cur->bssid[4],
-							ap_cur->bssid[5]);
+					printf(" %02X:%02X:%02X:%02X:%02X:%02X",
+						   ap_cur->bssid[0],
+						   ap_cur->bssid[1],
+						   ap_cur->bssid[2],
+						   ap_cur->bssid[3],
+						   ap_cur->bssid[4],
+						   ap_cur->bssid[5]);
 
-				fprintf(stderr,
-						"  %02X:%02X:%02X:%02X:%02X:%02X",
-						st_cur->stmac[0],
-						st_cur->stmac[1],
-						st_cur->stmac[2],
-						st_cur->stmac[3],
-						st_cur->stmac[4],
-						st_cur->stmac[5]);
+				printf("  %02X:%02X:%02X:%02X:%02X:%02X",
+					   st_cur->stmac[0],
+					   st_cur->stmac[1],
+					   st_cur->stmac[2],
+					   st_cur->stmac[3],
+					   st_cur->stmac[4],
+					   st_cur->stmac[5]);
 
-				fprintf(stderr, "  %3d ", st_cur->power);
-				fprintf(stderr, "  %2d", st_cur->rate_to / 1000000);
-				fprintf(stderr, "%c", (st_cur->qos_fr_ds) ? 'e' : ' ');
-				fprintf(stderr, "-%2d", st_cur->rate_from / 1000000);
-				fprintf(stderr, "%c", (st_cur->qos_to_ds) ? 'e' : ' ');
-				fprintf(stderr, "  %4d", st_cur->missed);
-				fprintf(stderr, " %8lu", st_cur->nb_pkt);
+				printf("  %3d ", st_cur->power);
+				printf("  %2d", st_cur->rate_to / 1000000);
+				printf("%c", (st_cur->qos_fr_ds) ? 'e' : ' ');
+				printf("-%2d", st_cur->rate_from / 1000000);
+				printf("%c", (st_cur->qos_to_ds) ? 'e' : ' ');
+				printf("  %4d", st_cur->missed);
+				printf(" %8lu", st_cur->nb_pkt);
+				printf("  %-5s",
+					   (st_cur->wpa.pmkid[0] != 0)
+						   ? "PMKID"
+						   : (st_cur->wpa.state == 7 ? "EAPOL" : ""));
 
 				if (ws_col > (columns_sta - 6))
 				{
@@ -4224,17 +4162,18 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 							< 0
 						? abort()
 						: (void) 0;
-					strbuf[ws_col - (columns_sta - 6)] = '\0';
-					fprintf(stderr, " %s", strbuf);
+					strbuf[MAX(ws_col - 75, 0)] = '\0';
+					printf(" %s", strbuf);
 				}
 
-				fprintf(stderr, "\n");
+				erase_line(0);
+				putchar('\n');
 
 				st_cur = st_cur->prev;
 			}
 
-			if ((G.p_selected_ap
-				 && (memcmp(G.selected_bssid, ap_cur->bssid, 6) == 0))
+			if ((lopt.p_selected_ap
+				 && (memcmp(lopt.selected_bssid, ap_cur->bssid, 6) == 0))
 				|| (ap_cur->marked))
 			{
 				textstyle(TEXT_RESET);
@@ -4244,30 +4183,28 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 		}
 	}
 
-	if (G.show_ack)
+	if (lopt.show_ack)
 	{
 		/* print some information about each unknown station */
 
-		nlines += 3;
-
-		if (nlines >= (ws_row - 1)) return;
-
-		memset(strbuf, ' ', (size_t) ws_col - 1);
-		strbuf[ws_col - 1] = '\0';
-		fprintf(stderr, "%s\n", strbuf);
+		erase_line(0);
+		move(CURSOR_DOWN, 1);
+		CHECK_END_OF_SCREEN();
 
 		memcpy(strbuf,
 			   " MAC       "
 			   "          CH PWR    ACK ACK/s    CTS RTS_RX RTS_TX  OTHER",
 			   (size_t) columns_na);
 		strbuf[ws_col - 1] = '\0';
-		fprintf(stderr, "%s\n", strbuf);
+		console_puts(strbuf);
+		CHECK_END_OF_SCREEN();
 
 		memset(strbuf, ' ', (size_t) ws_col - 1);
 		strbuf[ws_col - 1] = '\0';
-		fprintf(stderr, "%s\n", strbuf);
+		console_puts(strbuf);
+		CHECK_END_OF_SCREEN();
 
-		na_cur = G.na_1st;
+		na_cur = lopt.na_1st;
 
 		while (na_cur != NULL)
 		{
@@ -4277,35 +4214,35 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				continue;
 			}
 
-			if (nlines >= (ws_row - 1)) return;
-
 			nlines++;
 
-			if (ws_row != 0 && nlines >= ws_row) return;
+			if (nlines >= (ws_row - 1)) return;
 
-			fprintf(stderr,
-					" %02X:%02X:%02X:%02X:%02X:%02X",
-					na_cur->namac[0],
-					na_cur->namac[1],
-					na_cur->namac[2],
-					na_cur->namac[3],
-					na_cur->namac[4],
-					na_cur->namac[5]);
+			printf(" %02X:%02X:%02X:%02X:%02X:%02X",
+				   na_cur->namac[0],
+				   na_cur->namac[1],
+				   na_cur->namac[2],
+				   na_cur->namac[3],
+				   na_cur->namac[4],
+				   na_cur->namac[5]);
 
-			fprintf(stderr, "  %3d", na_cur->channel);
-			fprintf(stderr, " %3d", na_cur->power);
-			fprintf(stderr, " %6d", na_cur->ack);
-			fprintf(stderr, "  %4d", na_cur->ackps);
-			fprintf(stderr, " %6d", na_cur->cts);
-			fprintf(stderr, " %6d", na_cur->rts_r);
-			fprintf(stderr, " %6d", na_cur->rts_t);
-			fprintf(stderr, " %6d", na_cur->other);
+			printf("  %3d", na_cur->channel);
+			printf(" %3d", na_cur->power);
+			printf(" %6d", na_cur->ack);
+			printf("  %4d", na_cur->ackps);
+			printf(" %6d", na_cur->cts);
+			printf(" %6d", na_cur->rts_r);
+			printf(" %6d", na_cur->rts_t);
+			printf(" %6d", na_cur->other);
 
-			fprintf(stderr, "\n");
+			erase_line(0);
+			putchar('\n');
 
 			na_cur = na_cur->next;
 		}
 	}
+
+	erase_display(0);
 }
 
 #define OUI_STR_SIZE 8
@@ -4315,7 +4252,6 @@ get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2)
 {
 	char oui[OUI_STR_SIZE + 1];
 	char *manuf, *rmanuf;
-	// char *buffer_manuf;
 	char * manuf_str;
 	struct oui * ptr;
 	FILE * fp;
@@ -4334,10 +4270,10 @@ get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2)
 
 	snprintf(oui, sizeof(oui), "%02X:%02X:%02X", mac0, mac1, mac2);
 
-	if (G.manufList != NULL)
+	if (lopt.manufList != NULL)
 	{
 		// Search in the list
-		ptr = G.manufList;
+		ptr = lopt.manufList;
 		while (ptr != NULL)
 		{
 			found = !strncasecmp(ptr->id, oui, OUI_STR_SIZE);
@@ -4369,7 +4305,12 @@ get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2)
 				memset(a, 0x00, sizeof(a));
 				memset(b, 0x00, sizeof(b));
 				memset(c, 0x00, sizeof(c));
-				if (sscanf(buffer, "%2c-%2c-%2c", a, b, c) == 3)
+				if (sscanf(buffer,
+						   "%2c-%2c-%2c",
+						   (char *) a,
+						   (char *) b,
+						   (char *) c)
+					== 3)
 				{
 					snprintf(temp,
 							 sizeof(temp),
@@ -4404,43 +4345,17 @@ get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2)
 	if (!found || *manuf == '\0')
 	{
 		memcpy(manuf, "Unknown", 7);
-		manuf[strlen(manuf)] = '\0';
+		manuf[7] = '\0';
 	}
 
 	// Going in a smaller buffer
 	rmanuf = (char *) realloc(manuf, (strlen(manuf) + 1) * sizeof(char));
 	ALLEGE(rmanuf != NULL);
 
-	return (rmanuf) ? (rmanuf) : (manuf);
+	return (rmanuf);
 }
 #undef OUI_STR_SIZE
 #undef MANUF_SIZE
-
-/* See if a string contains a character in the first "n" bytes.
- *
- * Returns a pointer to the first occurrence of the character, or NULL
- * if the character is not present in the string.
- *
- * Breaks the str* naming convention to avoid a name collision if we're
- * compiling on a system that has strnchr()
- */
-static inline char * strchr_n(char * str, int c, size_t n)
-{
-	size_t count = 0;
-
-	if (str == NULL || n == 0)
-	{
-		return (NULL);
-	}
-
-	while (*str != c && *str != '\0' && count < n)
-	{
-		str++;
-		count++;
-	}
-
-	return (*str == c) ? (str) : (NULL);
-}
 
 /* Read at least one full line from the network.
  *
@@ -4451,10 +4366,11 @@ static inline char * strchr_n(char * str, int c, size_t n)
  * character.  If the return value is <= 0, the contents of the buffer
  * are undefined.
  */
-static inline int read_line(int sock, char * buffer, int pos, int size)
+static inline ssize_t
+read_line(int sock, char * buffer, size_t pos, size_t size)
 {
-	int status = 1;
-	if (pos < 0 || size < 1 || pos >= size || buffer == NULL || sock < 0)
+	ssize_t status = 1;
+	if (size < 1 || pos >= size || buffer == NULL || sock < 0)
 	{
 		return (-1);
 	}
@@ -4478,27 +4394,6 @@ static inline int read_line(int sock, char * buffer, int pos, int size)
 	}
 
 	return (pos);
-}
-
-/* Remove a newline-terminated block of data from a buffer, replacing
- * the newline with a '\0'.
- *
- * Returns the number of characters left in the buffer, or -1 if the
- * buffer did not contain a newline.
- */
-static inline int get_line_from_buffer(char * buffer, int size, char * line)
-{
-	char * cursor = strchr_n(buffer, 0x0A, size);
-	if (NULL != cursor)
-	{
-		*cursor = '\0';
-		cursor++;
-		strcpy(line, buffer);
-		memmove(buffer, cursor, size - (strlen(line) + 1));
-		return (size - (strlen(line) + 1));
-	}
-
-	return (-1);
 }
 
 /* Extract a name:value pair from a null-terminated line of JSON.
@@ -4615,8 +4510,8 @@ static void * gps_tracker_thread(void * arg)
 	char line[1537], buffer[1537], data[1537];
 	char * temp;
 	struct sockaddr_in gpsd_addr;
-	int ret, is_json, pos;
-	int mode;
+	int is_json;
+	ssize_t pos;
 	int gpsd_tried_connection = 0;
 	fd_set read_fd;
 	struct timeval timeout;
@@ -4632,7 +4527,7 @@ static void * gps_tracker_thread(void * arg)
 	*return_error = -1;
 
 	// Incase we GPSd goes down or we lose connection or a fix, we keep trying to connect inside the while loop
-	while (G.do_exit == 0)
+	while (lopt.do_exit == 0)
 	{
 		// If our socket connection to GPSD has been attempted and failed wait before trying again - used to prevent locking the CPU on socket retries
 		if (gpsd_tried_connection)
@@ -4664,7 +4559,7 @@ static void * gps_tracker_thread(void * arg)
 		// 2.92+ immediately sends version information
 		// < 2.92 requires to send PVTAD command
 		FD_ZERO(&read_fd);
-		FD_SET(gpsd_sock, &read_fd);
+		FD_SET(gpsd_sock, &read_fd); // NOLINT(hicpp-signed-bitwise)
 		timeout.tv_sec = 1;
 		timeout.tv_usec = 0;
 		is_json = select(gpsd_sock + 1, &read_fd, NULL, NULL, &timeout);
@@ -4676,7 +4571,7 @@ static void * gps_tracker_thread(void * arg)
 			if ((pos = read_line(gpsd_sock, buffer, 0, sizeof(buffer))) <= 0)
 				continue;
 
-			pos = get_line_from_buffer(buffer, pos, line);
+			pos = get_line_from_buffer(buffer, (size_t) pos, line);
 			is_json = (json_get_value_for_name(line, "class", data)
 					   && strncmp(data, "VERSION", 7) == 0);
 
@@ -4705,10 +4600,10 @@ static void * gps_tracker_thread(void * arg)
 		* connected to an old-style gpsd. */
 
 		// Initialisation of all GPS data to 0
-		memset(G.gps_loc, 0, sizeof(G.gps_loc));
+		memset(lopt.gps_loc, 0, sizeof(lopt.gps_loc));
 
 		/* Inside loop for reading the GPS coordinates/data */
-		while (G.do_exit == 0)
+		while (lopt.do_exit == 0)
 		{
 			gpsd_tried_connection = 0; // reset socket connection test
 			usleep(500000);
@@ -4719,15 +4614,15 @@ static void * gps_tracker_thread(void * arg)
 			// 0 = lat, 1 = lon, 2 = speed, 3 = heading, 4 = alt, 5 = lat error, 6 = lon error, 7 = vertical error
 
 			// Check if we need to reset/invalidate our GPS data if the data has become 'stale' based on a timeout/interval
-			if (time(NULL) - updateTime > G.gps_valid_interval)
+			if (time(NULL) - updateTime > lopt.gps_valid_interval)
 			{
-				memset(G.gps_loc, 0, sizeof(G.gps_loc));
+				memset(lopt.gps_loc, 0, sizeof(lopt.gps_loc));
 			}
 
 			// Record ALL GPS data from GPSD
-			if (G.record_data)
+			if (opt.record_data)
 			{
-				fputs(line, G.f_gps);
+				fputs(line, opt.f_gps);
 			}
 
 			/* read position, speed, heading, altitude */
@@ -4735,10 +4630,11 @@ static void * gps_tracker_thread(void * arg)
 			{
 				// Format definition: http://catb.org/gpsd/gpsd_json.html
 
-				if ((pos = read_line(gpsd_sock, buffer, pos, sizeof(buffer)))
+				if ((pos = read_line(
+						 gpsd_sock, buffer, (size_t) pos, sizeof(buffer)))
 					<= 0)
 					break;
-				pos = get_line_from_buffer(buffer, pos, line);
+				pos = get_line_from_buffer(buffer, (size_t) pos, line);
 
 				// See if we got a TPV report - aka actual GPS data if not send default 0 values
 				if (!json_get_value_for_name(line, "class", data)
@@ -4757,7 +4653,7 @@ static void * gps_tracker_thread(void * arg)
 				* Either 2 or 3 may also have speed and heading data.
 				*/
 				if (!json_get_value_for_name(line, "mode", data)
-					|| (mode = atoi(data)) < 2)
+					|| (strtol(data, NULL, 10)) < 2)
 				{
 					/* No GPS fix, so there are no coordinates to extract. */
 					continue;
@@ -4776,7 +4672,7 @@ static void * gps_tracker_thread(void * arg)
 				// GPS Time
 				if (json_get_value_for_name(line, "time", data))
 				{
-					if (!(strptime(data, "%Y-%m-%dT%H:%M:%S", &G.gps_time)
+					if (!(strptime(data, "%Y-%m-%dT%H:%M:%S", &lopt.gps_time)
 						  == NULL))
 					{
 						updateTime = time(NULL);
@@ -4786,72 +4682,80 @@ static void * gps_tracker_thread(void * arg)
 				// Latitude
 				if (json_get_value_for_name(line, "lat", data))
 				{
-					if (1 != sscanf(data, "%f", &G.gps_loc[0]))
+					lopt.gps_loc[0] = strtof(data, NULL);
+					if (errno == EINVAL || errno == ERANGE)
 					{
-						G.gps_loc[0] = 0;
+						lopt.gps_loc[0] = 0;
 					}
 				}
 
 				// Longitude
 				if (json_get_value_for_name(line, "lon", data))
 				{
-					if (1 != sscanf(data, "%f", &G.gps_loc[1]))
+					lopt.gps_loc[1] = strtof(data, NULL);
+					if (errno == EINVAL || errno == ERANGE)
 					{
-						G.gps_loc[1] = 0;
+						lopt.gps_loc[1] = 0;
 					}
 				}
 
 				// Longitude Error
 				if (json_get_value_for_name(line, "epx", data))
 				{
-					if (1 != sscanf(data, "%f", &G.gps_loc[6]))
+					lopt.gps_loc[6] = strtof(data, NULL);
+					if (errno == EINVAL || errno == ERANGE)
 					{
-						G.gps_loc[6] = 0;
+						lopt.gps_loc[6] = 0;
 					}
 				}
 
 				// Latitude Error
 				if (json_get_value_for_name(line, "epy", data))
 				{
-					if (1 != sscanf(data, "%f", &G.gps_loc[5]))
+					lopt.gps_loc[5] = strtof(data, NULL);
+					if (errno == EINVAL || errno == ERANGE)
 					{
-						G.gps_loc[5] = 0;
+						lopt.gps_loc[5] = 0;
 					}
 				}
 
 				// Vertical Error
 				if (json_get_value_for_name(line, "epv", data))
 				{
-					if (1 != sscanf(data, "%f", &G.gps_loc[7]))
+					lopt.gps_loc[7] = strtof(data, NULL);
+					if (errno == EINVAL || errno == ERANGE)
 					{
-						G.gps_loc[7] = 0;
+						lopt.gps_loc[7] = 0;
 					}
 				}
 
 				// Altitude
 				if (json_get_value_for_name(line, "alt", data))
 				{
-					if (1 != sscanf(data, "%f", &G.gps_loc[4]))
+					lopt.gps_loc[4] = strtof(data, NULL);
+					if (errno == EINVAL || errno == ERANGE)
 					{
-						G.gps_loc[4] = 0;
+						lopt.gps_loc[4] = 0;
 					}
 				}
 
 				// Speed
 				if (json_get_value_for_name(line, "speed", data))
 				{
-					if (1 != sscanf(data, "%f", &G.gps_loc[2]))
+					lopt.gps_loc[2] = strtof(data, NULL);
+					if (errno == EINVAL || errno == ERANGE)
 					{
-						G.gps_loc[2] = 0;
+						lopt.gps_loc[2] = 0;
 					}
 				}
 
 				// Heading
 				if (json_get_value_for_name(line, "track", data))
 				{
-					if (1 != sscanf(data, "%f", &G.gps_loc[3]))
+					lopt.gps_loc[3] = strtof(data, NULL);
+					if (errno == EINVAL || errno == ERANGE)
 					{
-						G.gps_loc[3] = 0;
+						lopt.gps_loc[3] = 0;
 					}
 				}
 			}
@@ -4862,11 +4766,18 @@ static void * gps_tracker_thread(void * arg)
 				memset(line, 0, sizeof(line));
 
 				snprintf(line, sizeof(line) - 1, "PVTAD\r\n");
-				if (send(gpsd_sock, line, 7, 0) != 7) return return_error;
+				if (send(gpsd_sock, line, 7, 0) != 7)
+				{
+					free(return_success);
+					return (return_error);
+				}
 
 				memset(line, 0, sizeof(line));
 				if (recv(gpsd_sock, line, sizeof(line) - 1, 0) <= 0)
-					return return_error;
+				{
+					free(return_success);
+					return (return_error);
+				}
 
 				if (memcmp(line, "GPSD,P=", 7) != 0) continue;
 
@@ -4874,44 +4785,49 @@ static void * gps_tracker_thread(void * arg)
 
 				if (line[7] == '?') continue;
 
+				int ret;
 				updateTime = time(NULL);
 				ret = sscanf(line + 7,
 							 "%f %f",
-							 &G.gps_loc[0],
-							 &G.gps_loc[1]); /* lat lon */
+							 &lopt.gps_loc[0],
+							 &lopt.gps_loc[1]); /* lat lon */
+				if (ret == EOF) fprintf(stderr, "Failed to parse lat lon.\n");
 
 				if ((temp = strstr(line, "V=")) == NULL) continue;
-				ret = sscanf(temp + 2, "%f", &G.gps_loc[2]); /* speed */
+				ret = sscanf(temp + 2, "%f", &lopt.gps_loc[2]); /* speed */
+				if (ret == EOF) fprintf(stderr, "Failed to parse speed.\n");
 
 				if ((temp = strstr(line, "T=")) == NULL) continue;
-				ret = sscanf(temp + 2, "%f", &G.gps_loc[3]); /* heading */
+				ret = sscanf(temp + 2, "%f", &lopt.gps_loc[3]); /* heading */
+				if (ret == EOF) fprintf(stderr, "Failed to parse heading.\n");
 
 				if ((temp = strstr(line, "A=")) == NULL) continue;
-				ret = sscanf(temp + 2, "%f", &G.gps_loc[4]); /* altitude */
+				ret = sscanf(temp + 2, "%f", &lopt.gps_loc[4]); /* altitude */
+				if (ret == EOF) fprintf(stderr, "Failed to parse altitude.\n");
 			}
 
-			G.save_gps = 1;
+			lopt.save_gps = 1;
 		}
 
 		// If we are still wanting to read GPS but encountered an error - reset data and try again
-		if (G.do_exit == 0)
+		if (lopt.do_exit == 0)
 		{
-			memset(G.gps_loc, 0, sizeof(G.gps_loc));
+			memset(lopt.gps_loc, 0, sizeof(lopt.gps_loc));
 			sleep(1);
 		}
 	}
 
+	free(return_error);
 	return (return_success);
 }
 
 static void sighandler(int signum)
 {
 	int card = 0;
-	signal(signum, sighandler);
 
 	if (signum == SIGUSR1)
 	{
-		int unused = read(G.cd_pipe[0], &card, sizeof(int));
+		ssize_t unused = read(lopt.cd_pipe[0], &card, sizeof(int));
 		if (unused < 0)
 		{
 			// error occurred
@@ -4921,39 +4837,36 @@ static void sighandler(int signum)
 		else if (unused == 0)
 		{
 			// EOF
-			perror("EOF encountered read(G.cd_pipe[0])");
+			perror("EOF encountered read(opt.cd_pipe[0])");
 			return;
 		}
 
-		if (card < 0 || (size_t) card >= ArrayCount(G.frequency))
+		if (card < 0 || (size_t) card >= ArrayCount(lopt.frequency))
 		{
 			// invalid received data
 			fprintf(stderr,
-					"Invalid data received for read(G.cd_pipe[0]), got %d\n",
+					"Invalid data received for read(opt.cd_pipe[0]), got %d\n",
 					card);
 			return;
 		}
 
-		if (G.freqoption)
-			(void) read(G.ch_pipe[0], &(G.frequency[card]), sizeof(int));
+		if (lopt.freqoption)
+			IGNORE_LTZ(
+				read(lopt.ch_pipe[0], &(lopt.frequency[card]), sizeof(int)));
 		else
-			(void) read(G.ch_pipe[0], &(G.channel[card]), sizeof(int));
+			IGNORE_LTZ(
+				read(lopt.ch_pipe[0], &(lopt.channel[card]), sizeof(int)));
 	}
 
 	if (signum == SIGUSR2)
-		(void) read(G.gc_pipe[0], &G.gps_loc, sizeof(G.gps_loc));
+		IGNORE_LTZ(read(lopt.gc_pipe[0], &lopt.gps_loc, sizeof(lopt.gps_loc)));
 
 	if (signum == SIGINT || signum == SIGTERM)
 	{
+		lopt.do_exit = 1;
+		show_cursor();
 		reset_term();
-		alarm(1);
-		G.do_exit = 1;
-		signal(SIGALRM, sighandler);
-#if defined(__sun__)
-		fprintf(stdout, "\n");
-#else
-		dprintf(STDOUT_FILENO, "\n");
-#endif
+		fprintf(stdout, "Quitting...\n");
 	}
 
 	if (signum == SIGSEGV)
@@ -4993,7 +4906,7 @@ static int send_probe_request(struct wif * wi)
 	REQUIRE(wi != NULL);
 
 	int len;
-	unsigned char p[4096], r_smac[6];
+	uint8_t p[4096], r_smac[6];
 
 	memcpy(p, PROBE_REQ, 24);
 
@@ -5009,15 +4922,25 @@ static int send_probe_request(struct wif * wi)
 	len += 16;
 
 	r_smac[0] = 0x00;
-	r_smac[1] = rand() & 0xFF;
-	r_smac[2] = rand() & 0xFF;
-	r_smac[3] = rand() & 0xFF;
-	r_smac[4] = rand() & 0xFF;
-	r_smac[5] = rand() & 0xFF;
+	r_smac[1] = (uint8_t)(
+		rand() // NOLINT(cert-msc30-c,cert-msc50-cpp,hicpp-signed-bitwise)
+		& 0xFF);
+	r_smac[2] = (uint8_t)(
+		rand() // NOLINT(cert-msc30-c,cert-msc50-cpp,hicpp-signed-bitwise)
+		& 0xFF);
+	r_smac[3] = (uint8_t)(
+		rand() // NOLINT(cert-msc30-c,cert-msc50-cpp,hicpp-signed-bitwise)
+		& 0xFF);
+	r_smac[4] = (uint8_t)(
+		rand() // NOLINT(cert-msc30-c,cert-msc50-cpp,hicpp-signed-bitwise)
+		& 0xFF);
+	r_smac[5] = (uint8_t)(
+		rand() // NOLINT(cert-msc30-c,cert-msc50-cpp,hicpp-signed-bitwise)
+		& 0xFF);
 
 	memcpy(p + 10, r_smac, 6);
 
-	if (wi_write(wi, p, len, NULL) == -1)
+	if (wi_write(wi, NULL, LINKTYPE_IEEE802_11, p, len, NULL) == -1)
 	{
 		switch (errno)
 		{
@@ -5025,6 +4948,8 @@ static int send_probe_request(struct wif * wi)
 			case ENOBUFS:
 				usleep(10000);
 				return (0); /* XXX not sure I like this... -sorbo */
+			default:
+				break;
 		}
 
 		perror("wi_write()");
@@ -5052,10 +4977,10 @@ static int getchancount(int valid)
 {
 	int i = 0, chan_count = 0;
 
-	while (G.channels[i])
+	while (lopt.channels[i])
 	{
 		i++;
-		if (G.channels[i] != -1) chan_count++;
+		if (lopt.channels[i] != -1) chan_count++;
 	}
 
 	if (valid) return (chan_count);
@@ -5066,10 +4991,10 @@ static int getfreqcount(int valid)
 {
 	int i = 0, freq_count = 0;
 
-	while (G.own_frequencies[i])
+	while (lopt.own_frequencies[i])
 	{
 		i++;
-		if (G.own_frequencies[i] != -1) freq_count++;
+		if (lopt.own_frequencies[i] != -1) freq_count++;
 	}
 
 	if (valid) return (freq_count);
@@ -5080,7 +5005,7 @@ static void
 channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 {
 	int ch, ch_idx = 0, card = 0, chi = 0, cai = 0, j = 0, k = 0, first = 1,
-			again = 1;
+			again;
 	int dropped = 0;
 
 	while (0 == kill(parent, 0))
@@ -5096,7 +5021,7 @@ channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 			++chi;
 			++cai;
 
-			if (G.chswitch == 2 && !first)
+			if (lopt.chswitch == 2 && !first)
 			{
 				j = if_num - 1;
 				card = if_num - 1;
@@ -5108,7 +5033,7 @@ channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 						again = 0;
 						for (k = 0; k < (if_num - 1); k++)
 						{
-							if (G.channels[ch_idx] == G.channel[k])
+							if (lopt.channels[ch_idx] == lopt.channel[k])
 							{
 								again = 1;
 								ch_idx = chi % chan_count;
@@ -5119,7 +5044,7 @@ channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 				}
 			}
 
-			if (G.channels[ch_idx] == -1)
+			if (lopt.channels[ch_idx] == -1)
 			{
 				j--;
 				cai--;
@@ -5127,9 +5052,9 @@ channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 				if (dropped >= chan_count)
 				{
 					ch = wi_get_channel(wi[card]);
-					G.channel[card] = ch;
-					(void) write(G.cd_pipe[1], &card, sizeof(int));
-					(void) write(G.ch_pipe[1], &ch, sizeof(int));
+					lopt.channel[card] = ch;
+					IGNORE_LTZ(write(lopt.cd_pipe[1], &card, sizeof(int)));
+					IGNORE_LTZ(write(lopt.ch_pipe[1], &ch, sizeof(int)));
 					kill(parent, SIGUSR1);
 					usleep(1000);
 				}
@@ -5138,31 +5063,31 @@ channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 
 			dropped = 0;
 
-			ch = G.channels[ch_idx];
+			ch = lopt.channels[ch_idx];
 
 #ifdef CONFIG_LIBNL
-			if (wi_set_ht_channel(wi[card], ch, G.htval) == 0)
+			if (wi_set_ht_channel(wi[card], ch, lopt.htval) == 0)
 #else
 			if (wi_set_channel(wi[card], ch) == 0)
 #endif
 			{
-				G.channel[card] = ch;
-				(void) write(G.cd_pipe[1], &card, sizeof(int));
-				(void) write(G.ch_pipe[1], &ch, sizeof(int));
-				if (G.active_scan_sim > 0) send_probe_request(wi[card]);
+				lopt.channel[card] = ch;
+				IGNORE_LTZ(write(lopt.cd_pipe[1], &card, sizeof(int)));
+				IGNORE_LTZ(write(lopt.ch_pipe[1], &ch, sizeof(int)));
+				if (lopt.active_scan_sim > 0) send_probe_request(wi[card]);
 				kill(parent, SIGUSR1);
 				usleep(1000);
 			}
 			else
 			{
-				G.channels[ch_idx] = -1; /* remove invalid channel */
+				lopt.channels[ch_idx] = -1; /* remove invalid channel */
 				j--;
 				cai--;
 				continue;
 			}
 		}
 
-		if (G.chswitch == 0)
+		if (lopt.chswitch == 0)
 		{
 			chi = chi - (if_num - 1);
 		}
@@ -5172,7 +5097,7 @@ channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 			first = 0;
 		}
 
-		usleep((G.hopfreq * 1000));
+		usleep((useconds_t)(lopt.hopfreq * 1000));
 	}
 
 	exit(0);
@@ -5182,7 +5107,7 @@ static void
 frequency_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 {
 	int ch, ch_idx = 0, card = 0, chi = 0, cai = 0, j = 0, k = 0, first = 1,
-			again = 1;
+			again;
 	int dropped = 0;
 
 	while (0 == kill(parent, 0))
@@ -5198,7 +5123,7 @@ frequency_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 			++chi;
 			++cai;
 
-			if (G.chswitch == 2 && !first)
+			if (lopt.chswitch == 2 && !first)
 			{
 				j = if_num - 1;
 				card = if_num - 1;
@@ -5210,7 +5135,8 @@ frequency_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 						again = 0;
 						for (k = 0; k < (if_num - 1); k++)
 						{
-							if (G.own_frequencies[ch_idx] == G.frequency[k])
+							if (lopt.own_frequencies[ch_idx]
+								== lopt.frequency[k])
 							{
 								again = 1;
 								ch_idx = chi % chan_count;
@@ -5221,7 +5147,7 @@ frequency_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 				}
 			}
 
-			if (G.own_frequencies[ch_idx] == -1)
+			if (lopt.own_frequencies[ch_idx] == -1)
 			{
 				j--;
 				cai--;
@@ -5229,9 +5155,9 @@ frequency_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 				if (dropped >= chan_count)
 				{
 					ch = wi_get_freq(wi[card]);
-					G.frequency[card] = ch;
-					(void) write(G.cd_pipe[1], &card, sizeof(int));
-					(void) write(G.ch_pipe[1], &ch, sizeof(int));
+					lopt.frequency[card] = ch;
+					IGNORE_LTZ(write(lopt.cd_pipe[1], &card, sizeof(int)));
+					IGNORE_LTZ(write(lopt.ch_pipe[1], &ch, sizeof(int)));
 					kill(parent, SIGUSR1);
 					usleep(1000);
 				}
@@ -5240,26 +5166,26 @@ frequency_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 
 			dropped = 0;
 
-			ch = G.own_frequencies[ch_idx];
+			ch = lopt.own_frequencies[ch_idx];
 
 			if (wi_set_freq(wi[card], ch) == 0)
 			{
-				G.frequency[card] = ch;
-				(void) write(G.cd_pipe[1], &card, sizeof(int));
-				(void) write(G.ch_pipe[1], &ch, sizeof(int));
+				lopt.frequency[card] = ch;
+				IGNORE_LTZ(write(lopt.cd_pipe[1], &card, sizeof(int)));
+				IGNORE_LTZ(write(lopt.ch_pipe[1], &ch, sizeof(int)));
 				kill(parent, SIGUSR1);
 				usleep(1000);
 			}
 			else
 			{
-				G.own_frequencies[ch_idx] = -1; /* remove invalid channel */
+				lopt.own_frequencies[ch_idx] = -1; /* remove invalid channel */
 				j--;
 				cai--;
 				continue;
 			}
 		}
 
-		if (G.chswitch == 0)
+		if (lopt.chswitch == 0)
 		{
 			chi = chi - (if_num - 1);
 		}
@@ -5269,7 +5195,7 @@ frequency_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 			first = 0;
 		}
 
-		usleep((G.hopfreq * 1000));
+		usleep((useconds_t)(lopt.hopfreq * 1000));
 	}
 
 	exit(0);
@@ -5315,6 +5241,7 @@ static int getchannels(const char * optarg)
 	// create a writable string
 	optc = optchan = (char *) malloc(strlen(optarg) + 1);
 	ALLEGE(optc != NULL);
+	ALLEGE(optchan != NULL);
 	strncpy(optchan, optarg, strlen(optarg));
 	optchan[strlen(optarg)] = '\0';
 
@@ -5342,7 +5269,7 @@ static int getchannels(const char * optarg)
 					}
 				}
 
-				if (sscanf(token, "%d-%d", &chan_first, &chan_last) != EOF)
+				if (sscanf(token, "%u-%u", &chan_first, &chan_last) != EOF)
 				{
 					if (chan_first > chan_last)
 					{
@@ -5386,7 +5313,7 @@ static int getchannels(const char * optarg)
 				}
 			}
 
-			if (sscanf(token, "%d", &chan_cur) != EOF)
+			if (sscanf(token, "%u", &chan_cur) != EOF)
 			{
 				if ((!invalid_channel(chan_cur)) && (chan_remain > 0))
 				{
@@ -5403,20 +5330,23 @@ static int getchannels(const char * optarg)
 		}
 	}
 
-	G.own_channels = (int *) malloc(sizeof(int) * (chan_max - chan_remain + 1));
-	ALLEGE(G.own_channels != NULL);
-	ALLEGE(G.own_channels != NULL);
+	lopt.own_channels
+		= (int *) malloc(sizeof(int) * (chan_max - chan_remain + 1));
+	ALLEGE(lopt.own_channels != NULL);
 
-	for (i = 0; i < (chan_max - chan_remain); i++)
+	if (chan_max > 0 && chan_max >= chan_remain) //-V560
 	{
-		G.own_channels[i] = tmp_channels[i];
+		for (i = 0; i < (chan_max - chan_remain); i++) //-V658
+		{
+			lopt.own_channels[i] = tmp_channels[i];
+		}
 	}
 
-	G.own_channels[i] = 0;
+	lopt.own_channels[i] = 0;
 
 	free(tmp_channels);
 	free(optc);
-	if (i == 1) return (G.own_channels[0]);
+	if (i == 1) return (lopt.own_channels[0]);
 	if (i == 0) return (-1);
 	return (0);
 }
@@ -5439,6 +5369,7 @@ static int getfrequencies(const char * optarg)
 	// create a writable string
 	optc = optfreq = (char *) malloc(strlen(optarg) + 1);
 	ALLEGE(optc != NULL);
+	ALLEGE(optfreq != NULL);
 	strncpy(optfreq, optarg, strlen(optarg));
 	optfreq[strlen(optarg)] = '\0';
 
@@ -5465,7 +5396,7 @@ static int getfrequencies(const char * optarg)
 					}
 				}
 
-				if (sscanf(token, "%d-%d", &freq_first, &freq_last) != EOF)
+				if (sscanf(token, "%u-%u", &freq_first, &freq_last) != EOF)
 				{
 					if (freq_first > freq_last)
 					{
@@ -5509,7 +5440,7 @@ static int getfrequencies(const char * optarg)
 				}
 			}
 
-			if (sscanf(token, "%d", &freq_cur) != EOF)
+			if (sscanf(token, "%u", &freq_cur) != EOF)
 			{
 				if ((!invalid_frequency(freq_cur)) && (freq_remain > 0))
 				{
@@ -5541,20 +5472,23 @@ static int getfrequencies(const char * optarg)
 		}
 	}
 
-	G.own_frequencies
+	lopt.own_frequencies
 		= (int *) malloc(sizeof(int) * (freq_max - freq_remain + 1));
-	ALLEGE(G.own_frequencies != NULL);
+	ALLEGE(lopt.own_frequencies != NULL);
 
-	for (i = 0; i < (freq_max - freq_remain); i++)
+	if (freq_max > 0 && freq_max >= freq_remain) //-V560
 	{
-		G.own_frequencies[i] = tmp_frequencies[i];
+		for (i = 0; i < (freq_max - freq_remain); i++) //-V658
+		{
+			lopt.own_frequencies[i] = tmp_frequencies[i];
+		}
 	}
 
-	G.own_frequencies[i] = 0;
+	lopt.own_frequencies[i] = 0;
 
 	free(tmp_frequencies);
 	free(optc);
-	if (i == 1) return (G.own_frequencies[0]); // exactly 1 frequency given
+	if (i == 1) return (lopt.own_frequencies[0]); // exactly 1 frequency given
 	if (i == 0) return (-1); // error occurred
 	return (0); // frequency hopping
 }
@@ -5619,19 +5553,19 @@ static int set_encryption_filter(const char * input)
 
 	if (strlen(input) < 3) return (1);
 
-	if (strcasecmp(input, "opn") == 0) G.f_encrypt |= STD_OPN;
+	if (strcasecmp(input, "opn") == 0) lopt.f_encrypt |= STD_OPN;
 
-	if (strcasecmp(input, "wep") == 0) G.f_encrypt |= STD_WEP;
+	if (strcasecmp(input, "wep") == 0) lopt.f_encrypt |= STD_WEP;
 
 	if (strcasecmp(input, "wpa") == 0)
 	{
-		G.f_encrypt |= STD_WPA;
-		G.f_encrypt |= STD_WPA2;
+		lopt.f_encrypt |= STD_WPA;
+		lopt.f_encrypt |= STD_WPA2;
 	}
 
-	if (strcasecmp(input, "wpa1") == 0) G.f_encrypt |= STD_WPA;
+	if (strcasecmp(input, "wpa1") == 0) lopt.f_encrypt |= STD_WPA;
 
-	if (strcasecmp(input, "wpa2") == 0) G.f_encrypt |= STD_WPA2;
+	if (strcasecmp(input, "wpa2") == 0) lopt.f_encrypt |= STD_WPA2;
 
 	return (0);
 }
@@ -5646,9 +5580,9 @@ static int check_monitor(struct wif * wi[], int * fd_raw, int * fdh, int cards)
 		monitor = wi_get_monitor(wi[i]);
 		if (monitor != 0)
 		{
-			memset(G.message, '\x00', sizeof(G.message));
-			snprintf(G.message,
-					 sizeof(G.message),
+			memset(lopt.message, '\x00', sizeof(lopt.message));
+			snprintf(lopt.message,
+					 sizeof(lopt.message),
 					 "][ %s reset to monitor mode",
 					 wi_get_ifname(wi[i]));
 			// reopen in monitor mode
@@ -5677,19 +5611,19 @@ static int check_channel(struct wif * wi[], int cards)
 	for (i = 0; i < cards; i++)
 	{
 		chan = wi_get_channel(wi[i]);
-		if (G.ignore_negative_one == 1 && chan == -1) return (0);
-		if (G.channel[i] != chan)
+		if (opt.ignore_negative_one == 1 && chan == -1) return (0);
+		if (lopt.channel[i] != chan)
 		{
-			memset(G.message, '\x00', sizeof(G.message));
-			snprintf(G.message,
-					 sizeof(G.message),
+			memset(lopt.message, '\x00', sizeof(lopt.message));
+			snprintf(lopt.message,
+					 sizeof(lopt.message),
 					 "][ fixed channel %s: %d ",
 					 wi_get_ifname(wi[i]),
 					 chan);
 #ifdef CONFIG_LIBNL
-			wi_set_ht_channel(wi[i], G.channel[i], G.htval);
+			wi_set_ht_channel(wi[i], lopt.channel[i], lopt.htval);
 #else
-			wi_set_channel(wi[i], G.channel[i]);
+			wi_set_channel(wi[i], lopt.channel[i]);
 #endif
 		}
 	}
@@ -5703,15 +5637,15 @@ static int check_frequency(struct wif * wi[], int cards)
 	{
 		freq = wi_get_freq(wi[i]);
 		if (freq < 0) continue;
-		if (G.frequency[i] != freq)
+		if (lopt.frequency[i] != freq)
 		{
-			memset(G.message, '\x00', sizeof(G.message));
-			snprintf(G.message,
-					 sizeof(G.message),
+			memset(lopt.message, '\x00', sizeof(lopt.message));
+			snprintf(lopt.message,
+					 sizeof(lopt.message),
 					 "][ fixed frequency %s: %d ",
 					 wi_get_ifname(wi[i]),
 					 freq);
-			wi_set_freq(wi[i], G.frequency[i]);
+			wi_set_freq(wi[i], lopt.frequency[i]);
 		}
 	}
 	return (0);
@@ -5768,7 +5702,7 @@ static int detect_frequencies(struct wif * wi)
 	return (0);
 }
 
-static int array_contains(int * array, int length, int value)
+static int array_contains(const int * array, int length, int value)
 {
 	REQUIRE(array != NULL);
 	REQUIRE(length >= 0 && length < INT_MAX);
@@ -5785,10 +5719,9 @@ static int rearrange_frequencies(void)
 	int * freqs;
 	int count, left, pos;
 	int width, last_used = 0;
-	int cur_freq, last_freq, round_done;
+	int cur_freq, round_done;
 
 	width = DEFAULT_CWIDTH;
-	cur_freq = 0;
 
 	count = getfreqcount(0);
 	left = count;
@@ -5801,8 +5734,7 @@ static int rearrange_frequencies(void)
 
 	while (left > 0)
 	{
-		last_freq = cur_freq;
-		cur_freq = G.own_frequencies[pos % count];
+		cur_freq = lopt.own_frequencies[pos % count];
 
 		if (cur_freq == last_used) round_done = 1;
 
@@ -5824,7 +5756,7 @@ static int rearrange_frequencies(void)
 		pos++;
 	}
 
-	memcpy(G.own_frequencies, freqs, count * sizeof(int));
+	memcpy(lopt.own_frequencies, freqs, count * sizeof(int));
 	free(freqs);
 
 	return (0);
@@ -5834,10 +5766,9 @@ int main(int argc, char * argv[])
 {
 	long time_slept, cycle_time, cycle_time2;
 	char * output_format_string;
-	int caplen = 0, i, j, fdh, fd_is_set, chan_count, freq_count;
+	int caplen = 0, i, j, fdh, chan_count, freq_count;
 	int fd_raw[MAX_CARDS], arptype[MAX_CARDS];
 	int ivs_only, found;
-	int valid_channel;
 	int freq[2];
 	int num_opts = 0;
 	int option = 0;
@@ -5851,14 +5782,14 @@ int main(int argc, char * argv[])
 	int pcreerroffset;
 #endif
 
-	struct AP_info *ap_cur, *ap_prv, *ap_next;
+	struct AP_info *ap_cur, *ap_next;
 	struct ST_info *st_cur, *st_next;
 	struct NA_info *na_cur, *na_next;
 	struct oui *oui_cur, *oui_next;
 
 	struct pcap_pkthdr pkh;
 
-	time_t tt1, tt2, tt3, start_time;
+	time_t tt1, tt2, start_time;
 
 	struct wif * wi[MAX_CARDS];
 	struct rx_info ri;
@@ -5904,15 +5835,19 @@ int main(int argc, char * argv[])
 		   {"showack", 0, 0, 'A'},
 		   {"detect-anomaly", 0, 0, 'E'},
 		   {"output-format", 1, 0, 'o'},
-		   {"ignore-negative-one", 0, &G.ignore_negative_one, 1},
+		   {"ignore-negative-one", 0, &opt.ignore_negative_one, 1},
 		   {"manufacturer", 0, 0, 'M'},
 		   {"uptime", 0, 0, 'U'},
 		   {"write-interval", 1, 0, 'I'},
 		   {"wps", 0, 0, 'W'},
 		   {"background", 1, 0, 'K'},
+		   {"min-packets", 1, 0, 'n'},
+		   {"real-time", 0, 0, 'T'},
 		   {0, 0, 0, 0}};
 
 	pid_t main_pid = getpid();
+
+	console_utf8_enable();
 
 #ifdef USE_GCRYPT
 // Register callback functions to ensure proper locking in the sensitive parts
@@ -5925,108 +5860,108 @@ int main(int argc, char * argv[])
 	// Tell Libgcrypt that initialization has completed.
 	gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif
-	ALLEGE(pthread_mutex_init(&(G.mx_print), NULL) == 0);
-	ALLEGE(pthread_mutex_init(&(G.mx_sort), NULL) == 0);
+	ALLEGE(pthread_mutex_init(&(lopt.mx_print), NULL) == 0);
+	ALLEGE(pthread_mutex_init(&(lopt.mx_sort), NULL) == 0);
 
 	textstyle(TEXT_RESET); //(TEXT_RESET, TEXT_BLACK, TEXT_WHITE);
 
 	/* initialize a bunch of variables */
 
-	srand(time(NULL));
-	memset(&G, 0, sizeof(G));
+	srand(time(NULL)); // NOLINT(cert-msc32-c,cert-msc51-cpp)
+	memset(&opt, 0, sizeof(opt));
+	memset(&lopt, 0, sizeof(lopt));
 
 	h80211 = NULL;
 	ivs_only = 0;
-	G.chanoption = 0;
-	G.freqoption = 0;
-	G.num_cards = 0;
+	lopt.chanoption = 0;
+	lopt.freqoption = 0;
+	lopt.num_cards = 0;
 	fdh = 0;
-	fd_is_set = 0;
-	chan_count = 0;
 	time_slept = 0;
-	G.batt = NULL;
-	G.chswitch = 0;
-	valid_channel = 0;
-	G.usegpsd = 0;
-	G.channels = (int *) bg_chans;
-	G.one_beacon = 1;
-	G.singlechan = 0;
-	G.singlefreq = 0;
-	G.dump_prefix = NULL;
-	G.record_data = 0;
-	G.f_cap = NULL;
-	G.f_ivs = NULL;
-	G.f_txt = NULL;
-	G.f_kis = NULL;
-	G.f_kis_xml = NULL;
-	G.f_gps = NULL;
-	G.f_logcsv = NULL;
-	G.keyout = NULL;
-	G.f_xor = NULL;
-	G.sk_len = 0;
-	G.sk_len2 = 0;
-	G.sk_start = 0;
-	G.prefix = NULL;
-	G.f_encrypt = 0;
-	G.asso_client = 0;
-	G.f_essid = NULL;
-	G.f_essid_count = 0;
-	G.active_scan_sim = 0;
-	G.update_s = 0;
-	G.decloak = 1;
-	G.is_berlin = 0;
-	G.numaps = 0;
-	G.maxnumaps = 0;
-	G.berlin = 120;
-	G.show_ap = 1;
-	G.show_sta = 1;
-	G.show_ack = 0;
-	G.hide_known = 0;
-	G.maxsize_essid_seen = 5; // Initial value: length of "ESSID"
-	G.show_manufacturer = 0;
-	G.show_uptime = 0;
-	G.hopfreq = DEFAULT_HOPFREQ;
-	G.s_file = NULL;
-	G.s_iface = NULL;
-	G.f_cap_in = NULL;
-	G.detect_anomaly = 0;
-	G.airodump_start_time = NULL;
-	G.manufList = NULL;
+	lopt.batt = NULL;
+	lopt.chswitch = 0;
+	opt.usegpsd = 0;
+	lopt.channels = (int *) bg_chans;
+	lopt.one_beacon = 1;
+	lopt.singlechan = 0;
+	lopt.singlefreq = 0;
+	lopt.dump_prefix = NULL;
+	opt.record_data = 0;
+	opt.f_cap = NULL;
+	opt.f_ivs = NULL;
+	opt.f_txt = NULL;
+	opt.f_kis = NULL;
+	opt.f_kis_xml = NULL;
+	opt.f_gps = NULL;
+	opt.f_logcsv = NULL;
+	lopt.keyout = NULL;
+	opt.f_xor = NULL;
+	opt.sk_len = 0;
+	opt.sk_len2 = 0;
+	opt.sk_start = 0;
+	opt.prefix = NULL;
+	lopt.f_encrypt = 0;
+	lopt.asso_client = 0;
+	lopt.f_essid = NULL;
+	lopt.f_essid_count = 0;
+	lopt.active_scan_sim = 0;
+	lopt.update_s = 0;
+	lopt.decloak = 1;
+	lopt.is_berlin = 0;
+	lopt.numaps = 0;
+	lopt.maxnumaps = 0;
+	lopt.berlin = 120;
+	lopt.show_ap = 1;
+	lopt.show_sta = 1;
+	lopt.show_ack = 0;
+	lopt.hide_known = 0;
+	lopt.maxsize_essid_seen = 5; // Initial value: length of "ESSID"
+	lopt.show_manufacturer = 0;
+	lopt.show_uptime = 0;
+	lopt.hopfreq = DEFAULT_HOPFREQ;
+	opt.s_file = NULL;
+	lopt.s_iface = NULL;
+	lopt.f_cap_in = NULL;
+	lopt.detect_anomaly = 0;
+	lopt.airodump_start_time = NULL;
+	lopt.manufList = NULL;
 
-	G.output_format_pcap = 1;
-	G.output_format_csv = 1;
-	G.output_format_kismet_csv = 1;
-	G.output_format_kismet_netxml = 1;
-	G.output_format_log_csv = 1;
-	G.gps_valid_interval
+	opt.output_format_pcap = 1;
+	opt.output_format_csv = 1;
+	opt.output_format_kismet_csv = 1;
+	opt.output_format_kismet_netxml = 1;
+	opt.output_format_log_csv = 1;
+	lopt.gps_valid_interval
 		= 5; // If we dont get a new GPS update in 5 seconds - invalidate it
-	G.file_write_interval = 5; // Write file every 5 seconds by default
-	G.maxsize_wps_seen = 6;
-	G.show_wps = 0;
-	G.background_mode = -1;
-	G.do_exit = 0;
+	lopt.file_write_interval = 5; // Write file every 5 seconds by default
+	lopt.maxsize_wps_seen = 6;
+	lopt.show_wps = 0;
+	lopt.background_mode = -1;
+	lopt.do_exit = 0;
+	lopt.min_pkts = 2;
+	lopt.relative_time = 0;
 #ifdef CONFIG_LIBNL
-	G.htval = CHANNEL_NO_HT;
+	lopt.htval = CHANNEL_NO_HT;
 #endif
 #ifdef HAVE_PCRE
-	G.f_essid_regex = NULL;
+	lopt.f_essid_regex = NULL;
 #endif
 
 	// Default selection.
 	resetSelection();
 
-	memset(G.sharedkey, '\x00', sizeof(G.sharedkey));
-	memset(G.message, '\x00', sizeof(G.message));
-	memset(&G.pfh_in, '\x00', sizeof(struct pcap_file_header));
+	memset(opt.sharedkey, '\x00', sizeof(opt.sharedkey));
+	memset(lopt.message, '\x00', sizeof(lopt.message));
+	memset(&lopt.pfh_in, '\x00', sizeof(struct pcap_file_header));
 
 	gettimeofday(&tv0, NULL);
 
-	lt = localtime((time_t *) &tv0.tv_sec);
+	lt = localtime(&tv0.tv_sec);
 
-	G.keyout = (char *) malloc(512);
-	ALLEGE(G.keyout != NULL);
-	memset(G.keyout, 0, 512);
-	snprintf(G.keyout,
+	lopt.keyout = (char *) malloc(512);
+	ALLEGE(lopt.keyout != NULL);
+	memset(lopt.keyout, 0, 512);
+	snprintf(lopt.keyout,
 			 511,
 			 "keyout-%02d%02d-%02d%02d%02d.keys",
 			 lt->tm_mon + 1,
@@ -6039,12 +5974,12 @@ int main(int argc, char * argv[])
 	{
 		arptype[i] = 0;
 		fd_raw[i] = -1;
-		G.channel[i] = 0;
+		lopt.channel[i] = 0;
 	}
 
-	memset(G.f_bssid, '\x00', 6);
-	memset(G.f_netmask, '\x00', 6);
-	memset(G.wpa_bssid, '\x00', 6);
+	memset(opt.f_bssid, '\x00', 6);
+	memset(opt.f_netmask, '\x00', 6);
+	memset(lopt.wpa_bssid, '\x00', 6);
 
 	/* check the arguments */
 
@@ -6101,11 +6036,12 @@ int main(int argc, char * argv[])
 	{
 		option_index = 0;
 
-		option = getopt_long(argc,
-							 argv,
-							 "b:c:egiw:s:t:u:m:d:N:R:aHDB:Ahf:r:EC:o:x:MUI:WK:",
-							 long_options,
-							 &option_index);
+		option
+			= getopt_long(argc,
+						  argv,
+						  "b:c:egiw:s:t:u:m:d:N:R:aHDB:Ahf:r:EC:o:x:MUI:WK:n:T",
+						  long_options,
+						  &option_index);
 
 		if (option < 0) break;
 
@@ -6135,7 +6071,7 @@ int main(int argc, char * argv[])
 					printf("Invalid background mode. Must be '0' or '1'\n");
 					exit(EXIT_FAILURE);
 				}
-				G.background_mode = (char) bg_mode;
+				lopt.background_mode = (char) bg_mode;
 				break;
 			}
 			case 'I':
@@ -6147,9 +6083,9 @@ int main(int argc, char * argv[])
 					exit(EXIT_FAILURE);
 				}
 
-				G.file_write_interval = atoi(optarg);
+				lopt.file_write_interval = (int) strtol(optarg, NULL, 10);
 
-				if (G.file_write_interval <= 0)
+				if (lopt.file_write_interval <= 0)
 				{
 					printf("Error: Write interval must be greater than 0. "
 						   "Aborting.\n");
@@ -6157,106 +6093,110 @@ int main(int argc, char * argv[])
 				}
 				break;
 
+			case 'T':
+				lopt.relative_time = 1;
+				break;
+
 			case 'E':
-				G.detect_anomaly = 1;
+				lopt.detect_anomaly = 1;
 				break;
 
 			case 'e':
 
-				G.one_beacon = 0;
+				lopt.one_beacon = 0;
 				break;
 
 			case 'a':
 
-				G.asso_client = 1;
+				lopt.asso_client = 1;
 				break;
 
 			case 'A':
 
-				G.show_ack = 1;
+				lopt.show_ack = 1;
 				break;
 
 			case 'h':
 
-				G.hide_known = 1;
+				lopt.hide_known = 1;
 				break;
 
 			case 'D':
 
-				G.decloak = 0;
+				lopt.decloak = 0;
 				break;
 
 			case 'M':
 
-				G.show_manufacturer = 1;
+				lopt.show_manufacturer = 1;
 				break;
 
 			case 'U':
-				G.show_uptime = 1;
+				lopt.show_uptime = 1;
 				break;
 
 			case 'W':
 
-				G.show_wps = 1;
+				lopt.show_wps = 1;
 				break;
 
 			case 'c':
 
-				if (G.channel[0] > 0 || G.chanoption == 1)
+				if (lopt.channel[0] > 0 || lopt.chanoption == 1)
 				{
-					if (G.chanoption == 1)
+					if (lopt.chanoption == 1)
 						printf("Notice: Channel range already given\n");
 					else
 						printf("Notice: Channel already given (%d)\n",
-							   G.channel[0]);
+							   lopt.channel[0]);
 					break;
 				}
 
-				G.channel[0] = getchannels(optarg);
+				lopt.channel[0] = getchannels(optarg);
 
-				if (G.channel[0] < 0)
+				if (lopt.channel[0] < 0)
 				{
 					airodump_usage();
 					return (EXIT_FAILURE);
 				}
 
-				G.chanoption = 1;
+				lopt.chanoption = 1;
 
-				if (G.channel[0] == 0)
+				if (lopt.channel[0] == 0)
 				{
-					G.channels = G.own_channels;
+					lopt.channels = lopt.own_channels;
 					break;
 				}
-				G.channels = (int *) bg_chans;
+				lopt.channels = (int *) bg_chans;
 				break;
 
 			case 'C':
 
-				if (G.channel[0] > 0 || G.chanoption == 1)
+				if (lopt.channel[0] > 0 || lopt.chanoption == 1)
 				{
-					if (G.chanoption == 1)
+					if (lopt.chanoption == 1)
 						printf("Notice: Channel range already given\n");
 					else
 						printf("Notice: Channel already given (%d)\n",
-							   G.channel[0]);
+							   lopt.channel[0]);
 					break;
 				}
 
-				if (G.freqoption == 1)
+				if (lopt.freqoption == 1)
 				{
 					printf("Notice: Frequency range already given\n");
 					break;
 				}
 
-				G.freqstring = optarg;
+				lopt.freqstring = optarg;
 
-				G.freqoption = 1;
+				lopt.freqoption = 1;
 
 				break;
 
 			case 'b':
 
-				if (G.chanoption == 1 && option != 'c')
+				if (lopt.chanoption == 1)
 				{
 					printf("Notice: Channel range already given\n");
 					break;
@@ -6278,13 +6218,13 @@ int main(int argc, char * argv[])
 				}
 
 				if (freq[1] + freq[0] == 2)
-					G.channels = (int *) abg_chans;
+					lopt.channels = (int *) abg_chans;
 				else
 				{
 					if (freq[1] == 1)
-						G.channels = (int *) a_chans;
+						lopt.channels = (int *) a_chans;
 					else
-						G.channels = (int *) bg_chans;
+						lopt.channels = (int *) bg_chans;
 				}
 
 				break;
@@ -6297,14 +6237,14 @@ int main(int argc, char * argv[])
 				{
 					output_format_first_time = 0;
 
-					G.output_format_pcap = 0;
-					G.output_format_csv = 0;
-					G.output_format_kismet_csv = 0;
-					G.output_format_kismet_netxml = 0;
-					G.output_format_log_csv = 0;
+					opt.output_format_pcap = 0;
+					opt.output_format_csv = 0;
+					opt.output_format_kismet_csv = 0;
+					opt.output_format_kismet_netxml = 0;
+					opt.output_format_log_csv = 0;
 				}
 
-				if (G.output_format_pcap)
+				if (opt.output_format_pcap)
 				{
 					airodump_usage();
 					fprintf(stderr,
@@ -6318,82 +6258,82 @@ int main(int argc, char * argv[])
 
 			case 'g':
 
-				G.usegpsd = 1;
+				opt.usegpsd = 1;
 				break;
 
 			case 'w':
 
-				if (G.dump_prefix != NULL)
+				if (lopt.dump_prefix != NULL)
 				{
 					printf("Notice: dump prefix already given\n");
 					break;
 				}
 				/* Write prefix */
-				G.dump_prefix = optarg;
-				G.record_data = 1;
+				lopt.dump_prefix = optarg;
+				opt.record_data = 1;
 				break;
 
 			case 'r':
 
-				if (G.s_file)
+				if (opt.s_file)
 				{
 					printf("Packet source already specified.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (EXIT_FAILURE);
 				}
-				G.s_file = optarg;
+				opt.s_file = optarg;
 				break;
 
 			case 's':
 
-				if (atoi(optarg) > 2)
+				if (strtol(optarg, NULL, 10) > 2 || errno == EINVAL)
 				{
 					airodump_usage();
 					return (EXIT_FAILURE);
 				}
-				if (G.chswitch != 0)
+				if (lopt.chswitch != 0)
 				{
 					printf("Notice: switching method already given\n");
 					break;
 				}
-				G.chswitch = atoi(optarg);
+				lopt.chswitch = (int) strtol(optarg, NULL, 10);
 				break;
 
 			case 'u':
 
-				G.update_s = atoi(optarg);
+				lopt.update_s = (int) strtol(optarg, NULL, 10);
 
 				/* If failed to parse or value <= 0, use default, 100ms */
-				if (G.update_s <= 0) G.update_s = REFRESH_RATE;
+				if (lopt.update_s <= 0) lopt.update_s = REFRESH_RATE;
 
 				break;
 
 			case 'f':
 
-				G.hopfreq = atoi(optarg);
+				lopt.hopfreq = (int) strtol(optarg, NULL, 10);
 
 				/* If failed to parse or value <= 0, use default, 100ms */
-				if (G.hopfreq <= 0) G.hopfreq = DEFAULT_HOPFREQ;
+				if (lopt.hopfreq <= 0) lopt.hopfreq = DEFAULT_HOPFREQ;
 
 				break;
 
 			case 'B':
 
-				G.is_berlin = 1;
-				G.berlin = atoi(optarg);
+				lopt.is_berlin = 1;
+				lopt.berlin = (int) strtol(optarg, NULL, 10);
 
-				if (G.berlin <= 0) G.berlin = 120;
+				if (lopt.berlin <= 0) lopt.berlin = 120;
 
 				break;
 
 			case 'm':
 
-				if (memcmp(G.f_netmask, NULL_MAC, 6) != 0)
+				if (memcmp(opt.f_netmask, NULL_MAC, 6) != 0)
 				{
 					printf("Notice: netmask already given\n");
 					break;
 				}
-				if (getmac(optarg, 1, G.f_netmask) != 0)
+				if (getmac(optarg, 1, opt.f_netmask) != 0)
 				{
 					printf("Notice: invalid netmask\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
@@ -6403,12 +6343,12 @@ int main(int argc, char * argv[])
 
 			case 'd':
 
-				if (memcmp(G.f_bssid, NULL_MAC, 6) != 0)
+				if (memcmp(opt.f_bssid, NULL_MAC, 6) != 0)
 				{
 					printf("Notice: bssid already given\n");
 					break;
 				}
-				if (getmac(optarg, 1, G.f_bssid) != 0)
+				if (getmac(optarg, 1, opt.f_bssid) != 0)
 				{
 					printf("Notice: invalid bssid\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
@@ -6419,27 +6359,28 @@ int main(int argc, char * argv[])
 
 			case 'N':
 
-				G.f_essid_count++;
-				G.f_essid = (char **) realloc(G.f_essid,
-											  G.f_essid_count * sizeof(char *));
-				ALLEGE(G.f_essid != NULL);
-				G.f_essid[G.f_essid_count - 1] = optarg;
+				lopt.f_essid_count++;
+				lopt.f_essid = (char **) realloc( //-V701
+					lopt.f_essid,
+					lopt.f_essid_count * sizeof(char *));
+				ALLEGE(lopt.f_essid != NULL);
+				lopt.f_essid[lopt.f_essid_count - 1] = optarg;
 				break;
 
 			case 'R':
 
 #ifdef HAVE_PCRE
-				if (G.f_essid_regex != NULL)
+				if (lopt.f_essid_regex != NULL)
 				{
 					printf("Error: ESSID regular expression already given. "
 						   "Aborting\n");
 					exit(EXIT_FAILURE);
 				}
 
-				G.f_essid_regex
+				lopt.f_essid_regex
 					= pcre_compile(optarg, 0, &pcreerror, &pcreerroffset, NULL);
 
-				if (G.f_essid_regex == NULL)
+				if (lopt.f_essid_regex == NULL)
 				{
 					printf("Error: regular expression compilation failed at "
 						   "offset %d: %s; aborting\n",
@@ -6459,6 +6400,11 @@ int main(int argc, char * argv[])
 				set_encryption_filter(optarg);
 				break;
 
+			case 'n':
+
+				lopt.min_pkts = strtoul(optarg, NULL, 10);
+				break;
+
 			case 'o':
 
 				// Reset output format if it's the first time the option is
@@ -6467,11 +6413,11 @@ int main(int argc, char * argv[])
 				{
 					output_format_first_time = 0;
 
-					G.output_format_pcap = 0;
-					G.output_format_csv = 0;
-					G.output_format_kismet_csv = 0;
-					G.output_format_kismet_netxml = 0;
-					G.output_format_log_csv = 0;
+					opt.output_format_pcap = 0;
+					opt.output_format_csv = 0;
+					opt.output_format_kismet_csv = 0;
+					opt.output_format_kismet_netxml = 0;
+					opt.output_format_log_csv = 0;
 				}
 
 				// Parse the value
@@ -6483,7 +6429,7 @@ int main(int argc, char * argv[])
 						if (strncasecmp(output_format_string, "csv", 3) == 0
 							|| strncasecmp(output_format_string, "txt", 3) == 0)
 						{
-							G.output_format_csv = 1;
+							opt.output_format_csv = 1;
 						}
 						else if (strncasecmp(output_format_string, "pcap", 4)
 									 == 0
@@ -6499,12 +6445,12 @@ int main(int argc, char * argv[])
 										"used together.\n");
 								return (EXIT_FAILURE);
 							}
-							G.output_format_pcap = 1;
+							opt.output_format_pcap = 1;
 						}
 						else if (strncasecmp(output_format_string, "ivs", 3)
 								 == 0)
 						{
-							if (G.output_format_pcap)
+							if (opt.output_format_pcap)
 							{
 								airodump_usage();
 								fprintf(stderr,
@@ -6518,12 +6464,12 @@ int main(int argc, char * argv[])
 						else if (strncasecmp(output_format_string, "kismet", 6)
 								 == 0)
 						{
-							G.output_format_kismet_csv = 1;
+							opt.output_format_kismet_csv = 1;
 						}
 						else if (strncasecmp(output_format_string, "gps", 3)
 								 == 0)
 						{
-							G.usegpsd = 1;
+							opt.usegpsd = 1;
 						}
 						else if (strncasecmp(output_format_string, "netxml", 6)
 									 == 0
@@ -6545,30 +6491,30 @@ int main(int argc, char * argv[])
 												14)
 										== 0)
 						{
-							G.output_format_kismet_netxml = 1;
+							opt.output_format_kismet_netxml = 1;
 						}
 						else if (strncasecmp(output_format_string, "logcsv", 6)
 								 == 0)
 						{
-							G.output_format_log_csv = 1;
+							opt.output_format_log_csv = 1;
 						}
-						else if (strncasecmp(output_format_string, "default", 6)
+						else if (strncasecmp(output_format_string, "default", 7)
 								 == 0)
 						{
-							G.output_format_pcap = 1;
-							G.output_format_csv = 1;
-							G.output_format_kismet_csv = 1;
-							G.output_format_kismet_netxml = 1;
+							opt.output_format_pcap = 1;
+							opt.output_format_csv = 1;
+							opt.output_format_kismet_csv = 1;
+							opt.output_format_kismet_netxml = 1;
 						}
-						else if (strncasecmp(output_format_string, "none", 6)
+						else if (strncasecmp(output_format_string, "none", 4)
 								 == 0)
 						{
-							G.output_format_pcap = 0;
-							G.output_format_csv = 0;
-							G.output_format_kismet_csv = 0;
-							G.output_format_kismet_netxml = 0;
-							G.output_format_log_csv = 0;
-							G.usegpsd = 0;
+							opt.output_format_pcap = 0;
+							opt.output_format_csv = 0;
+							opt.output_format_kismet_csv = 0;
+							opt.output_format_kismet_netxml = 0;
+							opt.output_format_log_csv = 0;
+							opt.usegpsd = 0;
 							ivs_only = 0;
 						}
 						else
@@ -6591,9 +6537,9 @@ int main(int argc, char * argv[])
 
 			case 'x':
 
-				G.active_scan_sim = atoi(optarg);
+				lopt.active_scan_sim = (int) strtol(optarg, NULL, 10);
 
-				if (G.active_scan_sim <= 0) G.active_scan_sim = 0;
+				if (lopt.active_scan_sim <= 0) lopt.active_scan_sim = 0;
 				break;
 
 			case '2':
@@ -6601,7 +6547,7 @@ int main(int argc, char * argv[])
 				printf("HT Channel unsupported\n");
 				return (EXIT_FAILURE);
 #else
-				G.htval = CHANNEL_HT20;
+				lopt.htval = CHANNEL_HT20;
 #endif
 				break;
 			case '3':
@@ -6609,7 +6555,7 @@ int main(int argc, char * argv[])
 				printf("HT Channel unsupported\n");
 				return (EXIT_FAILURE);
 #else
-				G.htval = CHANNEL_HT40_MINUS;
+				lopt.htval = CHANNEL_HT40_MINUS;
 #endif
 				break;
 			case '5':
@@ -6617,7 +6563,7 @@ int main(int argc, char * argv[])
 				printf("HT Channel unsupported\n");
 				return (EXIT_FAILURE);
 #else
-				G.htval = CHANNEL_HT40_PLUS;
+				lopt.htval = CHANNEL_HT40_PLUS;
 #endif
 				break;
 
@@ -6627,7 +6573,7 @@ int main(int argc, char * argv[])
 		}
 	} while (1);
 
-	if (argc - optind != 1 && G.s_file == NULL)
+	if (argc - optind != 1 && opt.s_file == NULL)
 	{
 		if (argc == 1)
 		{
@@ -6644,41 +6590,41 @@ int main(int argc, char * argv[])
 		return (EXIT_FAILURE);
 	}
 
-	if (argc - optind == 1) G.s_iface = argv[argc - 1];
+	if (argc - optind == 1) lopt.s_iface = argv[argc - 1];
 
-	if ((memcmp(G.f_netmask, NULL_MAC, 6) != 0)
-		&& (memcmp(G.f_bssid, NULL_MAC, 6) == 0))
+	if ((memcmp(opt.f_netmask, NULL_MAC, 6) != 0)
+		&& (memcmp(opt.f_bssid, NULL_MAC, 6) == 0))
 	{
 		printf("Notice: specify bssid \"--bssid\" with \"--netmask\"\n");
 		printf("\"%s --help\" for help.\n", argv[0]);
 		return (EXIT_FAILURE);
 	}
 
-	if (G.show_wps && G.show_manufacturer)
-		G.maxsize_essid_seen += G.maxsize_wps_seen;
+	if (lopt.show_wps && lopt.show_manufacturer)
+		lopt.maxsize_essid_seen += lopt.maxsize_wps_seen;
 
-	if (G.s_iface != NULL)
+	if (lopt.s_iface != NULL)
 	{
 		/* initialize cards */
-		G.num_cards = init_cards(G.s_iface, iface, wi);
+		lopt.num_cards = init_cards(lopt.s_iface, iface, wi);
 
-		if (G.num_cards <= 0 || G.num_cards >= MAX_CARDS)
+		if (lopt.num_cards <= 0 || lopt.num_cards >= MAX_CARDS)
 		{
-			printf("Failed initializing wireless card(s): %s\n", G.s_iface);
+			printf("Failed initializing wireless card(s): %s\n", lopt.s_iface);
 			return (EXIT_FAILURE);
 		}
 
-		for (i = 0; i < G.num_cards; i++)
+		for (i = 0; i < lopt.num_cards; i++)
 		{
 			fd_raw[i] = wi_fd(wi[i]);
 			if (fd_raw[i] > fdh) fdh = fd_raw[i];
 		}
 
-		if (G.freqoption == 1 && G.freqstring != NULL) // use frequencies
+		if (lopt.freqoption == 1 && lopt.freqstring != NULL) // use frequencies
 		{
 			detect_frequencies(wi[0]);
-			G.frequency[0] = getfrequencies(G.freqstring);
-			if (G.frequency[0] == -1)
+			lopt.frequency[0] = getfrequencies(lopt.freqstring);
+			if (lopt.frequency[0] == -1)
 			{
 				printf("No valid frequency given.\n");
 				return (EXIT_FAILURE);
@@ -6691,12 +6637,18 @@ int main(int argc, char * argv[])
 			/* find the interface index */
 			/* start a child to hop between frequencies */
 
-			if (G.frequency[0] == 0)
+			if (lopt.frequency[0] == 0)
 			{
-				(void) pipe(G.ch_pipe);
-				(void) pipe(G.cd_pipe);
+				IGNORE_NZ(pipe(lopt.ch_pipe));
+				IGNORE_NZ(pipe(lopt.cd_pipe));
 
-				signal(SIGUSR1, sighandler);
+				struct sigaction action;
+				action.sa_flags = 0;
+				action.sa_handler = &sighandler;
+				sigemptyset(&action.sa_mask);
+
+				if (sigaction(SIGUSR1, &action, NULL) == -1)
+					perror("sigaction(SIGUSR1)");
 
 				if (!fork())
 				{
@@ -6705,7 +6657,7 @@ int main(int argc, char * argv[])
 					* accessing the card (e.g. file descriptors) which may cause
 					* problems.  -sorbo
 					*/
-					for (i = 0; i < G.num_cards; i++)
+					for (i = 0; i < lopt.num_cards; i++)
 					{
 						strncpy(ifnam, wi_get_ifname(wi[i]), sizeof(ifnam) - 1);
 						ifnam[sizeof(ifnam) - 1] = 0;
@@ -6725,18 +6677,18 @@ int main(int argc, char * argv[])
 						perror("setuid");
 					}
 
-					frequency_hopper(wi, G.num_cards, freq_count, main_pid);
+					frequency_hopper(wi, lopt.num_cards, freq_count, main_pid);
 					exit(EXIT_FAILURE);
 				}
 			}
 			else
 			{
-				for (i = 0; i < G.num_cards; i++)
+				for (i = 0; i < lopt.num_cards; i++)
 				{
-					wi_set_freq(wi[i], G.frequency[0]);
-					G.frequency[i] = G.frequency[0];
+					wi_set_freq(wi[i], lopt.frequency[0]);
+					lopt.frequency[i] = lopt.frequency[0];
 				}
-				G.singlefreq = 1;
+				lopt.singlefreq = 1;
 			}
 		}
 		else // use channels
@@ -6746,12 +6698,18 @@ int main(int argc, char * argv[])
 			/* find the interface index */
 			/* start a child to hop between channels */
 
-			if (G.channel[0] == 0)
+			if (lopt.channel[0] == 0)
 			{
-				(void) pipe(G.ch_pipe);
-				(void) pipe(G.cd_pipe);
+				IGNORE_NZ(pipe(lopt.ch_pipe));
+				IGNORE_NZ(pipe(lopt.cd_pipe));
 
-				signal(SIGUSR1, sighandler);
+				struct sigaction action;
+				action.sa_flags = 0;
+				action.sa_handler = &sighandler;
+				sigemptyset(&action.sa_mask);
+
+				if (sigaction(SIGUSR1, &action, NULL) == -1)
+					perror("sigaction(SIGUSR1)");
 
 				if (!fork())
 				{
@@ -6760,7 +6718,7 @@ int main(int argc, char * argv[])
 					* accessing the card (e.g. file descriptors) which may cause
 					* problems.  -sorbo
 					*/
-					for (i = 0; i < G.num_cards; i++)
+					for (i = 0; i < lopt.num_cards; i++)
 					{
 						strncpy(ifnam, wi_get_ifname(wi[i]), sizeof(ifnam) - 1);
 						ifnam[sizeof(ifnam) - 1] = 0;
@@ -6780,22 +6738,22 @@ int main(int argc, char * argv[])
 						perror("setuid");
 					}
 
-					channel_hopper(wi, G.num_cards, chan_count, main_pid);
+					channel_hopper(wi, lopt.num_cards, chan_count, main_pid);
 					exit(EXIT_FAILURE);
 				}
 			}
 			else
 			{
-				for (i = 0; i < G.num_cards; i++)
+				for (i = 0; i < lopt.num_cards; i++)
 				{
 #ifdef CONFIG_LIBNL
-					wi_set_ht_channel(wi[i], G.channel[0], G.htval);
+					wi_set_ht_channel(wi[i], lopt.channel[0], lopt.htval);
 #else
-					wi_set_channel(wi[i], G.channel[0]);
+					wi_set_channel(wi[i], lopt.channel[0]);
 #endif
-					G.channel[i] = G.channel[0];
+					lopt.channel[i] = lopt.channel[0];
 				}
-				G.singlechan = 1;
+				lopt.singlechan = 1;
 			}
 		}
 	}
@@ -6807,9 +6765,9 @@ int main(int argc, char * argv[])
 	}
 
 	/* check if there is an input file */
-	if (G.s_file != NULL)
+	if (opt.s_file != NULL)
 	{
-		if (!(G.f_cap_in = fopen(G.s_file, "rb")))
+		if (!(lopt.f_cap_in = fopen(opt.s_file, "rb")))
 		{
 			perror("open failed");
 			return (EXIT_FAILURE);
@@ -6817,27 +6775,28 @@ int main(int argc, char * argv[])
 
 		n = sizeof(struct pcap_file_header);
 
-		if (fread(&G.pfh_in, 1, n, G.f_cap_in) != (size_t) n)
+		if (fread(&lopt.pfh_in, 1, (size_t) n, lopt.f_cap_in) != (size_t) n)
 		{
 			perror("fread(pcap file header) failed");
 			return (EXIT_FAILURE);
 		}
 
-		if (G.pfh_in.magic != TCPDUMP_MAGIC && G.pfh_in.magic != TCPDUMP_CIGAM)
+		if (lopt.pfh_in.magic != TCPDUMP_MAGIC
+			&& lopt.pfh_in.magic != TCPDUMP_CIGAM)
 		{
 			fprintf(stderr,
 					"\"%s\" isn't a pcap file (expected "
 					"TCPDUMP_MAGIC).\n",
-					G.s_file);
+					opt.s_file);
 			return (EXIT_FAILURE);
 		}
 
-		if (G.pfh_in.magic == TCPDUMP_CIGAM) SWAP32(G.pfh_in.linktype);
+		if (lopt.pfh_in.magic == TCPDUMP_CIGAM) SWAP32(lopt.pfh_in.linktype);
 
-		if (G.pfh_in.linktype != LINKTYPE_IEEE802_11
-			&& G.pfh_in.linktype != LINKTYPE_PRISM_HEADER
-			&& G.pfh_in.linktype != LINKTYPE_RADIOTAP_HDR
-			&& G.pfh_in.linktype != LINKTYPE_PPI_HDR)
+		if (lopt.pfh_in.linktype != LINKTYPE_IEEE802_11
+			&& lopt.pfh_in.linktype != LINKTYPE_PRISM_HEADER
+			&& lopt.pfh_in.linktype != LINKTYPE_RADIOTAP_HDR
+			&& lopt.pfh_in.linktype != LINKTYPE_PPI_HDR)
 		{
 			fprintf(stderr,
 					"Wrong linktype from pcap file header "
@@ -6850,27 +6809,31 @@ int main(int argc, char * argv[])
 
 	/* open or create the output files */
 
-	if (G.record_data)
-		if (dump_initialize(G.dump_prefix, ivs_only)) return (EXIT_FAILURE);
+	if (opt.record_data)
+		if (dump_initialize_multi_format(lopt.dump_prefix, ivs_only))
+			return (EXIT_FAILURE);
 
-	signal(SIGINT, sighandler);
-	signal(SIGSEGV, sighandler);
-	signal(SIGTERM, sighandler);
-	signal(SIGWINCH, sighandler);
+	struct sigaction action;
+	action.sa_flags = 0;
+	action.sa_handler = &sighandler;
+	sigemptyset(&action.sa_mask);
 
-	sighandler(SIGWINCH);
+	if (sigaction(SIGINT, &action, NULL) == -1) perror("sigaction(SIGINT)");
+	if (sigaction(SIGSEGV, &action, NULL) == -1) perror("sigaction(SIGSEGV)");
+	if (sigaction(SIGTERM, &action, NULL) == -1) perror("sigaction(SIGTERM)");
+	if (sigaction(SIGWINCH, &action, NULL) == -1) perror("sigaction(SIGWINCH)");
 
 	/* fill oui struct if ram is greater than 32 MB */
 	if (get_ram_size() > MIN_RAM_SIZE_LOAD_OUI_RAM)
 	{
-		G.manufList = load_oui_file();
+		lopt.manufList = load_oui_file();
 	}
 
 	/* start the GPS tracker */
 
-	if (G.usegpsd)
+	if (opt.usegpsd)
 	{
-		if (pthread_create(&G.gps_tid, NULL, &gps_tracker_thread, NULL) != 0)
+		if (pthread_create(&lopt.gps_tid, NULL, &gps_tracker_thread, NULL) != 0)
 		{
 			perror("Could not create GPS thread");
 			return (EXIT_FAILURE);
@@ -6886,38 +6849,37 @@ int main(int argc, char * argv[])
 	start_time = time(NULL);
 	tt1 = time(NULL);
 	tt2 = time(NULL);
-	tt3 = time(NULL);
 	gettimeofday(&tv3, NULL);
 	gettimeofday(&tv4, NULL);
 
-	G.batt = getBatteryString();
+	lopt.batt = getBatteryString();
 
-	G.elapsed_time = (char *) calloc(1, 4);
-	if (G.elapsed_time == NULL)
+	lopt.elapsed_time = (char *) calloc(1, 4);
+	if (lopt.elapsed_time == NULL)
 	{
 		perror("Error allocating memory");
 		return (EXIT_FAILURE);
 	}
-	strncpy(G.elapsed_time, "0 s", 4);
-	G.elapsed_time[strlen(G.elapsed_time)] = 0;
+	strncpy(lopt.elapsed_time, "0 s", 4);
+	lopt.elapsed_time[3] = '\0';
 
 	/* Create start time string for kismet netxml file */
-	G.airodump_start_time = (char *) calloc(1, 1000 * sizeof(char));
-	ALLEGE(G.airodump_start_time != NULL);
-	strncpy(G.airodump_start_time, ctime(&start_time), 1000 - 1);
-	G.airodump_start_time[strlen(G.airodump_start_time) - 1]
+	lopt.airodump_start_time = (char *) calloc(1, 1000 * sizeof(char));
+	ALLEGE(lopt.airodump_start_time != NULL);
+	strncpy(lopt.airodump_start_time, ctime(&start_time), 1000 - 1);
+	lopt.airodump_start_time[strlen(lopt.airodump_start_time) - 1]
 		= 0; // remove new line
-	G.airodump_start_time
-		= (char *) realloc(G.airodump_start_time,
-						   sizeof(char) * (strlen(G.airodump_start_time) + 1));
-	ALLEGE(G.airodump_start_time != NULL);
+	lopt.airodump_start_time = (char *) realloc( //-V701
+		lopt.airodump_start_time,
+		sizeof(char) * (strlen(lopt.airodump_start_time) + 1));
+	ALLEGE(lopt.airodump_start_time != NULL);
 
 	// Do not start the interactive mode input thread if running in the
 	// background
-	if (G.background_mode == -1) G.background_mode = is_background();
+	if (lopt.background_mode == -1) lopt.background_mode = is_background();
 
-	if (!G.background_mode
-		&& pthread_create(&(G.input_tid), NULL, (void *) input_thread, NULL)
+	if (!lopt.background_mode
+		&& pthread_create(&(lopt.input_tid), NULL, (void *) input_thread, NULL)
 			   != 0)
 	{
 		perror("pthread_create failed");
@@ -6926,48 +6888,54 @@ int main(int argc, char * argv[])
 
 	while (1)
 	{
-		if (G.do_exit)
+		if (lopt.do_exit)
 		{
 			break;
 		}
 
-		if (time(NULL) - tt1 >= G.file_write_interval)
+		if (time(NULL) - tt1 >= lopt.file_write_interval)
 		{
 			/* update the text output files */
 
 			tt1 = time(NULL);
-			if (G.output_format_csv) dump_write_csv();
-			if (G.output_format_kismet_csv) dump_write_kismet_csv();
-			if (G.output_format_kismet_netxml) dump_write_kismet_netxml();
+			if (opt.output_format_csv)
+				dump_write_csv(lopt.ap_1st, lopt.st_1st, lopt.f_encrypt);
+			if (opt.output_format_kismet_csv)
+				dump_write_kismet_csv(lopt.ap_1st, lopt.st_1st, lopt.f_encrypt);
+			if (opt.output_format_kismet_netxml)
+				dump_write_kismet_netxml(lopt.ap_1st,
+										 lopt.st_1st,
+										 lopt.f_encrypt,
+										 lopt.airodump_start_time);
 		}
 
 		if (time(NULL) - tt2 > 5)
 		{
-			if (G.sort_by != SORT_BY_NOTHING)
+			if (lopt.sort_by != SORT_BY_NOTHING)
 			{
 				/* sort the APs by power */
-				ALLEGE(pthread_mutex_lock(&(G.mx_sort)) == 0);
+				ALLEGE(pthread_mutex_lock(&(lopt.mx_sort)) == 0);
 				dump_sort();
-				ALLEGE(pthread_mutex_unlock(&(G.mx_sort)) == 0);
+				ALLEGE(pthread_mutex_unlock(&(lopt.mx_sort)) == 0);
 			}
 
 			/* update the battery state */
-			free(G.batt);
-			G.batt = NULL;
+			free(lopt.batt);
+			lopt.batt = NULL;
 
 			tt2 = time(NULL);
-			G.batt = getBatteryString();
+			lopt.batt = getBatteryString();
 
 			/* update elapsed time */
 
-			free(G.elapsed_time);
-			G.elapsed_time = NULL;
-			G.elapsed_time = getStringTimeFromSec(difftime(tt2, start_time));
+			free(lopt.elapsed_time);
+			lopt.elapsed_time = NULL;
+			lopt.elapsed_time = getStringTimeFromSec(difftime(tt2, start_time));
 
 			/* flush the output files */
 
-			if (G.f_cap != NULL) fflush(G.f_cap);
-			if (G.f_ivs != NULL) fflush(G.f_ivs);
+			if (opt.f_cap != NULL) fflush(opt.f_cap);
+			if (opt.f_ivs != NULL) fflush(opt.f_ivs);
 		}
 
 		gettimeofday(&tv1, NULL);
@@ -6978,41 +6946,44 @@ int main(int argc, char * argv[])
 		cycle_time2 = 1000000UL * (tv1.tv_sec - tv4.tv_sec)
 					  + (tv1.tv_usec - tv4.tv_usec);
 
-		if (G.active_scan_sim > 0 && cycle_time2 > G.active_scan_sim * 1000)
+		if (lopt.active_scan_sim > 0
+			&& cycle_time2 > lopt.active_scan_sim * 1000)
 		{
 			gettimeofday(&tv4, NULL);
-			send_probe_requests(wi, G.num_cards);
+			send_probe_requests(wi, lopt.num_cards);
 		}
 
 		if (cycle_time > 500000)
 		{
 			gettimeofday(&tv3, NULL);
 			update_rx_quality();
-			if (G.s_iface != NULL)
+			if (lopt.s_iface != NULL)
 			{
-				check_monitor(wi, fd_raw, &fdh, G.num_cards);
-				if (G.singlechan) check_channel(wi, G.num_cards);
-				if (G.singlefreq) check_frequency(wi, G.num_cards);
+				check_monitor(wi, fd_raw, &fdh, lopt.num_cards);
+				if (lopt.singlechan) check_channel(wi, lopt.num_cards);
+				if (lopt.singlefreq) check_frequency(wi, lopt.num_cards);
 			}
 		}
 
-		if (G.s_file != NULL)
+		if (opt.s_file != NULL)
 		{
+			static struct timeval prev_tv = {0, 0};
+
 			/* Read one packet */
 			n = sizeof(pkh);
 
-			if (fread(&pkh, n, 1, G.f_cap_in) != 1)
+			if (fread(&pkh, (size_t) n, 1, lopt.f_cap_in) != 1)
 			{
-				memset(G.message, '\x00', sizeof(G.message));
-				snprintf(G.message,
-						 sizeof(G.message),
-						 "][ Finished reading input file %s.\n",
-						 G.s_file);
-				G.s_file = NULL;
+				memset(lopt.message, '\x00', sizeof(lopt.message));
+				snprintf(lopt.message,
+						 sizeof(lopt.message),
+						 "][ Finished reading input file %s.",
+						 opt.s_file);
+				opt.s_file = NULL;
 				continue;
 			}
 
-			if (G.pfh_in.magic == TCPDUMP_CIGAM)
+			if (lopt.pfh_in.magic == TCPDUMP_CIGAM)
 			{
 				SWAP32(pkh.caplen);
 				SWAP32(pkh.len);
@@ -7025,89 +6996,205 @@ int main(int argc, char * argv[])
 
 			if (n <= 0 || n > (int) sizeof(buffer))
 			{
-				memset(G.message, '\x00', sizeof(G.message));
-				snprintf(G.message,
-						 sizeof(G.message),
-						 "][ Finished reading input file %s.\n",
-						 G.s_file);
-				G.s_file = NULL;
+				memset(lopt.message, '\x00', sizeof(lopt.message));
+				snprintf(lopt.message,
+						 sizeof(lopt.message),
+						 "][ Finished reading input file %s.",
+						 opt.s_file);
+				opt.s_file = NULL;
 				continue;
 			}
 
-			if (fread(h80211, n, 1, G.f_cap_in) != 1)
+			if (fread(h80211, (size_t) n, 1, lopt.f_cap_in) != 1)
 			{
-				memset(G.message, '\x00', sizeof(G.message));
-				snprintf(G.message,
-						 sizeof(G.message),
-						 "][ Finished reading input file %s.\n",
-						 G.s_file);
-				G.s_file = NULL;
+				memset(lopt.message, '\x00', sizeof(lopt.message));
+				snprintf(lopt.message,
+						 sizeof(lopt.message),
+						 "][ Finished reading input file %s.",
+						 opt.s_file);
+				opt.s_file = NULL;
 				continue;
 			}
 
-			if (G.pfh_in.linktype == LINKTYPE_PRISM_HEADER)
+			if (lopt.pfh_in.linktype == LINKTYPE_PRISM_HEADER)
 			{
 				if (h80211[7] == 0x40)
+				{
 					n = 64;
+					ri.ri_power = -((int32_t) load32_le(h80211 + 0x33));
+					ri.ri_noise = (int32_t) load32_le(h80211 + 0x33 + 12);
+					ri.ri_rate = load32_le(h80211 + 0x33 + 24) * 500000;
+				}
 				else
-					n = *(int *) (h80211 + 4);
+				{
+					n = load32_le(h80211 + 4);
+					ri.ri_mactime = load64_le(h80211 + 0x5C - 48);
+					ri.ri_channel = load32_le(h80211 + 0x5C - 36);
+					ri.ri_power = -((int32_t) load32_le(h80211 + 0x5C));
+					ri.ri_noise = (int32_t) load32_le(h80211 + 0x5C + 12);
+					ri.ri_rate = load32_le(h80211 + 0x5C + 24) * 500000;
+				}
 
-				if (n < 8 || n >= (int) caplen) continue;
+				if (n < 8 || n >= caplen) continue;
 
-				memcpy(tmpbuf, h80211, caplen);
+				memcpy(tmpbuf, h80211, (size_t) caplen);
 				caplen -= n;
-				memcpy(h80211, tmpbuf + n, caplen);
+				memcpy(h80211, tmpbuf + n, (size_t) caplen);
 			}
 
-			if (G.pfh_in.linktype == LINKTYPE_RADIOTAP_HDR)
+			if (lopt.pfh_in.linktype == LINKTYPE_RADIOTAP_HDR)
 			{
 				/* remove the radiotap header */
 
-				n = *(unsigned short *) (h80211 + 2);
+				n = load16_le(h80211 + 2);
 
-				if (n <= 0 || n >= (int) caplen) continue;
+				if (n <= 0 || n >= caplen) continue;
 
-				memcpy(tmpbuf, h80211, caplen);
+				int got_signal = 0;
+				int got_noise = 0;
+				struct ieee80211_radiotap_iterator iterator;
+				struct ieee80211_radiotap_header * rthdr;
+
+				rthdr = (struct ieee80211_radiotap_header *) h80211;
+
+				if (ieee80211_radiotap_iterator_init(
+						&iterator, rthdr, caplen, NULL)
+					< 0)
+					continue;
+
+				/* go through the radiotap arguments we have been given
+				 * by the driver
+				 */
+
+				while (ieee80211_radiotap_iterator_next(&iterator) >= 0)
+				{
+					switch (iterator.this_arg_index)
+					{
+						case IEEE80211_RADIOTAP_TSFT:
+							ri.ri_mactime = le64_to_cpu(
+								*((uint64_t *) iterator.this_arg));
+							break;
+
+						case IEEE80211_RADIOTAP_DBM_ANTSIGNAL:
+							if (!got_signal)
+							{
+								if (*iterator.this_arg < 127)
+									ri.ri_power = *iterator.this_arg;
+								else
+									ri.ri_power = *iterator.this_arg - 255;
+
+								got_signal = 1;
+							}
+							break;
+
+						case IEEE80211_RADIOTAP_DB_ANTSIGNAL:
+							if (!got_signal)
+							{
+								if (*iterator.this_arg < 127)
+									ri.ri_power = *iterator.this_arg;
+								else
+									ri.ri_power = *iterator.this_arg - 255;
+
+								got_signal = 1;
+							}
+							break;
+
+						case IEEE80211_RADIOTAP_DBM_ANTNOISE:
+							if (!got_noise)
+							{
+								if (*iterator.this_arg < 127)
+									ri.ri_noise = *iterator.this_arg;
+								else
+									ri.ri_noise = *iterator.this_arg - 255;
+
+								got_noise = 1;
+							}
+							break;
+
+						case IEEE80211_RADIOTAP_DB_ANTNOISE:
+							if (!got_noise)
+							{
+								if (*iterator.this_arg < 127)
+									ri.ri_noise = *iterator.this_arg;
+								else
+									ri.ri_noise = *iterator.this_arg - 255;
+
+								got_noise = 1;
+							}
+							break;
+
+						case IEEE80211_RADIOTAP_ANTENNA:
+							ri.ri_antenna = *iterator.this_arg;
+							break;
+
+						case IEEE80211_RADIOTAP_CHANNEL:
+							ri.ri_channel = getChannelFromFrequency(
+								le16toh(*(uint16_t *) iterator.this_arg));
+							break;
+
+						case IEEE80211_RADIOTAP_RATE:
+							ri.ri_rate = (*iterator.this_arg) * 500000;
+							break;
+					}
+				}
+
+				memcpy(tmpbuf, h80211, (size_t) caplen);
 				caplen -= n;
-				memcpy(h80211, tmpbuf + n, caplen);
+				memcpy(h80211, tmpbuf + n, (size_t) caplen);
 			}
 
-			if (G.pfh_in.linktype == LINKTYPE_PPI_HDR)
+			if (lopt.pfh_in.linktype == LINKTYPE_PPI_HDR)
 			{
 				/* remove the PPI header */
 
-				n = le16_to_cpu(*(unsigned short *) (h80211 + 2));
+				n = load16_le(h80211 + 2);
 
-				if (n <= 0 || n >= (int) caplen) continue;
+				if (n <= 0 || n >= caplen) continue;
 
 				/* for a while Kismet logged broken PPI headers */
-				if (n == 24
-					&& le16_to_cpu(*(unsigned short *) (h80211 + 8)) == 2)
-					n = 32;
+				if (n == 24 && load16_le(h80211 + 8) == 2) n = 32;
 
-				if (n <= 0 || n >= (int) caplen) continue;
+				if (n <= 0 || n >= caplen) continue; //-V560
 
-				memcpy(tmpbuf, h80211, caplen);
+				memcpy(tmpbuf, h80211, (size_t) caplen);
 				caplen -= n;
-				memcpy(h80211, tmpbuf + n, caplen);
+				memcpy(h80211, tmpbuf + n, (size_t) caplen);
 			}
 
 			read_pkts++;
 
-			if (read_pkts % 10 == 0) usleep(1);
+			if (lopt.relative_time && prev_tv.tv_sec != 0
+				&& prev_tv.tv_usec != 0)
+			{
+				// handle delaying this packet
+				struct timeval pkt_tv;
+				pkt_tv.tv_sec = pkh.tv_sec;
+				pkt_tv.tv_usec = pkh.tv_usec;
+
+				const useconds_t usec_diff
+					= (useconds_t) time_diff(&prev_tv, &pkt_tv);
+
+				if (usec_diff > 0) usleep(usec_diff);
+			}
+			else if (read_pkts % 10 == 0)
+				usleep(1);
+
+			// track the packet's timestamp
+			prev_tv.tv_sec = pkh.tv_sec;
+			prev_tv.tv_usec = pkh.tv_usec;
 		}
-		else if (G.s_iface != NULL)
+		else if (lopt.s_iface != NULL)
 		{
 			/* capture one packet */
 
 			FD_ZERO(&rfds);
-			for (i = 0; i < G.num_cards; i++)
+			for (i = 0; i < lopt.num_cards; i++)
 			{
-				FD_SET(fd_raw[i], &rfds);
+				FD_SET(fd_raw[i], &rfds); // NOLINT(hicpp-signed-bitwise)
 			}
 
-			tv0.tv_sec = G.update_s;
-			tv0.tv_usec = (G.update_s == 0) ? REFRESH_RATE : 0;
+			tv0.tv_sec = lopt.update_s;
+			tv0.tv_usec = (lopt.update_s == 0) ? REFRESH_RATE : 0;
 
 			gettimeofday(&tv1, NULL);
 
@@ -7138,7 +7225,7 @@ int main(int argc, char * argv[])
 		time_slept += 1000000UL * (tv2.tv_sec - tv1.tv_sec)
 					  + (tv2.tv_usec - tv1.tv_usec);
 
-		if (time_slept > REFRESH_RATE && time_slept > G.update_s * 1000000)
+		if (time_slept > REFRESH_RATE && time_slept > lopt.update_s * 1000000)
 		{
 			time_slept = 0;
 
@@ -7146,53 +7233,47 @@ int main(int argc, char * argv[])
 
 			/* update the window size */
 
-			if (ioctl(0, TIOCGWINSZ, &(G.ws)) < 0)
+			if (ioctl(0, TIOCGWINSZ, &(lopt.ws)) < 0)
 			{
-				G.ws.ws_row = 50;
-				G.ws.ws_col = 120;
+				lopt.ws.ws_row = 25;
+				lopt.ws.ws_col = 80;
 			}
-
-			if (G.ws.ws_col < 1) G.ws.ws_col = 1;
-			if (G.ws.ws_col > 300) G.ws.ws_col = 300;
 
 			/* display the list of access points we have */
 
-			if (!G.do_pause && !G.background_mode)
+			if (!lopt.do_pause && !lopt.background_mode)
 			{
-				ALLEGE(pthread_mutex_lock(&(G.mx_print)) == 0);
+				ALLEGE(pthread_mutex_lock(&(lopt.mx_print)) == 0);
 
-				moveto(1, 1);
-				dump_print(G.ws.ws_row, G.ws.ws_col, G.num_cards);
-				erase_display(0);
+				dump_print(lopt.ws.ws_row, lopt.ws.ws_col, lopt.num_cards);
 
-				ALLEGE(pthread_mutex_unlock(&(G.mx_print)) == 0);
+				ALLEGE(pthread_mutex_unlock(&(lopt.mx_print)) == 0);
 			}
 			continue;
 		}
 
-		if (G.s_file == NULL && G.s_iface != NULL)
+		if (opt.s_file == NULL && lopt.s_iface != NULL)
 		{
-			fd_is_set = 0;
-
-			for (i = 0; i < G.num_cards; i++)
+			for (i = 0; i < lopt.num_cards; i++)
 			{
-				if (FD_ISSET(fd_raw[i], &rfds))
+				if (FD_ISSET(fd_raw[i], &rfds)) // NOLINT(hicpp-signed-bitwise)
 				{
 
 					memset(buffer, 0, sizeof(buffer));
 					h80211 = buffer;
-					if ((caplen = wi_read(wi[i], h80211, sizeof(buffer), &ri))
+					if ((caplen = wi_read(
+							 wi[i], NULL, NULL, h80211, sizeof(buffer), &ri))
 						== -1)
 					{
 						wi_read_failed++;
 						if (wi_read_failed > 1)
 						{
-							G.do_exit = 1;
+							lopt.do_exit = 1;
 							break;
 						}
-						memset(G.message, '\x00', sizeof(G.message));
-						snprintf(G.message,
-								 sizeof(G.message),
+						memset(lopt.message, '\x00', sizeof(lopt.message));
+						snprintf(lopt.message,
+								 sizeof(lopt.message),
 								 "][ interface %s down ",
 								 wi_get_ifname(wi[i]));
 
@@ -7226,76 +7307,100 @@ int main(int argc, char * argv[])
 				}
 			}
 		}
-		else if (G.s_file != NULL)
+		else if (opt.s_file != NULL)
 		{
 			dump_add_packet(h80211, caplen, &ri, i);
 		}
+
+		if (quitting && time(NULL) - quitting_event_ts > 3)
+		{
+			quitting_event_ts = 0;
+			quitting = 0;
+			snprintf(lopt.message, sizeof(lopt.message), "]");
+		}
 	}
 
-	if (G.batt) free(G.batt);
+	if (lopt.batt) free(lopt.batt);
 
-	if (G.elapsed_time) free(G.elapsed_time);
+	if (lopt.elapsed_time) free(lopt.elapsed_time);
 
-	if (G.own_channels) free(G.own_channels);
+	if (lopt.own_channels) free(lopt.own_channels);
 
-	if (G.f_essid) free(G.f_essid);
+	if (lopt.f_essid) free(lopt.f_essid);
 
-	if (G.prefix) free(G.prefix);
+	if (opt.prefix) free(opt.prefix);
 
-	if (G.f_cap_name) free(G.f_cap_name);
+	if (opt.f_cap_name) free(opt.f_cap_name);
 
-	if (G.keyout) free(G.keyout);
+	if (lopt.keyout) free(lopt.keyout);
 
 #ifdef HAVE_PCRE
-	if (G.f_essid_regex) pcre_free(G.f_essid_regex);
+	if (lopt.f_essid_regex) pcre_free(lopt.f_essid_regex);
 #endif
 
-	for (i = 0; i < G.num_cards; i++) wi_close(wi[i]);
+	for (i = 0; i < lopt.num_cards; i++) wi_close(wi[i]);
 
-	if (G.record_data)
+	if (opt.record_data)
 	{
-		if (G.output_format_csv) dump_write_csv();
-		if (G.output_format_kismet_csv) dump_write_kismet_csv();
-		if (G.output_format_kismet_netxml) dump_write_kismet_netxml();
+		if (opt.output_format_csv)
+			dump_write_csv(lopt.ap_1st, lopt.st_1st, lopt.f_encrypt);
+		if (opt.output_format_kismet_csv)
+			dump_write_kismet_csv(lopt.ap_1st, lopt.st_1st, lopt.f_encrypt);
+		if (opt.output_format_kismet_netxml)
+			dump_write_kismet_netxml(lopt.ap_1st,
+									 lopt.st_1st,
+									 lopt.f_encrypt,
+									 lopt.airodump_start_time);
 
-		if (G.output_format_csv || G.f_txt != NULL) fclose(G.f_txt);
-		if (G.output_format_kismet_csv || G.f_kis != NULL) fclose(G.f_kis);
-		if (G.output_format_kismet_netxml || G.f_kis_xml != NULL)
+		if (opt.output_format_csv && opt.f_txt != NULL) fclose(opt.f_txt);
+		if (opt.output_format_kismet_csv && opt.f_kis != NULL)
+			fclose(opt.f_kis);
+		if (opt.output_format_kismet_netxml && opt.f_kis_xml != NULL)
 		{
-			fclose(G.f_kis_xml);
-			free(G.airodump_start_time);
+			fclose(opt.f_kis_xml);
+			free(lopt.airodump_start_time);
 		}
-		if (G.f_gps != NULL) fclose(G.f_gps);
-		if (G.output_format_pcap || G.f_cap != NULL) fclose(G.f_cap);
-		if (G.f_ivs != NULL) fclose(G.f_ivs);
-		if (G.f_logcsv != NULL) fclose(G.f_logcsv);
+		if (opt.f_gps != NULL) fclose(opt.f_gps);
+		if (opt.output_format_pcap && opt.f_cap != NULL) fclose(opt.f_cap);
+		if (opt.f_ivs != NULL) fclose(opt.f_ivs);
+		if (opt.f_logcsv != NULL) fclose(opt.f_logcsv);
 	}
 
-	if (!G.save_gps)
+	if (!lopt.save_gps)
 	{
-		snprintf((char *) buffer, 4096, "%s-%02d.gps", argv[2], G.f_index);
+		snprintf((char *) buffer, 4096, "%s-%02d.gps", argv[2], opt.f_index);
 		unlink((char *) buffer);
 	}
 
-	ap_prv = NULL;
-	ap_cur = G.ap_1st;
+	if (opt.usegpsd)
+	{
+		void * retval = NULL;
+		pthread_join(lopt.gps_tid, &retval);
+		if (retval != NULL) free(retval);
+	}
+
+	if (!lopt.background_mode)
+	{
+		pthread_join(lopt.input_tid, NULL);
+	}
+
+	ap_cur = lopt.ap_1st;
 
 	while (ap_cur != NULL)
 	{
-		// Clean content of ap_cur list (first element: G.ap_1st)
+		// Clean content of ap_cur list (first element: lopt.ap_1st)
 		uniqueiv_wipe(ap_cur->uiv_root);
 
 		list_tail_free(&(ap_cur->packets));
 
-		if (G.manufList) free(ap_cur->manuf);
+		if (lopt.manufList) free(ap_cur->manuf);
 
-		if (G.detect_anomaly) data_wipe(ap_cur->data_root);
+		if (lopt.detect_anomaly) data_wipe(ap_cur->data_root);
 
-		ap_prv = ap_cur;
 		ap_cur = ap_cur->next;
 	}
 
-	ap_cur = G.ap_1st;
+	ap_cur = lopt.ap_1st;
 
 	while (ap_cur != NULL)
 	{
@@ -7305,19 +7410,17 @@ int main(int argc, char * argv[])
 		ap_cur = ap_next;
 	}
 
-	st_cur = G.st_1st;
-	st_next = NULL;
+	st_cur = lopt.st_1st;
 
 	while (st_cur != NULL)
 	{
 		st_next = st_cur->next;
-		if (G.manufList) free(st_cur->manuf);
+		if (lopt.manufList) free(st_cur->manuf);
 		free(st_cur);
 		st_cur = st_next;
 	}
 
-	na_cur = G.na_1st;
-	na_next = NULL;
+	na_cur = lopt.na_1st;
 
 	while (na_cur != NULL)
 	{
@@ -7326,9 +7429,9 @@ int main(int argc, char * argv[])
 		na_cur = na_next;
 	}
 
-	if (G.manufList)
+	if (lopt.manufList)
 	{
-		oui_cur = G.manufList;
+		oui_cur = lopt.manufList;
 		while (oui_cur != NULL)
 		{
 			oui_next = oui_cur->next;
@@ -7337,6 +7440,7 @@ int main(int argc, char * argv[])
 		}
 	}
 
+	reset_term();
 	show_cursor();
 
 	return (EXIT_SUCCESS);

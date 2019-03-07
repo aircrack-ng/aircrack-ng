@@ -281,12 +281,17 @@ static int cygwin_read_packet(struct priv_cygwin * priv,
  * @return -1 if failure or the number of bytes sent
  */
 static int cygwin_write(struct wif * wi,
+						struct timespec * ts,
+						int dlt,
 						unsigned char * h80211,
 						int len,
 						struct tx_info * ti)
 {
 	struct priv_cygwin * priv = wi_priv(wi);
 	int rc;
+
+	(void) ts;
+	(void) dlt;
 
 	if ((rc = priv->pc_inject(h80211, len, ti)) == -1) return -1;
 
@@ -337,6 +342,8 @@ int cygwin_read_reader(int fd, int plen, void * dst, int len)
 }
 
 static int cygwin_read(struct wif * wi,
+					   struct timespec * ts,
+					   int * dlt,
 					   unsigned char * h80211,
 					   int len,
 					   struct rx_info * ri)
@@ -344,6 +351,9 @@ static int cygwin_read(struct wif * wi,
 	struct priv_cygwin * pc = wi_priv(wi);
 	struct rx_info tmp;
 	int plen;
+
+	(void) ts;
+	(void) dlt;
 
 	if (pc->pc_running == -1) return -1;
 

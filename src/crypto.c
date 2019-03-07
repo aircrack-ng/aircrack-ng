@@ -182,7 +182,7 @@ void calc_mic(struct AP_info * ap,
 #endif
 
 #ifdef HMAC_USE_NO_PTR
-	HMAC_CTX ctx;
+	HMAC_CTX ctx = {0};
 #else
 	HMAC_CTX * ctx;
 #endif
@@ -246,7 +246,7 @@ void calc_mic(struct AP_info * ap,
 	}
 }
 
-static inline unsigned long calc_crc(unsigned char * buf, int len)
+static inline unsigned long calc_crc(const unsigned char * buf, int len)
 {
 	REQUIRE(buf != NULL);
 
@@ -273,7 +273,7 @@ static inline unsigned long calc_crc_plain(unsigned char * buf, int len)
 
 /* CRC checksum verification routine */
 
-int check_crc_buf(unsigned char * buf, int len)
+int check_crc_buf(const unsigned char * buf, int len)
 {
 	REQUIRE(buf != NULL);
 
@@ -320,7 +320,7 @@ int add_crc32_plain(unsigned char * data, int length)
 	return (0);
 }
 
-int calc_crc_buf(unsigned char * buf, int len)
+int calc_crc_buf(const unsigned char * buf, int len)
 {
 	REQUIRE(buf != NULL);
 
@@ -991,7 +991,7 @@ int calc_tkip_mic(unsigned char * packet,
 	return (0);
 }
 
-const unsigned short TkipSbox[2][256]
+static const unsigned short TkipSbox[2][256]
 	= {{0xC6A5, 0xF884, 0xEE99, 0xF68D, 0xFF0D, 0xD6BD, 0xDEB1, 0x9154, 0x6050,
 		0x0203, 0xCEA9, 0x567D, 0xE719, 0xB562, 0x4DE6, 0xEC9A, 0x8F45, 0x1F9D,
 		0x8940, 0xFA87, 0xEF15, 0xB2EB, 0x8EC9, 0xFB0B, 0x41EC, 0xB367, 0x5FFD,

@@ -52,8 +52,8 @@
 #define CPUFREQ_CPU0C "/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq"
 #define CPUFREQ_CPU0M "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq"
 #define CORETEMP_PATH "/sys/devices/platform/coretemp.0/"
-int cpuid_readsysfs(const char * file);
-int cpuid_findcpusensorpath(const char * path);
+static int cpuid_readsysfs(const char * file);
+static int cpuid_findcpusensorpath(const char * path);
 #endif
 
 struct _cpuinfo cpuinfo = {0, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0.0, NULL};
@@ -61,7 +61,7 @@ struct _cpuinfo cpuinfo = {0, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0.0, NULL};
 //
 // Until better support for other arch's is added an ifdef is needed
 //
-unsigned long
+static unsigned long
 getRegister(const unsigned int val, const char from, const char to)
 {
 	unsigned long mask = (1ul << (to + 1ul)) - 1ul;
@@ -71,7 +71,7 @@ getRegister(const unsigned int val, const char from, const char to)
 	return (val & mask) >> from;
 }
 
-void sprintcat(char * dest, const char * src, size_t len)
+static void sprintcat(char * dest, const char * src, size_t len)
 {
 	if (strlen(dest) > 0) (void) strncat(dest, ",", len - strlen(dest) - 1);
 
@@ -142,7 +142,7 @@ int cpuid_simdsize(int viewmax)
 }
 
 #ifdef _X86
-char * cpuid_vendor(void)
+static char * cpuid_vendor(void)
 {
 	unsigned eax = 0, ebx = 0, ecx = 0, edx = 0;
 
@@ -188,7 +188,7 @@ char * cpuid_vendor(void)
 }
 #endif
 
-char * cpuid_featureflags(void)
+static char * cpuid_featureflags(void)
 {
 	char flags[64] = {0};
 #ifdef _X86
@@ -268,7 +268,7 @@ char * cpuid_featureflags(void)
 	return strdup(flags);
 }
 
-float cpuid_getcoretemp(void)
+static float cpuid_getcoretemp(void)
 {
 #ifdef __FreeBSD__
 	int tempval = 0;
@@ -295,7 +295,7 @@ float cpuid_getcoretemp(void)
 //
 // Locate the primary temp input on the coretemp sysfs
 //
-int cpuid_findcpusensorpath(const char * path)
+static int cpuid_findcpusensorpath(const char * path)
 {
 #define MAX_SENSOR_PATHS 16
 	DIR * dirp;
@@ -310,7 +310,7 @@ int cpuid_findcpusensorpath(const char * path)
 
 	snprintf(sensor, sizeof(sensor), "temp%d", sensorx);
 
-	while (cnt < MAX_SENSOR_PATHS && (dp = readdir(dirp)) != NULL)
+	while (cnt < (MAX_SENSOR_PATHS - 1) && (dp = readdir(dirp)) != NULL)
 	{
 		if (!strncmp(dp->d_name, sensor, 5))
 		{
@@ -326,7 +326,11 @@ int cpuid_findcpusensorpath(const char * path)
 			return sensorx;
 		}
 		else if (!strncmp(dp->d_name, "temp", 4))
-			sprintf(tbuf[cnt++], "%*s", 31, dp->d_name);
+		{
+			strncpy(tbuf[cnt], dp->d_name, 31);
+			tbuf[cnt][31] = '\0'; // ensure NULL termination
+			if (cnt < (MAX_SENSOR_PATHS - 1)) ++cnt; //-V547
+		}
 	}
 
 	(void) closedir(dirp);
@@ -356,7 +360,7 @@ int cpuid_findcpusensorpath(const char * path)
 	return -1;
 }
 
-int cpuid_readsysfs(const char * file)
+static int cpuid_readsysfs(const char * file)
 {
 	int fd, ival = 0;
 	struct stat sf;
@@ -381,7 +385,7 @@ int cpuid_readsysfs(const char * file)
 //
 // Return CPU frequency from scaling governor when supported
 //
-int cpuid_getfreq(int type)
+static int cpuid_getfreq(int type)
 {
 	int fd, ifreq = 0;
 	struct stat sf;
@@ -403,7 +407,7 @@ int cpuid_getfreq(int type)
 }
 #endif
 
-char * cpuid_modelinfo(void)
+static char * cpuid_modelinfo(void)
 {
 #ifdef _X86
 	unsigned eax = 0, ebx = 0, ecx = 0, edx = 0;
@@ -597,8 +601,8 @@ int cpuid_getinfo()
 	cpuinfo.model = cpuid_modelinfo();
 	cpuinfo.flags = cpuid_featureflags();
 
-	printf("Model           = %s\n", cpuinfo.model);
-	printf("Features        = %s\n", cpuinfo.flags);
+	if (cpuinfo.model != NULL) printf("Model           = %s\n", cpuinfo.model);
+	if (cpuinfo.flags != NULL) printf("Features        = %s\n", cpuinfo.flags);
 
 	// this shouldn't happen but prepare for the worst.
 	if (cpuinfo.cores == 0) cpuinfo.cores = cpu_count;
@@ -622,7 +626,8 @@ int cpuid_getinfo()
 			   cpuinfo.cpufreq_max);
 
 	cpu_temp = cpuid_getcoretemp();
-	if (cpu_temp != 0.0) printf("CPU temperature = %2.2f C\n", cpu_temp);
+	if (cpu_temp != 0.0) //-V550
+		printf("CPU temperature = %2.2f C\n", cpu_temp);
 
 	if (cpuinfo.htt) printf("Logical CPUs    = %d\n", cpuinfo.maxlogic);
 

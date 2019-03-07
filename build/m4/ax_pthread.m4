@@ -371,7 +371,7 @@ for ax_pthread_try_flag in $ax_pthread_flags; do
 #                       if $ax_pthread_check_cond
 #                        error "$ax_pthread_check_macro must be defined"
 #                       endif
-                        static void routine(void *a) { a = 0; }
+                        static void routine(void *a) { a = 0; (void)a; }
                         static void *start_routine(void *a) { return a; }],
                        [pthread_t th; pthread_attr_t attr;
                         pthread_create(&th, 0, start_routine, 0);

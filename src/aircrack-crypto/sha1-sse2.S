@@ -622,7 +622,6 @@ __i686.get_pc_thunk.bx:
 #endif
 #endif
 
-
-#ifdef __ELF__
+#if defined(__linux__) && defined(__ELF__)
 .section .note.GNU-stack,"",%progbits
 #endif

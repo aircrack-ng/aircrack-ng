@@ -163,15 +163,25 @@
 	} while (0)
 
 #define T_0_15(t, A, B, C, D, E)                                               \
-	SHA_ROUND(t, SHA_SRC, (((C ^ D) & B) ^ D), 0x5a827999, A, B, C, D, E)
+	SHA_ROUND(                                                                 \
+		t, SHA_SRC, ((((C) ^ (D)) & (B)) ^ (D)), 0x5a827999, A, B, C, D, E)
 #define T_16_19(t, A, B, C, D, E)                                              \
-	SHA_ROUND(t, SHA_MIX, (((C ^ D) & B) ^ D), 0x5a827999, A, B, C, D, E)
+	SHA_ROUND(                                                                 \
+		t, SHA_MIX, ((((C) ^ (D)) & (B)) ^ (D)), 0x5a827999, A, B, C, D, E)
 #define T_20_39(t, A, B, C, D, E)                                              \
-	SHA_ROUND(t, SHA_MIX, (B ^ C ^ D), 0x6ed9eba1, A, B, C, D, E)
+	SHA_ROUND(t, SHA_MIX, ((B) ^ (C) ^ (D)), 0x6ed9eba1, A, B, C, D, E)
 #define T_40_59(t, A, B, C, D, E)                                              \
-	SHA_ROUND(t, SHA_MIX, ((B & C) + (D & (B ^ C))), 0x8f1bbcdc, A, B, C, D, E)
+	SHA_ROUND(t,                                                               \
+			  SHA_MIX,                                                         \
+			  (((B) & (C)) + ((D) & ((B) ^ (C)))),                             \
+			  0x8f1bbcdc,                                                      \
+			  A,                                                               \
+			  B,                                                               \
+			  C,                                                               \
+			  D,                                                               \
+			  E)
 #define T_60_79(t, A, B, C, D, E)                                              \
-	SHA_ROUND(t, SHA_MIX, (B ^ C ^ D), 0xca62c1d6, A, B, C, D, E)
+	SHA_ROUND(t, SHA_MIX, ((B) ^ (C) ^ (D)), 0xca62c1d6, A, B, C, D, E)
 
 static void blk_SHA1_Block(blk_SHA_CTX * ctx, const unsigned int * data)
 {
@@ -337,11 +347,11 @@ void blk_SHA1_Final(unsigned char hashout[20], blk_SHA_CTX * ctx)
 	/* Output hash */
 	assert(((uintptr_t) hashout % 4UL) == 0); // V1032 catch
 
-	put_be32(hashout + 0 * 4, ctx->h0);
-	put_be32(hashout + 1 * 4, ctx->h1);
-	put_be32(hashout + 2 * 4, ctx->h2);
-	put_be32(hashout + 3 * 4, ctx->h3);
-	put_be32(hashout + 4 * 4, ctx->h4);
+	put_be32(&hashout[0], ctx->h0);
+	put_be32(&hashout[4], ctx->h1);
+	put_be32(&hashout[8], ctx->h2);
+	put_be32(&hashout[12], ctx->h3);
+	put_be32(&hashout[16], ctx->h4);
 }
 #define _SHA1_GIT
 #endif

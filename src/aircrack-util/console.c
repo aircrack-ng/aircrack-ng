@@ -31,10 +31,13 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <locale.h>
+#include <langinfo.h>
 #include <termios.h>
 #if !defined(TIOCGWINSZ) && !defined(linux)
 #include <sys/termios.h>
 #endif
+#include <string.h>
 #include <unistd.h>
 
 #include "console.h"
@@ -173,14 +176,33 @@ void show_cursor(void)
 int mygetch(void)
 {
 	struct termios oldt, newt;
-	int ch;
+	int ch = EOF;
 
 	tcgetattr(STDIN_FILENO, &oldt);
 	newt = oldt;
 	newt.c_lflag &= ~(ICANON | ECHO);
+	newt.c_cc[VMIN] = 0; /* require no keypress */
+	newt.c_cc[VTIME] = 2; /* 20 ms delay */
 	tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-	ch = getchar();
+
+	char c;
+	if (read(STDIN_FILENO, &c, sizeof(char)) > 0) ch = (int) c;
+
 	tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
 
 	return ch;
+}
+
+void console_utf8_enable(void)
+{
+	setlocale(LC_CTYPE, "");
+
+	char * codepage = nl_langinfo(CODESET);
+	if (codepage != NULL && strcmp(codepage, "UTF-8") != 0)
+	{
+		fprintf(stderr,
+				"Warning: Detected you are using a non-UNICODE "
+				"terminal character encoding.\n");
+		sleep(1);
+	}
 }

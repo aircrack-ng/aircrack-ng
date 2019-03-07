@@ -41,7 +41,7 @@
 
 AC_PREREQ(2.52)
 AC_INIT([aircrack-ng],
-    [m4_translit(m4_esyscmd([./evalrev || cat ./VERSION]),m4_newline)],
+    [m4_translit(m4_esyscmd([$(pwd)/evalrev || cat $(pwd)/VERSION]),m4_newline)],
     [https://forum.aircrack-ng.org])
 
 #
@@ -62,6 +62,13 @@ AM_MAINTAINER_MODE([enable])
 AC_SUBST([ACLOCAL_AMFLAGS], ["-I build/m4/stubs -I build/m4 \${ACLOCAL_FLAGS}"])
 
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
+
+#
+# Ensure MAKE is GNU compatible
+#
+if ! ${MAKE-make} --version /cannot/make/this >/dev/null 2>&1; then
+    AC_MSG_ERROR([you don't seem to have GNU make; it is required])
+fi
 
 #
 # Find tooling
@@ -97,6 +104,7 @@ AIRCRACK_NG_LIBNL
 # Optional
 #
 AIRCRACK_NG_AIRPCAP
+AIRCRACK_NG_EXPECT
 AIRCRACK_NG_EXPERIMENTAL
 AIRCRACK_NG_EXT_SCRIPTS
 AIRCRACK_NG_HWLOC
@@ -164,6 +172,7 @@ AM_CONDITIONAL([MULTIBIN], [test "$with_multibin" = yes])
 AM_CONDITIONAL([ENABLE_INSTALLED_TESTS], [test "nope" = yes]) # for glib tests
 AM_CONDITIONAL([CMOCKA], [test "$CMOCKA_FOUND" = yes])
 AM_CONDITIONAL([STATIC_BUILD], [test "$enable_static" = yes])
+AM_CONDITIONAL([EXPECT], [test "$EXPECT_FOUND" = yes])
 
 #
 # Save flags for build summary

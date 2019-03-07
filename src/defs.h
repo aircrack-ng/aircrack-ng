@@ -124,9 +124,70 @@
 
 #define ArrayCount(a) (sizeof((a)) / sizeof((a)[0]))
 
+#define IGNORE_LTZ(c)                                                          \
+	do                                                                         \
+	{                                                                          \
+		int __rc = (c);                                                        \
+		if (__rc < 0)                                                          \
+		{                                                                      \
+			fprintf(stderr,                                                    \
+					"%s:%d:Function failed(%d:%d): %s\n",                      \
+					__FILE__,                                                  \
+					__LINE__,                                                  \
+					__rc,                                                      \
+					errno,                                                     \
+					#c);                                                       \
+		}                                                                      \
+	} while (0)
+
+#define IGNORE_NZ(c)                                                           \
+	do                                                                         \
+	{                                                                          \
+		int __rc = (c);                                                        \
+		if (__rc != 0)                                                         \
+		{                                                                      \
+			fprintf(stderr,                                                    \
+					"%s:%d:Function failed(%d:%d): %s\n",                      \
+					__FILE__,                                                  \
+					__LINE__,                                                  \
+					__rc,                                                      \
+					errno,                                                     \
+					#c);                                                       \
+		}                                                                      \
+	} while (0)
+
+#define IGNORE_ZERO(c)                                                         \
+	do                                                                         \
+	{                                                                          \
+		if ((c) == 0)                                                          \
+		{                                                                      \
+			fprintf(stderr,                                                    \
+					"%s:%d:Function failed(%d): %s\n",                         \
+					__FILE__,                                                  \
+					__LINE__,                                                  \
+					errno,                                                     \
+					#c);                                                       \
+		}                                                                      \
+	} while (0)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+static inline size_t ustrlen(const uint8_t * s1)
+{
+	return strlen((const char *) s1);
+}
+
+#define destroy(var, fn)                                                       \
+	({                                                                         \
+		if ((var) != NULL)                                                     \
+		{                                                                      \
+			fn((__typeof__(var))(var));                                        \
+                                                                               \
+			(var) = NULL;                                                      \
+		}                                                                      \
+	})
 
 #ifdef __cplusplus
 }

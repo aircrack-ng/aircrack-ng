@@ -67,7 +67,7 @@
 #if defined(_MSC_VER) && !defined(MEMDBG_ON)
 #define malloc(a) _aligned_malloc(a, 16)
 #define realloc(a, b) _aligned_realloc(a, b, 16)
-#define calloc(a, b) memset(_aligned_malloc(a * b, 16), 0, a * b)
+#define calloc(a, b) memset(_aligned_malloc((a) * (b), 16), 0, (a) * (b))
 #define free(a) _aligned_free(a)
 char * strdup_MSVC(const char * str)
 {
@@ -259,6 +259,7 @@ void * mem_alloc_tiny_func(size_t size,
 #else
 	p = (char *) mem_alloc(size + mask);
 #endif
+	if (p == NULL) abort();
 	add_memory_link((void *) p);
 	p += mask;
 	p -= (size_t) p & mask;

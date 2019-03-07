@@ -63,11 +63,12 @@
 		 * - since linux does not include it in userspace headers
 		 */
 #include "osdep.h"
-#include "pcap.h"
+#include "pcap_local.h"
 #include "crctable_osdep.h"
 #include "common.h"
 #include "byteorder.h"
 #include "channel.h"
+#include "defs.h"
 
 #ifdef CONFIG_LIBNL
 struct nl80211_state state;
@@ -177,7 +178,7 @@ static int is_ndiswrapper(const char * iface, const char * path)
 		close(0);
 		close(1);
 		close(2);
-		(void) chdir("/");
+		IGNORE_NZ(chdir("/"));
 		execl(path, "iwpriv", iface, "ndis_reset", NULL);
 		exit(1);
 	}
@@ -484,7 +485,7 @@ static int linux_set_rate(struct wif * wi, int rate)
 				close(0);
 				close(1);
 				close(2);
-				(void) chdir("/");
+				IGNORE_NZ(chdir("/"));
 				execlp(dev->iwconfig,
 					   "iwconfig",
 					   wi_get_ifname(wi),
@@ -597,15 +598,19 @@ static int linux_get_mtu(struct wif * wi)
 	return ifr.ifr_mtu;
 }
 
-static int
-linux_read(struct wif * wi, unsigned char * buf, int count, struct rx_info * ri)
+static int linux_read(struct wif * wi,
+					  struct timespec * ts,
+					  int * dlt,
+					  unsigned char * buf,
+					  int count,
+					  struct rx_info * ri)
 {
 	struct priv_linux * dev = wi_priv(wi);
 	unsigned char tmpbuf[4096] __attribute__((aligned(8)));
 
 	int caplen, n, got_signal, got_noise, got_channel, fcs_removed;
 
-	caplen = n = got_signal = got_noise = got_channel = fcs_removed = 0;
+	n = got_signal = got_noise = got_channel = fcs_removed = 0;
 
 	if ((unsigned) count > sizeof(tmpbuf)) return (-1);
 
@@ -631,6 +636,17 @@ linux_read(struct wif * wi, unsigned char * buf, int count, struct rx_info * ri)
 	/* XXX */
 	if (ri) memset(ri, 0, sizeof(*ri));
 
+	if (dlt)
+	{
+		// TODO(jbenden): Future code could receive the actual linktype received.
+		*dlt = LINKTYPE_IEEE802_11;
+	}
+
+	if (ts)
+	{
+		clock_gettime(CLOCK_REALTIME, ts);
+	}
+
 	if (dev->arptype_in == ARPHRD_IEEE80211_PRISM)
 	{
 		/* skip the prism header */
@@ -639,9 +655,9 @@ linux_read(struct wif * wi, unsigned char * buf, int count, struct rx_info * ri)
 			/* prism54 uses a different format */
 			if (ri)
 			{
-				ri->ri_power = tmpbuf[0x33];
-				ri->ri_noise = *(unsigned int *) (tmpbuf + 0x33 + 12); //-V1032
-				ri->ri_rate = (*(unsigned int *) (tmpbuf + 0x33 + 24)) * 500000;
+				ri->ri_power = (int32_t) load32_le(tmpbuf + 0x33);
+				ri->ri_noise = (int32_t) load32_le(tmpbuf + 0x33 + 12);
+				ri->ri_rate = load32_le(buf + 0x33 + 24) * 500000;
 
 				got_signal = 1;
 				got_noise = 1;
@@ -653,24 +669,22 @@ linux_read(struct wif * wi, unsigned char * buf, int count, struct rx_info * ri)
 		{
 			if (ri)
 			{
-				ri->ri_mactime = *(u_int64_t *) (tmpbuf + 0x5C - 48);
-				ri->ri_channel = *(unsigned int *) (tmpbuf + 0x5C - 36);
-				ri->ri_power = *(unsigned int *) (tmpbuf + 0x5C);
-				ri->ri_noise = *(unsigned int *) (tmpbuf + 0x5C + 12);
-				ri->ri_rate = (*(unsigned int *) (tmpbuf + 0x5C + 24)) * 500000;
+				ri->ri_mactime = load64_le(tmpbuf + 0x5C - 48);
+				ri->ri_channel = load32_le(tmpbuf + 0x5C - 36);
+				ri->ri_power = (int32_t) load32_le(tmpbuf + 0x5C);
+				ri->ri_noise = (int32_t) load32_le(tmpbuf + 0x5C + 12);
+				ri->ri_rate = load32_le(tmpbuf + 0x5C + 24) * 500000;
 
-				//                if( ! memcmp( iface[i], "ath", 3 ) )
-				if (dev->drivertype == DT_MADWIFI)
-					ri->ri_power -= *(int *) (tmpbuf + 0x68);
-				if (dev->drivertype == DT_MADWIFING)
-					ri->ri_power -= *(int *) (tmpbuf + 0x68);
+				if (dev->drivertype == DT_MADWIFI
+					|| dev->drivertype == DT_MADWIFING)
+					ri->ri_power -= (int32_t) load32_le(tmpbuf + 0x68);
 
 				got_channel = 1;
 				got_signal = 1;
 				got_noise = 1;
 			}
 
-			n = *(int *) (tmpbuf + 4);
+			n = load32_le(tmpbuf + 4);
 		}
 
 		if (n < 8 || n >= caplen) return (0);
@@ -681,7 +695,7 @@ linux_read(struct wif * wi, unsigned char * buf, int count, struct rx_info * ri)
 		struct ieee80211_radiotap_iterator iterator;
 		struct ieee80211_radiotap_header * rthdr;
 
-		rthdr = (struct ieee80211_radiotap_header *) tmpbuf;
+		rthdr = (struct ieee80211_radiotap_header *) tmpbuf; //-V1032
 
 		if (ieee80211_radiotap_iterator_init(&iterator, rthdr, caplen, NULL)
 			< 0)
@@ -802,6 +816,8 @@ linux_read(struct wif * wi, unsigned char * buf, int count, struct rx_info * ri)
 }
 
 static int linux_write(struct wif * wi,
+					   struct timespec * ts,
+					   int dlt,
 					   unsigned char * buf,
 					   int count,
 					   struct tx_info * ti)
@@ -837,6 +853,9 @@ static int linux_write(struct wif * wi,
 	if (ti)
 	{
 	}
+
+	(void) ts;
+	(void) dlt;
 
 	rate = dev->rate;
 
@@ -884,7 +903,7 @@ static int linux_write(struct wif * wi,
 					memset(tmpbuf + 30, 0, 16);
 
 					tmpbuf[30] = (count - 30) & 0xFF;
-					tmpbuf[31] = (count - 30) >> 8;
+					tmpbuf[31] = (count - 30) >> 8; //-V610
 
 					memcpy(tmpbuf + 46, buf + 30, count - 30);
 
@@ -976,7 +995,7 @@ linux_set_ht_channel_nl80211(struct wif * wi, int channel, unsigned int htval)
 				close(0);
 				close(1);
 				close(2);
-				(void) chdir("/");
+				IGNORE_NZ(chdir("/"));
 				execl(dev->wlanctlng,
 					  "wlanctl-ng",
 					  wi_get_ifname(wi),
@@ -1005,7 +1024,7 @@ linux_set_ht_channel_nl80211(struct wif * wi, int channel, unsigned int htval)
 				close(0);
 				close(1);
 				close(2);
-				(void) chdir("/");
+				IGNORE_NZ(chdir("/"));
 				execlp(dev->iwpriv,
 					   "iwpriv",
 					   wi_get_ifname(wi),
@@ -1029,7 +1048,7 @@ linux_set_ht_channel_nl80211(struct wif * wi, int channel, unsigned int htval)
 				close(0);
 				close(1);
 				close(2);
-				(void) chdir("/");
+				IGNORE_NZ(chdir("/"));
 				execlp(dev->iwconfig,
 					   "iwconfig",
 					   wi_get_ifname(wi),
@@ -1123,7 +1142,7 @@ static int linux_set_channel(struct wif * wi, int channel)
 				close(0);
 				close(1);
 				close(2);
-				(void) chdir("/");
+				IGNORE_NZ(chdir("/"));
 				execl(dev->wlanctlng,
 					  "wlanctl-ng",
 					  wi_get_ifname(wi),
@@ -1152,7 +1171,7 @@ static int linux_set_channel(struct wif * wi, int channel)
 				close(0);
 				close(1);
 				close(2);
-				(void) chdir("/");
+				IGNORE_NZ(chdir("/"));
 				execlp(dev->iwpriv,
 					   "iwpriv",
 					   wi_get_ifname(wi),
@@ -1176,7 +1195,7 @@ static int linux_set_channel(struct wif * wi, int channel)
 				close(0);
 				close(1);
 				close(2);
-				(void) chdir("/");
+				IGNORE_NZ(chdir("/"));
 				execlp(dev->iwconfig,
 					   "iwconfig",
 					   wi_get_ifname(wi),
@@ -1240,7 +1259,7 @@ static int linux_set_freq(struct wif * wi, int freq)
 				close(0);
 				close(1);
 				close(2);
-				(void) chdir("/");
+				IGNORE_NZ(chdir("/"));
 				execlp(dev->iwconfig,
 					   "iwconfig",
 					   wi_get_ifname(wi),
@@ -1425,7 +1444,8 @@ static int set_monitor(struct priv_linux * dev, char * iface, int fd)
 			close(0);
 			close(1);
 			close(2);
-			(void) chdir("/");
+			IGNORE_NZ(chdir("/"));
+			ALLEGE(dev->wl != NULL);
 			execl(dev->wl, "wl", "monitor", "1", NULL);
 			exit(1);
 		}
@@ -1447,7 +1467,7 @@ static int set_monitor(struct priv_linux * dev, char * iface, int fd)
 					close(0);
 					close(1);
 					close(2);
-					(void) chdir("/");
+					IGNORE_NZ(chdir("/"));
 					execl(dev->wlanctlng,
 						  "wlanctl-ng",
 						  iface,
@@ -1474,7 +1494,7 @@ static int set_monitor(struct priv_linux * dev, char * iface, int fd)
 					close(0);
 					close(1);
 					close(2);
-					(void) chdir("/");
+					IGNORE_NZ(chdir("/"));
 					execlp(dev->iwpriv,
 						   "iwpriv",
 						   iface,
@@ -1498,7 +1518,7 @@ static int set_monitor(struct priv_linux * dev, char * iface, int fd)
 					close(0);
 					close(1);
 					close(2);
-					(void) chdir("/");
+					IGNORE_NZ(chdir("/"));
 					execlp(dev->iwpriv,
 						   "iwpriv",
 						   iface,
@@ -1544,7 +1564,7 @@ static int set_monitor(struct priv_linux * dev, char * iface, int fd)
 		close(0);
 		close(1);
 		close(2);
-		(void) chdir("/");
+		IGNORE_NZ(chdir("/"));
 		execlp("iwpriv", "iwpriv", iface, "monitor_type", "1", NULL);
 		exit(1);
 	}
@@ -1555,7 +1575,7 @@ static int set_monitor(struct priv_linux * dev, char * iface, int fd)
 		close(0);
 		close(1);
 		close(2);
-		(void) chdir("/");
+		IGNORE_NZ(chdir("/"));
 		execlp("iwpriv", "iwpriv", iface, "prismhdr", "1", NULL);
 		exit(1);
 	}
@@ -1566,7 +1586,7 @@ static int set_monitor(struct priv_linux * dev, char * iface, int fd)
 		close(0);
 		close(1);
 		close(2);
-		(void) chdir("/");
+		IGNORE_NZ(chdir("/"));
 		execlp("iwpriv", "iwpriv", iface, "set_prismhdr", "1", NULL);
 		exit(1);
 	}
@@ -1581,6 +1601,8 @@ static int openraw(struct priv_linux * dev,
 				   int * arptype,
 				   unsigned char * mac)
 {
+	REQUIRE(iface != NULL);
+
 	struct ifreq ifr;
 	struct ifreq ifr2;
 	struct iwreq wrq;
@@ -1589,7 +1611,7 @@ static int openraw(struct priv_linux * dev,
 	struct sockaddr_ll sll;
 	struct sockaddr_ll sll2;
 
-	if (iface == NULL || strlen(iface) >= sizeof(ifr.ifr_name))
+	if (strlen(iface) >= sizeof(ifr.ifr_name))
 	{
 		printf("Interface name too long: %s\n", iface);
 		return (1);
@@ -1655,8 +1677,10 @@ static int openraw(struct priv_linux * dev,
 			sll2.sll_ifindex = ifr2.ifr_ifindex;
 			sll2.sll_protocol = htons(ETH_P_ALL);
 
-			if (bind(dev->fd_main, (struct sockaddr *) &sll2, sizeof(sll2))
-				< 0) //-V641
+			if (bind(dev->fd_main, //-V641
+					 (struct sockaddr *) &sll2, //-V641
+					 sizeof(sll2)) //-V641
+				< 0)
 			{
 				printf("Interface %s: \n", dev->main_if);
 				perror("bind(ETH_P_ALL) failed");
@@ -1968,7 +1992,7 @@ static int do_linux_open(struct wif * wi, char * iface)
 				 sizeof(strbuf) - 1,
 				 "iwpriv %s rfmontx 1 >/dev/null 2>/dev/null",
 				 iface);
-		(void) system(strbuf);
+		IGNORE_NZ(system(strbuf));
 	}
 
 	/* check if newer athXraw interface available */
@@ -2018,14 +2042,14 @@ static int do_linux_open(struct wif * wi, char * iface)
 
 				memset(strbuf, 0, sizeof(strbuf));
 				snprintf(strbuf, sizeof(strbuf) - 1, "ifconfig %s up", athXraw);
-				(void) system(strbuf);
+				IGNORE_NZ(system(strbuf));
 
 #if 0 /* some people reported problems when prismheader is enabled */
                 memset( strbuf, 0, sizeof( strbuf ) );
                 snprintf( strbuf,  sizeof( strbuf ) - 1,
                          "sysctl -w dev.%s.rawdev_type=1 >/dev/null 2>/dev/null",
                          iface );
-                (void) system( strbuf );
+                IGNORE_NZ(system( strbuf ));
 #endif
 
 				iface = athXraw;
@@ -2042,7 +2066,7 @@ static int do_linux_open(struct wif * wi, char * iface)
 			close(0);
 			close(1);
 			close(2);
-			(void) chdir("/");
+			IGNORE_NZ(chdir("/"));
 			execlp("iwpriv", "iwpriv", iface, "get_port3", NULL);
 			exit(1);
 		}
@@ -2070,7 +2094,7 @@ static int do_linux_open(struct wif * wi, char * iface)
 			close(0);
 			close(1);
 			close(2);
-			(void) chdir("/");
+			IGNORE_NZ(chdir("/"));
 			execlp("iwpriv", "iwpriv", iface, "get_regdomain", NULL);
 			exit(1);
 		}
@@ -2094,7 +2118,7 @@ static int do_linux_open(struct wif * wi, char * iface)
 
 		if ((acpi = fopen(r_file, "r")) == NULL) goto close_out;
 		memset(buf, 0, 128);
-		(void) fgets(buf, 128, acpi);
+		IGNORE_ZERO(fgets(buf, 128, acpi));
 		buf[127] = '\x00';
 		// rtap iface doesn't exist
 		if (strncmp(buf, "-1", 2) == 0)
@@ -2106,7 +2130,7 @@ static int do_linux_open(struct wif * wi, char * iface)
 			// reopen for reading
 			fclose(acpi);
 			if ((acpi = fopen(r_file, "r")) == NULL) goto close_out;
-			(void) fgets(buf, 128, acpi);
+			IGNORE_ZERO(fgets(buf, 128, acpi));
 		}
 		fclose(acpi);
 		acpi = NULL;
@@ -2139,76 +2163,73 @@ static int do_linux_open(struct wif * wi, char * iface)
 		}
 
 		net_ifaces = opendir("/sys/class/net");
-		if (net_ifaces != NULL)
+		while (net_ifaces != NULL && (this_iface = readdir(net_ifaces)) != NULL)
 		{
-			while ((this_iface = readdir(net_ifaces)) != NULL)
+			if (this_iface->d_name[0] == '.') continue;
+
+			char * new_r_file = (char *) realloc(
+				r_file, (33 + strlen(this_iface->d_name) + 1) * sizeof(char));
+			if (!new_r_file)
 			{
-				if (this_iface->d_name[0] == '.') continue;
+				continue;
+			}
+			r_file = new_r_file;
+			snprintf(r_file,
+					 33 + strlen(this_iface->d_name) + 1,
+					 "/sys/class/net/%s/device/rtap_iface",
+					 this_iface->d_name);
 
-				char * new_r_file = (char *) realloc(
-					r_file,
-					(33 + strlen(this_iface->d_name) + 1) * sizeof(char));
-				if (!new_r_file)
+			if ((acpi = fopen(r_file, "r")) == NULL) continue;
+			dev->drivertype = DT_IPW2200;
+
+			memset(buf, 0, 128);
+			IGNORE_ZERO(fgets(buf, 128, acpi));
+			if (n == 0) // interface exists
+			{
+				if (strncmp(buf, iface, 5) == 0)
 				{
-					continue;
+					fclose(acpi);
+					acpi = NULL;
+					closedir(net_ifaces);
+					net_ifaces = NULL;
+					dev->main_if
+						= (char *) malloc(strlen(this_iface->d_name) + 1);
+					if (dev->main_if == NULL) continue;
+					strcpy(dev->main_if, this_iface->d_name);
+					break;
 				}
-				r_file = new_r_file;
-				snprintf(r_file,
-						 33 + strlen(this_iface->d_name) + 1,
-						 "/sys/class/net/%s/device/rtap_iface",
-						 this_iface->d_name);
-
-				if ((acpi = fopen(r_file, "r")) == NULL) continue;
-				dev->drivertype = DT_IPW2200;
-
-				memset(buf, 0, 128);
-				(void) fgets(buf, 128, acpi);
-				if (n == 0) // interface exists
+			}
+			else // need to create interface
+			{
+				if (strncmp(buf, "-1", 2) == 0)
 				{
+					// repoen for writing
+					fclose(acpi);
+					if ((acpi = fopen(r_file, "w")) == NULL) continue;
+					fputs("1", acpi);
+					// reopen for reading
+					fclose(acpi);
+					if ((acpi = fopen(r_file, "r")) == NULL) continue;
+					IGNORE_ZERO(fgets(buf, 128, acpi));
 					if (strncmp(buf, iface, 5) == 0)
 					{
-						fclose(acpi);
-						acpi = NULL;
 						closedir(net_ifaces);
 						net_ifaces = NULL;
 						dev->main_if
 							= (char *) malloc(strlen(this_iface->d_name) + 1);
 						if (dev->main_if == NULL) continue;
 						strcpy(dev->main_if, this_iface->d_name);
+						fclose(acpi);
+						acpi = NULL;
 						break;
 					}
 				}
-				else // need to create interface
-				{
-					if (strncmp(buf, "-1", 2) == 0)
-					{
-						// repoen for writing
-						fclose(acpi);
-						if ((acpi = fopen(r_file, "w")) == NULL) continue;
-						fputs("1", acpi);
-						// reopen for reading
-						fclose(acpi);
-						if ((acpi = fopen(r_file, "r")) == NULL) continue;
-						(void) fgets(buf, 128, acpi);
-						if (strncmp(buf, iface, 5) == 0)
-						{
-							closedir(net_ifaces);
-							net_ifaces = NULL;
-							dev->main_if = (char *) malloc(
-								strlen(this_iface->d_name) + 1);
-							if (dev->main_if == NULL) continue;
-							strcpy(dev->main_if, this_iface->d_name);
-							fclose(acpi);
-							acpi = NULL;
-							break;
-						}
-					}
-				}
-				fclose(acpi);
-				acpi = NULL;
 			}
-			if (net_ifaces != NULL) closedir(net_ifaces);
+			fclose(acpi);
+			acpi = NULL;
 		}
+
+		if (net_ifaces != NULL) closedir(net_ifaces);
 	}
 
 	if (openraw(dev, iface, dev->fd_out, &dev->arptype_out, dev->pl_mac) != 0)
@@ -2478,7 +2499,7 @@ EXPORT int get_battery_state(void)
 			unsigned charging, ac;
 
 			ret = sscanf(battery_data,
-						 "%*s %*d.%*d %*x %x %x %x %*d%% %d %s\n",
+						 "%*s %*d.%*d %*x %x %x %x %*d%% %d %31s\n",
 						 &ac,
 						 &charging,
 						 &flag,
@@ -2505,7 +2526,7 @@ EXPORT int get_battery_state(void)
 		FILE *acpi, *info;
 		char battery_state[28 + sizeof(this_adapter->d_name) + 1];
 		char battery_info[24 + sizeof(this_battery->d_name) + 1];
-		int rate = 1, remain = 0, current = 0;
+		int rate = 1, remain = 0;
 		static int total_remain = 0, total_cap = 0;
 		int batno = 0;
 		static int info_timer = 0;
@@ -2599,8 +2620,6 @@ EXPORT int get_battery_state(void)
 					remain = atoi(buf + 25);
 					total_remain += remain;
 				}
-				else if (strncmp(buf, "present voltage:", 17) == 0)
-					current = atoi(buf + 25);
 			}
 			total_cap += batt_full_capacity[batno];
 			fclose(acpi);

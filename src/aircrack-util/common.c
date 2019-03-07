@@ -32,6 +32,7 @@
  *  files in the program, then also delete it here.
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -58,6 +59,9 @@
 #endif
 
 #include "defs.h"
+#include "aircrack-osdep/osdep.h"
+#include "aircrack-osdep/common.h"
+#include "include/ethernet.h"
 
 #define isHex(c) (hexToInt(c) != -1)
 #define HEX_BASE 16
@@ -342,7 +346,8 @@ int get_nb_cpus(void)
 				if (pos == s)
 				{
 					pos = strchr(s, ':');
-					number = atoi(pos + 1);
+
+					if (pos != NULL) number = atoi(pos + 1);
 				}
 			}
 
@@ -395,22 +400,6 @@ int maccmp(unsigned char * mac1, unsigned char * mac2)
 		if (toupper(mac1[i]) != toupper(mac2[i])) return -1;
 	}
 	return 0;
-}
-
-// Converts a mac address in a human-readable format
-char * mac2string(unsigned char * mac_address)
-{
-	char * mac_string = (char *) malloc(sizeof(char) * 18);
-	snprintf(mac_string,
-			 18,
-			 "%02X:%02X:%02X:%02X:%02X:%02X",
-			 *mac_address,
-			 *(mac_address + 1),
-			 *(mac_address + 2),
-			 *(mac_address + 3),
-			 *(mac_address + 4),
-			 *(mac_address + 5));
-	return mac_string;
 }
 
 /* Return -1 if it's not an hex value and return its value when it's a hex value
@@ -647,15 +636,6 @@ int hexToInt(char s[], int len)
 	return value;
 }
 
-void rtrim(char * line)
-{
-	if (line && strlen(line) > 0)
-	{
-		if (line[strlen(line) - 1] == '\n') line[strlen(line) - 1] = 0;
-		if (line[strlen(line) - 1] == '\r') line[strlen(line) - 1] = 0;
-	}
-}
-
 char * get_current_working_directory(void)
 {
 	char * ret = NULL;
@@ -714,4 +694,12 @@ int is_background(void)
 
 	// Background
 	return 1;
+}
+
+int station_compare(const void * a, const void * b)
+{
+	REQUIRE(a != NULL);
+	REQUIRE(b != NULL);
+
+	return (memcmp(a, b, ETHER_ADDR_LEN));
 }

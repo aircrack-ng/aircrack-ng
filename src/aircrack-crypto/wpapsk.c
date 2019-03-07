@@ -114,7 +114,7 @@
 #define SIMDSHA1body SSESHA1body
 #endif
 
-char itoa64[64]
+static char itoa64[64]
 	= "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 char atoi64[0x100];
 
@@ -127,9 +127,9 @@ char atoi64[0x100];
 	 + (unsigned int) index / SIMD_COEF_32 * SHA_BUF_SIZ * SIMD_COEF_32 * 4)
 #else
 #define GETPOS(i, index)                                                       \
-	((index & (MMX_COEF - 1)) * 4 + ((i) & (0xffffffff - 3)) * MMX_COEF        \
+	(((index) & (MMX_COEF - 1)) * 4 + ((i) & (0xffffffff - 3)) * MMX_COEF      \
 	 + (3 - ((i) &3))                                                          \
-	 + (index >> (MMX_COEF >> 1)) * SHA_BUF_SIZ * MMX_COEF * 4)
+	 + ((index) >> (MMX_COEF >> 1)) * SHA_BUF_SIZ * MMX_COEF * 4)
 #endif
 
 #ifdef SIMD_CORE

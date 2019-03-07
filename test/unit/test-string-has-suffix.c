@@ -3,7 +3,18 @@
 #include <setjmp.h>
 #include <cmocka.h>
 
+#include "aircrack-osdep/byteorder.h"
+#include "aircrack-osdep/radiotap/platform.h"
 #include "aircrack-util/common.h"
+
+static void test_radiotap_unaligned_access(void ** state)
+{
+	(void) state;
+
+	const char bytes[] = {0x00, 0x01, 0x02, 0x00};
+
+	assert_true(get_unaligned_le16(bytes + 1) == 0x0201); //-V1032
+}
 
 static void test_string_has_suffix(void ** state)
 {
@@ -58,6 +69,7 @@ int main(int argc, char * argv[])
 
 	const struct CMUnitTest tests[] = {
 		cmocka_unit_test(test_string_has_suffix),
+		cmocka_unit_test(test_radiotap_unaligned_access),
 	};
 	return cmocka_run_group_tests(tests, NULL, NULL);
 }

@@ -32,10 +32,12 @@
 #ifndef _AIRUNDEFENSE_H_
 #define _AIRUNDEFENSE_H_
 
-#include "pcap.h"
+#include <stdbool.h>
+
+#include "pcap_local.h"
 #include "aircrack-util/common.h"
 
-typedef enum { false, true } BOOLEAN;
+typedef bool BOOLEAN;
 
 // How far should we check for cloaked packets (backward and forward)
 #define PACKET_CHECKING_LENGTH 10

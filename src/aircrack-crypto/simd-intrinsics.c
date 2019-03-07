@@ -1849,7 +1849,7 @@ void SIMDSHA1body(vtype * _data,
 #define INIT_G 0x1f83d9ab
 #define INIT_H 0x5be0cd19
 
-#define ror(x, n) ((x >> n) | (x << (32 - n)))
+#define ror(x, n) (((x) >> (n)) | ((x) << (32 - (n))))
 
 void sha256_reverse(uint32_t * hash)
 {
@@ -2468,7 +2468,7 @@ void SIMDSHA256body(vtype * data,
 #define INIT_G 0x1f83d9abfb41bd6bULL
 #define INIT_H 0x5be0cd19137e2179ULL
 
-#define ror(x, n) ((x >> n) | (x << (64 - n)))
+#define ror(x, n) (((x) >> (n)) | ((x) << (64 - (n))))
 
 void sha512_reverse(uint64_t * hash)
 {

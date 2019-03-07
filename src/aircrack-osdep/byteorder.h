@@ -35,6 +35,8 @@
 #ifndef _AIRCRACK_NG_BYTEORDER_H_
 #define _AIRCRACK_NG_BYTEORDER_H_
 
+#include <string.h>
+
 #define ___my_swab16(x)                                                        \
 	((u_int16_t)((((u_int16_t)(x) & (u_int16_t) 0x00ffU) << 8u)                \
 				 | (((u_int16_t)(x) & (u_int16_t) 0xff00U) >> 8u)))
@@ -83,7 +85,7 @@ typedef uint8_t u_int8_t;
 /*
 	 * Cygwin
 	 */
-#if defined(__CYGWIN32__)
+#if defined(__CYGWIN32__) || defined(CYGWIN)
 #include <asm/byteorder.h>
 #include <unistd.h>
 
@@ -214,6 +216,8 @@ typedef uint8_t u_int8_t;
 #define __cpu_to_le16(x) ___my_swab16(x)
 
 #define AIRCRACK_NG_BYTE_ORDER_DEFINED
+#define BIG_ENDIAN 1
+#define BYTE_ORDER BIG_ENDIAN
 #else
 #define AIRCRACK_NG_BYTE_ORDER 1
 #define LITTLE_ENDIAN 1
@@ -232,7 +236,7 @@ typedef uint8_t u_int8_t;
 #endif
 
 // FreeBSD
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
 #undef ushort
 #undef uint
 #include <sys/types.h>
@@ -442,5 +446,50 @@ typedef uint8_t u_int8_t;
 #ifndef ntohl
 #define ntohl be32_to_cpu
 #endif
+
+/* Loads and stores. These avoid undefined behavior due to unaligned memory
+ * accesses, via memcpy. */
+
+inline static uint16_t load16(uint8_t * b)
+{
+	uint16_t x;
+	memcpy(&x, b, 2);
+	return x;
+}
+
+inline static uint32_t load32(uint8_t * b)
+{
+	uint32_t x;
+	memcpy(&x, b, 4);
+	return x;
+}
+
+inline static uint64_t load64(uint8_t * b)
+{
+	uint64_t x;
+	memcpy(&x, b, 8);
+	return x;
+}
+
+inline static void store16(uint8_t * b, uint16_t i) { memcpy(b, &i, 2); }
+
+inline static void store32(uint8_t * b, uint32_t i) { memcpy(b, &i, 4); }
+
+inline static void store64(uint8_t * b, uint64_t i) { memcpy(b, &i, 8); }
+
+#define load16_le(b) (__le16_to_cpu(load16(b)))
+#define store16_le(b, i) (store16(b, __cpu_to_le16(i)))
+#define load16_be(b) (__be16_to_cpu(load16(b)))
+#define store16_be(b, i) (store16(b, __cpu_to_be16(i)))
+
+#define load32_le(b) (__le32_to_cpu(load32(b)))
+#define store32_le(b, i) (store32(b, __cpu_to_le32(i)))
+#define load32_be(b) (__be32_to_cpu(load32(b)))
+#define store32_be(b, i) (store32(b, __cpu_to_be32(i)))
+
+#define load64_le(b) (__le64_to_cpu(load64(b)))
+#define store64_le(b, i) (store64(b, __cpu_to_le64(i)))
+#define load64_be(b) (__be64_to_cpu(load64(b)))
+#define store64_be(b, i) (store64(b, __cpu_to_be64(i)))
 
 #endif

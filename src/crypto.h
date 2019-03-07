@@ -35,9 +35,17 @@
 #ifndef _CRYPTO_H
 #define _CRYPTO_H
 
+#include <limits.h>
+
 #ifdef USE_GCRYPT
 #include "gcrypt-openssl-wrapper.h"
 #endif
+
+#include "defs.h"
+
+#define CRYPT_NONE 0
+#define CRYPT_WEP 1
+#define CRYPT_WPA 2
 
 #define S_LLC_SNAP "\xAA\xAA\x03\x00\x00\x00"
 #define S_LLC_SNAP_ARP (S_LLC_SNAP "\x08\x06")
@@ -108,8 +116,8 @@ struct AP_info;
 void calc_pmk(char * key, char * essid, unsigned char pmk[40]);
 int decrypt_wep(unsigned char * data, int len, unsigned char * key, int keylen);
 int encrypt_wep(unsigned char * data, int len, unsigned char * key, int keylen);
-int check_crc_buf(unsigned char * buf, int len);
-int calc_crc_buf(unsigned char * buf, int len);
+int check_crc_buf(const unsigned char * buf, int len);
+int calc_crc_buf(const unsigned char * buf, int len);
 void calc_mic(struct AP_info * ap,
 			  unsigned char * pmk,
 			  unsigned char * ptk,
@@ -145,5 +153,47 @@ int calc_tkip_mic_key(unsigned char * packet, int length, unsigned char key[8]);
 
 extern const unsigned long int crc_tbl[256];
 extern const unsigned char crc_chop_tbl[256][4];
+
+static inline void add_icv(unsigned char * input, int len, int offset)
+{
+	REQUIRE(input != NULL);
+	REQUIRE(len > 0 && len < (INT_MAX - 4));
+	REQUIRE(offset >= 0 && offset <= len);
+
+	unsigned long crc = 0xFFFFFFFF;
+
+	for (int n = offset; n < len; n++)
+		crc = crc_tbl[(crc ^ input[n]) & 0xFF] ^ (crc >> 8);
+
+	crc = ~crc;
+
+	input[len] = (uint8_t)((crc) &0xFF);
+	input[len + 1] = (uint8_t)((crc >> 8) & 0xFF);
+	input[len + 2] = (uint8_t)((crc >> 16) & 0xFF);
+	input[len + 3] = (uint8_t)((crc >> 24) & 0xFF);
+}
+
+static inline int eapol_handshake_step(const unsigned char * eapol,
+									   const int len)
+{
+	REQUIRE(eapol != NULL);
+
+	const int eapol_size = 4 + 1 + 2 + 2 + 8 + 32 + 16 + 8 + 8 + 16 + 2;
+
+	if (len < eapol_size) return (0);
+
+	/* not pairwise */
+	if ((eapol[6] & 0x08) == 0) return (0);
+
+	/* 1: has no mic */
+	if ((eapol[5] & 1) == 0) return (1);
+
+	/* 3: has ack */
+	if ((eapol[6] & 0x80) != 0) return (3);
+
+	if (*((uint16_t *) &eapol[eapol_size - 2]) == 0) return (4);
+
+	return (2);
+}
 
 #endif /* crypto.h */

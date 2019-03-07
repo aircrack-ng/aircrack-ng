@@ -12,6 +12,8 @@
  * license, see COPYING for more details.
  */
 #include "radiotap_iter.h"
+#include "../osdep.h"
+#include "../byteorder.h"
 #include "platform.h"
 
 /* function prototypes and related defs are in radiotap_iter.h */
@@ -102,16 +104,16 @@ int ieee80211_radiotap_iterator_init(
 		return -EINVAL;
 
 	/* sanity check for allowed length and radiotap length field */
-	if (max_length < get_unaligned_le16(&radiotap_header->it_len))
+	if (max_length < get_unaligned_le16(UNALIGNED_ADDRESS(&radiotap_header->it_len)))
 		return -EINVAL;
 
 	iterator->_rtheader = radiotap_header;
-	iterator->_max_length = get_unaligned_le16(&radiotap_header->it_len);
+	iterator->_max_length = get_unaligned_le16(UNALIGNED_ADDRESS(&radiotap_header->it_len));
 	iterator->_arg_index = 0;
-	iterator->_bitmap_shifter = get_unaligned_le32(&radiotap_header->it_present);
+	iterator->_bitmap_shifter = get_unaligned_le32(UNALIGNED_ADDRESS(&radiotap_header->it_present));
 	iterator->_arg = (uint8_t *)radiotap_header + sizeof(*radiotap_header);
 	iterator->_reset_on_ext = 0;
-	iterator->_next_bitmap = &radiotap_header->it_present;
+	iterator->_next_bitmap = UNALIGNED_ADDRESS(&radiotap_header->it_present);
 	iterator->_next_bitmap++;
 	iterator->_vns = vns;
 	iterator->current_namespace = &radiotap_ns;

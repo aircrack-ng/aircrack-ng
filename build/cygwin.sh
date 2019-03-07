@@ -21,15 +21,17 @@ then
 	export CC CXX LIBS
 fi
 
-CFLAGS="-O3 -DNDEBUG"
-CXXFLAGS="-O3 -DNDEBUG"
+CPUS=$((`grep processor /proc/cpuinfo | wc -l` * 3 / 2))
+CFLAGS="-O2 -DNDEBUG"
+CXXFLAGS="-O2 -DNDEBUG"
 export CFLAGS CXXFLAGS
 
 RETRY=0
 
 while [ $RETRY -lt 3 ];
 do
-	./autogen.sh "$@" && break
+	# ./autogen.sh "$@" && break
+	autoreconf -vi && ./configure "$@" && break
 
 	echo "W: failed to run autogen.sh, will retry..."
 	RETRY=$(($RETRY + 1))
@@ -42,7 +44,7 @@ then
 	exit 1
 fi
 
-make
+make -j ${CPUS:-1}
 make check || { find test -name 'test-suite.log' -exec cat {} ';' && exit 1; }
 make clean
 

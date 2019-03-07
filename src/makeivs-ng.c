@@ -24,10 +24,11 @@
 #include <string.h>
 #include <getopt.h>
 #include <time.h>
+#include <float.h>
 
 #include "defs.h"
 #include "version.h"
-#include "pcap.h"
+#include "pcap_local.h"
 #include "uniqueiv.h"
 #include "aircrack-util/common.h"
 
@@ -60,6 +61,7 @@ static const char usage[] =
 int main(int argc, char * argv[])
 {
 	int i, j, k, pre_n, n, count = 100000, length = 16;
+	unsigned int un;
 	int paramUsed = 0, keylen = 0, zero = 0, startiv = 0, iv = 0;
 	FILE * f_ivs_out;
 	unsigned char K[32];
@@ -266,7 +268,7 @@ int main(int argc, char * argv[])
 			case 'w':
 
 				paramUsed = 1;
-				filename = optarg;
+				filename = strdup(optarg);
 				break;
 
 			case 'b':
@@ -320,9 +322,9 @@ int main(int argc, char * argv[])
 				buf[1] = s[1];
 				buf[2] = '\0';
 
-				while (sscanf(buf, "%x", &n) == 1)
+				while (sscanf(buf, "%x", &un) == 1)
 				{
-					if (n < 0 || n > 255)
+					if (un > 255)
 					{
 						printf(usage,
 							   getVersion("makeivs-ng",
@@ -339,7 +341,7 @@ int main(int argc, char * argv[])
 
 					if (3 + i >= 32) break;
 
-					K[3 + i++] = n;
+					K[3 + i++] = (uint8_t) un;
 
 					s += 2;
 
@@ -428,10 +430,11 @@ int main(int argc, char * argv[])
 		return (EXIT_FAILURE);
 	}
 
-	size = (long long) strlen(IVS2_MAGIC)
-		   + (long long) sizeof(struct ivs2_filehdr)
-		   + (long long) count * (long long) sizeof(struct ivs2_pkthdr)
-		   + (long long) count * (long long) (length + 4);
+	size = (unsigned long long) strlen(IVS2_MAGIC)
+		   + (unsigned long long) sizeof(struct ivs2_filehdr)
+		   + (unsigned long long) count
+				 * (unsigned long long) sizeof(struct ivs2_pkthdr)
+		   + (unsigned long long) count * (length + 4ULL);
 
 	printf("Creating %d IVs with %d bytes of keystream each.\n", count, length);
 	printf("Estimated filesize: ");
@@ -444,15 +447,18 @@ int main(int argc, char * argv[])
 	else // under 1 KB
 		printf("%.2f Byte\n", (double) size);
 
+	ALLEGE(filename != NULL);
 	if ((f_ivs_out = fopen(filename, "wb+")) == NULL)
 	{
 		perror("fopen");
+		free(filename);
 		return (EXIT_FAILURE);
 	}
 
 	if (fwrite(IVS2_MAGIC, 1, 4, f_ivs_out) != (size_t) 4)
 	{
 		perror("fwrite(IVs file MAGIC) failed");
+		free(filename);
 		return (EXIT_FAILURE);
 	}
 
@@ -463,6 +469,7 @@ int main(int argc, char * argv[])
 	if (fwrite(&fivs2, sizeof(struct ivs2_filehdr), 1, f_ivs_out) != (size_t) 1)
 	{
 		perror("fwrite(IV file header) failed");
+		free(filename);
 		return (EXIT_FAILURE);
 	}
 
@@ -475,6 +482,7 @@ int main(int argc, char * argv[])
 		!= (size_t) sizeof(struct ivs2_pkthdr))
 	{
 		perror("fwrite(IV header) failed");
+		free(filename);
 		return (EXIT_FAILURE);
 	}
 
@@ -487,6 +495,7 @@ int main(int argc, char * argv[])
 	if (fwrite(bssid, 1, 6, f_ivs_out) != (size_t) 6)
 	{
 		perror("fwrite(IV bssid) failed");
+		free(filename);
 		return (EXIT_FAILURE);
 	}
 	printf("Using fake BSSID %02X:%02X:%02X:%02X:%02X:%02X\n",
@@ -500,12 +509,12 @@ int main(int argc, char * argv[])
 	pre_n = 0;
 	for (n = 0; n < count; n++)
 	{
-		if ((dupe == 0) || (pre_n == n)
-			|| ((float) rand() / (float) RAND_MAX > (float) ((float) dupe /
+		if ((dupe <= FLT_EPSILON) || (pre_n == n)
+			|| ((float) rand() / (float) RAND_MAX > (dupe /
 #if defined(__x86_64__) && defined(__CYGWIN__)
-															 (0.0f + 100))))
+													 (0.0f + 100.0f))))
 #else
-															 100.0f)))
+													 100.0f)))
 #endif
 		{
 			if (prng)
@@ -577,17 +586,20 @@ int main(int argc, char * argv[])
 			!= (size_t) sizeof(struct ivs2_pkthdr))
 		{
 			perror("fwrite(IV header) failed");
+			free(filename);
 			return (EXIT_FAILURE);
 		}
 
 		if (fwrite(K, 1, 3, f_ivs_out) != (size_t) 3)
 		{
 			perror("fwrite(IV iv) failed");
+			free(filename);
 			return (EXIT_FAILURE);
 		}
 		if (fwrite(&zero, 1, 1, f_ivs_out) != (size_t) 1)
 		{
 			perror("fwrite(IV idx) failed");
+			free(filename);
 			return (EXIT_FAILURE);
 		}
 		ivs2.len -= 4;
@@ -611,6 +623,7 @@ int main(int argc, char * argv[])
 		fflush(stdout);
 	}
 
+	free(filename);
 	fclose(f_ivs_out);
 	printf("Done.\n");
 

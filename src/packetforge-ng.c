@@ -35,18 +35,22 @@
  */
 
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
+#include <sys/types.h>
 #include <time.h>
 #include <limits.h>
 #include <getopt.h>
 
 #include "defs.h"
 #include "version.h"
-#include "pcap.h"
+#include "pcap_local.h"
+#include "communications.h"
 #include "crypto.h"
 #include "aircrack-osdep/byteorder.h"
+#include "include/ethernet.h"
 #include "aircrack-util/common.h"
 #include "aircrack-util/console.h"
 
@@ -113,7 +117,8 @@ static const char usage[]
 	  "      --help         : Displays this usage screen\n"
 	  "\n";
 
-static struct options
+struct communication_options opt;
+static struct local_options
 {
 	unsigned char bssid[6];
 	unsigned char dmac[6];
@@ -144,261 +149,12 @@ static struct options
 	int first_packet;
 
 	int num_packets;
-} opt;
+} lopt;
 
-static struct devices
-{
-	int fd_in, arptype_in;
-	int fd_out, arptype_out;
-	int fd_rtc;
-
-	FILE * f_cap_in;
-
-	struct pcap_file_header pfh_in;
-} dev;
-
-static unsigned char h80211[2048];
-static unsigned char tmpbuf[2048];
-
-static int capture_ask_packet(int * caplen)
-{
-	time_t tr;
-	struct timeval tv;
-
-	long nb_pkt_read;
-	int i, j, n, mi_b, mi_s, mi_d;
-	int ret;
-
-	struct pcap_pkthdr pkh;
-
-	tr = time(NULL);
-
-	nb_pkt_read = 0;
-
-	if (opt.raw_file == NULL)
-	{
-		printf("Please specify an input file (-r).\n");
-		return (1);
-	}
-
-	while (1)
-	{
-		if (time(NULL) - tr > 0)
-		{
-			tr = time(NULL);
-			printf("\rRead %ld packets...\r", nb_pkt_read);
-			fflush(stdout);
-		}
-
-		/* there are no hidden backdoors in this source code */
-
-		n = sizeof(pkh);
-
-		if (fread(&pkh, n, 1, dev.f_cap_in) != 1)
-		{
-			printf("\r");
-			erase_line(0);
-			printf("End of file.\n");
-			return (1);
-		}
-
-		if (dev.pfh_in.magic == TCPDUMP_CIGAM)
-		{
-			SWAP32(pkh.caplen);
-			SWAP32(pkh.len);
-		}
-
-		tv.tv_sec = pkh.tv_sec;
-		tv.tv_usec = pkh.tv_usec;
-
-		n = *caplen = pkh.caplen;
-
-		if (n <= 0 || n > (int) sizeof(h80211))
-		{
-			printf("\r");
-			erase_line(0);
-			printf("Invalid packet length %d.\n", n);
-			return (1);
-		}
-
-		if (fread(h80211, n, 1, dev.f_cap_in) != 1)
-		{
-			printf("\r");
-			erase_line(0);
-			printf("End of file.\n");
-			return (1);
-		}
-
-		if (dev.pfh_in.linktype == LINKTYPE_PRISM_HEADER)
-		{
-			if (h80211[7] == 0x40)
-				n = 64;
-			else
-				n = *(int *) (h80211 + 4);
-
-			if (n < 8 || n >= (int) *caplen) continue;
-
-			memcpy(tmpbuf, h80211, *caplen);
-			*caplen -= n;
-			memcpy(h80211, tmpbuf + n, *caplen);
-		}
-
-		if (dev.pfh_in.linktype == LINKTYPE_RADIOTAP_HDR)
-		{
-			/* remove the radiotap header */
-
-			n = *(unsigned short *) (h80211 + 2);
-
-			if (n <= 0 || n >= (int) *caplen) continue;
-
-			memcpy(tmpbuf, h80211, *caplen);
-			*caplen -= n;
-			memcpy(h80211, tmpbuf + n, *caplen);
-		}
-
-		if (dev.pfh_in.linktype == LINKTYPE_PPI_HDR)
-		{
-			/* remove the PPI header */
-
-			n = le16_to_cpu(*(unsigned short *) (h80211 + 2));
-
-			if (n <= 0 || n >= (int) *caplen) continue;
-
-			/* for a while Kismet logged broken PPI headers */
-			if (n == 24 && le16_to_cpu(*(unsigned short *) (h80211 + 8)) == 2)
-				n = 32;
-
-			if (n <= 0 || n >= (int) *caplen) continue;
-
-			memcpy(tmpbuf, h80211, *caplen);
-			*caplen -= n;
-			memcpy(h80211, tmpbuf + n, *caplen);
-		}
-
-		nb_pkt_read++;
-
-		switch (h80211[1] & 3)
-		{
-			case 0:
-				mi_b = 16;
-				mi_s = 10;
-				mi_d = 4;
-				break;
-			case 1:
-				mi_b = 4;
-				mi_s = 10;
-				mi_d = 16;
-				break;
-			case 2:
-				mi_b = 10;
-				mi_s = 16;
-				mi_d = 4;
-				break;
-			default:
-				mi_b = 10;
-				mi_d = 16;
-				mi_s = 24;
-				break;
-		}
-
-		printf("\n\n        Size: %d, FromDS: %d, ToDS: %d",
-			   *caplen,
-			   (h80211[1] & 2) >> 1,
-			   (h80211[1] & 1));
-
-		if ((h80211[0] & 0x0C) == 8 && (h80211[1] & 0x40) != 0)
-		{
-			if ((h80211[27] & 0x20) == 0)
-				printf(" (WEP)");
-			else
-				printf(" (WPA)");
-		}
-
-		printf("\n\n");
-
-		printf("             BSSID  =  %02X:%02X:%02X:%02X:%02X:%02X\n",
-			   h80211[mi_b],
-			   h80211[mi_b + 1],
-			   h80211[mi_b + 2],
-			   h80211[mi_b + 3],
-			   h80211[mi_b + 4],
-			   h80211[mi_b + 5]);
-
-		printf("         Dest. MAC  =  %02X:%02X:%02X:%02X:%02X:%02X\n",
-			   h80211[mi_d],
-			   h80211[mi_d + 1],
-			   h80211[mi_d + 2],
-			   h80211[mi_d + 3],
-			   h80211[mi_d + 4],
-			   h80211[mi_d + 5]);
-
-		printf("        Source MAC  =  %02X:%02X:%02X:%02X:%02X:%02X\n",
-			   h80211[mi_s],
-			   h80211[mi_s + 1],
-			   h80211[mi_s + 2],
-			   h80211[mi_s + 3],
-			   h80211[mi_s + 4],
-			   h80211[mi_s + 5]);
-
-		/* print a hex dump of the packet */
-
-		for (i = 0; i < *caplen; i++)
-		{
-			if ((i & 15) == 0)
-			{
-				if (i == 224)
-				{
-					printf("\n        --- CUT ---");
-					break;
-				}
-
-				printf("\n        0x%04x:  ", i);
-			}
-
-			printf("%02x", h80211[i]); //-V781
-
-			if ((i & 1) != 0) printf(" ");
-
-			if (i == *caplen - 1 && ((i + 1) & 15) != 0)
-			{
-				for (j = ((i + 1) & 15); j < 16; j++)
-				{
-					printf("  ");
-					if ((j & 1) != 0) printf(" ");
-				}
-
-				printf(" ");
-
-				for (j = 16 - ((i + 1) & 15); j < 16; j++)
-					printf("%c",
-						   (h80211[i - 15 + j] < 32 || h80211[i - 15 + j] > 126)
-							   ? '.'
-							   : h80211[i - 15 + j]);
-			}
-
-			if (i > 0 && i < INT_MAX && ((i + 1) & 15) == 0)
-			{
-				printf(" ");
-
-				for (j = 0; j < 16; j++)
-					printf("%c",
-						   (h80211[i - 15 + j] < 32 || h80211[i - 15 + j] > 127)
-							   ? '.'
-							   : h80211[i - 15 + j]);
-			}
-		}
-
-		printf("\n\nUse this packet ? ");
-		fflush(stdout);
-		ret = 0;
-		while (!ret) ret = scanf("%1s", tmpbuf); //-V576
-		printf("\n");
-
-		if (tmpbuf[0] == 'y' || tmpbuf[0] == 'Y') break;
-	}
-
-	return (0);
-}
+struct devices dev;
+extern struct wif *_wi_in, *_wi_out;
+extern uint8_t h80211[4096];
+extern uint8_t tmpbuf[4096];
 
 /* IP address parsing routine */
 static int getip(char * s, unsigned char * ip, unsigned short * port)
@@ -424,6 +180,8 @@ static int getip(char * s, unsigned char * ip, unsigned short * port)
 
 	if (i != 4) return (1);
 
+	ALLEGE(s != NULL);
+
 	if ((s = strchr(s, ':')) != NULL)
 	{
 		s++;
@@ -433,7 +191,7 @@ static int getip(char * s, unsigned char * ip, unsigned short * port)
 		}
 	}
 
-	return (i != 4);
+	return (0);
 }
 
 static unsigned short ip_chksum(unsigned short * addr, int count)
@@ -471,22 +229,22 @@ static int set_tofromds(unsigned char * packet)
 	if (packet == NULL) return (1);
 
 	/* set TODS,FROMDS bits */
-	if (((opt.tods & 1) == 1) && ((opt.fromds & 1) == 1))
+	if (((lopt.tods & 1) == 1) && ((lopt.fromds & 1) == 1))
 	{
 		packet[1] = (packet[1] & 0xFC) | 0x03; /* set TODS=1,FROMDS=1 */
 	}
 
-	if (((opt.tods & 1) == 1) && ((opt.fromds & 1) == 0))
+	if (((lopt.tods & 1) == 1) && ((lopt.fromds & 1) == 0))
 	{
 		packet[1] = (packet[1] & 0xFC) | 0x01; /* set TODS=1,FROMDS=0 */
 	}
 
-	if (((opt.tods & 1) == 0) && ((opt.fromds & 1) == 1))
+	if (((lopt.tods & 1) == 0) && ((lopt.fromds & 1) == 1))
 	{
 		packet[1] = (packet[1] & 0xFC) | 0x02; /* set TODS=0,FROMDS=1 */
 	}
 
-	if (((opt.tods & 1) == 0) && ((opt.fromds & 1) == 0))
+	if (((lopt.tods & 1) == 0) && ((lopt.fromds & 1) == 0))
 	{
 		packet[1] = (packet[1] & 0xFC); /* set TODS=0,FROMDS=0 */
 	}
@@ -500,7 +258,7 @@ static int set_bssid(unsigned char * packet)
 
 	if (packet == NULL) return (1);
 
-	if (memcmp(opt.bssid, NULL_MAC, 6) == 0)
+	if (memcmp(lopt.bssid, NULL_MAC, 6) == 0)
 	{
 		printf("Please specify a BSSID (-a).\n");
 		return (1);
@@ -523,7 +281,7 @@ static int set_bssid(unsigned char * packet)
 	}
 
 	/* write bssid mac */
-	memcpy(packet + mi_b, opt.bssid, 6);
+	memcpy(packet + mi_b, lopt.bssid, 6);
 
 	return (0);
 }
@@ -534,21 +292,16 @@ static int set_dmac(unsigned char * packet)
 
 	if (packet == NULL) return (1);
 
-	if (memcmp(opt.dmac, NULL_MAC, 6) == 0)
+	if (memcmp(lopt.dmac, NULL_MAC, ETHER_ADDR_LEN) == 0)
 	{
 		printf("Please specify a destination MAC (-c).\n");
 		return (1);
 	}
 
-	switch (packet[1] & 3)
+	switch (packet[1] & IEEE80211_FC1_DIR_MASK)
 	{
-		case 0:
-			mi_d = 4;
-			break;
-		case 1:
-			mi_d = 16;
-			break;
-		case 2:
+		case IEEE80211_FC1_DIR_NODS:
+		case IEEE80211_FC1_DIR_FROMDS:
 			mi_d = 4;
 			break;
 		default:
@@ -557,7 +310,7 @@ static int set_dmac(unsigned char * packet)
 	}
 
 	/* write destination mac */
-	memcpy(packet + mi_d, opt.dmac, 6);
+	memcpy(packet + mi_d, lopt.dmac, ETHER_ADDR_LEN);
 
 	return (0);
 }
@@ -568,21 +321,19 @@ static int set_smac(unsigned char * packet)
 
 	if (packet == NULL) return (1);
 
-	if (memcmp(opt.smac, NULL_MAC, 6) == 0)
+	if (memcmp(lopt.smac, NULL_MAC, ETHER_ADDR_LEN) == 0)
 	{
 		printf("Please specify a source MAC (-h).\n");
 		return (1);
 	}
 
-	switch (packet[1] & 3)
+	switch (packet[1] & IEEE80211_FC1_DIR_MASK)
 	{
-		case 0:
+		case IEEE80211_FC1_DIR_NODS:
+		case IEEE80211_FC1_DIR_TODS:
 			mi_s = 10;
 			break;
-		case 1:
-			mi_s = 10;
-			break;
-		case 2:
+		case IEEE80211_FC1_DIR_FROMDS:
 			mi_s = 16;
 			break;
 		default:
@@ -591,7 +342,7 @@ static int set_smac(unsigned char * packet)
 	}
 
 	/* write source mac */
-	memcpy(packet + mi_s, opt.smac, 6);
+	memcpy(packet + mi_s, lopt.smac, ETHER_ADDR_LEN);
 
 	return (0);
 }
@@ -602,14 +353,14 @@ static int set_dip(unsigned char * packet, const int offset)
 	if (packet == NULL) return (1);
 	if (offset < 0 || offset > 2046) return (1);
 
-	if (memcmp(opt.dip, NULL_MAC, 4) == 0)
+	if (memcmp(lopt.dip, NULL_MAC, 4) == 0)
 	{
 		printf("Please specify a destination IP (-k).\n");
 		return (1);
 	}
 
 	/* set destination IP */
-	memcpy(packet + offset, opt.dip, 4);
+	memcpy(packet + offset, lopt.dip, 4);
 
 	return (0);
 }
@@ -620,14 +371,14 @@ static int set_sip(unsigned char * packet, const int offset)
 	if (packet == NULL) return (1);
 	if (offset < 0 || offset > 2046) return (1);
 
-	if (memcmp(opt.sip, NULL_MAC, 4) == 0)
+	if (memcmp(lopt.sip, NULL_MAC, 4) == 0)
 	{
 		printf("Please specify a source IP (-l).\n");
 		return (1);
 	}
 
 	/* set source IP */
-	memcpy(packet + offset, opt.sip, 4);
+	memcpy(packet + offset, lopt.sip, 4);
 
 	return (0);
 }
@@ -652,7 +403,7 @@ static int set_ip_ttl(unsigned char * packet)
 
 	if (packet == NULL) return (1);
 
-	ttl = opt.ttl;
+	ttl = lopt.ttl;
 	memcpy(packet + 40, &ttl, 1);
 
 	return (0);
@@ -683,14 +434,14 @@ static int next_keystream(unsigned char * dest,
 	char * buffer;
 	int gotit = 0;
 
-	if (opt.ivs2 == NULL) return (-1);
+	if (lopt.ivs2 == NULL) return (-1);
 	if (minlen > size + 4) return (-1);
 
-	while (fread(&ivs2, sizeof(struct ivs2_pkthdr), 1, opt.ivs2) == 1)
+	while (fread(&ivs2, sizeof(struct ivs2_pkthdr), 1, lopt.ivs2) == 1)
 	{
 		if (ivs2.flags & IVS2_BSSID)
 		{
-			if ((int) fread(opt.prev_bssid, 6, 1, opt.ivs2) != 1) return (-1);
+			if ((int) fread(lopt.prev_bssid, 6, 1, lopt.ivs2) != 1) return (-1);
 			ivs2.len -= 6;
 		}
 
@@ -699,13 +450,13 @@ static int next_keystream(unsigned char * dest,
 		buffer = (char *) malloc(ivs2.len);
 		if (buffer == NULL) return (-1);
 
-		if ((int) fread(buffer, ivs2.len, 1, opt.ivs2) != 1)
+		if ((int) fread(buffer, ivs2.len, 1, lopt.ivs2) != 1)
 		{
 			free(buffer);
 			return (-1);
 		}
 
-		if (memcmp(bssid, opt.prev_bssid, 6) != 0)
+		if (memcmp(bssid, lopt.prev_bssid, 6) != 0)
 		{
 			free(buffer);
 			continue;
@@ -729,9 +480,9 @@ static int next_keystream(unsigned char * dest,
 		if (gotit) return (0);
 	}
 
-	if (feof(opt.ivs2))
+	if (feof(lopt.ivs2))
 	{
-		if (fseek(opt.ivs2,
+		if (fseek(lopt.ivs2,
 				  sizeof(IVS2_MAGIC) + sizeof(struct ivs2_filehdr) - 1,
 				  SEEK_SET)
 			== -1)
@@ -745,8 +496,9 @@ static int next_keystream(unsigned char * dest,
 	return (-1);
 }
 
-static int
-encrypt_data(unsigned char * dest, const unsigned char * data, const int length)
+static int my_encrypt_data(unsigned char * dest,
+						   const unsigned char * data,
+						   const int length)
 {
 	unsigned char cipher[2048];
 	int n;
@@ -755,15 +507,15 @@ encrypt_data(unsigned char * dest, const unsigned char * data, const int length)
 	if (data == NULL) return (1);
 	if (length < 1 || length > 2044) return (1);
 
-	if (opt.prga == NULL && opt.ivs2 == NULL)
+	if (opt.prga == NULL && lopt.ivs2 == NULL)
 	{
 		printf("Please specify a XOR or %s file (-y).\n", IVS2_EXTENSION);
 		return (1);
 	}
 
-	if (opt.ivs2 != NULL)
+	if (lopt.ivs2 != NULL)
 	{
-		n = next_keystream(opt.prga, 1500, opt.bssid, length);
+		n = next_keystream(opt.prga, 1500, lopt.bssid, length);
 		if (n < 0)
 		{
 			printf("Error getting keystream.\n");
@@ -771,7 +523,7 @@ encrypt_data(unsigned char * dest, const unsigned char * data, const int length)
 		}
 		if (n == 1)
 		{
-			if (opt.first_packet == 1)
+			if (lopt.first_packet == 1)
 			{
 				printf("Error no keystream in %s file is long enough (%d).\n",
 					   IVS2_EXTENSION,
@@ -779,17 +531,19 @@ encrypt_data(unsigned char * dest, const unsigned char * data, const int length)
 				return (1);
 			}
 			else
-				next_keystream(opt.prga, 1500, opt.bssid, length);
+				next_keystream(opt.prga, 1500, lopt.bssid, length);
 		}
 	}
 
-	if (opt.prgalen - 4 < length)
+	if (opt.prgalen - 4 < (size_t) length)
 	{
 		printf(
 			"Please specify a longer PRGA file (-y) with at least %i bytes.\n",
 			(length + 4));
 		return (1);
 	}
+
+	ALLEGE(opt.prga != NULL);
 
 	/* encrypt data */
 	for (n = 0; n < length; n++)
@@ -802,7 +556,7 @@ encrypt_data(unsigned char * dest, const unsigned char * data, const int length)
 	return (0);
 }
 
-static int create_wep_packet(unsigned char * packet, int * length)
+static int my_create_wep_packet(unsigned char * packet, int * length)
 {
 	if (packet == NULL) return (1);
 
@@ -810,7 +564,8 @@ static int create_wep_packet(unsigned char * packet, int * length)
 	if (add_crc32(packet + 24, *length - 24) != 0) return (1);
 
 	/* encrypt data+crc32 and keep a 4byte hole */
-	if (encrypt_data(packet + 28, packet + 24, *length - 20) != 0) return (1);
+	if (my_encrypt_data(packet + 28, packet + 24, *length - 20) != 0)
+		return (1);
 
 	/* write IV+IDX right in front of the encrypted data */
 	if (set_IVidx(packet) != 0) return (1);
@@ -839,17 +594,17 @@ static int write_cap_packet(unsigned char * packet, const int length)
 		return (1);
 	}
 
-	if (opt.cap_out == NULL)
+	if (lopt.cap_out == NULL)
 	{
 		printf("Please specify an output file (-w).\n");
 		return (1);
 	}
 
-	if (opt.first_packet)
+	if (lopt.first_packet)
 	{
-		if ((f = fopen(opt.cap_out, "wb+")) == NULL)
+		if ((f = fopen(lopt.cap_out, "wb+")) == NULL)
 		{
-			fprintf(stderr, "failed: fopen(%s,wb+)\n", opt.cap_out);
+			fprintf(stderr, "failed: fopen(%s,wb+)\n", lopt.cap_out);
 			return (1);
 		}
 
@@ -872,9 +627,9 @@ static int write_cap_packet(unsigned char * packet, const int length)
 	}
 	else
 	{
-		if ((f = fopen(opt.cap_out, "ab+")) == NULL)
+		if ((f = fopen(lopt.cap_out, "ab+")) == NULL)
 		{
-			fprintf(stderr, "failed: fopen(%s,ab+)\n", opt.cap_out);
+			fprintf(stderr, "failed: fopen(%s,ab+)\n", lopt.cap_out);
 			return (1);
 		}
 	}
@@ -906,12 +661,12 @@ static int write_cap_packet(unsigned char * packet, const int length)
 
 	fclose(f);
 
-	if (opt.first_packet) opt.first_packet = 0;
+	if (lopt.first_packet) lopt.first_packet = 0;
 
 	return (0);
 }
 
-static int read_prga(unsigned char ** dest, const char * file)
+static int read_prga_xor_ivs2(unsigned char ** dest, const char * file)
 {
 	FILE * f;
 	int size;
@@ -970,9 +725,9 @@ static int read_prga(unsigned char ** dest, const char * file)
 				   IVS2_VERSION);
 		}
 
-		opt.ivs2 = f;
-		fseek(
-			f, sizeof(IVS2_MAGIC) + sizeof(struct ivs2_filehdr) - 1, SEEK_SET);
+		lopt.ivs2 = f;
+		IGNORE_LTZ(fseek(
+			f, sizeof(IVS2_MAGIC) + sizeof(struct ivs2_filehdr) - 1, SEEK_SET));
 	}
 	else
 	{
@@ -994,17 +749,17 @@ static int read_prga(unsigned char ** dest, const char * file)
 static int forge_arp(void)
 {
 	/* use arp request */
-	opt.pktlen = 60;
-	memcpy(h80211, ARP_REQ, opt.pktlen); //-V512
+	lopt.pktlen = 60;
+	memcpy(h80211, ARP_REQ, lopt.pktlen); //-V512
 
-	memcpy(opt.dmac, "\xFF\xFF\xFF\xFF\xFF\xFF", 6);
+	memcpy(lopt.dmac, "\xFF\xFF\xFF\xFF\xFF\xFF", 6);
 
 	if (set_tofromds(h80211) != 0) return (1);
 	if (set_bssid(h80211) != 0) return (1);
 	if (set_smac(h80211) != 0) return (1);
 	if (set_dmac(h80211) != 0) return (1);
 
-	memcpy(h80211 + 40, opt.smac, 6);
+	memcpy(h80211 + 40, lopt.smac, 6);
 
 	if (set_dip(h80211, 56) != 0) return (1);
 	if (set_sip(h80211, 46) != 0) return (1);
@@ -1016,8 +771,8 @@ static int forge_udp(void)
 {
 	unsigned short chksum;
 
-	opt.pktlen = 61;
-	memcpy(h80211, UDP_PACKET, opt.pktlen);
+	lopt.pktlen = 61;
+	memcpy(h80211, UDP_PACKET, lopt.pktlen);
 
 	if (set_tofromds(h80211) != 0) return (1);
 	if (set_bssid(h80211) != 0) return (1);
@@ -1026,7 +781,7 @@ static int forge_udp(void)
 
 	if (set_dip(h80211, 48) != 0) return (1);
 	if (set_sip(h80211, 44) != 0) return (1);
-	if (opt.ttl != -1)
+	if (lopt.ttl != -1)
 		if (set_ip_ttl(h80211) != 0) return (1);
 
 	if (set_ipid(h80211, 36) != 0) return (1);
@@ -1035,7 +790,7 @@ static int forge_udp(void)
 	h80211[57] = '\x09';
 
 	/* generate + set ip checksum */
-	chksum = ip_chksum((unsigned short *) (h80211 + 32), 20);
+	chksum = ip_chksum((unsigned short *) (h80211 + 32), 20); //-V1032
 	memcpy(h80211 + 42, &chksum, 2); //-V512
 
 	return (0);
@@ -1045,12 +800,12 @@ static int forge_icmp(void)
 {
 	unsigned short chksum;
 
-	opt.pktlen = 60;
-	memcpy(h80211, ICMP_PACKET, opt.pktlen);
+	lopt.pktlen = 60;
+	memcpy(h80211, ICMP_PACKET, lopt.pktlen);
 
-	if (memcmp(opt.dmac, NULL_MAC, 6) == 0)
+	if (memcmp(lopt.dmac, NULL_MAC, 6) == 0)
 	{
-		memcpy(opt.dmac, "\xFF\xFF\xFF\xFF\xFF\xFF", 6);
+		memcpy(lopt.dmac, "\xFF\xFF\xFF\xFF\xFF\xFF", 6);
 	}
 
 	if (set_tofromds(h80211) != 0) return (1);
@@ -1060,13 +815,13 @@ static int forge_icmp(void)
 
 	if (set_dip(h80211, 48) != 0) return (1);
 	if (set_sip(h80211, 44) != 0) return (1);
-	if (opt.ttl != -1)
+	if (lopt.ttl != -1)
 		if (set_ip_ttl(h80211) != 0) return (1);
 
 	if (set_ipid(h80211, 36) != 0) return (1);
 
 	/* generate + set ip checksum */
-	chksum = ip_chksum((unsigned short *) (h80211 + 32), 20);
+	chksum = ip_chksum((unsigned short *) (h80211 + 32), 20); //-V1032
 	memcpy(h80211 + 42, &chksum, 2);
 
 	return (0);
@@ -1074,13 +829,13 @@ static int forge_icmp(void)
 
 static int forge_null(void)
 {
-	opt.pktlen = opt.size;
+	lopt.pktlen = lopt.size;
 	memcpy(h80211, NULL_PACKET, 24);
-	memset(h80211 + 24, '\0', (opt.pktlen - 24));
+	memset(h80211 + 24, '\0', (lopt.pktlen - 24));
 
-	if (memcmp(opt.dmac, NULL_MAC, 6) == 0)
+	if (memcmp(lopt.dmac, NULL_MAC, 6) == 0)
 	{
-		memcpy(opt.dmac, "\xFF\xFF\xFF\xFF\xFF\xFF", 6);
+		memcpy(lopt.dmac, "\xFF\xFF\xFF\xFF\xFF\xFF", 6);
 	}
 
 	if (set_tofromds(h80211) != 0) return (1);
@@ -1088,26 +843,26 @@ static int forge_null(void)
 	if (set_smac(h80211) != 0) return (1);
 	if (set_dmac(h80211) != 0) return (1);
 
-	if (opt.pktlen > 26) h80211[26] = 0x03;
+	if (lopt.pktlen > 26) h80211[26] = 0x03;
 
 	return (0);
 }
 
 static int forge_custom(void)
 {
-	if (capture_ask_packet(&opt.pktlen) != 0) return (1);
+	if (capture_ask_packet(&lopt.pktlen, 0) != 0) return (1);
 
 	if (set_tofromds(h80211) != 0) return (1);
 
-	if (memcmp(opt.bssid, NULL_MAC, 6) != 0)
+	if (memcmp(lopt.bssid, NULL_MAC, 6) != 0)
 	{
 		if (set_bssid(h80211) != 0) return (1);
 	}
-	if (memcmp(opt.dmac, NULL_MAC, 6) != 0)
+	if (memcmp(lopt.dmac, NULL_MAC, 6) != 0)
 	{
 		if (set_dmac(h80211) != 0) return (1);
 	}
-	if (memcmp(opt.smac, NULL_MAC, 6) != 0)
+	if (memcmp(lopt.smac, NULL_MAC, 6) != 0)
 	{
 		if (set_smac(h80211) != 0) return (1);
 	}
@@ -1132,38 +887,39 @@ int main(int argc, char * argv[])
 	int n;
 
 	memset(&opt, 0, sizeof(opt));
+	memset(&lopt, 0, sizeof(lopt));
 
 	/* initialise global options */
-	memset(opt.bssid, '\x00', 6);
-	memset(opt.dmac, '\x00', 6);
-	memset(opt.smac, '\x00', 6);
-	memset(opt.dip, '\x00', 4);
-	memset(opt.sip, '\x00', 4);
-	memset(opt.fctrl, '\x00', 2);
+	memset(lopt.bssid, '\x00', 6);
+	memset(lopt.dmac, '\x00', 6);
+	memset(lopt.smac, '\x00', 6);
+	memset(lopt.dip, '\x00', 4);
+	memset(lopt.sip, '\x00', 4);
+	memset(lopt.fctrl, '\x00', 2);
 
 	opt.prga = NULL;
-	opt.cap_out = NULL;
-	opt.raw_file = NULL;
+	lopt.cap_out = NULL;
+	lopt.raw_file = NULL;
 
-	opt.mode = -1;
-	opt.pktlen = -1;
+	lopt.mode = -1;
+	lopt.pktlen = -1;
 	opt.prgalen = -1;
-	opt.ttl = -1;
+	lopt.ttl = -1;
 
-	opt.sport = -1;
-	opt.dport = -1;
+	lopt.sport = -1;
+	lopt.dport = -1;
 
-	opt.tods = 1;
-	opt.fromds = 0;
-	opt.encrypt = 1;
+	lopt.tods = 1;
+	lopt.fromds = 0;
+	lopt.encrypt = 1;
 
-	opt.size = 30;
+	lopt.size = 30;
 
-	opt.ivs2 = NULL;
-	memset(opt.prev_bssid, '\x00', 6);
+	lopt.ivs2 = NULL;
+	memset(lopt.prev_bssid, '\x00', 6);
 
-	opt.first_packet = 1;
-	opt.num_packets = 1;
+	lopt.first_packet = 1;
+	lopt.num_packets = 1;
 
 	srand(time(NULL));
 
@@ -1209,8 +965,8 @@ int main(int argc, char * argv[])
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (EXIT_FAILURE);
 				}
-				opt.fctrl[0] = ((uarg >> 8) & 0xFF);
-				opt.fctrl[1] = (uarg & 0xFF);
+				lopt.fctrl[0] = ((uarg >> 8) & 0xFF);
+				lopt.fctrl[1] = (uarg & 0xFF);
 				break;
 
 			case 't':
@@ -1222,7 +978,7 @@ int main(int argc, char * argv[])
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (EXIT_FAILURE);
 				}
-				opt.ttl = arg;
+				lopt.ttl = arg;
 				break;
 
 			case 'n':
@@ -1234,12 +990,12 @@ int main(int argc, char * argv[])
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (EXIT_FAILURE);
 				}
-				opt.num_packets = arg;
+				lopt.num_packets = arg;
 				break;
 
 			case 'a':
 
-				if (getmac(optarg, 1, opt.bssid) != 0)
+				if (getmac(optarg, 1, lopt.bssid) != 0)
 				{
 					printf("Invalid AP MAC address.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
@@ -1249,7 +1005,7 @@ int main(int argc, char * argv[])
 
 			case 'c':
 
-				if (getmac(optarg, 1, opt.dmac) != 0)
+				if (getmac(optarg, 1, lopt.dmac) != 0)
 				{
 					printf("Invalid destination MAC address.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
@@ -1259,7 +1015,7 @@ int main(int argc, char * argv[])
 
 			case 'h':
 
-				if (getmac(optarg, 1, opt.smac) != 0)
+				if (getmac(optarg, 1, lopt.smac) != 0)
 				{
 					printf("Invalid source MAC address.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
@@ -1269,28 +1025,28 @@ int main(int argc, char * argv[])
 
 			case 'j':
 
-				opt.fromds = 1;
+				lopt.fromds = 1;
 				break;
 
 			case 'o':
 
-				opt.tods = 0;
+				lopt.tods = 0;
 				break;
 
 			case 'e':
 
-				opt.encrypt = 0;
+				lopt.encrypt = 0;
 				break;
 
 			case 'r':
 
-				if (opt.raw_file != NULL)
+				if (lopt.raw_file != NULL)
 				{
 					printf("Packet source already specified.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (EXIT_FAILURE);
 				}
-				opt.raw_file = optarg;
+				lopt.raw_file = optarg;
 				break;
 
 			case 'y':
@@ -1301,7 +1057,7 @@ int main(int argc, char * argv[])
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (EXIT_FAILURE);
 				}
-				if (read_prga(&(opt.prga), optarg) != 0)
+				if (read_prga_xor_ivs2(&(opt.prga), optarg) != 0)
 				{
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (EXIT_FAILURE);
@@ -1310,19 +1066,19 @@ int main(int argc, char * argv[])
 
 			case 'w':
 
-				if (opt.cap_out != NULL)
+				if (lopt.cap_out != NULL)
 				{
 					printf("Output file already specified.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (EXIT_FAILURE);
 				}
-				opt.cap_out = optarg;
+				lopt.cap_out = optarg;
 
 				break;
 
 			case 'k':
 
-				if (getip(optarg, opt.dip, &(opt.dport)) != 0)
+				if (getip(optarg, lopt.dip, &(lopt.dport)) != 0)
 				{
 					printf("Invalid destination IP address.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
@@ -1332,7 +1088,7 @@ int main(int argc, char * argv[])
 
 			case 'l':
 
-				if (getip(optarg, opt.sip, &(opt.sport)) != 0)
+				if (getip(optarg, lopt.sip, &(lopt.sport)) != 0)
 				{
 					printf("Invalid source IP address.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
@@ -1349,63 +1105,63 @@ int main(int argc, char * argv[])
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (EXIT_FAILURE);
 				}
-				opt.size = arg;
+				lopt.size = arg;
 				break;
 
 			case '0':
 
-				if (opt.mode != -1)
+				if (lopt.mode != -1)
 				{
 					printf("Mode already specified.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (EXIT_FAILURE);
 				}
-				opt.mode = 0;
+				lopt.mode = 0;
 
 				break;
 
 			case '1':
 
-				if (opt.mode != -1)
+				if (lopt.mode != -1)
 				{
 					printf("Mode already specified.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (EXIT_FAILURE);
 				}
-				opt.mode = 1;
+				lopt.mode = 1;
 				break;
 
 			case '2':
 
-				if (opt.mode != -1)
+				if (lopt.mode != -1)
 				{
 					printf("Mode already specified.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (EXIT_FAILURE);
 				}
-				opt.mode = 2;
+				lopt.mode = 2;
 				break;
 
 			case '3':
 
-				if (opt.mode != -1)
+				if (lopt.mode != -1)
 				{
 					printf("Mode already specified.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (EXIT_FAILURE);
 				}
-				opt.mode = 3;
+				lopt.mode = 3;
 				break;
 
 			case '9':
 
-				if (opt.mode != -1)
+				if (lopt.mode != -1)
 				{
 					printf("Mode already specified.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (EXIT_FAILURE);
 				}
-				opt.mode = 9;
+				lopt.mode = 9;
 				break;
 
 			case 'H':
@@ -1425,9 +1181,9 @@ int main(int argc, char * argv[])
 		return (EXIT_FAILURE);
 	}
 
-	if (opt.raw_file != NULL)
+	if (lopt.raw_file != NULL)
 	{
-		if (!(dev.f_cap_in = fopen(opt.raw_file, "rb")))
+		if (!(dev.f_cap_in = fopen(lopt.raw_file, "rb")))
 		{
 			perror("open failed");
 			return (EXIT_FAILURE);
@@ -1447,7 +1203,7 @@ int main(int argc, char * argv[])
 			fprintf(stderr,
 					"\"%s\" isn't a pcap file (expected "
 					"TCPDUMP_MAGIC).\n",
-					opt.raw_file);
+					lopt.raw_file);
 			return (EXIT_FAILURE);
 		}
 
@@ -1467,9 +1223,9 @@ int main(int argc, char * argv[])
 		}
 	}
 
-	for (n = 0; n < opt.num_packets; n++)
+	for (n = 0; n < lopt.num_packets; n++)
 	{
-		switch (opt.mode)
+		switch (lopt.mode)
 		{
 			case 0:
 				if (forge_arp() != 0)
@@ -1514,9 +1270,9 @@ int main(int argc, char * argv[])
 				return (EXIT_FAILURE);
 		}
 
-		if (opt.encrypt)
+		if (lopt.encrypt)
 		{
-			if (create_wep_packet(h80211, &(opt.pktlen)) != 0)
+			if (my_create_wep_packet(h80211, &(lopt.pktlen)) != 0)
 				return (EXIT_FAILURE);
 		}
 		else
@@ -1525,18 +1281,18 @@ int main(int argc, char * argv[])
 			h80211[1] = h80211[1] & 0xBF;
 		}
 
-		if (write_cap_packet(h80211, opt.pktlen) != 0)
+		if (write_cap_packet(h80211, lopt.pktlen) != 0)
 		{
-			printf("Error writing pcap file %s.\n", opt.cap_out);
+			printf("Error writing pcap file %s.\n", lopt.cap_out);
 			return (EXIT_FAILURE);
 		}
 	}
 
 	printf("Wrote packet%s to: %s\n",
-		   (opt.num_packets > 1 ? "s" : ""),
-		   opt.cap_out);
+		   (lopt.num_packets > 1 ? "s" : ""),
+		   lopt.cap_out);
 
-	if (opt.ivs2) fclose(opt.ivs2);
+	if (lopt.ivs2) fclose(lopt.ivs2);
 
 	return (EXIT_SUCCESS);
 }

@@ -33,8 +33,9 @@
 #include <err.h>
 
 #include "osdep.h"
-#include "pcap.h"
+#include "pcap_local.h"
 #include "radiotap/radiotap_iter.h"
+#include "common.h"
 
 struct priv_file
 {
@@ -46,16 +47,24 @@ struct priv_file
 	unsigned char pf_mac[6];
 };
 
-static int
-file_read(struct wif * wi, unsigned char * h80211, int len, struct rx_info * ri)
+static int file_read(struct wif * wi,
+					 struct timespec * ts,
+					 int * dlt,
+					 unsigned char * h80211,
+					 int len,
+					 struct rx_info * ri)
 {
 	struct priv_file * pf = wi_priv(wi);
 	struct pcap_pkthdr pkh;
 	int rc;
+	int got_signal = 0;
+	int got_noise = 0;
 	unsigned char buf[4096] __attribute__((aligned(8)));
 	int off = 0;
 	struct ieee80211_radiotap_header * rh;
-	struct ieee80211_radiotap_iterator iter;
+	struct ieee80211_radiotap_iterator iterator;
+
+	memset(&iterator, 0, sizeof(iterator));
 
 	rc = read(pf->pf_fd, &pkh, sizeof(pkh));
 	if (rc != sizeof(pkh)) return -1;
@@ -72,7 +81,7 @@ file_read(struct wif * wi, unsigned char * h80211, int len, struct rx_info * ri)
 		return 0;
 	}
 
-	assert(pkh.caplen <= sizeof(buf));
+	assert(pkh.caplen <= sizeof(buf)); //-V547
 
 	rc = read(pf->pf_fd, buf, pkh.caplen);
 	if (rc != (int) pkh.caplen) return -1;
@@ -89,15 +98,84 @@ file_read(struct wif * wi, unsigned char * h80211, int len, struct rx_info * ri)
 			rh = (struct ieee80211_radiotap_header *) buf;
 			off = le16_to_cpu(rh->it_len);
 
-			if (ieee80211_radiotap_iterator_init(&iter, rh, rc, NULL) < 0)
+			if (ieee80211_radiotap_iterator_init(&iterator, rh, rc, NULL) < 0)
 				return -1;
 
-			while (ieee80211_radiotap_iterator_next(&iter) >= 0)
+			while (ieee80211_radiotap_iterator_next(&iterator) >= 0)
 			{
-				switch (iter.this_arg_index)
+				switch (iterator.this_arg_index)
 				{
+					case IEEE80211_RADIOTAP_TSFT:
+						if (ri)
+							ri->ri_mactime = le64_to_cpu(
+								*((uint64_t *) iterator.this_arg));
+						break;
+
+					case IEEE80211_RADIOTAP_DBM_ANTSIGNAL:
+						if (ri && !got_signal)
+						{
+							if (*iterator.this_arg < 127)
+								ri->ri_power = *iterator.this_arg;
+							else
+								ri->ri_power = *iterator.this_arg - 255;
+
+							got_signal = 1;
+						}
+						break;
+
+					case IEEE80211_RADIOTAP_DB_ANTSIGNAL:
+						if (ri && !got_signal)
+						{
+							if (*iterator.this_arg < 127)
+								ri->ri_power = *iterator.this_arg;
+							else
+								ri->ri_power = *iterator.this_arg - 255;
+
+							got_signal = 1;
+						}
+						break;
+
+					case IEEE80211_RADIOTAP_DBM_ANTNOISE:
+						if (ri && !got_noise)
+						{
+							if (*iterator.this_arg < 127)
+								ri->ri_noise = *iterator.this_arg;
+							else
+								ri->ri_noise = *iterator.this_arg - 255;
+
+							got_noise = 1;
+						}
+						break;
+
+					case IEEE80211_RADIOTAP_DB_ANTNOISE:
+						if (ri && !got_noise)
+						{
+							if (*iterator.this_arg < 127)
+								ri->ri_noise = *iterator.this_arg;
+							else
+								ri->ri_noise = *iterator.this_arg - 255;
+
+							got_noise = 1;
+						}
+						break;
+
+					case IEEE80211_RADIOTAP_ANTENNA:
+						if (ri) ri->ri_antenna = *iterator.this_arg;
+						break;
+
+					case IEEE80211_RADIOTAP_CHANNEL:
+						if (ri)
+							ri->ri_channel = getChannelFromFrequency(
+								le16toh(*(uint16_t *) iterator.this_arg));
+						break;
+
+					case IEEE80211_RADIOTAP_RATE:
+						if (ri) ri->ri_rate = (*iterator.this_arg) * 500000;
+						break;
+
 					case IEEE80211_RADIOTAP_FLAGS:
-						if (*iter.this_arg & IEEE80211_RADIOTAP_F_FCS) rc -= 4;
+						if (*iterator.this_arg & IEEE80211_RADIOTAP_F_FCS)
+							rc -= 4;
 						break;
 				}
 			}
@@ -105,19 +183,41 @@ file_read(struct wif * wi, unsigned char * h80211, int len, struct rx_info * ri)
 
 		case LINKTYPE_PRISM_HEADER:
 			if (buf[7] == 0x40)
+			{
 				off = 0x40;
+
+				if (ri)
+				{
+					ri->ri_power = -((int32_t) load32_le(buf + 0x33));
+					ri->ri_noise = (int32_t) load32_le(buf + 0x33 + 12);
+					ri->ri_rate = load32_le(buf + 0x33 + 24) * 500000;
+
+					got_signal = 1;
+					got_noise = 1;
+				}
+			}
 			else
-				off = le32_to_cpu(*(unsigned int *) (buf + 4)); //-V1032
+			{
+				off = load32_le(buf + 4);
+
+				if (ri)
+				{
+					ri->ri_mactime = load64_le(buf + 0x5C - 48);
+					ri->ri_channel = load32_le(buf + 0x5C - 36);
+					ri->ri_power = -((int32_t) load32_le(buf + 0x5C));
+					ri->ri_noise = (int32_t) load32_le(buf + 0x5C + 12);
+					ri->ri_rate = load32_le(buf + 0x5C + 24) * 500000;
+				}
+			}
 
 			rc -= 4;
 			break;
 
 		case LINKTYPE_PPI_HDR:
-			off = le16_to_cpu(*(unsigned short *) (buf + 2));
+			off = load16_le(buf + 2);
 
 			/* for a while Kismet logged broken PPI headers */
-			if (off == 24 && le16_to_cpu(*(unsigned short *) (buf + 8)) == 2)
-				off = 32;
+			if (off == 24 && load16_le(buf + 8) == 2) off = 32;
 
 			break;
 
@@ -137,6 +237,17 @@ file_read(struct wif * wi, unsigned char * h80211, int len, struct rx_info * ri)
 
 	if (rc > len) rc = len;
 
+	if (dlt)
+	{
+		*dlt = LINKTYPE_IEEE802_11;
+	}
+
+	if (ts)
+	{
+		ts->tv_sec = pkh.tv_sec;
+		ts->tv_nsec = pkh.tv_usec * 1000UL;
+	}
+
 	memcpy(h80211, &buf[off], rc);
 
 	return rc;
@@ -152,13 +263,15 @@ static int file_get_mac(struct wif * wi, unsigned char * mac)
 }
 
 static int file_write(struct wif * wi,
+					  struct timespec * ts,
+					  int dlt,
 					  unsigned char * h80211,
 					  int len,
 					  struct tx_info * ti)
 {
 	struct priv_file * pn = wi_priv(wi);
 
-	if (h80211 && ti && pn)
+	if (h80211 && ti && pn && ts && dlt)
 	{
 	}
 

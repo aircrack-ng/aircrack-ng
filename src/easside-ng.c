@@ -44,6 +44,7 @@
 #undef __FAVOR_BSD
 
 #include "defs.h"
+#include "communications.h"
 #include "aircrack-osdep/osdep.h"
 #include "ieee80211.h"
 #include "easside.h"
@@ -51,6 +52,7 @@
 #include "ethernet.h"
 #include "version.h"
 #include "aircrack-osdep/byteorder.h"
+#include "aircrack-util/common.h"
 
 #define S_MTU 1500
 #define S_MCAST "\x01\x00\x5e\x01\x00"
@@ -184,45 +186,6 @@ static void printf_time(char * fmt, ...)
 	va_start(ap, fmt);
 	vprintf(fmt, ap);
 	va_end(ap);
-}
-
-static inline void mac2str(char * str, unsigned char * m, int macsize)
-{
-	REQUIRE(str != NULL);
-	REQUIRE(m != NULL);
-
-	snprintf(str,
-			 macsize,
-			 "%.2X:%.2X:%.2X:%.2X:%.2X:%.2X",
-			 m[0],
-			 m[1],
-			 m[2],
-			 m[3],
-			 m[4],
-			 m[5]);
-}
-
-static inline int str2mac(unsigned char * mac, char * str)
-{
-	REQUIRE(mac != NULL);
-	REQUIRE(str != NULL);
-
-	unsigned int macf[6];
-
-	if (sscanf(str,
-			   "%x:%x:%x:%x:%x:%x",
-			   &macf[0],
-			   &macf[1],
-			   &macf[2],
-			   &macf[3],
-			   &macf[4],
-			   &macf[5])
-		!= 6)
-		return (-1);
-
-	for (int i = 0; i < 6; i++) *mac++ = (char) macf[i];
-
-	return (0);
 }
 
 static void init_defaults(struct east_state * es)
@@ -1501,8 +1464,8 @@ static void read_wifi(struct east_state * es)
 	unsigned char buf[8192];
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 
-	const int len = wi_read(es->es_wi, buf, sizeof(buf), NULL);
-	if (len < 0 || len > sizeof(buf)) err(1, "wi_read()");
+	const int len = wi_read(es->es_wi, NULL, NULL, buf, sizeof(buf), NULL);
+	if (len < 0 || (size_t) len > sizeof(buf)) err(1, "wi_read()");
 
 	/* XXX: I don't do any length chex */
 	if (len < 2)
@@ -1532,30 +1495,7 @@ static void read_wifi(struct east_state * es)
 	}
 }
 
-static unsigned int msec_diff(struct timeval * after, struct timeval * before)
-{
-	REQUIRE(after != NULL);
-	REQUIRE(before != NULL);
-	REQUIRE(after->tv_sec >= before->tv_sec);
-
-	unsigned int diff;
-
-	if (after->tv_sec > before->tv_sec)
-	{
-		unsigned int usec;
-
-		diff = (after->tv_sec - before->tv_sec - 1) * 1000;
-		usec = 1000 * 1000 - before->tv_usec;
-		usec += after->tv_usec;
-		diff += usec / 1000;
-	}
-	else /* after->tv_sec == before->tv_sec */
-		diff = (after->tv_usec - before->tv_usec) / 1000;
-
-	return (diff);
-}
-
-static inline void msec_to_tv(int msec, struct timeval * tv)
+static inline void msec_to_tv(unsigned int msec, struct timeval * tv)
 {
 	REQUIRE(tv != NULL);
 
@@ -1572,7 +1512,7 @@ static void chan_hop(struct east_state * es, struct timeval * tv)
 
 	if (gettimeofday(&now, NULL) == -1) err(1, "gettimeofday()");
 
-	elapsed = msec_diff(&now, &es->es_lasthop);
+	elapsed = msec_diff(&es->es_lasthop, &now);
 
 	/* hop */
 	if (elapsed >= es->es_hopfreq)
@@ -1588,16 +1528,6 @@ static void chan_hop(struct east_state * es, struct timeval * tv)
 	}
 	else
 		msec_to_tv(es->es_hopfreq - elapsed, tv);
-}
-
-static unsigned short fnseq(unsigned short fn, unsigned short seq)
-{
-	REQUIRE(fn < 16);
-
-	unsigned short r = fn;
-	r |= ((seq % 4096) << IEEE80211_SEQ_SEQ_SHIFT);
-
-	return (r);
 }
 
 static void fill_basic(struct east_state * es, struct ieee80211_frame * wh)
@@ -1626,7 +1556,7 @@ static void send_frame(struct east_state * es, void * buf, int len)
 	REQUIRE(es != NULL);
 	REQUIRE(buf != NULL);
 
-	int rc = wi_write(es->es_wi, buf, len, NULL);
+	int rc = wi_write(es->es_wi, NULL, LINKTYPE_IEEE802_11, buf, len, NULL);
 	if (rc == -1) err(1, "wi_write()");
 	if (rc != len)
 	{
@@ -1648,7 +1578,7 @@ static int too_early(struct timeval * tv, int to, struct timeval * last_sent)
 	/* check if timeout expired */
 	if (gettimeofday(&now, NULL) == -1) err(1, "gettimeofday()");
 
-	elapsed = msec_diff(&now, last_sent);
+	elapsed = msec_diff(last_sent, &now);
 	if (elapsed < (unsigned int) to)
 	{
 		msec_to_tv(to - elapsed, tv);
@@ -1668,24 +1598,21 @@ static void send_auth(struct east_state * es, struct timeval * tv)
 	unsigned char buf[4096];
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	unsigned short * sp;
-	int len;
 
 	if (too_early(tv, es->es_txto_mgt, &es->es_txlast)) return;
 
-	memset(buf, 0, sizeof(buf));
-
 	es->es_txseq++;
+
+	memset(buf, 0, sizeof(buf));
 	fill_basic(es, wh);
 	wh->i_fc[0] |= IEEE80211_FC0_TYPE_MGT | IEEE80211_FC0_SUBTYPE_AUTH;
 
 	/* transaction number */
-	sp = (unsigned short *) (wh + 1);
+	sp = (unsigned short *) ((unsigned char *) wh + sizeof(*wh)); //-V1032
 	sp++;
 	*sp = htole16(1);
 
-	len = sizeof(*wh) + 2 + 2 + 2;
-	printf("Sending auth request\n");
-	send_frame(es, wh, len);
+	send_frame(es, wh, sizeof(*wh) + 2 + 2 + 2);
 }
 
 static void send_assoc(struct east_state * es, struct timeval * tv)
@@ -2312,7 +2239,7 @@ static void buddy_inet_check(struct east_state * es)
 
 	if (gettimeofday(&now, NULL) == -1) err(1, "gettimeofday()");
 
-	rtt = msec_diff(&now, &es->es_rtt);
+	rtt = msec_diff(&es->es_rtt, &now);
 	es->es_astate = AS_REDIRECT;
 	printf("Rtt %dms\n", rtt);
 
@@ -2367,7 +2294,7 @@ static void buddy_packet(struct east_state * es)
 
 		if (gettimeofday(&now, NULL) == -1) err(1, "gettimeofday()");
 
-		rtt = msec_diff(&now, &es->es_rtt);
+		rtt = msec_diff(&es->es_rtt, &now);
 		es->es_rtt_id = 0;
 		printf(" rtt %dms", rtt);
 

@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "defs.h"
 #include "osdep.h"
 
 struct tip_fbsd
@@ -37,7 +38,7 @@ struct tip_fbsd
 	int tf_fd;
 	int tf_ioctls;
 	struct ifreq tf_ifr;
-	char tf_name[MAX_IFACE_NAME];
+	char tf_name[IFNAMSIZ];
 	int tf_destroy;
 };
 

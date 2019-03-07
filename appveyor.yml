@@ -3,13 +3,16 @@ version: 1.0.{build}
 pull_requests:
   do_not_increment_build_number: true
 
+# Do not build feature branch with open Pull Requests
+skip_branch_with_pr: true
+
 image: Visual Studio 2017
 
 configuration: Release
 
 platform: x64
 
-clone_depth: 100
+clone_depth: 500
 
 environment:
   global:
@@ -43,6 +46,13 @@ matrix:
 cache:
 - '%AIRCRACK_CI_CACHE%'
 
+# Uncomment to enable debugging on AppVeyor equipment
+#
+init:
+- git config --global core.autocrlf input
+- git config --global core.eol lf
+#- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+
 install:
 - ps: |
     function Exec-External {
@@ -66,7 +76,7 @@ install:
 - ps: |
     function updateCygwin($cygwinexe, $installFolder, $cacheFolder) {
       Write-Host "Update Cygwin: $cygwinexe"
-      Exec-External {& cmd /c $cygwinexe -gqnNdO -R $installFolder -s http://mirrors.kernel.org/sourceware/cygwin/ -l $cacheFolder -P autoconf -P automake -P bison -P clang -P gcc-core -P gcc-g++ -P mingw-runtime -P mingw-binutils -P mingw-gcc-core -P mingw-gcc-g++ -P mingw-pthreads -P mingw-w32api -P libtool -P make -P python -P gettext-devel -P gettext -P intltool -P libiconv -P libiconv-devel -P pkg-config -P git -P wget -P curl -P libcurl4 -P libpcre-devel -P openssl-devel -P libsqlite3-devel -P zlib-devel -P cmocka -P unzip -P zip -P rsync}
+      Exec-External {& cmd /c $cygwinexe -gqnNdO -R $installFolder -s http://mirrors.kernel.org/sourceware/cygwin/ -l $cacheFolder -P autoconf -P automake -P bison -P clang -P gcc-core -P gcc-g++ -P mingw-runtime -P mingw-binutils -P mingw-gcc-core -P mingw-gcc-g++ -P mingw-pthreads -P mingw-w32api -P libtool -P make -P python -P gettext-devel -P gettext -P intltool -P libiconv -P libiconv-devel -P pkg-config -P git -P wget -P curl -P libcurl4 -P libpcre-devel -P openssl-devel -P libsqlite3-devel -P zlib-devel -P cmocka -P unzip -P zip -P rsync -P expect}
       Write-Host "Update Cygwin: $cygwinexe " -NoNewLine
       Write-Host "[ OK ]" -ForegroundColor Green
     }
@@ -121,10 +131,7 @@ build_script:
     C:\cygwin\bin\bash -e -l -c "7z -y x AirPcap_Devpack_4_1_1_1838.zip"
 - ps: |
     if ($env:TARGET -eq "cygwin") {
-      Exec-External {& C:\cygwin\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src"}
-      Exec-External {& C:\cygwin\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-osdep"}
-      Exec-External {& C:\cygwin\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-crypto"}
-      Exec-External {& C:\cygwin\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll src/aircrack-util"}
+      Exec-External {& C:\cygwin\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll /cygdrive/c/Windows/System32"}
       Exec-External {& C:\cygwin\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x86/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x86/libairpcap.dll.a"}
       if ($env:COMPILER -eq "gcc") {
         Exec-External {& C:\cygwin\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental --with-airpcap=/cygdrive/c/projects/aircrack-ng"}
@@ -135,10 +142,7 @@ build_script:
     }
 - ps: |
     if ($env:TARGET -eq "cygwin64") {
-      Exec-External {& C:\cygwin64\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src"}
-      Exec-External {& C:\cygwin64\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-osdep"}
-      Exec-External {& C:\cygwin64\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-crypto"}
-      Exec-External {& C:\cygwin64\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-util"}
+      Exec-External {& C:\cygwin64\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll /cygdrive/c/Windows/System"}
       Exec-External {& C:\cygwin64\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x64/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x64/libairpcap.dll.a"}
       if ($env:COMPILER -eq "gcc") {
         Exec-External {& C:\cygwin64\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental --with-airpcap=/cygdrive/c/projects/aircrack-ng"}
@@ -149,20 +153,15 @@ build_script:
     }
 - ps: |
     if ($env:TARGET -eq "msys64") {
-      Exec-External {& C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src"}
-      Exec-External {& C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-osdep"}
-      Exec-External {& C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-crypto"}
-      Exec-External {& C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-util"}
+      Exec-External {& C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll /c/Windows/System"}
       Exec-External {& C:\msys64\usr\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x64/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x64/libairpcap.dll.a"}
       Exec-External {& C:\msys64\usr\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental --with-airpcap=/c/projects/aircrack-ng"}
       Exec-External {& C:\msys64\usr\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental"}
     }
 - ps: |
     if ($env:TARGET -eq "pkg") {
-      Exec-External {& C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src"}
-      Exec-External {& C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-osdep"}
-      Exec-External {& C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-crypto"}
-      Exec-External {& C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll src/aircrack-util"}
+      Exec-External {& C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll /c/Windows/System"}
+      Exec-External {& C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll /c/Windows/System32"}
       Exec-External {& C:\msys64\usr\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x64/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x64/libairpcap.dll.a"}
       Exec-External {& C:\cygwin\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x86/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x86/libairpcap.dll.a"}
       .\build\package-win32.ps1 2>&1 | %{ "$_" }

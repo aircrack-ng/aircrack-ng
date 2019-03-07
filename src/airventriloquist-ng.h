@@ -231,10 +231,6 @@ struct radius_hdr
 #define PROTO_TCP 0x06
 #define PROTO_UDP 0x11
 
-#define CRYPT_NONE 0
-#define CRYPT_WEP 1
-#define CRYPT_WPA 2
-
 #ifndef TRUE
 #define TRUE 1
 #endif

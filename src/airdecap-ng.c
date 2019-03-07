@@ -42,16 +42,12 @@
 
 #include "version.h"
 #include "crypto.h"
-#include "pcap.h"
+#include "pcap_local.h"
 #include "defs.h"
 #include "aircrack-osdep/byteorder.h"
 #include "aircrack-util/avl_tree.h"
 #include "aircrack-util/common.h"
 #include "aircrack-util/console.h"
-
-#define CRYPT_NONE 0
-#define CRYPT_WEP 1
-#define CRYPT_WPA 2
 
 static const char usage[] =
 
@@ -207,14 +203,6 @@ write_packet(FILE * f_out, struct pcap_pkthdr * pkh, unsigned char * h80211)
 	return (EXIT_SUCCESS);
 }
 
-static int station_compare(const void * a, const void * b)
-{
-	REQUIRE(a != NULL);
-	REQUIRE(b != NULL);
-
-	return memcmp(a, b, 6);
-}
-
 int main(int argc, char * argv[])
 {
 	time_t tt;
@@ -225,7 +213,7 @@ int main(int argc, char * argv[])
 	int i = 0, linktype;
 	unsigned n;
 	unsigned z;
-	unsigned char * h80211;
+	unsigned char * h80211 = NULL;
 	unsigned char bssid[6], stmac[6];
 
 	c_avl_tree_t * stations = c_avl_create(station_compare);
@@ -651,6 +639,8 @@ int main(int argc, char * argv[])
 
 	if (opt.store_bad)
 	{
+		ALLEGE(f_bad != NULL);
+
 		if (fwrite(&pfh, 1, n, f_bad) != (size_t) n)
 		{
 			perror("fwrite(pcap file header) failed");
@@ -691,7 +681,7 @@ int main(int argc, char * argv[])
 
 		if (n <= 0 || n > 65535)
 		{
-			printf("Corrupted file? Invalid packet length %d.\n", n);
+			printf("Corrupted file? Invalid packet length %u.\n", n);
 			break;
 		}
 
@@ -744,7 +734,7 @@ int main(int argc, char * argv[])
 			if (n == 24 && le16_to_cpu(*(unsigned short *) (h80211 + 8)) == 2)
 				n = 32;
 
-			if (n <= 0 || n >= (unsigned) pkh.caplen) continue;
+			if (n <= 0 || n >= (unsigned) pkh.caplen) continue; //-V560
 
 			h80211 += n;
 			pkh.caplen -= n;
@@ -779,7 +769,7 @@ int main(int argc, char * argv[])
 		switch (h80211[1] & 3)
 		{
 			case 0:
-				memcpy(bssid, h80211 + 16, sizeof(bssid));
+				memcpy(bssid, h80211 + 16, sizeof(bssid)); //-V525
 				break; // Adhoc
 			case 1:
 				memcpy(bssid, h80211 + 4, sizeof(bssid));
@@ -800,7 +790,7 @@ int main(int argc, char * argv[])
 		switch (h80211[1] & 3)
 		{
 			case 1:
-				memcpy(stmac, h80211 + 10, sizeof(stmac));
+				memcpy(stmac, h80211 + 10, sizeof(stmac)); //-V525
 				break;
 			case 2:
 				memcpy(stmac, h80211 + 4, sizeof(stmac));
@@ -1010,7 +1000,8 @@ int main(int argc, char * argv[])
 
 				st_cur->eapol_size = (h80211[z + 2] << 8) + h80211[z + 3] + 4;
 
-				if (pkh.len - z < st_cur->eapol_size || st_cur->eapol_size == 0
+				if (pkh.len - z < st_cur->eapol_size
+					|| st_cur->eapol_size == 0 //-V560
 					|| st_cur->eapol_size > sizeof(st_cur->eapol))
 				{
 					// Ignore the packet trying to crash us.
@@ -1018,7 +1009,7 @@ int main(int argc, char * argv[])
 					continue;
 				}
 
-				memcpy(st_cur->keymic, &h80211[z + 81], 16);
+				memcpy(st_cur->keymic, &h80211[z + 81], 16); //-V512
 				memcpy(st_cur->eapol, &h80211[z], st_cur->eapol_size);
 				memset(st_cur->eapol + 81, 0, 16);
 
@@ -1044,7 +1035,8 @@ int main(int argc, char * argv[])
 
 				st_cur->eapol_size = (h80211[z + 2] << 8) + h80211[z + 3] + 4;
 
-				if (pkh.len - z < st_cur->eapol_size || st_cur->eapol_size == 0
+				if (pkh.len - z < st_cur->eapol_size
+					|| st_cur->eapol_size == 0 //-V560
 					|| st_cur->eapol_size > sizeof(st_cur->eapol))
 				{
 					// Ignore the packet trying to crash us.
@@ -1078,7 +1070,7 @@ int main(int argc, char * argv[])
 
 	fclose(f_in);
 	fclose(f_out);
-	if (opt.store_bad) fclose(f_bad);
+	if (f_bad != NULL) fclose(f_bad);
 
 	/* write some statistics */
 

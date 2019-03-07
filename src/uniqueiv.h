@@ -40,11 +40,11 @@
 
 /* select byte within which desired bit is located */
 
-#define BITWISE_OFFT(x) (x >> 3)
+#define BITWISE_OFFT(x) ((x) >> 3)
 
 /* mask to extract desired bit */
 
-#define BITWISE_MASK(x) (1 << (x & 7))
+#define BITWISE_MASK(x) (1 << ((x) &7))
 
 unsigned char ** uniqueiv_init(void);
 int uniqueiv_mark(unsigned char ** uiv_root, unsigned char IV[3]);

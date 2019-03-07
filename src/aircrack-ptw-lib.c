@@ -43,8 +43,10 @@
 #include <alloca.h>
 #endif
 #include <limits.h>
+#include <math.h>
+#include <float.h>
 
-#include "pcap.h"
+#include "pcap_local.h"
 #include "defs.h"
 #include "aircrack-ptw-lib.h"
 #include "aircrack-ng.h"
@@ -115,9 +117,9 @@ static const double eval[] = {0.00534392069257663,
 							  0.00495094196451801,
 							  0.0048983441590402};
 
-int tried, max_tries;
-int depth[KEYHSBYTES];
-PTW_tableentry keytable[KEYHSBYTES][n];
+static int tried, max_tries;
+static int depth[KEYHSBYTES];
+static PTW_tableentry keytable[KEYHSBYTES][n];
 
 // Check if optmizied RC4 for AMD64 has to be compiled
 #if defined(__amd64) && defined(__SSE2__)                                      \
@@ -151,7 +153,7 @@ static int comparedoublesorthelper(const void * ina, const void * inb)
 	{
 		return 1;
 	}
-	else if (a->difference == b->difference)
+	else if (fabs(a->difference - b->difference) < FLT_EPSILON)
 	{
 		return 0;
 	}
@@ -498,7 +500,7 @@ static void getdrv(PTW_tableentry orgtable[][n],
 		}
 		for (j = 0; j < n; j++)
 		{
-			if (j == maxi)
+			if (fabs(maxi - j) < FLT_EPSILON)
 			{
 				help = (1.0 - orgtable[i][j].votes / emax);
 			}

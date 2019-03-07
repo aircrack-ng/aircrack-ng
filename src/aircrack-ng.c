@@ -69,6 +69,7 @@
 #include "aircrack-crypto/wpapsk.h"
 #include "aircrack-ng.h"
 #include "aircrack-osdep/byteorder.h"
+#include "aircrack-osdep/radiotap/platform.h"
 #include "aircrack-util/avl_tree.h"
 #include "aircrack-util/common.h"
 #include "aircrack-util/console.h"
@@ -80,11 +81,14 @@
 #include "crypto.h"
 #include "hashcat.h"
 #include "linecount.h"
-#include "pcap.h"
+#include "pcap_local.h"
 #include "session.h"
 #include "uniqueiv.h"
 #include "version.h"
 #include "wkp-frame.h"
+#include "aircrack-osdep/osdep.h"
+#include "include/ieee80211.h"
+#include "include/ethernet.h"
 
 #ifdef HAVE_SQLITE
 #include <sqlite3.h>
@@ -105,17 +109,18 @@ GCRY_THREAD_OPTION_PTHREAD_IMPL;
 #define DYNAMIC 1
 #endif
 
-static int station_compare(const void * a, const void * b)
-{
-	REQUIRE(a != NULL);
-	REQUIRE(b != NULL);
-
-	return (memcmp(a, b, 6));
-}
+#define H16800_PMKID_LEN 32
+#define H16800_BSSID_LEN 12
+#define H16800_STMAC_LEN 12
 
 /* stats global data */
 
 static volatile int wpa_cracked = 0;
+static int _pmkid_16800 = 0;
+static uint8_t _pmkid_16800_str[H16800_PMKID_LEN + H16800_BSSID_LEN
+								+ H16800_STMAC_LEN
+								+ MAX_PASSPHRASE_LENGTH
+								+ 3];
 static int _speed_test;
 static long _speed_test_length = 15;
 static struct timeval t_begin; /* time at start of attack      */
@@ -140,6 +145,7 @@ static pthread_mutex_t mx_dic; /* lock access to opt.dict      */
 static pthread_cond_t cv_eof; /* read EOF condition variable  */
 static int nb_eof = 0; /* # of threads who reached eof */
 static long nb_pkt = 0; /* # of packets read so far     */
+static long nb_prev_pkt = 0; /* # of packets read in prior pass */
 static int mc_pipe[256][2]; /* master->child control pipe   */
 static int cm_pipe[256][2]; /* child->master results pipe   */
 static int bf_pipe[256][2]; /* bruteforcer 'queue' pipe	 */
@@ -147,6 +153,7 @@ static int bf_nkeys[256];
 static unsigned char bf_wepkey[64];
 static volatile int wepkey_crack_success = 0;
 static volatile int close_aircrack = 0;
+static volatile int close_aircrack_fast = 0;
 static int id = 0; //-V707
 static pthread_t tid[MAX_THREADS] = {0};
 static pthread_t cracking_session_tid;
@@ -155,26 +162,6 @@ static volatile int wpa_wordlists_done = 0;
 static pthread_mutex_t mx_nb = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t mx_wpastats = PTHREAD_MUTEX_INITIALIZER;
 static ac_cpuset_t * cpuset = NULL;
-
-#define GOT_IV 0x00000001
-#define USE_IV 0x00000002
-#define K01_IV 0x00000010
-#define K02_IV 0x00000020
-#define K03_IV 0x00000040
-#define K04_IV 0x00000080
-#define K05_IV 0x00000100
-#define K06_IV 0x00000200
-#define K07_IV 0x00000400
-#define K08_IV 0x00000800
-#define K09_IV 0x00001000
-#define K10_IV 0x00002000
-#define K11_IV 0x00004000
-#define K12_IV 0x00008000
-#define K13_IV 0x00010000
-#define K14_IV 0x00020000
-#define K15_IV 0x00040000
-#define K16_IV 0x00080000
-#define K17_IV 0x00100000
 
 typedef struct
 {
@@ -187,6 +174,7 @@ typedef struct
 
 typedef struct
 {
+	int tail;
 	int off1;
 	int off2;
 	void * buf1;
@@ -271,6 +259,7 @@ static const char usage[]
 	  "  WPA-PSK options:\n"
 	  "\n"
 	  "      -E <file>  : create EWSA Project file v3\n"
+	  "      -I <str>   : PMKID string (hashcat -m 16800)\n"
 	  "      -j <file>  : create Hashcat v3.6+ file (HCCAPX)\n"
 	  "      -J <file>  : create Hashcat file (HCCAP)\n"
 	  "      -S         : WPA cracking speed test\n"
@@ -311,11 +300,10 @@ static const char usage[]
 
 static struct session * cracking_session = NULL;
 static char * progname = NULL;
-static volatile int intr_read = 0;
 
 static inline float chrono(struct timeval * start, int reset);
-static int safe_write(int fd, void * buf, size_t len);
-struct AP_info * hccapx_to_ap(struct hccapx * hx);
+static ssize_t safe_write(int fd, void * buf, size_t len);
+static struct AP_info * hccapx_to_ap(struct hccapx * hx);
 
 static inline int append_ap(struct AP_info * new_ap)
 {
@@ -324,9 +312,9 @@ static inline int append_ap(struct AP_info * new_ap)
 	return (c_avl_insert(access_points, new_ap->bssid, new_ap));
 }
 
-static int load_hccapx_file(int fd)
+static long load_hccapx_file(int fd)
 {
-	REQUIRE(fd != -1 && fd >= 0);
+	REQUIRE(fd >= 0);
 
 	hccapx_t hx;
 	struct AP_info * ap_cur = NULL;
@@ -350,7 +338,6 @@ static struct AP_info * get_first_target(void)
 	c_avl_iterator_t * it = c_avl_get_iterator(targets);
 	c_avl_iterator_next(it, &key, (void **) &target);
 	c_avl_iterator_destroy(it);
-	it = NULL;
 	return (target);
 }
 
@@ -359,11 +346,8 @@ static void destroy_ap(struct AP_info * ap)
 	REQUIRE(ap != NULL);
 
 	struct ST_info * st_tmp = NULL;
-	if (ap->ivbuf != NULL)
-	{
-		free(ap->ivbuf);
-		ap->ivbuf = NULL;
-	}
+
+	destroy(ap->ivbuf, free);
 
 	if (ap->stations != NULL)
 	{
@@ -378,30 +362,13 @@ static void destroy_ap(struct AP_info * ap)
 		ap->stations = NULL;
 	}
 
-	uniqueiv_wipe(ap->uiv_root);
-	ap->uiv_root = NULL;
+	destroy(ap->uiv_root, uniqueiv_wipe);
 
-	if (ap->ptw_clean != NULL)
-	{
-		if (ap->ptw_clean->allsessions != NULL)
-		{
-			free(ap->ptw_clean->allsessions);
-			ap->ptw_clean->allsessions = NULL;
-		}
-		free(ap->ptw_clean);
-		ap->ptw_clean = NULL;
-	}
+	if (ap->ptw_clean) destroy(ap->ptw_clean->allsessions, free);
+	destroy(ap->ptw_clean, free);
 
-	if (ap->ptw_vague != NULL)
-	{
-		if (ap->ptw_vague->allsessions != NULL)
-		{
-			free(ap->ptw_vague->allsessions);
-			ap->ptw_vague->allsessions = NULL;
-		}
-		free(ap->ptw_vague);
-		ap->ptw_vague = NULL;
-	}
+	if (ap->ptw_vague) destroy(ap->ptw_vague->allsessions, free);
+	destroy(ap->ptw_vague, free);
 }
 
 static void ac_aplist_free(void)
@@ -415,8 +382,7 @@ static void ac_aplist_free(void)
 	{
 		INVARIANT(ap_cur != NULL);
 
-		destroy_ap(ap_cur);
-		free(ap_cur);
+		destroy(ap_cur, destroy_ap);
 	}
 
 	ALLEGE(pthread_mutex_unlock(&mx_apl) == 0);
@@ -456,7 +422,8 @@ static void ap_avl_release_unused(struct AP_info * ap_cur)
 	ALLEGE(pthread_mutex_unlock(&mx_apl) == 0);
 }
 
-static int add_wep_iv(struct AP_info * ap, unsigned char * buffer)
+static int
+add_wep_iv(struct AP_info * ap, unsigned char * buffer, packet_reader_t * me)
 {
 	REQUIRE(ap != NULL);
 	REQUIRE(buffer != NULL);
@@ -466,25 +433,29 @@ static int add_wep_iv(struct AP_info * ap, unsigned char * buffer)
 
 	if (uniqueiv_check(ap->uiv_root, buffer) == 0)
 	{
-		/* add the IV & first two encrypted bytes */
-
-		long n = ap->nb_ivs * 5;
-
-		if (n + 5 > ap->ivbuf_size || ap->ivbuf == NULL)
+		if (me->mode == PACKET_READER_READ_MODE)
 		{
-			/* enlarge the IVs buffer */
+			/* add the IV & first two encrypted bytes */
 
-			ap->ivbuf_size += 131072;
-			uint8_t * tmp_ivbuf = realloc(ap->ivbuf, (size_t) ap->ivbuf_size);
-			if (tmp_ivbuf == NULL)
+			long n = ap->nb_ivs * 5;
+
+			if (n + 5 > ap->ivbuf_size || ap->ivbuf == NULL)
 			{
-				perror("realloc failed");
-				return (-1);
-			}
-			ap->ivbuf = tmp_ivbuf;
-		}
+				/* enlarge the IVs buffer */
 
-		memcpy(ap->ivbuf + n, buffer, 5);
+				ap->ivbuf_size += 131072;
+				uint8_t * tmp_ivbuf
+					= realloc(ap->ivbuf, (size_t) ap->ivbuf_size);
+				if (tmp_ivbuf == NULL)
+				{
+					perror("realloc failed");
+					return (-1);
+				}
+				ap->ivbuf = tmp_ivbuf;
+			}
+
+			memcpy(ap->ivbuf + n, buffer, 5);
+		}
 
 		uniqueiv_mark(ap->uiv_root, buffer);
 		ap->nb_ivs++;
@@ -495,7 +466,8 @@ static int add_wep_iv(struct AP_info * ap, unsigned char * buffer)
 
 static int parse_ivs2(struct AP_info * ap_cur,
 					  struct ivs2_pkthdr * pivs2,
-					  unsigned char * buffer)
+					  unsigned char * buffer,
+					  packet_reader_t * me)
 {
 	REQUIRE(ap_cur != NULL);
 	REQUIRE(pivs2 != NULL);
@@ -548,26 +520,29 @@ static int parse_ivs2(struct AP_info * ap_cur,
 
 		if (uniqueiv_check(ap_cur->uiv_root, buffer) == 0)
 		{
-			/* add the IV & first two encrypted bytes */
-
-			n = ap_cur->nb_ivs * 5;
-
-			if (n + 5 > ap_cur->ivbuf_size)
+			if (me->mode == PACKET_READER_READ_MODE)
 			{
-				/* enlarge the IVs buffer */
+				/* add the IV & first two encrypted bytes */
 
-				ap_cur->ivbuf_size += 131072;
-				uint8_t * tmp_ivbuf
-					= realloc(ap_cur->ivbuf, (size_t) ap_cur->ivbuf_size);
-				if (tmp_ivbuf == NULL)
+				n = ap_cur->nb_ivs * 5;
+
+				if (n + 5 > ap_cur->ivbuf_size)
 				{
-					perror("realloc failed");
-					return (-1);
-				}
-				ap_cur->ivbuf = tmp_ivbuf;
-			}
+					/* enlarge the IVs buffer */
 
-			memcpy(ap_cur->ivbuf + n, buffer, 5);
+					ap_cur->ivbuf_size += 131072;
+					uint8_t * tmp_ivbuf
+						= realloc(ap_cur->ivbuf, (size_t) ap_cur->ivbuf_size);
+					if (tmp_ivbuf == NULL)
+					{
+						perror("realloc failed");
+						return (-1);
+					}
+					ap_cur->ivbuf = tmp_ivbuf;
+				}
+
+				memcpy(ap_cur->ivbuf + n, buffer, 5);
+			}
 			uniqueiv_mark(ap_cur->uiv_root, buffer);
 			ap_cur->nb_ivs++;
 		}
@@ -609,26 +584,29 @@ static int parse_ivs2(struct AP_info * ap_cur,
 
 		if (uniqueiv_check(ap_cur->uiv_root, buffer) == 0)
 		{
-			/* add the IV & first two encrypted bytes */
-
-			n = ap_cur->nb_ivs * 5;
-
-			if (n + 5 > ap_cur->ivbuf_size)
+			if (me->mode == PACKET_READER_READ_MODE)
 			{
-				/* enlarge the IVs buffer */
+				/* add the IV & first two encrypted bytes */
 
-				ap_cur->ivbuf_size += 131072;
-				uint8_t * tmp_ivbuf
-					= realloc(ap_cur->ivbuf, (size_t) ap_cur->ivbuf_size);
-				if (tmp_ivbuf == NULL)
+				n = ap_cur->nb_ivs * 5;
+
+				if (n + 5 > ap_cur->ivbuf_size)
 				{
-					perror("realloc failed");
-					return (-1);
-				}
-				ap_cur->ivbuf = tmp_ivbuf;
-			}
+					/* enlarge the IVs buffer */
 
-			memcpy(ap_cur->ivbuf + n, buffer, 5);
+					ap_cur->ivbuf_size += 131072;
+					uint8_t * tmp_ivbuf
+						= realloc(ap_cur->ivbuf, (size_t) ap_cur->ivbuf_size);
+					if (tmp_ivbuf == NULL)
+					{
+						perror("realloc failed");
+						return (-1);
+					}
+					ap_cur->ivbuf = tmp_ivbuf;
+				}
+
+				memcpy(ap_cur->ivbuf + n, buffer, 5);
+			}
 			uniqueiv_mark(ap_cur->uiv_root, buffer);
 			ap_cur->nb_ivs++;
 		}
@@ -645,28 +623,20 @@ static int parse_ivs2(struct AP_info * ap_cur,
 static void clean_exit(int ret)
 {
 	int i = 0;
-	int child_pid;
 
 	char tmpbuf[128];
 	memset(tmpbuf, 0, 128);
 
 	close_aircrack = 1;
-	if (ret && !opt.is_quiet)
-	{
-		printf("\nQuitting aircrack-ng...\n");
-		fflush(stdout);
-	}
-
 	if (ret)
 	{
-		// Clear all circular queues for faster shutdown.
-		for (int i = 0; i < opt.nbcpu; ++i)
+		if (!opt.is_quiet)
 		{
-			if (wpa_data[i].cqueue != NULL)
-			{
-				circular_queue_reset(wpa_data[i].cqueue);
-			}
+			printf("\nQuitting aircrack-ng...\n");
+			fflush(stdout);
 		}
+
+		close_aircrack_fast = 1;
 
 		return;
 	}
@@ -706,21 +676,15 @@ static void clean_exit(int ret)
 
 	for (i = 0; i < opt.nbcpu; i++)
 	{
-		if (wpa_data[i].cqueue)
-		{
-			circular_queue_free(wpa_data[i].cqueue);
-			wpa_data[i].cqueue = NULL;
-		}
-		if (wpa_data[i].key_buffer != NULL)
-		{
-			free(wpa_data[i].key_buffer);
-			wpa_data[i].key_buffer = NULL;
-		}
+		destroy(wpa_data[i].cqueue, circular_queue_free);
+		destroy(wpa_data[i].key_buffer, free);
 		if (wpa_data[i].thread == i)
 		{
 			/* ALLEGE(*/ pthread_mutex_destroy(&(wpa_data[i].mutex)) /* == 0)*/;
 		}
 	}
+
+	ALLEGE(pthread_cond_destroy(&cv_eof) == 0);
 
 	dso_ac_crypto_engine_destroy(&engine);
 	ac_crypto_engine_loader_unload();
@@ -735,53 +699,25 @@ static void clean_exit(int ret)
 	{
 		for (i = 0; i < opt.totaldicts; i++)
 		{
-			if (opt.dicts[i] != NULL)
-			{
-				free(opt.dicts[i]);
-				opt.dicts[i] = NULL;
-			}
+			destroy(opt.dicts[i], free);
 		}
 	}
 
-	if (wep.ivbuf != NULL)
-	{
-		free(wep.ivbuf);
-		wep.ivbuf = NULL;
-	}
+	destroy(wep.ivbuf, free);
 
-	if (opt.logKeyToFile != NULL)
-	{
-		free(opt.logKeyToFile);
-		opt.logKeyToFile = NULL;
-	}
+	destroy(opt.logKeyToFile, free);
 
 	ac_aplist_free();
 
-	if (access_points != NULL)
-	{
-		c_avl_destroy(access_points);
-		access_points = NULL;
-	}
+	destroy(access_points, c_avl_destroy);
 
-	if (targets != NULL)
-	{
-		c_avl_destroy(targets);
-		targets = NULL;
-	}
+	destroy(targets, c_avl_destroy);
 
 #ifdef HAVE_SQLITE
-	if (db != NULL)
-	{
-		sqlite3_close(db);
-		db = NULL;
-	}
+	destroy(db, sqlite3_close);
 #endif
 
-	if (progname != NULL)
-	{
-		free(progname);
-		progname = NULL;
-	}
+	destroy(progname, free);
 
 	if (cracking_session)
 	{
@@ -794,21 +730,7 @@ static void clean_exit(int ret)
 		ac_session_free(&cracking_session);
 	}
 
-	// FIXME: Is this necessary anymore?
-	child_pid = fork();
-
-	if (child_pid == -1)
-	{
-		/* do error stuff here */
-	}
-	if (child_pid != 0)
-	{
-		/* The parent process exits here. */
-
-		exit(EXIT_SUCCESS);
-	}
-
-	_exit(ret);
+	exit(EXIT_SUCCESS);
 }
 
 static void sighandler(int signum)
@@ -920,6 +842,12 @@ wpa_send_passphrase(char * key, struct WPA_data * data, int lock)
 	REQUIRE(key != NULL);
 	REQUIRE(data != NULL);
 
+	if (close_aircrack)
+	{
+		circular_queue_reset(data->cqueue);
+		return (0);
+	}
+
 	if (lock)
 	{
 		circular_queue_push(data->cqueue, key, MAX_PASSPHRASE_LENGTH + 1);
@@ -961,7 +889,7 @@ static int checkbssids(const char * bssidlist)
 	if (bssidlist == NULL) return (-1);
 
 #define IS_X(x) ((x) == 'X' || (x) == 'x')
-#define VALID_CHAR(x) ((IS_X(x)) || hexCharToInt(x) > -1)
+#define VALID_CHAR(x) ((IS_X(x)) || hexCharToInt((char) x) > -1)
 
 #define VALID_SEP(arg) (((arg) == '_') || ((arg) == '-') || ((arg) == ':'))
 	frontlist = list = strdup(bssidlist);
@@ -1045,7 +973,7 @@ static void session_save_thread(void * arg)
 	struct timeval start;
 	struct timeval stop;
 	int8_t wordlist = 0;
-	uint64_t pos;
+	off_t pos;
 
 	if (!cracking_session || opt.stdin_dict)
 	{
@@ -1072,7 +1000,8 @@ static void session_save_thread(void * arg)
 		// Reset chrono
 		start.tv_sec = stop.tv_sec;
 
-		pos = wordlist = 0;
+		pos = 0;
+		wordlist = 0;
 
 		// Get position in file
 		ALLEGE(pthread_mutex_lock(&mx_dic) == 0);
@@ -1092,7 +1021,7 @@ static void session_save_thread(void * arg)
 		}
 
 		// Update amount of keys tried and save it
-		ac_session_save(cracking_session, pos, nb_tried);
+		ac_session_save(cracking_session, (uint64_t) pos, nb_tried);
 	}
 }
 
@@ -1112,16 +1041,17 @@ static int mergebssids(const char * bssidlist, unsigned char * bssid)
 	}
 
 	// Do not convert if equal to first bssid
-	if (memcmp(opt.firstbssid, bssid, 6) == 0) return (1);
+	if (memcmp(opt.firstbssid, bssid, ETHER_ADDR_LEN) == 0) return (1);
 
 	list_prev = NULL;
 	list_cur = opt.bssid_list_1st;
 
 	while (list_cur != NULL)
 	{
-		if (memcmp(list_cur->bssid, bssid, 6) == 0)
+		if (memcmp(list_cur->bssid, bssid, ETHER_ADDR_LEN) == 0)
 		{
-			if (list_cur->convert) memcpy(bssid, opt.firstbssid, 6);
+			if (list_cur->convert)
+				memcpy(bssid, opt.firstbssid, ETHER_ADDR_LEN);
 
 			return (list_cur->convert);
 		}
@@ -1155,9 +1085,9 @@ static int mergebssids(const char * bssidlist, unsigned char * bssid)
 
 	// skip first element (because it doesn't have to be converted
 	// It already has the good value
-	tmp = strsep(&list, ",");
+	(void) strsep(&list, ",");
 
-	next = found = 0;
+	found = 0;
 
 	do
 	{
@@ -1201,7 +1131,7 @@ static int mergebssids(const char * bssidlist, unsigned char * bssid)
 
 	list_cur->convert = found;
 	list_cur->next = NULL;
-	memcpy(list_cur->bssid, bssid, 6);
+	memcpy(list_cur->bssid, bssid, ETHER_ADDR_LEN);
 
 	if (opt.bssid_list_1st == NULL)
 		opt.bssid_list_1st = list_cur;
@@ -1209,7 +1139,7 @@ static int mergebssids(const char * bssidlist, unsigned char * bssid)
 		list_prev->next = list_cur;
 
 	// Do not forget to convert if it was successful
-	if (list_cur->convert) memcpy(bssid, opt.firstbssid, 6);
+	if (list_cur->convert) memcpy(bssid, opt.firstbssid, ETHER_ADDR_LEN);
 
 #undef VALID_CHAR
 #undef VALID_SEP
@@ -1218,13 +1148,40 @@ static int mergebssids(const char * bssidlist, unsigned char * bssid)
 	return (list_cur->convert);
 }
 
+static ssize_t may_read(int fd)
+{
+	struct timeval tv;
+	fd_set rfds;
+
+	FD_ZERO(&rfds);
+	FD_SET(fd, &rfds);
+
+	tv.tv_sec = 0;
+	tv.tv_usec = 250000;
+
+	while (select(fd + 1, &rfds, NULL, NULL, &tv) < 0)
+	{
+		if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) continue;
+		if (errno == EBADF) return (0);
+		perror("select");
+		abort();
+	}
+
+	if (FD_ISSET(fd, &rfds))
+	{
+		return (1);
+	}
+
+	return (0);
+}
+
 /* fread isn't atomic, sadly */
 
 static int atomic_read(read_buf * rb, int fd, int len, void * buf)
 {
-	ssize_t n;
+	ssize_t n = 0;
 
-	if (close_aircrack) return (CLOSE_IT);
+	if (close_aircrack) return (0);
 
 	if (rb->buf1 == NULL)
 	{
@@ -1255,7 +1212,17 @@ static int atomic_read(read_buf * rb, int fd, int len, void * buf)
 	}
 	else
 	{
-		n = read(fd, (char *) rb->buf1 + rb->off2, (size_t)(65536 - rb->off2));
+		do
+		{
+			if (may_read(fd))
+			{
+				n = read(fd,
+						 (char *) rb->buf1 + rb->off2,
+						 (size_t)(65536 - rb->off2));
+			}
+
+			if (close_aircrack) return (0);
+		} while (rb->tail && n == 0);
 
 		if (n <= 0) return (0);
 
@@ -1367,38 +1334,37 @@ static int packet_reader__update_ap_info(struct AP_info * ap_cur,
 	REQUIRE(pkh != NULL);
 
 	struct ST_info * st_cur = NULL;
-	unsigned char stmac[6];
+	unsigned char stmac[ETHER_ADDR_LEN];
 	unsigned char * p = NULL;
 
 	if (fmt == FORMAT_IVS)
 	{
 		ap_cur->crypt = 2;
-		if (me->mode == PACKET_READER_READ_MODE) add_wep_iv(ap_cur, buffer);
+		add_wep_iv(ap_cur, buffer, me);
 		return (0);
 	}
 	else if (fmt == FORMAT_IVS2)
 	{
-		if (me->mode == PACKET_READER_READ_MODE)
-			parse_ivs2(ap_cur, ivs2, buffer);
+		parse_ivs2(ap_cur, ivs2, buffer, me);
 		return (0);
 	}
 
 	/* locate the station MAC in the 802.11 header */
 
-	switch (h80211[1] & 3)
+	switch (h80211[1] & IEEE80211_FC1_DIR_MASK)
 	{
-		case 0:
-			memcpy(stmac, h80211 + 10, 6);
+		case IEEE80211_FC1_DIR_NODS:
+			memcpy(stmac, h80211 + 10, ETHER_ADDR_LEN);
 			break;
 
-		case 1:
-			memcpy(stmac, h80211 + 10, 6);
+		case IEEE80211_FC1_DIR_TODS:
+			memcpy(stmac, h80211 + 10, ETHER_ADDR_LEN);
 			break;
 
-		case 2:
+		case IEEE80211_FC1_DIR_FROMDS:
 			/* reject broadcast MACs */
 			if ((h80211[4] % 2) != 0) goto skip_station;
-			memcpy(stmac, h80211 + 4, 6);
+			memcpy(stmac, h80211 + 4, ETHER_ADDR_LEN);
 			break;
 
 		default:
@@ -1426,9 +1392,10 @@ skip_station:
 
 	/* packet parsing: Beacon or Probe Response */
 
-	if (h80211[0] == 0x80 || h80211[0] == 0x50)
+	if (h80211[0] == IEEE80211_FC0_SUBTYPE_BEACON
+		|| h80211[0] == IEEE80211_FC0_SUBTYPE_PROBE_RESP)
 	{
-		if (ap_cur->crypt < 0) ap_cur->crypt = (h80211[34] & 0x10) >> 4;
+		if (ap_cur->crypt == 0) ap_cur->crypt = (h80211[34] & 0x10u) >> 4u;
 
 		p = h80211 + 36;
 
@@ -1439,9 +1406,9 @@ skip_station:
 			if (p[0] == 0x00 && p[1] > 0 && p[2] != '\0')
 			{
 				/* found a non-cloaked ESSID */
-				int n = (p[1] > 32) ? 32 : p[1];
+				size_t n = (p[1] > 32) ? 32 : p[1];
 
-				memset(ap_cur->essid, 0, 33);
+				memset(ap_cur->essid, 0, ESSID_LENGTH + 1);
 				memcpy(ap_cur->essid, p + 2, n);
 			}
 
@@ -1451,7 +1418,7 @@ skip_station:
 
 	/* packet parsing: Association Request */
 
-	if (h80211[0] == 0x00)
+	if (h80211[0] == IEEE80211_FC0_SUBTYPE_ASSOC_REQ)
 	{
 		p = h80211 + 28;
 
@@ -1461,9 +1428,9 @@ skip_station:
 
 			if (p[0] == 0x00 && p[1] > 0 && p[2] != '\0')
 			{
-				int n = (p[1] > 32) ? 32 : p[1];
+				size_t n = (p[1] > 32) ? 32 : p[1];
 
-				memset(ap_cur->essid, 0, 33);
+				memset(ap_cur->essid, 0, ESSID_LENGTH + 1);
 				memcpy(ap_cur->essid, p + 2, n);
 			}
 
@@ -1473,7 +1440,7 @@ skip_station:
 
 	/* packet parsing: Association Response */
 
-	if (h80211[0] == 0x10)
+	if (h80211[0] == IEEE80211_FC0_SUBTYPE_ASSOC_RESP)
 	{
 		/* reset the WPA handshake state */
 		if (st_cur != NULL) st_cur->wpa.state = 0;
@@ -1481,12 +1448,18 @@ skip_station:
 
 	/* check if data */
 
-	if ((h80211[0] & 0x0C) != 0x08) return (0);
+	if ((h80211[0] & IEEE80211_FC0_TYPE_MASK) != IEEE80211_FC0_TYPE_DATA)
+		return (0);
 
 	/* check minimum size */
 
-	unsigned z = ((h80211[1] & 3) != 3) ? 24 : 30;
-	if ((h80211[0] & 0x80) == 0x80) z += 2; /* 802.11e QoS */
+	unsigned z
+		= ((h80211[1] & IEEE80211_FC1_DIR_MASK) != IEEE80211_FC1_DIR_DSTODS)
+			  ? 24
+			  : 30;
+	if ((h80211[0] & IEEE80211_FC0_SUBTYPE_BEACON)
+		== IEEE80211_FC0_SUBTYPE_BEACON)
+		z += 2; /* 802.11e QoS */
 
 	if (z + 16 > pkh->caplen) return (0);
 
@@ -1515,7 +1488,8 @@ skip_station:
 			unsigned char * body = h80211 + z;
 			int data_len = (int) (pkh->caplen - (body - h80211) - 4 - 4);
 
-			if ((h80211[1] & 0x03) == 0x03) // 30byte header
+			if ((h80211[1] & IEEE80211_FC1_DIR_MASK)
+				== IEEE80211_FC1_DIR_DSTODS) // 30byte header
 			{
 				body += 6;
 				data_len -= 6;
@@ -1533,19 +1507,17 @@ skip_station:
 		memcpy(buffer + 3, h80211 + z + 4, 2);
 
 		/* Special handling for spanning-tree packets */
-		if (memcmp(h80211 + 4, SPANTREE, 6) == 0
-			|| memcmp(h80211 + 16, SPANTREE, 6) == 0)
+		if (memcmp(h80211 + 4, SPANTREE, ETHER_ADDR_LEN) == 0
+			|| memcmp(h80211 + 16, SPANTREE, ETHER_ADDR_LEN) == 0)
 		{
 			buffer[3] = (uint8_t)((buffer[3] ^ 0x42) ^ 0xAA);
 			buffer[4] = (uint8_t)((buffer[4] ^ 0x42) ^ 0xAA);
 		}
 
-		if (me->mode == PACKET_READER_READ_MODE) add_wep_iv(ap_cur, buffer);
+		add_wep_iv(ap_cur, buffer, me);
 
 		return (0);
 	}
-
-	if (ap_cur->crypt < 0) ap_cur->crypt = 0; /* no encryption */
 
 	/* if ethertype == IPv4, find the LAN address */
 
@@ -1584,16 +1556,23 @@ skip_station:
 		return (1);
 	}
 
+	uint64_t replay_counter
+		= be64_to_cpu(get_unaligned((uint64_t *) (&h80211[z + 9])));
+
 	/* frame 1: Pairwise == 1, Install == 0, Ack == 1, MIC == 0 */
 
 	if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
 		&& (h80211[z + 6] & 0x80) != 0
 		&& (h80211[z + 5] & 0x01) == 0)
 	{
-		memcpy(st_cur->wpa.anonce, &h80211[z + 17], 32);
+		memcpy(st_cur->wpa.anonce, &h80211[z + 17], sizeof(st_cur->wpa.anonce));
 
 		/* authenticator nonce set */
 		st_cur->wpa.state = 1;
+
+		st_cur->wpa.found |= 1 << 1;
+
+		st_cur->wpa.replay = replay_counter;
 
 		if (h80211[z + 99] == 0xdd) // RSN
 		{
@@ -1616,14 +1595,30 @@ skip_station:
 
 	if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
 		&& (h80211[z + 6] & 0x80) == 0
-		&& (h80211[z + 5] & 0x01) != 0)
+		&& (h80211[z + 5] & 0x01) != 0
+		&& st_cur->wpa.replay == replay_counter)
 	{
-		if (memcmp(&h80211[z + 17], ZERO, 32) != 0)
+		if (memcmp(&h80211[z + 17], ZERO, sizeof(st_cur->wpa.snonce)) != 0)
 		{
-			memcpy(st_cur->wpa.snonce, &h80211[z + 17], 32);
+			memcpy(st_cur->wpa.snonce,
+				   &h80211[z + 17],
+				   sizeof(st_cur->wpa.snonce));
 
 			/* supplicant nonce set */
 			st_cur->wpa.state |= 2;
+		}
+
+		// uint16_t key_len = ((h80211[z + 7] << 8u) + h80211[z + 8]);
+		uint16_t key_data_len
+			= (h80211[z + 81 + 16] << 8u) + h80211[z + 81 + 17];
+
+		if (key_data_len == 0)
+		{
+			st_cur->wpa.found |= 1 << 4; // frame 4
+		}
+		else
+		{
+			st_cur->wpa.found |= 1 << 2; // frame 2
 		}
 
 		if ((st_cur->wpa.state & 4) != 4)
@@ -1632,7 +1627,7 @@ skip_station:
 			st_cur->wpa.eapol_size
 				= (uint32_t)((h80211[z + 2] << 8) + h80211[z + 3] + 4);
 
-			if (st_cur->wpa.eapol_size == 0
+			if (st_cur->wpa.eapol_size == 0 //-V560
 				|| st_cur->wpa.eapol_size > sizeof(st_cur->wpa.eapol)
 				|| pkh->len - z < st_cur->wpa.eapol_size)
 			{
@@ -1645,6 +1640,15 @@ skip_station:
 			memcpy(st_cur->wpa.keymic, &h80211[z + 81], 16);
 			memcpy(st_cur->wpa.eapol, &h80211[z], st_cur->wpa.eapol_size);
 			memset(st_cur->wpa.eapol + 81, 0, 16);
+
+			if (key_data_len == 0)
+			{
+				st_cur->wpa.eapol_source |= 1 << 4; // frame 4
+			}
+			else
+			{
+				st_cur->wpa.eapol_source |= 1 << 2; // frame 2
+			}
 
 			/* eapol frame & keymic set */
 			st_cur->wpa.state |= 4;
@@ -1658,11 +1662,16 @@ skip_station:
 
 	if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) != 0
 		&& (h80211[z + 6] & 0x80) != 0
-		&& (h80211[z + 5] & 0x01) != 0)
+		&& (h80211[z + 5] & 0x01) != 0
+		&& st_cur->wpa.replay == replay_counter)
 	{
-		if (memcmp(&h80211[z + 17], ZERO, 32) != 0)
+		st_cur->wpa.found |= 1 << 3;
+
+		if (memcmp(&h80211[z + 17], ZERO, sizeof(st_cur->wpa.anonce)) != 0)
 		{
-			memcpy(st_cur->wpa.anonce, &h80211[z + 17], 32);
+			memcpy(st_cur->wpa.anonce,
+				   &h80211[z + 17],
+				   sizeof(st_cur->wpa.anonce));
 
 			/* authenticator nonce set */
 			st_cur->wpa.state |= 1;
@@ -1674,7 +1683,7 @@ skip_station:
 			st_cur->wpa.eapol_size
 				= (uint32_t)((h80211[z + 2] << 8) + h80211[z + 3] + 4);
 
-			if (st_cur->wpa.eapol_size == 0
+			if (st_cur->wpa.eapol_size == 0 //-V560
 				|| st_cur->wpa.eapol_size > sizeof(st_cur->wpa.eapol)
 				|| pkh->len - z < st_cur->wpa.eapol_size)
 			{
@@ -1687,6 +1696,8 @@ skip_station:
 			memcpy(st_cur->wpa.keymic, &h80211[z + 81], 16);
 			memcpy(st_cur->wpa.eapol, &h80211[z], st_cur->wpa.eapol_size);
 			memset(st_cur->wpa.eapol + 81, 0, 16);
+
+			st_cur->wpa.eapol_source |= 1 << 3;
 
 			/* eapol frame & keymic set */
 			st_cur->wpa.state |= 4;
@@ -1702,7 +1713,7 @@ skip_station:
 		|| (st_cur->wpa.state > 0 && st_cur->wpa.pmkid[0] != 0x00))
 	{
 		/* got one valid handshake */
-		memcpy(st_cur->wpa.stmac, stmac, 6);
+		memcpy(st_cur->wpa.stmac, stmac, ETHER_ADDR_LEN);
 		memcpy(&ap_cur->wpa, &st_cur->wpa, sizeof(struct WPA_hdsk));
 	}
 
@@ -1756,49 +1767,50 @@ static int packet_reader_process_packet(packet_reader_t * me,
 
 		/* skip (uninteresting) control frames */
 
-		if ((h80211[0] & 0x0C) == 0x04) return (0);
+		if ((h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_CTL)
+			return (0);
 
 		/* locate the access point's MAC address */
 
-		switch (h80211[1] & 3)
+		switch (h80211[1] & IEEE80211_FC1_DIR_MASK)
 		{
-			case 0:
-				memcpy(bssid, h80211 + 16, 6);
+			case IEEE80211_FC1_DIR_NODS:
+				memcpy(bssid, h80211 + 16, ETHER_ADDR_LEN); //-V525
 				break; // Adhoc
-			case 1:
-				memcpy(bssid, h80211 + 4, 6);
+			case IEEE80211_FC1_DIR_TODS:
+				memcpy(bssid, h80211 + 4, ETHER_ADDR_LEN);
 				break; // ToDS
-			case 2:
-				memcpy(bssid, h80211 + 10, 6);
+			case IEEE80211_FC1_DIR_FROMDS:
+				memcpy(bssid, h80211 + 10, ETHER_ADDR_LEN);
 				break; // FromDS
-			case 3:
-				memcpy(bssid, h80211 + 10, 6);
+			case IEEE80211_FC1_DIR_DSTODS:
+				memcpy(bssid, h80211 + 10, ETHER_ADDR_LEN);
 				break; // WDS -> Transmitter taken as BSSID
 			default:
 				fprintf(stderr,
 						"Expected a value between 0 and 3, got %d.\n",
-						h80211[1] & 3);
+						h80211[1] & IEEE80211_FC1_DIR_MASK);
 				break;
 		}
 
-		switch (h80211[1] & 3)
+		switch (h80211[1] & IEEE80211_FC1_DIR_MASK)
 		{
-			case 0:
-				memcpy(dest, h80211 + 4, 6);
+			case IEEE80211_FC1_DIR_NODS:
+				memcpy(dest, h80211 + 4, ETHER_ADDR_LEN);
 				break; // Adhoc
-			case 1:
-				memcpy(dest, h80211 + 16, 6);
+			case IEEE80211_FC1_DIR_TODS:
+				memcpy(dest, h80211 + 16, ETHER_ADDR_LEN);
 				break; // ToDS
-			case 2:
-				memcpy(dest, h80211 + 4, 6);
+			case IEEE80211_FC1_DIR_FROMDS:
+				memcpy(dest, h80211 + 4, ETHER_ADDR_LEN);
 				break; // FromDS
-			case 3:
-				memcpy(dest, h80211 + 16, 6);
+			case IEEE80211_FC1_DIR_DSTODS:
+				memcpy(dest, h80211 + 16, ETHER_ADDR_LEN);
 				break; // WDS -> Transmitter taken as BSSID
 			default:
 				fprintf(stderr,
 						"Expected a value between 0 and 3, got %d.\n",
-						h80211[1] & 3);
+						h80211[1] & IEEE80211_FC1_DIR_MASK);
 				break;
 		}
 
@@ -1811,21 +1823,22 @@ static int packet_reader_process_packet(packet_reader_t * me,
 
 	if (opt.bssidmerge) mergebssids(opt.bssidmerge, bssid);
 
-	if (memcmp(bssid, BROADCAST, 6) == 0)
+	if (memcmp(bssid, BROADCAST, ETHER_ADDR_LEN) == 0)
 		/* probe request or such - skip the packet */
 		return (0);
 
 	if (me->mode == PACKET_READER_READ_MODE)
 	{
-		if (memcmp(bssid, opt.bssid, 6) != 0) return (0);
+		if (memcmp(bssid, opt.bssid, ETHER_ADDR_LEN) != 0) return (0);
 	}
 
-	if (memcmp(opt.maddr, ZERO, 6) != 0 && memcmp(opt.maddr, BROADCAST, 6) != 0)
+	if (memcmp(opt.maddr, ZERO, ETHER_ADDR_LEN) != 0
+		&& memcmp(opt.maddr, BROADCAST, ETHER_ADDR_LEN) != 0)
 	{
 		/* apply the MAC filter */
-		if (memcmp(opt.maddr, h80211 + 4, 6) != 0
-			&& memcmp(opt.maddr, h80211 + 10, 6) != 0
-			&& memcmp(opt.maddr, h80211 + 16, 6) != 0)
+		if (memcmp(opt.maddr, h80211 + 4, ETHER_ADDR_LEN) != 0
+			&& memcmp(opt.maddr, h80211 + 10, ETHER_ADDR_LEN) != 0
+			&& memcmp(opt.maddr, h80211 + 16, ETHER_ADDR_LEN) != 0)
 			return (0);
 	}
 
@@ -1843,7 +1856,7 @@ static int packet_reader_process_packet(packet_reader_t * me,
 		}
 
 		memset((*ap_cur), 0, sizeof(struct AP_info));
-		memcpy((*ap_cur)->bssid, bssid, 6);
+		memcpy((*ap_cur)->bssid, bssid, ETHER_ADDR_LEN);
 
 		(*ap_cur)->crypt = -1;
 
@@ -1932,8 +1945,8 @@ static void packet_reader_thread(void * arg)
 	int n;
 	int fmt;
 
-	unsigned char bssid[6] = {0};
-	unsigned char dest[6] = {0};
+	unsigned char bssid[ETHER_ADDR_LEN] = {0};
+	unsigned char dest[ETHER_ADDR_LEN] = {0};
 	unsigned char * h80211 = NULL;
 
 	struct ivs2_pkthdr ivs2 = {0};
@@ -1947,6 +1960,10 @@ static void packet_reader_thread(void * arg)
 			|| (request->mode == PACKET_READER_READ_MODE));
 
 	ALLEGE(signal(SIGINT, sighandler) != SIG_ERR);
+
+	rb.tail
+		= ((request->mode == PACKET_READER_READ_MODE && !opt.bssid_set) ? 1
+																		: 0);
 
 	if ((buffer = (unsigned char *) malloc(65536)) == NULL)
 	{
@@ -2069,13 +2086,6 @@ static void packet_reader_thread(void * arg)
 		}
 	}
 
-	/* avoid blocking on reading the file */
-	if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
-	{
-		perror("fcntl(O_NONBLOCK) failed");
-		goto read_fail;
-	}
-
 	while (1)
 	{
 		if (close_aircrack) break;
@@ -2104,9 +2114,10 @@ static void packet_reader_thread(void * arg)
 
 			if (ivs2.flags & IVS2_BSSID)
 			{
-				if (!atomic_read(&rb, fd, 6, bssid)) goto done_reading;
+				if (!atomic_read(&rb, fd, ETHER_ADDR_LEN, bssid))
+					goto done_reading;
 
-				ivs2.len -= 6;
+				ivs2.len -= ETHER_ADDR_LEN;
 			}
 
 			if (!atomic_read(&rb, fd, ivs2.len, buffer)) goto done_reading;
@@ -2146,7 +2157,7 @@ static void packet_reader_thread(void * arg)
 					n = 64;
 				else
 				{
-					n = le32_to_cpu(*(int *) (h80211 + 4));
+					n = load32_le(h80211 + 4);
 				}
 
 				if (n < 8 || n >= (int) pkh.caplen) continue;
@@ -2158,7 +2169,7 @@ static void packet_reader_thread(void * arg)
 			else if (pfh.linktype == LINKTYPE_RADIOTAP_HDR)
 			{
 				/* remove the radiotap header */
-				n = le16_to_cpu(*(unsigned short *) (h80211 + 2));
+				n = load16_le(h80211 + 2);
 
 				if (n <= 0 || n >= (int) pkh.caplen) continue;
 
@@ -2169,14 +2180,12 @@ static void packet_reader_thread(void * arg)
 			else if (pfh.linktype == LINKTYPE_PPI_HDR)
 			{
 				/* Remove the PPI header */
-				n = le16_to_cpu(*(unsigned short *) (h80211 + 2));
+				n = load16_le(h80211 + 2);
 
 				if (n <= 0 || n >= (int) pkh.caplen) continue;
 
 				/* for a while Kismet logged broken PPI headers */
-				if (n == 24
-					&& le16_to_cpu(*(unsigned short *) (h80211 + 8)) == 2)
-					n = 32;
+				if (n == 24 && load16_le(h80211 + 8) == 2) n = 32;
 
 				h80211 += n;
 				pkh.caplen -= n;
@@ -2187,7 +2196,7 @@ static void packet_reader_thread(void * arg)
 			}
 			else
 			{
-				fprintf(stderr, "unsupported linktype %d\n", pfh.linktype);
+				fprintf(stderr, "unsupported linktype %u\n", pfh.linktype);
 				continue;
 			}
 		}
@@ -2214,29 +2223,21 @@ static void packet_reader_thread(void * arg)
 				goto done_reading;
 			}
 		}
+
+		if (request->mode == PACKET_READER_READ_MODE && nb_prev_pkt == nb_pkt)
+		{
+			pthread_cond_signal(&cv_eof);
+		}
 	}
 
 done_reading:
 	++nb_eof;
+	pthread_cond_signal(&cv_eof);
 
 read_fail:
-	if (buffer != NULL)
-	{
-		free(buffer);
-		buffer = NULL;
-	}
-
-	if (rb.buf1 != NULL)
-	{
-		free(rb.buf1);
-		rb.buf1 = NULL;
-	}
-
-	if (rb.buf2 != NULL)
-	{
-		free(rb.buf2);
-		rb.buf2 = NULL;
-	}
+	destroy(buffer, free);
+	destroy(rb.buf1, free);
+	destroy(rb.buf2, free);
 
 	if (fd != -1) close(fd);
 
@@ -2255,7 +2256,7 @@ static inline float chrono(struct timeval * start, int reset)
 	gettimeofday(&current, NULL);
 
 	delta = (current.tv_sec - start->tv_sec)
-			+ (float) (current.tv_usec - start->tv_usec) / 1000000;
+			+ (float) (current.tv_usec - start->tv_usec) / 1000000.f;
 
 	if (reset) gettimeofday(start, NULL);
 
@@ -2264,22 +2265,29 @@ static inline float chrono(struct timeval * start, int reset)
 
 /* signal-safe I/O routines */
 
-static int safe_read(int fd, void * buf, size_t len)
+static ssize_t safe_read(int fd, void * buf, size_t len)
 {
-	REQUIRE(fd != -1 && fd >= 0);
+	REQUIRE(fd >= 0);
 	REQUIRE(buf != NULL);
 	REQUIRE(len > 0);
 
-	int n;
+	ssize_t n;
 	size_t sum = 0;
 	char * off = (char *) buf;
 
 	while (sum < len)
 	{
-		if (!(n = read(fd, (void *) off, len - sum)))
+		n = 0;
+
+		if (may_read(fd))
 		{
-			return (0);
+			if (!(n = read(fd, (void *) off, len - sum)))
+			{
+				return (0);
+			}
 		}
+		if (close_aircrack) return (-1);
+
 		if (n < 0 && errno == EINTR) continue;
 		if (n < 0) return (n);
 
@@ -2290,13 +2298,13 @@ static int safe_read(int fd, void * buf, size_t len)
 	return (sum);
 }
 
-static int safe_write(int fd, void * buf, size_t len)
+static ssize_t safe_write(int fd, void * buf, size_t len)
 {
-	REQUIRE(fd != -1 && fd >= 0);
+	REQUIRE(fd >= 0);
 	REQUIRE(buf != NULL);
 	REQUIRE(len > 0);
 
-	int n;
+	ssize_t n;
 	size_t sum = 0;
 	char * off = (char *) buf;
 
@@ -2328,22 +2336,18 @@ static int crack_wep_thread(void * arg)
 	unsigned char Sq, dq, Kq, jq, q;
 	unsigned char S1, S2, J2, t2;
 
-	int i, j, B, cid = (long) arg;
+	int i, j, B = 0, cid = (int) ((long) arg);
 	int votes[N_ATTACKS][256];
-	int first = 1, first2 = 1, oldB = 0, oldq = 0;
+	int first = 1, first2, oldB = 0, oldq = 0;
 
 	memcpy(S, R, 256);
 	memcpy(Si, R, 256);
 
 	while (1)
 	{
-		if (!first) oldB = B;
-
 		if (safe_read(mc_pipe[cid][0], (void *) &B, sizeof(int)) != sizeof(int))
 		{
-			perror("read failed");
-			kill(0, SIGTERM);
-			_exit(EXIT_FAILURE);
+			return (FAILURE);
 		}
 		if (close_aircrack) break;
 
@@ -2352,9 +2356,9 @@ static int crack_wep_thread(void * arg)
 		min = 5 * (((cid) *wep.nb_ivs) / opt.nbcpu);
 		max = 5 * (((1 + cid) * wep.nb_ivs) / opt.nbcpu);
 
-		q = 3 + B;
+		q = (uint8_t)(3 + B);
 
-		memcpy(K + 3, wep.key, B);
+		memcpy(K + 3, wep.key, (size_t) B);
 		memset(votes, 0, sizeof(votes));
 
 		/* START: KoreK attacks */
@@ -2365,7 +2369,7 @@ static int crack_wep_thread(void * arg)
 			{
 				for (i = 0; i < oldq; i++)
 				{
-					S[i] = Si[i] = i;
+					S[i] = Si[i] = (uint8_t) i;
 					S[jj[i]] = Si[jj[i]] = jj[i];
 				}
 			}
@@ -2376,7 +2380,8 @@ static int crack_wep_thread(void * arg)
 
 			for (i = j = 0; i < q; i++)
 			{
-				jj[i] = j = (j + S[i] + K[i]) & 0xFF;
+				jj[i] = (uint8_t)((j + S[i] + K[i]) & 0xFF);
+				j = (j + S[i] + K[i]) & 0xFF;
 				SWAP(S[i], S[j]);
 			}
 
@@ -2387,10 +2392,10 @@ static int crack_wep_thread(void * arg)
 				SWAP(Si[i], Si[jj[i]]);
 			} while (i != 0);
 
-			o1 = wep.ivbuf[xv + 3] ^ 0xAA;
+			o1 = (uint8_t)(wep.ivbuf[xv + 3] ^ 0xAA);
 			io1 = Si[o1];
 			S1 = S[1];
-			o2 = wep.ivbuf[xv + 4] ^ 0xAA;
+			o2 = (uint8_t)(wep.ivbuf[xv + 4] ^ 0xAA);
 			io2 = Si[o2];
 			S2 = S[2];
 
@@ -2411,14 +2416,14 @@ static int crack_wep_thread(void * arg)
 			{
 				if ((S1 == 2) && (o1 == 2))
 				{
-					Kq = 1 - dq;
+					Kq = (uint8_t) 1 - dq;
 					votes[A_neg][Kq]++;
-					Kq = 2 - dq;
+					Kq = (uint8_t) 2 - dq;
 					votes[A_neg][Kq]++;
 				}
 				else if (o2 == 0)
 				{
-					Kq = 2 - dq;
+					Kq = (uint8_t) 2 - dq;
 					votes[A_neg][Kq]++;
 				}
 			}
@@ -2426,24 +2431,24 @@ static int crack_wep_thread(void * arg)
 			{
 				if ((o2 == 0) && (Sq == 0))
 				{
-					Kq = 2 - dq;
+					Kq = (uint8_t) 2 - dq;
 					votes[A_u15][Kq]++;
 				}
 			}
 
 			if ((S1 == 1) && (o1 == S2))
 			{
-				Kq = 1 - dq;
+				Kq = (uint8_t) 1 - dq;
 				votes[A_neg][Kq]++;
-				Kq = 2 - dq;
+				Kq = (uint8_t) 2 - dq;
 				votes[A_neg][Kq]++;
 			}
 
 			if ((S1 == 0) && (S[0] == 1) && (o1 == 1))
 			{
-				Kq = 0 - dq;
+				Kq = (uint8_t) 0 - dq;
 				votes[A_neg][Kq]++;
-				Kq = 1 - dq;
+				Kq = (uint8_t) 1 - dq;
 				votes[A_neg][Kq]++;
 			}
 
@@ -2473,7 +2478,7 @@ static int crack_wep_thread(void * arg)
 
 			if ((io1 == 2) && (S[q] == 1))
 			{
-				Kq = 1 - dq;
+				Kq = (uint8_t) 1 - dq;
 				votes[A_u5_2][Kq]++;
 			}
 
@@ -2481,18 +2486,18 @@ static int crack_wep_thread(void * arg)
 			{
 				if ((S1 == 0) && (o1 == q))
 				{
-					Kq = 1 - dq;
+					Kq = (uint8_t) 1 - dq;
 					votes[A_u13_2][Kq]++;
 				}
 				else if ((((1 - q - S1) & 0xFF) == 0) && (o1 == S1))
 				{
-					Kq = 1 - dq;
+					Kq = (uint8_t) 1 - dq;
 					votes[A_u13_3][Kq]++;
 				}
 				else if ((S1 >= ((-q) & 0xFF))
 						 && (((q + S1 - io1) & 0xFF) == 0))
 				{
-					Kq = 1 - dq;
+					Kq = (uint8_t) 1 - dq;
 					votes[A_u5_3][Kq]++;
 				}
 			}
@@ -2617,9 +2622,9 @@ void show_wep_stats(int B,
 
 	delta = chrono(&t_begin, 0);
 
-	et_h = delta / 3600;
-	et_m = (delta - et_h * 3600) / 60;
-	et_s = delta - et_h * 3600 - et_m * 60;
+	et_h = (int) (delta / 3600);
+	et_m = (int) ((delta - et_h * 3600) / 60);
+	et_s = (int) (delta - et_h * 3600 - et_m * 60);
 
 	if (is_cleared == 0)
 	{
@@ -2738,7 +2743,7 @@ void show_wep_stats(int B,
 			if (wep.poll[i][wep.depth[i]].idx >= ASCII_LOW_T
 				&& wep.poll[i][wep.depth[i]].idx <= ASCII_HIGH_T)
 				if (wep.poll[i][wep.depth[i]].val >= ASCII_VOTE_STRENGTH_T
-					|| ASCII_DISREGARD_STRENGTH)
+					|| ASCII_DISREGARD_STRENGTH) //-V560
 					printf("  %c", wep.poll[i][wep.depth[i]].idx);
 
 		printf("\n");
@@ -2764,7 +2769,7 @@ static void key_found(unsigned char * wepkey, int keylen, int B)
 		if (wepkey[i] == 0 || (wepkey[i] >= 32 && wepkey[i] < 127)) nb_ascii++;
 
 	wepkey_crack_success = 1;
-	memcpy(bf_wepkey, wepkey, keylen);
+	memcpy(bf_wepkey, wepkey, (size_t) keylen);
 
 	if (opt.is_quiet)
 		printf("KEY FOUND! [ ");
@@ -2832,7 +2837,8 @@ static int check_wep_key(unsigned char * wepkey, int B, int keylen)
 {
 	unsigned char x1, x2;
 	unsigned long xv;
-	int i, j, n, bad, tests;
+	size_t i, j, n, bad;
+	unsigned long tests;
 
 	unsigned char K[64];
 	unsigned char S[256];
@@ -2845,23 +2851,23 @@ static int check_wep_key(unsigned char * wepkey, int B, int keylen)
 
 	bad = 0;
 
-	memcpy(K + 3, wepkey, keylen);
+	memcpy(K + 3, wepkey, (size_t) keylen);
 
 	tests = 32;
 
-	if (opt.dict) tests = wep.nb_ivs;
+	if (opt.dict) tests = (unsigned long) wep.nb_ivs;
 
 	if (tests < TEST_MIN_IVS) tests = TEST_MIN_IVS;
 	if (tests > TEST_MAX_IVS) tests = TEST_MAX_IVS;
 
 	for (n = 0; n < tests; n++)
 	{
-		xv = 5 * n;
+		xv = 5u * n;
 
 		ALLEGE(pthread_mutex_lock(&mx_ivb) == 0);
 
 		memcpy(K, &wep.ivbuf[xv], 3); //-V512
-		memcpy(S, R, 256);
+		memcpy(S, R, sizeof(S));
 
 		for (i = j = 0; i < 256; i++)
 		{
@@ -2870,12 +2876,12 @@ static int check_wep_key(unsigned char * wepkey, int B, int keylen)
 		}
 
 		i = 1;
-		j = (0 + S[i]) & 0xFF;
+		j = (size_t)((0 + S[i]) & 0xFF);
 		SWAP(S[i], S[j]);
 		x1 = wep.ivbuf[xv + 3] ^ S[(S[i] + S[j]) & 0xFF];
 
 		i = 2;
-		j = (j + S[i]) & 0xFF;
+		j = (size_t)((j + S[i]) & 0xFF);
 		SWAP(S[i], S[j]);
 		x2 = wep.ivbuf[xv + 4] ^ S[(S[i] + S[j]) & 0xFF];
 
@@ -2889,31 +2895,18 @@ static int check_wep_key(unsigned char * wepkey, int B, int keylen)
 		if (bad > ((tests * opt.probability) / 100)) return (FAILURE);
 	}
 
-	opt.probability = (((tests - bad) * 100) / tests);
+	opt.probability = (int) (((tests - bad) * 100) / tests);
 	key_found(wepkey, keylen, B);
 
 	return (SUCCESS);
-}
-
-/* routine used to sort the votes */
-
-static inline int cmp_votes(const void * bs1, const void * bs2)
-{
-	REQUIRE(bs1 != NULL);
-	REQUIRE(bs2 != NULL);
-
-	if (((vote *) bs1)->val < ((vote *) bs2)->val) return (1);
-
-	if (((vote *) bs1)->val > ((vote *) bs2)->val) return (-1);
-
-	return (0);
 }
 
 /* sum up the votes and sort them */
 
 static int calc_poll(int B)
 {
-	int i, n, cid, *vi;
+	int i, cid, *vi;
+	size_t n;
 	int votes[N_ATTACKS][256];
 
 	memset(&opt.votes, '\0', sizeof(opt.votes));
@@ -2924,7 +2917,7 @@ static int calc_poll(int B)
 	{
 		n = sizeof(int);
 
-		if (safe_write(mc_pipe[cid][1], &B, n) != n)
+		if ((size_t) safe_write(mc_pipe[cid][1], &B, n) != n)
 		{
 			perror("write failed");
 			kill(0, SIGTERM);
@@ -2944,11 +2937,9 @@ static int calc_poll(int B)
 	{
 		n = sizeof(votes);
 
-		if (safe_read(cm_pipe[cid][0], votes, n) != n)
+		if ((size_t) safe_read(cm_pipe[cid][0], votes, n) != n)
 		{
-			perror("read failed");
-			kill(0, SIGTERM);
-			_exit(EXIT_FAILURE);
+			return (FAILURE);
 		}
 
 		for (n = 0, vi = (int *) votes; n < N_ATTACKS; n++)
@@ -2996,7 +2987,7 @@ static int calc_poll(int B)
 
 static int update_ivbuf(void)
 {
-	int n;
+	size_t n;
 	struct AP_info * ap_cur;
 	void * key;
 
@@ -3015,7 +3006,6 @@ static int update_ivbuf(void)
 		}
 	}
 	c_avl_iterator_destroy(it);
-	it = NULL;
 
 	/* 2nd pass: create the main IVs buffer if necessary */
 
@@ -3027,22 +3017,18 @@ static int update_ivbuf(void)
 
 		ALLEGE(pthread_mutex_lock(&mx_ivb) == 0);
 
-		if (wep.ivbuf != NULL)
-		{
-			free(wep.ivbuf);
-			wep.ivbuf = NULL;
-		}
+		destroy(wep.ivbuf, free);
 
 		wep.nb_ivs = 0;
 
 		it = c_avl_get_iterator(access_points);
 		while (c_avl_iterator_next(it, &key, (void **) &ap_cur) == 0)
 		{
-			if (ap_cur->crypt == 2 && ap_cur->target)
+			if (ap_cur->ivbuf != NULL && ap_cur->crypt == 2 && ap_cur->target)
 			{
-				n = ap_cur->nb_ivs;
+				n = (size_t) ap_cur->nb_ivs;
 
-				uint8_t * tmp_ivbuf = realloc(wep.ivbuf, (wep.nb_ivs + n) * 5);
+				uint8_t * tmp_ivbuf = realloc(wep.ivbuf, (wep.nb_ivs + n) * 5u);
 				if (tmp_ivbuf == NULL)
 				{
 					ALLEGE(pthread_mutex_unlock(&mx_ivb) == 0);
@@ -3052,13 +3038,12 @@ static int update_ivbuf(void)
 				}
 				wep.ivbuf = tmp_ivbuf;
 
-				memcpy(wep.ivbuf + wep.nb_ivs * 5, ap_cur->ivbuf, 5 * n);
+				memcpy(wep.ivbuf + wep.nb_ivs * 5u, ap_cur->ivbuf, 5u * n);
 
 				wep.nb_ivs += n;
 			}
 		}
 		c_avl_iterator_destroy(it);
-		it = NULL;
 
 		ALLEGE(pthread_mutex_unlock(&mx_ivb) == 0);
 
@@ -3100,7 +3085,7 @@ static int remove_votes(int keybyte, unsigned char value)
 				if (i == 0)
 				{
 					// Also update wep key if it's the first value to remove
-					wep.key[keybyte] = wep.poll[keybyte][i].idx;
+					wep.key[keybyte] = (uint8_t) wep.poll[keybyte][i].idx;
 				}
 			}
 		}
@@ -3122,6 +3107,7 @@ static int do_wep_crack1(int B)
 	char user_guess[4];
 
 get_ivs:
+	if (wepkey_crack_success) return (SUCCESS);
 
 	switch (update_ivbuf())
 	{
@@ -3148,7 +3134,7 @@ get_ivs:
 		else
 		{
 			printf(
-				"Read %ld packets, got %ld IVs...\r", nb_pkt, wep.nb_ivs_now);
+				"Read %ld packets, got %ld IVs...\n", nb_pkt, wep.nb_ivs_now);
 			fflush(stdout);
 
 			sleep(1);
@@ -3192,7 +3178,7 @@ get_ivs:
 				break;
 		}
 
-		wep.key[B] = wep.poll[B][wep.depth[B]].idx;
+		wep.key[B] = (uint8_t) wep.poll[B][wep.depth[B]].idx;
 
 		if (!opt.is_quiet)
 		{
@@ -3210,6 +3196,7 @@ get_ivs:
 			if (check_wep_key(wep.key, B, 5) == SUCCESS)
 			{
 				opt.keylen = 5;
+
 				return (SUCCESS);
 			}
 		}
@@ -3250,7 +3237,7 @@ get_ivs:
 					// If it's not a number, reask
 					// Check if inputted value is correct (from 0 to and
 					// inferior to opt.keylen)
-					remove_keybyte_nr = atoi(user_guess);
+					remove_keybyte_nr = (int) strtol(user_guess, NULL, 10);
 					if (isdigit((int) user_guess[0]) == 0
 						|| remove_keybyte_nr < 0
 						|| remove_keybyte_nr >= opt.keylen)
@@ -3285,19 +3272,19 @@ get_ivs:
 				{
 					for (l = 0; l < 256; l++)
 					{
-						wep.key[opt.brutebytes[0]] = l;
+						wep.key[opt.brutebytes[0]] = (uint8_t) l;
 
 						for (m = 0; m < 256; m++)
 						{
-							wep.key[opt.brutebytes[1]] = m;
+							wep.key[opt.brutebytes[1]] = (uint8_t) m;
 
 							for (i = 0; i < 256; i++)
 							{
-								wep.key[opt.brutebytes[2]] = i;
+								wep.key[opt.brutebytes[2]] = (uint8_t) i;
 
 								for (j = 0; j < 256; j++)
 								{
-									wep.key[opt.brutebytes[3]] = j;
+									wep.key[opt.brutebytes[3]] = (uint8_t) j;
 
 									if (check_wep_key(wep.key, B + 1, 0)
 										== SUCCESS)
@@ -3311,15 +3298,15 @@ get_ivs:
 				{
 					for (m = 0; m < 256; m++)
 					{
-						wep.key[opt.brutebytes[0]] = m;
+						wep.key[opt.brutebytes[0]] = (uint8_t) m;
 
 						for (i = 0; i < 256; i++)
 						{
-							wep.key[opt.brutebytes[1]] = i;
+							wep.key[opt.brutebytes[1]] = (uint8_t) i;
 
 							for (j = 0; j < 256; j++)
 							{
-								wep.key[opt.brutebytes[2]] = j;
+								wep.key[opt.brutebytes[2]] = (uint8_t) j;
 
 								if (check_wep_key(wep.key, B + 1, 0) == SUCCESS)
 									return (SUCCESS);
@@ -3331,11 +3318,11 @@ get_ivs:
 				{
 					for (i = 0; i < 256; i++)
 					{
-						wep.key[opt.brutebytes[0]] = i;
+						wep.key[opt.brutebytes[0]] = (uint8_t) i;
 
 						for (j = 0; j < 256; j++)
 						{
-							wep.key[opt.brutebytes[1]] = j;
+							wep.key[opt.brutebytes[1]] = (uint8_t) j;
 
 							if (check_wep_key(wep.key, B + 1, 0) == SUCCESS)
 								return (SUCCESS);
@@ -3346,7 +3333,7 @@ get_ivs:
 				{
 					for (i = 0; i < 256; i++)
 					{
-						wep.key[opt.brutebytes[0]] = i;
+						wep.key[opt.brutebytes[0]] = (uint8_t) i;
 
 						if (check_wep_key(wep.key, B + 1, 0) == SUCCESS)
 							return (SUCCESS);
@@ -3389,7 +3376,7 @@ get_ivs:
 
 				if (wepkey_crack_success)
 				{
-					memcpy(wep.key, bf_wepkey, opt.keylen);
+					memcpy(wep.key, bf_wepkey, (size_t) opt.keylen);
 					return (SUCCESS);
 				}
 			}
@@ -3418,7 +3405,7 @@ get_ivs:
 		}
 		if (wepkey_crack_success)
 		{
-			memcpy(wep.key, bf_wepkey, opt.keylen);
+			memcpy(wep.key, bf_wepkey, (size_t) opt.keylen);
 			return (SUCCESS);
 		}
 	}
@@ -3456,7 +3443,7 @@ static int do_wep_crack2(int B)
 	{
 		if (calc_poll(i) != SUCCESS) return (FAILURE);
 
-		wep.key[i] = wep.poll[i][0].idx;
+		wep.key[i] = (uint8_t) wep.poll[i][0].idx;
 
 		wep.fudge[i] = 1;
 		wep.depth[i] = 0;
@@ -3487,7 +3474,7 @@ static int do_wep_crack2(int B)
 				break;
 		}
 
-		wep.key[B] = wep.poll[B][wep.depth[B]].idx;
+		wep.key[B] = (uint8_t) wep.poll[B][wep.depth[B]].idx;
 
 		if (!opt.is_quiet) show_wep_stats(B, 0, NULL, NULL, NULL, 0);
 
@@ -3495,7 +3482,7 @@ static int do_wep_crack2(int B)
 		{
 			if (calc_poll(i) != SUCCESS) return (FAILURE);
 
-			wep.key[i] = wep.poll[i][0].idx;
+			wep.key[i] = (uint8_t) wep.poll[i][0].idx;
 
 			wep.fudge[i] = 1;
 			wep.depth[i] = 0;
@@ -3505,11 +3492,11 @@ static int do_wep_crack2(int B)
 
 		for (i = 0; i < 256; i++)
 		{
-			wep.key[opt.keylen - 2] = i;
+			wep.key[opt.keylen - 2] = (uint8_t) i;
 
 			for (j = 0; j < 256; j++)
 			{
-				wep.key[opt.keylen - 1] = j;
+				wep.key[opt.keylen - 1] = (uint8_t) j;
 
 				if (check_wep_key(wep.key, opt.keylen - 2, 0) == SUCCESS)
 					return (SUCCESS);
@@ -3522,14 +3509,12 @@ static int do_wep_crack2(int B)
 
 static int inner_bruteforcer_thread(void * arg)
 {
-	int i, j, k, l, reduce = 0;
+	int i, j, k, l;
 	size_t nthread = (size_t) arg;
 	unsigned char wepkey[64];
 	int ret = 0;
 
 inner_bruteforcer_thread_start:
-
-	reduce = 0;
 
 	if (close_aircrack) return (ret);
 
@@ -3539,33 +3524,30 @@ inner_bruteforcer_thread_start:
 	 */
 	if (safe_read(bf_pipe[nthread][0], (void *) wepkey, 64) != 64)
 	{
-		perror("read failed");
-		kill(0, SIGTERM);
-		_exit(EXIT_FAILURE);
+		return (FAILURE);
 	}
-	else
-		reduce = 1;
 
 	if (close_aircrack) return (ret);
+
 	/* now we test the 256*256 keys... if we succeed we'll save it and exit the
 	 * thread */
 	if (opt.do_brute == 4)
 	{
 		for (l = 0; l < 256; l++)
 		{
-			wepkey[opt.brutebytes[0]] = l;
+			wepkey[opt.brutebytes[0]] = (uint8_t) l;
 
 			for (k = 0; k < 256; k++)
 			{
-				wepkey[opt.brutebytes[1]] = k;
+				wepkey[opt.brutebytes[1]] = (uint8_t) k;
 
 				for (i = 0; i < 256; i++)
 				{
-					wepkey[opt.brutebytes[2]] = i;
+					wepkey[opt.brutebytes[2]] = (uint8_t) i;
 
 					for (j = 0; j < 256; j++)
 					{
-						wepkey[opt.brutebytes[3]] = j;
+						wepkey[opt.brutebytes[3]] = (uint8_t) j;
 
 						if (check_wep_key(wepkey, opt.keylen - 2, 0) == SUCCESS)
 							return (SUCCESS);
@@ -3578,15 +3560,15 @@ inner_bruteforcer_thread_start:
 	{
 		for (k = 0; k < 256; k++)
 		{
-			wepkey[opt.brutebytes[0]] = k;
+			wepkey[opt.brutebytes[0]] = (uint8_t) k;
 
 			for (i = 0; i < 256; i++)
 			{
-				wepkey[opt.brutebytes[1]] = i;
+				wepkey[opt.brutebytes[1]] = (uint8_t) i;
 
 				for (j = 0; j < 256; j++)
 				{
-					wepkey[opt.brutebytes[2]] = j;
+					wepkey[opt.brutebytes[2]] = (uint8_t) j;
 
 					if (check_wep_key(wepkey, opt.keylen - 2, 0) == SUCCESS)
 						return (SUCCESS);
@@ -3598,11 +3580,11 @@ inner_bruteforcer_thread_start:
 	{
 		for (i = 0; i < 256; i++)
 		{
-			wepkey[opt.brutebytes[0]] = i;
+			wepkey[opt.brutebytes[0]] = (uint8_t) i;
 
 			for (j = 0; j < 256; j++)
 			{
-				wepkey[opt.brutebytes[1]] = j;
+				wepkey[opt.brutebytes[1]] = (uint8_t) j;
 
 				if (check_wep_key(wepkey, opt.keylen - 2, 0) == SUCCESS)
 					return (SUCCESS);
@@ -3613,14 +3595,14 @@ inner_bruteforcer_thread_start:
 	{
 		for (j = 0; j < 256; j++)
 		{
-			wepkey[opt.brutebytes[0]] = j;
+			wepkey[opt.brutebytes[0]] = (uint8_t) j;
 
 			if (check_wep_key(wepkey, opt.keylen - 2, 0) == SUCCESS)
 				return (SUCCESS);
 		}
 	}
 
-	bf_nkeys[nthread]--;
+	--bf_nkeys[nthread];
 
 	goto inner_bruteforcer_thread_start;
 }
@@ -3660,45 +3642,26 @@ static void show_wpa_stats(char * key,
 	delta = chrono(&t_begin, 0);
 	if (delta <= FLT_EPSILON) goto __out;
 
-	et_h = (int) (delta / 3600.f);
-	et_m = (int) ((delta - (et_h * 3600.f)) / 60.f);
-	et_s = (int) ((delta - (et_h * 3600.f)) - (et_m * 60.f));
-
-	float orig_delta = delta;
-
-	if ((delta = chrono(&t_kprev, 0)) >= 6.f)
-	{
-		float delta0;
-		delta0 = delta;
-
-		t_kprev.tv_sec += 6;
-		delta = chrono(&t_kprev, 0);
-
-		if (delta <= FLT_EPSILON) goto __out;
-		if (delta0 <= FLT_EPSILON) goto __out;
-
-		ALLEGE(pthread_mutex_lock(&mx_nb) == 0);
-		nb_kprev *= (delta / delta0);
-		cur_nb_kprev = nb_kprev;
-		ALLEGE(pthread_mutex_unlock(&mx_nb) == 0);
-	}
+	et_s = (int) lrintf(fmodf(delta, 59.f));
+	et_m = (int) lrintf(fmodf(((delta - et_s) / 60.0), 59.0f));
+	if (delta >= 60.f * 60.f)
+		et_h = (int) lrintf((delta - et_s - et_m) / (60.f * 60.f));
 	else
-	{
-		ALLEGE(pthread_mutex_lock(&mx_nb) == 0);
-		cur_nb_kprev = nb_kprev;
-		ALLEGE(pthread_mutex_unlock(&mx_nb) == 0);
-	}
+		et_h = 0;
 
-	if (delta <= FLT_EPSILON) goto __out;
+	ALLEGE(pthread_mutex_lock(&mx_nb) == 0);
+	cur_nb_kprev = nb_kprev;
+	ALLEGE(pthread_mutex_unlock(&mx_nb) == 0);
+
+	ksec = (float) cur_nb_kprev / delta;
+	if (ksec <= FLT_EPSILON) goto __out;
 
 	if (_speed_test)
 	{
-		float ks = ((float) cur_nb_kprev / delta);
-
-		printf("%0.3f k/s   \r", ks);
+		printf("%0.3f k/s   \r", ksec);
 		fflush(stdout);
 
-		if (_speed_test_length > 0 && orig_delta >= (float) _speed_test_length)
+		if (_speed_test_length > 0 && delta >= (float) _speed_test_length)
 		{
 			printf("\n");
 			exit(EXIT_SUCCESS);
@@ -3706,10 +3669,6 @@ static void show_wpa_stats(char * key,
 
 		goto __out;
 	}
-
-	ksec = (float) cur_nb_kprev / delta;
-
-	if (ksec <= FLT_EPSILON) goto __out;
 
 	moveto(0, 3);
 	erase_display(0);
@@ -3747,7 +3706,7 @@ static void show_wpa_stats(char * key,
 		printf("Time left: ");
 		if (opt.wordcount != 0 && ksec > FLT_EPSILON)
 		{
-			calc = ((float) nb_tried / (float) opt.wordcount) * 100;
+			calc = ((float) nb_tried / (float) opt.wordcount) * 100.0f;
 			remain = (opt.wordcount - nb_tried);
 			eta = (remain / (long long int) ksec);
 
@@ -3932,7 +3891,7 @@ static inline int calculate_passphrase_length(uint8_t * key)
 {
 	REQUIRE(key != NULL);
 
-	int i = (int) strnlen((const char *) key, 64 + 2);
+	int i = (int) strnlen((const char *) key, MAX_PASSPHRASE_LENGTH + 3);
 
 	// ensure NULL termination, after strnlen.
 	key[i] = '\0';
@@ -3941,7 +3900,7 @@ static inline int calculate_passphrase_length(uint8_t * key)
 	while (i > 0 && (key[i - 1] == '\r' || key[i - 1] == '\n')) i--;
 
 	// truncate long passphrases
-	if (i > 64) i = 64;
+	if (i > MAX_PASSPHRASE_LENGTH + 1) i = 64;
 
 	// ensure NULL termination, after above checks
 	key[i] = '\0';
@@ -3975,7 +3934,7 @@ static int crack_wpa_thread(void * arg)
 	data = (struct WPA_data *) arg;
 	ap = data->ap;
 	threadid = data->threadid;
-	strncpy(essid, ap->essid, ESSID_LENGTH);
+	memcpy(essid, ap->essid, ESSID_LENGTH + 1);
 
 	// The attack below requires a full handshake.
 	ALLEGE(ap->wpa.state == 7);
@@ -4099,7 +4058,7 @@ static int crack_wpa_pmkid_thread(void * arg)
 	data = (struct WPA_data *) arg;
 	ap = data->ap;
 	threadid = data->threadid;
-	strncpy(essid, ap->essid, ESSID_LENGTH);
+	memcpy(essid, ap->essid, ESSID_LENGTH + 1);
 
 	// Check some pre-conditions.
 	ALLEGE(ap->wpa.state > 0 && ap->wpa.state < 7);
@@ -4383,7 +4342,7 @@ static int display_wpa_hash_information(struct AP_info * ap_cur)
 		return (FAILURE);
 	}
 
-	if (memcmp(ap_cur->essid, ZERO, 32) == 0 && !opt.essid_set)
+	if (memcmp(ap_cur->essid, ZERO, ESSID_LENGTH) == 0 && !opt.essid_set)
 	{
 		printf("An ESSID is required. Try option -e.\n");
 		return (FAILURE);
@@ -4391,12 +4350,11 @@ static int display_wpa_hash_information(struct AP_info * ap_cur)
 
 	if (opt.essid_set && ap_cur->essid[0] == '\0')
 	{
-		memset(ap_cur->essid, 0, sizeof(ap_cur->essid));
-		strncpy(ap_cur->essid, opt.essid, sizeof(ap_cur->essid) - 1);
+		memcpy(ap_cur->essid, opt.essid, sizeof(ap_cur->essid));
 	}
 
 	printf("[*] ESSID (length: %d): %s\n",
-		   (int) strlen(ap_cur->essid),
+		   (int) ustrlen(ap_cur->essid),
 		   ap_cur->essid);
 
 	printf("[*] Key version: %d\n", ap_cur->wpa.keyver);
@@ -4417,21 +4375,21 @@ static int display_wpa_hash_information(struct AP_info * ap_cur)
 		   ap_cur->wpa.stmac[5]);
 
 	printf("\n[*] anonce:");
-	for (i = 0; i < 32; i++)
+	for (i = 0; i < sizeof(ap_cur->wpa.anonce); i++)
 	{
 		if (i % 16 == 0) printf("\n    ");
 		printf("%02X ", ap_cur->wpa.anonce[i]);
 	}
 
 	printf("\n[*] snonce:");
-	for (i = 0; i < 32; i++)
+	for (i = 0; i < sizeof(ap_cur->wpa.snonce); i++)
 	{
 		if (i % 16 == 0) printf("\n    ");
 		printf("%02X ", ap_cur->wpa.snonce[i]);
 	}
 
 	printf("\n[*] Key MIC:\n   ");
-	for (i = 0; i < 16; i++)
+	for (i = 0; i < sizeof(ap_cur->wpa.keymic); i++)
 	{
 		printf(" %02X", ap_cur->wpa.keymic[i]);
 	}
@@ -4467,10 +4425,8 @@ static int do_make_wkp(struct AP_info * ap_cur)
 	memcpy(frametmp, wkp_frame, WKP_FRAME_LENGTH * sizeof(char));
 
 	// Make sure the filename contains the extension
-	if ((strstr(opt.wkp, ".wkp") == NULL
-		 || strlen(strstr(opt.wkp, ".wkp")) != 4)
-		&& (strstr(opt.wkp, ".WKP") == NULL
-			|| strlen(strstr(opt.wkp, ".WKP")) != 4))
+	if (!(string_has_suffix(opt.wkp, ".wkp")
+		  || string_has_suffix(opt.wkp, ".WKP")))
 	{
 		strcat(opt.wkp, ".wkp");
 	}
@@ -4487,17 +4443,17 @@ static int do_make_wkp(struct AP_info * ap_cur)
 
 	// BSSID
 	ptmp = (char *) ap_cur->bssid;
-	memcpy(&frametmp[0x514], ptmp, 6);
+	memcpy(&frametmp[0x514], ptmp, ETHER_ADDR_LEN);
 
 	// Station Mac
 	ptmp = (char *) ap_cur->wpa.stmac;
-	memcpy(&frametmp[0x51a], ptmp, 6);
+	memcpy(&frametmp[0x51a], ptmp, ETHER_ADDR_LEN);
 
 	// ESSID
 	memcpy(&frametmp[0x520], ap_cur->essid, sizeof(ap_cur->essid));
 
 	// ESSID length
-	frametmp[0x540] = (uint8_t) strlen(ap_cur->essid);
+	frametmp[0x540] = (uint8_t) ustrlen(ap_cur->essid);
 
 	// WPA Key version
 	frametmp[0x544] = ap_cur->wpa.keyver;
@@ -4507,11 +4463,11 @@ static int do_make_wkp(struct AP_info * ap_cur)
 
 	// anonce
 	ptmp = (char *) ap_cur->wpa.anonce;
-	memcpy(&frametmp[0x54c], ptmp, 32);
+	memcpy(&frametmp[0x54c], ptmp, sizeof(ap_cur->wpa.anonce));
 
 	// snonce
 	ptmp = (char *) ap_cur->wpa.snonce;
-	memcpy(&frametmp[0x56c], ptmp, 32);
+	memcpy(&frametmp[0x56c], ptmp, sizeof(ap_cur->wpa.snonce));
 
 	// EAPOL
 	ptmp = (char *) ap_cur->wpa.eapol;
@@ -4561,6 +4517,7 @@ static hccap_t ap_to_hccap(struct AP_info * ap)
 	return (hccap);
 }
 
+#if 0
 // Caller must free
 __attribute__((unused)) static struct AP_info * hccap_to_ap(hccap_t * hccap)
 {
@@ -4570,7 +4527,7 @@ __attribute__((unused)) static struct AP_info * hccap_to_ap(hccap_t * hccap)
 	ALLEGE(ap != NULL);
 	memset(&ap, 0, sizeof(ap));
 
-	memcpy(&ap->essid, &hccap->essid, sizeof(ap->essid));
+	memcpy(&ap->essid, &hccap->essid, sizeof(ap->essid)); //-V512
 	memcpy(&ap->bssid, &hccap->mac1, sizeof(ap->bssid));
 	memcpy(&ap->wpa.stmac, &hccap->mac2, sizeof(hccap->mac2));
 	memcpy(&ap->wpa.snonce, &hccap->nonce1, sizeof(hccap->nonce1));
@@ -4582,6 +4539,7 @@ __attribute__((unused)) static struct AP_info * hccap_to_ap(hccap_t * hccap)
 
 	return (ap);
 }
+#endif
 
 static int do_make_hccap(struct AP_info * ap_cur)
 {
@@ -4654,6 +4612,21 @@ struct AP_info * hccapx_to_ap(struct hccapx * hx)
 	return (ap);
 }
 
+// See: https://hashcat.net/wiki/doku.php?id=hccapx
+static struct MessagePairLUT
+{
+	uint8_t found_mask;
+	uint8_t eapol_mask;
+	uint8_t message_pair;
+} message_pair_lookup_table[] = {
+	{(1 << 1) + (1 << 2), (1 << 2), 128},
+	{(1 << 1) + (1 << 4), (1 << 4), 129},
+	{(1 << 2) + (1 << 3), (1 << 2), 130},
+	{(1 << 2) + (1 << 3), (1 << 3), 131},
+	{(1 << 3) + (1 << 4), (1 << 3), 132},
+	{(1 << 3) + (1 << 4), (1 << 4), 133},
+};
+
 static hccapx_t ap_to_hccapx(struct AP_info * ap)
 {
 	REQUIRE(ap != NULL);
@@ -4668,12 +4641,37 @@ static hccapx_t ap_to_hccapx(struct AP_info * ap)
 	memcpy(&hx.signature, &temp, sizeof(temp));
 	temp = cpu_to_le32(HCCAPX_CURRENT_VERSION);
 	memcpy(&hx.version, &temp, sizeof(temp));
-	hx.message_pair = 0; // Temporary (see docs)
 
-	ssid_len = (uint8_t) strlen(ap->essid);
+	hx.message_pair = 0;
+	for (size_t i = 0; i < ArrayCount(message_pair_lookup_table); ++i)
+	{
+		const struct MessagePairLUT * item = &message_pair_lookup_table[i];
+		if ((ap->wpa.found & item->found_mask) == item->found_mask
+			&& (ap->wpa.eapol_source & item->eapol_mask) != 0)
+		{
+			hx.message_pair = item->message_pair;
+		}
+	}
+	ALLEGE(hx.message_pair > 0);
+
+	if ((ap->wpa.eapol_source & (1 << 3)) != 0)
+	{
+		fprintf(stderr,
+				"WARNING: The created HCCAPX file will not be able to "
+				"properly convert back to PCAP format.\n");
+
+		if (ap->wpa.eapol_size >= sizeof(hx.eapol))
+		{
+			fprintf(stderr,
+					"FATAL: EAPOL data from M3 exceeds maximum size of "
+					"255 bytes.\n");
+		}
+	}
+
+	ssid_len = (uint8_t) ustrlen(ap->essid);
 	memcpy(&hx.essid_len, &ssid_len, sizeof(ssid_len));
 
-	memcpy(&hx.essid, &ap->essid, sizeof(ap->essid) - 1);
+	memcpy(&hx.essid, &ap->essid, sizeof(hx.essid)); //-V512
 	memcpy(&hx.mac_ap, &ap->bssid, sizeof(ap->bssid));
 	memcpy(&hx.mac_sta, &ap->wpa.stmac, sizeof(ap->wpa.stmac));
 	memcpy(&hx.keyver, &ap->wpa.keyver, sizeof(ap->wpa.keyver));
@@ -5260,7 +5258,7 @@ static int perform_wep_crack(struct AP_info * ap_cur)
 
 	opt.do_brute += j;
 
-	if (opt.ffact == 0)
+	if (opt.ffact <= FLT_EPSILON)
 	{
 		if (opt.do_ptw)
 			opt.ffact = 2;
@@ -5314,9 +5312,12 @@ static int perform_wep_crack(struct AP_info * ap_cur)
 					printf("Failed. Next try with %d IVs.\n", opt.next_ptw_try);
 				}
 			}
-			if (ret) usleep(10000);
-		} while (ret != 0);
+			if (ret) usleep(1000);
+		} while (!close_aircrack && ret != 0);
 	}
+
+	if (close_aircrack)
+		return (FAILURE);
 
 	else if (opt.dict != NULL)
 	{
@@ -5423,6 +5424,10 @@ static int perform_wep_crack(struct AP_info * ap_cur)
 		}
 	}
 
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-overflow"
+#endif
 	ALLEGE(ret >= 0 && ret <= RESTART);
 	if (opt.is_quiet != 1 && ret == FAILURE)
 	{
@@ -5439,6 +5444,9 @@ static int perform_wep_crack(struct AP_info * ap_cur)
 		printf("KEY NOT FOUND\n");
 		moveto(0, 24);
 	}
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 	return (ret);
 }
@@ -5481,7 +5489,7 @@ static int perform_wpa_crack(struct AP_info * ap_cur)
 		return (FAILURE);
 	}
 
-	if (memcmp(ap_cur->essid, ZERO, 32) == 0 && !opt.essid_set)
+	if (memcmp(ap_cur->essid, ZERO, ESSID_LENGTH) == 0 && !opt.essid_set)
 	{
 		printf("An ESSID is required. Try option -e.\n");
 		return (FAILURE);
@@ -5489,11 +5497,10 @@ static int perform_wpa_crack(struct AP_info * ap_cur)
 
 	if (opt.essid_set && ap_cur->essid[0] == '\0')
 	{
-		memset(ap_cur->essid, 0, sizeof(ap_cur->essid));
-		strncpy(ap_cur->essid, opt.essid, sizeof(ap_cur->essid) - 1);
+		memcpy(ap_cur->essid, opt.essid, sizeof(ap_cur->essid));
 	}
 
-	dso_ac_crypto_engine_set_essid(&engine, (uint8_t *) ap_cur->essid);
+	dso_ac_crypto_engine_set_essid(&engine, ap_cur->essid);
 
 	if (db == NULL)
 	{
@@ -5567,7 +5574,7 @@ static int perform_wpa_crack(struct AP_info * ap_cur)
 		int ret = do_wpa_crack(); // we feed keys to the cracking threads
 
 		// Shutdown the circular queue.
-		bool shutdown = true;
+		bool shutdown;
 		do
 		{
 			shutdown = true;
@@ -5575,6 +5582,11 @@ static int perform_wpa_crack(struct AP_info * ap_cur)
 			for (int i = 0; i < opt.nbcpu; ++i)
 			{
 				int active;
+
+				if (close_aircrack_fast)
+				{
+					circular_queue_reset(wpa_data[i].cqueue);
+				}
 
 				ALLEGE(pthread_mutex_lock(&(wpa_data[i].mutex)) == 0);
 				active = wpa_data[i].active;
@@ -5738,7 +5750,7 @@ int main(int argc, char * argv[])
 	char *s, buf[128];
 	struct AP_info * ap_cur = NULL;
 	int old = 0;
-	char essid[33];
+	char essid[ESSID_LENGTH + 1];
 	int restore_session = 0;
 	int nbarg = argc;
 	access_points = c_avl_create(station_compare);
@@ -5794,7 +5806,6 @@ int main(int argc, char * argv[])
 	}
 
 	db = NULL;
-	j = 0;
 	/* check the arguments */
 
 	opt.nbdict = 0;
@@ -5857,7 +5868,7 @@ int main(int argc, char * argv[])
 
 		int option_index = 0;
 
-		const static struct option long_options[]
+		static const struct option long_options[]
 			= {{"bssid", 1, 0, 'b'},
 			   {"debug", 1, 0, 'd'},
 			   {"combine", 0, 0, 'C'},
@@ -5880,7 +5891,7 @@ int main(int argc, char * argv[])
 		option = getopt_long(
 			nbarg,
 			((restore_session) ? cracking_session->argv : argv),
-			"r:a:e:b:p:qcthd:l:E:J:m:n:i:f:k:x::XysZ:w:0HKC:M:DP:zV1Suj:N:R:",
+			"r:a:e:b:p:qcthd:l:E:J:m:n:i:f:k:x::XysZ:w:0HKC:M:DP:zV1Suj:N:R:I:",
 			long_options,
 			&option_index);
 
@@ -5929,6 +5940,14 @@ int main(int argc, char * argv[])
 
 			case 'S':
 				_speed_test = 1;
+				break;
+
+			case 'I':
+				_pmkid_16800 = 1;
+				memset((char *) _pmkid_16800_str, 0, sizeof(_pmkid_16800_str));
+				strncpy((char *) _pmkid_16800_str,
+						optarg,
+						sizeof(_pmkid_16800_str));
 				break;
 
 			case 'Z':
@@ -5985,7 +6004,7 @@ int main(int argc, char * argv[])
 
 			case 'a':
 
-				ret1 = sscanf(optarg, "%d", &opt.amode);
+				opt.amode = (int) strtol(optarg, NULL, 10);
 
 				if (strcasecmp(optarg, "wep") == 0)
 					opt.amode = 1;
@@ -5996,8 +6015,7 @@ int main(int argc, char * argv[])
 				else if (strcasecmp(optarg, "80211w") == 0)
 					opt.amode = 3;
 
-				if (ret1 != 1
-					|| (opt.amode != 1 && opt.amode != 2 && opt.amode != 3))
+				if (opt.amode != 1 && opt.amode != 2 && opt.amode != 3)
 				{
 					printf(
 						"Invalid attack mode. [1,2,3] or [wep,wpa,80211w]\n");
@@ -6023,7 +6041,8 @@ int main(int argc, char * argv[])
 			case 'e':
 
 				memset(opt.essid, 0, sizeof(opt.essid));
-				strncpy(opt.essid, optarg, sizeof(opt.essid) - 1);
+				memcpy(
+					opt.essid, optarg, MIN(strlen(optarg), sizeof(opt.essid)));
 				opt.essid_set = 1;
 				break;
 
@@ -6040,8 +6059,9 @@ int main(int argc, char * argv[])
 				break;
 
 			case 'p':
-				if (sscanf(optarg, "%d", &opt.nbcpu) != 1 || opt.nbcpu < 1
-					|| opt.nbcpu > MAX_THREADS)
+
+				opt.nbcpu = (int) strtol(optarg, NULL, 10);
+				if (opt.nbcpu < 1 || opt.nbcpu > MAX_THREADS)
 				{
 					printf("Invalid number of processes (recommended: %d)\n",
 						   cpu_count);
@@ -6122,7 +6142,7 @@ int main(int argc, char * argv[])
 							printf("\"%s --help\" for help.\n", argv[0]);
 							return (EXIT_FAILURE);
 						}
-						opt.debug[i] = n;
+						opt.debug[i] = (uint8_t) n;
 						opt.debug_row[i++] = 1;
 					}
 					if (i >= 64) break;
@@ -6147,11 +6167,10 @@ int main(int argc, char * argv[])
 
 			case 'n':
 
-				if (sscanf(optarg, "%d", &opt.keylen) != 1
-					|| (opt.keylen != 64 && opt.keylen != 128
-						&& opt.keylen != 152
-						&& opt.keylen != 256
-						&& opt.keylen != 512))
+				opt.keylen = (int) strtol(optarg, NULL, 10);
+				if (opt.keylen != 64 && opt.keylen != 128 && opt.keylen != 152
+					&& opt.keylen != 256
+					&& opt.keylen != 512)
 				{
 					printf("Invalid WEP key length. [64,128,152,256,512]\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
@@ -6164,8 +6183,8 @@ int main(int argc, char * argv[])
 
 			case 'i':
 
-				if (sscanf(optarg, "%d", &opt.index) != 1 || opt.index < 1
-					|| opt.index > 4)
+				opt.index = (int) strtol(optarg, NULL, 10);
+				if (opt.index < 1 || opt.index > 4)
 				{
 					printf("Invalid WEP key index. [1-4]\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
@@ -6176,7 +6195,8 @@ int main(int argc, char * argv[])
 
 			case 'f':
 
-				if (sscanf(optarg, "%f", &opt.ffact) != 1 || opt.ffact < 1)
+				opt.ffact = (int) strtol(optarg, NULL, 10);
+				if (opt.ffact < 1)
 				{
 					printf("Invalid fudge factor. [>=1]\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
@@ -6187,8 +6207,8 @@ int main(int argc, char * argv[])
 
 			case 'k':
 
-				if (sscanf(optarg, "%d", &opt.korek) != 1 || opt.korek < 1
-					|| opt.korek > N_ATTACKS)
+				opt.korek = (int) strtol(optarg, NULL, 10);
+				if (opt.korek < 1 || opt.korek > N_ATTACKS)
 				{
 					printf("Invalid KoreK attack strategy. [1-%d]\n",
 						   N_ATTACKS);
@@ -6201,6 +6221,7 @@ int main(int argc, char * argv[])
 				break;
 
 			case 'l':
+
 				opt.logKeyToFile = (char *) calloc(1, strlen(optarg) + 1);
 				if (opt.logKeyToFile == NULL)
 				{
@@ -6212,6 +6233,7 @@ int main(int argc, char * argv[])
 				break;
 
 			case 'E':
+
 				// Make sure there's enough space for file extension just in
 				// case it was forgotten
 				opt.wkp = (char *) calloc(1, strlen(optarg) + 1 + 4);
@@ -6226,6 +6248,7 @@ int main(int argc, char * argv[])
 				break;
 
 			case 'J':
+
 				// Make sure there's enough space for file extension just in
 				// case it was forgotten
 				opt.hccap = (char *) calloc(1, strlen(optarg) + 1 + 6);
@@ -6240,6 +6263,7 @@ int main(int argc, char * argv[])
 				break;
 
 			case 'j':
+
 				// Make sure there's enough space for file extension just in
 				// case it was forgotten
 				opt.hccapx = (char *) calloc(1, strlen(optarg) + 1 + 7);
@@ -6255,9 +6279,10 @@ int main(int argc, char * argv[])
 
 			case 'M':
 
-				if (sscanf(optarg, "%d", &opt.max_ivs) != 1 || opt.max_ivs < 1)
+				opt.max_ivs = (int) strtol(optarg, NULL, 10);
+				if (opt.max_ivs < 1)
 				{
-					printf("Invalid number of max. ivs [>1]\n");
+					printf("Invalid number of max. ivs [>=1]\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (EXIT_FAILURE);
 				}
@@ -6268,9 +6293,8 @@ int main(int argc, char * argv[])
 
 			case 'P':
 
-				if (sscanf(optarg, "%d", &opt.ptw_attack) != 1
-					|| opt.ptw_attack < 0
-					|| opt.ptw_attack > 2)
+				opt.ptw_attack = (int) strtol(optarg, NULL, 10);
+				if (errno == EINVAL || opt.ptw_attack < 0 || opt.ptw_attack > 2)
 				{
 					printf("Invalid number for ptw debug [0-2]\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
@@ -6285,9 +6309,8 @@ int main(int argc, char * argv[])
 
 				if (optarg)
 				{
-					if (sscanf(optarg, "%d", &opt.do_brute) != 1
-						|| opt.do_brute < 0
-						|| opt.do_brute > 4)
+					opt.do_brute = (int) strtol(optarg, NULL, 10);
+					if (errno == EINVAL || opt.do_brute < 0 || opt.do_brute > 4)
 					{
 						printf("Invalid option -x%s. [0-4]\n", optarg);
 						printf("\"%s --help\" for help.\n", argv[0]);
@@ -6308,14 +6331,17 @@ int main(int argc, char * argv[])
 				break;
 
 			case 'K':
+
 				opt.do_ptw = 0;
 				break;
 
 			case 's':
+
 				opt.showASCII = 1;
 				break;
 
 			case 'w':
+
 				if (set_dicts(optarg) != 0)
 				{
 					printf("\"%s --help\" for help.\n", argv[0]);
@@ -6326,6 +6352,7 @@ int main(int argc, char * argv[])
 				break;
 
 			case 'r':
+
 #ifdef HAVE_SQLITE
 				if (sqlite3_open(optarg, &db))
 				{
@@ -6353,6 +6380,7 @@ int main(int argc, char * argv[])
 				break;
 
 			case 'C':
+
 				nbMergeBSSID = checkbssids(optarg);
 
 				if (nbMergeBSSID < 1 || nbMergeBSSID >= INT_MAX)
@@ -6372,6 +6400,7 @@ int main(int argc, char * argv[])
 				break;
 
 			case 'z':
+
 				/* only for backwards compatibility - PTW used by default */
 				if (opt.visual_inspection)
 				{
@@ -6407,7 +6436,7 @@ int main(int argc, char * argv[])
 		ap_cur->target = 1;
 		ap_cur->wpa.state = 7;
 		ap_cur->wpa.keyver = (uint8_t)(opt.amode & 0xFF);
-		strcpy(ap_cur->essid, "sorbo");
+		strcpy((char *) ap_cur->essid, "sorbo");
 		strcpy((char *) ap_cur->bssid, "deadb");
 		c_avl_insert(targets, ap_cur->bssid, ap_cur);
 
@@ -6429,7 +6458,7 @@ int main(int argc, char * argv[])
 		"Aircrack-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 
 	if ((cracking_session && cracking_session->argc - optind < 1)
-		|| (!cracking_session && argc - optind < 1))
+		|| (!cracking_session && !_pmkid_16800 && argc - optind < 1))
 	{
 		if (nbarg == 1)
 		{
@@ -6459,6 +6488,7 @@ int main(int argc, char * argv[])
 			printf("\"%s --help\" for help.\n", argv[0]);
 		}
 		clean_exit(ret);
+		return ret;
 	}
 
 	if (opt.amode >= 2 && opt.dict == NULL)
@@ -6479,11 +6509,69 @@ int main(int argc, char * argv[])
 	n = nbarg - optind;
 	id = 0;
 
+	if (_pmkid_16800)
+	{
+		size_t remaining = strlen((char *) _pmkid_16800_str);
+
+		if (remaining
+			< H16800_PMKID_LEN + H16800_BSSID_LEN + H16800_STMAC_LEN + 19)
+		{
+			ret = EXIT_FAILURE;
+			fprintf(stderr, "Input is too short!\n");
+			goto exit_main;
+		}
+
+		opt.amode = 3;
+		opt.bssid_set = 1;
+
+		ap_cur = malloc(sizeof(*ap_cur));
+		if (!ap_cur) err(1, "malloc()");
+
+		memset(ap_cur, 0, sizeof(*ap_cur));
+
+		// PMKID * BSSID * STMAC * ESSID
+		// c2ea9449c142e84a0479041702526532*0012bf77162d*0021e924a5e7*574c414e2d373731363938 // WLAN-771698
+
+		ap_cur->crypt = 4;
+		ap_cur->target = 1;
+		ap_cur->wpa.state = 5;
+		ap_cur->wpa.keyver = (uint8_t)(opt.amode & 0xFF);
+
+		hexStringToArray((char *) _pmkid_16800_str,
+						 H16800_PMKID_LEN,
+						 ap_cur->wpa.pmkid,
+						 sizeof(ap_cur->wpa.pmkid));
+		hexStringToArray((char *) _pmkid_16800_str + H16800_PMKID_LEN + 1,
+						 H16800_BSSID_LEN,
+						 ap_cur->bssid,
+						 sizeof(ap_cur->bssid));
+		hexStringToArray((char *) _pmkid_16800_str + H16800_PMKID_LEN + 1
+							 + H16800_BSSID_LEN
+							 + 1,
+						 H16800_STMAC_LEN,
+						 ap_cur->wpa.stmac,
+						 sizeof(ap_cur->wpa.stmac));
+		hexStringToArray(
+			(char *) _pmkid_16800_str + H16800_PMKID_LEN + 1 + H16800_BSSID_LEN
+				+ 1
+				+ H16800_STMAC_LEN
+				+ 1,
+			(int) remaining - H16800_PMKID_LEN + 1 + H16800_BSSID_LEN + 1
+				+ H16800_STMAC_LEN
+				+ 1,
+			ap_cur->essid,
+			sizeof(ap_cur->essid));
+
+		c_avl_insert(targets, ap_cur->bssid, ap_cur);
+
+		goto __start;
+	}
+
 	if (!opt.bssid_set)
 	{
 		if (!opt.is_quiet)
 		{
-			printf("Reading packets, please wait...\r");
+			printf("Reading packets, please wait...\n");
 			fflush(stdout);
 		}
 
@@ -6522,13 +6610,11 @@ int main(int argc, char * argv[])
 
 		/* wait until each thread reaches EOF */
 
-		intr_read = 1;
 		for (i = 0; i < id; i++)
 		{
 			ALLEGE(pthread_join(tid[i], NULL) == 0);
 			tid[i] = 0;
 		}
-		intr_read = 0;
 
 		if (!opt.is_quiet && !opt.no_stdin)
 		{
@@ -6555,7 +6641,7 @@ int main(int argc, char * argv[])
 			}
 
 			// Set BSSID
-			memcpy(opt.bssid, ap_cur->bssid, 6);
+			memcpy(opt.bssid, ap_cur->bssid, ETHER_ADDR_LEN);
 			opt.bssid_set = 1;
 
 			// Set wordlist
@@ -6591,8 +6677,8 @@ int main(int argc, char * argv[])
 			while (c_avl_iterator_next(it, &key, (void **) &ap_cur) == 0)
 			{
 				memset(essid, 0, sizeof(essid));
-				memcpy(essid, ap_cur->essid, 32);
-				for (zz = 0; zz < 32; zz++)
+				memcpy(essid, ap_cur->essid, ESSID_LENGTH);
+				for (zz = 0; zz < ESSID_LENGTH; zz++)
 				{
 					if ((essid[zz] > 0 && essid[zz] < 32) || (essid[zz] > 126))
 						essid[zz] = '?';
@@ -6656,10 +6742,10 @@ int main(int argc, char * argv[])
 					ret1 = 0;
 					while (!ret1) ret1 = scanf("%127s", buf);
 
-					if ((z = atoi(buf)) < 1) continue;
+					if ((z = (int) strtol(buf, NULL, 10)) < 1) continue;
 
 					i = 1;
-					c_avl_iterator_t * it = c_avl_get_iterator(access_points);
+					it = c_avl_get_iterator(access_points);
 					while (c_avl_iterator_next(it, &key, (void **) &ap_cur) == 0
 						   && i < z)
 					{
@@ -6677,7 +6763,7 @@ int main(int argc, char * argv[])
 			else if (c_avl_size(access_points) == 1)
 			{
 				printf("Choosing first network as target.\n");
-				c_avl_iterator_t * it = c_avl_get_iterator(access_points);
+				it = c_avl_get_iterator(access_points);
 				c_avl_iterator_next(it, &key, (void **) &ap_cur);
 				c_avl_iterator_destroy(it);
 				it = NULL;
@@ -6694,13 +6780,12 @@ int main(int argc, char * argv[])
 			// Release memory of all APs we don't care about currently.
 			ap_avl_release_unused(ap_cur);
 
-			memcpy(opt.bssid, ap_cur->bssid, 6);
-			opt.bssid_set = 1;
+			memcpy(opt.bssid, ap_cur->bssid, ETHER_ADDR_LEN);
 
 			// Copy BSSID to the cracking session
 			if (cracking_session && opt.dict != NULL)
 			{
-				memcpy(cracking_session->bssid, ap_cur->bssid, 6);
+				memcpy(cracking_session->bssid, ap_cur->bssid, ETHER_ADDR_LEN);
 			}
 
 			/* Disable PTW if dictionary used in WEP */
@@ -6715,6 +6800,7 @@ int main(int argc, char * argv[])
 	}
 
 	id = 0;
+	nb_prev_pkt = nb_pkt;
 	nb_pkt = 0;
 	nb_eof = 0;
 
@@ -6722,8 +6808,22 @@ int main(int argc, char * argv[])
 
 	if (!opt.is_quiet)
 	{
-		printf("Reading packets, please wait...\r");
+		printf("Reading packets, please wait...\n");
 		fflush(stdout);
+	}
+
+	if (ap_cur != NULL)
+	{
+		if (ap_cur->uiv_root != NULL)
+		{
+			uniqueiv_wipe(ap_cur->uiv_root);
+			ap_cur->uiv_root = NULL;
+		}
+
+		ap_cur->nb_ivs = 0;
+		ap_cur->ivbuf_size = 0;
+
+		destroy(ap_cur->ivbuf, free);
 	}
 
 	do
@@ -6751,15 +6851,17 @@ int main(int argc, char * argv[])
 		if (id >= MAX_THREADS) break;
 	} while (++optind < nbarg);
 
-	/* wait until each thread reaches EOF */
-
-	intr_read = 0;
-	for (i = 0; i < id; i++)
+	/* wait until threads re-read the original packets read in first pass */
+	ALLEGE(pthread_mutex_lock(&mx_eof) == 0);
+	if (!opt.bssid_set)
 	{
-		ALLEGE(pthread_join(tid[i], NULL) == 0);
-		tid[i] = 0;
+		while (nb_prev_pkt != nb_pkt) pthread_cond_wait(&cv_eof, &mx_eof);
 	}
-	intr_read = 1;
+	else
+	{
+		while (nb_eof != id) pthread_cond_wait(&cv_eof, &mx_eof);
+	}
+	ALLEGE(pthread_mutex_unlock(&mx_eof) == 0);
 
 	if (!opt.is_quiet && !opt.no_stdin)
 	{
@@ -6772,9 +6874,11 @@ int main(int argc, char * argv[])
 	c_avl_iterator_t * it = c_avl_get_iterator(access_points);
 	while (c_avl_iterator_next(it, &key, (void **) &ap_cur) == 0)
 	{
-		if (memcmp(opt.maddr, BROADCAST, 6) == 0
-			|| (opt.bssid_set && !memcmp(opt.bssid, ap_cur->bssid, 6))
-			|| (opt.essid_set && !strcmp(opt.essid, ap_cur->essid)))
+		if (memcmp(opt.maddr, BROADCAST, ETHER_ADDR_LEN) == 0
+			|| (opt.bssid_set
+				&& !memcmp(opt.bssid, ap_cur->bssid, ETHER_ADDR_LEN))
+			|| (opt.essid_set
+				&& !memcmp(opt.essid, ap_cur->essid, ESSID_LENGTH)))
 		{
 			ap_cur->target = 1;
 		}
@@ -6804,7 +6908,7 @@ int main(int argc, char * argv[])
 		{
 			case 0:
 				printf("Target '%s' network doesn't seem encrypted.\n",
-					   ap_cur->essid);
+					   (char *) ap_cur->essid);
 				break;
 
 			default:
@@ -6819,12 +6923,12 @@ int main(int argc, char * argv[])
 
 	for (i = 0; i < opt.nbcpu; i++)
 	{
-		(void) pipe(mc_pipe[i]);
-		(void) pipe(cm_pipe[i]);
+		IGNORE_NZ(pipe(mc_pipe[i]));
+		IGNORE_NZ(pipe(cm_pipe[i]));
 
 		if (opt.amode <= 1 && opt.nbcpu > 1 && opt.do_brute && opt.do_mt_brute)
 		{
-			(void) pipe(bf_pipe[i]);
+			IGNORE_NZ(pipe(bf_pipe[i]));
 			bf_nkeys[i] = 0;
 		}
 	}
@@ -6835,10 +6939,8 @@ __start:
 	// Start cracking session
 	if (cracking_session)
 	{
-		if (pthread_create(&cracking_session_tid,
-						   NULL,
-						   (void *) session_save_thread,
-						   (void *) NULL)
+		if (pthread_create(
+				&cracking_session_tid, NULL, (void *) session_save_thread, NULL)
 			!= 0)
 		{
 			perror("pthread_create failed");

@@ -42,7 +42,7 @@ int simd_get_supported_features(void)
 		__cpuid(1, eax, ebx, ecx, edx);
 	}
 
-	if (edx & (1 << 23))
+	if (edx & (1 << 23)) //-V525
 	{
 		result |= SIMD_SUPPORTS_MMX;
 	}

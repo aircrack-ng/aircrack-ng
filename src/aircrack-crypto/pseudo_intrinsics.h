@@ -104,8 +104,8 @@ typedef uint64x2_t vtype64;
 #define vset1_epi32(x) vdupq_n_u32(x)
 #define vset1_epi64(x) (vtype) vdupq_n_u64(x)
 #define vset_epi32(x3, x2, x1, x0)                                             \
-	vcombine_u32(vcreate_u32(((uint64_t)(x1) << 32) | x0),                     \
-				 vcreate_u32(((uint64_t)(x3) << 32) | x2))
+	vcombine_u32(vcreate_u32(((uint64_t)(x1) << 32) | (x0)),                   \
+				 vcreate_u32(((uint64_t)(x3) << 32) | (x2)))
 #define vset_epi64(x1, x0)                                                     \
 	(vtype) vcombine_u64(vcreate_u64(x0), vcreate_u64(x1))
 #define vsetzero() vset1_epi32(0)

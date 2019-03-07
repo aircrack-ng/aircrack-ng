@@ -36,6 +36,7 @@
 
 #include <netinet/in.h>
 #include <stdint.h>
+#include <time.h>
 
 #include "byteorder.h"
 #include "packed.h"
@@ -100,10 +101,14 @@ struct rx_info
 struct wif
 {
 	int (*wi_read)(struct wif * wi,
+				   struct timespec * ts,
+				   int * dlt,
 				   unsigned char * h80211,
 				   int len,
 				   struct rx_info * ri);
 	int (*wi_write)(struct wif * wi,
+					struct timespec * ts,
+					int dlt,
 					unsigned char * h80211,
 					int len,
 					struct tx_info * ti);
@@ -128,10 +133,18 @@ struct wif
 
 /* Routines to be used by client code */
 IMPORT struct wif * wi_open(char * iface);
-IMPORT int
-wi_read(struct wif * wi, unsigned char * h80211, int len, struct rx_info * ri);
-IMPORT int
-wi_write(struct wif * wi, unsigned char * h80211, int len, struct tx_info * ti);
+IMPORT int wi_read(struct wif * wi,
+				   struct timespec * ts,
+				   int * dlt,
+				   unsigned char * h80211,
+				   int len,
+				   struct rx_info * ri);
+IMPORT int wi_write(struct wif * wi,
+					struct timespec * ts,
+					int dlt,
+					unsigned char * h80211,
+					int len,
+					struct tx_info * ti);
 IMPORT int wi_set_channel(struct wif * wi, int chan);
 IMPORT int wi_set_ht_channel(struct wif * wi, int chan, unsigned int htval);
 IMPORT int wi_get_channel(struct wif * wi);

@@ -47,11 +47,12 @@
 #include "aircrack-osdep/osdep.h"
 #include "ieee80211.h"
 #include "crypto.h"
-#include "pcap.h"
+#include "pcap_local.h"
 #include "aircrack-util/common.h"
 
 struct packet
 {
+	struct timespec p_ts;
 	unsigned char p_data[2048];
 	int p_len;
 };
@@ -105,7 +106,8 @@ static int open_pcap(const char * fname)
 	return (fd);
 }
 
-static inline void write_pcap(int fd, const void * p, const int len)
+static inline void
+write_pcap(int fd, const struct timespec * ts, const void * p, const int len)
 {
 	REQUIRE(p != NULL);
 
@@ -114,8 +116,8 @@ static inline void write_pcap(int fd, const void * p, const int len)
 	memset(&pkh, 0, sizeof(pkh));
 
 	pkh.caplen = pkh.len = len;
-	pkh.tv_sec = 0;
-	pkh.tv_usec = 0;
+	pkh.tv_sec = ts->tv_sec;
+	pkh.tv_usec = ts->tv_nsec / 1000UL;
 
 	if (write(fd, &pkh, sizeof(pkh)) != sizeof(pkh)) err(1, "write()");
 
@@ -124,7 +126,7 @@ static inline void write_pcap(int fd, const void * p, const int len)
 
 static inline void packet_write_pcap(int fd, const struct packet * p)
 {
-	write_pcap(fd, p->p_data, p->p_len);
+	write_pcap(fd, &p->p_ts, p->p_data, p->p_len);
 }
 
 static void print_network(const struct network * n)
@@ -141,14 +143,14 @@ static void print_network(const struct network * n)
 		   n->n_ssid);
 }
 
-static void save_network(const struct network * n)
+static void save_network(const struct timespec * ts, const struct network * n)
 {
 	REQUIRE(n != NULL);
 
 	int i;
 
 	_outfd = open_pcap(_outfilename);
-	write_pcap(_outfd, n->n_beacon, n->n_beaconlen);
+	write_pcap(_outfd, ts, n->n_beacon, n->n_beaconlen);
 
 	for (i = 0; i < 4; i++)
 	{
@@ -191,8 +193,9 @@ static void fix_beacon(struct network * n)
 	n->n_beaconlen += ssidlen - origlen;
 }
 
-static void check_network(struct network * n)
+static void check_network(struct timespec * ts, int * dlt, struct network * n)
 {
+	UNUSED_PARAM(dlt);
 	REQUIRE(n != NULL);
 
 	if (!n->n_beaconlen || !n->n_handshake || !n->n_ssid[0]) return;
@@ -201,7 +204,7 @@ static void check_network(struct network * n)
 
 	print_network(n);
 
-	save_network(n);
+	save_network(ts, n);
 }
 
 static inline struct network * find_net(const unsigned char * b)
@@ -352,7 +355,10 @@ static int parse_elem_vendor(const unsigned char * e, const int l)
 	return (parse_rsn((unsigned char *) &wpa->wpa_version, l - 6, 0));
 }
 
-static void process_beacon(struct ieee80211_frame * wh, int totlen)
+static void process_beacon(struct timespec * ts,
+						   int * dlt,
+						   struct ieee80211_frame * wh,
+						   int totlen)
 {
 	REQUIRE(wh != NULL);
 
@@ -429,50 +435,40 @@ static void process_beacon(struct ieee80211_frame * wh, int totlen)
 	strncpy(n->n_ssid, ssid, sizeof(n->n_ssid));
 	(n->n_ssid)[sizeof(n->n_ssid) - 1] = '\0';
 
-	check_network(n);
+	check_network(ts, dlt, n);
 	return;
 __bad:
 	printf("bad beacon\n");
 }
 
-static int eapol_handshake_step(const unsigned char * eapol, const int len)
-{
-	REQUIRE(eapol != NULL);
-
-	const int eapol_size = 4 + 1 + 2 + 2 + 8 + 32 + 16 + 8 + 8 + 16 + 2;
-
-	if (len < eapol_size) return (0);
-
-	/* not pairwise */
-	if ((eapol[6] & 0x08) == 0) return (0);
-
-	/* 1: has no mic */
-	if ((eapol[5] & 1) == 0) return (1);
-
-	/* 3: has ack */
-	if ((eapol[6] & 0x80) != 0) return (3);
-
-	if (*((uint16_t *) &eapol[eapol_size - 2]) == 0) return (4);
-
-	return (2);
-}
-
-static void packet_copy(struct packet * p, const void * d, const int len)
+static void packet_copy(struct packet * p,
+						struct timespec * ts,
+						const void * d,
+						const int len)
 {
 	REQUIRE(p != NULL);
 	REQUIRE(len <= (int) sizeof(p->p_data));
 
+	if (ts)
+	{
+		p->p_ts.tv_sec = ts->tv_sec;
+		p->p_ts.tv_nsec = ts->tv_nsec;
+	}
 	p->p_len = len;
 	memcpy(p->p_data, d, len);
 }
 
-static void process_eapol(struct network * n,
+static void process_eapol(struct timespec * ts,
+						  int * dlt,
+						  struct network * n,
 						  struct client * c,
 						  const unsigned char * p,
 						  const int len,
 						  struct ieee80211_frame * wh,
 						  const int totlen)
 {
+	UNUSED_PARAM(dlt);
+
 	int num, i;
 
 	num = eapol_handshake_step(p, len);
@@ -519,7 +515,7 @@ static void process_eapol(struct network * n,
 			abort();
 	}
 
-	packet_copy(&c->c_handshake[num - 1], wh, totlen);
+	packet_copy(&c->c_handshake[num - 1], ts, wh, totlen);
 
 	if (c->c_wpa_got == 7)
 	{
@@ -529,7 +525,10 @@ static void process_eapol(struct network * n,
 	}
 }
 
-static void process_data(struct ieee80211_frame * wh, int len)
+static void process_data(struct timespec * ts,
+						 int * dlt,
+						 struct ieee80211_frame * wh,
+						 int len)
 {
 	REQUIRE(wh != NULL);
 
@@ -588,12 +587,14 @@ static void process_data(struct ieee80211_frame * wh, int len)
 
 	c = find_add_client(n, clientaddr);
 
-	process_eapol(n, c, p, len, wh, orig);
+	process_eapol(ts, dlt, n, c, p, len, wh, orig);
 
-	if (n->n_handshake) check_network(n);
+	if (n->n_handshake) check_network(ts, dlt, n);
 }
 
-static void grab_hidden_ssid(const unsigned char * bssid,
+static void grab_hidden_ssid(struct timespec * ts,
+							 int * dlt,
+							 const unsigned char * bssid,
 							 struct ieee80211_frame * wh,
 							 int len,
 							 const int off)
@@ -623,7 +624,7 @@ static void grab_hidden_ssid(const unsigned char * bssid,
 	memcpy(n->n_ssid, p, l);
 	n->n_ssid[l] = 0;
 
-	check_network(n);
+	check_network(ts, dlt, n);
 	return;
 
 __bad:
@@ -631,7 +632,8 @@ __bad:
 	return;
 }
 
-static void process_packet(void * packet, const int len)
+static void
+process_packet(struct timespec * ts, int * dlt, void * packet, const int len)
 {
 	REQUIRE(packet != NULL);
 
@@ -645,25 +647,25 @@ static void process_packet(void * packet, const int len)
 			switch (wh->i_fc[0] & IEEE80211_FC0_SUBTYPE_MASK)
 			{
 				case IEEE80211_FC0_SUBTYPE_BEACON:
-					process_beacon(wh, len);
+					process_beacon(ts, dlt, wh, len);
 					break;
 
 				case IEEE80211_FC0_SUBTYPE_ASSOC_REQ:
-					grab_hidden_ssid(wh->i_addr3, wh, len, 2 + 2);
+					grab_hidden_ssid(ts, dlt, wh->i_addr3, wh, len, 2 + 2);
 					break;
 
 				case IEEE80211_FC0_SUBTYPE_REASSOC_REQ:
-					grab_hidden_ssid(wh->i_addr3, wh, len, 2 + 2 + 6);
+					grab_hidden_ssid(ts, dlt, wh->i_addr3, wh, len, 2 + 2 + 6);
 					break;
 
 				case IEEE80211_FC0_SUBTYPE_PROBE_RESP:
-					grab_hidden_ssid(wh->i_addr3, wh, len, 8 + 2 + 2);
+					grab_hidden_ssid(ts, dlt, wh->i_addr3, wh, len, 8 + 2 + 2);
 					break;
 			}
 			break;
 
 		case IEEE80211_FC0_TYPE_DATA:
-			process_data(wh, len);
+			process_data(ts, dlt, wh, len);
 			break;
 	}
 }
@@ -673,6 +675,8 @@ static void pwn(const char * fname)
 	REQUIRE(fname != NULL);
 
 	struct wif * wi;
+	struct timespec ts;
+	int dlt;
 	char crap[2048];
 	int rc;
 
@@ -692,8 +696,10 @@ static void pwn(const char * fname)
 		return;
 	}
 
-	while ((rc = wi_read(wi, (unsigned char *) crap, sizeof(crap), NULL)) > 0)
-		process_packet(crap, rc);
+	while ((rc = wi_read(
+				wi, &ts, &dlt, (unsigned char *) crap, sizeof(crap), NULL))
+		   > 0)
+		process_packet(&ts, &dlt, crap, rc);
 
 	wi_close(wi);
 }

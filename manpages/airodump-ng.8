@@ -59,6 +59,9 @@ Set the channel to be in HT40- (802.11n). It requires the frequency 20MHz below 
 .I -r <file>
 Reads packet from a file.
 .TP
+.I -T, --real-time
+While reading packets from a file specified with \(aq-r <file>\(aq, simulate the arrival rate of them, as if they were "live".
+.TP
 .I -x <msecs>
 Active Scanning Simulation (send probe requests and parse the probe responses).
 .TP
@@ -100,6 +103,9 @@ It will only show networks, matching the given bssid ^ netmask combination. Need
 .I -a
 It will only show associated clients.
 .TP
+.I -n <int>, --min-packets <int>
+The minimum number of packets received by an AP before displaying it.
+.TP
 .I -N, --essid
 Filter APs by ESSID. Can be used several times to match a set of ESSID.
 .TP
@@ -121,6 +127,15 @@ Invert sorting algorithm
 .TP
 .I m
 Mark the selected AP or cycle through different colors if the selected AP is already marked
+.TP
+.I o
+Enable colored display of APs and their stations.
+.TP
+.I p
+Disable colored display.
+.TP
+.I q
+Quit program.
 .TP
 .I r
 (De-)Activate realtime sorting - applies sorting algorithm every time the display will be redrawn
@@ -162,16 +177,16 @@ BSSID              PWR RXQ  Beacons    #Data, #/s  CH  MB  ENC  CIPHER AUTH ESSI
 00:14:6C:7E:40:80   32 100      752       73    2   9  54  WPA  TKIP   PSK  teddy
 .br
 .PP
-BSSID              STATION            PWR   Rate   Lost   Frames  Probes
+BSSID              STATION            PWR   Rate   Lost   Frames  Notes  Probes
 .br
 .PP
-00:14:6C:7A:41:81  00:0F:B5:32:31:31   51   11-11     2       14  bigbear
+00:14:6C:7A:41:81  00:0F:B5:32:31:31   51   11-11     2       14         bigbear
 .br
-(not associated)   00:14:A4:3F:8D:13   19   11-11     0        4  mossy
+(not associated)   00:14:A4:3F:8D:13   19   11-11     0        4         mossy
 .br
-00:14:6C:7A:41:81  00:0C:41:52:D1:D1   \-1    11-2     0        5  bigbear
+00:14:6C:7A:41:81  00:0C:41:52:D1:D1   \-1    11-2     0        5         bigbear
 .br
-00:14:6C:7E:40:80  00:0F:B5:FD:FB:C2   35   36-24     0       99  teddy
+00:14:6C:7E:40:80  00:0F:B5:FD:FB:C2   35   36-24     0       99         teddy
 .br
 -----------------------------------------------------------------------
 .br
@@ -224,6 +239,9 @@ This is only displayed when using a single channel. The first number is the last
 .TP
 .I Lost
 It means lost packets coming from the client. To determine the number of packets lost, there is a sequence field on every non-control frame, so you can subtract the second last sequence number from the last sequence number and you know how many packets you have lost.
+.TP
+.I Notes
+Additional information about the client, such as captured EAPOL or PMKID.
 .TP
 .I Packets
 The number of data packets sent by the client.

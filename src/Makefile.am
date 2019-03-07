@@ -53,14 +53,14 @@ SRC_AC		= aircrack-ng.c
 SRC_AC_ALL  = aircrack-ng.c
 
 SRC_AD		= airdecap-ng.c
-SRC_PF		= packetforge-ng.c
-SRC_AR		= aireplay-ng.c
-SRC_ADU		= airodump-ng.c dump_write.c
+SRC_PF		= packetforge-ng.c communications.c
+SRC_AR		= aireplay-ng.c communications.c
+SRC_ADU		= airodump-ng.c communications.c dump_write.c
 
-SRC_AT		= airtun-ng.c
+SRC_AT		= airtun-ng.c fragments.c communications.c
 SRC_IV		= ivstools.c
 SRC_AS		= airserv-ng.c
-SRC_WS		= wesside-ng.c
+SRC_WS		= wesside-ng.c communications.c
 SRC_BS		= besside-ng.c
 SRC_BC		= besside-ng-crawler.c
 SRC_AL		= airolib-ng.c
@@ -71,11 +71,11 @@ SRC_COW		= cowpatty.c
 SRC_ES		= easside-ng.c
 SRC_BUDDY	= buddy-ng.c
 SRC_MI		= makeivs-ng.c
-SRC_AB		= airbase-ng.c
+SRC_AB		= airbase-ng.c communications.c fragments.c
 SRC_AU		= airdecloak-ng.c
-SRC_TT		= tkiptun-ng.c
+SRC_TT		= tkiptun-ng.c communications.c
 SRC_WC		= wpaclean.c
-SRC_AV		= airventriloquist-ng.c
+SRC_AV		= airventriloquist-ng.c communications.c
 
 SRC_ACLIB	= crypto.c $(SSEC_INT) uniqueiv.c session.c
 LIBAC_LIBS	= libaclib.la
@@ -173,8 +173,8 @@ airdecap_ng_CFLAGS = $(COMMON_CFLAGS)
 airdecap_ng_LDADD = $(COMMON_LDADD) $(LIBAC_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
 packetforge_ng_SOURCES = $(SRC_PF)
-packetforge_ng_CFLAGS = $(COMMON_CFLAGS)
-packetforge_ng_LDADD = $(COMMON_LDADD) $(LIBAC_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
+packetforge_ng_CFLAGS = $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
+packetforge_ng_LDADD = $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBAC_LIBS) $(LIBAIRCRACK_UTIL_LIBS) $(CRYPTO_LIBS)
 
 aireplay_ng_SOURCES = $(SRC_AR)
 aireplay_ng_CFLAGS = $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
@@ -292,7 +292,7 @@ EXTRA_DIST = wpaclean.c \
              easside.h \
              aireplay-ng.c \
              ivstools.c \
-             pcap.h \
+             pcap_local.h \
              aircrack-ng.c \
              airodump-ng.c \
              crypto.c \
@@ -315,7 +315,12 @@ EXTRA_DIST = wpaclean.c \
              session.h \
 			 defs.h \
 			 dump_write.h \
-			 dump_write.c
+			 dump_write.c \
+			 fragments.h \
+			 fragments.c \
+			 communications.h \
+			 communications.c \
+			 station.h
 
 
 @CODE_COVERAGE_RULES@

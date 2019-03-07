@@ -69,8 +69,9 @@
 
 #include "defs.h"
 #include "version.h"
-#include "pcap.h"
+#include "pcap_local.h"
 #include "aircrack-osdep/osdep.h"
+#include "communications.h"
 #include "crypto.h"
 #include "aircrack-util/common.h"
 #include "ieee80211.h"
@@ -114,35 +115,6 @@
 	"\x40\x00\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF\xCC\xCC\xCC\xCC\xCC\xCC"         \
 	"\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00"
 
-#define RATE_NUM 12
-
-#define RATE_1M 1000000
-#define RATE_2M 2000000
-#define RATE_5_5M 5500000
-#define RATE_11M 11000000
-
-#define RATE_6M 6000000
-#define RATE_9M 9000000
-#define RATE_12M 12000000
-#define RATE_18M 18000000
-#define RATE_24M 24000000
-#define RATE_36M 36000000
-#define RATE_48M 48000000
-#define RATE_54M 54000000
-
-static const int bitrates[RATE_NUM] = {RATE_1M,
-									   RATE_2M,
-									   RATE_5_5M,
-									   RATE_6M,
-									   RATE_9M,
-									   RATE_11M,
-									   RATE_12M,
-									   RATE_18M,
-									   RATE_24M,
-									   RATE_36M,
-									   RATE_48M,
-									   RATE_54M};
-
 static char * progname = NULL;
 
 static const char usage[]
@@ -168,52 +140,9 @@ static const char usage[]
 	  "\n"
 	  "\n";
 
-struct options
+struct communication_options opt;
+static struct local_options
 {
-	u_int8_t f_bssid[6];
-	u_int8_t f_dmac[6];
-	u_int8_t f_smac[6];
-	int f_minlen;
-	int32_t f_maxlen;
-	int f_type;
-	int f_subtype;
-	int f_tods;
-	int f_fromds;
-	int f_iswep;
-
-	int r_nbpps;
-	u_int8_t r_bssid[6];
-	u_int8_t r_dmac[6];
-	u_int8_t r_smac[6];
-	u_int8_t r_dip[4];
-	u_int8_t r_sip[4];
-	char r_essid[33];
-	char r_smac_set;
-
-	char ip_out[16]; // 16 for 15 chars + \x00
-	char ip_in[16];
-	int port_out;
-	int port_in;
-
-	char * iface_out;
-	char * s_face;
-	char * s_file;
-	uint8_t * prga;
-
-	int a_mode;
-	int a_count;
-	int a_delay;
-	int f_retry;
-
-	int prgalen;
-
-	int delay;
-	int npackets;
-
-	int ignore_negative_one;
-	int rtc;
-
-	int reassoc;
 	char flag_icmp_resp;
 	char flag_http_hijack;
 	char flag_dnsspoof;
@@ -237,29 +166,10 @@ struct options
 	struct WPA_ST_info * st_1st;
 	struct WPA_ST_info * st_cur;
 	struct WPA_ST_info * st_prv;
-} opt;
+} lopt;
 
-struct devices
-{
-	int fd_in, arptype_in;
-	int fd_out, arptype_out;
-	int fd_rtc;
-
-	u_int8_t mac_in[6];
-	u_int8_t mac_out[6];
-
-	int is_wlanng;
-	int is_hostap;
-	int is_madwifi;
-	int is_madwifing;
-	int is_bcm43xx;
-
-	FILE * f_cap_in;
-
-	struct pcap_file_header pfh_in;
-} dev;
-
-static struct wif *_wi_in, *_wi_out;
+struct devices dev;
+struct wif *_wi_in, *_wi_out;
 
 struct ARP_req
 {
@@ -280,412 +190,9 @@ struct APt
 	int pwr[REQUESTS];
 };
 
-static unsigned long nb_pkt_sent;
-static u_int8_t h80211[4096];
+unsigned long nb_pkt_sent;
+u_int8_t h80211[4096];
 static u_int8_t tmpbuf[4096];
-
-static int set_bitrate(struct wif * wi, int rate)
-{
-	int i, newrate;
-
-	if (wi_set_rate(wi, rate)) return (1);
-
-	// Workaround for buggy drivers (rt73) that do not accept 5.5M, but 5M
-	// instead
-	if (rate == 5500000 && wi_get_rate(wi) != 5500000)
-	{
-		if (wi_set_rate(wi, 5000000)) return (1);
-	}
-
-	newrate = wi_get_rate(wi);
-	for (i = 0; i < RATE_NUM; i++)
-	{
-		if (bitrates[i] == rate) break;
-	}
-	if (i == RATE_NUM) i = -1;
-	if (newrate != rate)
-	{
-		if (i != -1)
-		{
-			if (i > 0)
-			{
-				if (bitrates[i - 1] >= newrate)
-				{
-					printf(
-						"Couldn't set rate to %.1fMBit. (%.1fMBit instead)\n",
-						(rate / 1000000.0),
-						(wi_get_rate(wi) / 1000000.0));
-					return (1);
-				}
-			}
-			if (i < RATE_NUM - 1)
-			{
-				if (bitrates[i + 1] <= newrate)
-				{
-					printf(
-						"Couldn't set rate to %.1fMBit. (%.1fMBit instead)\n",
-						(rate / 1000000.0),
-						(wi_get_rate(wi) / 1000000.0));
-					return (1);
-				}
-			}
-			return (0);
-		}
-		printf("Couldn't set rate to %.1fMBit. (%.1fMBit instead)\n",
-			   (rate / 1000000.0),
-			   (wi_get_rate(wi) / 1000000.0));
-		return (1);
-	}
-	return (0);
-}
-
-static int send_packet(void * buf, u_int32_t count)
-{
-	struct wif * wi = _wi_out; /* XXX globals suck */
-	u_int8_t * pkt = (u_int8_t *) buf;
-
-	// setting sequence numbers... Don' want to do this for our purposes...
-	// One main reason for this is because IF this is an encrypted frame
-	// then the sequence number is used in the encryption, so changing it here
-	// will break it. It won't be able to be decrypted...
-
-	if ((count > 24))
-	{
-		// Set the duration...
-		pkt[2] = 0x3A;
-		pkt[3] = 0x01;
-
-		// Reset Retry Flag
-		pkt[1] = pkt[1] & ~0x4;
-	}
-
-	if (wi_write(wi, buf, count, NULL) == -1)
-	{
-		switch (errno)
-		{
-			case EAGAIN:
-			case ENOBUFS:
-				printf("Hey, ENOBUFS happened\n");
-				usleep(10000);
-				return (0); /* XXX not sure I like this... -sorbo */
-		}
-
-		perror("wi_write()");
-		return (-1);
-	}
-
-	nb_pkt_sent++;
-	return (0);
-}
-
-static int read_packet(void * buf, u_int32_t count, struct rx_info * ri)
-{
-	REQUIRE(buf != NULL);
-
-	struct wif * wi = _wi_in; /* XXX */
-	int rc;
-
-	rc = wi_read(wi, buf, count, ri);
-	if (rc == -1)
-	{
-		switch (errno)
-		{
-			case EAGAIN:
-				return (0);
-		}
-
-		perror("wi_read()");
-		return (-1);
-	}
-
-	return (rc);
-}
-
-static int wait_for_beacon(uint8_t * bssid, uint8_t * capa, char * essid)
-{
-	int len = 0, chan = 0, taglen = 0, tagtype = 0, pos = 0;
-	uint8_t pkt_sniff[4096];
-	struct timeval tv, tv2;
-	char essid2[33];
-
-	gettimeofday(&tv, NULL);
-	while (1)
-	{
-		len = 0;
-		while (len < 22)
-		{
-			len = read_packet(pkt_sniff, sizeof(pkt_sniff), NULL);
-
-			gettimeofday(&tv2, NULL);
-			if (((tv2.tv_sec - tv.tv_sec) * 1000000)
-					+ (tv2.tv_usec - tv.tv_usec)
-				> 10000 * 1000) // wait 10sec for beacon frame
-			{
-				return (-1);
-			}
-			if (len <= 0) usleep(1);
-		}
-		if (!memcmp(pkt_sniff, "\x80", 1))
-		{
-			pos = 0;
-			taglen = 22; // initial value to get the fixed tags parsing started
-			taglen += 12; // skip fixed tags in frames
-			do
-			{
-				pos += taglen + 2;
-				tagtype = pkt_sniff[pos];
-				taglen = pkt_sniff[pos + 1];
-			} while (tagtype != 3 && pos < len - 2);
-
-			if (tagtype != 3) continue;
-			if (taglen != 1) continue;
-			if (pos + 2 + taglen > len) continue;
-
-			chan = pkt_sniff[pos + 2];
-
-			if (essid)
-			{
-				pos = 0;
-				taglen
-					= 22; // initial value to get the fixed tags parsing started
-				taglen += 12; // skip fixed tags in frames
-				do
-				{
-					pos += taglen + 2;
-					tagtype = pkt_sniff[pos];
-					taglen = pkt_sniff[pos + 1];
-				} while (tagtype != 0 && pos < len - 2);
-
-				if (tagtype != 0) continue;
-				if (taglen <= 1)
-				{
-					if (bssid != NULL && memcmp(bssid, pkt_sniff + 10, 6) == 0)
-						break;
-					else
-						continue;
-				}
-				if (pos + 2 + taglen > len) continue;
-
-				if (taglen > 32) taglen = 32;
-
-				if ((pkt_sniff + pos + 2)[0] < 32 && bssid != NULL
-					&& memcmp(bssid, pkt_sniff + 10, 6) == 0)
-				{
-					break;
-				}
-
-				/* if bssid is given, copy essid */
-				if (bssid != NULL && memcmp(bssid, pkt_sniff + 10, 6) == 0
-					&& strlen(essid) == 0)
-				{
-					memset(essid, 0, 33);
-					memcpy(essid, pkt_sniff + pos + 2, taglen);
-					break;
-				}
-
-				/* if essid is given, copy bssid AND essid, so we can handle
-				 * case insensitive arguments */
-				if (bssid != NULL && memcmp(bssid, NULL_MAC, 6) == 0
-					&& strncasecmp(essid, (char *) pkt_sniff + pos + 2, taglen)
-						   == 0
-					&& strlen(essid) == (unsigned) taglen)
-				{
-					memset(essid, 0, 33);
-					memcpy(essid, pkt_sniff + pos + 2, taglen);
-					memcpy(bssid, pkt_sniff + 10, 6);
-					printf("Found BSSID \"%02X:%02X:%02X:%02X:%02X:%02X\" to "
-						   "given ESSID \"%s\".\n",
-						   bssid[0],
-						   bssid[1],
-						   bssid[2],
-						   bssid[3],
-						   bssid[4],
-						   bssid[5],
-						   essid);
-					break;
-				}
-
-				/* if essid and bssid are given, check both */
-				if (bssid != NULL && memcmp(bssid, pkt_sniff + 10, 6) == 0
-					&& strlen(essid) > 0)
-				{
-					memset(essid2, 0, 33);
-					memcpy(essid2, pkt_sniff + pos + 2, taglen);
-					if (strncasecmp(essid, essid2, taglen) == 0
-						&& strlen(essid) == (unsigned) taglen)
-						break;
-					else
-					{
-						printf("For the given BSSID "
-							   "\"%02X:%02X:%02X:%02X:%02X:%02X\", there is an "
-							   "ESSID mismatch!\n",
-							   bssid[0],
-							   bssid[1],
-							   bssid[2],
-							   bssid[3],
-							   bssid[4],
-							   bssid[5]);
-						printf(
-							"Found ESSID \"%s\" vs. specified ESSID \"%s\"\n",
-							essid2,
-							essid);
-						printf("Using the given one, double check it to be "
-							   "sure its correct!\n");
-						break;
-					}
-				}
-			}
-		}
-	}
-
-	if (capa) memcpy(capa, pkt_sniff + 34, 2);
-
-	return (chan);
-}
-
-/**
-	if bssid != NULL its looking for a beacon frame
-*/
-static int
-attack_check(uint8_t * bssid, char * essid, uint8_t * capa, struct wif * wi)
-{
-	int ap_chan = 0, iface_chan = 0;
-
-	iface_chan = wi_get_channel(wi);
-
-	if (iface_chan == -1 && !opt.ignore_negative_one)
-	{
-		PCT;
-		printf("Couldn't determine current channel for %s, you should either "
-			   "force the operation with --ignore-negative-one or apply a "
-			   "kernel patch\n",
-			   wi_get_ifname(wi));
-		return (-1);
-	}
-
-	if (bssid != NULL)
-	{
-		ap_chan = wait_for_beacon(bssid, capa, essid);
-		if (ap_chan < 0)
-		{
-			PCT;
-			printf("No such BSSID available.\n");
-			return (-1);
-		}
-		if ((ap_chan != iface_chan)
-			&& (iface_chan != -1 || !opt.ignore_negative_one))
-		{
-			PCT;
-			printf("%s is on channel %d, but the AP uses channel %d\n",
-				   wi_get_ifname(wi),
-				   iface_chan,
-				   ap_chan);
-			return (-1);
-		}
-	}
-
-	return (0);
-}
-
-static int getnet(uint8_t * capa, int filter, int force)
-{
-	u_int8_t * bssid;
-
-	if (filter)
-		bssid = opt.f_bssid;
-	else
-		bssid = opt.r_bssid;
-
-	if (memcmp(bssid, NULL_MAC, 6))
-	{
-		PCT;
-		printf("Waiting for beacon frame (BSSID: "
-			   "%02X:%02X:%02X:%02X:%02X:%02X) on channel %d\n",
-			   bssid[0],
-			   bssid[1],
-			   bssid[2],
-			   bssid[3],
-			   bssid[4],
-			   bssid[5],
-			   wi_get_channel(_wi_in));
-	}
-	else if (strlen(opt.r_essid) > 0)
-	{
-		PCT;
-		printf("Waiting for beacon frame (ESSID: %s) on channel %d\n",
-			   opt.r_essid,
-			   wi_get_channel(_wi_in));
-	}
-	else if (force)
-	{
-		PCT;
-		if (filter)
-		{
-			printf("Please specify at least a BSSID (-b) or an ESSID (-e)\n");
-		}
-		else
-		{
-			printf("Please specify at least a BSSID (-a) or an ESSID (-e)\n");
-		}
-		return (1);
-	}
-	else
-		return (0);
-
-	if (attack_check(bssid, opt.r_essid, capa, _wi_in) != 0)
-	{
-		if (memcmp(bssid, NULL_MAC, 6))
-		{
-			if (strlen(opt.r_essid) == 0 || opt.r_essid[0] < 32)
-			{
-				printf("Please specify an ESSID (-e).\n");
-			}
-		}
-
-		if (!memcmp(bssid, NULL_MAC, 6))
-		{
-			if (strlen(opt.r_essid) > 0)
-			{
-				printf("Please specify a BSSID (-a).\n");
-			}
-		}
-		return (1);
-	}
-
-	return (0);
-}
-
-static int get_ip_port(char * iface, char * ip, const int ip_size)
-{
-	char * host;
-	char * ptr;
-	int port = -1;
-	struct in_addr addr;
-
-	host = strdup(iface);
-	if (!host) return (-1);
-
-	ptr = strchr(host, ':');
-	if (!ptr) goto out;
-
-	*ptr++ = 0;
-
-	if (!inet_aton(host, (struct in_addr *) &addr))
-		goto out; /* XXX resolve hostname */
-
-	if (strlen(host) > 15)
-	{
-		port = -1;
-		goto out;
-	}
-	strncpy(ip, host, ip_size);
-	port = atoi(ptr);
-	if (port <= 0) port = -1;
-
-out:
-	free(host);
-	return (port);
-}
 
 static int tcp_test(const char * ip_str, const short port)
 {
@@ -940,13 +447,15 @@ static int deauth_station(struct WPA_ST_info * st_cur)
 			memcpy(h80211 + 4, st_cur->stmac, 6);
 			memcpy(h80211 + 10, st_cur->bssid, 6);
 
-			if (send_packet(h80211, 26) < 0) return (1);
+			if (send_packet(_wi_out, h80211, 26, kRewriteSequenceNumber) < 0)
+				return (1);
 
 			// Send deauth to the AP...
 			memcpy(h80211 + 4, st_cur->bssid, 6);
 			memcpy(h80211 + 10, st_cur->stmac, 6);
 
-			if (send_packet(h80211, 26) < 0) return (1);
+			if (send_packet(_wi_out, h80211, 26, kRewriteSequenceNumber) < 0)
+				return (1);
 			// Usually this is where we would wait for an ACK, but we need to
 			// get back
 			// to capturing packets to get the EAPOL 4 way handshake
@@ -1338,7 +847,7 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 			// this is a Extended IV field
 			extra_enc_length = 8;
 		}
-		packet += extra_enc_length;
+		packet += (uintptr_t) extra_enc_length;
 		length -= extra_enc_length;
 		size_80211hdr += extra_enc_length;
 	}
@@ -1372,9 +881,9 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 				&& 0 == p_rhdr->key_mic)
 			{
 				/* set authenticator nonce */
-				memcpy(opt.st_cur->anonce, p_rhdr->wpa_nonce, 32);
+				memcpy(lopt.st_cur->anonce, p_rhdr->wpa_nonce, 32);
 				printf(COL_4WAYHS "------> #1, Captured anonce " COL_REST);
-				PRINTMAC(opt.st_cur->stmac);
+				PRINTMAC(lopt.st_cur->stmac);
 			}
 
 			/* frame 2 of 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1,
@@ -1388,38 +897,38 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 				if (memcmp(p_rhdr->wpa_nonce, ZERO, 32) != 0)
 				{
 					/* set supplicant nonce */
-					memcpy(opt.st_cur->snonce, p_rhdr->wpa_nonce, 32);
+					memcpy(lopt.st_cur->snonce, p_rhdr->wpa_nonce, 32);
 					printf(COL_4WAYHS "------> #2, Captured snonce " COL_REST);
 				}
 				else
 				{
 					printf(COL_4WAYHS "------> #4, Captured        " COL_REST);
 				}
-				PRINTMAC(opt.st_cur->stmac);
+				PRINTMAC(lopt.st_cur->stmac);
 
-				opt.st_cur->eapol_size
+				lopt.st_cur->eapol_size
 					= ntohs(p_d1x->length) + 4; // 4 is sizeof radius header
 
-				if (length < opt.st_cur->eapol_size
-					|| opt.st_cur->eapol_size == 0
-					|| opt.st_cur->eapol_size > sizeof(opt.st_cur->eapol))
+				if (length < lopt.st_cur->eapol_size
+					|| lopt.st_cur->eapol_size == 0 //-V560
+					|| lopt.st_cur->eapol_size > sizeof(lopt.st_cur->eapol))
 				{
 					// Ignore the packet trying to crash us.
 					printf("Caught a packet trying to crash us, sneaky "
 						   "bastard!\n");
 					hexDump("Offending Packet:", packet, length);
-					opt.st_cur->eapol_size = 0;
+					lopt.st_cur->eapol_size = 0;
 					return;
 				}
 				// Save the MIC
-				memcpy(opt.st_cur->keymic, p_rhdr->wpa_key_mic, 16);
+				memcpy(lopt.st_cur->keymic, p_rhdr->wpa_key_mic, 16);
 				// Save the whole EAPOL frame
-				memcpy(opt.st_cur->eapol, p_d1x, opt.st_cur->eapol_size);
+				memcpy(lopt.st_cur->eapol, p_d1x, lopt.st_cur->eapol_size);
 				// Clearing the MIC in the saves EAPOL frame
-				memset(opt.st_cur->eapol + 81, 0, 16);
+				memset(lopt.st_cur->eapol + 81, 0, 16);
 
 				// copy the key descriptor version
-				opt.st_cur->keyver = p_rhdr->key_ver;
+				lopt.st_cur->keyver = p_rhdr->key_ver;
 			}
 
 			/* frame 3 of 4: Pairwise == 1, Install == 1, Ack == 1, MIC == 1,
@@ -1431,62 +940,62 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 				if (memcmp(p_rhdr->wpa_nonce, ZERO, 32) != 0)
 				{
 					/* set authenticator nonce (again) */
-					memcpy(opt.st_cur->anonce, p_rhdr->wpa_nonce, 32);
+					memcpy(lopt.st_cur->anonce, p_rhdr->wpa_nonce, 32);
 					printf(COL_4WAYHS "------> #3, Captured anonce " COL_REST);
-					PRINTMAC(opt.st_cur->stmac);
+					PRINTMAC(lopt.st_cur->stmac);
 				}
 				// WARNING: Serious Code Reuse here!!!
-				opt.st_cur->eapol_size
+				lopt.st_cur->eapol_size
 					= ntohs(p_d1x->length) + 4; // 4 is sizeof radius header
 
-				if (length < opt.st_cur->eapol_size
-					|| opt.st_cur->eapol_size == 0
-					|| opt.st_cur->eapol_size > sizeof(opt.st_cur->eapol))
+				if (length < lopt.st_cur->eapol_size
+					|| lopt.st_cur->eapol_size == 0 //-V560
+					|| lopt.st_cur->eapol_size > sizeof(lopt.st_cur->eapol))
 				{
 					// Ignore the packet trying to crash us.
 					printf("Caught a packet trying to crash us, sneaky "
 						   "bastard!\n");
 					hexDump("Offending Packet:", packet, length);
-					opt.st_cur->eapol_size = 0;
+					lopt.st_cur->eapol_size = 0;
 					return;
 				}
 				// Save the MIC
-				memcpy(opt.st_cur->keymic, p_rhdr->wpa_key_mic, 16);
+				memcpy(lopt.st_cur->keymic, p_rhdr->wpa_key_mic, 16);
 				// Save the whole EAPOL frame
-				memcpy(opt.st_cur->eapol, p_d1x, opt.st_cur->eapol_size);
+				memcpy(lopt.st_cur->eapol, p_d1x, lopt.st_cur->eapol_size);
 				// Clearing the MIC in the saves EAPOL frame
-				memset(opt.st_cur->eapol + 81, 0, 16);
+				memset(lopt.st_cur->eapol + 81, 0, 16);
 
 				// copy the key descriptor version
-				opt.st_cur->keyver = p_rhdr->key_ver;
+				lopt.st_cur->keyver = p_rhdr->key_ver;
 			}
 
-			memset(opt.st_cur->ptk, 0, 80);
+			memset(lopt.st_cur->ptk, 0, 80);
 
-			opt.st_cur->valid_ptk = calc_ptk(opt.st_cur, opt.pmk);
-			if (1 == opt.st_cur->valid_ptk)
+			lopt.st_cur->valid_ptk = calc_ptk(lopt.st_cur, lopt.pmk);
+			if (1 == lopt.st_cur->valid_ptk)
 			{
 
 				hexDump(
-					COL_4WAYKEY "MIC" COL_4WAYKEYDATA, opt.st_cur->keymic, 16);
+					COL_4WAYKEY "MIC" COL_4WAYKEYDATA, lopt.st_cur->keymic, 16);
 				hexDump(
-					COL_4WAYKEY "stmac" COL_4WAYKEYDATA, opt.st_cur->stmac, 6);
+					COL_4WAYKEY "stmac" COL_4WAYKEYDATA, lopt.st_cur->stmac, 6);
 				hexDump(
-					COL_4WAYKEY "bssid" COL_4WAYKEYDATA, opt.st_cur->bssid, 6);
+					COL_4WAYKEY "bssid" COL_4WAYKEYDATA, lopt.st_cur->bssid, 6);
 				hexDump(COL_4WAYKEY "anonce" COL_4WAYKEYDATA,
-						opt.st_cur->anonce,
+						lopt.st_cur->anonce,
 						32);
 				hexDump(COL_4WAYKEY "snonce" COL_4WAYKEYDATA,
-						opt.st_cur->snonce,
+						lopt.st_cur->snonce,
 						32);
 				hexDump(COL_4WAYKEY "keymic" COL_4WAYKEYDATA,
-						opt.st_cur->keymic,
+						lopt.st_cur->keymic,
 						16);
 				hexDump(COL_4WAYKEY "epol" COL_4WAYKEYDATA,
-						opt.st_cur->eapol,
-						opt.st_cur->eapol_size);
+						lopt.st_cur->eapol,
+						lopt.st_cur->eapol_size);
 				printf(COL_BLUE "Valid key: ");
-				PRINTMAC(opt.st_cur->stmac);
+				PRINTMAC(lopt.st_cur->stmac);
 				printf("\n" COL_REST);
 			}
 
@@ -1515,22 +1024,22 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 					u_int8_t * p_http = packet + hdr_size;
 					u_int32_t l_http = length - hdr_size;
 					// Find a GET
-					if ((1 == opt.flag_http_hijack)
+					if ((1 == lopt.flag_http_hijack)
 						&& (p_http[0] == 0x47 && p_http[1] == 0x45
 							&& p_http[2] == 0x54))
 					{
-						int ret = fnmatch((const char *) opt.p_hijack_str,
+						int ret = fnmatch((const char *) lopt.p_hijack_str,
 										  (const char *) p_http,
 										  FNM_PERIOD);
 						if (0 == ret)
 						{
 							printf("This frame matched a term we are looking "
 								   "for\n");
-							if (NULL != opt.p_redir_url)
+							if (NULL != lopt.p_redir_url)
 							{
 								char * p_hit
 									= strstr((const char *) p_http,
-											 (const char *) opt.p_redir_url);
+											 (const char *) lopt.p_redir_url);
 								if (NULL != p_hit)
 								{
 									printf("Caught our own redirect, ignoring "
@@ -1547,7 +1056,7 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 						else
 						{
 							printf("pattern %s, not in this packet\n",
-								   opt.p_hijack_str);
+								   lopt.p_hijack_str);
 							return;
 						}
 
@@ -1623,10 +1132,10 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 
 						// Pointer to the start of the http section
 						p_http = pkt + offset_proto + hdr_size;
-						l_http = strlen(opt.p_redir_pkt_str);
+						l_http = strlen(lopt.p_redir_pkt_str);
 
 						// Copy the http frame we wish to send
-						memcpy(p_http, opt.p_redir_pkt_str, l_http);
+						memcpy(p_http, lopt.p_redir_pkt_str, l_http);
 						res_length
 							= offset_proto + hdr_size + l_http
 							  + extra_enc_length; // have to account for MIC
@@ -1651,30 +1160,35 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 
 						if (IEEE80211_FC1_WEP & wfrm->i_fc[1])
 						{
-							if (opt.st_cur->keyver == 1)
+							if (lopt.st_cur->keyver == 1)
 							{
 								res_length += 4;
 							}
-							encrypt_data_packet(pkt, res_length, opt.st_cur);
-							encrypt_data_packet(tmpbuf, tmpbuf_len, opt.st_cur);
+							encrypt_data_packet(pkt, res_length, lopt.st_cur);
+							encrypt_data_packet(
+								tmpbuf, tmpbuf_len, lopt.st_cur);
 						}
 
 						printf(COL_HTTPINJECT "---> Injecting Redirect Packet "
 											  "to: " COL_HTTPINJECTDATA);
-						PRINTMAC(opt.st_cur->stmac);
+						PRINTMAC(lopt.st_cur->stmac);
 						printf(COL_REST);
 
-						if (send_packet(pkt, res_length) != 0)
+						if (send_packet(_wi_out,
+										pkt,
+										res_length,
+										kRewriteSequenceNumber)
+							!= 0)
 							printf("Error Sending Packet\n");
 						printf("\n");
 						// Uncomment to send RST packet to the server
-						// if( send_packet( tmpbuf, tmpbuf_len ) != 0 )
+						// if (send_packet(_wi_out, tmpbuf, tmpbuf_len, true) != 0)
 						//    printf("ERROR: couldn't send Ack\n");
 						return;
 					}
 				}
 			}
-			else if ((short) PROTO_UDP == p_ip->protocol && opt.flag_dnsspoof)
+			else if ((short) PROTO_UDP == p_ip->protocol && lopt.flag_dnsspoof)
 			{
 				struct udp_hdr * p_udp = (struct udp_hdr *) packet;
 
@@ -1743,24 +1257,28 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 					packet_start_length = dns_offset + dns_resplen;
 					if (IEEE80211_FC1_WEP & wfrm->i_fc[1])
 					{
-						if (opt.st_cur->keyver == 1)
+						if (lopt.st_cur->keyver == 1)
 						{
 							packet_start_length += 4;
 						}
 
 						packet_start_length += extra_enc_length;
 						encrypt_data_packet(
-							pkt, packet_start_length, opt.st_cur);
+							pkt, packet_start_length, lopt.st_cur);
 					}
 
-					if (send_packet(pkt, packet_start_length) != 0)
+					if (send_packet(_wi_out,
+									pkt,
+									(size_t) packet_start_length,
+									kRewriteSequenceNumber)
+						!= 0)
 						printf("Error Sending Packet\n");
 
 					return;
 				}
 			}
 
-			else if ((1 == opt.flag_icmp_resp)
+			else if ((1 == lopt.flag_icmp_resp)
 					 && (short) PROTO_ICMP == p_ip->protocol)
 			{
 				struct icmp * p_icmp = (struct icmp *) packet;
@@ -1800,7 +1318,7 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 						  - extra_enc_length; // Don't forget extra MIC at the
 					// end of the frame
 
-					if (opt.st_cur->keyver == 1)
+					if (lopt.st_cur->keyver == 1)
 					{
 						icmp_length -= 4;
 					}
@@ -1811,11 +1329,15 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 					if (IEEE80211_FC1_WEP & wfrm->i_fc[1])
 					{
 						encrypt_data_packet(
-							pkt, packet_start_length, opt.st_cur);
+							pkt, packet_start_length, lopt.st_cur);
 					}
 
 					printf("Sending ICMP response\n");
-					if (send_packet(pkt, packet_start_length) != 0)
+					if (send_packet(_wi_out,
+									pkt,
+									(size_t) packet_start_length,
+									kRewriteSequenceNumber)
+						!= 0)
 						printf("Error Sending Packet\n");
 
 					return;
@@ -1841,18 +1363,18 @@ static bool is_adhoc_frame(u_int8_t * packet)
 
 static bool find_station_in_db(u_int8_t * p_stmac)
 {
-	opt.st_prv = NULL;
-	opt.st_cur = opt.st_1st;
+	lopt.st_prv = NULL;
+	lopt.st_cur = lopt.st_1st;
 
-	while (opt.st_cur != NULL)
+	while (lopt.st_cur != NULL)
 	{
-		if (!memcmp(opt.st_cur->stmac, p_stmac, 6)) break;
+		if (!memcmp(lopt.st_cur->stmac, p_stmac, 6)) break;
 
-		opt.st_prv = opt.st_cur;
-		opt.st_cur = opt.st_cur->next;
+		lopt.st_prv = lopt.st_cur;
+		lopt.st_cur = lopt.st_cur->next;
 	}
 
-	if (NULL == opt.st_cur)
+	if (NULL == lopt.st_cur)
 		// If not fount, opt.st_cur == NULL
 		return (FALSE);
 	else
@@ -1862,15 +1384,15 @@ static bool find_station_in_db(u_int8_t * p_stmac)
 
 static bool alloc_new_station_in_db(void)
 {
-	opt.st_cur = (struct WPA_ST_info *) malloc(sizeof(struct WPA_ST_info));
+	lopt.st_cur = (struct WPA_ST_info *) malloc(sizeof(struct WPA_ST_info));
 
-	if (NULL == opt.st_cur)
+	if (NULL == lopt.st_cur)
 	{
 		perror("station malloc failed");
 		return (FALSE);
 	}
 	// Zero out memory of newly allocated structure
-	memset(opt.st_cur, 0, sizeof(struct WPA_ST_info));
+	memset(lopt.st_cur, 0, sizeof(struct WPA_ST_info));
 	return (TRUE);
 }
 
@@ -1900,7 +1422,9 @@ static void process_station_data(u_int8_t * packet, int length)
 	struct ieee80211_frame * wfrm = (struct ieee80211_frame *) packet;
 
 	u_int8_t * p_stmac = packet_get_sta_80211(packet);
+	ALLEGE(p_stmac != NULL);
 	u_int8_t * p_bssid = packet_get_bssid_80211(packet);
+	ALLEGE(p_bssid != NULL);
 
 	if (!find_station_in_db(p_stmac))
 	{
@@ -1909,33 +1433,33 @@ static void process_station_data(u_int8_t * packet, int length)
 			return;
 		}
 
-		if (opt.st_1st == NULL)
-			opt.st_1st = opt.st_cur;
+		if (lopt.st_1st == NULL)
+			lopt.st_1st = lopt.st_cur;
 		else
-			opt.st_prv->next = opt.st_cur;
+			lopt.st_prv->next = lopt.st_cur;
 
-		memcpy(opt.st_cur->stmac, p_stmac, 6);
-		memcpy(opt.st_cur->bssid, p_bssid, 6);
+		memcpy(lopt.st_cur->stmac, p_stmac, 6);
+		memcpy(lopt.st_cur->bssid, p_bssid, 6);
 
-		if (TRUE == opt.flag_verbose)
+		if (TRUE == lopt.flag_verbose)
 		{
 			printf(COL_NEWSTA "Added new station\n" COL_NEWSTADATA);
 			printf("Station = ");
 			PRINTMAC(p_stmac);
 			printf("BSSID   = ");
-			PRINTMAC(opt.st_cur->bssid);
+			PRINTMAC(lopt.st_cur->bssid);
 			printf(COL_REST);
 			// Attempt to force a de-auth and reconnect automagically ;)
 		}
 
-		if ((is_wfrm_encrypted(wfrm)) && (TRUE == opt.deauth))
+		if ((is_wfrm_encrypted(wfrm)) && (TRUE == lopt.deauth))
 		{
 			// This frame was encrypted, so send some deauths to the station
 			// Hoping to reauth/reassoc to force 4 way handshake
-			if (FALSE == mac_is_multi_broadcast(opt.st_cur->stmac))
+			if (FALSE == mac_is_multi_broadcast(lopt.st_cur->stmac))
 			{
 				printf("Doing deauth\n");
-				deauth_station(opt.st_cur);
+				deauth_station(lopt.st_cur);
 				printf("\nFinished Deauth Attempt\n");
 			}
 		}
@@ -1974,20 +1498,20 @@ static bool is_wfrm_already_processed(u_int8_t * packet, int length)
 	// IF TODS
 	if (wfrm_is_tods(wfrm))
 	{
-		if (crc == opt.st_cur->t_crc)
+		if (crc == lopt.st_cur->t_crc)
 		{
 			return (TRUE);
 		}
-		opt.st_cur->t_crc = crc;
+		lopt.st_cur->t_crc = crc;
 	}
 	// IF FROMDS
 	else if (wfrm_is_fromds(wfrm))
 	{
-		if (crc == opt.st_cur->f_crc)
+		if (crc == lopt.st_cur->f_crc)
 		{
 			return (TRUE);
 		}
-		opt.st_cur->f_crc = crc;
+		lopt.st_cur->f_crc = crc;
 	}
 	// this frame hasn't been processed yet
 	return (FALSE);
@@ -2060,18 +1584,18 @@ static void process_wireless_data_packet(u_int8_t * packet, int length)
 			// Apparently this is a WPA packet
 			// Don't bother with this if we don't have a valid ptk for this
 			// station
-			if ((NULL == opt.st_cur) || (!opt.st_cur->valid_ptk))
+			if ((NULL == lopt.st_cur) || (!lopt.st_cur->valid_ptk))
 			{
 				return;
 			}
 			else
 			{
 				// if the PTK is valid, try to decrypt
-				if (opt.st_cur->keyver == 1)
+				if (lopt.st_cur->keyver == 1)
 				{
 					if (decrypt_tkip(packet_start,
 									 packet_start_length,
-									 opt.st_cur->ptk + 32)
+									 lopt.st_cur->ptk + 32)
 						== 0)
 					{
 						printf("TKIP decryption on this packet failed :( \n");
@@ -2082,7 +1606,7 @@ static void process_wireless_data_packet(u_int8_t * packet, int length)
 				{
 					if (decrypt_ccmp(packet_start,
 									 packet_start_length,
-									 opt.st_cur->ptk + 32)
+									 lopt.st_cur->ptk + 32)
 						== 0)
 					{
 						printf("CCMP decryption on this packet failed :( \n");
@@ -2201,7 +1725,17 @@ static int do_active_injection(void)
 		}
 	}
 
-	if (getnet(NULL, 0, 0) != 0) return (1);
+	if (getnet(_wi_in,
+			   NULL,
+			   0,
+			   0,
+			   opt.f_bssid,
+			   opt.r_bssid,
+			   (uint8_t *) opt.r_essid,
+			   opt.ignore_negative_one,
+			   0 /* nodetect */)
+		!= 0)
+		return (EXIT_FAILURE);
 
 	srand(time(NULL));
 	// Set our bitrate to the loudest/most likely to reach the station/AP...
@@ -2225,7 +1759,7 @@ static int do_active_injection(void)
 		if (!FD_ISSET(dev.fd_in, &rfds)) continue;
 
 		memset(h80211, 0, sizeof(h80211));
-		caplen = read_packet(h80211, sizeof(h80211), NULL);
+		caplen = read_packet(_wi_in, h80211, sizeof(h80211), NULL);
 
 		// Ignore small frames...
 		if (caplen <= 30) continue;
@@ -2244,7 +1778,8 @@ int main(int argc, char * argv[])
 	int option_index = 0;
 
 	memset(&dev, 0, sizeof(dev));
-	memset(&opt, 0, sizeof(struct options));
+	memset(&opt, 0, sizeof(struct communication_options));
+	memset(&lopt, 0, sizeof(struct local_options));
 
 	opt.f_type = -1;
 	opt.f_subtype = -1;
@@ -2255,7 +1790,7 @@ int main(int argc, char * argv[])
 	opt.f_iswep = -1;
 
 	opt.a_mode = -1;
-	opt.deauth = 0;
+	lopt.deauth = 0;
 	opt.delay = 15;
 	opt.r_smac_set = 0;
 	opt.npackets = 1;
@@ -2264,11 +1799,11 @@ int main(int argc, char * argv[])
 	opt.reassoc = 0;
 	opt.s_face = NULL;
 	opt.iface_out = NULL;
-	opt.p_hijack_str = NULL;
-	opt.flag_verbose = 0;
-	opt.flag_icmp_resp = 0;
-	opt.flag_http_hijack = 0;
-	opt.flag_dnsspoof = 0;
+	lopt.p_hijack_str = NULL;
+	lopt.flag_verbose = 0;
+	lopt.flag_icmp_resp = 0;
+	lopt.flag_http_hijack = 0;
+	lopt.flag_dnsspoof = 0;
 
 	char * p_redir_url = NULL;
 
@@ -2312,17 +1847,17 @@ int main(int argc, char * argv[])
 
 			case 'v':
 				printf("Verbose enabled\n");
-				opt.flag_verbose = 1;
+				lopt.flag_verbose = 1;
 				break;
 
 			case 'd':
 				printf("Deauthing enabled\n");
-				opt.deauth = 1;
+				lopt.deauth = 1;
 				break;
 
 			case 'c':
 				printf("Debugging by responding to ICMP enabled\n");
-				opt.flag_icmp_resp = 1;
+				lopt.flag_icmp_resp = 1;
 				break;
 
 			case 'r':
@@ -2332,7 +1867,7 @@ int main(int argc, char * argv[])
 
 			case 'n':
 				printf("DNS IP: %s\n", optarg);
-				int retval = inet_pton(AF_INET, optarg, &opt.p_dnsspoof_ip);
+				int retval = inet_pton(AF_INET, optarg, &lopt.p_dnsspoof_ip);
 				if (1 != retval)
 				{
 					printf("Error occurred converting IP, please specify a "
@@ -2341,17 +1876,17 @@ int main(int argc, char * argv[])
 					free(progname);
 					return (EXIT_FAILURE);
 				}
-				opt.flag_dnsspoof = 1;
+				lopt.flag_dnsspoof = 1;
 				break;
 
 			case 's':
 				printf("Hijack search term: %s\n", optarg);
-				opt.p_hijack_str = optarg;
-				opt.flag_http_hijack = 1;
+				lopt.p_hijack_str = optarg;
+				lopt.flag_http_hijack = 1;
 				break;
 
 			case 'e':
-				if (opt.essid[0])
+				if (lopt.essid[0])
 				{
 					printf("ESSID already specified.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
@@ -2359,8 +1894,8 @@ int main(int argc, char * argv[])
 					return (EXIT_FAILURE);
 				}
 
-				memset(opt.essid, 0, sizeof(opt.essid));
-				strncpy(opt.essid, optarg, sizeof(opt.essid) - 1);
+				memset(lopt.essid, 0, sizeof(lopt.essid));
+				strncpy(lopt.essid, optarg, sizeof(lopt.essid) - 1);
 				break;
 
 			case 'p':
@@ -2374,8 +1909,8 @@ int main(int argc, char * argv[])
 
 				opt.crypt = CRYPT_WPA;
 
-				memset(opt.passphrase, 0, sizeof(opt.passphrase));
-				strncpy(opt.passphrase, optarg, sizeof(opt.passphrase) - 1);
+				memset(lopt.passphrase, 0, sizeof(lopt.passphrase));
+				strncpy(lopt.passphrase, optarg, sizeof(lopt.passphrase) - 1);
 				break;
 
 			case 'h':
@@ -2392,11 +1927,11 @@ int main(int argc, char * argv[])
 
 	if (opt.crypt == CRYPT_WPA)
 	{
-		if (opt.passphrase[0] != '\0')
+		if (lopt.passphrase[0] != '\0')
 		{
 			/* compute the Pairwise Master Key */
 
-			if (opt.essid[0] == '\0')
+			if (lopt.essid[0] == '\0')
 			{
 				printf("You must also specify the ESSID (-e). This is the "
 					   "broadcast SSID name\n");
@@ -2404,16 +1939,16 @@ int main(int argc, char * argv[])
 				return (EXIT_FAILURE);
 			}
 
-			calc_pmk(opt.passphrase, opt.essid, opt.pmk);
+			calc_pmk(lopt.passphrase, lopt.essid, lopt.pmk);
 		}
 	}
 
-	if (1 == opt.flag_http_hijack)
+	if (1 == lopt.flag_http_hijack)
 	{
 
-		if (NULL != opt.p_hijack_str)
+		if (NULL != lopt.p_hijack_str)
 		{
-			printf("hijack string = %s\n", opt.p_hijack_str);
+			printf("hijack string = %s\n", lopt.p_hijack_str);
 		}
 		else
 		{
@@ -2422,7 +1957,7 @@ int main(int argc, char * argv[])
 
 		if (NULL != p_redir_url)
 		{
-			opt.p_redir_url = p_redir_url;
+			lopt.p_redir_url = p_redir_url;
 
 			printf("We have a redirect specified\n");
 			char * p_url = strstr(packet302_redirect, REDIRECT_PLACEHOLDER);
@@ -2432,16 +1967,16 @@ int main(int argc, char * argv[])
 							+ strlen(p_redir_url);
 
 			// Allocate memory if we're modifying this
-			opt.p_redir_pkt_str = malloc(total_len);
-			if (opt.p_redir_pkt_str != NULL)
+			lopt.p_redir_pkt_str = malloc(total_len);
+			if (lopt.p_redir_pkt_str != NULL)
 			{
-				char * p_curr = opt.p_redir_pkt_str;
+				char * p_curr = lopt.p_redir_pkt_str;
 				int len_first = p_url - packet302_redirect;
 				// Copy the first part of the packet up to the URL in the header
 				memcpy(p_curr, packet302_redirect, len_first);
 
 				// Next copy the specified redirection URL from user input
-				p_curr = opt.p_redir_pkt_str + len_first;
+				p_curr = lopt.p_redir_pkt_str + len_first;
 				memcpy(p_curr, p_redir_url, strlen(p_redir_url));
 
 				// Copy the remainder of the packet...
@@ -2463,7 +1998,7 @@ int main(int argc, char * argv[])
 				   "specified\n");
 			printf("\tUsing the default redirect specified\n");
 			// Using default redirect in the hardcoded header....
-			opt.p_redir_pkt_str = packet302_redirect;
+			lopt.p_redir_pkt_str = packet302_redirect;
 		}
 	}
 

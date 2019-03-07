@@ -57,8 +57,9 @@
 #include <limits.h>
 
 #include "defs.h"
+#include "communications.h"
 #include "aircrack-osdep/osdep.h"
-#include "pcap.h"
+#include "pcap_local.h"
 #include "aircrack-ptw-lib.h"
 #include "ieee80211.h"
 #include "ethernet.h"
@@ -90,6 +91,11 @@
 #define KEY_FILE "key.log"
 #define PRGA_FILE "prga.log"
 #define KEYLIMIT 1000000
+
+// unused, but needed for link
+struct communication_options opt;
+struct devices dev;
+extern struct wif *_wi_in, *_wi_out;
 
 struct frag_state
 {
@@ -346,28 +352,9 @@ static void hexdump(unsigned char * ptr, int len)
 	printf("\n");
 }
 
-static char * mac2str(unsigned char * mac)
-{
-	REQUIRE(mac != NULL);
-
-	static char ret[6 * 3];
-
-	snprintf(ret,
-			 (6 * 3),
-			 "%.2X:%.2X:%.2X:%.2X:%.2X:%.2X",
-			 mac[0],
-			 mac[1],
-			 mac[2],
-			 mac[3],
-			 mac[4],
-			 mac[5]);
-
-	return (ret);
-}
-
 static void inject(struct wif * wi, void * buf, int len)
 {
-	int rc = wi_write(wi, buf, len, NULL);
+	int rc = wi_write(wi, NULL, LINKTYPE_IEEE802_11, buf, len, NULL);
 
 	if (rc == -1)
 	{
@@ -405,7 +392,7 @@ static void send_frame(struct wstate * ws, unsigned char * buf, int len)
 
 		if (ws->ws_retries > 10)
 		{
-			time_print("ERROR Max retransmists for (%d bytes):\n", lastlen);
+			time_print("ERROR Max retransmits for (%d bytes):\n", lastlen);
 			hexdump(&lame[0], lastlen);
 		}
 		len = lastlen;
@@ -444,24 +431,6 @@ static void send_frame(struct wstate * ws, unsigned char * buf, int len)
 		perror("gettimeofday()");
 		exit(EXIT_FAILURE);
 	}
-}
-
-/* Expects host-endian arguments, but returns little-endian seq. */
-static unsigned short fnseq(unsigned short fn, unsigned short seq)
-{
-	unsigned short r = 0;
-
-	if (fn > 15)
-	{
-		time_print("too many fragments (%d)\n", fn);
-		exit(EXIT_FAILURE);
-	}
-
-	r = fn;
-
-	r |= ((seq % 4096) << IEEE80211_SEQ_SEQ_SHIFT);
-
-	return (htole16(r));
 }
 
 static void fill_basic(struct wstate * ws, struct ieee80211_frame * wh)
@@ -556,6 +525,8 @@ static void wepify(struct wstate * ws, unsigned char * body, int dlen)
 
 static void send_auth(struct wstate * ws)
 {
+	REQUIRE(ws != NULL);
+
 	unsigned char buf[128] __attribute__((aligned(8)));
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	unsigned short * n;
@@ -564,6 +535,7 @@ static void send_auth(struct wstate * ws)
 	fill_basic(ws, wh);
 	wh->i_fc[0] |= IEEE80211_FC0_TYPE_MGT | IEEE80211_FC0_SUBTYPE_AUTH;
 
+	/* transaction number */
 	n = (unsigned short *) ((unsigned char *) wh + sizeof(*wh)); //-V1032
 	n++;
 	*n = htole16(1);
@@ -669,10 +641,14 @@ get_victim_ssid(struct wstate * ws, struct ieee80211_frame * wh, int len)
 		memcpy(ws->ws_bss, wh->i_addr3, 6);
 		set_chan(ws, ws->ws_apchan);
 		ws->ws_state = FOUND_VICTIM;
+
+		char * mac = mac2string(ws->ws_bss);
+		ALLEGE(mac != NULL);
 		time_print("Found SSID(%s) BSS=(%s) chan=%d\n",
 				   ws->ws_ssid,
-				   mac2str(ws->ws_bss),
+				   mac,
 				   ws->ws_apchan);
+		free(mac);
 		return (1);
 	}
 
@@ -904,9 +880,10 @@ static void proc_data(struct wstate * ws, struct ieee80211_frame * wh, int len)
 
 	if (!(wh->i_fc[1] & IEEE80211_FC1_WEP))
 	{
-		time_print("WARNING: Got NON wep packet from %s dlen %d\n",
-				   mac2str(wh->i_addr2),
-				   dlen);
+		char * mac = mac2string(wh->i_addr2);
+		ALLEGE(mac != NULL);
+		time_print("WARNING: Got NON wep packet from %s dlen %d\n", mac, dlen);
+		free(mac);
 		return;
 	}
 
@@ -924,7 +901,11 @@ static void proc_data(struct wstate * ws, struct ieee80211_frame * wh, int len)
 		}
 
 		memcpy(ws->ws_rtrmac, wh->i_addr3, 6);
-		time_print("Got arp reply from (%s)\n", mac2str(ws->ws_rtrmac));
+
+		char * mac = mac2string(ws->ws_rtrmac);
+		ALLEGE(mac != NULL);
+		time_print("Got arp reply from (%s)\n", mac);
+		free(mac);
 	}
 }
 
@@ -1017,7 +998,11 @@ decrypt_arpreq(struct wstate * ws, struct ieee80211_frame * wh, int rd)
 	}
 
 	ws->ws_dpi.pi_len = i;
-	time_print("Got ARP request from (%s)\n", mac2str(wh->i_addr3));
+
+	char * mac = mac2string(wh->i_addr3);
+	ALLEGE(mac != NULL);
+	time_print("Got ARP request from (%s)\n", mac);
+	free(mac);
 }
 
 static void log_wep(struct wstate * ws, struct ieee80211_frame * wh, int len)
@@ -1262,7 +1247,11 @@ stuff_for_net(struct wstate * ws, struct ieee80211_frame * wh, int rd)
 			if (mac[0] == 0xff || mac[0] == 0x1) return;
 
 			memcpy(ws->ws_mymac, mac, 6);
-			time_print("Trying to use MAC=(%s)\n", mac2str(ws->ws_mymac));
+
+			char * mac_p = mac2string(ws->ws_mymac);
+			ALLEGE(mac_p != NULL);
+			time_print("Trying to use MAC=(%s)\n", mac_p);
+			free(mac_p);
 			ws->ws_state = FOUND_VICTIM;
 			return;
 		}
@@ -1810,39 +1799,6 @@ static void try_crack(struct wstate * ws)
 	ws->ws_wep_thresh += ws->ws_thresh_incr;
 }
 
-static inline int elapsedd(struct timeval * past, struct timeval * now)
-{
-	REQUIRE(past != NULL);
-	REQUIRE(now != NULL);
-
-	int el;
-	const int inf = 666 * 1000 * 1000;
-
-	el = now->tv_sec - past->tv_sec;
-
-	if (el == 0)
-	{
-		el = now->tv_usec - past->tv_usec;
-	}
-	else
-	{
-		el = (el - 1) * 1000 * 1000;
-		el += 1000 * 1000 - past->tv_usec;
-		el += now->tv_usec;
-	}
-
-	if (el < 0) return (inf);
-
-	return (el);
-}
-
-static inline int read_packet(struct wstate * ws, unsigned char * dst, int len)
-{
-	REQUIRE(ws != NULL);
-
-	return wi_read(ws->ws_wi, dst, len, NULL);
-}
-
 static void open_wepfile(struct wstate * ws)
 {
 	REQUIRE(ws != NULL);
@@ -1908,7 +1864,7 @@ static void check_relay_timeout(struct wstate * ws, struct timeval * now)
 
 	if (!ws->ws_fs.fs_waiting_relay) return;
 
-	int el = elapsedd(&ws->ws_fs.fs_last, now);
+	int el = elapsed_time_diff(&ws->ws_fs.fs_last, now);
 
 	if (el > (1500 * 1000))
 	{
@@ -1923,7 +1879,7 @@ static void check_arp_timeout(struct wstate * ws, struct timeval * now)
 
 	if (ws->ws_rtrmac != (unsigned char *) 1) return;
 
-	int el = elapsedd(&ws->ws_arpsend, now);
+	int el = elapsed_time_diff(&ws->ws_arpsend, now);
 	if (el >= (1500 * 1000))
 	{
 		ws->ws_rtrmac = 0;
@@ -1937,7 +1893,7 @@ static void display_status_bar(struct wstate * ws,
 {
 	int el;
 
-	el = elapsedd(last_status, now);
+	el = elapsed_time_diff(last_status, now);
 	if (el < 100 * 1000) return;
 
 	if (ws->ws_crack_pid) check_key(ws);
@@ -1986,7 +1942,7 @@ static void check_tx(struct wstate * ws, struct timeval * now)
 
 	if (!ws->ws_waiting_ack) return;
 
-	int elapsed = elapsedd(&ws->ws_tsent, now);
+	int elapsed = elapsed_time_diff(&ws->ws_tsent, now);
 	if (elapsed >= (int) ws->ws_ack_timeout) send_frame(ws, NULL, -1);
 }
 
@@ -1997,8 +1953,7 @@ static void check_hop(struct wstate * ws, struct timeval * now)
 	int elapsed;
 	int chan = ws->ws_chan;
 
-	elapsed = elapsedd(&ws->ws_lasthop, now);
-
+	elapsed = elapsed_time_diff(&ws->ws_lasthop, now);
 	if (elapsed < 300 * 1000) return;
 
 	chan++;
@@ -2024,7 +1979,7 @@ static void post_input(struct wstate * ws, struct timeval * now)
 	// check if we need to write something...
 	if (!ws->ws_waiting_ack) can_write(ws);
 
-	el = elapsedd(&ws->ws_last_wcount, now);
+	el = elapsed_time_diff(&ws->ws_last_wcount, now);
 
 	/* calculate rate, roughtly */
 	if (el < 1 * 1000 * 1000) return;
@@ -2044,7 +1999,7 @@ static void do_input(struct wstate * ws)
 	unsigned char buf[4096];
 	int rd;
 
-	rd = read_packet(ws, buf, sizeof(buf));
+	rd = wi_read(ws->ws_wi, NULL, NULL, buf, sizeof(buf), NULL);
 	if (rd == 0) return;
 	if (rd == -1)
 	{
@@ -2182,7 +2137,11 @@ static void start(struct wstate * ws, char * dev)
 	{
 		if (wi_set_mac(wi, ws->ws_mymac) == -1) printf("Can't set mac\n");
 	}
-	time_print("Using mac %s\n", mac2str(ws->ws_mymac));
+
+	char * mac = mac2string(ws->ws_mymac);
+	ALLEGE(mac != NULL);
+	time_print("Using mac %s\n", mac);
+	free(mac);
 
 	ws->ws_ptw = PTW_newattackstate();
 	if (!ws->ws_ptw) err(1, "PTW_newattackstate()");
@@ -2221,32 +2180,6 @@ static void usage(char * pname)
 		   version_info);
 	free(version_info);
 	exit(EXIT_SUCCESS);
-}
-
-static inline void str2mac(unsigned char * dst, char * mac)
-{
-	REQUIRE(dst != NULL);
-	REQUIRE(mac != NULL);
-
-	unsigned int macf[6];
-	int i;
-
-	if (sscanf(mac,
-			   "%x:%x:%x:%x:%x:%x",
-			   &macf[0],
-			   &macf[1],
-			   &macf[2],
-			   &macf[3],
-			   &macf[4],
-			   &macf[5])
-		!= 6)
-	{
-
-		printf("can't parse mac %s\n", mac);
-		exit(EXIT_FAILURE);
-	}
-
-	for (i = 0; i < 6; i++) *dst++ = (unsigned char) macf[i];
 }
 
 static void init_defaults(struct wstate * ws)

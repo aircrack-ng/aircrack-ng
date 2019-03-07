@@ -41,12 +41,14 @@
 #include "defs.h"
 #include "version.h"
 #include "crypto.h"
-#include "pcap.h"
+#include "pcap_local.h"
+#include "aircrack-osdep/byteorder.h"
+#include "aircrack-osdep/packed.h"
+#include "include/ieee80211.h"
 #include "uniqueiv.h"
 #include "aircrack-osdep/byteorder.h"
 #include "aircrack-util/common.h"
 #include "eapol.h"
-
 #include "aircrack-util/console.h"
 
 #define FAILURE -1
@@ -54,35 +56,7 @@
 #define WPA 2
 #define ESSID 3
 
-/* linked list of detected access points */
-
-struct AP_info
-{
-	struct AP_info * prev; /* prev. AP in list         */
-	struct AP_info * next; /* next  AP in list         */
-
-	int ssid_length; /* length of ssid           */
-
-	unsigned char bssid[6]; /* the access point's MAC   */
-	unsigned char essid[256]; /* ascii network identifier */
-
-	unsigned char ** uiv_root; /* unique iv root structure */
-	/* if wep-encrypted network */
-
-	int wpa_stored; /* wpa stored in ivs file?   */
-	int essid_stored; /* essid stored in ivs file? */
-};
-
-/* linked list of detected clients */
-
-struct ST_info
-{
-	struct ST_info * prev; /* the prev client in list   */
-	struct ST_info * next; /* the next client in list   */
-	struct AP_info * base; /* AP this client belongs to */
-	unsigned char stmac[6]; /* the client's MAC address  */
-	struct WPA_hdsk wpa; /* WPA handshake data        */
-};
+#include "station.h"
 
 /* bunch of global stuff */
 
@@ -225,11 +199,15 @@ static int merge(int argc, char * argv[])
 	return (EXIT_SUCCESS);
 }
 
+// NOTE(jbenden): This is also in airodump-ng.c
 static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 {
 	REQUIRE(h80211 != NULL);
 
-	int i, n, seq, dlen, clen;
+	int seq, clen;
+	size_t dlen;
+	size_t i;
+	size_t n;
 	unsigned z;
 	struct ivs2_pkthdr ivs2;
 	unsigned char * p;
@@ -246,31 +224,32 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 
 	/* skip packets smaller than a 802.11 header */
 
-	if (caplen < 24) return (FAILURE);
+	if (caplen < sizeof(struct ieee80211_frame)) return (FAILURE);
 
 	/* skip (uninteresting) control frames */
 
-	if ((h80211[0] & 0x0C) == 0x04) return (FAILURE);
+	if ((h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_CTL)
+		return (FAILURE);
 
 	/* grab the sequence number */
 	seq = ((h80211[22] >> 4) + (h80211[23] << 4));
 
 	/* locate the access point's MAC address */
 
-	switch (h80211[1] & 3)
+	switch (h80211[1] & IEEE80211_FC1_DIR_MASK)
 	{
-		case 0:
-			memcpy(bssid, h80211 + 16, 6);
-			break;
-		case 1:
+		case IEEE80211_FC1_DIR_NODS:
+			memcpy(bssid, h80211 + 16, 6); //-V525
+			break; // Adhoc
+		case IEEE80211_FC1_DIR_TODS:
 			memcpy(bssid, h80211 + 4, 6);
-			break;
-		case 2:
+			break; // ToDS
+		case IEEE80211_FC1_DIR_FROMDS:
 			memcpy(bssid, h80211 + 10, 6);
-			break;
-		default:
+			break; // FromDS
+		case IEEE80211_FC1_DIR_DSTODS:
 			memcpy(bssid, h80211 + 10, 6);
-			break;
+			break; // WDS -> Transmitter taken as BSSID
 	}
 
 	/* update our chained list of access points */
@@ -316,6 +295,7 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 		ap_cur->essid_stored = 0;
 	}
 
+#if 0
 	/* find wpa handshake */
 	if (h80211[0] == 0x10)
 	{
@@ -323,12 +303,13 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 
 		if (st_cur != NULL && st_cur->wpa.state != 0xFF) st_cur->wpa.state = 0;
 	}
+#endif
 
 	/* locate the station MAC in the 802.11 header */
 
-	switch (h80211[1] & 3)
+	switch (h80211[1] & IEEE80211_FC1_DIR_MASK)
 	{
-		case 0:
+		case IEEE80211_FC1_DIR_NODS:
 
 			/* if management, check that SA != BSSID */
 
@@ -337,14 +318,14 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 			memcpy(stmac, h80211 + 10, 6);
 			break;
 
-		case 1:
+		case IEEE80211_FC1_DIR_TODS:
 
 			/* ToDS packet, must come from a client */
 
 			memcpy(stmac, h80211 + 10, 6);
 			break;
 
-		case 2:
+		case IEEE80211_FC1_DIR_FROMDS:
 
 			/* FromDS packet, reject broadcast MACs */
 
@@ -352,7 +333,7 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 			memcpy(stmac, h80211 + 4, 6);
 			break;
 
-		default:
+		case IEEE80211_FC1_DIR_DSTODS:
 			goto skip_station;
 	}
 
@@ -400,7 +381,8 @@ skip_station:
 
 	/* packet parsing: Beacon or Probe Response */
 
-	if (h80211[0] == 0x80 || h80211[0] == 0x50)
+	if (h80211[0] == IEEE80211_FC0_SUBTYPE_BEACON
+		|| h80211[0] == IEEE80211_FC0_SUBTYPE_PROBE_RESP)
 	{
 		p = h80211 + 36;
 
@@ -417,7 +399,7 @@ skip_station:
 
 				n = p[1];
 
-				memset(ap_cur->essid, 0, 256);
+				memset(ap_cur->essid, 0, ESSID_LENGTH + 1);
 				memcpy(ap_cur->essid, p + 2, n);
 
 				if (G.f_ivs != NULL && !ap_cur->essid_stored)
@@ -475,7 +457,7 @@ skip_station:
 
 	/* packet parsing: Association Request */
 
-	if (h80211[0] == 0x00 && caplen > 28)
+	if (h80211[0] == IEEE80211_FC0_SUBTYPE_ASSOC_REQ && caplen > 28)
 	{
 		p = h80211 + 28;
 
@@ -548,18 +530,18 @@ skip_station:
 
 	/* packet parsing: some data */
 
-	if ((h80211[0] & 0x0C) == 0x08)
+	if ((h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_DATA)
 	{
 		/* check the SNAP header to see if data is encrypted */
 
-		z = ((h80211[1] & 3) != 3) ? 24 : 30;
+		z = ((h80211[1] & IEEE80211_FC1_DIR_MASK) != IEEE80211_FC1_DIR_DSTODS)
+				? 24
+				: 30;
 
 		if (z + 26 > caplen) return (FAILURE);
 
-		if (z + 10 > caplen) return (FAILURE);
-
 		// check if WEP bit set and extended iv
-		if ((h80211[1] & 0x40) != 0 && (h80211[z + 3] & 0x20) == 0)
+		if ((h80211[1] & IEEE80211_FC1_WEP) != 0 && (h80211[z + 3] & 0x20) == 0)
 		{
 			/* WEP: check if we've already seen this IV */
 
@@ -582,9 +564,10 @@ skip_station:
 						ivs2.flags |= IVS2_XOR;
 						ivs2.len += clen + 4;
 						/* reveal keystream (plain^encrypted) */
-						for (n = 0; n < (ivs2.len - 4); n++)
+						for (n = 0; n < (size_t)(ivs2.len - 4); n++)
 						{
-							clear[n] = (clear[n] ^ h80211[z + 4 + n]) & 0xFF;
+							clear[n] = (uint8_t)((clear[n] ^ h80211[z + 4 + n])
+												 & 0xFF);
 						}
 						// clear is now the keystream
 					}
@@ -597,16 +580,16 @@ skip_station:
 						// len = 4(iv+idx) + 1(num of keystreams) + 1(len per
 						// keystream) + 32*num_xor + 16*sizeof(int)(weight[16])
 						ivs2.len += 4 + 1 + 1 + 32 * num_xor + 16 * sizeof(int);
-						clear[0] = num_xor;
-						clear[1] = clen;
+						clear[0] = (uint8_t) num_xor;
+						clear[1] = (uint8_t) clen;
 						/* reveal keystream (plain^encrypted) */
 						for (o = 0; o < num_xor; o++)
 						{
-							for (n = 0; n < (ivs2.len - 4); n++)
+							for (n = 0; n < (size_t)(ivs2.len - 4); n++)
 							{
-								clear[2 + n + o * 32] = (clear[2 + n + o * 32]
-														 ^ h80211[z + 4 + n])
-														& 0xFF;
+								clear[2 + n + o * 32] = (uint8_t)(
+									(clear[2 + n + o * 32] ^ h80211[z + 4 + n])
+									& 0xFF);
 							}
 						}
 						memcpy(clear + 4 + 1 + 1 + 32 * num_xor,
@@ -659,7 +642,9 @@ skip_station:
 			}
 		}
 
-		z = ((h80211[1] & 3) != 3) ? 24 : 30;
+		z = ((h80211[1] & IEEE80211_FC1_DIR_MASK) != IEEE80211_FC1_DIR_DSTODS)
+				? 24
+				: 30;
 
 		if (z + 26 > caplen) return (FAILURE);
 
@@ -705,10 +690,10 @@ skip_station:
 				&& (h80211[z + 5] & 0x01) != 0)
 			{
 				st_cur->wpa.eapol_size
-					= (h80211[z + 2] << 8) + h80211[z + 3] + 4;
+					= (h80211[z + 2] << 8) + h80211[z + 3] + 4u;
 
-				if (st_cur->wpa.eapol_size > sizeof(st_cur->wpa.eapol_size)
-					|| caplen - z < st_cur->wpa.eapol_size)
+				if (st_cur->wpa.eapol_size == 0 //-V560
+					|| st_cur->wpa.eapol_size >= sizeof(st_cur->wpa.eapol) - 16)
 				{
 					// ignore packet trying to crash us
 					st_cur->wpa.eapol_size = 0;
@@ -725,7 +710,7 @@ skip_station:
 				memcpy(st_cur->wpa.eapol, &h80211[z], st_cur->wpa.eapol_size);
 				memset(st_cur->wpa.eapol + 81, 0, 16);
 				st_cur->wpa.state |= 8;
-				st_cur->wpa.keyver = h80211[z + 6] & 7;
+				st_cur->wpa.keyver = (uint8_t)(h80211[z + 6] & 7);
 
 				if (st_cur->wpa.state == 15)
 				{
@@ -735,8 +720,6 @@ skip_station:
 					{
 						memset(&ivs2, '\x00', sizeof(struct ivs2_pkthdr));
 						ivs2.flags = 0;
-						ivs2.len = 0;
-
 						ivs2.len = sizeof(struct WPA_hdsk);
 						ivs2.flags |= IVS2_WPA;
 
@@ -810,7 +793,7 @@ int main(int argc, char * argv[])
 	{
 		return (merge(argc, argv));
 	}
-	if (strcmp(argv[1], "--convert"))
+	if (strcmp(argv[1], "--convert") != 0)
 	{
 		usage(EXIT_FAILURE);
 		return (EXIT_FAILURE);
@@ -829,8 +812,8 @@ int main(int argc, char * argv[])
 		return (EXIT_FAILURE);
 	}
 
-	memset(bssid_cur, 0, 6);
-	memset(bssid_prv, 0, 6);
+	memset(bssid_cur, 0, sizeof(bssid_cur)); //-V597
+	memset(bssid_prv, 0, sizeof(bssid_prv)); //-V597
 
 	/* check the input pcap file */
 
@@ -972,7 +955,7 @@ int main(int argc, char * argv[])
 			if (n == 24 && le16_to_cpu(*(unsigned short *) (h80211 + 8)) == 2)
 				n = 32;
 
-			if (n <= 0 || n >= (int) pkh.caplen) continue;
+			if (n >= (int) pkh.caplen) continue;
 
 			h80211 += n;
 			pkh.caplen -= n;
