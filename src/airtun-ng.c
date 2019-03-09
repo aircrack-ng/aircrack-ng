@@ -378,9 +378,9 @@ static int packet_xmit(unsigned char * packet, int length)
 
 	if (opt.crypt == CRYPT_WEP)
 	{
-		K[0] = rand() & 0xFF;
-		K[1] = rand() & 0xFF;
-		K[2] = rand() & 0xFF;
+		K[0] = rand_u8();
+		K[1] = rand_u8();
+		K[2] = rand_u8();
 		K[3] = 0x00;
 
 		/* write crc32 value behind data */
@@ -903,7 +903,7 @@ int main(int argc, char * argv[])
 	opt.r_nbpps = 100;
 	lopt.tods = 0;
 
-	srand(time(NULL));
+	rand_init();
 
 	while (1)
 	{

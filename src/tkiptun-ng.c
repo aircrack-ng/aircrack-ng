@@ -1321,7 +1321,7 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 	struct pcap_file_header pfh_out;
 	struct pcap_pkthdr pkh;
 
-	srand(time(NULL));
+	rand_init();
 
 	memcpy(h80211, src_packet, src_packet_len);
 	caplen = src_packet_len;
@@ -1902,17 +1902,17 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 
 		if (is_deauth_mode)
 		{
-			opt.r_smac[1] = rand() & 0x3E;
-			opt.r_smac[2] = rand() & 0xFF;
-			opt.r_smac[3] = rand() & 0xFF;
-			opt.r_smac[4] = rand() & 0xFF;
+			opt.r_smac[1] = rand_u8() & 0x3E;
+			opt.r_smac[2] = rand_u8();
+			opt.r_smac[3] = rand_u8();
+			opt.r_smac[4] = rand_u8();
 		}
 		else
 		{
-			opt.r_dmac[1] = rand() & 0xFE;
-			opt.r_dmac[2] = rand() & 0xFF;
-			opt.r_dmac[3] = rand() & 0xFF;
-			opt.r_dmac[4] = rand() & 0xFF;
+			opt.r_dmac[1] = rand_u8() & 0xFE;
+			opt.r_dmac[2] = rand_u8();
+			opt.r_dmac[3] = rand_u8();
+			opt.r_dmac[4] = rand_u8();
 		}
 
 		ticks[3] = 0;
@@ -2885,8 +2885,7 @@ int main(int argc, char * argv[])
 		memcpy(lopt.wpa_sta.snonce, lopt.wpa.snonce, 32);
 		memcpy(lopt.wpa_sta.anonce, lopt.wpa.anonce, 32);
 		memset(lopt.wpa_sta.keymic, 0, sizeof(lopt.wpa_sta.keymic));
-		memcpy(
-			lopt.wpa_sta.keymic, lopt.wpa.keymic, sizeof(lopt.wpa.keymic));
+		memcpy(lopt.wpa_sta.keymic, lopt.wpa.keymic, sizeof(lopt.wpa.keymic));
 		memcpy(lopt.wpa_sta.eapol, lopt.wpa.eapol, 256);
 		lopt.wpa_sta.eapol_size = lopt.wpa.eapol_size;
 		lopt.wpa_sta.keyver = lopt.wpa.keyver;

@@ -4922,21 +4922,11 @@ static int send_probe_request(struct wif * wi)
 	len += 16;
 
 	r_smac[0] = 0x00;
-	r_smac[1] = (uint8_t)(
-		rand() // NOLINT(cert-msc30-c,cert-msc50-cpp,hicpp-signed-bitwise)
-		& 0xFF);
-	r_smac[2] = (uint8_t)(
-		rand() // NOLINT(cert-msc30-c,cert-msc50-cpp,hicpp-signed-bitwise)
-		& 0xFF);
-	r_smac[3] = (uint8_t)(
-		rand() // NOLINT(cert-msc30-c,cert-msc50-cpp,hicpp-signed-bitwise)
-		& 0xFF);
-	r_smac[4] = (uint8_t)(
-		rand() // NOLINT(cert-msc30-c,cert-msc50-cpp,hicpp-signed-bitwise)
-		& 0xFF);
-	r_smac[5] = (uint8_t)(
-		rand() // NOLINT(cert-msc30-c,cert-msc50-cpp,hicpp-signed-bitwise)
-		& 0xFF);
+	r_smac[1] = rand_u8();
+	r_smac[2] = rand_u8();
+	r_smac[3] = rand_u8();
+	r_smac[4] = rand_u8();
+	r_smac[5] = rand_u8();
 
 	memcpy(p + 10, r_smac, 6);
 
@@ -5867,7 +5857,7 @@ int main(int argc, char * argv[])
 
 	/* initialize a bunch of variables */
 
-	srand(time(NULL)); // NOLINT(cert-msc32-c,cert-msc51-cpp)
+	rand_init();
 	memset(&opt, 0, sizeof(opt));
 	memset(&lopt, 0, sizeof(lopt));
 

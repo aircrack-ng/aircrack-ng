@@ -340,7 +340,7 @@ static void send_fragments(unsigned char * packet,
 	int header_size = 24;
 
 	data_size = packet_len - header_size;
-	packet[23] = (rand() % 0xFF);
+	packet[23] = rand_u8();
 
 	for (t = 0; t < INT_MAX; t += fragsize)
 	{
@@ -2514,10 +2514,10 @@ static int do_attack_caffe_latte(void)
 				//                 flip[53-24-4] ^= ((rand() % 255)+1); //flip
 				//                 random bits in last byte of sender IP
 				flip[z + 21]
-					^= ((rand() % 255)
+					^= (rand_u8()
 						+ 1); // flip random bits in last byte of sender MAC
 				flip[z + 25]
-					^= ((rand() % 255)
+					^= (rand_u8()
 						+ 1); // flip random bits in last byte of sender IP
 
 				add_crc32_plain(flip, caplen - z - 4 - 4);
@@ -2992,7 +2992,7 @@ static int do_attack_migmode(void)
 				flip[19] ^= (opt.r_smac[3] ^ senderMAC[3]);
 				flip[20] ^= (opt.r_smac[4] ^ senderMAC[4]);
 				flip[21] ^= (opt.r_smac[5] ^ senderMAC[5]);
-				flip[25] ^= ((rand() % 255)
+				flip[25] ^= (rand_u8()
 							 + 1); // flip random bits in last byte of sender IP
 
 				add_crc32_plain(flip, caplen - z - 4 - 4);
@@ -3386,7 +3386,7 @@ static int do_attack_chopchop(void)
 		!= 0)
 		return (EXIT_FAILURE);
 
-	srand(time(NULL));
+	rand_init();
 
 	if (capture_ask_packet(&caplen, 0) != 0) return (1);
 
@@ -3531,10 +3531,10 @@ static int do_attack_chopchop(void)
 		is_deauth_mode = 1;
 
 		opt.r_smac[0] = 0x00;
-		opt.r_smac[1] = rand() & 0x3E;
-		opt.r_smac[2] = rand() & 0xFF;
-		opt.r_smac[3] = rand() & 0xFF;
-		opt.r_smac[4] = rand() & 0xFF;
+		opt.r_smac[1] = rand_u8() & 0x3E;
+		opt.r_smac[2] = rand_u8();
+		opt.r_smac[3] = rand_u8();
+		opt.r_smac[4] = rand_u8();
 
 		memcpy(opt.r_dmac, "\xFF\xFF\xFF\xFF\xFF\xFF", 6);
 	}
@@ -3543,10 +3543,10 @@ static int do_attack_chopchop(void)
 		is_deauth_mode = 0;
 
 		opt.r_dmac[0] = 0xFF;
-		opt.r_dmac[1] = rand() & 0xFE;
-		opt.r_dmac[2] = rand() & 0xFF;
-		opt.r_dmac[3] = rand() & 0xFF;
-		opt.r_dmac[4] = rand() & 0xFF;
+		opt.r_dmac[1] = rand_u8() & 0xFE;
+		opt.r_dmac[2] = rand_u8();
+		opt.r_dmac[3] = rand_u8();
+		opt.r_dmac[4] = rand_u8();
 	}
 
 	/* let's go chopping */
@@ -3903,17 +3903,17 @@ static int do_attack_chopchop(void)
 
 		if (is_deauth_mode)
 		{
-			opt.r_smac[1] = rand() & 0x3E;
-			opt.r_smac[2] = rand() & 0xFF;
-			opt.r_smac[3] = rand() & 0xFF;
-			opt.r_smac[4] = rand() & 0xFF;
+			opt.r_smac[1] = rand_u8() & 0x3E;
+			opt.r_smac[2] = rand_u8();
+			opt.r_smac[3] = rand_u8();
+			opt.r_smac[4] = rand_u8();
 		}
 		else
 		{
-			opt.r_dmac[1] = rand() & 0xFE;
-			opt.r_dmac[2] = rand() & 0xFF;
-			opt.r_dmac[3] = rand() & 0xFF;
-			opt.r_dmac[4] = rand() & 0xFF;
+			opt.r_dmac[1] = rand_u8() & 0xFE;
+			opt.r_dmac[2] = rand_u8();
+			opt.r_dmac[3] = rand_u8();
+			opt.r_dmac[4] = rand_u8();
 		}
 
 		ticks[3] = 0;
@@ -5188,7 +5188,7 @@ static int do_attack_test(void)
 		!= 0)
 		return (EXIT_FAILURE);
 
-	srand(time(NULL));
+	rand_init();
 
 	memset(ap, '\0', sizeof(ap));
 
@@ -5231,11 +5231,11 @@ static int do_attack_test(void)
 			random source so we can identify our packets
 		*/
 		opt.r_smac[0] = 0x00;
-		opt.r_smac[1] = rand() & 0xFF;
-		opt.r_smac[2] = rand() & 0xFF;
-		opt.r_smac[3] = rand() & 0xFF;
-		opt.r_smac[4] = rand() & 0xFF;
-		opt.r_smac[5] = rand() & 0xFF;
+		opt.r_smac[1] = rand_u8();
+		opt.r_smac[2] = rand_u8();
+		opt.r_smac[3] = rand_u8();
+		opt.r_smac[4] = rand_u8();
+		opt.r_smac[5] = rand_u8();
 
 		memcpy(h80211 + 10, opt.r_smac, 6);
 
@@ -5350,11 +5350,11 @@ static int do_attack_test(void)
 				random source so we can identify our packets
 			*/
 			opt.r_smac[0] = 0x00;
-			opt.r_smac[1] = rand() & 0xFF;
-			opt.r_smac[2] = rand() & 0xFF;
-			opt.r_smac[3] = rand() & 0xFF;
-			opt.r_smac[4] = rand() & 0xFF;
-			opt.r_smac[5] = rand() & 0xFF;
+			opt.r_smac[1] = rand_u8();
+			opt.r_smac[2] = rand_u8();
+			opt.r_smac[3] = rand_u8();
+			opt.r_smac[4] = rand_u8();
+			opt.r_smac[5] = rand_u8();
 
 			// build/send probe request
 			memcpy(h80211 + 10, opt.r_smac, 6);
@@ -5619,11 +5619,11 @@ static int do_attack_test(void)
 						random source so we can identify our packets
 					*/
 					opt.r_smac[0] = 0x00;
-					opt.r_smac[1] = rand() & 0xFF;
-					opt.r_smac[2] = rand() & 0xFF;
-					opt.r_smac[3] = rand() & 0xFF;
-					opt.r_smac[4] = rand() & 0xFF;
-					opt.r_smac[5] = rand() & 0xFF;
+					opt.r_smac[1] = rand_u8();
+					opt.r_smac[2] = rand_u8();
+					opt.r_smac[3] = rand_u8();
+					opt.r_smac[4] = rand_u8();
+					opt.r_smac[5] = rand_u8();
 
 					memcpy(h80211 + 10, opt.r_smac, 6);
 
@@ -5722,25 +5722,25 @@ static int do_attack_test(void)
 			k = 0;
 			/* random macs */
 			opt.f_smac[0] = 0x00;
-			opt.f_smac[1] = rand() & 0xFF;
-			opt.f_smac[2] = rand() & 0xFF;
-			opt.f_smac[3] = rand() & 0xFF;
-			opt.f_smac[4] = rand() & 0xFF;
-			opt.f_smac[5] = rand() & 0xFF;
+			opt.f_smac[1] = rand_u8();
+			opt.f_smac[2] = rand_u8();
+			opt.f_smac[3] = rand_u8();
+			opt.f_smac[4] = rand_u8();
+			opt.f_smac[5] = rand_u8();
 
 			opt.f_dmac[0] = 0x00;
-			opt.f_dmac[1] = rand() & 0xFF;
-			opt.f_dmac[2] = rand() & 0xFF;
-			opt.f_dmac[3] = rand() & 0xFF;
-			opt.f_dmac[4] = rand() & 0xFF;
-			opt.f_dmac[5] = rand() & 0xFF;
+			opt.f_dmac[1] = rand_u8();
+			opt.f_dmac[2] = rand_u8();
+			opt.f_dmac[3] = rand_u8();
+			opt.f_dmac[4] = rand_u8();
+			opt.f_dmac[5] = rand_u8();
 
 			opt.f_bssid[0] = 0x00;
-			opt.f_bssid[1] = rand() & 0xFF;
-			opt.f_bssid[2] = rand() & 0xFF;
-			opt.f_bssid[3] = rand() & 0xFF;
-			opt.f_bssid[4] = rand() & 0xFF;
-			opt.f_bssid[5] = rand() & 0xFF;
+			opt.f_bssid[1] = rand_u8();
+			opt.f_bssid[2] = rand_u8();
+			opt.f_bssid[3] = rand_u8();
+			opt.f_bssid[4] = rand_u8();
+			opt.f_bssid[5] = rand_u8();
 
 			if (i == 0) // attack -0
 			{
@@ -5780,7 +5780,7 @@ static int do_attack_test(void)
 				h80211[27] = 0x00;
 
 				// random bytes (as encrypted data)
-				for (j = 0; j < 132; j++) h80211[28 + j] = rand() & 0xFF;
+				for (j = 0; j < 132; j++) h80211[28 + j] = rand_u8();
 
 				opt.f_iswep = 1;
 				opt.f_tods = 0;
@@ -5801,7 +5801,7 @@ static int do_attack_test(void)
 				h80211[27] = 0x00;
 
 				// random bytes (as encrypted data)
-				for (j = 0; j < 132; j++) h80211[28 + j] = rand() & 0xFF;
+				for (j = 0; j < 132; j++) h80211[28 + j] = rand_u8();
 
 				opt.f_iswep = -1;
 				opt.f_tods = 1;
@@ -5826,7 +5826,7 @@ static int do_attack_test(void)
 				h80211[27] = 0x00;
 
 				// random bytes (as encrypted data)
-				for (j = 0; j < 7; j++) h80211[28 + j] = rand() & 0xFF;
+				for (j = 0; j < 7; j++) h80211[28 + j] = rand_u8();
 
 				opt.f_iswep = -1;
 				opt.f_tods = 1;

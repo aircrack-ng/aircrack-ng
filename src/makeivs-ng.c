@@ -385,7 +385,7 @@ int main(int argc, char * argv[])
 
 	if (nofms) maxivs -= 256 * weplen;
 
-	srand(seed);
+	rand_init_with(seed);
 
 	if (paramUsed == 0)
 	{
@@ -510,16 +510,16 @@ int main(int argc, char * argv[])
 	for (n = 0; n < count; n++)
 	{
 		if ((dupe <= FLT_EPSILON) || (pre_n == n)
-			|| ((float) rand() / (float) RAND_MAX > (dupe /
+			|| (rand_f32() > (dupe /
 #if defined(__x86_64__) && defined(__CYGWIN__)
-													 (0.0f + 100.0f))))
+							  (0.0f + 100.0f))))
 #else
-													 100.0f)))
+							  100.0f)))
 #endif
 		{
 			if (prng)
 			{
-				iv = rand() & 0xFFFFFF;
+				iv = rand_u32() & 0xFFFFFF;
 			}
 			else
 			{
@@ -564,12 +564,11 @@ int main(int argc, char * argv[])
 			SWAP(S[i], S[j]);
 		}
 
-		if (errorrate > 0 && ((float) ((float) rand() / (float) RAND_MAX)
-							  <= (float) (errorrate /
+		if (errorrate > 0 && (rand_f32() <= (float) (errorrate /
 #if defined(__x86_64__) && defined(__CYGWIN__)
-										  (0.0f + 100))))
+													 (0.0f + 100))))
 #else
-										  100.0f)))
+													 100.0f)))
 #endif
 		{
 			SWAP(S[1], S[11]);

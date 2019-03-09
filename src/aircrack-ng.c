@@ -5776,7 +5776,7 @@ int main(int argc, char * argv[])
 
 	memset(&opt, 0, sizeof(opt));
 
-	srand(time(NULL));
+	rand_init();
 
 #if DYNAMIC
 	// Load the best available shared library, or the user specified one.

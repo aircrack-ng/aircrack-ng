@@ -1737,7 +1737,8 @@ static int do_active_injection(void)
 		!= 0)
 		return (EXIT_FAILURE);
 
-	srand(time(NULL));
+	rand_init();
+
 	// Set our bitrate to the loudest/most likely to reach the station/AP...
 	set_bitrate(_wi_out, RATE_1M);
 
@@ -2029,11 +2030,11 @@ int main(int argc, char * argv[])
 	   random source so we can identify our packets
 	*/
 	opt.r_smac[0] = 0x00;
-	opt.r_smac[1] = rand() & 0xFF;
-	opt.r_smac[2] = rand() & 0xFF;
-	opt.r_smac[3] = rand() & 0xFF;
-	opt.r_smac[4] = rand() & 0xFF;
-	opt.r_smac[5] = rand() & 0xFF;
+	opt.r_smac[1] = rand_u8();
+	opt.r_smac[2] = rand_u8();
+	opt.r_smac[3] = rand_u8();
+	opt.r_smac[4] = rand_u8();
+	opt.r_smac[5] = rand_u8();
 
 	opt.r_smac_set = 1;
 
