@@ -1369,9 +1369,9 @@ int encrypt_data(uint8_t * data, size_t length)
 	/* encrypt data */
 	if (opt.crypt == CRYPT_WEP)
 	{
-		K[0] = (uint8_t)(rand() & 0xFF);
-		K[1] = (uint8_t)(rand() & 0xFF);
-		K[2] = (uint8_t)(rand() & 0xFF);
+		K[0] = rand_u8();
+		K[1] = rand_u8();
+		K[2] = rand_u8();
 		memcpy(K + 3, opt.wepkey, opt.weplen);
 
 		encrypt_wep(data, (int) length, K, (int) opt.weplen + 3);
