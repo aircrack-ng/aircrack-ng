@@ -1552,11 +1552,7 @@ read_packets:
 
 		if (dev.fd_rtc >= 0)
 		{
-			if (read(dev.fd_rtc, &n, sizeof(n)) < 0)
-			{
-				perror("read(/dev/rtc) failed");
-				return (EXIT_FAILURE);
-			}
+			IGNORE_LTZ(read(dev.fd_rtc, &n, sizeof(n)));
 
 			ticks[0]++;
 			ticks[1]++;
@@ -1745,13 +1741,7 @@ static int do_attack_arp_resend(void)
 
 		if (dev.fd_rtc >= 0)
 		{
-			if (read(dev.fd_rtc, &n, sizeof(n)) < 0)
-			{
-				perror("read(/dev/rtc) failed");
-				free(arp);
-				fclose(f_cap_out);
-				return (EXIT_FAILURE);
-			}
+			IGNORE_LTZ(read(dev.fd_rtc, &n, sizeof(n)));
 
 			ticks[0]++;
 			ticks[1]++;
@@ -2208,13 +2198,7 @@ static int do_attack_caffe_latte(void)
 
 		if (dev.fd_rtc >= 0)
 		{
-			if (read(dev.fd_rtc, &n, sizeof(n)) < 0)
-			{
-				perror("read(/dev/rtc) failed");
-				free(arp);
-				fclose(f_cap_out);
-				return (1);
-			}
+			IGNORE_LTZ(read(dev.fd_rtc, &n, sizeof(n)));
 
 			ticks[0]++;
 			ticks[1]++;
@@ -2699,13 +2683,7 @@ static int do_attack_migmode(void)
 
 		if (dev.fd_rtc >= 0)
 		{
-			if (read(dev.fd_rtc, &n, sizeof(n)) < 0)
-			{
-				perror("read(/dev/rtc) failed");
-				free(arp);
-				fclose(f_cap_out);
-				return (1);
-			}
+			IGNORE_LTZ(read(dev.fd_rtc, &n, sizeof(n)));
 
 			ticks[0]++;
 			ticks[1]++;
@@ -3269,11 +3247,7 @@ read_packets:
 
 		if (dev.fd_rtc >= 0)
 		{
-			if (read(dev.fd_rtc, &n, sizeof(n)) < 0)
-			{
-				perror("read(/dev/rtc) failed");
-				return (1);
-			}
+			IGNORE_LTZ(read(dev.fd_rtc, &n, sizeof(n)));
 
 			ticks[0]++;
 			ticks[1]++;
@@ -3614,12 +3588,7 @@ static int do_attack_chopchop(void)
 
 		if (dev.fd_rtc >= 0)
 		{
-			if (read(dev.fd_rtc, &n, sizeof(n)) < 0)
-			{
-				perror("\nread(/dev/rtc) failed");
-				free(chopped);
-				return (1);
-			}
+			IGNORE_LTZ(read(dev.fd_rtc, &n, sizeof(n)));
 
 			ticks[0]++; /* ticks since we entered the while loop     */
 			ticks[1]++; /* ticks since the last status line update   */
