@@ -41,6 +41,7 @@
 #include "defs.h"
 #include "fragments.h"
 #include "crypto.h"
+#include "aircrack-util/common.h"
 
 extern pFrag_t rFragment;
 
@@ -262,9 +263,9 @@ unsigned char * getCompleteFrag(unsigned char * smac,
 					packet = (unsigned char *) malloc(
 						(size_t) len + old->headerlen + 8);
 					ALLEGE(packet != NULL);
-					K[0] = (uint8_t)(rand() & 0xFF);
-					K[1] = (uint8_t)(rand() & 0xFF);
-					K[2] = (uint8_t)(rand() & 0xFF);
+					K[0] = rand_u8();
+					K[1] = rand_u8();
+					K[2] = rand_u8();
 					K[3] = (uint8_t)(0x00);
 
 					memcpy(packet, old->header, (size_t) old->headerlen);
