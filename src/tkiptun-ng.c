@@ -1466,12 +1466,12 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 				break;
 		}
 
-		crc_mask
-			= crc_tbl[crc_mask & 0xFF] ^ (crc_mask >> 8) ^ (chopped[i] << 24);
+		crc_mask = crc_tbl[crc_mask & 0xFF] ^ (crc_mask >> 8UL)
+				   ^ ((unsigned long) chopped[i] << 24UL);
 	}
 
 	for (i = 0; i < 4; i++)
-		crc_mask = crc_tbl[crc_mask & 0xFF] ^ (crc_mask >> 8);
+		crc_mask = crc_tbl[crc_mask & 0xFF] ^ (crc_mask >> 8UL);
 
 	chopped[data_end - 4] = crc_mask;
 	crc_mask >>= 8;
