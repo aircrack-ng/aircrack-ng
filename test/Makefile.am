@@ -106,7 +106,8 @@ TESTS += test-airodump-ng-0001.sh \
 		test-aireplay-ng-0004.sh \
 		test-aireplay-ng-0005.sh \
 		test-aireplay-ng-0006.sh \
-		test-airbase-ng-0001.sh
+		test-airbase-ng-0001.sh \
+		test-airbase-ng-0002.sh
 endif
 
 if HAVE_SQLITE3
@@ -176,7 +177,8 @@ EXTRA_DIST += test-airodump-ng-0001.sh \
 		test-aireplay-ng-0004.sh \
 		test-aireplay-ng-0005.sh \
 		test-aireplay-ng-0006.sh \
-		test-airbase-ng-0001.sh
+		test-airbase-ng-0001.sh \
+		test-airbase-ng-0002.sh
 endif
 
 if HAVE_SQLITE3
