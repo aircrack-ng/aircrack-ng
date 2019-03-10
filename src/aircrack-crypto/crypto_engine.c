@@ -559,6 +559,7 @@ EXPORT void ac_crypto_engine_calc_mic(ac_crypto_engine_t * engine,
 	else
 	{
 		fprintf(stderr, "Unsupported key version %d encountered.\n", keyver);
+		if (keyver == 0) fprintf(stderr, "May be WPA3 - not yet supported.\n");
 		abort();
 	}
 }
