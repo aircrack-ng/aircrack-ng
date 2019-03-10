@@ -897,7 +897,7 @@ int main(int argc, char * argv[])
 
 				/* if the PTK is valid, try to decrypt */
 
-				if (st_cur == NULL || !st_cur->valid_ptk) continue;
+				if (!st_cur->valid_ptk) continue;
 
 				if (st_cur->keyver == 1)
 				{
