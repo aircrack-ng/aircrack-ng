@@ -2219,6 +2219,12 @@ skip_probe:
 						case 0x0d:
 							ap_cur->security |= AUTH_CMAC;
 							break;
+						case 0x08:
+							ap_cur->security |= AUTH_SAE;
+							break;
+						case 0x12:
+							ap_cur->security |= AUTH_OWE;
+							break;
 						default:
 							break;
 					}
@@ -3787,7 +3793,12 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			else
 			{
 				if (ap_cur->security & STD_WPA2)
-					snprintf(strbuf + len, sizeof(strbuf) - len, "WPA2");
+				{
+					if (ap_cur->security & AUTH_SAE || ap_cur->security & AUTH_OWE)
+						snprintf(strbuf + len, sizeof(strbuf) - len, "WPA3");
+					else
+						snprintf(strbuf + len, sizeof(strbuf) - len, "WPA2");
+				}
 				else if (ap_cur->security & STD_WPA)
 					snprintf(strbuf + len, sizeof(strbuf) - len, "WPA ");
 				else if (ap_cur->security & STD_WEP)
@@ -3824,7 +3835,9 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				snprintf(strbuf + len, sizeof(strbuf) - len, "    ");
 			else
 			{
-				if (ap_cur->security & AUTH_MGT)
+				if (ap_cur->security & AUTH_SAE)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "SAE ");
+				else if (ap_cur->security & AUTH_MGT)
 					snprintf(strbuf + len, sizeof(strbuf) - len, "MGT ");
 				else if (ap_cur->security & AUTH_CMAC)
 					snprintf(strbuf + len, sizeof(strbuf) - len, "CMAC");
@@ -3835,6 +3848,8 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 					else
 						snprintf(strbuf + len, sizeof(strbuf) - len, "PSK ");
 				}
+				else if (ap_cur->security & AUTH_OWE)
+					snprintf(strbuf + len, sizeof(strbuf) - len, "OWE ");
 				else if (ap_cur->security & AUTH_OPN)
 					snprintf(strbuf + len, sizeof(strbuf) - len, "OPN ");
 			}
