@@ -74,21 +74,25 @@ fi
 
 if [ $(md5sum "${TEMP_FILE}-01.cap" | gawk '{print $1}' ) != '50d6b6d03c0e582a1ae60986e5f53832' ]; then
 	echo "Invalid PCAP file"
+	rm -f ${TEMP_FILE}-01.*
 	exit 1
 fi
 
 if [ $(md5sum "${TEMP_FILE}-01.csv" | gawk '{print $1}') != '7b5b92716e839e310d8edda8ec21a469' ]; then
 	echo "Invalid CSV file"
+	rm -f ${TEMP_FILE}-01.*
 	exit 1
 fi
 
 if [ $(md5sum "${TEMP_FILE}-01.kismet.csv" | gawk '{print $1}') != '0f402e05f06f582a7931420075485369' ]; then
 	echo "Invalid Kismet CSV file"
+	rm -f ${TEMP_FILE}-01.*
 	exit 1
 fi
 
 if [ $(md5sum "${TEMP_FILE}-01.log.csv" | gawk '{print $1}') != '6bdaf36ee12b14b2a5a80c3af8ae7160' ]; then
 	echo "Invalid Log CSV"
+	rm -f ${TEMP_FILE}-01.*
 	exit 1
 fi
 
