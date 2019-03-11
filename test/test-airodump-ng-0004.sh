@@ -48,7 +48,7 @@ if [ -z "${WI_IFACE}" ]; then
 	exit 1
 fi
 
-# Start hostapd with WPA3
+# Start hostapd with WPA2 CCMP
 TEMP_HOSTAPD_CONF=$(mktemp -u)
 cat >> ${TEMP_HOSTAPD_CONF} << EOF
 interface=${WI_IFACE}
@@ -57,7 +57,6 @@ channel=1
 wpa=2
 wpa_passphrase=password
 rsn_pairwise=CCMP
-ieee80211w=2
 EOF
 
 # Start hostapd
