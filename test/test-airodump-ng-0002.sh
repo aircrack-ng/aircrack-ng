@@ -1,8 +1,6 @@
 #!/bin/sh
 # Airodump-ng: Test WPA3 detection
 
-set -xv
-
 if test ! -z "${CI}"; then exit 77; fi
 
 # Check root
