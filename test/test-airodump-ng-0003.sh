@@ -116,7 +116,7 @@ if [ ! -f ${TEMP_FILE}-01.kismet.netxml ]; then
 fi
 ENCRYPTION_SECTION="$(grep '<encryption>WPA+OWE</encryption>' ${TEMP_FILE}-01.kismet.netxml)"
 if [ -z "${ENCRYPTION_SECTION}" ]; then
-        echo "Failed to find SAE in the kismet netxml"
+        echo "Failed to find OWE in the kismet netxml"
 	rm -f ${TEMP_FILE}-01.*
         exit 1
 fi
@@ -130,7 +130,7 @@ fi
 ENCRYPTION_SECTION="$(tail -n 1 ${TEMP_FILE}-01.kismet.csv | gawk -F\; '{print $8}')"
 if [ "x${ENCRYPTION_SECTION}" != 'xWPA3,AES-CCM,OWE' ]; then
 	echo "Encryption section not found or invalid in Kismet CSV"
-	echo "Expected 'WPA3,AES-CCM,SAE', got ${ENCRYPTION_SECTION}"
+	echo "Expected 'OWE,AES-CCM,SAE', got ${ENCRYPTION_SECTION}"
 	rm -f ${TEMP_FILE}-01.*
 	exit 1
 fi
