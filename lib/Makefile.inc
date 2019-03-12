@@ -58,6 +58,10 @@ if LIBGCRYPT
 SRC_CRYPTO	+=	%D%/crypto/sha1-git.c
 endif
 
+if X86
+SRC_CRYPTO	+=	%D%/crypto/sha1-sse2.S
+endif
+
 libcowpatty_la_SOURCES = $(SRC_COW)
 libcowpatty_la_CFLAGS = $(COMMON_CFLAGS) $(LIBCOW_CFLAGS)
 if !STATIC_CRYPTO
@@ -138,6 +142,8 @@ noinst_LTLIBRARIES += libaircrack-ce-wep.la libcowpatty.la libaccrypto.la libptw
 EXTRA_DIST +=	%D%/ce-wep/uniqueiv.c \
 							%D%/cowpatty/cowpatty.c \
 							%D%/crypto/crypto.c \
+							%D%/crypto/sha1-git.c \
+							%D%/crypto/sha1-sse2.S \
 							%D%/libac/adt/avl_tree.c \
 							%D%/libac/adt/circular_buffer.c \
 							%D%/libac/adt/circular_queue.c \

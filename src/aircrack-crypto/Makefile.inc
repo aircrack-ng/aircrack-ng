@@ -37,11 +37,7 @@
 # If you delete this exception statement from all source files in the
 # program, then also delete it here.
 
-COMMON_ARCH_FILES =
-if X86
-COMMON_ARCH_FILES += %D%/sha1-sse2.S
-endif
-LIBAIRCRACK_CRYPTO_SRCS = %D%/memory.c %D%/sha1-git.c $(COMMON_ARCH_FILES) %D%/simd-intrinsics.c %D%/wpapsk.c %D%/crypto_engine.c
+LIBAIRCRACK_CRYPTO_SRCS = %D%/memory.c %D%/simd-intrinsics.c %D%/wpapsk.c %D%/crypto_engine.c
 
 #
 # Intel/AMD
@@ -50,28 +46,28 @@ libaircrack_crypto_x86_avx512_la_SOURCES = $(LIBAIRCRACK_CRYPTO_SRCS)
 libaircrack_crypto_x86_avx512_la_CFLAGS = $(x86_avx512_cflags) -DSIMD_CORE -DJOHN_AVX512F $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
 libaircrack_crypto_x86_avx512_la_LDFLAGS = -release 1.3.0 -no-undefined
 if !STATIC_CRYPTO
-libaircrack_crypto_x86_avx512_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
+libaircrack_crypto_x86_avx512_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 endif
 
 libaircrack_crypto_x86_avx2_la_SOURCES = $(LIBAIRCRACK_CRYPTO_SRCS)
 libaircrack_crypto_x86_avx2_la_CFLAGS = $(x86_avx2_cflags) -DSIMD_CORE -DJOHN_AVX2 $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
 libaircrack_crypto_x86_avx2_la_LDFLAGS = -release 1.3.0 -no-undefined
 if !STATIC_CRYPTO
-libaircrack_crypto_x86_avx2_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
+libaircrack_crypto_x86_avx2_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 endif
 
 libaircrack_crypto_x86_avx_la_SOURCES = $(LIBAIRCRACK_CRYPTO_SRCS)
 libaircrack_crypto_x86_avx_la_CFLAGS = $(x86_avx_cflags) -DSIMD_CORE -DJOHN_AVX $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
 libaircrack_crypto_x86_avx_la_LDFLAGS = -release 1.3.0 -no-undefined
 if !STATIC_CRYPTO
-libaircrack_crypto_x86_avx_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
+libaircrack_crypto_x86_avx_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 endif
 
 libaircrack_crypto_x86_sse2_la_SOURCES = $(LIBAIRCRACK_CRYPTO_SRCS)
 libaircrack_crypto_x86_sse2_la_CFLAGS = $(x86_sse2_cflags) -DSIMD_CORE -DJOHN_SSE2 $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
 libaircrack_crypto_x86_sse2_la_LDFLAGS = -release 1.3.0 -no-undefined
 if !STATIC_CRYPTO
-libaircrack_crypto_x86_sse2_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
+libaircrack_crypto_x86_sse2_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 endif
 
 ##
@@ -81,7 +77,7 @@ libaircrack_crypto_arm_neon_la_SOURCES = $(LIBAIRCRACK_CRYPTO_SRCS)
 libaircrack_crypto_arm_neon_la_CFLAGS = $(arm_neon_cflags) -DSIMD_CORE -DHAS_NEON $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
 libaircrack_crypto_arm_neon_la_LDFLAGS = -release 1.3.0 -no-undefined
 if !STATIC_CRYPTO
-libaircrack_crypto_arm_neon_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
+libaircrack_crypto_arm_neon_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 endif
 
 ##
@@ -91,27 +87,23 @@ libaircrack_crypto_ppc_altivec_la_SOURCES = $(LIBAIRCRACK_CRYPTO_SRCS)
 libaircrack_crypto_ppc_altivec_la_CFLAGS = $(ppc_altivec_cflags) -DSIMD_CORE -DHAS_ALTIVEC=1 -DJOHN_ALTIVEC $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
 libaircrack_crypto_ppc_altivec_la_LDFLAGS = -release 1.3.0 -no-undefined
 if !STATIC_CRYPTO
-libaircrack_crypto_ppc_altivec_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
+libaircrack_crypto_ppc_altivec_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 endif
 
 libaircrack_crypto_ppc_power8_la_SOURCES = $(LIBAIRCRACK_CRYPTO_SRCS)
 libaircrack_crypto_ppc_power8_la_CFLAGS = $(ppc_altivec_cflags) -DSIMD_CORE -DHAS_ALTIVEC=1 -DJOHN_ALTIVEC -DJOHN_POWER8 $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
 libaircrack_crypto_ppc_power8_la_LDFLAGS = -release 1.3.0 -no-undefined
 if !STATIC_CRYPTO
-libaircrack_crypto_ppc_power8_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
+libaircrack_crypto_ppc_power8_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 endif
 
 #
 # Generic library
-ARCH_FILES =
-if X86
-ARCH_FILES += %D%/sha1-sse2.S
-endif
 libaircrack_crypto_la_CFLAGS = $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
-libaircrack_crypto_la_SOURCES = %D%/memory.c %D%/sha1-git.c %D%/wpapsk.c %D%/crypto_engine.c $(ARCH_FILES)
+libaircrack_crypto_la_SOURCES = %D%/memory.c %D%/wpapsk.c %D%/crypto_engine.c
 libaircrack_crypto_la_LDFLAGS = -release 1.3.0 -no-undefined
 if !STATIC_CRYPTO
-libaircrack_crypto_la_LIBADD = $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
+libaircrack_crypto_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 endif
 
 #
@@ -152,10 +144,6 @@ EXTRA_DIST +=	%D%/aligned.h \
 				%D%/memory.h \
 				%D%/misc.h \
 				%D%/pseudo_intrinsics.h \
-				%D%/sha1-git.c \
-				%D%/sha1-git.h \
-				%D%/sha1-sse2.h \
-				%D%/sha1-sse2.S \
 				%D%/simd-intrinsics.c \
 				%D%/simd-intrinsics.h \
 				%D%/simd-intrinsics-load-flags.h \
