@@ -78,13 +78,19 @@ LIBRADIOTAP_LIBS = libradiotap.la
 
 LIBAIRCRACK_CRYPTO_LIBS = libaircrack-crypto.la
 
+LIBAIRCRACK_CRYPTO_X86_AVX512_LIBS = libaircrack-crypto-x86-avx512.la
+
 LIBAIRCRACK_CRYPTO_X86_AVX2_LIBS = libaircrack-crypto-x86-avx2.la
 
 LIBAIRCRACK_CRYPTO_X86_AVX_LIBS = libaircrack-crypto-x86-avx.la
 
 LIBAIRCRACK_CRYPTO_X86_SSE2_LIBS = libaircrack-crypto-x86-sse2.la
 
-## TODO Add remaining SIMD entries for static linking to work
+LIBAIRCRACK_CRYPTO_ARM_NEON_LIBS = libaircrack-crypto-arm-neon.la
+
+LIBAIRCRACK_CRYPTO_PPC_ALTIVEC_LIBS = libaircrack-crypto-ppc-altivec.la
+
+LIBAIRCRACK_CRYPTO_PPC_POWER8_LIBS = libaircrack-crypto-ppc-power8.la
 
 LIBAIRCRACK_CRYPTO_PATH = $(abs_top_builddir)/
 

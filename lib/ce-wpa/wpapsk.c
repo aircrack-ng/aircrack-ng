@@ -55,19 +55,21 @@
 #include "config.h"
 #endif
 
+#include <string.h>
+#include <stdint.h>
+
 #ifndef USE_GCRYPT
 #include <openssl/sha.h>
 #else
-#include "sha1-git.h"
+#include "aircrack-ng/crypto/sha1-git.h"
 #endif
-#include <string.h>
-#include <stdint.h>
-#include "simd-intrinsics.h"
+
+#include "aircrack-ng/ce-wpa/simd-intrinsics.h"
 #include "aircrack-ng/aircrack-ng.h"
-#include "arch.h"
-#include "wpapsk.h"
-#include "johnswap.h"
-#include "memory.h"
+#include "aircrack-ng/ce-wpa/arch.h"
+#include "aircrack-ng/ce-wpa/wpapsk.h"
+#include "aircrack-ng/ce-wpa/johnswap.h"
+#include "aircrack-ng/ce-wpa/memory.h"
 #include "aircrack-ng/cpu/simd_cpuid.h"
 
 // #define XDEBUG
@@ -112,7 +114,7 @@
 #endif
 #endif
 
-#include "memdbg.h"
+#include "aircrack-ng/ce-wpa/memdbg.h"
 
 #ifndef SIMD_CORE
 #undef SIMDSHA1body

@@ -58,18 +58,18 @@
 #endif
 
 #include <string.h>
+#include <stdint.h>
 
-#include "arch.h"
-#include "pseudo_intrinsics.h"
-#include "memory.h"
-#include "md5.h"
-#include "MD5_std.h"
-#include "stdint.h"
-#include "johnswap.h"
-#include "simd-intrinsics-load-flags.h"
-#include "aligned.h"
-#include "misc.h"
-#include "memdbg.h"
+#include "aircrack-ng/ce-wpa/arch.h"
+#include "aircrack-ng/ce-wpa/pseudo_intrinsics.h"
+#include "aircrack-ng/ce-wpa/memory.h"
+#include "aircrack-ng/ce-wpa/md5.h"
+#include "aircrack-ng/ce-wpa/MD5_std.h"
+#include "aircrack-ng/ce-wpa/johnswap.h"
+#include "aircrack-ng/ce-wpa/simd-intrinsics-load-flags.h"
+#include "aircrack-ng/ce-wpa/aligned.h"
+#include "aircrack-ng/ce-wpa/misc.h"
+#include "aircrack-ng/ce-wpa/memdbg.h"
 
 /* Shorter names for use in index calculations */
 #define VS32 SIMD_COEF_32

@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "aircrack-crypto/crypto_engine.h"
+#include "aircrack-ng/ce-wpa/crypto_engine.h"
 
 static void test_calc_one_pmk(void ** state)
 {

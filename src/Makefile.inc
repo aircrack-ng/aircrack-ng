@@ -234,4 +234,3 @@ EXTRA_DIST +=	%D%/wpaclean/wpaclean.c \
 							%D%/airodump-ng/dump_write.c
 
 include %D%/include/Makefile.inc
-include %D%/aircrack-crypto/Makefile.inc

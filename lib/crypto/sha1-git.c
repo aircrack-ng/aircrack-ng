@@ -47,7 +47,8 @@
 #include <stdint.h>
 #include <string.h>
 #include <arpa/inet.h>
-#include "sha1-git.h"
+
+#include "aircrack-ng/crypto/sha1-git.h"
 
 #if defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))
 

@@ -37,8 +37,8 @@
 #endif
 
 #ifdef USE_GCRYPT
-#include "gcrypt-openssl-wrapper.h"
-#include "sha1-git.h"
+#include "aircrack-ng/crypto/gcrypt-openssl-wrapper.h"
+#include "aircrack-ng/crypto/sha1-git.h"
 #else
 #include <openssl/hmac.h>
 #include <openssl/sha.h>
@@ -46,6 +46,7 @@
 #include <openssl/rc4.h>
 #include <openssl/aes.h>
 #endif
+
 #include <string.h>
 #include <arpa/inet.h>
 #include <assert.h>
@@ -186,7 +187,7 @@ void calc_mic(struct AP_info * ap,
 #endif
 
 #ifdef HMAC_USE_NO_PTR
-	HMAC_CTX ctx;
+	HMAC_CTX ctx = {0};
 #else
 	HMAC_CTX * ctx;
 #endif

@@ -61,12 +61,12 @@
 #include <malloc.h>
 #endif
 
-#include "arch.h"
-#include "misc.h"
-#include "memory.h"
-#include "jcommon.h"
-#include "johnswap.h"
-#include "memdbg.h"
+#include "aircrack-ng/ce-wpa/arch.h"
+#include "aircrack-ng/ce-wpa/misc.h"
+#include "aircrack-ng/ce-wpa/memory.h"
+#include "aircrack-ng/ce-wpa/jcommon.h"
+#include "aircrack-ng/ce-wpa/johnswap.h"
+#include "aircrack-ng/ce-wpa/memdbg.h"
 
 #if defined(_MSC_VER) && !defined(MEMDBG_ON)
 #define malloc(a) _aligned_malloc(a, 16)

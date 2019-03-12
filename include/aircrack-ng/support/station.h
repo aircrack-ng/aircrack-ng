@@ -32,7 +32,7 @@
  *  files in the program, then also delete it here.
  */
 
-#include "aircrack-crypto/crypto_engine.h"
+#include "aircrack-ng/ce-wpa/crypto_engine.h"
 #include "aircrack-ng/adt/avl_tree.h"
 #include "aircrack-ng/support/pcap_local.h"
 #include "aircrack-ng/ptw/aircrack-ptw-lib.h"

@@ -44,11 +44,11 @@
 #if defined(__FreeBSD__)
 #include <unistd.h>
 #endif
+#include <pthread.h>
+
 #include "aircrack-ng/ptw/aircrack-ptw-lib.h"
 #include "eapol.h"
-#include "aircrack-crypto/crypto_engine.h"
-
-#include <pthread.h>
+#include "aircrack-ng/ce-wpa/crypto_engine.h"
 #include "aircrack-ng/adt/avl_tree.h"
 #include "aircrack-ng/adt/circular_queue.h"
 

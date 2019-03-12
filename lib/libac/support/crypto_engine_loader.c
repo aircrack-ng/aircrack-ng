@@ -44,7 +44,7 @@
 #include <dlfcn.h>
 #endif
 
-#include "aircrack-crypto/crypto_engine.h"
+#include "aircrack-ng/ce-wpa/crypto_engine.h"
 #include "aircrack-ng/support/crypto_engine_loader.h"
 #include "aircrack-ng/support/common.h"
 #include "aircrack-ng/cpu/trampoline.h"

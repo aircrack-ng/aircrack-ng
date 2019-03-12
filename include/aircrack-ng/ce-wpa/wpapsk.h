@@ -53,19 +53,20 @@
 #ifndef _WPAPSK_H
 #define _WPAPSK_H
 
-#include <string.h>
 #include <assert.h>
+#include <string.h>
+#include <stdint.h>
+
 #ifdef USE_GCRYPT
-#include "gcrypt-openssl-wrapper.h"
+#include "aircrack-ng/crypto/gcrypt-openssl-wrapper.h"
 #else
 #include <openssl/hmac.h>
 #endif
-#include <stdint.h>
-#include "arch.h"
-#include "jcommon.h"
-#include "johnswap.h"
 
-#include "crypto_engine.h"
+#include "aircrack-ng/ce-wpa/arch.h"
+#include "aircrack-ng/ce-wpa/jcommon.h"
+#include "aircrack-ng/ce-wpa/johnswap.h"
+#include "aircrack-ng/ce-wpa/crypto_engine.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -45,8 +45,8 @@
 #include <sys/types.h>
 
 #ifdef USE_GCRYPT
-#include "gcrypt-openssl-wrapper.h"
-#include "sha1-git.h"
+#include "aircrack-ng/crypto/gcrypt-openssl-wrapper.h"
+#include "aircrack-ng/crypto/sha1-git.h"
 #else
 #include <openssl/hmac.h>
 #include <openssl/sha.h>
@@ -54,7 +54,7 @@
 
 #include "aircrack-ng/support/common.h"
 #include "aircrack-ng/cpu/trampoline.h"
-#include "aircrack-crypto/crypto_engine.h"
+#include "aircrack-ng/ce-wpa/crypto_engine.h"
 #include "aircrack-ng/support/crypto_engine_loader.h"
 
 /*

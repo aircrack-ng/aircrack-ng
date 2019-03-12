@@ -68,9 +68,9 @@
 #include <unistd.h>
 
 #include "aircrack-ng/defs.h"
-#include "aircrack-crypto/crypto_engine.h"
+#include "aircrack-ng/ce-wpa/crypto_engine.h"
 #include "aircrack-ng/crypto/sha1-sse2.h"
-#include "aircrack-crypto/wpapsk.h"
+#include "aircrack-ng/ce-wpa/wpapsk.h"
 #include "aircrack-ng/aircrack-ng.h"
 #include "aircrack-ng/osdep/byteorder.h"
 #include "radiotap/platform.h"

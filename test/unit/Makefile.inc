@@ -45,6 +45,7 @@ UNIT_COMMON_CFLAGS = $(AM_CPPFLAGS) $(PTHREAD_CFLAGS) \
 UNIT_COMMON_LDADD  = $(PTHREAD_LIBS) \
 					 $(CRYPTO_LIBS) \
 					 $(ZLIB_LIBS) \
+                     $(LIBAIRCRACK_LIBS) \
 					 $(CMOCKA_LIBS)
 
 test_calc_one_pmk_SOURCES = %D%/test-calc-one-pmk.c

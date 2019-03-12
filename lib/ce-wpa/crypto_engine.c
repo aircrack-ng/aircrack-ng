@@ -37,11 +37,12 @@
 #define _GNU_SOURCE
 #include <string.h>
 #include <stdint.h>
-#include "simd-intrinsics.h"
-#include "wpapsk.h"
+
+#include "aircrack-ng/ce-wpa/simd-intrinsics.h"
+#include "aircrack-ng/ce-wpa/wpapsk.h"
 #ifdef USE_GCRYPT
-#include "gcrypt-openssl-wrapper.h"
-#include "sha1-git.h"
+#include "aircrack-ng/crypto/gcrypt-openssl-wrapper.h"
+#include "aircrack-ng/crypto/sha1-git.h"
 #else
 #include <openssl/hmac.h>
 #include <openssl/sha.h>
@@ -54,8 +55,7 @@
 #endif
 
 #include "aircrack-ng/cpu/trampoline.h"
-
-#include "crypto_engine.h"
+#include "aircrack-ng/ce-wpa/crypto_engine.h"
 
 // #define XDEBUG
 
