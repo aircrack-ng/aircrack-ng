@@ -59,10 +59,11 @@ interface=${WI_IFACE}
 ssid=test
 channel=1
 wpa=2
-wpa_passphrase=password
+sae_password=password
 wpa_key_mgmt=SAE
 rsn_pairwise=CCMP
 ieee80211w=2
+sae_require_mfp=1
 EOF
 
 # Start hostapd
