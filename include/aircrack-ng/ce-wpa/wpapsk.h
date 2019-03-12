@@ -57,12 +57,7 @@
 #include <string.h>
 #include <stdint.h>
 
-#ifdef USE_GCRYPT
-#include "aircrack-ng/crypto/gcrypt-openssl-wrapper.h"
-#else
-#include <openssl/hmac.h>
-#endif
-
+#include <aircrack-ng/crypto/crypto.h>
 #include "aircrack-ng/ce-wpa/arch.h"
 #include "aircrack-ng/ce-wpa/jcommon.h"
 #include "aircrack-ng/ce-wpa/johnswap.h"

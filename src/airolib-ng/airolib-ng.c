@@ -1302,12 +1302,7 @@ int main(int argc, char ** argv)
 		   {"essid", 1, 0, 'd'},
 		   {0, 0, 0, 0}};
 
-#ifdef USE_GCRYPT
-	// Disable secure memory.
-	gcry_control(GCRYCTL_DISABLE_SECMEM, 0);
-	// Tell Libgcrypt that initialization has completed.
-	gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
-#endif
+	ac_crypto_init();
 
 	signal(SIGINT, sighandler);
 	signal(SIGQUIT, sighandler);

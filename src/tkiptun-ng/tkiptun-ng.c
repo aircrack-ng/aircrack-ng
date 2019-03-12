@@ -2271,12 +2271,7 @@ int main(int argc, char * argv[])
 	int packet1_len, packet2_len;
 	struct timeval mic_fail;
 
-#ifdef USE_GCRYPT
-	// Disable secure memory.
-	gcry_control(GCRYCTL_DISABLE_SECMEM, 0);
-	// Tell Libgcrypt that initialization has completed.
-	gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
-#endif
+	ac_crypto_init();
 
 	/* check the arguments */
 

@@ -888,12 +888,7 @@ int main(int argc, char * argv[])
 	char *s, buf[128];
 	size_t caplen, len;
 
-#ifdef USE_GCRYPT
-	// Disable secure memory.
-	gcry_control(GCRYCTL_DISABLE_SECMEM, 0);
-	// Tell Libgcrypt that initialization has completed.
-	gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
-#endif
+	ac_crypto_init();
 
 	/* check the arguments */
 

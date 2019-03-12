@@ -58,12 +58,7 @@
 #include <string.h>
 #include <stdint.h>
 
-#ifndef USE_GCRYPT
-#include <openssl/sha.h>
-#else
-#include "aircrack-ng/crypto/sha1-git.h"
-#endif
-
+#include <aircrack-ng/crypto/crypto.h>
 #include "aircrack-ng/ce-wpa/simd-intrinsics.h"
 #include "aircrack-ng/aircrack-ng.h"
 #include "aircrack-ng/ce-wpa/arch.h"

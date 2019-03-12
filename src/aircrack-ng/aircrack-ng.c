@@ -102,13 +102,6 @@ static sqlite3 * db = NULL; //-V707
 static char * db = NULL; ///-V707
 #endif
 
-// libgcrypt thread callback definition for libgcrypt < 1.6.0
-#ifdef USE_GCRYPT
-#if GCRYPT_VERSION_NUMBER < 0x010600
-GCRY_THREAD_OPTION_PTHREAD_IMPL;
-#endif
-#endif
-
 #ifndef DYNAMIC
 #define DYNAMIC 1
 #endif
@@ -5760,17 +5753,8 @@ int main(int argc, char * argv[])
 	access_points = c_avl_create(station_compare);
 	targets = c_avl_create(station_compare);
 
-#ifdef USE_GCRYPT
-// Register callback functions to ensure proper locking in the sensitive parts
-// of libgcrypt < 1.6.0
-#if GCRYPT_VERSION_NUMBER < 0x010600
-	gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
-#endif
-	// Disable secure memory.
-	gcry_control(GCRYCTL_DISABLE_SECMEM, 0);
-	// Tell Libgcrypt that initialization has completed.
-	gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
-#endif
+	ac_crypto_init();
+
 	ret = FAILURE;
 	showhelp = 0;
 

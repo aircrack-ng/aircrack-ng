@@ -61,11 +61,7 @@ typedef unsigned int MD5_u32plus;
 
 #include "arch.h"
 #ifdef SIMD_PARA_MD5
-#ifndef USE_GCRYPT
-#include <openssl/md5.h>
-#else
-#include "gcrypt-openssl-wrapper.h"
-#endif
+#include <aircrack-ng/crypto/crypto.h>
 #endif
 
 #endif /* _MD5_H */

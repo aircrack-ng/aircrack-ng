@@ -12,14 +12,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
-#ifdef USE_GCRYPT
-#include "aircrack-ng/crypto/gcrypt-openssl-wrapper.h"
-#include "aircrack-ng/crypto/sha1-git.h"
-#else
-#include <openssl/hmac.h>
-#include <openssl/sha.h>
-#endif
-
+#include "aircrack-ng/crypto/crypto.h"
 #include "aircrack-ng/support/common.h"
 #include "aircrack-ng/cpu/trampoline.h"
 #include "aircrack-ng/ce-wpa/crypto_engine.h"

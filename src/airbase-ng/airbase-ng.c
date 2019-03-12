@@ -77,13 +77,6 @@
 #include "aircrack-ng/osdep/osdep.h"
 #include "aircrack-ng/support/common.h"
 
-// libgcrypt thread callback definition for libgcrypt < 1.6.0
-#ifdef USE_GCRYPT
-#if GCRYPT_VERSION_NUMBER < 0x010600
-GCRY_THREAD_OPTION_PTHREAD_IMPL;
-#endif
-#endif
-
 #define EXT_IN 0x01
 #define EXT_OUT 0x02
 
@@ -3174,17 +3167,8 @@ int main(int argc, char * argv[])
 	ALLEGE(rCF != NULL);
 	memset(rCF, 0, sizeof(struct CF_packet));
 
-#ifdef USE_GCRYPT
-// Register callback functions to ensure proper locking in the sensitive parts
-// of libgcrypt < 1.6.0
-#if GCRYPT_VERSION_NUMBER < 0x010600
-	gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
-#endif
-	// Disable secure memory.
-	gcry_control(GCRYCTL_DISABLE_SECMEM, 0);
-	// Tell Libgcrypt that initialization has completed.
-	gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
-#endif
+	ac_crypto_init();
+
 	ALLEGE(pthread_mutex_init(&mx_cf, NULL) == 0);
 	ALLEGE(pthread_mutex_init(&mx_cap, NULL) == 0);
 

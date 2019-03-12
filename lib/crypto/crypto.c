@@ -36,17 +36,6 @@
 #include "config.h"
 #endif
 
-#ifdef USE_GCRYPT
-#include "aircrack-ng/crypto/gcrypt-openssl-wrapper.h"
-#include "aircrack-ng/crypto/sha1-git.h"
-#else
-#include <openssl/hmac.h>
-#include <openssl/sha.h>
-// We don't use EVP. Bite me
-#include <openssl/rc4.h>
-#include <openssl/aes.h>
-#endif
-
 #include <string.h>
 #include <arpa/inet.h>
 #include <assert.h>
@@ -60,6 +49,29 @@
 #include "aircrack-ng/support/common.h"
 
 #define UBTOUL(b) ((unsigned long) (b))
+
+// libgcrypt thread callback definition for libgcrypt < 1.6.0
+#ifdef USE_GCRYPT
+#if GCRYPT_VERSION_NUMBER < 0x010600
+GCRY_THREAD_OPTION_PTHREAD_IMPL;
+#endif
+#endif
+
+API_EXPORT
+void ac_crypto_init(void)
+{
+#ifdef USE_GCRYPT
+// Register callback functions to ensure proper locking in the sensitive parts
+// of libgcrypt < 1.6.0
+#if GCRYPT_VERSION_NUMBER < 0x010600
+	gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
+#endif
+	// Disable secure memory.
+	gcry_control(GCRYCTL_DISABLE_SECMEM, 0);
+	// Tell Libgcrypt that initialization has completed.
+	gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
+#endif
+}
 
 /* RC4 encryption/ WEP decryption check */
 

@@ -38,7 +38,17 @@
 #include <limits.h>
 
 #ifdef USE_GCRYPT
-#include "gcrypt-openssl-wrapper.h"
+#include <aircrack-ng/crypto/gcrypt-openssl-wrapper.h>
+#include <aircrack-ng/crypto/sha1-git.h>
+#else
+#include <openssl/hmac.h>
+#include <openssl/sha.h>
+#include <openssl/rc4.h>
+#include <openssl/md5.h>
+#include <openssl/aes.h>
+#if HAVE_OPENSSL_CMAC_H
+#include <openssl/cmac.h>
+#endif
 #endif
 
 #include "aircrack-ng/defs.h"
@@ -195,5 +205,9 @@ static inline int eapol_handshake_step(const unsigned char * eapol,
 
 	return (2);
 }
+
+/// Initialize the system cryptography librar(ies).
+API_EXPORT
+void ac_crypto_init(void);
 
 #endif /* crypto.h */

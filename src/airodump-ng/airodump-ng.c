@@ -91,13 +91,6 @@
 #include "radiotap/radiotap.h"
 #include "radiotap/radiotap_iter.h"
 
-// libgcrypt thread callback definition for libgcrypt < 1.6.0
-#ifdef USE_GCRYPT
-#if GCRYPT_VERSION_NUMBER < 0x010600
-GCRY_THREAD_OPTION_PTHREAD_IMPL;
-#endif
-#endif
-
 struct devices dev;
 uint8_t h80211[4096] __attribute__((aligned(16)));
 uint8_t tmpbuf[4096] __attribute__((aligned(16)));
@@ -5852,18 +5845,8 @@ int main(int argc, char * argv[])
 	pid_t main_pid = getpid();
 
 	console_utf8_enable();
+	ac_crypto_init();
 
-#ifdef USE_GCRYPT
-// Register callback functions to ensure proper locking in the sensitive parts
-// of libgcrypt < 1.6.0
-#if GCRYPT_VERSION_NUMBER < 0x010600
-	gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
-#endif
-	// Disable secure memory.
-	gcry_control(GCRYCTL_DISABLE_SECMEM, 0);
-	// Tell Libgcrypt that initialization has completed.
-	gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
-#endif
 	ALLEGE(pthread_mutex_init(&(lopt.mx_print), NULL) == 0);
 	ALLEGE(pthread_mutex_init(&(lopt.mx_sort), NULL) == 0);
 

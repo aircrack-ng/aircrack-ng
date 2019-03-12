@@ -38,22 +38,9 @@
 #include <string.h>
 #include <stdint.h>
 
+#include <aircrack-ng/crypto/crypto.h>
 #include "aircrack-ng/ce-wpa/simd-intrinsics.h"
 #include "aircrack-ng/ce-wpa/wpapsk.h"
-#ifdef USE_GCRYPT
-#include "aircrack-ng/crypto/gcrypt-openssl-wrapper.h"
-#include "aircrack-ng/crypto/sha1-git.h"
-#else
-#include <openssl/hmac.h>
-#include <openssl/sha.h>
-// We don't use EVP. Bite me
-#include <openssl/rc4.h>
-#include <openssl/aes.h>
-#if HAVE_OPENSSL_CMAC_H
-#include <openssl/cmac.h>
-#endif
-#endif
-
 #include "aircrack-ng/cpu/trampoline.h"
 #include "aircrack-ng/ce-wpa/crypto_engine.h"
 
