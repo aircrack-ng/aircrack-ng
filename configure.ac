@@ -39,7 +39,7 @@
 
 # FIXME: MULTIBIN implementation in here and src/Makefile.am
 
-AC_PREREQ(2.52)
+AC_PREREQ([2.52])
 AC_INIT([aircrack-ng],
     [m4_translit(m4_esyscmd([$(pwd)/evalrev || cat $(pwd)/VERSION]),m4_newline)],
     [https://forum.aircrack-ng.org])
@@ -195,7 +195,7 @@ LIBS="$opt_libs $LIBS"
 #
 # Generate all build files
 #
-AC_OUTPUT([
+AC_CONFIG_FILES([
 Makefile
 
 manpages/Makefile
@@ -209,6 +209,7 @@ scripts/versuck-ng/Makefile
 
 test/test-env.sh
 ])
+AC_OUTPUT
 
 #
 # Output a summary of the build to be performed
