@@ -57,14 +57,13 @@
 #include "config.h"
 #endif
 
+#include <assert.h>
 #include <string.h>
 #include <stdint.h>
 
 #include "aircrack-ng/ce-wpa/arch.h"
 #include "aircrack-ng/ce-wpa/pseudo_intrinsics.h"
 #include "aircrack-ng/ce-wpa/memory.h"
-#include "aircrack-ng/ce-wpa/md5.h"
-#include "aircrack-ng/ce-wpa/MD5_std.h"
 #include "aircrack-ng/ce-wpa/johnswap.h"
 #include "aircrack-ng/ce-wpa/simd-intrinsics-load-flags.h"
 #include "aircrack-ng/ce-wpa/aligned.h"
@@ -1387,6 +1386,8 @@ void sha1_unreverse(uint32_t * hash)
 
 #undef INIT_E
 
+// SSEi_MIXED_IN | SSEi_RELOAD | SSEi_OUTPUT_AS_INP_FMT
+
 void SIMDSHA1body(vtype * _data,
 				  ARCH_WORD_32 * out,
 				  ARCH_WORD_32 * reload_state,
@@ -1403,6 +1404,7 @@ void SIMDSHA1body(vtype * _data,
 	unsigned int i;
 	vtype * data;
 
+#if 0
 	if (SSEi_flags & SSEi_FLAT_IN)
 	{
 // Move _data to __data, mixing it SIMD_COEF_32 wise.
@@ -1501,8 +1503,12 @@ void SIMDSHA1body(vtype * _data,
 		data = w;
 	}
 	else
-		data = _data;
+#else
+	assert((SSEi_flags & SSEi_FLAT_IN) == 0);
+#endif
+	data = _data;
 
+#if 0
 	if ((SSEi_flags & SSEi_RELOAD) == 0)
 	{
 		SHA1_PARA_DO(i)
@@ -1516,6 +1522,10 @@ void SIMDSHA1body(vtype * _data,
 	}
 	else
 	{
+#endif
+	assert((SSEi_flags & SSEi_RELOAD) != 0);
+
+#if 0
 		if ((SSEi_flags & SSEi_RELOAD_INP_FMT) == SSEi_RELOAD_INP_FMT)
 		{
 			SHA1_PARA_DO(i)
@@ -1529,16 +1539,21 @@ void SIMDSHA1body(vtype * _data,
 		}
 		else
 		{
-			SHA1_PARA_DO(i)
-			{
-				a[i] = vload((vtype *) &reload_state[i * 5 * VS32 + 0 * VS32]);
-				b[i] = vload((vtype *) &reload_state[i * 5 * VS32 + 1 * VS32]);
-				c[i] = vload((vtype *) &reload_state[i * 5 * VS32 + 2 * VS32]);
-				d[i] = vload((vtype *) &reload_state[i * 5 * VS32 + 3 * VS32]);
-				e[i] = vload((vtype *) &reload_state[i * 5 * VS32 + 4 * VS32]);
-			}
-		}
+#endif
+	SHA1_PARA_DO(i)
+	{
+		a[i] = vload((vtype *) &reload_state[i * 5 * VS32 + 0 * VS32]);
+		b[i] = vload((vtype *) &reload_state[i * 5 * VS32 + 1 * VS32]);
+		c[i] = vload((vtype *) &reload_state[i * 5 * VS32 + 2 * VS32]);
+		d[i] = vload((vtype *) &reload_state[i * 5 * VS32 + 3 * VS32]);
+		e[i] = vload((vtype *) &reload_state[i * 5 * VS32 + 4 * VS32]);
 	}
+#if 0
+		}
+#endif
+#if 0
+	}
+#endif
 
 	cst = vset1_epi32(0x5A827999);
 	SHA1_ROUND2a(a, b, c, d, e, SHA1_F, 0);
@@ -1624,6 +1639,7 @@ void SIMDSHA1body(vtype * _data,
 	SHA1_ROUND2x(b, c, d, e, a, SHA1_I, 74);
 	SHA1_ROUND2x(a, b, c, d, e, SHA1_I, 75);
 
+#if 0
 	if (SSEi_flags & SSEi_REVERSE_STEPS)
 	{
 		SHA1_PARA_DO(i)
@@ -1632,12 +1648,14 @@ void SIMDSHA1body(vtype * _data,
 		}
 		return;
 	}
+#endif
 
 	SHA1_ROUND2x(e, a, b, c, d, SHA1_I, 76);
 	SHA1_ROUND2x(d, e, a, b, c, SHA1_I, 77);
 	SHA1_ROUND2x(c, d, e, a, b, SHA1_I, 78);
 	SHA1_ROUND2x(b, c, d, e, a, SHA1_I, 79);
 
+#if 0
 	if ((SSEi_flags & SSEi_RELOAD) == 0)
 	{
 		SHA1_PARA_DO(i)
@@ -1674,27 +1692,26 @@ void SIMDSHA1body(vtype * _data,
 		}
 		else
 		{
-			SHA1_PARA_DO(i)
-			{
-				a[i] = vadd_epi32(
-					a[i],
-					vload((vtype *) &reload_state[i * 5 * VS32 + 0 * VS32]));
-				b[i] = vadd_epi32(
-					b[i],
-					vload((vtype *) &reload_state[i * 5 * VS32 + 1 * VS32]));
-				c[i] = vadd_epi32(
-					c[i],
-					vload((vtype *) &reload_state[i * 5 * VS32 + 2 * VS32]));
-				d[i] = vadd_epi32(
-					d[i],
-					vload((vtype *) &reload_state[i * 5 * VS32 + 3 * VS32]));
-				e[i] = vadd_epi32(
-					e[i],
-					vload((vtype *) &reload_state[i * 5 * VS32 + 4 * VS32]));
-			}
+#endif
+	SHA1_PARA_DO(i)
+	{
+		a[i] = vadd_epi32(
+			a[i], vload((vtype *) &reload_state[i * 5 * VS32 + 0 * VS32]));
+		b[i] = vadd_epi32(
+			b[i], vload((vtype *) &reload_state[i * 5 * VS32 + 1 * VS32]));
+		c[i] = vadd_epi32(
+			c[i], vload((vtype *) &reload_state[i * 5 * VS32 + 2 * VS32]));
+		d[i] = vadd_epi32(
+			d[i], vload((vtype *) &reload_state[i * 5 * VS32 + 3 * VS32]));
+		e[i] = vadd_epi32(
+			e[i], vload((vtype *) &reload_state[i * 5 * VS32 + 4 * VS32]));
+	}
+#if 0
 		}
 	}
+#endif
 
+#if 0
 	if (SSEi_flags & SSEi_FLAT_OUT)
 	{
 		SHA1_PARA_DO(i)
@@ -1757,14 +1774,19 @@ void SIMDSHA1body(vtype * _data,
 		}
 		else
 		{
-			SHA1_PARA_DO(i)
-			{
-				vstore((vtype *) &out[i * 16 * VS32 + 0 * VS32], a[i]);
-				vstore((vtype *) &out[i * 16 * VS32 + 1 * VS32], b[i]);
-				vstore((vtype *) &out[i * 16 * VS32 + 2 * VS32], c[i]);
-				vstore((vtype *) &out[i * 16 * VS32 + 3 * VS32], d[i]);
-				vstore((vtype *) &out[i * 16 * VS32 + 4 * VS32], e[i]);
-			}
+#endif
+	assert((SSEi_flags & SSEi_OUTPUT_AS_INP_FMT) != 0
+		   && (SSEi_flags & SSEi_OUTPUT_AS_2BUF_INP_FMT) == 0);
+
+	SHA1_PARA_DO(i)
+	{
+		vstore((vtype *) &out[i * 16 * VS32 + 0 * VS32], a[i]);
+		vstore((vtype *) &out[i * 16 * VS32 + 1 * VS32], b[i]);
+		vstore((vtype *) &out[i * 16 * VS32 + 2 * VS32], c[i]);
+		vstore((vtype *) &out[i * 16 * VS32 + 3 * VS32], d[i]);
+		vstore((vtype *) &out[i * 16 * VS32 + 4 * VS32], e[i]);
+	}
+#if 0
 		}
 	}
 	else
@@ -1778,6 +1800,7 @@ void SIMDSHA1body(vtype * _data,
 			vstore((vtype *) &out[i * 5 * VS32 + 4 * VS32], e[i]);
 		}
 	}
+#endif
 }
 #endif /* SIMD_PARA_SHA1 */
 

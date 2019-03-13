@@ -71,20 +71,14 @@
 #define SHA_BUF_SIZ 16
 #define SIMD_COEF_32 4
 #define SIMD_COEF_64 2
-#ifndef SIMD_PARA_MD4
-#define SIMD_PARA_MD4 2
-#endif
-#ifndef SIMD_PARA_MD5
-#define SIMD_PARA_MD5 2
-#endif
 #ifndef SIMD_PARA_SHA1
 #define SIMD_PARA_SHA1 1
 #endif
 #ifndef SIMD_PARA_SHA256
-#define SIMD_PARA_SHA256 1
+#define SIMD_PARA_SHA256 0
 #endif
 #ifndef SIMD_PARA_SHA512
-#define SIMD_PARA_SHA512 1
+#define SIMD_PARA_SHA512 0
 #endif
 #endif
 
@@ -92,21 +86,14 @@
 #define SHA_BUF_SIZ 16
 #define SIMD_COEF_32 4
 #define SIMD_COEF_64 2
-
-#ifndef SIMD_PARA_MD4
-#define SIMD_PARA_MD4 1
-#endif
-#ifndef SIMD_PARA_MD5
-#define SIMD_PARA_MD5 1
-#endif
 #ifndef SIMD_PARA_SHA1
 #define SIMD_PARA_SHA1 1
 #endif
 #ifndef SIMD_PARA_SHA256
-#define SIMD_PARA_SHA256 1
+#define SIMD_PARA_SHA256 0
 #endif
 #ifndef SIMD_PARA_SHA512
-#define SIMD_PARA_SHA512 1
+#define SIMD_PARA_SHA512 0
 #endif
 
 #endif
@@ -359,45 +346,6 @@
 #define SIMD_COEF_64 2
 #endif
 
-/*
-#ifndef SIMD_PARA_MD4
-#if defined(__INTEL_COMPILER)
-#define SIMD_PARA_MD4			3
-#elif defined(__clang__)
-#define SIMD_PARA_MD4			4
-#elif defined(__llvm__)
-#define SIMD_PARA_MD4			3
-#elif defined(__GNUC__) && GCC_VERSION < 40405	// 4.4.5
-#define SIMD_PARA_MD4			1
-#elif defined(__GNUC__) && GCC_VERSION < 40500	// 4.5.0
-#define SIMD_PARA_MD4			3
-#elif defined(__GNUC__) && (GCC_VERSION < 40600 || defined(__XOP__)) // 4.6.0
-#define SIMD_PARA_MD4			2
-#else
-#define SIMD_PARA_MD4			3
-#endif
-#endif
-
-#ifndef SIMD_PARA_MD5
-#if defined(__INTEL_COMPILER)
-#define SIMD_PARA_MD5			3
-#elif defined(__clang__)
-#define SIMD_PARA_MD5			5
-#elif defined(__llvm__)
-#define SIMD_PARA_MD5			3
-#elif defined(__GNUC__) && GCC_VERSION == 30406	// 3.4.6
-#define SIMD_PARA_MD5			3
-#elif defined(__GNUC__) && GCC_VERSION < 40405	// 4.4.5
-#define SIMD_PARA_MD5			1
-#elif defined(__GNUC__) && GCC_VERSION < 40500	// 4.5.0
-#define SIMD_PARA_MD5			3
-#elif defined(__GNUC__) && (GCC_VERSION < 40600 || defined(__XOP__)) // 4.6.0
-#define SIMD_PARA_MD5			2
-#else
-#define SIMD_PARA_MD5			3
-#endif
-#endif
-*/
 #ifndef SIMD_PARA_SHA1
 #if defined(__INTEL_COMPILER)
 #define SIMD_PARA_SHA1 1
@@ -414,6 +362,7 @@
 #endif
 #endif
 
+#if 0
 #ifndef SIMD_PARA_SHA256
 #if __XOP__
 #define SIMD_PARA_SHA256 2
@@ -423,6 +372,7 @@
 #endif
 #ifndef SIMD_PARA_SHA512
 #define SIMD_PARA_SHA512 1
+#endif
 #endif
 
 #ifndef SHA1_SSE_PARA
@@ -452,16 +402,6 @@
 #define PARA_TO_N(n) STR_VALUE(n) "x"
 #define PARA_TO_MxN(m, n) STR_VALUE(m) "x" STR_VALUE(n)
 
-#if SIMD_PARA_MD4 > 1
-#define MD4_N_STR PARA_TO_MxN(SIMD_COEF_32, SIMD_PARA_MD4)
-#else
-#define MD4_N_STR PARA_TO_N(SIMD_COEF_32)
-#endif
-#if SIMD_PARA_MD5 > 1
-#define MD5_N_STR PARA_TO_MxN(SIMD_COEF_32, SIMD_PARA_MD5)
-#else
-#define MD5_N_STR PARA_TO_N(SIMD_COEF_32)
-#endif
 #if SIMD_PARA_SHA1 > 1
 #define SHA1_N_STR PARA_TO_MxN(SIMD_COEF_32, SIMD_PARA_SHA1)
 #else

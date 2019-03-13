@@ -49,8 +49,6 @@ aircrack_ngheaders_HEADERS = 	%D%/aircrack-ng/adt/avl_tree.h \
 															%D%/aircrack-ng/ce-wpa/misc.h \
 															%D%/aircrack-ng/ce-wpa/simd-intrinsics.h \
 															%D%/aircrack-ng/ce-wpa/pseudo_intrinsics.h \
-															%D%/aircrack-ng/ce-wpa/md5.h \
-															%D%/aircrack-ng/ce-wpa/MD5_std.h \
 															%D%/aircrack-ng/ce-wpa/memory.h \
 															%D%/aircrack-ng/ce-wpa/aligned.h \
 															%D%/aircrack-ng/ce-wpa/johnswap.h \
