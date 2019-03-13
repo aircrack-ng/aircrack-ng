@@ -37,7 +37,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "aircrack-ng/defs.h"
+#include <aircrack-ng/defs.h>
 
 #define MAX_THREADS 256
 

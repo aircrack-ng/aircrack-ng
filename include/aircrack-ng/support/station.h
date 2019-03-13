@@ -32,10 +32,10 @@
  *  files in the program, then also delete it here.
  */
 
-#include "aircrack-ng/ce-wpa/crypto_engine.h"
-#include "aircrack-ng/adt/avl_tree.h"
-#include "aircrack-ng/support/pcap_local.h"
-#include "aircrack-ng/ptw/aircrack-ptw-lib.h"
+#include <aircrack-ng/ce-wpa/crypto_engine.h>
+#include <aircrack-ng/adt/avl_tree.h>
+#include <aircrack-ng/support/pcap_local.h>
+#include <aircrack-ng/ptw/aircrack-ptw-lib.h>
 
 #ifndef AIRCRACK_NG_STATION_H
 #define AIRCRACK_NG_STATION_H

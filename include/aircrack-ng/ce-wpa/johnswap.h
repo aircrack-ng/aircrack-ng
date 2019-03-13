@@ -44,7 +44,7 @@
 #define __JOHN_SWAP_H__
 
 /* reqired for the john_bswap_32 ARCH_WORD_32 declaration */
-#include "jcommon.h"
+#include <aircrack-ng/ce-wpa/jcommon.h>
 
 /* if x86 compatible cpu */
 #if defined(i386) || defined(__i386__) || defined(__i486__)                    \

@@ -51,7 +51,7 @@
 #endif
 #endif
 
-#include "aircrack-ng/defs.h"
+#include <aircrack-ng/defs.h>
 
 #define CRYPT_NONE 0
 #define CRYPT_WEP 1

@@ -55,8 +55,8 @@
 #ifndef _JCOMMON_H
 #define _JCOMMON_H
 
-#include "arch.h"
-#include "memory.h"
+#include <aircrack-ng/ce-wpa/arch.h>
+#include <aircrack-ng/ce-wpa/memory.h>
 
 #if ARCH_INT_GT_32
 typedef unsigned short ARCH_WORD_32;

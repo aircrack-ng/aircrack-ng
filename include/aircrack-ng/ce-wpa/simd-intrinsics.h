@@ -57,10 +57,10 @@
 #undef SIMD_COEF_32
 #endif
 
-#include "jcommon.h"
-#include "pseudo_intrinsics.h"
-#include "simd-intrinsics-load-flags.h"
-#include "aligned.h"
+#include <aircrack-ng/ce-wpa/jcommon.h>
+#include <aircrack-ng/ce-wpa/pseudo_intrinsics.h>
+#include <aircrack-ng/ce-wpa/simd-intrinsics-load-flags.h>
+#include <aircrack-ng/ce-wpa/aligned.h>
 
 #ifndef _EMMINTRIN_H_INCLUDED
 #define __m128i void

@@ -38,8 +38,9 @@
 #include <stdint.h>
 #include <time.h>
 
-#include "byteorder.h"
-#include "packed.h"
+#include <aircrack-ng/osdep/byteorder.h>
+#include <aircrack-ng/osdep/common.h>
+#include <aircrack-ng/osdep/packed.h>
 
 #if defined(__APPLE_CC__) && defined(_XCODE)
 #include <pcap/bpf.h>
@@ -55,21 +56,6 @@
 #define LINKTYPE_PPI_HDR DLT_PPI
 #undef TCPDUMP_MAGIC
 #define TCPDUMP_MAGIC 0xa1b2c3d4
-#endif
-
-#if defined(_MSC_VER)
-//  Microsoft
-#define EXPORT __declspec(dllexport)
-#define IMPORT __declspec(dllimport)
-#elif defined(__GNUC__) || defined(__llvm__) || defined(__clang__)             \
-	|| defined(__INTEL_COMPILER)
-#define EXPORT __attribute__((visibility("default")))
-#define IMPORT
-#else
-//  do nothing and hope for the best?
-#define EXPORT
-#define IMPORT
-#pragma warning Unknown dynamic link import / export semantics.
 #endif
 
 /* For all structures, when adding new fields, always append them to the end.

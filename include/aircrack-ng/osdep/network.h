@@ -11,7 +11,7 @@
 #include <inttypes.h>
 #include <sys/types.h>
 
-#include "osdep.h"
+#include <aircrack-ng/osdep/osdep.h>
 
 enum
 {

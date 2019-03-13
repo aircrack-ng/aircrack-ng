@@ -46,11 +46,11 @@
 #endif
 #include <pthread.h>
 
-#include "aircrack-ng/ptw/aircrack-ptw-lib.h"
+#include <aircrack-ng/ptw/aircrack-ptw-lib.h>
 #include "eapol.h"
-#include "aircrack-ng/ce-wpa/crypto_engine.h"
-#include "aircrack-ng/adt/avl_tree.h"
-#include "aircrack-ng/adt/circular_queue.h"
+#include <aircrack-ng/ce-wpa/crypto_engine.h>
+#include <aircrack-ng/adt/avl_tree.h>
+#include <aircrack-ng/adt/circular_queue.h>
 
 #define SUCCESS 0
 #define FAILURE 1
@@ -212,7 +212,7 @@ struct WEP_data
 	vote poll[64][256]; /* KoreK cryptanalysis results  */
 };
 
-#include "aircrack-ng/support/station.h"
+#include <aircrack-ng/support/station.h>
 
 struct mergeBSSID
 {

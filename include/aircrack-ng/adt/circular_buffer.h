@@ -23,7 +23,7 @@
 #ifndef AIRCRACK_UTIL_CIRCULAR_BUFFER_H
 #define AIRCRACK_UTIL_CIRCULAR_BUFFER_H
 
-#include "aircrack-ng/defs.h"
+#include <aircrack-ng/defs.h>
 
 /**
  * @file circular_buffer.h

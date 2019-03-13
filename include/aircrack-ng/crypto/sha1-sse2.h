@@ -35,7 +35,7 @@
 #include <string.h>
 #include <time.h>
 
-#include "aircrack-ng/crypto/crypto.h"
+#include <aircrack-ng/crypto/crypto.h>
 
 #if defined(__i386__) || ((defined(__x86_64__) && !defined(__CYGWIN__))        \
 						  || (defined(__x86_64__) && defined(__CYGWIN__)       \

@@ -68,7 +68,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "aircrack-ng/ce-wpa/crypto_engine.h"
+#include <aircrack-ng/ce-wpa/crypto_engine.h>
 
 #ifdef __cplusplus
 extern "C" {

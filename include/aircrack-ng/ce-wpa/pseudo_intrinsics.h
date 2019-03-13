@@ -66,13 +66,14 @@
 #ifndef _SSE_PSEUDO_H
 #define _SSE_PSEUDO_H
 
-#include "arch.h"
+#include <stdint.h>
+
+#include <aircrack-ng/ce-wpa/arch.h>
 
 #if SIMD_COEF_32
 
-#include "aligned.h"
-#include "stdint.h"
-#include "jcommon.h" /* for is_aligned() */
+#include <aircrack-ng/ce-wpa/aligned.h>
+#include <aircrack-ng/ce-wpa/jcommon.h> /* for is_aligned() */
 
 /*************************** NEON (ARM) *******************************/
 #ifdef __ARM_NEON__

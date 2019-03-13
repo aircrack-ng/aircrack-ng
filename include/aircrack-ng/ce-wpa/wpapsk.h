@@ -58,16 +58,17 @@
 #include <stdint.h>
 
 #include <aircrack-ng/crypto/crypto.h>
-#include "aircrack-ng/ce-wpa/arch.h"
-#include "aircrack-ng/ce-wpa/jcommon.h"
-#include "aircrack-ng/ce-wpa/johnswap.h"
-#include "aircrack-ng/ce-wpa/crypto_engine.h"
+#include <aircrack-ng/ce-wpa/arch.h>
+#include <aircrack-ng/ce-wpa/jcommon.h>
+#include <aircrack-ng/ce-wpa/johnswap.h>
+#include <aircrack-ng/ce-wpa/crypto_engine.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 void init_atoi(void);
+
 int init_wpapsk(ac_crypto_engine_t * engine,
 				const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
 				int nparallel,

@@ -59,7 +59,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "arch.h"
+#include <aircrack-ng/ce-wpa/arch.h>
 
 #if __AVX512F__
 #define SIMD_COEF_32 16
