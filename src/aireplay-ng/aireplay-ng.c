@@ -1502,7 +1502,7 @@ read_packets:
 	else
 		memcpy(dmac, opt.r_dmac, 6);
 
-	if (opt.r_fctrl != -1)
+	if (opt.r_fctrl != -1U)
 	{
 		h80211[0] = opt.r_fctrl >> 8;
 		h80211[1] = opt.r_fctrl & 0xFF;
