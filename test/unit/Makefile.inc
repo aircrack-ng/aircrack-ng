@@ -51,7 +51,7 @@ UNIT_COMMON_LDADD  = $(PTHREAD_LIBS) \
 test_calc_one_pmk_SOURCES = %D%/test-calc-one-pmk.c
 test_calc_one_pmk_CFLAGS  = $(UNIT_COMMON_CFLAGS)
 test_calc_one_pmk_LDFLAGS = -rdynamic
-test_calc_one_pmk_LDADD   = $(LIBAIRCRACK_CRYPTO_LIBS) \
+test_calc_one_pmk_LDADD   = $(LIBAIRCRACK_CE_WPA_LIBS) \
 						    $(UNIT_COMMON_LDADD)
 
 test_circular_buffer_SOURCES = %D%/test-circular-buffer.c
@@ -70,18 +70,18 @@ test_string_has_suffix_LDFLAGS = -rdynamic
 test_string_has_suffix_LDADD   = $(LIBAIRCRACK_LIBS) $(UNIT_COMMON_LDADD)
 
 test_wpapsk_SOURCES = %D%/test-wpapsk.c
-test_wpapsk_CFLAGS  = "-DLIBAIRCRACK_CRYPTO_PATH=\"$(LIBAIRCRACK_CRYPTO_PATH)\"" \
+test_wpapsk_CFLAGS  = "-DLIBAIRCRACK_CE_WPA_PATH=\"$(LIBAIRCRACK_CE_WPA_PATH)\"" \
 					  "-DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"" \
 					  "-DABS_TOP_BUILDDIR=\"$(abs_top_builddir)\"" \
 					  "-DLIBDIR=\"$(libdir)\"" \
 					  $(UNIT_COMMON_CFLAGS)
 test_wpapsk_LDFLAGS = -rdynamic
-test_wpapsk_LDADD   = $(LIBAIRCRACK_CRYPTO_LIBS) \
+test_wpapsk_LDADD   = $(LIBAIRCRACK_CE_WPA_LIBS) \
 					  $(LIBAIRCRACK_LIBS) \
 					  $(UNIT_COMMON_LDADD)
 
 test_wpapsk_cmac_SOURCES = %D%/test-wpapsk-cmac.c
-test_wpapsk_cmac_CFLAGS  = "-DLIBAIRCRACK_CRYPTO_PATH=\"$(LIBAIRCRACK_CRYPTO_PATH)\"" \
+test_wpapsk_cmac_CFLAGS  = "-DLIBAIRCRACK_CE_WPA_PATH=\"$(LIBAIRCRACK_CE_WPA_PATH)\"" \
 						   "-DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"" \
 						   "-DABS_TOP_BUILDDIR=\"$(abs_top_builddir)\"" \
 						   "-DLIBDIR=\"$(libdir)\"" \

@@ -259,7 +259,7 @@ EXPORT int ac_crypto_engine_loader_get_available(void)
 		snprintf(library_path,
 				 sizeof(library_path) - 1,
 				 "%s%s",
-				 LIBAIRCRACK_CRYPTO_PATH,
+				 LIBAIRCRACK_CE_WPA_PATH,
 				 LT_OBJDIR);
 	}
 	else
@@ -290,7 +290,7 @@ EXPORT int ac_crypto_engine_loader_get_available(void)
 		if (string_has_suffix((char *) entry->d_name, ".so"))
 #endif
 		{
-			char * search = strstr(entry->d_name, "aircrack-crypto-");
+			char * search = strstr(entry->d_name, "aircrack-ce-wpa-");
 
 			if (search)
 			{
@@ -312,7 +312,7 @@ out:
 
 EXPORT char * ac_crypto_engine_loader_best_library_for(int simd_features)
 {
-	char buffer[8192] = {"aircrack-crypto"};
+	char buffer[8192] = {"aircrack-ce-wpa"};
 	char library_path[8192];
 	char module_filename[8192];
 	size_t buffer_remaining = 8192 - strlen(buffer) - 1;
@@ -364,7 +364,7 @@ EXPORT char * ac_crypto_engine_loader_best_library_for(int simd_features)
 		snprintf(library_path,
 				 sizeof(library_path) - 1,
 				 "%s%s",
-				 LIBAIRCRACK_CRYPTO_PATH,
+				 LIBAIRCRACK_CE_WPA_PATH,
 				 LT_OBJDIR);
 	}
 	else

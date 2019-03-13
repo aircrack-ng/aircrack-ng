@@ -76,23 +76,16 @@ LIBCOWPATTY_LIBS = libcowpatty.la
 LIBPTW_LIBS = libptw.la
 LIBRADIOTAP_LIBS = libradiotap.la
 
-LIBAIRCRACK_CRYPTO_LIBS = libaircrack-crypto.la
+LIBAIRCRACK_CE_WPA_LIBS = libaircrack-ce-wpa.la
+LIBAIRCRACK_CE_WPA_X86_AVX512_LIBS = libaircrack-ce-wpa-x86-avx512.la
+LIBAIRCRACK_CE_WPA_X86_AVX2_LIBS = libaircrack-ce-wpa-x86-avx2.la
+LIBAIRCRACK_CE_WPA_X86_AVX_LIBS = libaircrack-ce-wpa-x86-avx.la
+LIBAIRCRACK_CE_WPA_X86_SSE2_LIBS = libaircrack-ce-wpa-x86-sse2.la
+LIBAIRCRACK_CE_WPA_ARM_NEON_LIBS = libaircrack-ce-wpa-arm-neon.la
+LIBAIRCRACK_CE_WPA_PPC_ALTIVEC_LIBS = libaircrack-ce-wpa-ppc-altivec.la
+LIBAIRCRACK_CE_WPA_PPC_POWER8_LIBS = libaircrack-ce-wpa-ppc-power8.la
 
-LIBAIRCRACK_CRYPTO_X86_AVX512_LIBS = libaircrack-crypto-x86-avx512.la
-
-LIBAIRCRACK_CRYPTO_X86_AVX2_LIBS = libaircrack-crypto-x86-avx2.la
-
-LIBAIRCRACK_CRYPTO_X86_AVX_LIBS = libaircrack-crypto-x86-avx.la
-
-LIBAIRCRACK_CRYPTO_X86_SSE2_LIBS = libaircrack-crypto-x86-sse2.la
-
-LIBAIRCRACK_CRYPTO_ARM_NEON_LIBS = libaircrack-crypto-arm-neon.la
-
-LIBAIRCRACK_CRYPTO_PPC_ALTIVEC_LIBS = libaircrack-crypto-ppc-altivec.la
-
-LIBAIRCRACK_CRYPTO_PPC_POWER8_LIBS = libaircrack-crypto-ppc-power8.la
-
-LIBAIRCRACK_CRYPTO_PATH = $(abs_top_builddir)/
+LIBAIRCRACK_CE_WPA_PATH = $(abs_top_builddir)/
 
 include $(top_srcdir)/include/Makefile.inc
 include $(top_srcdir)/lib/Makefile.inc

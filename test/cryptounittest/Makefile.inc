@@ -58,7 +58,7 @@ test_calc_pmk_CFLAGS  = $(AM_CPPFLAGS) \
 						$(PTHREAD_CFLAGS) \
 						$(CRYPTO_CFLAGS)
 test_calc_pmk_LDADD   = $(LIBACCRYPTO_LIBS) $(LIBAIRCRACK_LIBS) \
-						$(LIBAIRCRACK_CRYPTO_LIBS) \
+						$(LIBAIRCRACK_CE_WPA_LIBS) \
 						$(PTHREAD_LIBS) \
 						$(CRYPTO_LIBS) \
 						$(ZLIB_LIBS)
