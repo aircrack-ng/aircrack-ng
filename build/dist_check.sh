@@ -29,7 +29,7 @@ tar xzf ../$BN.tar.gz
 cd "$BN"
 if [ "$TRAVIS_OS_NAME" == "osx" ]; then ./configure --with-openssl=/usr/local/Cellar/openssl/1.0.2l --with-experimental --with-ext-scripts; else ./configure --with-experimental --with-ext-scripts; fi
 make
-make check || { find test -name 'test-suite.log' -exec cat {} ';' && exit 1; }
+make check || { find . -name 'test-suite.log' -exec cat {} ';' && exit 1; }
 make DESTDIR=/tmp/ac install
 
 exit 0
