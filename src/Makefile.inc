@@ -105,7 +105,7 @@ endif
 
 aircrack_ng_SOURCES		= $(SRC_AC) $(SRC_LINECOUNT) $(SRC_SESSION)
 aircrack_ng_CFLAGS		= $(COMMON_CFLAGS) $(SQLITE3_CFLAGS) $(LIBPTW_CFLAGS)
-aircrack_ng_CPPFLAGS	= $(AM_CPPFLAGS) -I$(top_srcdir)/src/aircrack-ng
+aircrack_ng_CPPFLAGS	= $(AM_CPPFLAGS) -I$(abs_srcdir)/src/aircrack-ng
 aircrack_ng_LDADD			= $(LIBACCRYPTO_LIBS) $(LIBAIRCRACK_LIBS) $(LIBAIRCRACK_CE_WEP_LIBS) $(SQLITE3_LDFLAGS) $(SQLITE3_LIBS) $(LIBPTW_LIBS) $(COMMON_LDADD) $(CRYPTO_LIBS) $(HWLOC_LIBS)
 
 if STATIC_BUILD
@@ -129,7 +129,7 @@ aireplay_ng_LDADD		= $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBACCRYPTO_LIB
 
 airodump_ng_SOURCES		= $(SRC_ADU) $(SRC_DWRITE)
 airodump_ng_CFLAGS		= $(COMMON_CFLAGS) $(PCRE_CFLAGS) $(LIBNL_CFLAGS)
-airodump_ng_CPPFLAGS	= $(AM_CPPFLAGS) -I$(top_srcdir)/src/airodump-ng
+airodump_ng_CPPFLAGS	= $(AM_CPPFLAGS) -I$(abs_srcdir)/src/airodump-ng
 airodump_ng_LDADD			= $(COMMON_LDADD) $(PCRE_LIBS) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBACCRYPTO_LIBS) $(LIBAIRCRACK_CE_WEP_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_LIBS) $(CRYPTO_LIBS)
 
 airserv_ng_SOURCES	= $(SRC_AS)
@@ -154,12 +154,12 @@ wesside_ng_LDADD		= $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBACCRYPTO_LIBS
 
 easside_ng_SOURCES	= $(SRC_ES)
 easside_ng_CFLAGS		= $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
-easside_ng_CPPFLAGS	= $(AM_CPPFLAGS) -I$(top_srcdir)/src/easside-ng
+easside_ng_CPPFLAGS	= $(AM_CPPFLAGS) -I$(abs_srcdir)/src/easside-ng
 easside_ng_LDADD		= $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_LIBS) $(CRYPTO_LIBS)
 
 buddy_ng_SOURCES	= $(SRC_BUDDY)
 buddy_ng_CFLAGS		= $(COMMON_CFLAGS) $(PTHREAD_CFLAGS)
-buddy_ng_CPPFLAGS	= $(AM_CPPFLAGS) -I$(top_srcdir)/src/easside-ng
+buddy_ng_CPPFLAGS	= $(AM_CPPFLAGS) -I$(abs_srcdir)/src/easside-ng
 buddy_ng_LDADD		= $(COMMON_LDADD) $(LIBAIRCRACK_LIBS) $(CRYPTO_LIBS)
 
 besside_ng_SOURCES	= $(SRC_BS)
@@ -184,7 +184,7 @@ airbase_ng_LDADD		= $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBACCRYPTO_LIBS
 
 airdecloak_ng_SOURCES		= $(SRC_AU)
 airdecloak_ng_CFLAGS		= $(COMMON_CFLAGS)
-airdecloak_ng_CPPFLAGS	= $(AM_CPPFLAGS) -I$(top_srcdir)/src/airdecloak-ng
+airdecloak_ng_CPPFLAGS	= $(AM_CPPFLAGS) -I$(abs_srcdir)/src/airdecloak-ng
 airdecloak_ng_LDADD			= $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_LIBS) $(CRYPTO_LIBS)
 
 tkiptun_ng_SOURCES	= $(SRC_TT)
@@ -197,12 +197,11 @@ wpaclean_LDADD		= $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(AIRPCAP_LIBS) $(LI
 
 airventriloquist_ng_SOURCES		= $(SRC_AV)
 airventriloquist_ng_CFLAGS		= $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
-airventriloquist_ng_CPPFLAGS	= $(AM_CPPFLAGS) -I$(top_srcdir)/src/airventriloquist-ng
+airventriloquist_ng_CPPFLAGS	= $(AM_CPPFLAGS) -I$(abs_srcdir)/src/airventriloquist-ng
 airventriloquist_ng_LDADD 		= $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBACCRYPTO_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_LIBS) $(CRYPTO_LIBS)
 
 EXTRA_DIST +=	%D%/wpaclean/wpaclean.c \
 							%D%/buddy-ng/buddy-ng.c \
-							%D%/airventriloquist-ng.h \
 							%D%/airdecloak-ng/airdecloak-ng.h \
 							%D%/airserv-ng/airserv-ng.c \
 							%D%/besside-ng/besside-ng.c \
@@ -224,6 +223,7 @@ EXTRA_DIST +=	%D%/wpaclean/wpaclean.c \
 							%D%/airdecloak-ng/airdecloak-ng.c \
 							%D%/packetforge-ng/packetforge-ng.c \
 							%D%/airventriloquist-ng/airventriloquist-ng.c \
+							%D%/airventriloquist-ng/airventriloquist-ng.h \
 							%D%/wesside-ng/wesside-ng.c \
 							%D%/airtun-ng/airtun-ng.c \
 							%D%/aircrack-ng/linecount.h \

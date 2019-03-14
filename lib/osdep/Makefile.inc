@@ -101,22 +101,14 @@ libaircrack_osdep_la_CPPFLAGS = -I$(top_srcdir)/include/aircrack-ng/osdep $(AM_C
 
 EXTRA_DIST +=     %D%/openbsd.c \
                   %D%/darwin.c \
-                  %D%/crctable_osdep.h \
                   %D%/common.c \
                   %D%/darwin_tap.c \
                   %D%/cygwin.c \
-                  %D%/aircrack_ng_airpcap.h \
                   %D%/linux.c \
                   %D%/file.c \
-                  %D%/network.h \
-                  %D%/osdep.h \
-                  %D%/byteorder.h \
                   %D%/linux_tap.c \
-                  %D%/common.h \
                   %D%/airpcap.c \
-                  %D%/cygwin.h \
                   %D%/netbsd.c \
-                  %D%/packed.h \
                   %D%/freebsd_tap.c \
                   %D%/freebsd.c \
                   %D%/osdep.c \
@@ -125,5 +117,4 @@ EXTRA_DIST +=     %D%/openbsd.c \
                   %D%/dummy.c \
                   %D%/netbsd_tap.c \
                   %D%/network.c \
-                  %D%/cygwin_tap.c \
-                  %D%/channel.h
+                  %D%/cygwin_tap.c

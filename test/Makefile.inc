@@ -153,6 +153,14 @@ EXTRA_DIST += %D%/test-hex_string_to_array.sh \
 			  %D%/MOM1.cap \
 			  %D%/pass.txt
 
+if EXPECT
+EXTRA_DIST += %D%/test-aircrack-ng-0020.sh \
+              %D%/wep_64_ptw_01.cap \
+              %D%/wep_64_ptw_02.cap \
+              %D%/wep_64_ptw_03.cap \
+              %D%/wep_64_ptw_04.cap
+endif
+
 if LINUX
 EXTRA_DIST += %D%/test-aireplay-ng-0001.sh \
 			  %D%/test-aireplay-ng-0002.sh \
