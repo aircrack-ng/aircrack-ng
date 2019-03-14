@@ -81,6 +81,7 @@
 
 #define REQUESTS 30
 #define MAX_APS 50
+#define MAX_ARP_SLOTS 8
 
 #define NEW_IV 1
 #define RETRY 2
@@ -1719,7 +1720,7 @@ static int do_attack_arp_resend(void)
 	}
 	else
 	{
-		arp = (struct ARP_req *) malloc(sizeof(struct ARP_req));
+		arp = (struct ARP_req *) malloc(sizeof(struct ARP_req) * MAX_ARP_SLOTS);
 		ALLEGE(arp != NULL);
 	}
 
@@ -2025,6 +2026,8 @@ static int do_attack_arp_resend(void)
 
 				if (++arp_off2 >= nb_arp) arp_off2 = 0;
 			}
+			else if (nb_arp >= MAX_ARP_SLOTS && !opt.ringbuffer)
+				continue;
 			else
 			{
 
@@ -2177,7 +2180,7 @@ static int do_attack_caffe_latte(void)
 		arp = (struct ARP_req *) malloc(opt.ringbuffer
 										* sizeof(struct ARP_req));
 	else
-		arp = (struct ARP_req *) malloc(sizeof(struct ARP_req));
+		arp = (struct ARP_req *) malloc(sizeof(struct ARP_req) * MAX_ARP_SLOTS);
 	ALLEGE(arp != NULL);
 
 	memset(ticks, 0, sizeof(ticks));
@@ -2480,6 +2483,8 @@ static int do_attack_caffe_latte(void)
 
 			if (nb_arp >= opt.ringbuffer && opt.ringbuffer > 0)
 				continue;
+			else if (nb_arp >= MAX_ARP_SLOTS && !opt.ringbuffer)
+				continue;
 			else
 			{
 
@@ -2570,7 +2575,7 @@ static int do_attack_migmode(void)
 		arp = (struct ARP_req *) malloc(opt.ringbuffer
 										* sizeof(struct ARP_req));
 	else
-		arp = (struct ARP_req *) malloc(sizeof(struct ARP_req));
+		arp = (struct ARP_req *) malloc(sizeof(struct ARP_req) * MAX_ARP_SLOTS);
 
 	if (arp == NULL) return 1;
 
@@ -2949,6 +2954,8 @@ static int do_attack_migmode(void)
 			/* Ring buffer size: by default: 8 ) */
 
 			if (nb_arp >= opt.ringbuffer && opt.ringbuffer > 0)
+				continue;
+			else if (nb_arp >= MAX_ARP_SLOTS && !opt.ringbuffer)
 				continue;
 			else
 			{
