@@ -47,7 +47,7 @@
 #include <pthread.h>
 
 #include <aircrack-ng/ptw/aircrack-ptw-lib.h>
-#include "eapol.h"
+#include <aircrack-ng/third-party/eapol.h>
 #include <aircrack-ng/ce-wpa/crypto_engine.h>
 #include <aircrack-ng/adt/avl_tree.h>
 #include <aircrack-ng/adt/circular_queue.h>

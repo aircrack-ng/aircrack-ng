@@ -51,8 +51,8 @@
 
 #include "aircrack-ng/osdep/byteorder.h"
 #include "aircrack-ng/osdep/packed.h"
-#include "include/ethernet.h"
-#include "include/ieee80211.h"
+#include "aircrack-ng/third-party/ethernet.h"
+#include "aircrack-ng/third-party/ieee80211.h"
 
 extern struct communication_options opt;
 extern struct devices dev;

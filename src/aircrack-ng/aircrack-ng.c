@@ -83,7 +83,7 @@
 #include "aircrack-ng/cpu/trampoline.h"
 #include "aircrack-ng/cowpatty/cowpatty.h"
 #include "aircrack-ng/crypto/crypto.h"
-#include "hashcat.h"
+#include "aircrack-ng/third-party/hashcat.h"
 #include "linecount.h"
 #include "aircrack-ng/support/pcap_local.h"
 #include "session.h"
@@ -91,8 +91,8 @@
 #include "aircrack-ng/version.h"
 #include "wkp-frame.h"
 #include "aircrack-ng/osdep/osdep.h"
-#include "include/ieee80211.h"
-#include "include/ethernet.h"
+#include "aircrack-ng/third-party/ieee80211.h"
+#include "aircrack-ng/third-party/ethernet.h"
 
 #ifdef HAVE_SQLITE
 #include <sqlite3.h>

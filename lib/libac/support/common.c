@@ -65,7 +65,7 @@
 #include "aircrack-ng/defs.h"
 #include "aircrack-ng/osdep/osdep.h"
 #include "aircrack-ng/osdep/common.h"
-#include "include/ethernet.h"
+#include "aircrack-ng/third-party/ethernet.h"
 
 #define isHex(c) (hexToInt(c) != -1)
 #define HEX_BASE 16

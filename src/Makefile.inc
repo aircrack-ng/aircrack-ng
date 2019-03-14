@@ -232,5 +232,3 @@ EXTRA_DIST +=	%D%/wpaclean/wpaclean.c \
 							%D%/aircrack-ng/session.h \
 							%D%/airodump-ng/dump_write.h \
 							%D%/airodump-ng/dump_write.c
-
-include %D%/include/Makefile.inc

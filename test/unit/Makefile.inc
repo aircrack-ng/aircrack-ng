@@ -37,22 +37,22 @@
 # If you delete this exception statement from all source files in the
 # program, then also delete it here.
 
-UNIT_COMMON_CFLAGS = $(AM_CPPFLAGS) $(PTHREAD_CFLAGS) \
-					 $(CRYPTO_CFLAGS) \
-					 $(ZLIB_CFLAGS) \
-					 $(CMOCKA_CFLAGS)
+UNIT_COMMON_CFLAGS =	$(PTHREAD_CFLAGS) \
+											$(CRYPTO_CFLAGS) \
+											$(ZLIB_CFLAGS) \
+											$(CMOCKA_CFLAGS)
 
-UNIT_COMMON_LDADD  = $(PTHREAD_LIBS) \
-					 $(CRYPTO_LIBS) \
-					 $(ZLIB_LIBS) \
-                     $(LIBAIRCRACK_LIBS) \
-					 $(CMOCKA_LIBS)
+UNIT_COMMON_LDADD  =	$(PTHREAD_LIBS) \
+											$(CRYPTO_LIBS) \
+											$(ZLIB_LIBS) \
+											$(LIBAIRCRACK_LIBS) \
+											$(CMOCKA_LIBS)
 
 test_calc_one_pmk_SOURCES = %D%/test-calc-one-pmk.c
 test_calc_one_pmk_CFLAGS  = $(UNIT_COMMON_CFLAGS)
 test_calc_one_pmk_LDFLAGS = -rdynamic
 test_calc_one_pmk_LDADD   = $(LIBAIRCRACK_CE_WPA_LIBS) \
-						    $(UNIT_COMMON_LDADD)
+														$(UNIT_COMMON_LDADD)
 
 test_circular_buffer_SOURCES = %D%/test-circular-buffer.c
 test_circular_buffer_CFLAGS  = $(UNIT_COMMON_CFLAGS)
@@ -71,24 +71,24 @@ test_string_has_suffix_LDADD   = $(LIBAIRCRACK_LIBS) $(UNIT_COMMON_LDADD)
 
 test_wpapsk_SOURCES = %D%/test-wpapsk.c
 test_wpapsk_CFLAGS  = "-DLIBAIRCRACK_CE_WPA_PATH=\"$(LIBAIRCRACK_CE_WPA_PATH)\"" \
-					  "-DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"" \
-					  "-DABS_TOP_BUILDDIR=\"$(abs_top_builddir)\"" \
-					  "-DLIBDIR=\"$(libdir)\"" \
-					  $(UNIT_COMMON_CFLAGS)
+											"-DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"" \
+											"-DABS_TOP_BUILDDIR=\"$(abs_top_builddir)\"" \
+											"-DLIBDIR=\"$(libdir)\"" \
+											$(UNIT_COMMON_CFLAGS)
 test_wpapsk_LDFLAGS = -rdynamic
 test_wpapsk_LDADD   = $(LIBAIRCRACK_CE_WPA_LIBS) \
-					  $(LIBAIRCRACK_LIBS) \
-					  $(UNIT_COMMON_LDADD)
+											$(LIBAIRCRACK_LIBS) \
+											$(UNIT_COMMON_LDADD)
 
 test_wpapsk_cmac_SOURCES = %D%/test-wpapsk-cmac.c
-test_wpapsk_cmac_CFLAGS  = "-DLIBAIRCRACK_CE_WPA_PATH=\"$(LIBAIRCRACK_CE_WPA_PATH)\"" \
-						   "-DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"" \
-						   "-DABS_TOP_BUILDDIR=\"$(abs_top_builddir)\"" \
-						   "-DLIBDIR=\"$(libdir)\"" \
-						   $(UNIT_COMMON_CFLAGS)
+test_wpapsk_cmac_CFLAGS  =	"-DLIBAIRCRACK_CE_WPA_PATH=\"$(LIBAIRCRACK_CE_WPA_PATH)\"" \
+														"-DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"" \
+														"-DABS_TOP_BUILDDIR=\"$(abs_top_builddir)\"" \
+														"-DLIBDIR=\"$(libdir)\"" \
+														$(UNIT_COMMON_CFLAGS)
 test_wpapsk_cmac_LDFLAGS = -rdynamic
 test_wpapsk_cmac_LDADD   = $(LIBAIRCRACK_LIBS) \
-						   $(UNIT_COMMON_LDADD)
+												   $(UNIT_COMMON_LDADD)
 
 TESTS += test-calc-one-pmk test-circular-buffer test-circular-queue test-string-has-suffix
 

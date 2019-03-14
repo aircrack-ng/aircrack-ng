@@ -39,20 +39,18 @@
 
 ACLOCAL_AMFLAGS = -I build/m4/stubs -I build/m4
 
-SUBDIRS = manpages \
-		  scripts
+SUBDIRS =	manpages \
+					scripts
 
-AM_CPPFLAGS = -I$(top_srcdir) \
-			  -I$(top_srcdir)/include \
-			  -I$(top_srcdir)/lib \
-				-I$(top_srcdir)/src \
-			  -I$(top_srcdir)/src/include \
-			  $(CRYPTO_INCLUDES) \
-			  $(CODE_COVERAGE_CPPFLAGS)
+AM_CPPFLAGS = -I$(abs_srcdir) \
+							-I$(abs_srcdir)/include \
+							-I$(abs_srcdir)/lib \
+							$(CRYPTO_INCLUDES) \
+							$(CODE_COVERAGE_CPPFLAGS)
 
-CFLAGS		+= $(CODE_COVERAGE_CFLAGS)
+CFLAGS		+=	$(CODE_COVERAGE_CFLAGS)
 CXXFLAGS	+=	$(CODE_COVERAGE_CXXFLAGS)
-LIBS		+=	$(CODE_COVERAGE_LIBS)
+LIBS			+=	$(CODE_COVERAGE_LIBS)
 
 COMMON_CFLAGS	= $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
 COMMON_LDADD	= $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)

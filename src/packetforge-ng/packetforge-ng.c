@@ -54,7 +54,7 @@
 #include "aircrack-ng/support/communications.h"
 #include "aircrack-ng/crypto/crypto.h"
 #include "aircrack-ng/osdep/byteorder.h"
-#include "include/ethernet.h"
+#include "aircrack-ng/third-party/ethernet.h"
 #include "aircrack-ng/support/common.h"
 #include "aircrack-ng/tui/console.h"
 

@@ -78,7 +78,7 @@
 #include "aircrack-ng/support/communications.h"
 #include "aircrack-ng/crypto/crypto.h"
 #include "aircrack-ng/support/common.h"
-#include "ieee80211.h"
+#include "aircrack-ng/third-party/ieee80211.h"
 #include "radiotap/radiotap_iter.h"
 #include "airventriloquist-ng.h"
 

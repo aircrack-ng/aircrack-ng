@@ -69,7 +69,7 @@
 #include "aircrack-ng/support/pcap_local.h"
 #include "aircrack-ng/crypto/crypto.h"
 #include "aircrack-ng/support/common.h"
-#include "eapol.h"
+#include "aircrack-ng/third-party/eapol.h"
 
 #include "aircrack-ng/defs.h"
 #include "aircrack-ng/support/communications.h"

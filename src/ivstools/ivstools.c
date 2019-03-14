@@ -48,11 +48,11 @@
 #include "aircrack-ng/support/pcap_local.h"
 #include "aircrack-ng/osdep/byteorder.h"
 #include "aircrack-ng/osdep/packed.h"
-#include "include/ieee80211.h"
+#include "aircrack-ng/third-party/ieee80211.h"
 #include "aircrack-ng/ce-wep/uniqueiv.h"
 #include "aircrack-ng/osdep/byteorder.h"
 #include "aircrack-ng/support/common.h"
-#include "eapol.h"
+#include "aircrack-ng/third-party/eapol.h"
 #include "aircrack-ng/tui/console.h"
 
 #define FAILURE -1

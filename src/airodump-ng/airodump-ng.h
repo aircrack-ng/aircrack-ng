@@ -32,12 +32,13 @@
 #ifndef _AIRODUMP_NG_H_
 #define _AIRODUMP_NG_H_
 
-#include "eapol.h"
-#include "aircrack-ng/support/pcap_local.h"
 #include <sys/ioctl.h>
 #if !defined(TIOCGWINSZ) && !defined(linux)
 #include <sys/termios.h>
 #endif
+
+#include "aircrack-ng/third-party/eapol.h"
+#include "aircrack-ng/support/pcap_local.h"
 
 /* some constants */
 

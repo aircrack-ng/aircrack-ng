@@ -83,7 +83,7 @@
 #include "airodump-ng.h"
 #include "dump_write.h"
 #include "aircrack-ng/osdep/common.h"
-#include "include/ieee80211.h"
+#include "aircrack-ng/third-party/ieee80211.h"
 #include "aircrack-ng/support/common.h"
 #include "aircrack-ng/support/mcs_index_rates.h"
 #include "aircrack-ng/utf8/verifyssid.h"

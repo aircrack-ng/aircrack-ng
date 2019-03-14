@@ -1776,7 +1776,8 @@ void SIMDSHA1body(vtype * _data,
 		{
 #endif
 	assert((SSEi_flags & SSEi_OUTPUT_AS_INP_FMT) != 0
-		   && (SSEi_flags & SSEi_OUTPUT_AS_2BUF_INP_FMT) == 0);
+		   && (SSEi_flags & SSEi_OUTPUT_AS_2BUF_INP_FMT)
+				  != SSEi_OUTPUT_AS_2BUF_INP_FMT);
 
 	SHA1_PARA_DO(i)
 	{
