@@ -32,6 +32,8 @@
 
 #include <ctype.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
 #include <time.h>
 #include <sys/time.h>
 
@@ -205,6 +207,30 @@ static inline int time_diff(struct timeval * past, struct timeval * now)
 	return (int) (n - p);
 }
 
+static inline int elapsed_time_diff(struct timeval * past, struct timeval * now)
+{
+	REQUIRE(past != NULL);
+	REQUIRE(now != NULL);
+
+	time_t el = now->tv_sec - past->tv_sec;
+
+	if (el == 0)
+	{
+		el = now->tv_usec - past->tv_usec;
+	}
+	else
+	{
+		el = (el - 1) * 1000 * 1000;
+		el += 1000 * 1000 - past->tv_usec;
+		el += now->tv_usec;
+	}
+
+	if (el < 0) return (666 * 1000 * 1000);
+	return (int) (el);
+}
+
+#define msec_diff(past, now) (time_diff((past), (now)) / 1000)
+
 /// Return \a str with all leading whitespace removed.
 static inline void ltrim(char * str)
 {
@@ -296,6 +322,52 @@ get_line_from_buffer(char * buffer, size_t size, char * line)
 }
 
 int station_compare(const void * a, const void * b);
+
+/// Initialize standard C random number generator.
+static inline void rand_init(void)
+{
+	srand(time(NULL)); // NOLINT(cert-msc32-c,cert-msc51-cpp)
+}
+
+/// Initialize standard C random number generator with specific seed.
+static inline void rand_init_with(int seed)
+{
+	srand(seed); // NOLINT(cert-msc32-c,cert-msc51-cpp)
+}
+
+/// Acquire a random unsigned char, from the standard C random number generator.
+static inline uint8_t rand_u8(void)
+{
+	// coverity[dont_call]
+	return (uint8_t)(
+		rand()
+		& 0xFFU); // NOLINT(cert-msc30-c,cert-msc50-cpp,hicpp-signed-bitwise)
+}
+
+/// Acquire a random unsigned short, from the standard C random number generator.
+static inline uint16_t rand_u16(void)
+{
+	// coverity[dont_call]
+	return (uint16_t)(
+		rand()
+		& 0xFFFFU); // NOLINT(cert-msc30-c,cert-msc50-cpp,hicpp-signed-bitwise)
+}
+
+/// Acquire a random unsigned long, from the standard C random number generator.
+static inline uint32_t rand_u32(void)
+{
+	// coverity[dont_call]
+	return (uint32_t)(
+		rand()
+		& 0xFFFFFFFFUL); // NOLINT(cert-msc30-c,cert-msc50-cpp,hicpp-signed-bitwise)
+}
+
+/// Acquire a random float, from the standard C random number generator.
+static inline float rand_f32(void)
+{
+	// coverity[dont_call]
+	return ((float) rand() / (float) RAND_MAX);
+}
 
 #ifdef __cplusplus
 };

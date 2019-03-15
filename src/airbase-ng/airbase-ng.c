@@ -1346,7 +1346,7 @@ static int addarp(unsigned char * packet, int length)
 
 	if (memcmp(bssid, opt.r_bssid, 6) != 0) return (-1);
 
-	packet[21] ^= ((rand() % 255) + 1); // Sohail:flip sender MAC address since
+	packet[21] ^= (rand_u8() + 1); // Sohail:flip sender MAC address since
 	// few clients do not honor ARP from its
 	// own MAC
 
@@ -1355,9 +1355,9 @@ static int addarp(unsigned char * packet, int length)
 	memset(flip, 0, 4096);
 
 	flip[49 - z - 4]
-		^= ((rand() % 255) + 1); // flip random bits in last byte of sender MAC
+		^= (rand_u8() + 1); // flip random bits in last byte of sender MAC
 	flip[53 - z - 4]
-		^= ((rand() % 255) + 1); // flip random bits in last byte of sender IP
+		^= (rand_u8() + 1); // flip random bits in last byte of sender IP
 
 	add_crc32_plain(flip, length - z - 4 - 4);
 	for (i = 0; i < length - z - 4; i++) (packet + z + 4)[i] ^= flip[i];
@@ -1785,7 +1785,7 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 					else
 					{
 						for (i = 0; i < 32; i++)
-							st_cur->wpa.anonce[i] = (uint8_t)(rand() & 0xFF);
+							st_cur->wpa.anonce[i] = rand_u8();
 					}
 					st_cur->wpa.state |= 1;
 
@@ -2392,7 +2392,7 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 
 						for (i = 0; i < bytes2use; i++)
 						{
-							packet[length + i] = (uint8_t)(rand() & 0xFF);
+							packet[length + i] = rand_u8();
 						}
 
 						length += bytes2use;
@@ -2565,8 +2565,7 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 				}
 				else
 				{
-					for (i = 0; i < 32; i++)
-						st_cur->wpa.anonce[i] = (uint8_t)(rand() & 0xFF);
+					for (i = 0; i < 32; i++) st_cur->wpa.anonce[i] = rand_u8();
 				}
 
 				st_cur->wpa.state |= 1;
@@ -3055,8 +3054,8 @@ static void cfrag_thread(void)
 
 				if (nb_pkt_sent_1 == 0) ticks[0] = 0;
 
-				rnd[0] = (unsigned char) (rand() % 0xFF);
-				rnd[1] = (unsigned char) (rand() % 0xFF);
+				rnd[0] = rand_u8();
+				rnd[1] = rand_u8();
 
 				for (i = 0; i < curCF->fragnum; i++)
 				{
@@ -3091,8 +3090,8 @@ static void cfrag_thread(void)
 						* (double) opt.r_nbpps
 					> (double) nb_pkt_sent_1)
 				{
-					rnd[0] = (unsigned char) (rand() % 0xFF);
-					rnd[1] = (unsigned char) (rand() % 0xFF);
+					rnd[0] = rand_u8();
+					rnd[1] = rand_u8();
 					for (i = 0; i < curCF->fragnum; i++)
 					{
 						memcpy(buffer, curCF->frags[i], curCF->fraglen[i]);
@@ -3188,7 +3187,7 @@ int main(int argc, char * argv[])
 	lopt.wif_mtu = WIF_MTU;
 	invalid_channel_displayed = 0;
 
-	srand(time(NULL));
+	rand_init();
 
 	while (1)
 	{
@@ -3972,7 +3971,7 @@ int main(int argc, char * argv[])
 	if (lopt.adhoc)
 	{
 		for (i = 0; i < 6; i++) // random cell
-			opt.r_bssid[i] = (uint8_t)(rand() & 0xFF);
+			opt.r_bssid[i] = rand_u8();
 
 		// generate an even first byte
 		if (opt.r_bssid[0] & 0x01) opt.r_bssid[0] ^= 0x01;

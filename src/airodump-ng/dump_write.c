@@ -207,7 +207,12 @@ int dump_write_csv(struct AP_info * ap_1st,
 			fprintf(opt.f_txt, " ");
 		else
 		{
-			if (ap_cur->security & STD_WPA2) fprintf(opt.f_txt, " WPA2");
+			if (ap_cur->security & STD_WPA2)
+			{
+				if (ap_cur->security & AUTH_SAE || ap_cur->security & AUTH_OWE)
+					fprintf(opt.f_txt, " WPA3");
+				fprintf(opt.f_txt, " WPA2");
+			}
 			if (ap_cur->security & STD_WPA) fprintf(opt.f_txt, " WPA");
 			if (ap_cur->security & STD_WEP) fprintf(opt.f_txt, " WEP");
 			if (ap_cur->security & STD_OPN) fprintf(opt.f_txt, " OPN");
@@ -235,6 +240,7 @@ int dump_write_csv(struct AP_info * ap_1st,
 			fprintf(opt.f_txt, "   ");
 		else
 		{
+			if (ap_cur->security & AUTH_SAE) fprintf(opt.f_txt, " SAE");
 			if (ap_cur->security & AUTH_MGT) fprintf(opt.f_txt, " MGT");
 			if (ap_cur->security & AUTH_CMAC) fprintf(opt.f_txt, " CMAC");
 			if (ap_cur->security & AUTH_PSK)
@@ -244,6 +250,7 @@ int dump_write_csv(struct AP_info * ap_1st,
 				else
 					fprintf(opt.f_txt, " PSK");
 			}
+			if (ap_cur->security & AUTH_OWE) fprintf(opt.f_txt, " OWE");
 			if (ap_cur->security & AUTH_OPN) fprintf(opt.f_txt, " OPN");
 		}
 
@@ -969,6 +976,12 @@ int dump_write_kismet_netxml(struct AP_info * ap_1st,
 			if (ap_cur->security & ENC_GMAC)
 				fprintf(
 					opt.f_kis_xml, NETXML_ENCRYPTION_TAG, "\t\t\t", "WPA+GMAC");
+			if (ap_cur->security & AUTH_SAE)
+				fprintf(
+					opt.f_kis_xml, NETXML_ENCRYPTION_TAG, "\t\t\t", "WPA+SAE");
+			if (ap_cur->security & AUTH_OWE)
+				fprintf(
+					opt.f_kis_xml, NETXML_ENCRYPTION_TAG, "\t\t\t", "WPA+OWE");
 		}
 		else if (ap_cur->security & ENC_WEP104)
 			fprintf(opt.f_kis_xml, NETXML_ENCRYPTION_TAG, "\t\t\t", "WEP104");
@@ -1417,7 +1430,13 @@ int dump_write_kismet_csv(struct AP_info * ap_1st,
 		// Encryption
 		if ((ap_cur->security & (STD_OPN | STD_WEP | STD_WPA | STD_WPA2)) != 0)
 		{
-			if (ap_cur->security & STD_WPA2) fprintf(opt.f_kis, "WPA2,");
+			if (ap_cur->security & STD_WPA2)
+			{
+				if (ap_cur->security & AUTH_SAE || ap_cur->security & AUTH_OWE)
+					fprintf(opt.f_kis, "WPA3,");
+				else
+					fprintf(opt.f_kis, "WPA2,");
+			}
 			if (ap_cur->security & STD_WPA) fprintf(opt.f_kis, "WPA,");
 			if (ap_cur->security & STD_WEP) fprintf(opt.f_kis, "WEP,");
 			if (ap_cur->security & STD_OPN) fprintf(opt.f_kis, "OPN,");
@@ -1434,6 +1453,8 @@ int dump_write_kismet_csv(struct AP_info * ap_1st,
 			if (ap_cur->security & ENC_WEP40) fprintf(opt.f_kis, "WEP40,");
 			if (ap_cur->security & ENC_GCMP) fprintf(opt.f_kis, "GCMP,");
 			if (ap_cur->security & ENC_GMAC) fprintf(opt.f_kis, "GMAC,");
+			if (ap_cur->security & AUTH_SAE) fprintf(opt.f_kis, "SAE,");
+			if (ap_cur->security & AUTH_OWE) fprintf(opt.f_kis, "OWE,");
 		}
 
 		fseek(opt.f_kis, -1, SEEK_CUR);

@@ -91,7 +91,14 @@ TESTS += %D%/test-aireplay-ng-0001.sh \
 		 %D%/test-aireplay-ng-0003.sh \
 		 %D%/test-aireplay-ng-0004.sh \
 		 %D%/test-aireplay-ng-0005.sh \
-		 %D%/test-aireplay-ng-0006.sh
+		 %D%/test-aireplay-ng-0006.sh \
+		 %D%/test-airbase-ng-0001.sh \
+		 %D%/test-airbase-ng-0002.sh \
+		 %D%/test-airodump-ng-0001.sh \
+		 %D%/test-airodump-ng-0002.sh \
+		 %D%/test-airodump-ng-0003.sh \
+		 %D%/test-airodump-ng-0004.sh \
+		 %D%/test-airodump-ng-0005.sh
 endif
 
 if HAVE_SQLITE3
@@ -167,7 +174,14 @@ EXTRA_DIST += %D%/test-aireplay-ng-0001.sh \
 			  %D%/test-aireplay-ng-0003.sh \
 			  %D%/test-aireplay-ng-0004.sh \
 			  %D%/test-aireplay-ng-0005.sh \
-			  %D%/test-aireplay-ng-0006.sh
+			  %D%/test-aireplay-ng-0006.sh \
+			  %D%/test-airbase-ng-0001.sh \
+			  %D%/test-airbase-ng-0002.sh \
+			  %D%/test-airodump-ng-0001.sh \
+			  %D%/test-airodump-ng-0002.sh \
+			  %D%/test-airodump-ng-0003.sh \
+			  %D%/test-airodump-ng-0004.sh \
+			  %D%/test-airodump-ng-0005.sh
 endif
 
 if HAVE_SQLITE3

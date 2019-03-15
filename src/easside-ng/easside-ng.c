@@ -1516,7 +1516,7 @@ static void chan_hop(struct east_state * es, struct timeval * tv)
 
 	if (gettimeofday(&now, NULL) == -1) err(1, "gettimeofday()");
 
-	elapsed = time_diff(&es->es_lasthop, &now);
+	elapsed = msec_diff(&es->es_lasthop, &now);
 
 	/* hop */
 	if (elapsed >= es->es_hopfreq)
@@ -1582,7 +1582,7 @@ static int too_early(struct timeval * tv, int to, struct timeval * last_sent)
 	/* check if timeout expired */
 	if (gettimeofday(&now, NULL) == -1) err(1, "gettimeofday()");
 
-	elapsed = time_diff(last_sent, &now);
+	elapsed = msec_diff(last_sent, &now);
 	if (elapsed < (unsigned int) to)
 	{
 		msec_to_tv(to - elapsed, tv);
@@ -2243,7 +2243,7 @@ static void buddy_inet_check(struct east_state * es)
 
 	if (gettimeofday(&now, NULL) == -1) err(1, "gettimeofday()");
 
-	rtt = time_diff(&es->es_rtt, &now);
+	rtt = msec_diff(&es->es_rtt, &now);
 	es->es_astate = AS_REDIRECT;
 	printf("Rtt %dms\n", rtt);
 
@@ -2298,7 +2298,7 @@ static void buddy_packet(struct east_state * es)
 
 		if (gettimeofday(&now, NULL) == -1) err(1, "gettimeofday()");
 
-		rtt = time_diff(&es->es_rtt, &now);
+		rtt = msec_diff(&es->es_rtt, &now);
 		es->es_rtt_id = 0;
 		printf(" rtt %dms", rtt);
 

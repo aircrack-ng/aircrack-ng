@@ -5764,7 +5764,7 @@ int main(int argc, char * argv[])
 
 	memset(&opt, 0, sizeof(opt));
 
-	srand(time(NULL));
+	rand_init();
 
 #if DYNAMIC
 	// Load the best available shared library, or the user specified one.
@@ -6502,7 +6502,7 @@ int main(int argc, char * argv[])
 		size_t remaining = strlen((char *) _pmkid_16800_str);
 
 		if (remaining
-			< H16800_PMKID_LEN + H16800_BSSID_LEN + H16800_STMAC_LEN + 19)
+			< H16800_PMKID_LEN + H16800_BSSID_LEN + H16800_STMAC_LEN + 4)
 		{
 			ret = EXIT_FAILURE;
 			fprintf(stderr, "Input is too short!\n");

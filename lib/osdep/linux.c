@@ -658,7 +658,7 @@ static int linux_read(struct wif * wi,
 			/* prism54 uses a different format */
 			if (ri)
 			{
-				ri->ri_power = -((int32_t) load32_le(tmpbuf + 0x33));
+				ri->ri_power = (int32_t) load32_le(tmpbuf + 0x33);
 				ri->ri_noise = (int32_t) load32_le(tmpbuf + 0x33 + 12);
 				ri->ri_rate = load32_le(buf + 0x33 + 24) * 500000;
 
@@ -674,7 +674,7 @@ static int linux_read(struct wif * wi,
 			{
 				ri->ri_mactime = load64_le(tmpbuf + 0x5C - 48);
 				ri->ri_channel = load32_le(tmpbuf + 0x5C - 36);
-				ri->ri_power = -((int32_t) load32_le(tmpbuf + 0x5C));
+				ri->ri_power = (int32_t) load32_le(tmpbuf + 0x5C);
 				ri->ri_noise = (int32_t) load32_le(tmpbuf + 0x5C + 12);
 				ri->ri_rate = load32_le(tmpbuf + 0x5C + 24) * 500000;
 

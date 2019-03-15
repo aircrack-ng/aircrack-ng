@@ -822,6 +822,8 @@ int main(int argc, char * argv[])
 			stats.nb_stations++;
 		}
 
+		ALLEGE(st_cur != NULL);
+
 		/* check if we haven't already processed this packet */
 
 		crc = calc_crc_buf(h80211 + z, pkh.caplen - z);
@@ -894,7 +896,7 @@ int main(int argc, char * argv[])
 
 				/* if the PTK is valid, try to decrypt */
 
-				if (st_cur == NULL || !st_cur->valid_ptk) continue;
+				if (!st_cur->valid_ptk) continue;
 
 				if (st_cur->keyver == 1)
 				{

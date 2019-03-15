@@ -394,7 +394,7 @@ static int set_ipid(unsigned char * packet, const int offset)
 	if (packet == NULL) return (1);
 	if (offset < 0 || offset > 2046) return (1);
 
-	id = (rand() & 0xFFFF);
+	id = rand_u16();
 	/* set IP Identification */
 	memcpy(packet + offset, (unsigned char *) &id, 2);
 
@@ -925,7 +925,7 @@ int main(int argc, char * argv[])
 	lopt.first_packet = 1;
 	lopt.num_packets = 1;
 
-	srand(time(NULL));
+	rand_init();
 
 	while (1)
 	{
