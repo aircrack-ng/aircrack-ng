@@ -54,7 +54,7 @@ case "$host_os" in
     openbsd* | OpenBSD*)
         OS=openbsd
         ;;
-    freebsd* | FreeBSD* | hardenedbsd* | hbsd* | dragonfly* | DragonFly* | trueos* | TrueOS*)
+    freebsd* | FreeBSD* | hardenedbsd* | hbsd* | dragonfly* | DragonFly* | trueos* | TrueOS* | midnightbsd* | MidnightBSD*)
         OS=freebsd
         ;;
     *)

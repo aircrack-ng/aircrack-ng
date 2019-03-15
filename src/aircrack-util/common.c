@@ -48,7 +48,7 @@
 
 #include <common.h>
 
-#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__)
+#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__) || defined(__MidnightBSD__)
 #include <sys/sysctl.h>
 #include <sys/user.h>
 #endif
@@ -183,7 +183,7 @@ int is_string_number(const char * str)
 int get_ram_size(void)
 {
 	int ret = -1;
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__MidnightBSD__)
 	int mib[] = {CTL_HW, HW_PHYSMEM};
 	size_t len;
 	unsigned long physmem;
@@ -357,7 +357,7 @@ int get_nb_cpus(void)
 
 		fclose(f);
 	}
-#elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__)
+#elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__) || defined(__MidnightBSD__)
 	// Not sure about defined(__DragonFly__) || defined(__NetBSD__) ||
 	// defined(__OpenBSD__) || defined(__APPLE__)
 	int mib[] = {CTL_HW, HW_NCPU};
