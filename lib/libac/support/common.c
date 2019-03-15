@@ -52,7 +52,8 @@
 
 #include <aircrack-ng/support/common.h>
 
-#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__) || defined(__MidnightBSD__)
+#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__)     \
+	|| defined(__MidnightBSD__)
 #include <sys/sysctl.h>
 #include <sys/user.h>
 #endif
@@ -126,10 +127,10 @@ int64_t ftello64(FILE * fp)
 #endif
 
 API_EXPORT
-const unsigned char ZERO[33] = "\x00\x00\x00\x00\x00\x00\x00\x00"
-							   "\x00\x00\x00\x00\x00\x00\x00\x00"
-							   "\x00\x00\x00\x00\x00\x00\x00\x00"
-							   "\x00\x00\x00\x00\x00\x00\x00\x00";
+unsigned char ZERO[33] = "\x00\x00\x00\x00\x00\x00\x00\x00"
+						 "\x00\x00\x00\x00\x00\x00\x00\x00"
+						 "\x00\x00\x00\x00\x00\x00\x00\x00"
+						 "\x00\x00\x00\x00\x00\x00\x00\x00";
 
 /*
  * Print the time and percentage in readable format
@@ -362,7 +363,8 @@ int get_nb_cpus(void)
 
 		fclose(f);
 	}
-#elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__) || defined(__MidnightBSD__)
+#elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__)   \
+	|| defined(__MidnightBSD__)
 	// Not sure about defined(__DragonFly__) || defined(__NetBSD__) ||
 	// defined(__OpenBSD__) || defined(__APPLE__)
 	int mib[] = {CTL_HW, HW_NCPU};
