@@ -91,7 +91,10 @@ int64_t ftello64(FILE * fp);
 extern "C" {
 #endif
 
-API_IMPORT unsigned char ZERO[33];
+static const unsigned char ZERO[33] = "\x00\x00\x00\x00\x00\x00\x00\x00"
+									  "\x00\x00\x00\x00\x00\x00\x00\x00"
+									  "\x00\x00\x00\x00\x00\x00\x00\x00"
+									  "\x00\x00\x00\x00\x00\x00\x00\x00";
 
 void calctime(time_t t, float calc);
 

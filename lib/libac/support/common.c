@@ -126,12 +126,6 @@ int64_t ftello64(FILE * fp)
 }
 #endif
 
-API_EXPORT
-unsigned char ZERO[33] = "\x00\x00\x00\x00\x00\x00\x00\x00"
-						 "\x00\x00\x00\x00\x00\x00\x00\x00"
-						 "\x00\x00\x00\x00\x00\x00\x00\x00"
-						 "\x00\x00\x00\x00\x00\x00\x00\x00";
-
 /*
  * Print the time and percentage in readable format
  */
