@@ -41,6 +41,7 @@
 #include <assert.h>
 #include <pthread.h>
 #include <stdint.h>
+#include <errno.h>
 
 #include "aircrack-ng/defs.h"
 #include "aircrack-ng/crypto/crypto.h"

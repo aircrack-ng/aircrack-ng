@@ -36,6 +36,7 @@
 #define _CRYPTO_H
 
 #include <limits.h>
+#include <errno.h>
 
 #ifdef USE_GCRYPT
 #include <aircrack-ng/crypto/gcrypt-openssl-wrapper.h>
