@@ -37,6 +37,9 @@
 # If you delete this exception statement from all source files in the
 # program, then also delete it here.
 
+include %D%/radiotap/Makefile.inc
+include %D%/osdep/Makefile.inc
+
 SRC_CE_WEP	=	%D%/ce-wep/uniqueiv.c
 SRC_CE_WPA	=	%D%/ce-wpa/crypto_engine.c \
 							%D%/ce-wpa/memory.c \
@@ -294,6 +297,3 @@ EXTRA_DIST +=	%D%/ce-wep/uniqueiv.c \
 							%D%/radiotap/radiotap.c \
 							%D%/radiotap/radiotap.h \
 							%D%/radiotap/radiotap_iter.h
-
-include %D%/radiotap/Makefile.inc
-include %D%/osdep/Makefile.inc
