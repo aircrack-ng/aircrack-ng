@@ -41,7 +41,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <sys/time.h>
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__MidnightBSD__)
 #include <unistd.h>
 #endif
 #include <pthread.h>
