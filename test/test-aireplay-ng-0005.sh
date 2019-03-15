@@ -41,15 +41,15 @@ if [ $(lsmod | egrep mac80211_hwsim | wc -l) -eq 0 ]; then
 fi
 
 # Check there are two radios
-AMOUNT_RADIOS=$("${top_builddir}/scripts/airmon-ng" | egrep hwsim | wc -l)
+AMOUNT_RADIOS=$("${abs_builddir}/../scripts/airmon-ng" | egrep hwsim | wc -l)
 if [ ${AMOUNT_RADIOS} -ne 2 ]; then
 	echo "Expected two radios, got ${AMOUNT_RADIOS}, hwsim may be in use by something else, skipping"
 	exit 77
 fi
 
 # Check if interfaces are present and grab them
-WI_IFACE=$("${top_builddir}/scripts/airmon-ng" 2>/dev/null | egrep hwsim | head -n 1 | awk '{print $2}')
-WI_IFACE2=$("${top_builddir}/scripts/airmon-ng" 2>/dev/null | egrep hwsim | tail -n 1 | awk '{print $2}')
+WI_IFACE=$("${abs_builddir}/../scripts/airmon-ng" 2>/dev/null | egrep hwsim | head -n 1 | awk '{print $2}')
+WI_IFACE2=$("${abs_builddir}/../scripts/airmon-ng" 2>/dev/null | egrep hwsim | tail -n 1 | awk '{print $2}')
 if [ -z "${WI_IFACE}" ] || [ -z "${WI_IFACE2}" ]; then
 	echo "Failed getting interfaces names"
 	[ ${LOAD_MODULE} -eq 1 ] && rmmod mac80211_hwsim 2>&1 >/dev/null
@@ -88,7 +88,7 @@ iw dev ${WI_IFACE2} set channel ${CHANNEL}
 
 # Run actual test
 OUTPUT_TEMP=$(mktemp)
-"${top_builddir}/src/aireplay-ng${EXEEXT}" \
+"${abs_builddir}/../aireplay-ng${EXEEXT}" \
     -9 \
     -B \
     ${WI_IFACE2} \
