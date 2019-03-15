@@ -1,22 +1,25 @@
-.TH BESSIDE-NG-CRAWLER 1 "December 2018" "Version 1.5.2"
-
+.TH IVSTOOLS 1 "@MAN_RELEASE_DATE@" "@MAN_RELEASE_VERSION@"
 
 .SH NAME
-besside-ng-crawler - filter EAPOL frames from a directory of capture files.
+ivstools - extract IVs from a pcap file or merges several .ivs files into one
 .SH SYNOPSIS
-.B besside-ng-crawler
-<Input Directory> <Output File>
+.B ivstools
+--convert <pcap file> <ivs output file>
+.B ivstools
+--merge <ivs file 1> <ivs file 2> .. <output file>
 .SH DESCRIPTION
-.BI besside-ng-crawler
-
-Scans recursively on input directory looking for pcap dumpfiles and filters out
-one beacon and all EAPOL frames for the WPA networks if finds in them.
-
+.BI ivstools
+is a tool designed to extract ivs (initialization vectors) from a pcap dump to an ivs file and it can also merge several ivs (initialization vectors) files into one..
+.SH EXAMPLE
+.B ivstools
+--convert wep_dump.cap out.ivs
+.br
+.B ivstools
+--merge myivs1.ivs myivs2.ivs myivs3.ivs allivs.ivs
 .SH AUTHOR
-This manual page was written by David Francos Cuartero.
+This manual page was written by Adam Cecile <gandalf@le-vert.net> for the Debian system (but may be used by others).
 Permission is granted to copy, distribute and/or modify this document under the terms of the GNU General Public License, Version 2 or any later version published by the Free Software Foundation
 On Debian systems, the complete text of the GNU General Public License can be found in /usr/share/common-licenses/GPL.
-
 .SH SEE ALSO
 .br
 .B airbase-ng(8)
@@ -49,9 +52,9 @@ On Debian systems, the complete text of the GNU General Public License can be fo
 .br
 .B airolib-ng(1)
 .br
-.B buddy-ng(1)
+.B besside-ng-crawler(1)
 .br
-.B ivstools(1)
+.B buddy-ng(1)
 .br
 .B kstats(1)
 .br

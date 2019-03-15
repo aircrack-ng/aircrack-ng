@@ -1,4 +1,4 @@
-.TH AIRDECLOAK-NG 1 "December 2018" "Version 1.5.2"
+.TH AIRDECLOAK-NG 1 "@MAN_RELEASE_DATE@" "@MAN_RELEASE_VERSION@"
 
 .SH NAME
 airuncloak-ng - Removes wep cloaked framed from a pcap file.

@@ -1,4 +1,4 @@
-.TH TKIPTUN-NG 8 "December 2018" "Version 1.5.2"
+.TH TKIPTUN-NG 8 "@MAN_RELEASE_DATE@" "@MAN_RELEASE_VERSION@"
 
 .SH NAME
 tkiptun-ng - inject a few frames into a WPA TKIP network with QoS

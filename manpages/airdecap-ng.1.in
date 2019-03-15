@@ -1,4 +1,4 @@
-.TH AIRDECAP-NG 1 "December 2018" "Version 1.5.2"
+.TH AIRDECAP-NG 1 "@MAN_RELEASE_DATE@" "@MAN_RELEASE_VERSION@"
 
 .SH NAME
 airdecap-ng - decrypt a WEP/WPA crypted pcap file

@@ -1,4 +1,4 @@
-.TH AIRBASE-NG 8 "December 2018" "Version 1.5.2"
+.TH AIRBASE-NG 8 "@MAN_RELEASE_DATE@" "@MAN_RELEASE_VERSION@"
 
 .SH NAME
 airbase-ng - multi-purpose tool aimed at attacking clients as opposed to the Access Point (AP) itself

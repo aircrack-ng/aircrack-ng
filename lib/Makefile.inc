@@ -156,28 +156,28 @@ libaircrack_ce_wep_la_LIBADD	= $(CRYPTO_LIBS)
 # Intel/AMD
 libaircrack_ce_wpa_x86_avx512_la_SOURCES = $(SRC_CE_WPA)
 libaircrack_ce_wpa_x86_avx512_la_CFLAGS = $(x86_avx512_cflags) -DSIMD_CORE -DJOHN_AVX512F $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
-libaircrack_ce_wpa_x86_avx512_la_LDFLAGS = -release 1.3.0 -no-undefined
+libaircrack_ce_wpa_x86_avx512_la_LDFLAGS = -release $(LT_VER) -no-undefined
 if !STATIC_CRYPTO
 libaircrack_ce_wpa_x86_avx512_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 endif
 
 libaircrack_ce_wpa_x86_avx2_la_SOURCES = $(SRC_CE_WPA)
 libaircrack_ce_wpa_x86_avx2_la_CFLAGS = $(x86_avx2_cflags) -DSIMD_CORE -DJOHN_AVX2 $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
-libaircrack_ce_wpa_x86_avx2_la_LDFLAGS = -release 1.3.0 -no-undefined
+libaircrack_ce_wpa_x86_avx2_la_LDFLAGS = -release $(LT_VER) -no-undefined
 if !STATIC_CRYPTO
 libaircrack_ce_wpa_x86_avx2_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 endif
 
 libaircrack_ce_wpa_x86_avx_la_SOURCES = $(SRC_CE_WPA)
 libaircrack_ce_wpa_x86_avx_la_CFLAGS = $(x86_avx_cflags) -DSIMD_CORE -DJOHN_AVX $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
-libaircrack_ce_wpa_x86_avx_la_LDFLAGS = -release 1.3.0 -no-undefined
+libaircrack_ce_wpa_x86_avx_la_LDFLAGS = -release $(LT_VER) -no-undefined
 if !STATIC_CRYPTO
 libaircrack_ce_wpa_x86_avx_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 endif
 
 libaircrack_ce_wpa_x86_sse2_la_SOURCES = $(SRC_CE_WPA)
 libaircrack_ce_wpa_x86_sse2_la_CFLAGS = $(x86_sse2_cflags) -DSIMD_CORE -DJOHN_SSE2 $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
-libaircrack_ce_wpa_x86_sse2_la_LDFLAGS = -release 1.3.0 -no-undefined
+libaircrack_ce_wpa_x86_sse2_la_LDFLAGS = -release $(LT_VER) -no-undefined
 if !STATIC_CRYPTO
 libaircrack_ce_wpa_x86_sse2_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 endif
@@ -185,7 +185,7 @@ endif
 # ARM/AARCH64
 libaircrack_ce_wpa_arm_neon_la_SOURCES = $(SRC_CE_WPA)
 libaircrack_ce_wpa_arm_neon_la_CFLAGS = $(arm_neon_cflags) -DSIMD_CORE -DHAS_NEON $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
-libaircrack_ce_wpa_arm_neon_la_LDFLAGS = -release 1.3.0 -no-undefined
+libaircrack_ce_wpa_arm_neon_la_LDFLAGS = -release $(LT_VER) -no-undefined
 if !STATIC_CRYPTO
 libaircrack_ce_wpa_arm_neon_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 endif
@@ -193,14 +193,14 @@ endif
 # PowerPC
 libaircrack_ce_wpa_ppc_altivec_la_SOURCES = $(SRC_CE_WPA)
 libaircrack_ce_wpa_ppc_altivec_la_CFLAGS = $(ppc_altivec_cflags) -DSIMD_CORE -DHAS_ALTIVEC=1 -DJOHN_ALTIVEC $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
-libaircrack_ce_wpa_ppc_altivec_la_LDFLAGS = -release 1.3.0 -no-undefined
+libaircrack_ce_wpa_ppc_altivec_la_LDFLAGS = -release $(LT_VER) -no-undefined
 if !STATIC_CRYPTO
 libaircrack_ce_wpa_ppc_altivec_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 endif
 
 libaircrack_ce_wpa_ppc_power8_la_SOURCES = $(SRC_CE_WPA)
 libaircrack_ce_wpa_ppc_power8_la_CFLAGS = $(ppc_altivec_cflags) -DSIMD_CORE -DHAS_ALTIVEC=1 -DJOHN_ALTIVEC -DJOHN_POWER8 $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
-libaircrack_ce_wpa_ppc_power8_la_LDFLAGS = -release 1.3.0 -no-undefined
+libaircrack_ce_wpa_ppc_power8_la_LDFLAGS = -release $(LT_VER) -no-undefined
 if !STATIC_CRYPTO
 libaircrack_ce_wpa_ppc_power8_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 endif
@@ -208,7 +208,7 @@ endif
 # Generic library
 libaircrack_ce_wpa_la_CFLAGS = $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
 libaircrack_ce_wpa_la_SOURCES = $(SRC_CE_WPA)
-libaircrack_ce_wpa_la_LDFLAGS = -release 1.3.0 -no-undefined
+libaircrack_ce_wpa_la_LDFLAGS = -release $(LT_VER) -no-undefined
 if !STATIC_CRYPTO
 libaircrack_ce_wpa_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 endif

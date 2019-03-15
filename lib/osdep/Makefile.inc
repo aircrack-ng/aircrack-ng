@@ -96,7 +96,7 @@ endif
 endif
 
 lib_LTLIBRARIES += libaircrack-osdep.la
-libaircrack_osdep_la_LDFLAGS = -release 1.3.0 -no-undefined
+libaircrack_osdep_la_LDFLAGS = -release $(LT_VER) -no-undefined
 libaircrack_osdep_la_CPPFLAGS = -I$(top_srcdir)/include/aircrack-ng/osdep $(AM_CPPFLAGS)
 
 EXTRA_DIST +=     %D%/openbsd.c \

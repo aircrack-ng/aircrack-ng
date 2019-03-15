@@ -1,4 +1,4 @@
-.TH AIROLIB-NG 1 "December 2018" "Version 1.5.2"
+.TH AIROLIB-NG 1 "@MAN_RELEASE_DATE@" "@MAN_RELEASE_VERSION@"
 
 .SH NAME
 airolib-ng - manage and create a WPA/WPA2 pre-computed hashes tables
