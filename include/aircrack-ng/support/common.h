@@ -369,6 +369,15 @@ static inline float rand_f32(void)
 	return ((float) rand() / (float) RAND_MAX);
 }
 
+/// Saturated add for unsigned, 32-bit integers.
+static inline uint32_t adds_u32(uint32_t a, uint32_t b)
+{
+	uint32_t c = a + b;
+	if (unlikely(c < a)) /* can only happen due to overflow */
+		c = -1;
+	return (c);
+}
+
 #ifdef __cplusplus
 };
 #endif

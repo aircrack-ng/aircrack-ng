@@ -977,8 +977,8 @@ static int CFC_filter_duplicate_sn(void)
 
 static int get_average_signal_ap(void)
 {
-	long all_signals;
-	long nb_packet_used;
+	uint32_t all_signals;
+	uint32_t nb_packet_used;
 	int average_signal;
 
 	// Init
@@ -1002,7 +1002,7 @@ static int get_average_signal_ap(void)
 					|| _packet_elt_head->current->version_type_subtype
 						   == PROBE_RESPONSE)
 				{
-					++nb_packet_used;
+					nb_packet_used = adds_u32(nb_packet_used, 1U);
 					all_signals += _packet_elt_head->current->signal_quality;
 				}
 			} while (next_packet_pointer_same_fromToDS_and_source(
