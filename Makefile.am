@@ -43,7 +43,9 @@ SUBDIRS =	manpages \
 					scripts
 
 AM_CPPFLAGS = -I$(abs_srcdir) \
+							-I$(abs_builddir)/include \
 							-I$(abs_srcdir)/include \
+							-I$(abs_builddir)/lib \
 							-I$(abs_srcdir)/lib \
 							$(CRYPTO_INCLUDES) \
 							$(CODE_COVERAGE_CPPFLAGS)
