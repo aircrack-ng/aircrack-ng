@@ -56,7 +56,7 @@ if CYGWIN
 if AIRPCAP
 libaircrack_osdep_la_SOURCES = $(SRCS_CYGWIN)
 libaircrack_osdep_la_CFLAGS = $(AIRPCAP_CFLAGS)
-libaircrack_osdep_la_LIBADD = $(AIRPCAP_LIBS) $(LIBRADIOTAP_LIBS) -lsetupapi -liphlpapi -luuid
+libaircrack_osdep_la_LIBADD = $(AIRPCAP_LIBS) $(LIBRADIOTAP_LIBS) -lsetupapi -liphlpapi
 else
 libaircrack_osdep_la_SOURCES = $(SRCS_CYGWIN)
 endif
@@ -91,7 +91,7 @@ endif
 if !AIRPCAP
 libaircrack_osdep_la_LIBADD = $(LIBRADIOTAP_LIBS)
 if CYGWIN
-libaircrack_osdep_la_LIBADD += -lsetupapi -liphlpapi -luuid
+libaircrack_osdep_la_LIBADD += -lsetupapi -liphlpapi
 endif
 endif
 

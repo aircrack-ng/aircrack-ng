@@ -68,7 +68,7 @@ LIBAIRCRACK_CE_WEP_LIBS = libaircrack-ce-wep.la
 LIBAIRCRACK_LIBS = libaircrack.la
 LIBAIRCRACK_OSDEP_LIBS= libaircrack-osdep.la
 if CYGWIN
-LIBAIRCRACK_OSDEP_LIBS+= -liphlpapi -lsetupapi -luuid
+LIBAIRCRACK_OSDEP_LIBS+= -liphlpapi -lsetupapi
 endif
 LIBCOWPATTY_LIBS = libcowpatty.la
 LIBPTW_LIBS = libptw.la
