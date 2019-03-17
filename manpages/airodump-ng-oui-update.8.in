@@ -1,0 +1,63 @@
+.TH AIRODUMP-NG-OUI-UPDATE 8 "@MAN_RELEASE_DATE@" "@MAN_RELEASE_VERSION@"
+
+.SH NAME
+airodump-ng-oui-updater - IEEE oui list updater for airodump-ng
+
+.SH SYNOPSIS
+.B airodump-ng-oui-updater
+
+.SH DESCRIPTION
+.BI airodump-ng-oui-updater
+downloads and parses IEEE OUI list.
+
+.SH AUTHOR
+This manual page was written by David Francos Cuartero.
+Permission is granted to copy, distribute and/or modify this document under the terms of the GNU General Public License, Version 2 or any later version published by the Free Software Foundation
+On Debian systems, the complete text of the GNU General Public License can be found in /usr/share/common-licenses/GPL.
+
+.PP
+.SH SEE ALSO
+.br
+.B airbase-ng(8)
+.br
+.B aireplay-ng(8)
+.br
+.B airmon-ng(8)
+.br
+.B airodump-ng(8)
+.br
+.B airserv-ng(8)
+.br
+.B airtun-ng(8)
+.br
+.B besside-ng(8)
+.br
+.B easside-ng(8)
+.br
+.B tkiptun-ng(8)
+.br
+.B wesside-ng(8)
+.br
+.B aircrack-ng(1)
+.br
+.B airdecap-ng(1)
+.br
+.B airdecloak-ng(1)
+.br
+.B airolib-ng(1)
+.br
+.B besside-ng-crawler(1)
+.br
+.B buddy-ng(1)
+.br
+.B ivstools(1)
+.br
+.B kstats(1)
+.br
+.B makeivs-ng(1)
+.br
+.B packetforge-ng(1)
+.br
+.B wpaclean(1)
+.br
+.B airventriloquist(8)

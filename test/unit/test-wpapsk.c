@@ -1,3 +1,7 @@
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdarg.h>
 #include <stddef.h>
 #include <setjmp.h>
@@ -8,18 +12,11 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
-#ifdef USE_GCRYPT
-#include "gcrypt-openssl-wrapper.h"
-#include "sha1-git.h"
-#else
-#include <openssl/hmac.h>
-#include <openssl/sha.h>
-#endif
-
-#include "aircrack-util/common.h"
-#include "aircrack-util/trampoline.h"
-#include "aircrack-crypto/crypto_engine.h"
-#include "aircrack-util/crypto_engine_loader.h"
+#include "aircrack-ng/crypto/crypto.h"
+#include "aircrack-ng/support/common.h"
+#include "aircrack-ng/cpu/trampoline.h"
+#include "aircrack-ng/ce-wpa/crypto_engine.h"
+#include "aircrack-ng/support/crypto_engine_loader.h"
 
 /*
  * We must force linking to one of the support crypto libraries; however,

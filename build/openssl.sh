@@ -10,6 +10,6 @@ esac
 
 if [ "$TRAVIS_OS_NAME" == "osx" ]; then ./autogen.sh --with-experimental ${EXTRA}; else ./autogen.sh --with-experimental ${EXTRA}; fi || { cat config.log; exit 1; }
 make
-make check || { find test -name 'test-suite.log' -exec cat {} ';' && exit 1; }
+make check || { find . -name 'test-suite.log' -exec cat {} ';' && exit 1; }
 make clean
 exit 0

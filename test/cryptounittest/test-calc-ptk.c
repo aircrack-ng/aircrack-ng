@@ -22,15 +22,19 @@
  *
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <strings.h>
 #include <stdlib.h>
-#include "defs.h"
-#include "crypto.h"
+
+#include "aircrack-ng/defs.h"
+#include "aircrack-ng/crypto/crypto.h"
 #include "tests.h"
-#include <string.h>
 
 int main(int argc, char ** argv)
 {

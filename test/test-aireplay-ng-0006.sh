@@ -40,14 +40,14 @@ if [ $(lsmod | egrep mac80211_hwsim | wc -l) -eq 0 ]; then
 fi
 
 # Check if there is only one radio
-AMOUNT_RADIOS=$("${top_builddir}/scripts/airmon-ng" | egrep hwsim | wc -l)
+AMOUNT_RADIOS=$("${abs_builddir}/../scripts/airmon-ng" | egrep hwsim | wc -l)
 if [ ${AMOUNT_RADIOS} -ne 1 ]; then
 	echo "Expected one radio, got ${AMOUNT_RADIOS}, hwsim may be in use by something else, skipping"
 	exit 77
 fi
 
 # Check if interface is present and grab it
-WI_IFACE=$("${top_builddir}/scripts/airmon-ng" 2>/dev/null | egrep hwsim | awk '{print $2}')
+WI_IFACE=$("${abs_builddir}/../scripts/airmon-ng" 2>/dev/null | egrep hwsim | awk '{print $2}')
 if [ -z "${WI_IFACE}" ]; then
 	[ ${LOAD_MODULE} -eq 1 ] && rmmod mac80211_hwsim 2>&1 >/dev/null
 	exit 1
@@ -72,7 +72,7 @@ TCPDUMP_PID=$!
 
 # Next test is directed
 AP_MAC="00:11:22:33:44:55"
-"${top_builddir}/src/aireplay-ng${EXEEXT}" \
+"${abs_builddir}/../aireplay-ng${EXEEXT}" \
 	-0 1 \
 	-a ${AP_MAC} \
 	-D \

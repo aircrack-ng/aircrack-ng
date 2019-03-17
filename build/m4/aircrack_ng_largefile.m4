@@ -43,6 +43,6 @@ AX_REQUIRE_DEFINED([AC_SYS_LARGEFILE])[]dnl
 AC_SYS_LARGEFILE
 
 AS_IF([test ".$ac_cv_sys_file_offset_bits$ac_cv_sys_large_files" != ".nono"], [
-	CPPFLAGS="$CPPFLAGS -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE"
+    AC_DEFINE([_LARGEFILE64_SOURCE], [1], [Define this if 64-bit file access requires this define to be present])
 ])
 ])

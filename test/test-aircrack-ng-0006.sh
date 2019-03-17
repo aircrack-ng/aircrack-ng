@@ -15,7 +15,7 @@ ${abs_srcdir}/wpa.cap
 ${abs_builddir}/1word,${abs_srcdir}/password.lst
 EOF
 
-"${top_builddir}/src/aircrack-ng${EXEEXT}" \
+"${abs_builddir}/../aircrack-ng${EXEEXT}" \
     -R ${abs_builddir}/session | \
         grep 'KEY FOUND! \[ biscotte \]'
 

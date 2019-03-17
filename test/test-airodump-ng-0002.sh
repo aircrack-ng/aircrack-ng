@@ -39,13 +39,13 @@ if [ $(lsmod | egrep mac80211_hwsim | wc -l) -eq 0 ]; then
 fi
 
 # Check there are two radios
-if [ $("${top_builddir}/scripts/airmon-ng" | egrep hwsim | wc -l) -ne 1 ]; then
+if [ $("${abs_builddir}/../scripts/airmon-ng" | egrep hwsim | wc -l) -ne 1 ]; then
         echo "Expected two radios but got a different amount, hwsim may be in use by something else, skipping"
         exit 77
 fi
 
 # Check if interfaces are present and grab them
-WI_IFACE=$("${top_builddir}/scripts/airmon-ng" 2>/dev/null | egrep hwsim | awk '{print $2}')
+WI_IFACE=$("${abs_builddir}/../scripts/airmon-ng" 2>/dev/null | egrep hwsim | awk '{print $2}')
 if [ -z "${WI_IFACE}" ]; then
 	echo "Failed getting interface name"
 	[ ${LOAD_MODULE} -eq 1 ] && rmmod mac80211_hwsim 2>&1 >/dev/null
@@ -83,7 +83,7 @@ ip link set hwsim0 up
 TEMP_FILE=$(mktemp -u)
 screen -AmdS capture \
 	timeout 4 \
-		"${top_builddir}/src/airodump-ng" \
+		"${abs_builddir}/../airodump-ng" \
 			hwsim0 \
 			-c 1 \
 			-w ${TEMP_FILE} \

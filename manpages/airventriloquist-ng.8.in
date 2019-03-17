@@ -1,0 +1,88 @@
+.TH AIRVENTRILOQUIST-NG 8 "@MAN_RELEASE_DATE@" "@MAN_RELEASE_VERSION@"
+
+.SH NAME
+airventriloquist-ng - encrypted WiFi packet injection
+.SH SYNOPSIS
+.B airventriloquist-ng
+[options]
+.SH DESCRIPTION
+.BI airventriloquist-ng
+injects on encrypted WiFi packet and circumvents wireless intrusion prevention systems.
+.SH OPTIONS
+.PP
+.TP
+.I --help
+Shows the help screen.
+.TP
+.I -i <replay interface>
+Interface to capture and inject. Mandatory option.
+.TP
+.I -d, --deauth
+Sends active deauthentications frames to encrypted stations.
+.TP
+.I -e <value>, --essid <value>
+ESSID of target network. For SSID containing special characters, see https://www.aircrack-ng.org/doku.php?id=faq#how_to_use_spaces_double_quote_and_single_quote_etc_in_ap_names
+.TP
+.I -p <value>, --passphrase <value>
+WPA Passphrase of the target network. Passphrase is between 8 and 63 characters long.
+.TP
+.I -c, --icmp
+Respond to all ICMP frames (Debug).
+.TP
+.I -n, --dns
+IP to resolve all DNS queries to.
+.TP
+.I -s <URL>, --hijack <URL>
+URL to look for in HTTP requests when hijacking connections. The URL can have wildcards characters. Example: *jquery*.js*
+.TP
+.I -r <URL>, --redirect <URL>
+URL to redirect hijacked connections to.
+.TP
+.I -v, --verbose
+Verbose output.
+.PP
+.SH SEE ALSO
+.br
+.B airbase-ng(8)
+.br
+.B aireplay-ng(8)
+.br
+.B airmon-ng(8)
+.br
+.B airodump-ng(8)
+.br
+.B airodump-ng-oui-update(8)
+.br
+.B airserv-ng(8)
+.br
+.B besside-ng(8)
+.br
+.B easside-ng(8)
+.br
+.B tkiptun-ng(8)
+.br
+.B wesside-ng(8)
+.br
+.B aircrack-ng(1)
+.br
+.B airdecap-ng(1)
+.br
+.B airdecloak-ng(1)
+.br
+.B airolib-ng(1)
+.br
+.B besside-ng-crawler(1)
+.br
+.B buddy-ng(1)
+.br
+.B ivstools(1)
+.br
+.B kstats(1)
+.br
+.B makeivs-ng(1)
+.br
+.B packetforge-ng(1)
+.br
+.B wpaclean(1)
+.br
+.B airtun-ng(8)

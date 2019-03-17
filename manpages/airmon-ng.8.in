@@ -1,0 +1,87 @@
+.TH AIRMON-NG 8 "@MAN_RELEASE_DATE@" "@MAN_RELEASE_VERSION@"
+
+.SH NAME
+airmon-ng - POSIX sh script designed to turn wireless cards into monitor mode.
+.SH SYNOPSIS
+.B airmon-ng
+<start|stop> <interface> [channel]
+.B airmon-ng
+<check> [kill]
+.SH DESCRIPTION
+.BI airmon-ng
+This script can be used to enable monitor mode on wireless interfaces. It may also be used to go back from monitor mode to managed mode. Entering the airmon-ng command without parameters will show the interfaces status. 
+It can also list/kill programs that can interfere with the wireless card operation.
+.SH OPTIONAL PARAMETERS
+.PP
+.TP
+.I start <interface> [channel]
+Enable monitor mode on an interface (and specify a channel). Note: Madwifi-ng is a special case, \(aqstart\(aq has to be used on wifi interfaces and \(aqstop\(aq on ath interfaces.
+.TP
+.I stop <interface>
+Disable monitor mode and go back to managed mode (except for madwifi-ng where it kills the ath VAP).
+.TP
+.I check [kill]
+List all possible programs that could interfere with the wireless card. If \(aqkill\(aq is specified, it will try to kill all of them.
+.TP
+.I --verbose
+This flag must precede start/stop/check and can be combined with other parameters or used alone. 
+This flag will increase the verbosity to provide additional useful information which may not be needed for normal operation.
+.TP
+.I --debug
+This flag must precede start/stop/check and can be combined with other parameters or used alone. 
+This flag will increase the verbosity to debug level to assist in troubleshooting errors in airmon-ng. Use this flag when opening a bug, but only use --verbose when requesting support in irc.
+.TP
+.I --elite
+WARNING: DO NOT USE: This flag must precede start or stop and will prevent airmon-ng from removing interfaces. 
+WARNING: Use of this flag will immediately disqualify receiving any support from the aircrack-ng team, due to the fact that this behavior is known to be broken. WARNING!
+
+.SH AUTHOR
+This manual page was written by Adam Cecile <gandalf@le-vert.net> for the Debian system (but may be used by others).
+And modified to fit airmon-ng by David Francos Cuartero <xayon@xayon.net>.
+Most recently modified by Zero_Chaos to update for the airmon-zc rewrite.
+Permission is granted to copy, distribute and/or modify this document under the terms of the GNU General Public License, Version 2 or any later version published by the Free Software Foundation
+On Debian systems, the complete text of the GNU General Public License can be found in /usr/share/common-licenses/GPL.
+
+.SH SEE ALSO
+.br
+.B airbase-ng(8)
+.br
+.B aireplay-ng(8)
+.br
+.B airodump-ng(8)
+.br
+.B airodump-ng-oui-update(8)
+.br
+.B airserv-ng(8)
+.br
+.B airtun-ng(8)
+.br
+.B besside-ng(8)
+.br
+.B easside-ng(8)
+.br
+.B tkiptun-ng(8)
+.br
+.B wesside-ng(8)
+.br
+.B aircrack-ng(1)
+.br
+.B airdecap-ng(1)
+.br
+.B airdecloak-ng(1)
+.br
+.B airolib-ng(1)
+.br
+.B besside-ng-crawler(1)
+.br
+.B buddy-ng(1)
+.br
+.B ivstools(1)
+.br
+.B kstats(1)
+.br
+.B makeivs-ng(1)
+.br
+.B packetforge-ng(1)
+.br
+.B wpaclean(1)

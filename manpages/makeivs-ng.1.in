@@ -1,0 +1,102 @@
+.TH MAKEIVS-NG 1 "@MAN_RELEASE_DATE@" "@MAN_RELEASE_VERSION@"
+
+.SH NAME
+makeivs - generate a dummy IVS dump file with a specific WEP key
+.SH SYNOPSIS
+.B makeivs
+<ivs file> <104-bit key>
+.SH DESCRIPTION
+.BI makeivs-ng
+is a tool designed to generate an IVS dump file with an inputted WEP key.
+The aim of is tools is to provide a way to create dumps with a known encryption key for tests.
+.SH OPTIONS
+.TP
+.B Common options:
+.TP
+.I -b <bssid> or --bssid <bssid>
+Set the BSSID (Access Point MAC)
+.TP
+.I -f <num> or --first <num>
+Value for the first IV generated.
+.TP
+.I -k <key> or --key <key>
+Target network WEP key in hex. Separator between bytes is accepted but not necessary.
+.TP
+.I -s <num> or --seed <num>
+Seed used to setup random generator. May be used in combination with \-p or \-\-prng.
+.TP
+.I -w <file> or --write <file>
+Filename to write IVs into.
+.TP
+.I -c <num> or --count <num>
+Amount of IVs to generate. Default value is 100000.
+.TP
+.I -d <num> or --dupe <num>
+Percentage of duplicate IVs.
+.TP
+.I -e <num> or --error <num>
+Percentage of erroneous keystreams.
+.TP
+.I -l <num> or --length <num>
+Size of keystreams. Default: 16 bytes.
+.TP
+.I -n or --nofms 
+Ignores weak IVs.
+.TP
+.I -p or --prng
+Use random values when generating IVs. Default is to use sequential values.
+.TP
+.I --help
+Show help screen.
+.SH EXAMPLE
+.B makeivs
+makeivs -w out.ivs -k 123456789ABCDEF123456789AB
+.SH AUTHOR
+This manual page was written by Adam Cecile <gandalf@le-vert.net> for the Debian system (but may be used by others).
+Permission is granted to copy, distribute and/or modify this document under the terms of the GNU General Public License, Version 2 or any later version published by the Free Software Foundation
+On Debian systems, the complete text of the GNU General Public License can be found in /usr/share/common-licenses/GPL.
+.SH SEE ALSO
+.br
+.B airbase-ng(8)
+.br
+.B aireplay-ng(8)
+.br
+.B airmon-ng(8)
+.br
+.B airodump-ng(8)
+.br
+.B airodump-ng-oui-update(8)
+.br
+.B airserv-ng(8)
+.br
+.B airtun-ng(8)
+.br
+.B besside-ng(8)
+.br
+.B easside-ng(8)
+.br
+.B tkiptun-ng(8)
+.br
+.B wesside-ng(8)
+.br
+.B aircrack-ng(1)
+.br
+.B airdecap-ng(1)
+.br
+.B airdecloak-ng(1)
+.br
+.B airolib-ng(1)
+.br
+.B besside-ng-crawler(1)
+.br
+.B buddy-ng(1)
+.br
+.B ivstools(1)
+.br
+.B kstats(1)
+.br
+.B packetforge-ng(1)
+.br
+.B wpaclean(1)
+.br
+.B airventriloquist(8)

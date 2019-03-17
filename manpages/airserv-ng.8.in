@@ -1,0 +1,79 @@
+.TH AIRSERV-NG 8 "@MAN_RELEASE_DATE@" "@MAN_RELEASE_VERSION@"
+
+.SH NAME
+airserv-ng - a wireless card server
+.SH SYNOPSIS
+.B airserv-ng
+<options>
+.SH DESCRIPTION
+.BI airserv-ng
+is a wireless card server which allows multiple wireless application programs to independently use a wireless card via a client-server TCP network connection. All operating system and wireless card driver specific code is incorporated into the server. This eliminates the need for each wireless application to contain the complex wireless card and driver logic. It is also supports multiple operating systems.
+.SH OPTIONS
+.PP
+.TP
+.I -h
+Shows the help screen.
+.TP
+.I -p <port>
+TCP port to listen on (by default: 666).
+.TP
+.I -d <iface>
+Wifi interface to use.
+.TP
+.I -c <chan>
+Lock interface to this channel.
+.TP
+.I -v <level>
+Debug level. There are 3 debug levels.
+Debug level of 1 shows client connection/disconnection (default).
+Debug level of 2 shows channel change requests and invalid client command requests in addition to the debug level 1 messages.
+Debug level of 3 displays a message each time a packet (and its length) is sent to the client. It also include messages from level 2 (and 1).
+.SH AUTHOR
+This manual page was written by Thomas d\(aqOtreppe.
+Permission is granted to copy, distribute and/or modify this document under the terms of the GNU General Public License, Version 2 or any later version published by the Free Software Foundation
+On Debian systems, the complete text of the GNU General Public License can be found in /usr/share/common-licenses/GPL.
+.SH SEE ALSO
+.br
+.B airbase-ng(8)
+.br
+.B aireplay-ng(8)
+.br
+.B airmon-ng(8)
+.br
+.B airodump-ng(8)
+.br
+.B airodump-ng-oui-update(8)
+.br
+.B airtun-ng(8)
+.br
+.B besside-ng(8)
+.br
+.B easside-ng(8)
+.br
+.B tkiptun-ng(8)
+.br
+.B wesside-ng(8)
+.br
+.B aircrack-ng(1)
+.br
+.B airdecap-ng(1)
+.br
+.B airdecloak-ng(1)
+.br
+.B airolib-ng(1)
+.br
+.B besside-ng-crawler(1)
+.br
+.B buddy-ng(1)
+.br
+.B ivstools(1)
+.br
+.B kstats(1)
+.br
+.B makeivs-ng(1)
+.br
+.B packetforge-ng(1)
+.br
+.B wpaclean(1)
+.br
+.B airventriloquist(8)

@@ -64,6 +64,3 @@ EXTRA_DIST = airdrop \
 			 README \
 			 setup.py \
 			 old-installers
-
-
-@CODE_COVERAGE_RULES@

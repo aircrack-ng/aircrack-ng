@@ -1,3 +1,7 @@
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -5,7 +9,7 @@
 #include <setjmp.h>
 #include <cmocka.h>
 
-#include "aircrack-util/circular_buffer.h"
+#include "aircrack-ng/adt/circular_buffer.h"
 
 static void test_cbuf_init_and_empty(void ** state)
 {
