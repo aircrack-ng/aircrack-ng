@@ -140,3 +140,8 @@ integration-TESTS:
 integration:
 	$(MAKE) $(AM_MAKEFLAGS) $(check_PROGRAMS) $(integration_PROGRAMS)
 	$(MAKE) $(AM_MAKEFLAGS) integration-TESTS
+
+mostlyclean-local:
+	-test -z "$(INTEGRATION_TEST_LOGS)" || rm -f $(INTEGRATION_TEST_LOGS)
+	-test -z "$(INTEGRATION_TEST_LOGS:.log=.trs)" || rm -f $(INTEGRATION_TEST_LOGS:.log=.trs)
+	-test -z "$(INTEGRATION_TEST_SUITE_LOG)" || rm -f $(INTEGRATION_TEST_SUITE_LOG)
