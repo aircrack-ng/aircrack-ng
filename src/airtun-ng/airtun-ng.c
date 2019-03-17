@@ -1107,7 +1107,7 @@ int main(int argc, char * argv[])
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (EXIT_FAILURE);
 				}
-				if (opt.crypt != CRYPT_NONE)
+				if (opt.crypt != CRYPT_NONE && opt.crypt != CRYPT_WPA)
 				{
 					printf("Encryption key already specified.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
