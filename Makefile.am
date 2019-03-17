@@ -39,10 +39,6 @@
 
 ACLOCAL_AMFLAGS = -I build/m4/stubs -I build/m4
 
-TEST_EXTENSIONS = .sh @EXEEXT@
-
-AM_TESTS_FD_REDIRECT = 9>&2
-
 SUBDIRS =	manpages \
 					scripts
 
