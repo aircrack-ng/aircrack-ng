@@ -39,6 +39,10 @@
 
 ACLOCAL_AMFLAGS = -I build/m4/stubs -I build/m4
 
+TEST_EXTENSIONS = .sh @EXEEXT@
+
+AM_TESTS_FD_REDIRECT = 9>&2
+
 SUBDIRS =	manpages \
 					scripts
 
@@ -64,6 +68,7 @@ lib_LTLIBRARIES =
 EXTRA_DIST = VERSION
 check_PROGRAMS =
 TESTS =
+INTEGRATION_TESTS =
 
 LIBACCRYPTO_LIBS = libaccrypto.la
 LIBAIRCRACK_CE_WEP_LIBS = libaircrack-ce-wep.la
@@ -87,6 +92,7 @@ LIBAIRCRACK_CE_WPA_PPC_POWER8_LIBS = libaircrack-ce-wpa-ppc-power8.la
 
 LIBAIRCRACK_CE_WPA_PATH = $(abs_top_builddir)/
 
+include $(top_srcdir)/Makefile.integration.mk
 include $(top_srcdir)/include/Makefile.inc
 include $(top_srcdir)/lib/Makefile.inc
 include $(top_srcdir)/src/Makefile.inc

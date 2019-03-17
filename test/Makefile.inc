@@ -86,7 +86,7 @@ TESTS += %D%/test-aircrack-ng-0020.sh
 endif
 
 if LINUX
-TESTS += %D%/test-aireplay-ng-0001.sh \
+INTEGRATION_TESTS += %D%/test-aireplay-ng-0001.sh \
 		 %D%/test-aireplay-ng-0002.sh \
 		 %D%/test-aireplay-ng-0003.sh \
 		 %D%/test-aireplay-ng-0004.sh \
