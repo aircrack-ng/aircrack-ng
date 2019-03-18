@@ -139,7 +139,8 @@ iw dev ${WI_IFACE2} set channel ${CHANNEL}
 
 
 # Start wpa_supplicant
-wpa_supplicant -B -Dnl80211 -i ${WI_IFACE2} -c ${TEMP_WPAS_CONF} 2>&1
+WPAS_PID=$(mktemp -u)
+wpa_supplicant -B -Dnl80211 -i ${WI_IFACE2} -c ${TEMP_WPAS_CONF} -P ${WPAS_PID} 2>&1
 if test $? -ne 0; then
 	echo "Failed starting wpa_supplicant"
 	echo "Running airmon-ng check kill may fix the issue"
@@ -154,8 +155,8 @@ fi
 sleep 6
 
 # Clean up
-rm -f ${TEMP_WPAS_CONF}
-kill -9 ${AD_PID}
+kill -9 ${AD_PID} $(cat ${WPAS_PID})
+rm -f ${TEMP_WPAS_CONF} ${WPAS_PID}
 
 # Check we have the xor file
 XOR_FILE="$(ls -1 ${TEMP_FILE}*.xor)"
