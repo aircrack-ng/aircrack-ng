@@ -16,7 +16,7 @@ clone_depth: 500
 
 environment:
   global:
-    APPVEYOR_SAVE_CACHE_ON_ERROR: true
+    # APPVEYOR_SAVE_CACHE_ON_ERROR: true
     AIRCRACK_CI_CACHE: C:\aircrack_ci_cache
     CYG_CACHE: '%AIRCRACK_CI_CACHE%\cygwin'
     MSYS2_CACHE: '%AIRCRACK_CI_CACHE%\msys2'
@@ -43,8 +43,8 @@ matrix:
     - TARGET: cygwin64
       COMPILER: clang
 
-cache:
-- '%AIRCRACK_CI_CACHE%'
+# cache:
+# - '%AIRCRACK_CI_CACHE%'
 
 # Uncomment to enable debugging on AppVeyor equipment
 #
