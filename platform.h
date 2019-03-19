@@ -8,8 +8,13 @@
 #include <endian.h>
 #endif
 
+#ifndef le16_to_cpu
 #define le16_to_cpu		le16toh
+#endif
+
+#ifndef le32_to_cpu
 #define le32_to_cpu		le32toh
+#endif
 
 #if defined(_MSC_VER)
 //  Microsoft
