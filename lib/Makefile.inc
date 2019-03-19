@@ -52,7 +52,6 @@ SRC_LIBAC		= %D%/libac/adt/avl_tree.c \
 							%D%/libac/adt/circular_buffer.c \
 							%D%/libac/adt/circular_queue.c \
 							%D%/libac/cpu/simd_cpuid.c \
-							%D%/libac/cpu/trampoline.c \
 							%D%/libac/support/fragments.c \
 							%D%/libac/support/common.c \
 							%D%/libac/support/communications.c \
@@ -256,7 +255,6 @@ EXTRA_DIST +=	%D%/ce-wep/uniqueiv.c \
 							%D%/libac/cpu/cpuset_hwloc.c \
 							%D%/libac/cpu/cpuset_pthread.c \
 							%D%/libac/cpu/simd_cpuid.c \
-							%D%/libac/cpu/trampoline.c \
 							%D%/libac/cpu/trampoline_arm.c \
 							%D%/libac/cpu/trampoline_ppc.c \
 							%D%/libac/cpu/trampoline_stubs.c \
