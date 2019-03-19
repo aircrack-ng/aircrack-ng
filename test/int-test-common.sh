@@ -163,12 +163,14 @@ run_hostapd() {
 		echo '------------'
 		echo 'Running airmon-ng check kill may fix the issue'
 		cleanup()
-		exit 1
+		return 0
 	fi
 
 	# Get PID
 	HOSTAPD_PID=$(cat ${HOSTAPD_PID_FILE} 2>/dev/null)
 	echo "HostAPd PID: ${HOSTAPD_PID}"
+
+	return 1
 }
 
 kill_hostapd() {

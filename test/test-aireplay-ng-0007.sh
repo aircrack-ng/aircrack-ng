@@ -45,6 +45,7 @@ EOF
 
 # Start HostAPd
 run_hostapd ${TEMP_HOSTAPD_CONF_FILE}
+[ $? -eq 0 ] && exit 1
 
 # Put third interface in monitor mode
 set_monitor_mode ${WI_IFACE3}
