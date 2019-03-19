@@ -3,66 +3,28 @@
 
 if test ! -z "${CI}"; then exit 77; fi
 
+# Load helper functions
+. "${abs_builddir}/../test/int-test-common.sh"
+
 # Check root
-if [ $(id -u) -ne 0 ]; then
-	echo "Not root, skipping"
-	exit 77
-fi
+check_root
 
-hash iw 2>&1 >/dev/null
-if [ $? -ne 0 ]; then
-	echo "iw is not installed, skipping"
-	exit 77
-fi
+# Check all required tools are installed
+check_airmon_ng_deps_present
+is_tool_present hostapd
 
-hash lsusb 2>&1 >/dev/null
-if [ $? -ne 0 ]; then
-	echo "lsusb is not installed, skipping"
-	exit 77
-fi
+# Load mac80211_hwsim
+load_module 1
 
-hash tcpdump 2>&1 >/dev/null
-if [ $? -ne 0 ]; then
-	echo "tcpdump is not installed, skipping"
-	exit 77
-fi
+# Check there are two radios
+check_radios_present 1
 
-# Load module
-LOAD_MODULE=0
-if [ $(lsmod | egrep mac80211_hwsim | wc -l) -eq 0 ]; then
-	LOAD_MODULE=1
-	modprobe mac80211_hwsim radios=1 2>&1 >/dev/null
-	if [ $? -ne 0 ]; then
-		# XXX: It can fail if inside a container too
-		echo "Failed inserting module, skipping"
-		exit 77
-	fi
-fi
-
-# Check if there is only one radio
-AMOUNT_RADIOS=$("${abs_builddir}/../scripts/airmon-ng" | egrep hwsim | wc -l)
-if [ ${AMOUNT_RADIOS} -ne 1 ]; then
-	echo "Expected one radio, got ${AMOUNT_RADIOS}, hwsim may be in use by something else, skipping"
-	exit 77
-fi
-
-# Check if interface is present and grab it
-WI_IFACE=$("${abs_builddir}/../scripts/airmon-ng" 2>/dev/null | egrep hwsim | awk '{print $2}')
-if [ -z "${WI_IFACE}" ]; then
-	[ ${LOAD_MODULE} -eq 1 ] && rmmod mac80211_hwsim 2>&1 >/dev/null
-	exit 1
-fi
+# Get interfaces names
+get_hwsim_interface_name 1
+WI_IFACE=${IFACE}
 
 # Put interface in monitor so tcpdump captures in the correct mode
-ip link set ${WI_IFACE} down
-iw dev ${WI_IFACE} set monitor none
-ip link set ${WI_IFACE} up
-
-# Check it is in monitor mode
-if [ -z "$(iw dev ${WI_IFACE} info | egrep 'type monitor')" ]; then
-	[ ${LOAD_MODULE} -eq 1 ] && rmmod mac80211_hwsim 2>&1 >/dev/null
-	exit 1
-fi
+set_monitor_mode ${WI_IFACE}
 
 # Start capture in the background
 TEMP_PCAP=$(mktemp)
@@ -90,8 +52,8 @@ kill -15 ${TCPDUMP_PID}
 # to the file
 sleep 3
 
-# Unload hwsim module
-[ ${LOAD_MODULE} -eq 1 ] && rmmod mac80211_hwsim 2>&1 >/dev/null
+# Cleanup
+cleanup
 
 # There should be exactly 256 deauth
 AMOUNT_PACKETS=$(tcpdump -r ${TEMP_PCAP} 2>/dev/null | egrep "DeAuthentication \(${AP_MAC}" | egrep 'Disassociated because the information in the Power Capability element is unacceptable' | wc -l)
