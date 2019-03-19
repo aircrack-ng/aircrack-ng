@@ -11,7 +11,7 @@ check_root
 
 # Check all required tools are installed
 check_airmon_ng_deps_present
-is_tool_present hostapd
+is_tool_present tcpdump
 
 # Load mac80211_hwsim
 load_module 1
