@@ -143,7 +143,7 @@ TEMP_HOSTAPD_CONF_FILE=$(mktemp -u)
 run_hostapd() {
 	# Check configuration file is present
 	if [ -z "$1" ]; then
-		echo 'HostAPd requires a configuration file and interface'
+		echo 'HostAPd requires a configuration file'
 		exit 1
 	fi
 
