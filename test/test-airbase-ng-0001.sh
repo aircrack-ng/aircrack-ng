@@ -75,11 +75,10 @@ set_interface_channel ${WI_IFACE} ${CHANNEL}
 
 # Start wpa_supplicant
 run_wpa_supplicant ${TEMP_WPAS_CONF_FILE} ${WI_IFACE}
-TEMP_WPAS_PID="/tmp/wpas_pid_$(date +%s)"
 
 # Wait for authentication then kill wpa supplicant and cleanup
 sleep 6
-cleanup
+kill_wpa_supplicant
 
 # wait another 2 secs then kill airbase-ng
 sleep 2
@@ -88,11 +87,13 @@ kill -9 ${AB_PID}
 # Check Airbase-ng output
 AB_PCAP="$(grep 'Created capture file' ${AB_TEMP} | gawk -F\" '{print $2}')"
 CLIENT_CONNECT=$(grep Client ${AB_TEMP} | grep ${ENCRYPT} | wc -l)
+
+# Some cleanup
 rm -f ${AB_TEMP}
+cleanup
 
 if [ ${CLIENT_CONNECT} -eq 0 ]; then
 	echo "Client failed to connect to AP - possibly incorrect encryption"
-	cleanup
 	rm -f ${AB_PCAP}
 	exit 1
 fi
