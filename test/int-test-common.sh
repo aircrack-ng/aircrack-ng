@@ -2,6 +2,7 @@
 
 cleanup() {
 	echo "Cleanup"
+	kill_wpa_supplicant
 	kill_hostapd
 	unload_module
 }
@@ -53,6 +54,14 @@ unload_module() {
 		echo 'Unloading mac80211_hwsim'
 		rmmod mac80211_hwsim 2>/dev/null >/dev/null
 	fi
+}
+
+is_pid_running() {
+	check_arg_is_number "$1" 'is_pid_running'
+
+	[ ! -f "/proc/${1}/status" ] && return 0
+
+	return 1
 }
 
 check_root() {
@@ -175,5 +184,59 @@ kill_hostapd() {
 		TEMP_HOSTAPD_CONF_FILE=""
 		HOSTAPD_PID=""
 		HOSTAPD_PID_FILE=""
+	fi
+}
+
+########################## WPA supplicant ##########################
+
+WPAS_PID_FILE=$(mktemp -u)
+
+# PID is more of a convenience
+WPAS_PID=""
+TEMP_WPAS_CONF_FILE=$(mktemp -u)
+run_wpa_supplicant() {
+	# Check configuration file is present
+	if [ -z "$1" ] || [ -z "$2" ]; then
+		echo 'WPA_supplicant requires a configuration file and a wifi interface'
+		exit 1
+	fi
+
+	if [ ! -f "$1" ]; then
+		echo "WPA_supplicant configuration file $1 does not exist"
+		exit 1
+	fi
+
+	TEMP_WPAS_CONF_FILE="$1"
+
+	# Run WPA supplicant
+	echo "Starting WPA_supplicant with ${TEMP_WPAS_CONF_FILE} on $2"
+	wpa_supplicant -B -Dnl80211 -i $2 -c ${TEMP_WPAS_CONF_FILE} -P ${WPAS_PID_FILE} 2>&1
+	if test $? -ne 0; then
+		echo 'Failed starting WPA supplicant with the following configuration:'
+		cat ${TEMP_WPAS_CONF_FILE}
+		echo '------------'
+		echo 'Running airmon-ng check kill may fix the issue'
+		cleanup()
+		exit 1
+	fi
+
+	# Get PID
+	WPAS_PID=$(cat ${WPAS_PID_FILE} 2>/dev/null)
+	echo "WPA supplicant PID: ${WPAS_PID}"
+}
+
+kill_wpa_supplicant() {
+	if [ -n "${TEMP_WPAS_CONF_FILE}" ] && [ -f ${WPAS_PID_FILE} ]; then
+
+		# Get WPA supplicant PID
+		PID_TO_KILL=$(cat ${WPAS_PID_FILE} 2>/dev/null)
+		echo "Killing WPA supplicant PID ${PID_TO_KILL}"
+
+		# Kill and cleanup
+		kill -9 ${PID_TO_KILL}
+		rm -f ${TEMP_WPAS_CONF_FILE} ${WPAS_PID_FILE}
+		TEMP_WPAS_CONF_FILE=""
+		WPAS_PID=""
+		WPAS_PID_FILE=""
 	fi
 }
