@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "radiotap.h"
+#include "platform.h"
 
 /* Radiotap header iteration
  *   implemented in radiotap.c
@@ -89,12 +90,12 @@ struct ieee80211_radiotap_iterator {
 #define CALLING_CONVENTION
 #endif
 
-extern CALLING_CONVENTION int ieee80211_radiotap_iterator_init(
+IMPORT extern CALLING_CONVENTION int ieee80211_radiotap_iterator_init(
 	struct ieee80211_radiotap_iterator *iterator,
 	struct ieee80211_radiotap_header *radiotap_header,
 	int max_length, const struct ieee80211_radiotap_vendor_namespaces *vns);
 
-extern CALLING_CONVENTION int ieee80211_radiotap_iterator_next(
+IMPORT extern CALLING_CONVENTION int ieee80211_radiotap_iterator_next(
 	struct ieee80211_radiotap_iterator *iterator);
 
 #endif /* __RADIOTAP_ITER_H */

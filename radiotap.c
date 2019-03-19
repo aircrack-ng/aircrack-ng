@@ -87,6 +87,7 @@ static const struct ieee80211_radiotap_namespace radiotap_ns = {
  * Example code: parse.c
  */
 
+EXPORT
 int ieee80211_radiotap_iterator_init(
 	struct ieee80211_radiotap_iterator *iterator,
 	struct ieee80211_radiotap_header *radiotap_header,
@@ -101,16 +102,16 @@ int ieee80211_radiotap_iterator_init(
 		return -EINVAL;
 
 	/* sanity check for allowed length and radiotap length field */
-	if (max_length < get_unaligned_le16(&radiotap_header->it_len))
+	if (max_length < get_unaligned_le16(UNALIGNED_ADDRESS(&radiotap_header->it_len)))
 		return -EINVAL;
 
 	iterator->_rtheader = radiotap_header;
-	iterator->_max_length = get_unaligned_le16(&radiotap_header->it_len);
+	iterator->_max_length = get_unaligned_le16(UNALIGNED_ADDRESS(&radiotap_header->it_len));
 	iterator->_arg_index = 0;
-	iterator->_bitmap_shifter = get_unaligned_le32(&radiotap_header->it_present);
+	iterator->_bitmap_shifter = get_unaligned_le32(UNALIGNED_ADDRESS(&radiotap_header->it_present));
 	iterator->_arg = (uint8_t *)radiotap_header + sizeof(*radiotap_header);
 	iterator->_reset_on_ext = 0;
-	iterator->_next_bitmap = &radiotap_header->it_present;
+	iterator->_next_bitmap = UNALIGNED_ADDRESS(&radiotap_header->it_present);
 	iterator->_next_bitmap++;
 	iterator->_vns = vns;
 	iterator->current_namespace = &radiotap_ns;
@@ -228,6 +229,7 @@ static int find_override(struct ieee80211_radiotap_iterator *iterator,
  * iterator.this_arg for type "type" safely on all arches.
  */
 
+EXPORT
 int ieee80211_radiotap_iterator_next(
 	struct ieee80211_radiotap_iterator *iterator)
 {
