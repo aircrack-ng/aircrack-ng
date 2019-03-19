@@ -411,9 +411,17 @@ typedef uint8_t u_int8_t;
 #define cpu_to_le64 __cpu_to_le64
 #define le64_to_cpu __le64_to_cpu
 #define cpu_to_le32 __cpu_to_le32
+
+#ifndef le32_to_cpu
 #define le32_to_cpu __le32_to_cpu
+#endif
+
 #define cpu_to_le16 __cpu_to_le16
+
+#ifndef le16_to_cpu
 #define le16_to_cpu __le16_to_cpu
+#endif
+
 #define cpu_to_be64 __cpu_to_be64
 #define be64_to_cpu __be64_to_cpu
 #define cpu_to_be32 __cpu_to_be32
