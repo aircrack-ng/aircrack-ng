@@ -23,7 +23,7 @@ load_module() {
 
 	if [ -z "$(lsmod | egrep mac80211_hwsim)" ]; then
 		echo "Loading mac80211_hwsim with $1 radios"
-		modprobe mac80211_hwsim radios=2 2>&1 >/dev/null
+		modprobe mac80211_hwsim radios=$1 2>&1 >/dev/null
 		if [ $? -ne 0 ]; then
 			# XXX: It can fail if inside a container too
 			echo "Failed inserting module, skipping"
@@ -45,7 +45,7 @@ check_radios_present() {
 		exit 1
 	fi
 
-	echo "Correct amount of radios: $1"
+	echo "Correct amount of radios present: $1"
 }
 
 unload_module() {
@@ -120,6 +120,7 @@ set_monitor_mode() {
 	echo "Putting $1 in monitor mode"
 	ip link set $1 down
 	iw dev $1 set monitor none
+	ip link set $1 up
 }
 
 
