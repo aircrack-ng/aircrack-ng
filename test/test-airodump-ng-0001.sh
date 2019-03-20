@@ -5,51 +5,31 @@
 
 if test ! -z "${CI}"; then exit 77; fi
 
+# Load helper functions
+. "${abs_builddir}/../test/int-test-common.sh"
+
 # Check root
-if [ $(id -u) -ne 0 ]; then
-	echo "Not root, skipping"
-	exit 77
-fi
+check_root
 
-# Check hostapd is present
-hash screen 2>&1 >/dev/null
-if [ $? -ne 0 ]; then
-	echo "screen is not installed, skipping"
-	exit 77
-fi
+# Check all required tools are installed
+check_airmon_ng_deps_present
+is_tool_present screen
 
-# Load module
-LOAD_MODULE=0
-if [ $(lsmod | egrep mac80211_hwsim | wc -l) -eq 0 ]; then
-	LOAD_MODULE=1
-	modprobe mac80211_hwsim radios=1 2>&1 >/dev/null
-	if [ $? -ne 0 ]; then
-		# XXX: It can fail if inside a container too
-		echo "Failed inserting module, skipping"
-		exit 77
-	fi
-fi
+# Load mac80211_hwsim
+load_module 1
 
 # Check there are two radios
-if [ $("${abs_builddir}/../scripts/airmon-ng" | egrep hwsim | wc -l) -ne 1 ]; then
-        echo "Expected two radios but got a different amount, hwsim may be in use by something else, skipping"
-        exit 77
-fi
+check_radios_present 1
 
-# Check if interfaces are present and grab them
-WI_IFACE=$("${abs_builddir}/../scripts/airmon-ng" 2>/dev/null | egrep hwsim | awk '{print $2}')
-if [ -z "${WI_IFACE}" ]; then
-	echo "Failed getting interface name"
-	[ ${LOAD_MODULE} -eq 1 ] && rmmod mac80211_hwsim 2>&1 >/dev/null
-	exit 1
-fi
+# Get interfaces names
+get_hwsim_interface_name 1
+WI_IFACE=${IFACE}
 
 CHANNEL=9
-# Put other interface in monitor mode
-ip link set ${WI_IFACE} down
-iw dev ${WI_IFACE} set monitor none
-ip link set ${WI_IFACE} up
-iw dev ${WI_IFACE} set channel ${CHANNEL}
+
+# Put interface in monitor mode
+set_monitor_mode ${WI_IFACE}
+set_interface_channel ${WI_IFACE} ${CHANNEL}
 
 TEMP_FILE=$(mktemp -u)
 screen -AmdS capture \
@@ -64,7 +44,7 @@ screen -AmdS capture \
 sleep 5
 
 # Unload module
-[ ${LOAD_MODULE} -eq 1 ] && rmmod mac80211_hwsim 2>&1 >/dev/null
+cleanup
 
 # Basic checks
 if [ $(ls -1 ${TEMP_FILE}-01.* | wc -l) -ne 5 ]; then
