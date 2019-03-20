@@ -1,5 +1,5 @@
 #!/bin/sh
-# Directed deauth
+# Aireplay-ng: directed deauth
 
 if test ! -z "${CI}"; then exit 77; fi
 

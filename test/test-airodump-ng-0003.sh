@@ -63,6 +63,7 @@ wpa_passphrase=password
 wpa_key_mgmt=OWE
 rsn_pairwise=CCMP
 ieee80211w=2
+# Airodump-ng test 3
 EOF
 
 # Start hostapd

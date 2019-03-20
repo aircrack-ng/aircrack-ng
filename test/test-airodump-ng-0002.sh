@@ -64,6 +64,7 @@ wpa_key_mgmt=SAE
 rsn_pairwise=CCMP
 ieee80211w=2
 sae_require_mfp=1
+# Airodump-ng test 2
 EOF
 
 # Start hostapd

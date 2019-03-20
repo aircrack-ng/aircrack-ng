@@ -1,5 +1,5 @@
 #!/bin/sh
-# Deauth test with reason code
+# Aireplay-ng: deauth test with reason code
 
 if test ! -z "${CI}"; then exit 77; fi
 

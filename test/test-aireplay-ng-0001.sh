@@ -1,4 +1,5 @@
 #!/bin/sh
+# Aireplay-ng fakeauth against hostapd
 
 if test ! -z "${CI}"; then exit 77; fi
 
@@ -34,6 +35,7 @@ interface=${WI_IFACE}
 channel=${CHANNEL}
 hw_mode=g
 ssid=${SSID}
+# Aireplay-ng test 1
 EOF
 
 # Start HostAPd

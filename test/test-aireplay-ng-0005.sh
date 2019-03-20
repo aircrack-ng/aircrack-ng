@@ -1,5 +1,5 @@
 #!/bin/sh
-# Injection test with bitrate
+# Aireplay-ng: Injection test with bitrate
 
 if test ! -z "${CI}"; then exit 77; fi
 
@@ -35,7 +35,7 @@ interface=${WI_IFACE}
 channel=${CHANNEL}
 hw_mode=g
 ssid=${SSID}
-# Test 5
+# Aireplay-ng test 5
 EOF
 
 # Start HostAPd

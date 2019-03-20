@@ -57,6 +57,7 @@ channel=1
 wpa=1
 wpa_pairwise=TKIP
 wpa_passphrase=password
+# Airodump-ng test 5
 EOF
 
 # Start hostapd

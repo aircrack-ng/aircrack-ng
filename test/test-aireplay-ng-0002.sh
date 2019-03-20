@@ -1,4 +1,5 @@
 #!/bin/sh
+# Aireplay-ng: broadcast deauth
 
 if test ! -z "${CI}"; then exit 77; fi
 

@@ -40,7 +40,7 @@ interface=${WI_IFACE}
 wep_key0="${WEP_KEY}"
 channel=${CHANNEL}
 driver=nl80211
-# Shared wep key test
+# Aireplay-ng test 7
 EOF
 
 # Start HostAPd
@@ -83,7 +83,7 @@ network={
 	wep_key0="${WEP_KEY}"
 	wep_tx_keyidx=0
 }
-# Shared wep key authentication
+# Aireplay-ng test 7
 EOF
 
 # Run wpa_supplicant

@@ -1,5 +1,5 @@
 #!/bin/sh
-# Airbase-ng WPA/WPA2 supplicant authentication
+# Airbase-ng WPA supplicant authentication
 
 if test ! -z "${CI}"; then exit 77; fi
 
@@ -68,7 +68,7 @@ network={
 	group=${ENCRYPT}
 	pairwise=${ENCRYPT}
 }
-# Airbase-ng Test 1
+# Airbase-ng Test 2
 EOF
 
 # Set interface up

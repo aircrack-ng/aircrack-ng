@@ -57,6 +57,7 @@ channel=1
 wpa=2
 wpa_passphrase=password
 rsn_pairwise=CCMP
+# Airodump-ng test 4
 EOF
 
 # Start hostapd

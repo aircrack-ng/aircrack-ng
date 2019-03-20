@@ -1,5 +1,5 @@
 #!/bin/sh
-# Airbase-ng WPA/WPA2 supplicant authentication
+# Airbase-ng WPA2 supplicant authentication
 
 if test ! -z "${CI}"; then exit 77; fi
 
