@@ -144,11 +144,13 @@ run_hostapd() {
 	# Check configuration file is present
 	if [ -z "$1" ]; then
 		echo 'HostAPd requires a configuration file'
+		cleanup
 		exit 1
 	fi
 
 	if [ ! -f "$1" ]; then
 		echo "HostAPd configuration file $1 does not exist"
+		cleanup
 		exit 1
 	fi
 
@@ -162,7 +164,7 @@ run_hostapd() {
 		cat ${TEMP_HOSTAPD_CONF_FILE}
 		echo '------------'
 		echo 'Running airmon-ng check kill may fix the issue'
-		cleanup()
+		cleanup
 		return 0
 	fi
 
@@ -200,11 +202,13 @@ run_wpa_supplicant() {
 	# Check configuration file is present
 	if [ -z "$1" ] || [ -z "$2" ]; then
 		echo 'WPA_supplicant requires a configuration file and a wifi interface'
+		cleanup
 		exit 1
 	fi
 
 	if [ ! -f "$1" ]; then
 		echo "WPA_supplicant configuration file $1 does not exist"
+		cleanup
 		exit 1
 	fi
 
@@ -218,7 +222,7 @@ run_wpa_supplicant() {
 		cat ${TEMP_WPAS_CONF_FILE}
 		echo '------------'
 		echo 'Running airmon-ng check kill may fix the issue'
-		cleanup()
+		cleanup
 		exit 1
 	fi
 
