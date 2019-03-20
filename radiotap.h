@@ -22,9 +22,15 @@
 #define bswap_32 OSSwapInt32
 #define bswap_64 OSSwapInt64
 #include <machine/endian.h>
+#ifndef le16toh
 #define le16toh(x) OSSwapLittleToHostInt16(x)
+#endif
+#ifndef le32toh
 #define le32toh(x) OSSwapLittleToHostInt32(x)
+#endif
+#ifndef le64toh
 #define le64toh(x) OSSwapLittleToHostInt64(x)
+#endif
 #endif
 
 /**
