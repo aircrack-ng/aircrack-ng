@@ -16,6 +16,7 @@
 #endif
 
 #if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__) || defined(__MidnightBSD__)
+#include <sys/endian.h>
 #include <sys/types.h>
 #endif
 
