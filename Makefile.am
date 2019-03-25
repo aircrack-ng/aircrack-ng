@@ -47,6 +47,8 @@ AM_CPPFLAGS = -I$(abs_srcdir) \
 							-I$(abs_srcdir)/include \
 							-I$(abs_builddir)/lib \
 							-I$(abs_srcdir)/lib \
+							-I$(abs_builddir)/lib/radiotap \
+							-I$(abs_srcdir)/lib/radiotap \
 							$(CRYPTO_INCLUDES) \
 							$(CODE_COVERAGE_CPPFLAGS)
 

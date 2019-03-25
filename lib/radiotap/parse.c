@@ -4,10 +4,15 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <endian.h>
 #include <errno.h>
 #include <string.h>
-#include "radiotap/radiotap_iter.h"
+#if defined(__APPLE__)
+#include <machine/endian.h>
+#else
+#include <endian.h>
+#endif
+
+#include "radiotap_iter.h"
 
 static int fcshdr = 0;
 

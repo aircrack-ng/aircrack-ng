@@ -37,7 +37,6 @@
 # If you delete this exception statement from all source files in the
 # program, then also delete it here.
 
-include %D%/radiotap/Makefile.inc
 include %D%/osdep/Makefile.inc
 
 SRC_CE_WEP	=	%D%/ce-wep/uniqueiv.c
@@ -59,6 +58,7 @@ SRC_LIBAC		= %D%/libac/adt/avl_tree.c \
 							%D%/libac/support/mcs_index_rates.c \
 							%D%/libac/tui/console.c \
 							%D%/libac/utf8/verifyssid.c
+SRC_RADIOTAP = %D%/radiotap/radiotap.c
 
 if LIBGCRYPT
 SRC_CRYPTO	+=	%D%/crypto/sha1-git.c
@@ -83,6 +83,9 @@ libptw_la_CFLAGS	= $(COMMON_CFLAGS)
 if !STATIC_CRYPTO
 libptw_la_LIBADD	= $(COMMON_LDADD)
 endif
+
+libradiotap_la_SOURCES	= $(SRC_RADIOTAP)
+libradiotap_la_LDFLAGS	= -no-undefined
 
 ########################################################################
 # Aircrack Support Library                                             #
@@ -238,7 +241,7 @@ endif
 lib_LTLIBRARIES += libaircrack-ce-wpa-x86-avx2.la libaircrack-ce-wpa-x86-avx.la libaircrack-ce-wpa-x86-sse2.la
 endif
 
-noinst_LTLIBRARIES += libaircrack-ce-wep.la libcowpatty.la libaccrypto.la libptw.la libaircrack.la
+noinst_LTLIBRARIES += libaircrack-ce-wep.la libcowpatty.la libaccrypto.la libptw.la libaircrack.la libradiotap.la
 
 EXTRA_DIST +=	%D%/ce-wep/uniqueiv.c \
 							%D%/ce-wpa/crypto_engine.c \
@@ -290,6 +293,7 @@ EXTRA_DIST +=	%D%/ce-wep/uniqueiv.c \
 							%D%/osdep/osdep.c \
 							%D%/osdep/tap-win32/common.h \
 							%D%/ptw/aircrack-ptw-lib.c \
+							%D%/radiotap/COPYING \
 							%D%/radiotap/parse.c \
 							%D%/radiotap/platform.h \
 							%D%/radiotap/radiotap.c \
