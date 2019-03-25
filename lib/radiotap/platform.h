@@ -2,10 +2,26 @@
 #include <errno.h>
 #include <string.h>
 
+#if defined(linux) || defined(Linux) || defined(__linux__) || defined(__linux) \
+        || defined(__gnu_linux__)
+#include <endian.h>
+#endif
+
+#if defined(__CYGWIN32__) || defined(CYGWIN)
+#include <asm/byteorder.h>
+#endif
+
 #if defined(__APPLE__)
 #include <machine/endian.h>
-#else
-#include <endian.h>
+#endif
+
+#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__) || defined(__MidnightBSD__)
+#include <sys/types.h>
+#endif
+
+#if defined(__SVR4) && defined(__sun__)
+#include <sys/byteorder.h>
+#include <sys/types.h>
 #endif
 
 #ifndef le16_to_cpu
