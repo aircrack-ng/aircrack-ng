@@ -95,7 +95,7 @@ check_airmon_ng_deps_present() {
 get_hwsim_interface_name() {
 	check_arg_is_number "$1" 'get_hwsim_interface_name'
 
-	IFACE=$("${abs_builddir}/../scripts/airmon-ng" 2>/dev/null | egrep hwsim | head -n $1 | tail -n 1 | gawk '{print $2}')
+	IFACE=$("${abs_builddir}/../scripts/airmon-ng" 2>/dev/null | egrep hwsim | head -n $1 | tail -n 1 | awk '{print $2}')
 
 	if [ -z "${IFACE}" ]; then
 		echo "Failed getting interface $1"

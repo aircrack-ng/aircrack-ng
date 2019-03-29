@@ -85,7 +85,7 @@ sleep 2
 kill -9 ${AB_PID}
 
 # Check Airbase-ng output
-AB_PCAP="$(grep 'Created capture file' ${AB_TEMP} | gawk -F\" '{print $2}')"
+AB_PCAP="$(grep 'Created capture file' ${AB_TEMP} | awk -F\" '{print $2}')"
 CLIENT_CONNECT=$(grep Client ${AB_TEMP} | grep ${ENCRYPT} | wc -l)
 
 # Some cleanup

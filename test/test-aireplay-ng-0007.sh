@@ -64,7 +64,7 @@ screen -AmdS capture \
 sleep 3
 
 # Get airodump-ng PID
-AD_PID=$(ps faux | grep airodump | grep "${TEMP_FILE}" | grep -v grep | gawk '{print $2}')
+AD_PID=$(ps faux | grep airodump | grep "${TEMP_FILE}" | grep -v grep | awk '{print $2}')
 if [ -z "${AD_PID}" ]; then
 	echo "Failed starting airodump-ng"
 	kill -9 $(cat ${TEMP_HOSTAPD_PID}) ${AD_PID}
