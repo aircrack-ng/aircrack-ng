@@ -105,6 +105,6 @@ coverage*.info
 /aminclude_static.am
 /config.h
 /config.h.in
-/src/version.h
+/include/aircrack-ng/version.h
 /manpages/*.1
 /manpages/*.8
