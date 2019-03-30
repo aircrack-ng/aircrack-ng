@@ -15,11 +15,11 @@ is_tool_present screen
 is_tool_present hostapd
 
 # Check HostAPd version supports WPA3
-HOSTAPD_VER="$(hostapd -v 2>&1 | grep hostapd | awk '{print $2}')"
+HOSTAPD_VER="$(hostapd -v 2>&1 | ${GREP} hostapd | ${AWK} '{print $2}')"
 if [ -z "${HOSTAPD_VER}" ]; then
 	echo "Failed getting hostapd version, skipping"
 	exit 1
-elif [ "$(echo ${HOSTAPD_VER} | grep -v -E '^v((2\.[789])|(3.[0-9]))')" ]; then
+elif [ "$(echo ${HOSTAPD_VER} | ${GREP} -v -E '^v((2\.[789])|(3.[0-9]))')" ]; then
 	echo "hostapd version does not support WPA3, skipping"
 	echo "v2.7+ required, got ${HOSTAPD_VER}"
 	exit 77
@@ -71,7 +71,7 @@ sleep 6
 cleanup
 
 # Check CSV
-ENCRYPTION_SECTION="$(head -n 3 ${TEMP_FILE}-01.csv | tail -n 1 | awk -F, '{print $6 $7 $8}')"
+ENCRYPTION_SECTION="$(head -n 3 ${TEMP_FILE}-01.csv | tail -n 1 | ${AWK} -F, '{print $6 $7 $8}')"
 if [ -z "${ENCRYPTION_SECTION}" ]; then
 	echo "Something failed with airodump-ng, did not get info from CSV"
 	rm -f ${TEMP_FILE}-01.*
@@ -88,7 +88,7 @@ if [ ! -f ${TEMP_FILE}-01.kismet.netxml ]; then
 	rm -f ${TEMP_FILE}-01.*
 	exit 1
 fi
-ENCRYPTION_SECTION="$(grep '<encryption>WPA+SAE</encryption>' ${TEMP_FILE}-01.kismet.netxml)"
+ENCRYPTION_SECTION="$(${GREP} '<encryption>WPA+SAE</encryption>' ${TEMP_FILE}-01.kismet.netxml)"
 if [ -z "${ENCRYPTION_SECTION}" ]; then
         echo "Failed to find SAE in the kismet netxml"
 	rm -f ${TEMP_FILE}-01.*
@@ -101,7 +101,7 @@ if [ ! -f ${TEMP_FILE}-01.kismet.csv ]; then
 	rm -f ${TEMP_FILE}-01.*
 	exit 1
 fi
-ENCRYPTION_SECTION="$(tail -n 1 ${TEMP_FILE}-01.kismet.csv | awk -F\; '{print $8}')"
+ENCRYPTION_SECTION="$(tail -n 1 ${TEMP_FILE}-01.kismet.csv | ${AWK} -F\; '{print $8}')"
 if [ "x${ENCRYPTION_SECTION}" != 'xWPA3,AES-CCM,SAE' ]; then
 	echo "Encryption section not found or invalid in Kismet CSV"
 	echo "Expected 'WPA3,AES-CCM,SAE', got ${ENCRYPTION_SECTION}"

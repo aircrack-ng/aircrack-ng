@@ -55,13 +55,13 @@ OUTPUT_TEMP=$(mktemp)
 # Some cleanup
 cleanup
 
-if [ -z "$(grep 'Injection is working!' ${OUTPUT_TEMP})" ]; then
+if [ -z "$(${GREP} 'Injection is working!' ${OUTPUT_TEMP})" ]; then
 	echo "Injection is not working"
 	rm -f ${OUTPUT_TEMP}
 	exit 1
 fi
 
-if [ -z "$(grep '30/30' ${OUTPUT_TEMP})" ]; then
+if [ -z "$(${GREP} '30/30' ${OUTPUT_TEMP})" ]; then
 	echo "AP not present or failure injecting"
 	rm -f ${OUTPUT_TEMP}
 	exit 1

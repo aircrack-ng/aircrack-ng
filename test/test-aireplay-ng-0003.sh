@@ -54,8 +54,8 @@ kill -15 ${TCPDUMP_PID}
 sleep 3
 
 # Count packets
-AMOUNT_PACKETS_AP=$(tcpdump -r ${TEMP_PCAP} 2>/dev/null | grep "DeAuthentication (${AP_MAC}" | wc -l)
-AMOUNT_PACKETS_CLIENT=$(tcpdump -r ${TEMP_PCAP} 2>/dev/null | grep "DeAuthentication (${CLIENT_MAC}" | wc -l)
+AMOUNT_PACKETS_AP=$(tcpdump -r ${TEMP_PCAP} 2>/dev/null | ${GREP} "DeAuthentication (${AP_MAC}" | wc -l)
+AMOUNT_PACKETS_CLIENT=$(tcpdump -r ${TEMP_PCAP} 2>/dev/null | ${GREP} "DeAuthentication (${CLIENT_MAC}" | wc -l)
 
 # Cleanup
 cleanup

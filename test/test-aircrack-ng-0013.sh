@@ -11,7 +11,7 @@ set -ef
     -a 2 \
     "${abs_srcdir}/test1.pcap" \
     -l /dev/null -q | \
-        grep "KEY FOUND" | grep "15211521"
+        ${GREP} "KEY FOUND" | ${GREP} "15211521"
 
 exit 0
 

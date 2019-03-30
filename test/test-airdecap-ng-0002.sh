@@ -8,8 +8,8 @@ set -ef
     "${abs_srcdir}/wpa-psk-linksys.cap" \
     -o /dev/null \
     -c /dev/null | \
-        grep "decrypted WPA" | \
-            grep 53
+        ${GREP} "decrypted WPA" | \
+            ${GREP} 53
 
 exit 0
 

@@ -10,7 +10,7 @@ fi
 "${top_builddir}/wpaclean${EXEEXT}" \
     "$(basename $0).out.log" \
     "${abs_srcdir}/wpa.cap" | \
-        grep 'Net 00:0d:93:eb:b0:8c test'
+        ${GREP} 'Net 00:0d:93:eb:b0:8c test'
 
 rm -f "$(basename $0).out.log"
 

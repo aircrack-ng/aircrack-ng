@@ -17,7 +17,7 @@ set -ef
 #    -w - \
 #    "test.hccap" \
 #    -l /dev/null | \
-#        grep "KEY FOUND"
+#        ${GREP} "KEY FOUND"
 
 rm -f test.hccap
 

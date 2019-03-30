@@ -11,7 +11,7 @@ set -ef
     -a 2 \
     "${abs_srcdir}/test-pmkid.pcap" \
     -l /dev/null -q | \
-        grep "KEY FOUND" | grep "SP-91862D361"
+        ${GREP} "KEY FOUND" | ${GREP} "SP-91862D361"
 
 exit 0
 

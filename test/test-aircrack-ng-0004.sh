@@ -8,7 +8,7 @@ set -ef
     -a 2 \
     -e linksys \
     -q "${abs_srcdir}/wpa-psk-linksys.cap" | \
-        grep 'KEY FOUND! \[ dictionary \]'
+        ${GREP} 'KEY FOUND! \[ dictionary \]'
 
 exit 0
 

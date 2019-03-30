@@ -52,25 +52,25 @@ if [ $(ls -1 ${TEMP_FILE}-01.* | wc -l) -ne 5 ]; then
 	exit 1
 fi
 
-if [ $(md5sum "${TEMP_FILE}-01.cap" | awk '{print $1}' ) != '50d6b6d03c0e582a1ae60986e5f53832' ]; then
+if [ $(md5sum "${TEMP_FILE}-01.cap" | ${AWK} '{print $1}' ) != '50d6b6d03c0e582a1ae60986e5f53832' ]; then
 	echo "Invalid PCAP file"
 	rm -f ${TEMP_FILE}-01.*
 	exit 1
 fi
 
-if [ $(md5sum "${TEMP_FILE}-01.csv" | awk '{print $1}') != '7b5b92716e839e310d8edda8ec21a469' ]; then
+if [ $(md5sum "${TEMP_FILE}-01.csv" | ${AWK} '{print $1}') != '7b5b92716e839e310d8edda8ec21a469' ]; then
 	echo "Invalid CSV file"
 	rm -f ${TEMP_FILE}-01.*
 	exit 1
 fi
 
-if [ $(md5sum "${TEMP_FILE}-01.kismet.csv" | awk '{print $1}') != '0f402e05f06f582a7931420075485369' ]; then
+if [ $(md5sum "${TEMP_FILE}-01.kismet.csv" | ${AWK} '{print $1}') != '0f402e05f06f582a7931420075485369' ]; then
 	echo "Invalid Kismet CSV file"
 	rm -f ${TEMP_FILE}-01.*
 	exit 1
 fi
 
-if [ $(md5sum "${TEMP_FILE}-01.log.csv" | awk '{print $1}') != '6bdaf36ee12b14b2a5a80c3af8ae7160' ]; then
+if [ $(md5sum "${TEMP_FILE}-01.log.csv" | ${AWK} '{print $1}') != '6bdaf36ee12b14b2a5a80c3af8ae7160' ]; then
 	echo "Invalid Log CSV"
 	rm -f ${TEMP_FILE}-01.*
 	exit 1

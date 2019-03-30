@@ -17,7 +17,7 @@ EOF
 
 "${abs_builddir}/../aircrack-ng${EXEEXT}" \
     -R ${abs_builddir}/session | \
-        grep 'KEY FOUND! \[ biscotte \]'
+        ${GREP} 'KEY FOUND! \[ biscotte \]'
 
 rm -f ${abs_builddir}/1word
 

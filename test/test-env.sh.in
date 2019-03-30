@@ -12,3 +12,7 @@ EXPECT="@EXPECT@"; export EXPECT
 AIRCRACK_LIBEXEC_PATH="@abs_top_builddir@/src"; export AIRCRACK_LIBEXEC_PATH
 
 AIRCRACK_NG_ARGS="${AIRCRACK_NG_ARGS:--p 4}"; export AIRCRACK_NG_ARGS
+
+AWK="@AWK@"; export AWK
+
+GREP="@GREP@"; export GREP

@@ -28,7 +28,7 @@ set_monitor_mode ${WI_IFACE}
 set_interface_channel ${WI_IFACE} 1
 
 # Check it is in monitor mode
-if [ -z "$(iw dev ${WI_IFACE} info | egrep 'type monitor')" ]; then
+if [ -z "$(iw dev ${WI_IFACE} info | ${GREP} 'type monitor')" ]; then
 	[ ${LOAD_MODULE} -eq 1 ] && rmmod mac80211_hwsim 2>&1 >/dev/null
 	exit 1
 fi
@@ -59,7 +59,7 @@ kill -15 ${TCPDUMP_PID}
 sleep 3
 
 # Count packets
-AMOUNT_PACKETS=$(tcpdump -r ${TEMP_PCAP} 2>/dev/null | grep "DeAuthentication (${AP_MAC}" | wc -l)
+AMOUNT_PACKETS=$(tcpdump -r ${TEMP_PCAP} 2>/dev/null | ${GREP} "DeAuthentication (${AP_MAC}" | wc -l)
 
 # Cleanup
 cleanup

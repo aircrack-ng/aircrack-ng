@@ -86,8 +86,8 @@ sleep 2
 kill -9 ${AB_PID}
 
 # Check Airbase-ng output
-AB_PCAP="$(grep 'Created capture file' ${AB_TEMP} | awk -F\" '{print $2}')"
-CLIENT_CONNECT=$(grep Client ${AB_TEMP} | grep ${ENCRYPT} | wc -l)
+AB_PCAP="$(${GREP} 'Created capture file' ${AB_TEMP} | ${AWK} -F\" '{print $2}')"
+CLIENT_CONNECT=$(${GREP} Client ${AB_TEMP} | ${GREP} ${ENCRYPT} | wc -l)
 
 # Some cleanup
 rm -f ${AB_TEMP}
@@ -107,7 +107,7 @@ fi
     -e "${SSID}" \
     -q \
 	"${AB_PCAP}" | \
-        grep "KEY FOUND! \[ ${PSK} \]"
+        ${GREP} "KEY FOUND! \[ ${PSK} \]"
 
 RET=$?
 

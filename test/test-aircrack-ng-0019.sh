@@ -6,7 +6,7 @@ set -ef
     ${AIRCRACK_NG_ARGS} \
     -w "${abs_srcdir}/pass.txt" \
     "${abs_srcdir}/MOM1.cap" | \
-        grep 'KEY FOUND! \[ MOM12345 \]'
+        ${GREP} 'KEY FOUND! \[ MOM12345 \]'
 
 exit 0
 

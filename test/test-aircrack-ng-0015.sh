@@ -8,7 +8,7 @@ echo "staytogether" | "${abs_builddir}/../aircrack-ng${EXEEXT}" \
     -w - \
     "${abs_srcdir}/StayAlfred.hccapx" \
     -l /dev/null | \
-        grep "KEY FOUND"
+        ${GREP} "KEY FOUND"
 
 exit 0
 

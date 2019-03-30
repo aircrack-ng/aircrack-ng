@@ -56,7 +56,7 @@ sleep 3
 cleanup
 
 # There should be exactly 256 deauth
-AMOUNT_PACKETS=$(tcpdump -r ${TEMP_PCAP} 2>/dev/null | egrep "DeAuthentication \(${AP_MAC}" | egrep 'Disassociated because the information in the Power Capability element is unacceptable' | wc -l)
+AMOUNT_PACKETS=$(tcpdump -r ${TEMP_PCAP} 2>/dev/null | ${GREP} "DeAuthentication (${AP_MAC}" | ${GREP} 'Disassociated because the information in the Power Capability element is unacceptable' | wc -l)
 rm ${TEMP_PCAP}
 [ ${AMOUNT_PACKETS} -eq 256 ] && exit 0
 

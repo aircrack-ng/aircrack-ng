@@ -17,10 +17,10 @@ echo Harkonen | "${abs_builddir}/../airolib-ng${EXEEXT}" "${tmpfile}" --import e
 "${abs_builddir}/../airolib-ng${EXEEXT}" "${tmpfile}" --import passwd "${TESTDIR}/password.lst"
 [ $? -ne 0 ] && exit 1
 
-"${abs_builddir}/../airolib-ng${EXEEXT}" "${tmpfile}" --batch | grep "Computed 233 PMK"
+"${abs_builddir}/../airolib-ng${EXEEXT}" "${tmpfile}" --batch | ${GREP} "Computed 233 PMK"
 [ $? -ne 0 ] && exit 1
 
-"${abs_builddir}/../aircrack-ng${EXEEXT}" -q -e Harkonen  -r "${tmpfile}"  "${TESTDIR}/wpa2.eapol.cap" | grep 'KEY FOUND! \[ 12345678 \]'
+"${abs_builddir}/../aircrack-ng${EXEEXT}" -q -e Harkonen  -r "${tmpfile}"  "${TESTDIR}/wpa2.eapol.cap" | ${GREP} 'KEY FOUND! \[ 12345678 \]'
 [ $? -ne 0 ] && exit 1
 
 exit 0

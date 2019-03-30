@@ -18,7 +18,7 @@ set -ef
 	"${abs_srcdir}/Chinese-SSID-Name.pcap" \
 	"${abs_srcdir}/wpaclean_crash.pcap" \
 	"${abs_srcdir}/wps2.0.pcap" | \
-        grep 'KEY FOUND! \[ biscotte \]'
+        ${GREP} 'KEY FOUND! \[ biscotte \]'
 
 exit 0
 

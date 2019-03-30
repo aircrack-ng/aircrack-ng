@@ -16,7 +16,7 @@ echo "dictionary" | "${abs_builddir}/../aircrack-ng${EXEEXT}" \
     -w - \
     "test.hccapx" \
     -l /dev/null | \
-        grep "KEY FOUND"
+        ${GREP} "KEY FOUND"
 
 rm -f test.hccapx
 

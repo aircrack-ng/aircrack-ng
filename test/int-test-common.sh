@@ -12,7 +12,7 @@ check_arg_is_number() {
 		echo "${2}() requires an argument, and it must be a number"
 		exit 1
 	fi
-	if [ -z "$(echo $1 | egrep -E '^[0-9]{1,}$')" ]; then
+	if [ -z "$(echo $1 | ${GREP} -E '^[0-9]{1,}$')" ]; then
 		echo "${2}() expects the a number, got $1"
 		exit 1
 	fi
@@ -22,7 +22,7 @@ MODULE_LOADED=0
 load_module() {
 	check_arg_is_number "$1" 'load_module'
 
-	if [ -z "$(lsmod | egrep mac80211_hwsim)" ]; then
+	if [ -z "$(lsmod | ${GREP} mac80211_hwsim)" ]; then
 		echo "Loading mac80211_hwsim with $1 radios"
 		modprobe mac80211_hwsim radios=$1 2>&1 >/dev/null
 		if [ $? -ne 0 ]; then
@@ -40,7 +40,7 @@ load_module() {
 check_radios_present() {
 	check_arg_is_number "$1" 'check_radios_present'
 
-	AMOUNT_RADIOS=$("${abs_builddir}/../scripts/airmon-ng" | egrep hwsim | wc -l)
+	AMOUNT_RADIOS=$("${abs_builddir}/../scripts/airmon-ng" | ${GREP} hwsim | wc -l)
 	if [ ${AMOUNT_RADIOS} -ne $1 ]; then
 		echo "Expected $1 radios, got ${AMOUNT_RADIOS}, hwsim may be in use by something else, aborting"
 		exit 1
@@ -95,7 +95,7 @@ check_airmon_ng_deps_present() {
 get_hwsim_interface_name() {
 	check_arg_is_number "$1" 'get_hwsim_interface_name'
 
-	IFACE=$("${abs_builddir}/../scripts/airmon-ng" 2>/dev/null | egrep hwsim | head -n $1 | tail -n 1 | awk '{print $2}')
+	IFACE=$("${abs_builddir}/../scripts/airmon-ng" 2>/dev/null | ${GREP} hwsim | head -n $1 | tail -n 1 | ${AWK} '{print $2}')
 
 	if [ -z "${IFACE}" ]; then
 		echo "Failed getting interface $1"

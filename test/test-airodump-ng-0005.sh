@@ -57,7 +57,7 @@ sleep 6
 cleanup
 
 # Check CSV
-ENCRYPTION_SECTION="$(head -n 3 ${TEMP_FILE}-01.csv | tail -n 1 | awk -F, '{print $6 $7 $8}')"
+ENCRYPTION_SECTION="$(head -n 3 ${TEMP_FILE}-01.csv | tail -n 1 | ${AWK} -F, '{print $6 $7 $8}')"
 if [ -z "${ENCRYPTION_SECTION}" ]; then
 	echo "Something failed with airodump-ng, did not get info from CSV"
 	rm -f ${TEMP_FILE}-01.*
@@ -74,8 +74,8 @@ if [ ! -f ${TEMP_FILE}-01.kismet.netxml ]; then
 	rm -f ${TEMP_FILE}-01.*
 	exit 1
 fi
-ENCRYPTION_SECTION="$(grep '<encryption>WPA+PSK</encryption>' ${TEMP_FILE}-01.kismet.netxml)"
-if [ -z "${ENCRYPTION_SECTION}" ] || [ -z "$(grep '<encryption>WPA+TKIP</encryption>' ${TEMP_FILE}-01.kismet.netxml)" ]; then
+ENCRYPTION_SECTION="$(${GREP} '<encryption>WPA+PSK</encryption>' ${TEMP_FILE}-01.kismet.netxml)"
+if [ -z "${ENCRYPTION_SECTION}" ] || [ -z "$(${GREP} '<encryption>WPA+TKIP</encryption>' ${TEMP_FILE}-01.kismet.netxml)" ]; then
         echo "Failed to find PSK and TKIP in the kismet netxml"
 	cat ${TEMP_FILE}-01.kismet.netxml
 	rm -f ${TEMP_FILE}-01.*
@@ -88,7 +88,7 @@ if [ ! -f ${TEMP_FILE}-01.kismet.csv ]; then
 	rm -f ${TEMP_FILE}-01.*
 	exit 1
 fi
-ENCRYPTION_SECTION="$(tail -n 1 ${TEMP_FILE}-01.kismet.csv | awk -F\; '{print $8}')"
+ENCRYPTION_SECTION="$(tail -n 1 ${TEMP_FILE}-01.kismet.csv | ${AWK} -F\; '{print $8}')"
 if [ "x${ENCRYPTION_SECTION}" != 'xWPA,TKIP' ]; then
 	echo "Encryption section not found or invalid in Kismet CSV"
 	echo "Expected 'WPA,TKIP', got ${ENCRYPTION_SECTION}"

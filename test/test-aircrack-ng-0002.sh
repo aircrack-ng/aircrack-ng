@@ -8,7 +8,7 @@ set -ef
     -a 2 \
     -e test \
     -q "${abs_srcdir}/wpa.cap" | \
-        grep 'KEY FOUND! \[ biscotte \]'
+        ${GREP} 'KEY FOUND! \[ biscotte \]'
 
 exit 0
 

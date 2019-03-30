@@ -8,7 +8,7 @@ set -ef
     -a 2 \
     -e Harkonen \
     -q "${abs_srcdir}/wpa2.eapol.cap" | \
-        grep 'KEY FOUND! \[ 12345678 \]'
+        ${GREP} 'KEY FOUND! \[ 12345678 \]'
 
 exit 0
 
