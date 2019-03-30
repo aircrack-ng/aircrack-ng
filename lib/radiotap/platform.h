@@ -9,6 +9,7 @@
 
 #if defined(__CYGWIN32__) || defined(CYGWIN)
 #include <asm/byteorder.h>
+#include <endian.h>
 #endif
 
 #if defined(__APPLE__)
