@@ -150,7 +150,7 @@ cp -p "Airpcap_Devpack/bin/x64/airpcap.dll" "$env:DIST/bin/64bit"
 cp /usr/share/doc/Cygwin/CYGWIN_LICENSE "$env:DIST/LICENSE.Cygwin"
 
 # gather dependencies of Cygwin
-FILES="cygcrypto-1.0.0.dll cyggcc_s-1.dll cyggcc_s-seh-1.dll cygpcre-1.dll cygsqlite3-0.dll cygstdc++-6.dll cygwin1.dll cygz.dll"
+FILES="cygcrypto-1.1.dll cyghwloc-15.dll cyggcc_s-1.dll cyggcc_s-seh-1.dll cygpcre-1.dll cygsqlite3-0.dll cygstdc++-6.dll cygwin1.dll cygz.dll cygxml2-2.dll cyglzma-5.dll cygiconv-2.dll"
 
 for FILE in `$FILES; do
     cp -p "/cygdrive/c/cygwin/bin/`$FILE" "$env:DIST/bin/32bit" || :
