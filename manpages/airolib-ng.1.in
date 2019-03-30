@@ -24,7 +24,7 @@ Execute specified SQL statement.
 Clean the database from old junk. When specifying \(aqall\(aq, it will also reduce filesize if possible and run an integrity check.
 .TP
 .I --batch
-Start batch-processing all combinations of ESSIDs and passwords.
+Start/Restart batch-processing all combinations of ESSIDs and passwords. To pause, hit Ctrl-C.
 .TP
 .I --verify [all]
 Verify a set of randomly chosen PMKs. If \(aqall\(aq is given, all invalid PMK in the database will be deleted.
