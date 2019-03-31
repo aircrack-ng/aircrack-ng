@@ -115,7 +115,12 @@ void ac_cpuset_bind_thread_at(ac_cpuset_t * cpuset, pthread_t tid, size_t idx)
 	hwloc_bitmap_singlify(cpuset->hwloc_cpusets[idx]);
 
 	if (hwloc_set_thread_cpubind(cpuset->topology,
+#ifdef CYGWIN
+								 // WARNING: This is a HACK into `class pthread` of Cygwin.
+								 *((HANDLE*)((char*)tid + sizeof(ptrdiff_t) + sizeof(uint32_t))),
+#else
 								 tid,
+#endif
 								 cpuset->hwloc_cpusets[idx],
 								 HWLOC_CPUBIND_THREAD))
 	{
