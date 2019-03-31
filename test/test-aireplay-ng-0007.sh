@@ -67,9 +67,8 @@ sleep 3
 AD_PID=$(ps faux | ${GREP} airodump | ${GREP} "${TEMP_FILE}" | ${GREP} -v grep | ${AWK} '{print $2}')
 if [ -z "${AD_PID}" ]; then
 	echo "Failed starting airodump-ng"
-	kill -9 $(cat ${TEMP_HOSTAPD_PID}) ${AD_PID}
-	rm -rf ${TEMP_HOSTAPD_CONF} ${TEMP_WPAS_CONF}
-	[ ${LOAD_MODULE} -eq 1 ] && rmmod mac80211_hwsim 2>&1 >/dev/null
+	kill -9 ${AD_PID}
+	cleanup
 	exit 1
 fi
 
@@ -96,10 +95,8 @@ wpa_supplicant -B -Dnl80211 -i ${WI_IFACE2} -c ${TEMP_WPAS_CONF} -P ${WPAS_PID} 
 if test $? -ne 0; then
 	echo "Failed starting wpa_supplicant"
 	echo "Running airmon-ng check kill may fix the issue"
-	kill -9 $(cat ${TEMP_HOSTAPD_PID}) ${AD_PID}
-	rm -rf ${TEMP_HOSTAPD_CONF} ${TEMP_WPAS_CONF}
 	kill -9 ${AD_PID}
-	[ ${LOAD_MODULE} -eq 1 ] && rmmod mac80211_hwsim 2>&1 >/dev/null
+	cleanup
 	exit 1
 fi
 
@@ -114,9 +111,7 @@ rm -f ${TEMP_WPAS_CONF} ${WPAS_PID}
 XOR_FILE="$(ls -1 ${TEMP_FILE}*.xor)"
 if [ -z "${XOR_FILE}" ]; then
 	echo "Failed getting XOR file from airodump-ng from real authentication"
-	kill -9 $(cat ${TEMP_HOSTAPD_PID})
-	rm -f ${TEMP_HOSTAPD_CONF}
-	[ ${LOAD_MODULE} -eq 1 ] && rmmod mac80211_hwsim 2>&1 >/dev/null
+	cleanup
 	exit 1
 fi
 
