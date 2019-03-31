@@ -1,8 +1,6 @@
 #!/bin/sh
 # Airodump-ng: Check base files generated are good
 
-#!/bin/sh
-
 if test ! -z "${CI}"; then exit 77; fi
 
 # Load helper functions
