@@ -106,6 +106,15 @@ void ac_cpuset_distribute(ac_cpuset_t * cpuset, size_t count)
 #endif
 }
 
+#ifdef CYGWIN
+struct tid_to_handle
+{
+	ptrdiff_t vtbl;
+  uint32_t magic;
+  HANDLE h;
+};
+#endif
+
 void ac_cpuset_bind_thread_at(ac_cpuset_t * cpuset, pthread_t tid, size_t idx)
 {
 	assert(cpuset != NULL);
@@ -117,7 +126,7 @@ void ac_cpuset_bind_thread_at(ac_cpuset_t * cpuset, pthread_t tid, size_t idx)
 	if (hwloc_set_thread_cpubind(cpuset->topology,
 #ifdef CYGWIN
 								 // WARNING: This is a HACK into `class pthread` of Cygwin.
-								 *((HANDLE*)((char*)tid + sizeof(ptrdiff_t) + sizeof(uint32_t))),
+								 *((HANDLE*)((char*)tid + offsetof(struct tid_to_handle, h))),
 #else
 								 tid,
 #endif
