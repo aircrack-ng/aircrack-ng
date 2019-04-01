@@ -13,6 +13,14 @@ check_root
 check_airmon_ng_deps_present
 is_tool_present hostapd
 
+# Cleanup
+finish() {
+	cleanup
+	[ -n "${OUTPUT_TEMP}" ] && rm -f ${OUTPUT_TEMP}
+}
+
+trap  finish INT QUIT SEGV PIPE ALRM TERM
+
 # Load mac80211_hwsim
 load_module 2
 

@@ -14,6 +14,15 @@ check_airmon_ng_deps_present
 is_tool_present screen
 is_tool_present hostapd
 
+# Cleanup
+finish() {
+	screen -S capture -p 0 -X quit
+	[ -n "${TEMP_FILE}" ] && [ -f "${TEMP_FILE}-01.csv" ] && rm -f ${TEMP_FILE}*
+	cleanup
+}
+
+trap  finish INT QUIT SEGV PIPE ALRM TERM
+
 # Load mac80211_hwsim
 load_module 1
 

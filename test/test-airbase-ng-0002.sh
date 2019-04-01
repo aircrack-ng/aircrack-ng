@@ -16,6 +16,19 @@ check_root
 check_airmon_ng_deps_present
 is_tool_present wpa_supplicant
 
+# Cleanup
+finish() {
+	cleanup
+	if [ -n "${AB_PID}" ]; then
+		is_pid_running ${AB_PID}
+		[ $? -eq 1 ] && kill -9 ${AB_PID}
+	fi
+	[ -n "${AB_TEMP}" ] && rm -f ${AB_TEMP}
+	[ -n "${AB_PCAP}" ] && rm -f ${AB_PCAP}
+}
+
+trap  finish INT QUIT SEGV PIPE ALRM TERM
+
 # Load mac80211_hwsim
 load_module 2
 

@@ -14,6 +14,16 @@ check_airmon_ng_deps_present
 is_tool_present hostapd
 is_tool_present wpa_supplicant
 
+# Cleanup
+finish() {
+	[ -n "${AD_PID}" ] && kill -9 ${AD_PID}
+	[ -n "${TEMP_FILE}" ] && [ -f "${TEMP_FILE}-01.csv" ] && rm -f ${TEMP_FILE}-01.*
+	[ -n "${XOR_FILE}" ] && [ -f "${XOR_FILE}" ] && rm -f ${XOR_FILE}
+	cleanup
+}
+
+trap  finish INT QUIT SEGV PIPE ALRM TERM
+
 # Load mac80211_hwsim
 load_module 3
 

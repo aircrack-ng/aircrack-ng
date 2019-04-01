@@ -25,6 +25,15 @@ elif [ "$(echo ${HOSTAPD_VER} | ${GREP} -v -E '^v((2\.[789])|(3.[0-9]))')" ]; th
 	exit 77
 fi
 
+# Cleanup
+finish() {
+	screen -S capture -p 0 -X quit
+	[ -n "${TEMP_FILE}" ] && [ -f "${TEMP_FILE}-01.csv" ] && rm -f ${TEMP_FILE}*
+	cleanup
+}
+
+trap  finish INT QUIT SEGV PIPE ALRM TERM
+
 # Load mac80211_hwsim
 load_module 1
 

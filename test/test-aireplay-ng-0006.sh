@@ -13,6 +13,17 @@ check_root
 check_airmon_ng_deps_present
 is_tool_present tcpdump
 
+# Cleanup
+finish() {
+	if [ -n "${TCPDUMP_PID}" ]; then
+		kill -9 ${TCPDUMP_PID}
+		rm -rf ${TEMP_PCAP}
+	fi
+	cleanup
+}
+
+trap  finish INT QUIT SEGV PIPE ALRM TERM
+
 # Load mac80211_hwsim
 load_module 1
 
