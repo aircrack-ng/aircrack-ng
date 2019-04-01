@@ -114,8 +114,8 @@ fi
 sleep 6
 
 # Clean up
-kill -9 ${AD_PID} $(cat ${WPAS_PID})
-rm -f ${TEMP_WPAS_CONF} ${WPAS_PID}
+kill -9 ${AD_PID}
+kill_wpa_supplicant
 
 # Check we have the xor file
 XOR_FILE="$(ls -1 ${TEMP_FILE}*.xor)"
@@ -136,6 +136,6 @@ RET=$?
 
 # Some cleanup
 cleanup
-rm -f ${TEMP_FILE}*
+rm -f ${XOR_FILE} ${TEMP_FILE}*
 
 exit ${RET}
