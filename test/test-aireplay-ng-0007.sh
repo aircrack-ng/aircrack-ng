@@ -77,7 +77,6 @@ sleep 3
 AD_PID=$(ps faux | ${GREP} airodump | ${GREP} "${TEMP_FILE}" | ${GREP} -v grep | ${AWK} '{print $2}')
 if [ -z "${AD_PID}" ]; then
 	echo "Failed starting airodump-ng"
-	kill -9 ${AD_PID}
 	cleanup
 	exit 1
 fi
