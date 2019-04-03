@@ -11,6 +11,7 @@ check_root
 
 # Check all required tools are installed
 check_airmon_ng_deps_present
+is_tool_present screen
 is_tool_present hostapd
 is_tool_present wpa_supplicant
 
