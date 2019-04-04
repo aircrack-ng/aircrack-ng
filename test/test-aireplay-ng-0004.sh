@@ -3,7 +3,7 @@
 
 if test ! -z "${CI}"; then exit 77; fi
 
- Load helper functions
+# Load helper functions
 . "${abs_builddir}/../test/int-test-common.sh"
 
 # Check root
