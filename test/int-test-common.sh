@@ -169,6 +169,7 @@ run_hostapd() {
 	fi
 
 	# Get PID
+	sleep 0.5
 	HOSTAPD_PID=$(cat ${HOSTAPD_PID_FILE} 2>/dev/null)
 	echo "HostAPd PID: ${HOSTAPD_PID}"
 
@@ -227,6 +228,7 @@ run_wpa_supplicant() {
 	fi
 
 	# Get PID
+	sleep 0.5
 	WPAS_PID=$(cat ${WPAS_PID_FILE} 2>/dev/null)
 	echo "WPA supplicant PID: ${WPAS_PID}"
 }
