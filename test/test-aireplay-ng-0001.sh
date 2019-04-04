@@ -68,7 +68,7 @@ cleanup
 
 # Check if association is successful
 RET=0
-[ -z "$(${GREP} 'Association successful' ${OUTPUT_TEMP})" ] && RET=1
+[ -z "$(${GREP} 'Association successful' ${OUTPUT_TEMP})" ] && RET=1 && cat ${OUTPUT_TEMP}
 rm -f ${OUTPUT_TEMP}
 
 exit ${RET}

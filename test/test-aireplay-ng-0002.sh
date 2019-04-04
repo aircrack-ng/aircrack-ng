@@ -79,4 +79,5 @@ rm ${TEMP_PCAP}
 # There should be exactly 256 deauth
 [ ${AMOUNT_PACKETS} -eq 256 ] && exit 0
 
+echo "Invalid amount of deauth (${AMOUNT_DEAUTH}), expected 256"
 exit 1
