@@ -5920,7 +5920,7 @@ int main(int argc, char * argv[])
 			case 'R':
 				// Restore and continue session
 				fprintf(stderr,
-						"This option must be used without any other option!\n");
+						"This option must be used alone!\n");
 				return (EXIT_FAILURE);
 
 			case 'W':
