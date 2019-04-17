@@ -168,5 +168,9 @@ StayAlfred.hccapx:
     Hashcat HCCAPx file with WPA handshake.
     Passphrase for 'StayAlfred' ESSID is 'staytogether'
 
+wpa3-psk.pcap:
+    WPA3 PSK SAE authentication. Passphrase for the network 
+    'WPA3-Network' is 'abcdefgh'
+
 More sample pcap are available from Wireshark: 
     https://wiki.wireshark.org/SampleCaptures#Wifi_.2F_Wireless_LAN_captures_.2F_802.11
