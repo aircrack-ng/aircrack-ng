@@ -12,6 +12,9 @@ SSID=thisrocks
 # Load helper functions
 . "${abs_builddir}/../test/int-test-common.sh"
 
+# Check for buggy hwsim
+check_hwsim_bug
+
 # Check root
 check_root
 
