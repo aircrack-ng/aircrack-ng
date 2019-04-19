@@ -60,7 +60,9 @@ run_hostapd ${TEMP_HOSTAPD_CONF_FILE}
 
 # Put third interface in monitor mode
 set_monitor_mode ${WI_IFACE3}
+[ $? -eq 1 ] && exit 1
 set_interface_channel ${WI_IFACE3} ${CHANNEL}
+[ $? -eq 1 ] && exit 1
 
 # Run airodump-ng in the background
 TEMP_FILE=$(mktemp -u)
@@ -96,6 +98,7 @@ EOF
 # Run wpa_supplicant
 # Set interface up
 set_interface_channel ${WI_IFACE2} ${CHANNEL}
+[ $? -eq 1 ] && exit 1
 
 # Start wpa_supplicant
 run_wpa_supplicant ${TEMP_WPAS_CONF_FILE} ${WI_IFACE2}

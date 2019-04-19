@@ -47,7 +47,9 @@ WI_IFACE2=${IFACE}
 
 # Put other interface in monitor mode
 set_monitor_mode ${WI_IFACE2}
+[ $? -eq 1 ] && exit 1
 set_interface_channel ${WI_IFACE2} ${CHANNEL}
+[ $? -eq 1 ] && exit 1
 
 # Run airbase-ng in the background
 AB_TEMP=$(mktemp -u)

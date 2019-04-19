@@ -36,6 +36,7 @@ WI_IFACE=${IFACE}
 
 # Put interface in monitor so tcpdump captures in the correct mode
 set_monitor_mode ${WI_IFACE}
+[ $? -eq 1 ] && exit 1
 
 # Start capture in the background
 TEMP_PCAP=$(mktemp)

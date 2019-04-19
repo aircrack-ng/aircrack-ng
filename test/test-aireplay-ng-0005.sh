@@ -52,7 +52,9 @@ run_hostapd ${TEMP_HOSTAPD_CONF_FILE}
 
 # Put other interface in monitor mode
 set_monitor_mode ${WI_IFACE2}
+[ $? -eq 1 ] && exit 1
 set_interface_channel ${WI_IFACE2} ${CHANNEL}
+[ $? -eq 1 ] && exit 1
 
 # Run actual test
 OUTPUT_TEMP=$(mktemp)

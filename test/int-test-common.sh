@@ -120,7 +120,7 @@ get_hwsim_interface_name() {
 set_interface_channel() {
 	if [ -z "$1" ]; then
 		echo 'set_monitor_mode(): missing interface name'
-		exit 1
+		return 1
 	fi
 
 	check_arg_is_number "$2" 'set_interface_channel'
@@ -128,18 +128,36 @@ set_interface_channel() {
 	echo "Setting $1 on channel $2"
 	ip link set $1 up
 	iw dev $1 set channel $2
+	if [ $? -eq 1 ]; then
+		echo "iw dev $1 set channel $2 failed, exiting"
+		return 1
+	fi
+	return 0
 }
 
 set_monitor_mode() {
 	if [ -z "$1" ]; then
 		echo 'set_monitor_mode(): missing interface name'
-		exit 1
+		return 1
 	fi
 
 	echo "Putting $1 in monitor mode"
 	ip link set $1 down
 	iw dev $1 set monitor none
+	if [ $? -eq 1 ]; then
+		echo "iw dev $1 set monitor none failed, exiting"
+		return 1
+	fi
 	ip link set $1 up
+
+	# Check card is in monitor mode
+	IFACE_MODE=$(iw dev $1 info | grep type | awk '{print $2}')
+	if [ "${IFACE_MODE}" != 'monitor' ]; then
+		echo "Failed to set $1 in monitor mode: ${IFACE_MODE}"
+		return 1
+	fi
+
+	return 0
 }
 
 

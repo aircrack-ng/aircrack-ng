@@ -36,7 +36,9 @@ WI_IFACE=${IFACE}
 
 # Put other interface in monitor mode
 set_monitor_mode ${WI_IFACE}
+[ $? -eq 1 ] && exit 1
 set_interface_channel ${WI_IFACE} 1
+[ $? -eq 1 ] && exit 1
 
 # Check it is in monitor mode
 [ -z "$(iw dev ${WI_IFACE} info | ${GREP} 'type monitor')" ] && exit 1

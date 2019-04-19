@@ -36,7 +36,9 @@ CHANNEL=9
 
 # Put interface in monitor mode
 set_monitor_mode ${WI_IFACE}
+[ $? -eq 1 ] && exit 1
 set_interface_channel ${WI_IFACE} ${CHANNEL}
+[ $? -eq 1 ] && exit 1
 
 TEMP_FILE=$(mktemp -u)
 screen -AmdS capture \
