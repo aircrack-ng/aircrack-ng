@@ -110,7 +110,7 @@ if [ ${CLIENT_CONNECT} -eq 0 ]; then
 fi
 
 # Crack the capture
-"${abs_builddir}/../aircrack-ng${EXEEXT}" \
+timeout 60 "${abs_builddir}/../aircrack-ng${EXEEXT}" \
     ${AIRCRACK_NG_ARGS} \
     -w "${abs_srcdir}/password.lst" \
     -a 2 \
