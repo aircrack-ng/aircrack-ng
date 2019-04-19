@@ -1,15 +1,5 @@
 #!/bin/sh
 
-check_hwsim_bug() {
-	K_MAJ_VER=`uname -r | awk -F. '{print $1 }'`
-	K_MIN_VER=`uname -r | awk -F. '{print $2 }'`
-	echo "Kernel version: ${K_MAJ_VER}.${K_MIN_VER}"
-	if [ ${K_MAJ_VER} -eq 4 ] && [ ${K_MIN_VER} -gt 11 ]; then
-		echo "hwsim is known to be buggy with this kernel version (${K_MAJ_VER}.${K_MIN_VER}), skipping"
-		[ "x$1" = 'xcontinue' ] || exit 77
-	fi
-}
-
 cleanup() {
 	echo "Cleanup"
 	kill_wpa_supplicant
