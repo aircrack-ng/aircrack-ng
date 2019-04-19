@@ -27,7 +27,7 @@ fi
 
 # Cleanup
 finish() {
-	screen -S capture -p 0 -X quit
+	screen_cleanup
 	[ -n "${TEMP_FILE}" ] && [ -f "${TEMP_FILE}-01.csv" ] && rm -f ${TEMP_FILE}*
 	cleanup
 }

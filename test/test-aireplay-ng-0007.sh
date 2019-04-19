@@ -17,6 +17,7 @@ is_tool_present wpa_supplicant
 
 # Cleanup
 finish() {
+	screen_cleanup
 	[ -n "${AD_PID}" ] && kill -9 ${AD_PID}
 	[ -n "${TEMP_FILE}" ] && [ -f "${TEMP_FILE}-01.csv" ] && rm -f ${TEMP_FILE}-01.*
 	[ -n "${XOR_FILE}" ] && [ -f "${XOR_FILE}" ] && rm -f ${XOR_FILE}

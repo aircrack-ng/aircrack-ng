@@ -7,6 +7,13 @@ cleanup() {
 	unload_module
 }
 
+screen_cleanup() {
+	SCREEN_NAME=capture
+	[ -n "$1" ] && SCREEN_NAME="$1"
+	screen -S ${SCREEN_NAME} -p 0 -X quit
+	screen -wipe
+}
+
 check_arg_is_number() {
 	if [ -z "$1" ]; then
 		echo "${2}() requires an argument, and it must be a number"
