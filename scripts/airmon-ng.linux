@@ -1080,13 +1080,14 @@ scanProcesses() {
 		pso="1"
 	fi
 
-	PROCESSES="wpa_action\|wpa_supplicant\|wpa_cli\|dhclient\|ifplugd\|dhcdbd\|dhcpcd\|udhcpc\|NetworkManager\|knetworkmanager\|avahi-autoipd\|avahi-daemon\|wlassistant\|wifibox\|net_applet"
+	PROCESSES="wpa_action\|wpa_supplicant\|wpa_cli\|dhclient\|ifplugd\|dhcdbd\|dhcpcd\|udhcpc\|NetworkManager\|knetworkmanager\|avahi-autoipd\|avahi-daemon\|wlassistant\|wifibox\|net_applet\|wicd-daemon\|wicd-client"
 	#PS_ERROR="invalid\|illegal"
 
 	if [ -x "$(command -v service 2>&1)" ] && [ "$1" = "kill" ]; then
 		service network-manager stop 2> /dev/null > /dev/null
 		service NetworkManager stop 2> /dev/null > /dev/null
 		service avahi-daemon stop 2> /dev/null > /dev/null
+		service wicd stop 2> /dev/null > /dev/null
 	fi
 
 	unset match
