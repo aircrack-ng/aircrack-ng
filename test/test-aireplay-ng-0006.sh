@@ -22,7 +22,7 @@ finish() {
 	cleanup
 }
 
-trap  finish INT QUIT SEGV PIPE ALRM TERM
+trap  finish INT QUIT SEGV PIPE ALRM TERM EXIT
 
 # Load mac80211_hwsim
 load_module 1
@@ -63,12 +63,8 @@ kill -15 ${TCPDUMP_PID}
 # to the file
 sleep 3
 
-# Cleanup
-cleanup
-
 # There should be exactly 256 deauth
 AMOUNT_PACKETS=$(tcpdump -r ${TEMP_PCAP} 2>/dev/null | ${GREP} "DeAuthentication (${AP_MAC}" | ${GREP} 'Disassociated because the information in the Power Capability element is unacceptable' | wc -l)
-rm ${TEMP_PCAP}
 [ ${AMOUNT_PACKETS} -eq 256 ] && exit 0
 
 exit 1

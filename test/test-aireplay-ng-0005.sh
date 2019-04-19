@@ -19,7 +19,7 @@ finish() {
 	cleanup
 }
 
-trap  finish INT QUIT SEGV PIPE ALRM TERM
+trap  finish INT QUIT SEGV PIPE ALRM TERM EXIT
 
 # Load mac80211_hwsim
 load_module 2
@@ -62,28 +62,20 @@ OUTPUT_TEMP=$(mktemp)
     ${WI_IFACE2} \
 	2>&1 > ${OUTPUT_TEMP}
 
-# Some cleanup
-cleanup
-
 # Then checks
 if [ -z "$(${GREP} 'Injection is working!' ${OUTPUT_TEMP})" ]; then
 	echo "Injection is not working"
-	rm -f ${OUTPUT_TEMP}
 	exit 1
 fi
 
 if [ -z "$(${GREP} '30/30' ${OUTPUT_TEMP})" ]; then
 	echo "AP not present or failure injecting"
-	rm -f ${OUTPUT_TEMP}
 	exit 1
 fi
 
 if [ -z "$(${GREP} 'Probing at 54.0 Mbps:	30/30: 100%' ${OUTPUT_TEMP})" ]; then
 	echo "Failed bitrate test"
-	rm -f ${OUTPUT_TEMP}
 	exit 1
 fi
-
-rm ${OUTPUT_TEMP}
 
 exit 0

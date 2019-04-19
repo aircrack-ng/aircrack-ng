@@ -22,7 +22,7 @@ finish() {
 	cleanup
 }
 
-trap  finish INT QUIT SEGV PIPE ALRM TERM
+trap  finish INT QUIT SEGV PIPE ALRM TERM EXIT
 
 # Load mac80211_hwsim
 load_module 1
@@ -39,10 +39,7 @@ set_monitor_mode ${WI_IFACE}
 set_interface_channel ${WI_IFACE} 1
 
 # Check it is in monitor mode
-if [ -z "$(iw dev ${WI_IFACE} info | ${GREP} 'type monitor')" ]; then
-	[ ${LOAD_MODULE} -eq 1 ] && rmmod mac80211_hwsim 2>&1 >/dev/null
-	exit 1
-fi
+[ -z "$(iw dev ${WI_IFACE} info | ${GREP} 'type monitor')" ] && exit 1
 
 # Start capture in the background
 TEMP_PCAP=$(mktemp)
@@ -60,7 +57,7 @@ AP_MAC="00:11:22:33:44:55"
 		2>&1 >/dev/null
 
 # Wait a second
-sleep 1
+sleep 2
 
 # Kill tcpdump (SIGTERM)
 kill -15 ${TCPDUMP_PID}
@@ -71,10 +68,6 @@ sleep 3
 
 # Count packets
 AMOUNT_PACKETS=$(tcpdump -r ${TEMP_PCAP} 2>/dev/null | ${GREP} "DeAuthentication (${AP_MAC}" | wc -l)
-
-# Cleanup
-cleanup
-rm ${TEMP_PCAP}
 
 # There should be exactly 256 deauth
 [ ${AMOUNT_PACKETS} -eq 256 ] && exit 0

@@ -32,7 +32,7 @@ finish() {
 	cleanup
 }
 
-trap  finish INT QUIT SEGV PIPE ALRM TERM
+trap  finish INT QUIT SEGV PIPE ALRM TERM EXIT
 
 # Load mac80211_hwsim
 load_module 1
@@ -76,18 +76,13 @@ screen -AmdS capture \
 # Wait a few seconds for it to finish
 sleep 6
 
-# Some cleanup
-cleanup
-
 # Check CSV
 ENCRYPTION_SECTION="$(head -n 3 ${TEMP_FILE}-01.csv | tail -n 1 | ${AWK} -F, '{print $6 $7 $8}')"
 if [ -z "${ENCRYPTION_SECTION}" ]; then
 	echo "Something failed with airodump-ng, did not get info from CSV"
-	rm -f ${TEMP_FILE}-01.*
 	exit 1
 elif [ "$(echo ${ENCRYPTION_SECTION} | tr -d ' ')" != 'WPA3WPA2CCMPSAE' ]; then
 	echo "Encryption section is not what is expected. Got ${ENCRYPTION_SECTION}"
-	rm -f ${TEMP_FILE}-01.*
 	exit 1
 fi
 
@@ -100,25 +95,19 @@ fi
 ENCRYPTION_SECTION="$(${GREP} '<encryption>WPA+SAE</encryption>' ${TEMP_FILE}-01.kismet.netxml)"
 if [ -z "${ENCRYPTION_SECTION}" ]; then
         echo "Failed to find SAE in the kismet netxml"
-	rm -f ${TEMP_FILE}-01.*
         exit 1
 fi
 
 # Check Kismet CSV
 if [ ! -f ${TEMP_FILE}-01.kismet.csv ]; then
 	echo 'Kismet CSV not found'
-	rm -f ${TEMP_FILE}-01.*
 	exit 1
 fi
 ENCRYPTION_SECTION="$(tail -n 1 ${TEMP_FILE}-01.kismet.csv | ${AWK} -F\; '{print $8}')"
 if [ "x${ENCRYPTION_SECTION}" != 'xWPA3,AES-CCM,SAE' ]; then
 	echo "Encryption section not found or invalid in Kismet CSV"
 	echo "Expected 'WPA3,AES-CCM,SAE', got ${ENCRYPTION_SECTION}"
-	rm -f ${TEMP_FILE}-01.*
 	exit 1
 fi
-
-# Cleanup
-rm -f ${TEMP_FILE}-01.*
 
 exit 0

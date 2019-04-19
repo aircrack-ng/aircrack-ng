@@ -19,7 +19,7 @@ finish() {
 	[ -n "${OUTPUT_TEMP}" ] && rm -f ${OUTPUT_TEMP}
 }
 
-trap  finish INT QUIT SEGV PIPE ALRM TERM
+trap  finish INT QUIT SEGV PIPE ALRM TERM EXIT
 
 # Load mac80211_hwsim
 load_module 2
@@ -63,12 +63,8 @@ OUTPUT_TEMP=$(mktemp)
     ${WI_IFACE2} \
 	2>&1 >${OUTPUT_TEMP}
 
-# First part of cleanup
-cleanup
-
 # Check if association is successful
 RET=0
 [ -z "$(${GREP} 'Association successful' ${OUTPUT_TEMP})" ] && RET=1 && cat ${OUTPUT_TEMP}
-rm -f ${OUTPUT_TEMP}
 
 exit ${RET}

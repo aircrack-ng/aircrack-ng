@@ -23,7 +23,7 @@ finish() {
 	cleanup
 }
 
-trap  finish INT QUIT SEGV PIPE ALRM TERM
+trap  finish INT QUIT SEGV PIPE ALRM TERM EXIT
 
 # Load mac80211_hwsim
 load_module 3
@@ -78,13 +78,11 @@ sleep 3
 AD_PID=$(ps faux | ${GREP} airodump | ${GREP} "${TEMP_FILE}" | ${GREP} -v grep | ${AWK} '{print $2}')
 if [ -z "${AD_PID}" ]; then
 	echo "Failed starting airodump-ng"
-	cleanup
 	exit 1
 fi
 
 # Prepare WPA Supplicant
-TEMP_WPAS_CONF=$(mktemp)
-cat >> ${TEMP_WPAS_CONF} << EOF
+cat >> ${TEMP_WPAS_CONF_FILE} << EOF
 network={
 	ssid="${SSID}"
 	key_mgmt=NONE
@@ -100,15 +98,7 @@ EOF
 set_interface_channel ${WI_IFACE2} ${CHANNEL}
 
 # Start wpa_supplicant
-WPAS_PID=$(mktemp -u)
-wpa_supplicant -B -Dnl80211 -i ${WI_IFACE2} -c ${TEMP_WPAS_CONF} -P ${WPAS_PID} 2>&1
-if test $? -ne 0; then
-	echo "Failed starting wpa_supplicant"
-	echo "Running airmon-ng check kill may fix the issue"
-	kill -9 ${AD_PID}
-	cleanup
-	exit 1
-fi
+run_wpa_supplicant ${TEMP_WPAS_CONF_FILE} ${WI_IFACE2}
 
 # Wait for wpa_supplicant to be done
 sleep 6
@@ -121,7 +111,6 @@ kill_wpa_supplicant
 XOR_FILE="$(ls -1 ${TEMP_FILE}*.xor)"
 if [ -z "${XOR_FILE}" ]; then
 	echo "Failed getting XOR file from airodump-ng from real authentication"
-	cleanup
 	exit 1
 fi
 
@@ -132,10 +121,4 @@ fi
 	-y ${XOR_FILE} \
 		${WI_IFACE3}
 
-RET=$?
-
-# Some cleanup
-cleanup
-rm -f ${XOR_FILE} ${TEMP_FILE}*
-
-exit ${RET}
+exit $?

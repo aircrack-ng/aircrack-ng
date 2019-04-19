@@ -24,15 +24,15 @@ is_tool_present tcpdump
 
 # Cleanup
 finish() {
-	cleanup
 	if [ -n "${AB_PID}" ]; then
 		is_pid_running ${AB_PID}
 		[ $? -eq 1 ] && kill -9 ${AB_PID}
 	fi
 	[ -n "${AB_TEMP}" ] && rm -f ${AB_TEMP}
+	cleanup
 }
 
-trap finish INT QUIT SEGV PIPE ALRM TERM
+trap finish INT QUIT SEGV PIPE ALRM TERM EXIT
 
 # Load mac80211_hwsim
 load_module 2
@@ -67,10 +67,11 @@ sleep 1
 is_pid_running ${AB_PID}
 if [ $? -eq 0 ]; then
 	echo "Airbase-ng process died"
-	cleanup
-	rm -f ${AB_TEMP}
 	exit 1
 fi
+
+# Get airbase-ng PCAP
+AB_PCAP="$(${GREP} 'Created capture file' ${AB_TEMP} | ${AWK} -F\" '{print $2}')"
 
 # Set interface in monitor mode
 set_monitor_mode ${WI_IFACE}
@@ -82,18 +83,12 @@ BEACON="$(tcpdump -c 1 -i ${WI_IFACE} 2>/dev/null | grep Beacon)"
 
 if [ -z "${BEACON}" ]; then
 	echo "Did not receive a beacon"
-	kill -9 ${AB_PID}
-	rm -f ${AB_TEMP}
-	cleanup
 	exit 1
 fi
 echo "${BEACON}"
 
 if [ $(echo "${BEACON}" | grep "Beacon (${SSID})" | wc -l) -eq 1 ]; then
 	echo "SSID is not hidden"
-	kill -9 ${AB_PID}
-	rm -f ${AB_TEMP}
-	cleanup
 	exit 1
 fi
 
@@ -106,9 +101,6 @@ fi
 if [ $? -eq 1 ]; then
 	# Should have failed
 	echo "Fakeauth succeeded when it should have failed"
-	kill -9 ${AB_PID}
-	rm -f ${AB_TEMP}
-	cleanup
 	exit 1
 fi
 
@@ -120,27 +112,17 @@ fi
 
 if [ $? -eq 0 ]; then
 	echo "Fakeauth failed"
-	kill -9 ${AB_PID}
-	rm -f ${AB_TEMP}
-	cleanup
 	exit 1
 fi
 
-# wait another 2 secs then kill airbase-ng
+# wait another 2 secs for packets to be written
 sleep 2
-kill -9 ${AB_PID}
 
 # Check Airbase-ng output
-AB_PCAP="$(${GREP} 'Created capture file' ${AB_TEMP} | ${AWK} -F\" '{print $2}')"
 CLIENT_CONNECT=$(${GREP} Client ${AB_TEMP} | ${GREP} ${ENCRYPT} | wc -l)
-
-# Some cleanup
-rm -f ${AB_TEMP}
-cleanup
 
 if [ ${CLIENT_CONNECT} -eq 0 ]; then
 	echo "Client failed to connect to AP - possibly incorrect encryption"
-	rm -f ${AB_PCAP}
 	exit 1
 fi
 

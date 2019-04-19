@@ -30,7 +30,7 @@ finish() {
 	[ -n "${AB_PCAP}" ] && rm -f ${AB_PCAP}
 }
 
-trap  finish INT QUIT SEGV PIPE ALRM TERM
+trap  finish INT QUIT SEGV PIPE ALRM TERM EXIT
 
 # Load mac80211_hwsim
 load_module 2
@@ -66,10 +66,11 @@ sleep 1
 is_pid_running ${AB_PID}
 if [ $? -eq 0 ]; then
 	echo "Airbase-ng process died"
-	cleanup
-	rm ${AB_TEMP}
 	exit 1
 fi
+
+# Grab airbase-ng pcap filename
+AB_PCAP="$(${GREP} 'Created capture file' ${AB_TEMP} | ${AWK} -F\" '{print $2}')"
 
 # Set-up wpa_supplicant
 PSK=password
@@ -88,29 +89,24 @@ EOF
 
 # Set interface up
 set_interface_channel ${WI_IFACE} ${CHANNEL}
+RET=$?
 
 # Start wpa_supplicant
 run_wpa_supplicant ${TEMP_WPAS_CONF_FILE} ${WI_IFACE}
+if [ $? -eq 1 ] || [ ${RET} -eq 1 ]; then
+	exit 1
+fi
 
-# Wait for authentication then kill wpa supplicant and cleanup
-sleep 6
-kill_wpa_supplicant
 
-# wait another 2 secs then kill airbase-ng
-sleep 2
+# Wait for authentication then kill airbase-ng
+sleep 8
 kill -9 ${AB_PID}
 
 # Check Airbase-ng output
-AB_PCAP="$(${GREP} 'Created capture file' ${AB_TEMP} | ${AWK} -F\" '{print $2}')"
 CLIENT_CONNECT=$(${GREP} Client ${AB_TEMP} | ${GREP} ${ENCRYPT} | wc -l)
-
-# Some cleanup
-rm -f ${AB_TEMP}
-cleanup
 
 if [ ${CLIENT_CONNECT} -eq 0 ]; then
 	echo "Client failed to connect to AP - possibly incorrect encryption"
-	rm -f ${AB_PCAP}
 	exit 1
 fi
 
@@ -127,9 +123,6 @@ fi
 RET=$?
 
 [ ${RET} -eq 1 ] && echo "Failed cracking passphrase"
-
-# Cleanup PCAP
-rm -f ${AB_PCAP}
 
 # Cleanup
 exit ${RET}

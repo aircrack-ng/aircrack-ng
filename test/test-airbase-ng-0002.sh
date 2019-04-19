@@ -30,7 +30,7 @@ finish() {
 	[ -n "${AB_PCAP}" ] && rm -f ${AB_PCAP}
 }
 
-trap  finish INT QUIT SEGV PIPE ALRM TERM
+trap  finish INT QUIT SEGV PIPE ALRM TERM EXIT
 
 # Load mac80211_hwsim
 load_module 2
@@ -66,8 +66,6 @@ sleep 1
 is_pid_running ${AB_PID}
 if [ $? -eq 0 ]; then
 	echo "Airbase-ng process died"
-	cleanup
-	rm ${AB_TEMP}
 	exit 1
 fi
 
@@ -111,7 +109,6 @@ cleanup
 
 if [ ${CLIENT_CONNECT} -eq 0 ]; then
 	echo "Client failed to connect to AP - possibly incorrect encryption"
-	rm -f ${AB_PCAP}
 	exit 1
 fi
 
