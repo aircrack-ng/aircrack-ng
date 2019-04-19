@@ -14,6 +14,9 @@ check_airmon_ng_deps_present
 is_tool_present screen
 is_tool_present hostapd
 
+# Check for interfering processes
+airmon_ng_check
+
 # Cleanup
 finish() {
 	screen_cleanup

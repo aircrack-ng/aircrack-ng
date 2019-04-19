@@ -56,6 +56,15 @@ check_radios_present() {
 	echo "Correct amount of radios present: $1"
 }
 
+airmon_ng_check() {
+	# Display output of "airmon-ng check" if there are interfering process
+	# Can help in detecting if previous tests didn't clean up
+	# Or, if running the first test, check if there are interfering processes
+	if [ $("${abs_builddir}/../scripts/airmon-ng" check | grep "PID" | wc -l) -eq 1 ]; then
+		"${abs_builddir}/../scripts/airmon-ng" check
+	fi
+}
+
 unload_module() {
 	if [ ${MODULE_LOADED} -eq 1 ]; then
 		echo 'Unloading mac80211_hwsim'

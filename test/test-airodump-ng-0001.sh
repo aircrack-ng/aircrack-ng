@@ -13,6 +13,9 @@ check_root
 check_airmon_ng_deps_present
 is_tool_present screen
 
+# Check for interfering processes
+airmon_ng_check
+
 # Cleanup
 finish() {
 	screen_cleanup

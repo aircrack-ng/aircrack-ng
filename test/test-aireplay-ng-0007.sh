@@ -15,6 +15,9 @@ is_tool_present screen
 is_tool_present hostapd
 is_tool_present wpa_supplicant
 
+# Check for interfering processes
+airmon_ng_check
+
 # Cleanup
 finish() {
 	screen_cleanup

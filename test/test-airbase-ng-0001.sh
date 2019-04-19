@@ -16,6 +16,9 @@ check_root
 check_airmon_ng_deps_present
 is_tool_present wpa_supplicant
 
+# Check for interfering processes
+airmon_ng_check
+
 # Cleanup
 finish() {
 	cleanup

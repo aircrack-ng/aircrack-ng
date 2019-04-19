@@ -14,6 +14,9 @@ check_airmon_ng_deps_present
 is_tool_present screen
 is_tool_present hostapd
 
+# Check for interfering processes
+airmon_ng_check
+
 # Check HostAPd version supports WPA3
 HOSTAPD_VER="$(hostapd -v 2>&1 | ${GREP} hostapd | ${AWK} '{print $2}')"
 if [ -z "${HOSTAPD_VER}" ]; then

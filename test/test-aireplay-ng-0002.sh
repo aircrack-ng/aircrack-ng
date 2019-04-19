@@ -13,6 +13,9 @@ check_root
 check_airmon_ng_deps_present
 is_tool_present tcpdump
 
+# Check for interfering processes
+airmon_ng_check
+
 # Cleanup
 finish() {
 	if [ -n "${TCPDUMP_PID}" ]; then
