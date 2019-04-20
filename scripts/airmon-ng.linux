@@ -1087,6 +1087,11 @@ scanProcesses() {
 		service network-manager stop 2> /dev/null > /dev/null
 		service NetworkManager stop 2> /dev/null > /dev/null
 		service avahi-daemon stop 2> /dev/null > /dev/null
+		while [ $? -eq 1 ]; do
+			# Sometimes avahi is persistent and keeps being restarted by systemd.
+			# It's usually 4 times that it needs to be stopped
+			service avahi-daemon stop 2> /dev/null > /dev/null
+		done
 		service wicd stop 2> /dev/null > /dev/null
 	fi
 
