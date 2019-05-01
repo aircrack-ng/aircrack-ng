@@ -350,6 +350,20 @@ ifaceIsUp() {
 	fi
 }
 
+ifaceExists() {
+	if [ -x "$(command -v ip 2>&1)" ]; then
+		ifaceExistsCmd="ip link show dev"
+	elif [ -x "$(command -v ifconfig 2>&1)" ]; then
+		ifaceExistsCmd="ifconfig"
+	fi
+	if ${ifaceExistsCmd} ${1} > /dev/null 2>&1
+	then
+		return
+	else
+		return 1
+	fi
+}
+
 #listIfaceUnspec() {
 #	if [ -x "$(command -v ip 2>&1)" ]; then
 #		ip link 2>/dev/null | awk -F"[: ]+" '/UNSPEC/ {print $2}'
@@ -1340,6 +1354,15 @@ if [ "$#" != "0" ]; then
 	if [ -z "$2" ]; then
 		usage
 	fi
+fi
+
+#start/stop interface existance check
+if [ "$1" = "start" ] || [ "$1" = "stop" ]; then
+  if ! ifaceExists "${2}"; then
+    printf "Requested device \"${2}\" does not exist.\n"
+    printf "Run ${0} without any arguments to see available interfaces\n"
+    exit 1
+  fi
 fi
 
 #startup checks complete, headers then main
