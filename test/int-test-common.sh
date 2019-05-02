@@ -192,7 +192,7 @@ run_hostapd() {
 
 	# Run HostAPd
 	echo "Starting HostAPd with ${TEMP_HOSTAPD_CONF_FILE}"
-	hostapd -B ${TEMP_HOSTAPD_CONF_FILE} -P ${HOSTAPD_PID_FILE} 2>&1
+	hostapd -P ${HOSTAPD_PID_FILE} -B ${TEMP_HOSTAPD_CONF_FILE} 2>&1
 	if test $? -ne 0; then
 		echo 'Failed starting HostAPd with the following configuration:'
 		cat ${TEMP_HOSTAPD_CONF_FILE}
