@@ -6445,8 +6445,9 @@ int main(int argc, char * argv[])
 	progname = getVersion(
 		"Aircrack-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 
-	if ((cracking_session && cracking_session->argc - optind < 1)
-		|| (!cracking_session && !_pmkid_16800 && argc - optind < 1))
+	if ((cracking_session && cracking_session->is_loaded && 
+		cracking_session->argc - optind < 1) || (!cracking_session && 
+		!_pmkid_16800 && argc - optind < 1))
 	{
 		if (nbarg == 1)
 		{

@@ -299,6 +299,7 @@ struct session * ac_session_load(const char * filename)
 
 	// Initialize
 	ac_session_init(ret);
+	ret->is_loaded = 1;
 	ret->filename = strdup(filename);
 	ALLEGE(ret->filename != NULL);
 
