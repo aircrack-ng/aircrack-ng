@@ -443,6 +443,14 @@ startMac80211Iface() {
 			fi
 		done
 	fi
+    #check if chipset has driver not under mac80211 stack
+    if [ "${DRIVER}" = "8812au" ] || [ "${DRIVER}" = "8814au" ] || [ "${DRIVER}" = "88XXau" ]; then
+        #grumble grumble, seriously crap vendor driver
+		setLink ${1} down
+        startDeprecatedIface ${1}
+        setChannelMac80211 ${1}
+        return
+    fi
 	#we didn't bail means we need a monitor interface
 	if [ ${#1} -gt 12 ]; then
 		printf "Interface ${1}mon is too long for linux so it will be renamed to the old style (wlan#) name.\n"
@@ -456,12 +464,6 @@ startMac80211Iface() {
 		fi
 		#we didn't bail means our target interface is available
 		setLink ${1} down
-		if [ "${DRIVER}" = "8812au" ] || [ "${DRIVER}" = "8814au" ] || [ "${DRIVER}" = "88XXau" ]; then
-			#grumble grumble, seriously crap vendor driver
-			startDeprecatedIface ${1}
-			setChannelMac80211 ${1}
-			return
-		fi
 		IW_ERROR="$(iw phy ${PHYDEV} interface add ${1}mon type monitor 2>&1)"
 		if [ -z "${IW_ERROR}" ]; then
 			sleep 1
