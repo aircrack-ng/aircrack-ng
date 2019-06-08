@@ -616,7 +616,7 @@ stopMac80211Iface() {
 			printf "please report it.\n"
 			exit 1
 		else
-			if [ "${DRIVER}" = "8812au" ] || [ "${DRIVER}" = "8814au" ] || [ "${DRIVER}" = "88XXau" ]; then
+			if [ "${DRIVER}" = "8812au" ] || [ "${DRIVER}" = "rtl8188eus" ] || [ "${DRIVER}" = "88XXau" ]; then
 				#grumble grumble, seriously crap vendor driver
 				stopDeprecatedIface ${1}
 				return
