@@ -96,7 +96,7 @@ Below are instructions for installing the basic requirements to build
 
 #### DragonflyBSD
 
-    pkg install pkgconf shtool libtool gcc7 automake autoconf pcre sqlite3 libgcrypt gmake cmocka
+    pkg install pkgconf shtool libtool gcc8 automake autoconf pcre sqlite3 libgcrypt gmake cmocka
 
 #### OpenBSD
 
@@ -313,11 +313,11 @@ to your choosing:
     make
     ```
 
- * Compiling on DragonflyBSD with gcrypt using GCC 7
+ * Compiling on DragonflyBSD with gcrypt using GCC 8
 
    ```
    autoreconf -i
-   env CC=gcc7 CXX=g++7 MAKE=gmake ./configure --with-experimental --with-gcrypt
+   env CC=gcc8 CXX=g++8 MAKE=gmake ./configure --with-experimental --with-gcrypt
    gmake
    ```
 
