@@ -111,7 +111,7 @@ if [ -d /sys/bus/pci ] || [ -d /sys/bus/pci_express ] || [ -d /proc/bus/pci ]; t
 		PCI_DEVICES=1
 	elif [ -r /proc/bus/pci/devices ] && [ -n "$(cat /proc/bus/pci/devices 2>/dev/null)" ]; then
 		PCI_DEVICES=1
-	elif [ -d /sys/bus/pci_express/devices ] && [ -n "$(ls -1 /sys/bus/pci_express/devices 2>/dev/null | wc -l)" != '0' ]; then
+	elif [ -d /sys/bus/pci_express/devices ] && [ -n "$(ls -1 /sys/bus/pci_express/devices 2>/dev/null | wc -l)" ]; then
 		PCI_DEVICES=1
 	fi
 
