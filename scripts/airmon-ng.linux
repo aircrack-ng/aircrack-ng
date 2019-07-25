@@ -111,7 +111,7 @@ if [ -d /sys/bus/pci ] || [ -d /sys/bus/pci_express ] || [ -d /proc/bus/pci ]; t
 		PCI_DEVICES=1
 	elif [ -r /proc/bus/pci/devices ] && [ -n "$(cat /proc/bus/pci/devices 2>/dev/null)" ]; then
 		PCI_DEVICES=1
-	elif [ -d /sys/bus/pci_express/devices ] && [ -n "$(ls -1 /sys/bus/pci_express/devices 2>/dev/null | wc -l)" ]; then
+	elif [ -d /sys/bus/pci_express/devices ] && [ -n "$(ls -l /sys/bus/pci_express/devices 2>/dev/null | wc -l)" ]; then
 		PCI_DEVICES=1
 	fi
 
@@ -283,7 +283,7 @@ rfkill_check() {
 		return 187
 	fi
 	rfkill_status="$(rfkill list ${index} 2>&1)"
-	if [ $? != 0 ]; then
+	if [ $rfkill_status != 0 ]; then
 		printf "rfkill error: %s\n" "${rfkill_status}"
 		return 187
 	elif [ -z "${rfkill_status}" ]; then
@@ -310,10 +310,10 @@ rfkill_unblock() {
 		return 0
 	fi
 	rfkill_status="$(rfkill unblock ${1#phy} 2>&1)"
-	if [ $? != 0 ]; then
+	if [ $rfkill_status != 0 ]; then
 		rfkill_status="$(rfkill unblock $index 2>&1)"
-		if [ $? != 0 ]; then
-			if [ `echo "$blah" | grep "Usage" | wc -l` -eq 1 ]; then
+		if [ $rfkill_status != 0 ]; then
+			if [ $(echo "$blah" | grep -c "Usage") -eq 1 ]; then
 				printf "Missing parameters in rfkill! Report this"
 			else
 				printf "%s" "rfkill error: ${rfkill_status}\n"
@@ -389,7 +389,7 @@ startDeprecatedIface() {
 }
 
 yesorno() {
-	read input
+	read -r input
 	case $input in
 		y) return 0 ;;
 		yes) return 0 ;;
@@ -527,8 +527,7 @@ startwlIface() {
 			fi
 		fi
 		if [ -w "/proc/brcm_monitor0" ]; then
-			printf "1" > /proc/brcm_monitor0
-			if [ "$?" = "0" ]; then
+			if printf "1" > /proc/brcm_monitor0; then
 				printf "\n\t\t(experimental wl monitor mode vif enabled for [%s]%s on [%s]prism0)\n" "${PHYDEV}" "${1}" "${PHYDEV}"
 			else
 				printf "\n\t\t(failed to enable experimental wl monitor mode for [%s]%s)\n" "${PHYDEV}" "${1}"
@@ -699,8 +698,7 @@ stopwlIface() {
 			fi
 		fi
 		if [ -w "/proc/brcm_monitor0" ]; then
-			printf "0" > /proc/brcm_monitor0
-			if [ "$?" = "0" ]; then
+			if printf "0" > /proc/brcm_monitor0; then
 				printf "\n\t\t(experimental wl monitor mode vif disabled for [%s]%s)\n" "${PHYDEV}" "${1}"
 			else
 				printf "\n\t\t(failed to disable experimental wl monitor mode for [%s]%s)\n" "${PHYDEV}" "${1}"
@@ -773,7 +771,7 @@ getDriver() {
 	#Here we will catch the broken lying drivers not caught above
 	#currently this only functions for pci devices and not usb since lsusb has no -k option
 	if [ "${MODINFO}" = "1" ]; then
-		if $(modinfo -F filename $DRIVER  > /dev/null 2>&1)
+		if modinfo -F filename $DRIVER  > /dev/null 2>&1
 		then
 			true
 		else
@@ -921,7 +919,7 @@ getChipset() {
 		fi
 	elif [ "${DRIVER}" = "mac80211_hwsim" ]; then
 		CHIPSET="Software simulator of 802.11 radio(s) for mac80211"
-	elif $(printf "%s" "$ethtool_output" | awk '/bus-info/ {print $2}' | grep -q bcma)
+	elif printf "%s" "$ethtool_output" | awk '/bus-info/ {print $2}' | grep -q bcma
 	then
 		BUS="bcma"
 
@@ -982,7 +980,7 @@ getExtendedInfo() {
 		EXTENDED="rfkill soft blocked"
 	elif [ "${rfkill_retcode}" = "2" ]; then
 		EXTENDED="rfkill hard blocked"
-	elif [ "${rfkill_redcode}" = "3" ]; then
+	elif [ "${rfkill_retcode}" = "3" ]; then
 		EXTENDED="rfkill hard and soft blocked"
 	fi
 
@@ -1089,14 +1087,7 @@ getExtendedInfo() {
 
 scanProcesses() {
 	#this test means it errored and said it was busybox since busybox doesn't print without error
-	if (ps -A 2>&1 | grep -q BusyBox)
-	then
-		#busybox in openwrt cannot handle -A but its output by default is -A
-		psopts=""
-	else
-		psopts="-A"
-	fi
-	if ( ps -o comm= 2>&1 | grep -q BusyBox )
+	if pgrep busybox
 	then
 		#busybox in openwrt cannot handle -o
 		pso="0"
@@ -1121,10 +1112,10 @@ scanProcesses() {
 
 	unset match
 	if [ "${pso}" = 1 ]; then
-		match="$(ps ${psopts} -o comm= | grep ${PROCESSES} | grep -v grep | wc -l)"
+		match="$(pgrep ${PROCESSES} | grep -c -v grep)"
 	elif [ "${pso}" = 0 ]; then
 		#openwrt busybox grep hits on itself so we -v it out
-		match="$(ps ${psopts} | grep ${PROCESSES} | grep -v grep | wc -l)"
+		match="$(pgrep ${PROCESSES} | grep -c -v grep)"
 	fi
 	if [ ${match} -gt 0 ] && [ "${1}" != "kill" ]; then
 		printf "Found %s processes that could cause trouble.\n" "$match"
@@ -1143,20 +1134,20 @@ scanProcesses() {
 			printf "Killing these processes:\n\n"
 		fi
 		if [ "${pso}" = "1" ]; then
-			ps ${psopts} -o pid=PID -o comm=Name | grep "${PROCESSES}\|PID"
+			pgrep "${PROCESSES}\|PID"
 		else
 			#openwrt busybox grep hits on itself so we -v it out
-			ps ${psopts} | grep "${PROCESSES}\|PID | grep -v grep"
+			pgrep "${PROCESSES}\|PID | grep -v grep"
 		fi
 		if [ "${1}" = "kill" ]; then
 			#we have to use signal 9 because things like nm actually respawn wpa_supplicant too quickly
 			if [ "${pso}" = "1" ]; then
-				for pid in $(ps ${psopts} -o pid= -o comm= | grep ${PROCESSES} | awk '{print $1}'); do
+				for pid in $(pgrep ${PROCESSES} | awk '{print $1}'); do
 					kill -9 ${pid}
 				done
 			else
 				#openwrt busybox grep hits on itself so we -v it out
-				for pid in $(ps ${psopts} | grep ${PROCESSES} | grep -v grep | awk '{print $1}'); do
+				for pid in $(pgrep ${PROCESSES} | grep -v grep | awk '{print $1}'); do
 					kill -9 ${pid}
 				done
 			fi
@@ -1202,7 +1193,7 @@ listInterfaces() {
 	for iface in $(ls -1 /sys/class/net)
 	do
 		if [ -f /sys/class/net/${iface}/uevent ]; then
-			if $(grep -q DEVTYPE=wlan /sys/class/net/${iface}/uevent)
+			if grep -q DEVTYPE=wlan /sys/class/net/${iface}/uevent
 			then
 				iface_list="${iface_list}\n ${iface}"
 			fi
