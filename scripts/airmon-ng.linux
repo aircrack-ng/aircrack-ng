@@ -111,7 +111,7 @@ if [ -d /sys/bus/pci ] || [ -d /sys/bus/pci_express ] || [ -d /proc/bus/pci ]; t
 		PCI_DEVICES=1
 	elif [ -r /proc/bus/pci/devices ] && [ -n "$(cat /proc/bus/pci/devices 2>/dev/null)" ]; then
 		PCI_DEVICES=1
-	elif [ -d /sys/bus/pci_express/devices ] && [ -n "$(ls -1 /sys/bus/pci_express/devices 2>/dev/null | wc -l)" != '0' ]; then
+	elif [ -d /sys/bus/pci_express/devices ] && [ "$(ls -1 /sys/bus/pci_express/devices 2>/dev/null | wc -l)" != '0' ]; then
 		PCI_DEVICES=1
 	fi
 
@@ -313,7 +313,7 @@ rfkill_unblock() {
 	if [ $? != 0 ]; then
 		rfkill_status="$(rfkill unblock $index 2>&1)"
 		if [ $? != 0 ]; then
-			if [ `echo "$blah" | grep "Usage" | wc -l` -eq 1 ]; then
+      if [ $(echo "${rfkill_status}" | grep -c "Usage") -eq 1 ]; then
 				printf "Missing parameters in rfkill! Report this"
 			else
 				printf "rfkill error: ${rfkill_status}\n"
@@ -389,7 +389,7 @@ startDeprecatedIface() {
 }
 
 yesorno() {
-	read input
+	read -r input
 	case $input in
 		y) return 0 ;;
 		yes) return 0 ;;
@@ -527,8 +527,7 @@ startwlIface() {
 			fi
 		fi
 		if [ -w "/proc/brcm_monitor0" ]; then
-			printf "1" > /proc/brcm_monitor0
-			if [ "$?" = "0" ]; then
+			if printf "1" > /proc/brcm_monitor0; then
 				printf "\n\t\t(experimental wl monitor mode vif enabled for [${PHYDEV}]${1} on [${PHYDEV}]prism0)\n"
 			else
 				printf "\n\t\t(failed to enable experimental wl monitor mode for [${PHYDEV}${1})\n"
@@ -773,29 +772,29 @@ getDriver() {
 	#Here we will catch the broken lying drivers not caught above
 	#currently this only functions for pci devices and not usb since lsusb has no -k option
 	if [ "${MODINFO}" = "1" ]; then
-		if $(modinfo -F filename $DRIVER  > /dev/null 2>&1)
+		if modinfo -F filename ${DRIVER}  > /dev/null 2>&1
 		then
 			true
 		else
-			save="$DRIVER"
+			save="${DRIVER}"
 
-			if [ -n "${DEVICEID}" ] && [ "$BUS" = "pci" ]; then
-				DRIVER="$(lspci -d $DEVICEID -k | awk '/modules/ {print $3}')"
+			if [ -n "${DEVICEID}" ] && [ "${BUS}" = "pci" ]; then
+				DRIVER="$(lspci -d ${DEVICEID} -k | awk '/modules/ {print $3}')"
 			fi
 			if [ -z "${BUS}" ] || [ "${BUS}" != 'sdio' ]; then
 					unset DRIVER
 			fi
 
-			if [ -n "$save" ] && [ -z "$DRIVER" ] ; then
-				DRIVER="$save"
+			if [ -n "${save}" ] && [ -z "${DRIVER}" ] ; then
+				DRIVER="${save}"
 			fi
 		fi
 	fi
-	if [ -z "$DRIVER" ] ; then
+	if [ -z "${DRIVER}" ] ; then
 		DRIVER="??????"
 	fi
-	if [ "$DEBUG" = "1" ]; then
-		printf "getdriver() $DRIVER\n"
+	if [ "${DEBUG}" = "1" ]; then
+		printf "getdriver() ${DRIVER}\n"
 	fi
 }
 
@@ -858,11 +857,11 @@ getFirmware() {
 getChipset() {
 	#this needs cleanup, we shouldn't have multiple lines assigning chipset per bus
 	#fix this to be one line per bus
-	if [ -f /sys/class/net/$1/device/modalias ]; then
-		if [ "$BUS" = "usb" ]; then
+	if [ -f /sys/class/net/${1}/device/modalias ]; then
+		if [ "${BUS}" = "usb" ]; then
 			if [ "${LSUSB}" = "1" ]; then
-				BUSINFO="$(cut -d ":" -f 2 /sys/class/net/$1/device/modalias | cut -b 1-10 | sed 's/^.//;s/p/:/')"
-				CHIPSET="$(lsusb -d "$BUSINFO" | head -n1 - | cut -f3- -d ":" | sed 's/^....//;s/ Network Connection//g;s/ Wireless Adapter//g;s/^ //')"
+				BUSINFO="$(cut -d ":" -f 2 /sys/class/net/${1}/device/modalias | cut -b 1-10 | sed 's/^.//;s/p/:/')"
+				CHIPSET="$(lsusb -d "${BUSINFO}" | head -n1 - | cut -f3- -d ":" | sed 's/^....//;s/ Network Connection//g;s/ Wireless Adapter//g;s/^ //')"
 			elif [ "${LSUSB}" = "0" ]; then
 				printf "Your system doesn't seem to support usb but we found usb hardware, please report this.\n"
 				exit 1
@@ -871,15 +870,15 @@ getChipset() {
 		elif [ "${BUS}" = "pci" -o "${BUS}" = "pcmcia" ] && [ "${LSPCI}" = "1" ]; then
 			if [ -f /sys/class/net/$1/device/vendor ] && [ -f /sys/class/net/$1/device/device ]; then
 				DEVICEID="$(cat /sys/class/net/$1/device/vendor):$(cat /sys/class/net/$1/device/device)"
-				CHIPSET="$(lspci -d $DEVICEID | cut -f3- -d ":" | sed 's/Wireless LAN Controller //g;s/ Network Connection//g;s/ Wireless Adapter//;s/^ //')"
+				CHIPSET="$(lspci -d ${DEVICEID} | cut -f3- -d ":" | sed 's/Wireless LAN Controller //g;s/ Network Connection//g;s/ Wireless Adapter//;s/^ //')"
 			else
-				BUSINFO="$(printf "$ethtool_output" | grep bus-info | cut -d ":" -f "3-" | sed 's/^ //')"
-				CHIPSET="$(lspci | grep "$BUSINFO" | head -n1 - | cut -f3- -d ":" | sed 's/Wireless LAN Controller //g;s/ Network Connection//g;s/ Wireless Adapter//;s/^ //')"
-				DEVICEID="$(lspci -nn | grep "$BUSINFO" | grep '[[0-9][0-9][0-9][0-9]:[0-9][0-9][0-9][0-9]' -o)"
+				BUSINFO="$(printf "${ethtool_output}" | grep bus-info | cut -d ":" -f "3-" | sed 's/^ //')"
+				CHIPSET="$(lspci | grep "${BUSINFO}" | head -n1 - | cut -f3- -d ":" | sed 's/Wireless LAN Controller //g;s/ Network Connection//g;s/ Wireless Adapter//;s/^ //')"
+				DEVICEID="$(lspci -nn | grep "${BUSINFO}" | grep '[[0-9][0-9][0-9][0-9]:[0-9][0-9][0-9][0-9]' -o)"
 			fi
 		elif [ "${BUS}" = "sdio" ]; then
-			if [ -f /sys/class/net/$1/device/vendor ] && [ -f /sys/class/net/$1/device/device ]; then
-				DEVICEID="$(cat /sys/class/net/$1/device/vendor):$(cat /sys/class/net/$1/device/device)"
+			if [ -f /sys/class/net/${1}/device/vendor ] && [ -f /sys/class/net/${1}/device/device ]; then
+				DEVICEID="$(cat /sys/class/net/${1}/device/vendor):$(cat /sys/class/net/${1}/device/device)"
 			fi
 			if [ "${DEVICEID}" = '0x02d0:0x4330' ]; then
 				CHIPSET='Broadcom 4330'
@@ -906,22 +905,22 @@ getChipset() {
 			elif [ "${DEVICEID}" = '0x02d0:0xa887' ]; then
 				CHIPSET='Broadcom 43143'
 			else
-				CHIPSET="unable to detect for sdio $DEVICEID"
+				CHIPSET="unable to detect for sdio ${DEVICEID}"
 			fi
 		else
 			CHIPSET="Not pci, usb, or sdio"
 		fi
 	#we don't do a check for usb here but it is obviously only going to work for usb
-	elif [ -f /sys/class/net/$1/device/idVendor ] && [ -f /sys/class/net/$1/device/idProduct ]; then
-		DEVICEID="$(cat /sys/class/net/$1/device/idVendor):$(cat /sys/class/net/$1/device/idProduct)"
+	elif [ -f /sys/class/net/${1}/device/idVendor ] && [ -f /sys/class/net/${1}/device/idProduct ]; then
+		DEVICEID="$(cat /sys/class/net/${1}/device/idVendor):$(cat /sys/class/net/${1}/device/idProduct)"
 		if [ "${LSUSB}" = "1" ]; then
-			CHIPSET="$(lsusb | grep -i "$DEVICEID" | head -n1 - | cut -f3- -d ":" | sed 's/^....//;s/ Network Connection//g;s/ Wireless Adapter//g;s/^ //')"
+			CHIPSET="$(lsusb | grep -i "${DEVICEID}" | head -n1 - | cut -f3- -d ":" | sed 's/^....//;s/ Network Connection//g;s/ Wireless Adapter//g;s/^ //')"
 		elif [ "${LSUSB}" = "0" ]; then
 			CHIPSET="idVendor and idProduct found on non-usb device, please report this."
 		fi
 	elif [ "${DRIVER}" = "mac80211_hwsim" ]; then
 		CHIPSET="Software simulator of 802.11 radio(s) for mac80211"
-	elif $(printf "$ethtool_output" | awk '/bus-info/ {print $2}' | grep -q bcma)
+	elif $(printf "${ethtool_output}" | awk '/bus-info/ {print $2}' | grep -q bcma)
 	then
 		BUS="bcma"
 
@@ -934,11 +933,11 @@ getChipset() {
 		CHIPSET="non-mac80211 device? (report this!)"
 	fi
 
-	if [ "$DEBUG" = "1" ]; then
-		printf "getchipset() $CHIPSET\n"
-		printf "BUS = $BUS\n"
-		printf "BUSINFO = $BUSINFO\n"
-		printf "DEVICEID = $DEVICEID\n"
+	if [ "${DEBUG}" = "1" ]; then
+		printf "getchipset() ${CHIPSET}\n"
+		printf "BUS = ${BUS}\n"
+		printf "BUSINFO = ${BUSINFO}\n"
+		printf "DEVICEID = ${DEVICEID}\n"
 	fi
 }
 
@@ -982,7 +981,7 @@ getExtendedInfo() {
 		EXTENDED="rfkill soft blocked"
 	elif [ "${rfkill_retcode}" = "2" ]; then
 		EXTENDED="rfkill hard blocked"
-	elif [ "${rfkill_redcode}" = "3" ]; then
+	elif [ "${rfkill_retcode}" = "3" ]; then
 		EXTENDED="rfkill hard and soft blocked"
 	fi
 
@@ -1202,7 +1201,7 @@ listInterfaces() {
 	for iface in $(ls -1 /sys/class/net)
 	do
 		if [ -f /sys/class/net/${iface}/uevent ]; then
-			if $(grep -q DEVTYPE=wlan /sys/class/net/${iface}/uevent)
+			if grep -q DEVTYPE=wlan /sys/class/net/${iface}/uevent
 			then
 				iface_list="${iface_list}\n ${iface}"
 			fi
