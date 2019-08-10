@@ -129,7 +129,12 @@ static const int a_chans[]
 	   118, 120, 122, 124, 126, 128, 132, 134, 136, 138, 140, 142,
 	   144, 149, 151, 153, 155, 157, 159, 161, 165, 169, 173, 0};
 
-static int * frequencies;
+struct detected_frequencies_st
+{
+    size_t count;
+    size_t table_size;
+    int * frequencies;
+};
 
 static volatile int quitting = 0;
 static volatile time_t quitting_event_ts = 0;
@@ -5215,15 +5220,25 @@ static inline int invalid_channel(int chan)
 	return (1);
 }
 
-static inline int invalid_frequency(int freq)
+static inline bool invalid_frequency(
+    detected_frequencies_st const * const detected_frequencies,
+    int const freq)
 {
-	int i = 0;
+    bool is_invalid;
 
-	do
-	{
-		if (freq == frequencies[i] && freq != 0) return (0);
-	} while (frequencies[++i]);
-	return (1);
+    for (size_t i = 0; i < detected_frequencies->count; i++)
+    {
+        if (freq == detected_frequencies->frequencies[i])
+        {
+            is_invalid = false;
+            goto done;
+        }
+    }
+
+    is_invalid = true; 
+
+done:
+    return is_invalid;
 }
 
 /* parse a string, for example "1,2,3-7,11" */
@@ -5356,7 +5371,9 @@ static int getchannels(const char * optarg)
 
 /* parse a string, for example "1,2,3-7,11" */
 
-static int getfrequencies(const char * optarg)
+static int getfrequencies(
+    detected_frequencies_st * const detected_frequencies, 
+    const char * optarg)
 {
 	unsigned int i = 0, freq_cur = 0, freq_first = 0, freq_last = 0,
 				 freq_max = 10000, freq_remain = 0;
@@ -5409,7 +5426,7 @@ static int getfrequencies(const char * optarg)
 					}
 					for (i = freq_first; i <= freq_last; i++)
 					{
-						if ((!invalid_frequency(i)) && (freq_remain > 0))
+                        if ((!invalid_frequency(detected_frequencies, i)) && (freq_remain > 0))
 						{
 							tmp_frequencies[freq_max - freq_remain] = i;
 							freq_remain--;
@@ -5445,7 +5462,7 @@ static int getfrequencies(const char * optarg)
 
 			if (sscanf(token, "%u", &freq_cur) != EOF)
 			{
-				if ((!invalid_frequency(freq_cur)) && (freq_remain > 0))
+                if ((!invalid_frequency(detected_frequencies, freq_cur)) && (freq_remain > 0))
 				{
 					tmp_frequencies[freq_max - freq_remain] = freq_cur;
 					freq_remain--;
@@ -5458,7 +5475,8 @@ static int getfrequencies(const char * optarg)
 					freq_last = 9999;
 					for (i = freq_first; i <= freq_last; i++)
 					{
-						if ((!invalid_frequency(i)) && (freq_remain > 0))
+                        if (!invalid_frequency(detected_frequencies, i)
+                            && freq_remain > 0)
 						{
 							tmp_frequencies[freq_max - freq_remain] = i;
 							freq_remain--;
@@ -5654,55 +5672,80 @@ static int check_frequency(struct wif * wi[], int cards)
 	return (0);
 }
 
-static int detect_frequencies(struct wif * wi)
+static void detect_frequency_range(
+    struct wif * wi, 
+    detected_frequencies_st * const detected_frequencies,
+    size_t const start_freq, 
+    size_t const end_freq)
+{
+    for (int freq = start_freq; 
+          detected_frequencies->count < detected_frequencies->table_size && freq <= end_freq; 
+          freq += 5)
+    {
+        if (wi_set_freq(wi, freq) == 0)
+        {
+            detected_frequencies->frequencies[detected_frequencies->count] = freq;
+            detected_frequencies->count++;
+        }
+
+        int const channel_13_freq = 2482;
+
+        if (freq == channel_13_freq)
+        {
+            int const channel_14_freq = 2484;
+            // special case for chan 14, as its 12MHz away from 13, not 5MHz
+            if (wi_set_freq(wi, channel_14_freq) == 0)
+            {
+                detected_frequencies->frequencies[detected_frequencies->count] = channel_14_freq;
+                detected_frequencies->count++;
+            }
+        }
+    }
+}
+
+static void detected_frequencies_initialise(
+    detected_frequencies_st * const detected_frequencies,
+    size_t const max_frequencies)
+{
+    detected_frequencies->count = 0;
+    detected_frequencies->table_size = max_frequencies;
+    // field for frequencies supported
+    detected_frequencies->frequencies =
+        calloc(detected_frequencies->table_size, sizeof(int));
+
+    ALLEGE(detected_frequencies->frequencies != NULL);
+}
+
+static void detected_frequencies_cleanup(
+    detected_frequencies_st * const detected_frequencies)
+{
+    free(detected_frequencies->frequencies);
+    detected_frequencies->frequencies = NULL;
+}
+
+
+static void detect_frequencies(
+    struct wif * wi, 
+    detected_frequencies_st * const detected_frequencies)
 {
 	REQUIRE(wi != NULL);
 
-	int start_freq = 2192;
-	int end_freq = 2732;
-	int max_freq_num = 2048; // should be enough to keep all available channels
-	int freq = 0, i = 0;
+    size_t const max_freq_num = 2048; // should be enough to keep all available channels
 
-	printf("Checking available frequencies, this could take few seconds.\n");
+	printf("Checking available frequencies; this could take few seconds.\n");
 
-	frequencies = (int *) malloc(
-		(max_freq_num + 1) * sizeof(int)); // field for frequencies supported
-	ALLEGE(frequencies != NULL);
-	memset(frequencies, 0, (max_freq_num + 1) * sizeof(int));
-	for (freq = start_freq; freq <= end_freq; freq += 5)
-	{
-		if (wi_set_freq(wi, freq) == 0)
-		{
-			frequencies[i] = freq;
-			i++;
-		}
-		if (freq == 2482)
-		{
-			// special case for chan 14, as its 12MHz away from 13, not 5MHz
-			freq = 2484;
-			if (wi_set_freq(wi, freq) == 0)
-			{
-				frequencies[i] = freq;
-				i++;
-			}
-			freq = 2482;
-		}
-	}
+    detected_frequencies_initialise(detected_frequencies, max_freq_num);
 
-	// again for 5GHz channels
-	start_freq = 4800;
-	end_freq = 6000;
-	for (freq = start_freq; freq <= end_freq; freq += 5)
-	{
-		if (wi_set_freq(wi, freq) == 0)
-		{
-			frequencies[i] = freq;
-			i++;
-		}
-	}
+    int start_freq = 2192;
+    int end_freq = 2732;
+    detect_frequency_range(wi, detected_frequencies, start_freq, end_freq);
 
-	printf("Done.\n");
-	return (0);
+    // again for 5GHz channels
+    start_freq = 4800;
+    end_freq = 6000;
+    detect_frequency_range(wi, detected_frequencies, start_freq, end_freq);
+
+    printf("Done. Found %d frequencies\n", detected_frequencies->count);
 }
 
 static int array_contains(const int * array, int length, int value)
@@ -5730,9 +5773,8 @@ static int rearrange_frequencies(void)
 	left = count;
 	pos = 0;
 
-	freqs = malloc(sizeof(int) * (count + 1));
+	freqs = calloc(count + 1, sizeof(int));
 	ALLEGE(freqs != NULL);
-	memset(freqs, 0, sizeof(int) * (count + 1));
 	round_done = 0;
 
 	while (left > 0)
@@ -6615,11 +6657,14 @@ int main(int argc, char * argv[])
 
 		if (lopt.freqoption == 1 && lopt.freqstring != NULL) // use frequencies
 		{
-			detect_frequencies(wi[0]);
-			lopt.frequency[0] = getfrequencies(lopt.freqstring);
+            detected_frequencies_st detected_frequencies; 
+
+            detect_frequencies(wi[0], &detected_frequencies);
+            lopt.frequency[0] = getfrequencies(&detected_frequencies, lopt.freqstring);
 			if (lopt.frequency[0] == -1)
 			{
 				printf("No valid frequency given.\n");
+                detected_frequencies_cleanup(&detected_frequencies);
 				return (EXIT_FAILURE);
 			}
 
@@ -6660,7 +6705,8 @@ int main(int argc, char * argv[])
 						if (!wi[i])
 						{
 							printf("Can't reopen %s\n", ifnam);
-							exit(EXIT_FAILURE);
+                            detected_frequencies_cleanup(&detected_frequencies);
+                            exit(EXIT_FAILURE);
 						}
 					}
 
@@ -6671,6 +6717,8 @@ int main(int argc, char * argv[])
 					}
 
 					frequency_hopper(wi, lopt.num_cards, freq_count, main_pid);
+                    detected_frequencies_cleanup(&detected_frequencies);
+
 					exit(EXIT_FAILURE);
 				}
 			}
@@ -6683,6 +6731,8 @@ int main(int argc, char * argv[])
 				}
 				lopt.singlefreq = 1;
 			}
+
+            detected_frequencies_cleanup(&detected_frequencies);
 		}
 		else // use channels
 		{
