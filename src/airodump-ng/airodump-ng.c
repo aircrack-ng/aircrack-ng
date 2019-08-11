@@ -90,6 +90,7 @@
 #include "aircrack-ng/tui/console.h"
 #include "radiotap/radiotap.h"
 #include "radiotap/radiotap_iter.h"
+#include "strlcpy.h"
 
 struct devices dev;
 uint8_t h80211[4096] __attribute__((aligned(16)));
@@ -815,7 +816,7 @@ static struct oui * load_oui_file(void)
 					 c[0],
 					 c[1]);
 
-            char * const oui_ptr->manufacturer = 
+            oui_ptr->manufacturer = 
                 get_manufacturer_from_string(buffer);
 
             if (oui_ptr->manufacturer == NULL)
@@ -4378,7 +4379,7 @@ get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2)
 {
 	char oui[OUI_STR_SIZE];
     char * manuf; 
-    FILE * const fp = NULL;
+    FILE * fp = NULL;
 
 	snprintf(oui, sizeof oui, "%02X:%02X:%02X", mac0, mac1, mac2);
 
@@ -4392,6 +4393,11 @@ get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2)
             manuf = strdup(ptr->manufacturer);
             ALLEGE(manuf != NULL);
         }
+        else
+        {
+            manuf = NULL;
+        }
+
         goto done;
 	}
 	else
@@ -4966,6 +4972,7 @@ sigchld_handler(int signum)
     /* Reap zombie processes. */
     pid_t pid;
     int const status = wait_proc(-1, &pid);
+    (void)status;
 }
 
 static void read_hopper_process_data(struct local_options * const options)
@@ -4977,7 +4984,7 @@ static void read_hopper_process_data(struct local_options * const options)
     {
         read_result = read(options->hopper_process_pipe[0], &hopper_data, sizeof hopper_data);
     }
-    while (read_result < 0 && errno = EINTR);
+    while (read_result < 0 && errno == EINTR);
 
     if (read_result < 0)
     {
@@ -5206,7 +5213,7 @@ channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
                     struct hopper_data_st const hopper_data =
                     {
                         .card = card,
-                        .u.channel = ch;
+                        .u.channel = ch
                     };
 
                     IGNORE_LTZ(write(lopt.hopper_process_pipe[1], &hopper_data, sizeof hopper_data));
@@ -5231,7 +5238,7 @@ channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
                 struct hopper_data_st const hopper_data =
                 {
                     .card = card,
-                    .u.channel = ch;
+                    .u.channel = ch
                 }; 
 
                 IGNORE_LTZ(write(lopt.hopper_process_pipe[1], &hopper_data, sizeof hopper_data)); 
@@ -5324,7 +5331,7 @@ frequency_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
                     struct hopper_data_st const hopper_data =
                     {
                         .card = card,
-                        .u.frequency = ch;
+                        .u.frequency = ch
                     };
 
                     IGNORE_LTZ(write(lopt.hopper_process_pipe[1], &hopper_data, sizeof hopper_data)); 
@@ -5345,7 +5352,7 @@ frequency_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
                 struct hopper_data_st const hopper_data =
                 {
                     .card = card,
-                    .u.frequency = ch;
+                    .u.frequency = ch
                 };
 
                 IGNORE_LTZ(write(lopt.hopper_process_pipe[1], &hopper_data, sizeof hopper_data));
@@ -5389,7 +5396,7 @@ static inline int invalid_channel(int chan)
 }
 
 static inline bool invalid_frequency(
-    detected_frequencies_st const * const detected_frequencies,
+    struct detected_frequencies_st const * const detected_frequencies,
     int const freq)
 {
     bool is_invalid;
@@ -5537,7 +5544,7 @@ static int getchannels(const char * optarg)
 /* parse a string, for example "1,2,3-7,11" */
 
 static int getfrequencies(
-    detected_frequencies_st * const detected_frequencies, 
+    struct detected_frequencies_st * const detected_frequencies, 
     const char * optarg)
 {
 	unsigned int i = 0, freq_cur = 0, freq_first = 0, freq_last = 0,
@@ -5776,7 +5783,7 @@ static struct wif * reopen_card(struct wif * const old)
 
 static bool reopen_cards(
     struct local_options const * const options,
-    struct wif * const * const wi)
+    struct wif * * const wi)
 {
     bool success;
 
@@ -5868,7 +5875,7 @@ static int check_frequency(struct wif * wi[], int cards)
 
 static void detect_frequency_range(
     struct wif * wi, 
-    detected_frequencies_st * const detected_frequencies,
+    struct detected_frequencies_st * const detected_frequencies,
     size_t const start_freq, 
     size_t const end_freq)
 {
@@ -5898,7 +5905,7 @@ static void detect_frequency_range(
 }
 
 static void detected_frequencies_initialise(
-    detected_frequencies_st * const detected_frequencies,
+    struct detected_frequencies_st * const detected_frequencies,
     size_t const max_frequencies)
 {
     detected_frequencies->count = 0;
@@ -5911,7 +5918,7 @@ static void detected_frequencies_initialise(
 }
 
 static void detected_frequencies_cleanup(
-    detected_frequencies_st * const detected_frequencies)
+    struct detected_frequencies_st * const detected_frequencies)
 {
     free(detected_frequencies->frequencies);
     detected_frequencies->frequencies = NULL;
@@ -5920,7 +5927,7 @@ static void detected_frequencies_cleanup(
 
 static void detect_frequencies(
     struct wif * wi, 
-    detected_frequencies_st * const detected_frequencies)
+    struct detected_frequencies_st * const detected_frequencies)
 {
 	REQUIRE(wi != NULL);
 
@@ -5939,7 +5946,7 @@ static void detect_frequencies(
     end_freq = 6000;
     detect_frequency_range(wi, detected_frequencies, start_freq, end_freq);
 
-    printf("Done. Found %d frequencies\n", detected_frequencies->count);
+    printf("Done. Found %zu frequencies\n", detected_frequencies->count);
 }
 
 static int array_contains(const int * array, int length, int value)
@@ -6002,8 +6009,8 @@ static int rearrange_frequencies(void)
 }
 
 static int start_monitor_process(
-    struct local_options const * const options, 
-    struct wif * const * const wi)
+    struct local_options * const options, 
+    struct wif * * const wi)
 {
     int result; /* -1: error, 0: child process, 1: parent_process */
     int const pipe_result = pipe(options->hopper_process_pipe);
@@ -6052,13 +6059,12 @@ static int start_monitor_process(
         close(options->hopper_process_pipe[1]);
     }
 
-done:
     return result;
 }
 
 static void start_frequency_hopper_process(
-    struct local_options const * const options,
-    struct wif * const * const wi,
+    struct local_options * const options,
+    struct wif * * const wi,
     int const frequency_count)
 {
     pid_t const main_pid = getpid();
@@ -6072,8 +6078,8 @@ static void start_frequency_hopper_process(
 }
 
 static void start_channel_hopper_process(
-    struct local_options const * const options,
-    struct wif * const * const wi,
+    struct local_options * const options,
+    struct wif * * const wi,
     int const channel_count)
 {
     pid_t const main_pid = getpid();
@@ -6107,7 +6113,7 @@ static void check_monitor_process(struct local_options * const options)
         FD_SET(options->hopper_process_pipe[0], &rfds); // NOLINT(hicpp-signed-bitwise)
         pipe_ready = select(options->hopper_process_pipe[0], &rfds, NULL, NULL, &tv);
     }
-    while (pipe_ready < 0 && errno == ENITR);
+    while (pipe_ready < 0 && errno == EINTR);
 
     if (pipe_ready != 1)
     {
@@ -6971,7 +6977,7 @@ int main(int argc, char * argv[])
 
 		if (lopt.freqoption == 1 && lopt.freqstring != NULL) // use frequencies
 		{
-            detected_frequencies_st detected_frequencies; 
+            struct detected_frequencies_st detected_frequencies; 
 
             detect_frequencies(wi[0], &detected_frequencies);
 
@@ -7104,7 +7110,9 @@ int main(int argc, char * argv[])
     action.sa_handler = &sigchld_handler;
     sigemptyset(&action.sa_mask); 
     if (sigaction(SIGCHLD, &action, NULL) == -1)
+    {
         perror("sigaction(SIGCHLD)");
+    }
 
 	/* fill oui struct if ram is greater than 32 MB */
 	if (get_ram_size() > MIN_RAM_SIZE_LOAD_OUI_RAM)

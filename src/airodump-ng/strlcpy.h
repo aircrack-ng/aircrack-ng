@@ -1,7 +1,7 @@
 #ifndef __STRLCPY_H__
 #define __STRLCPY_H__
 
-#include <stdint.h>
+#include <stddef.h>
 #include <sys/cdefs.h>
 
 size_t

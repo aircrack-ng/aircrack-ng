@@ -44,6 +44,7 @@ SRC_AD			= %D%/airdecap-ng/airdecap-ng.c
 SRC_PF			= %D%/packetforge-ng/packetforge-ng.c
 SRC_AR			= %D%/aireplay-ng/aireplay-ng.c
 SRC_ADU			= %D%/airodump-ng/airodump-ng.c
+SRC_STRLCPY		= %D%/airodump-ng/strlcpy.c
 
 SRC_AT			= %D%/airtun-ng/airtun-ng.c
 SRC_IV			= %D%/ivstools/ivstools.c
@@ -127,7 +128,7 @@ aireplay_ng_SOURCES	= $(SRC_AR)
 aireplay_ng_CFLAGS	= $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
 aireplay_ng_LDADD		= $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBACCRYPTO_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_LIBS) $(CRYPTO_LIBS)
 
-airodump_ng_SOURCES		= $(SRC_ADU) $(SRC_DWRITE)
+airodump_ng_SOURCES		= $(SRC_ADU) $(SRC_DWRITE) $(SRC_STRLCPY)
 airodump_ng_CFLAGS		= $(COMMON_CFLAGS) $(PCRE_CFLAGS) $(LIBNL_CFLAGS)
 airodump_ng_CPPFLAGS	= $(AM_CPPFLAGS) -I$(abs_srcdir)/src/airodump-ng
 airodump_ng_LDADD			= $(COMMON_LDADD) $(PCRE_LIBS) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBACCRYPTO_LIBS) $(LIBAIRCRACK_CE_WEP_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_LIBS) $(CRYPTO_LIBS)
