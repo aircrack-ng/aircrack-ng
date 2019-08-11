@@ -172,9 +172,9 @@ static struct local_options
 	char * batt; /* Battery string       */
 	int channel[MAX_CARDS]; /* current channel #    */
 	int frequency[MAX_CARDS]; /* current frequency #    */
-	int ch_pipe[2]; /* current channel pipe */
-	int cd_pipe[2]; /* current card pipe    */
-	int gc_pipe[2]; /* gps coordinates pipe */
+	int channel_pipe[2]; /* current channel pipe */
+	int card_pipe[2]; /* current card pipe    */
+
 	float gps_loc[8]; /* gps coordinates      */
 	int save_gps; /* keep gps file flag   */
 	int gps_valid_interval; /* how many seconds until we consider the GPS data invalid if we dont get new data */
@@ -4923,46 +4923,91 @@ done:
     return return_value; 
 }
 
+static int
+wait_proc(pid_t in, pid_t * out)
+{
+    int stat = 0;
+    pid_t pid;
+
+    do
+    {
+        pid = waitpid(in, &stat, WNOHANG);
+    }
+    while (pid < 0 && errno == EINTR);
+
+    if (out != NULL)
+    {
+        *out = pid;
+    }
+
+    int status = -1;
+    if (WIFEXITED(stat))
+    {
+        status = WEXITSTATUS(stat);
+    }
+    else if (WIFSIGNALED(stat))
+    {
+        status = WTERMSIG(stat);
+    }
+
+    return status;
+}
+
+static void
+sigchld_handler(int signum)
+{
+    /* Reap zombie processes. */
+    pid_t pid;
+    int const status = wait_proc(-1, &pid);
+}
+
+static void sigusr1_handler(int signum)
+{
+    int card = 0;
+    ssize_t const read_result = read(lopt.card_pipe[0], &card, sizeof(int));
+
+    if (read_result < 0)
+    {
+        // error occurred
+        perror("read");
+        return;
+    }
+    else if (read_result == 0)
+    {
+        // EOF
+        perror("EOF encountered read(opt.cd_pipe[0])");
+        return;
+    }
+    else if (read_result != sizeof card)
+    {
+        perror("Incorrect number of bytes read from pipe");
+        return;
+    }
+
+    if (card < 0 || (size_t)card >= ArrayCount(lopt.frequency))
+    {
+        // invalid received data
+        fprintf(stderr,
+                "Invalid data received for read(opt.cd_pipe[0]), got %d\n",
+                card);
+        return;
+    }
+
+    if (read(lopt.channel_pipe[0], &value, sizeof value) == sizeof value)
+    {
+        if (lopt.freqoption)
+        {
+            lopt.frequency[card] = value;
+        }
+        else
+        {
+            lopt.channel[card] = value;
+        }
+    }
+}
+
 static void sighandler(int signum)
 {
-	int card = 0;
-
-	if (signum == SIGUSR1)
-	{
-		ssize_t unused = read(lopt.cd_pipe[0], &card, sizeof(int));
-		if (unused < 0)
-		{
-			// error occurred
-			perror("read");
-			return;
-		}
-		else if (unused == 0)
-		{
-			// EOF
-			perror("EOF encountered read(opt.cd_pipe[0])");
-			return;
-		}
-
-		if (card < 0 || (size_t) card >= ArrayCount(lopt.frequency))
-		{
-			// invalid received data
-			fprintf(stderr,
-					"Invalid data received for read(opt.cd_pipe[0]), got %d\n",
-					card);
-			return;
-		}
-
-		if (lopt.freqoption)
-			IGNORE_LTZ(
-				read(lopt.ch_pipe[0], &(lopt.frequency[card]), sizeof(int)));
-		else
-			IGNORE_LTZ(
-				read(lopt.ch_pipe[0], &(lopt.channel[card]), sizeof(int)));
-	}
-
-	if (signum == SIGUSR2)
-		IGNORE_LTZ(read(lopt.gc_pipe[0], &lopt.gps_loc, sizeof(lopt.gps_loc)));
-
 	if (signum == SIGINT || signum == SIGTERM)
 	{
 		lopt.do_exit = 1;
@@ -4993,8 +5038,6 @@ static void sighandler(int signum)
 		show_cursor();
 		_exit(1);
 	}
-
-	if (signum == SIGCHLD) wait(NULL);
 
 	if (signum == SIGWINCH)
 	{
@@ -5100,7 +5143,8 @@ channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 			again;
 	int dropped = 0;
 
-	while (0 == kill(parent, 0))
+    /* Continue running as long as the parent is running. */
+    while (0 == kill(parent, 0))
 	{
 		for (j = 0; j < if_num; j++)
 		{
@@ -5145,9 +5189,11 @@ channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 				{
 					ch = wi_get_channel(wi[card]);
 					lopt.channel[card] = ch;
-					IGNORE_LTZ(write(lopt.cd_pipe[1], &card, sizeof(int)));
-					IGNORE_LTZ(write(lopt.ch_pipe[1], &ch, sizeof(int)));
+
+                    IGNORE_LTZ(write(lopt.card_pipe[1], &card, sizeof(int)));
+                    IGNORE_LTZ(write(lopt.channel_pipe[1], &ch, sizeof(int)));
 					kill(parent, SIGUSR1);
+
 					usleep(1000);
 				}
 				continue;
@@ -5164,10 +5210,14 @@ channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 #endif
 			{
 				lopt.channel[card] = ch;
-				IGNORE_LTZ(write(lopt.cd_pipe[1], &card, sizeof(int)));
-				IGNORE_LTZ(write(lopt.ch_pipe[1], &ch, sizeof(int)));
-				if (lopt.active_scan_sim > 0) send_probe_request(wi[card]);
+
+                IGNORE_LTZ(write(lopt.card_pipe[1], &card, sizeof(int)));
+                IGNORE_LTZ(write(lopt.channel_pipe[1], &ch, sizeof(int)));
 				kill(parent, SIGUSR1);
+
+                if (lopt.active_scan_sim > 0)
+                    send_probe_request(wi[card]); 
+
 				usleep(1000);
 			}
 			else
@@ -5202,6 +5252,7 @@ frequency_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 			again;
 	int dropped = 0;
 
+    /* Continue running as long as the parent is running. */
 	while (0 == kill(parent, 0))
 	{
 		for (j = 0; j < if_num; j++)
@@ -5248,9 +5299,11 @@ frequency_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 				{
 					ch = wi_get_freq(wi[card]);
 					lopt.frequency[card] = ch;
-					IGNORE_LTZ(write(lopt.cd_pipe[1], &card, sizeof(int)));
-					IGNORE_LTZ(write(lopt.ch_pipe[1], &ch, sizeof(int)));
+
+                    IGNORE_LTZ(write(lopt.card_pipe[1], &card, sizeof(int)));
+                    IGNORE_LTZ(write(lopt.channel_pipe[1], &ch, sizeof(int)));
 					kill(parent, SIGUSR1);
+
 					usleep(1000);
 				}
 				continue;
@@ -5263,9 +5316,11 @@ frequency_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 			if (wi_set_freq(wi[card], ch) == 0)
 			{
 				lopt.frequency[card] = ch;
-				IGNORE_LTZ(write(lopt.cd_pipe[1], &card, sizeof(int)));
-				IGNORE_LTZ(write(lopt.ch_pipe[1], &ch, sizeof(int)));
+
+                IGNORE_LTZ(write(lopt.card_pipe[1], &card, sizeof(int)));
+                IGNORE_LTZ(write(lopt.channel_pipe[1], &ch, sizeof(int)));
 				kill(parent, SIGUSR1);
+
 				usleep(1000);
 			}
 			else
@@ -5706,10 +5761,10 @@ static int check_monitor(struct wif * wi[], int * fd_raw, int * fdh, int cards)
 
 static int check_channel(struct wif * wi[], int cards)
 {
-	int i, chan;
-	for (i = 0; i < cards; i++)
+	for (size_t i = 0; i < cards; i++)
 	{
-		chan = wi_get_channel(wi[i]);
+		int const chan = wi_get_channel(wi[i]);
+
 		if (opt.ignore_negative_one == 1 && chan == -1) return (0);
 		if (lopt.channel[i] != chan)
 		{
@@ -5726,15 +5781,15 @@ static int check_channel(struct wif * wi[], int cards)
 #endif
 		}
 	}
-	return (0);
+	return 0;
 }
 
 static int check_frequency(struct wif * wi[], int cards)
 {
-	int i, freq;
-	for (i = 0; i < cards; i++)
+	for (size_t i = 0; i < cards; i++)
 	{
-		freq = wi_get_freq(wi[i]);
+        int const freq = wi_get_freq(wi[i]);
+
 		if (freq < 0) continue;
 		if (lopt.frequency[i] != freq)
 		{
@@ -5747,7 +5802,7 @@ static int check_frequency(struct wif * wi[], int cards)
 			wi_set_freq(wi[i], lopt.frequency[i]);
 		}
 	}
-	return (0);
+	return 0;
 }
 
 static void detect_frequency_range(
@@ -5967,7 +6022,7 @@ int main(int argc, char * argv[])
 		   {"real-time", 0, 0, 'T'},
 		   {0, 0, 0, 0}};
 
-	pid_t main_pid = getpid();
+	pid_t const main_pid = getpid();
 
 	console_utf8_enable();
 	ac_crypto_init();
@@ -6738,11 +6793,14 @@ int main(int argc, char * argv[])
             detected_frequencies_st detected_frequencies; 
 
             detect_frequencies(wi[0], &detected_frequencies);
+
             lopt.frequency[0] = getfrequencies(&detected_frequencies, lopt.freqstring);
+
+            detected_frequencies_cleanup(&detected_frequencies); 
+
 			if (lopt.frequency[0] == -1)
 			{
 				printf("No valid frequency given.\n");
-                detected_frequencies_cleanup(&detected_frequencies);
 				return (EXIT_FAILURE);
 			}
 
@@ -6755,12 +6813,12 @@ int main(int argc, char * argv[])
 
 			if (lopt.frequency[0] == 0)
 			{
-				IGNORE_NZ(pipe(lopt.ch_pipe));
-				IGNORE_NZ(pipe(lopt.cd_pipe));
+                IGNORE_NZ(pipe(lopt.card_pipe));
+                IGNORE_NZ(pipe(lopt.channel_pipe)); 
 
 				struct sigaction action;
 				action.sa_flags = 0;
-				action.sa_handler = &sighandler;
+                action.sa_handler = &sigusr1_handler;
 				sigemptyset(&action.sa_mask);
 
 				if (sigaction(SIGUSR1, &action, NULL) == -1)
@@ -6768,6 +6826,8 @@ int main(int argc, char * argv[])
 
 				if (!fork())
 				{
+                    /* This is the child process. */
+
 					/* reopen cards.  This way parent & child don't share
 					* resources for
 					* accessing the card (e.g. file descriptors) which may cause
@@ -6782,7 +6842,6 @@ int main(int argc, char * argv[])
 						if (!wi[i])
 						{
 							printf("Can't reopen %s\n", ifnam);
-                            detected_frequencies_cleanup(&detected_frequencies);
                             exit(EXIT_FAILURE);
 						}
 					}
@@ -6794,8 +6853,6 @@ int main(int argc, char * argv[])
 					}
 
 					frequency_hopper(wi, lopt.num_cards, freq_count, main_pid);
-                    detected_frequencies_cleanup(&detected_frequencies);
-
 					exit(EXIT_FAILURE);
 				}
 			}
@@ -6808,8 +6865,6 @@ int main(int argc, char * argv[])
 				}
 				lopt.singlefreq = 1;
 			}
-
-            detected_frequencies_cleanup(&detected_frequencies);
 		}
 		else // use channels
 		{
@@ -6820,12 +6875,12 @@ int main(int argc, char * argv[])
 
 			if (lopt.channel[0] == 0)
 			{
-				IGNORE_NZ(pipe(lopt.ch_pipe));
-				IGNORE_NZ(pipe(lopt.cd_pipe));
+                IGNORE_NZ(pipe(lopt.card_pipe));
+                IGNORE_NZ(pipe(lopt.channel_pipe)); 
 
 				struct sigaction action;
 				action.sa_flags = 0;
-				action.sa_handler = &sighandler;
+                action.sa_handler = &sigusr1_handler;
 				sigemptyset(&action.sa_mask);
 
 				if (sigaction(SIGUSR1, &action, NULL) == -1)
@@ -6833,11 +6888,13 @@ int main(int argc, char * argv[])
 
 				if (!fork())
 				{
-					/* reopen cards.  This way parent & child don't share
-					* resources for
-					* accessing the card (e.g. file descriptors) which may cause
-					* problems.  -sorbo
-					*/
+                    /* This is the child process. */
+
+                    /* reopen cards.  This way parent & child don't share
+                    * resources for
+                    * accessing the card (e.g. file descriptors) which may cause
+                    * problems.  -sorbo
+                    */
 					for (i = 0; i < lopt.num_cards; i++)
 					{
 						strlcpy(ifnam, wi_get_ifname(wi[i]), sizeof(ifnam));
@@ -6941,6 +6998,12 @@ int main(int argc, char * argv[])
 	if (sigaction(SIGSEGV, &action, NULL) == -1) perror("sigaction(SIGSEGV)");
 	if (sigaction(SIGTERM, &action, NULL) == -1) perror("sigaction(SIGTERM)");
 	if (sigaction(SIGWINCH, &action, NULL) == -1) perror("sigaction(SIGWINCH)");
+
+    action.sa_flags = 0;
+    action.sa_handler = &sigchld_handler;
+    sigemptyset(&action.sa_mask); 
+    if (sigaction(SIGCHLD, &action, NULL) == -1)
+        perror("sigaction(SIGCHLD)");
 
 	/* fill oui struct if ram is greater than 32 MB */
 	if (get_ram_size() > MIN_RAM_SIZE_LOAD_OUI_RAM)
