@@ -53,4 +53,12 @@ int dump_write_kismet_csv(struct AP_info * ap_1st,
 						  struct ST_info * st_1st,
 						  unsigned int f_encrypt);
 
+int dump_write_wifi_scanner(struct AP_info * ap_1st,
+                            struct ST_info * st_1st,
+                            unsigned int const f_encrypt,
+                            int const filter_seconds,
+                            char const * const sys_name,
+                            char const * const loc_name);
+
+
 #endif /* _AIRODUMP_NG_DUMP_WRITE_H_ */

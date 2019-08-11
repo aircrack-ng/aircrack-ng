@@ -144,7 +144,7 @@ struct communication_options
 	FILE * f_txt; /* output csv file      */
 	FILE * f_kis; /* output kismet csv file      */
 	FILE * f_kis_xml; /* output kismet netxml file */
-	FILE * f_gps; /* output gps file      */
+    FILE * f_gps; /* output gps file      */
 	FILE * f_cap; /* output cap file      */
 	FILE * f_ivs; /* output ivs file      */
 	FILE * f_xor; /* output prga file     */
@@ -158,6 +158,7 @@ struct communication_options
 	int output_format_kismet_csv;
 	int output_format_kismet_netxml;
 	int output_format_log_csv;
+    int output_format_wifi_scanner;
 
 	int usegpsd; /* do we use GPSd?      */
 	int record_data; /* do we record data?   */

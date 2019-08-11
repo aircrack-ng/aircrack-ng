@@ -106,8 +106,10 @@ struct AP_info
 
 	time_t tinit, tlast; /* first and last time seen */
 
-	int channel; /* AP radio channel         */
-	enum channel_width_enum channel_width; /* Channel width            */
+    time_t time_printed;    /* last time printed */
+    int channel; /* AP radio channel         */
+    int old_channel; /* previously seen channel */
+    enum channel_width_enum channel_width; /* Channel width            */
 	char standard[3]; /* 802.11 standard: n or ac */
 	struct n_channel_info n_channel; /* 802.11n channel info     */
 	struct ac_channel_info ac_channel; /* 802.11ac channel info    */
@@ -194,7 +196,8 @@ struct ST_info
 	char * manuf; /* the client's manufacturer */
 
 	time_t tinit, tlast; /* first and last time seen  */
-	unsigned long nb_pkt; /* total number of packets   */
+    time_t time_printed; /* last time printed */
+    unsigned long nb_pkt; /* total number of packets   */
 	uint8_t essid[ESSID_LENGTH + 1]; /* last associated essid     */
 	int essid_length; /* essid length of last asso */
 	int probe_index; /* probed ESSIDs ring index  */
@@ -214,7 +217,8 @@ struct ST_info
 	int qos_to_ds; /* does it use 802.11e to ds */
 	int qos_fr_ds; /* does it receive 802.11e   */
 	int channel; /* Channel station is seen   */
-	float gps_loc_min[5]; /* min gps coordinates      */
+    int old_channel; /* previously seen channel */
+    float gps_loc_min[5]; /* min gps coordinates      */
 	float gps_loc_max[5]; /* max gps coordinates      */
 	float gps_loc_best[5]; /* best gps coordinates     */
 };

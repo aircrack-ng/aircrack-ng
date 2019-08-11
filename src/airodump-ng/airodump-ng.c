@@ -115,22 +115,32 @@ static const char * OUI_PATHS[]
 	   NULL};
 
 static int read_pkts = 0;
+enum
+{
+    channel_list_sentinel = 0
+};
 
-static const int abg_chans[]
-	= {1,   7,   13,  2,   8,   3,   14,  9,   4,   10,  5,   11,  6,
-	   12,  36,  38,  40,  42,  44,  46,  48,  50,  52,  54,  56,  58,
-	   60,  62,  64,  100, 102, 104, 106, 108, 110, 112, 114, 116, 118,
-	   120, 122, 124, 126, 128, 132, 134, 136, 138, 140, 142, 144, 149,
-	   151, 153, 155, 157, 159, 161, 165, 169, 173, 0};
+static int abg_chans[] = 
+{
+    1,   7,   13,  2,   8,   3,   14,  9,   4,   10,  5,   11,  6,
+	12,  36,  38,  40,  42,  44,  46,  48,  50,  52,  54,  56,  58,
+	60,  62,  64,  100, 102, 104, 106, 108, 110, 112, 114, 116, 118,
+	120, 122, 124, 126, 128, 132, 134, 136, 138, 140, 142, 144, 149,
+    151, 153, 155, 157, 159, 161, 165, 169, 173, channel_list_sentinel 
+};
 
-static const int bg_chans[]
-	= {1, 7, 13, 2, 8, 3, 14, 9, 4, 10, 5, 11, 6, 12, 0};
+static int bg_chans[] = 
+{ 
+    1, 7, 13, 2, 8, 3, 14, 9, 4, 10, 5, 11, 6, 12, channel_list_sentinel 
+};
 
-static const int a_chans[]
-	= {36,  38,  40,  42,  44,  46,  48,  50,  52,  54,  56,  58,
-	   60,  62,  64,  100, 102, 104, 106, 108, 110, 112, 114, 116,
-	   118, 120, 122, 124, 126, 128, 132, 134, 136, 138, 140, 142,
-	   144, 149, 151, 153, 155, 157, 159, 161, 165, 169, 173, 0};
+static int a_chans[] = 
+{
+    36,  38,  40,  42,  44,  46,  48,  50,  52,  54,  56,  58,
+	60,  62,  64,  100, 102, 104, 106, 108, 110, 112, 114, 116,
+	118, 120, 122, 124, 126, 128, 132, 134, 136, 138, 140, 142,
+    144, 149, 151, 153, 155, 157, 159, 161, 165, 169, 173, channel_list_sentinel 
+};
 
 struct detected_frequencies_st
 {
@@ -192,6 +202,7 @@ static struct local_options
 	int gps_valid_interval; /* how many seconds until we consider the GPS data invalid if we dont get new data */
 
 	int * channels;
+
 	int singlechan; /* channel hopping set 1*/
 	int singlefreq; /* frequency hopping: 1 */
 	int chswitch; /* switching method     */
@@ -299,6 +310,11 @@ static struct local_options
 	u_int maxsize_wps_seen;
 	int show_wps;
 	struct tm gps_time; /* the timestamp from the gps data */
+    char sys_name[256];  /* system name value for wifi scanner custom format */
+    char loc_name[256];  /* location name value for wifi scanner custom format */
+    time_t filter_seconds;
+    int file_reset_minutes;
+    time_t last_file_reset;
 #ifdef CONFIG_LIBNL
 	unsigned int htval;
 #endif
@@ -869,8 +885,10 @@ static const char usage[] =
 	"      --wps                 : Display WPS information (if any)\n"
 	"      --output-format\n"
 	"                  <formats> : Output format. Possible values:\n"
-	"                              pcap, ivs, csv, gps, kismet, netxml, "
-	"logcsv\n"
+    "                              pcap, ivs, csv, gps, kismet, netxml, wifi_scanner\n"
+    "      --sys-name            : Unique System Name\n"
+    "      --loc-name            : Unique Location Name\n"
+    "logcsv\n"
 	"      --ignore-negative-one : Removes the message that says\n"
 	"                              fixed channel <interface>: -1\n"
 	"      --write-interval\n"
@@ -1321,11 +1339,11 @@ static int dump_add_packet(unsigned char * h80211,
 	struct timeval tv;
 	struct ivs2_pkthdr ivs2;
 	unsigned char *p, *org_p, c;
-	unsigned char bssid[6];
-	unsigned char stmac[6];
-	unsigned char namac[6];
-	unsigned char clear[2048];
-	int weight[16];
+    unsigned char bssid[6] = { 0 };
+    unsigned char stmac[6] = { 0 };
+    unsigned char namac[6] = { 0 };
+    unsigned char clear[2048] = { 0 };
+    int weight[16] = { 0 };
 	int num_xor = 0;
 
 	struct AP_info * ap_cur = NULL;
@@ -1430,6 +1448,7 @@ static int dump_add_packet(unsigned char * h80211,
 
 		ap_cur->tinit = time(NULL);
 		ap_cur->tlast = time(NULL);
+        ap_cur->time_printed = 0; 
 
 		ap_cur->avg_power = -1;
 		ap_cur->best_power = -1;
@@ -1438,7 +1457,8 @@ static int dump_add_packet(unsigned char * h80211,
 		for (i = 0; i < NB_PWR; i++) ap_cur->power_lvl[i] = -1;
 
 		ap_cur->channel = -1;
-		ap_cur->max_speed = -1;
+        ap_cur->old_channel = -1;
+        ap_cur->max_speed = -1;
 		ap_cur->security = 0;
 
 		ap_cur->ivbuf = NULL;
@@ -1630,7 +1650,7 @@ static int dump_add_packet(unsigned char * h80211,
 
 	while (st_cur != NULL)
 	{
-        if (!memcmp(st_cur->stmac, stmac, 6))
+        if (memcmp(st_cur->stmac, stmac, 6) == 0)
         {
             break;
         }
@@ -1673,6 +1693,7 @@ static int dump_add_packet(unsigned char * h80211,
 
 		st_cur->tinit = time(NULL);
 		st_cur->tlast = time(NULL);
+        st_cur->time_printed = 0;
 
 		st_cur->power = -1;
 		st_cur->best_power = -1;
@@ -1685,6 +1706,7 @@ static int dump_add_packet(unsigned char * h80211,
 		st_cur->qos_fr_ds = 0;
 		st_cur->qos_to_ds = 0;
 		st_cur->channel = 0;
+        st_cur->old_channel = 0; 
 
 		gettimeofday(&(st_cur->ftimer), NULL);
 
@@ -3165,40 +3187,34 @@ write_packet:
 	return (0);
 }
 
-static void dump_sort(void)
+static void sort_aps(struct local_options * const options)
 {
-	time_t tt = time(NULL);
+    time_t tt = time(NULL);
+    struct AP_info * new_ap_1st = NULL;
+    struct AP_info * new_ap_end = NULL;
 
-	/* thanks to Arnaud Cornet :-) */
+    /* Sort the aps by WHATEVER first, */
+    /* Can't 'sort' be used to sort these entries? */
 
-	struct AP_info * new_ap_1st = NULL;
-	struct AP_info * new_ap_end = NULL;
+    while (options->ap_1st != NULL)
+    {
+        struct AP_info * ap_cur = options->ap_1st;
+        struct AP_info * ap_min = NULL;
 
-	struct ST_info * new_st_1st = NULL;
-	struct ST_info * new_st_end = NULL;
+        while (ap_cur != NULL)
+        {
+            if (tt - ap_cur->tlast > 20)
+                ap_min = ap_cur;
 
-	struct ST_info *st_cur, *st_min;
-	struct AP_info *ap_cur, *ap_min;
+            ap_cur = ap_cur->next;
+        }
 
-	/* sort the aps by WHATEVER first */
+        if (ap_min == NULL)
+        {
+            ap_min = ap_cur = options->ap_1st;
 
-	while (lopt.ap_1st)
-	{
-		ap_min = NULL;
-		ap_cur = lopt.ap_1st;
-
-		while (ap_cur != NULL)
-		{
-			if (tt - ap_cur->tlast > 20) ap_min = ap_cur;
-
-			ap_cur = ap_cur->next;
-		}
-
-		if (ap_min == NULL)
-		{
-			ap_min = ap_cur = lopt.ap_1st;
-
-			/*#define SORT_BY_BSSID	1
+/* 
+#define SORT_BY_BSSID	1
 #define SORT_BY_POWER	2
 #define SORT_BY_BEACON	3
 #define SORT_BY_DATA	4
@@ -3208,163 +3224,186 @@ static void dump_sort(void)
 #define SORT_BY_ENC	9
 #define SORT_BY_CIPHER	10
 #define SORT_BY_AUTH	11
-#define SORT_BY_ESSID	12*/
+#define SORT_BY_ESSID	12
+*/
 
-			while (ap_cur != NULL)
-			{
-				switch (lopt.sort_by)
-				{
-					case SORT_BY_BSSID:
-						if (memcmp(ap_cur->bssid, ap_min->bssid, 6)
-								* lopt.sort_inv
-							< 0)
-							ap_min = ap_cur;
-						break;
-					case SORT_BY_POWER:
-						if ((ap_cur->avg_power - ap_min->avg_power)
-								* lopt.sort_inv
-							< 0)
-							ap_min = ap_cur;
-						break;
-					case SORT_BY_BEACON:
-						if ((ap_cur->nb_bcn < ap_min->nb_bcn) && lopt.sort_inv)
-							ap_min = ap_cur;
-						break;
-					case SORT_BY_DATA:
-						if ((ap_cur->nb_data < ap_min->nb_data)
-							&& lopt.sort_inv)
-							ap_min = ap_cur;
-						break;
-					case SORT_BY_PRATE:
-						if ((ap_cur->nb_dataps - ap_min->nb_dataps)
-								* lopt.sort_inv
-							< 0)
-							ap_min = ap_cur;
-						break;
-					case SORT_BY_CHAN:
-						if ((ap_cur->channel - ap_min->channel) * lopt.sort_inv
-							< 0)
-							ap_min = ap_cur;
-						break;
-					case SORT_BY_MBIT:
-						if ((ap_cur->max_speed - ap_min->max_speed)
-								* lopt.sort_inv
-							< 0)
-							ap_min = ap_cur;
-						break;
-					case SORT_BY_ENC:
-						if (((int) (ap_cur->security & STD_FIELD)
-							 - (int) (ap_min->security & STD_FIELD))
-								* lopt.sort_inv
-							< 0)
-							ap_min = ap_cur;
-						break;
-					case SORT_BY_CIPHER:
-						if (((int) (ap_cur->security & ENC_FIELD)
-							 - (int) (ap_min->security & ENC_FIELD))
-								* lopt.sort_inv
-							< 0)
-							ap_min = ap_cur;
-						break;
-					case SORT_BY_AUTH:
-						if (((int) (ap_cur->security & AUTH_FIELD)
-							 - (int) (ap_min->security & AUTH_FIELD))
-								* lopt.sort_inv
-							< 0)
-							ap_min = ap_cur;
-						break;
-					case SORT_BY_ESSID:
-						if ((strncasecmp((char *) ap_cur->essid,
-										 (char *) ap_min->essid,
-										 ESSID_LENGTH))
-								* lopt.sort_inv
-							< 0)
-							ap_min = ap_cur;
-						break;
-					default: // sort by power
-						if (ap_cur->avg_power < ap_min->avg_power)
-							ap_min = ap_cur;
-						break;
-				}
-				ap_cur = ap_cur->next;
-			}
-		}
+            while (ap_cur != NULL)
+            {
+                switch (options->sort_by)
+                {
+                    case SORT_BY_BSSID:
+                        if (memcmp(ap_cur->bssid, ap_min->bssid, 6)
+                            * options->sort_inv
+                            < 0)
+                            ap_min = ap_cur;
+                        break;
+                    case SORT_BY_POWER:
+                        if ((ap_cur->avg_power - ap_min->avg_power)
+                            * options->sort_inv
+                            < 0)
+                            ap_min = ap_cur;
+                        break;
+                    case SORT_BY_BEACON:
+                        if ((ap_cur->nb_bcn < ap_min->nb_bcn) && options->sort_inv)
+                            ap_min = ap_cur;
+                        break;
+                    case SORT_BY_DATA:
+                        if ((ap_cur->nb_data < ap_min->nb_data)
+                            && options->sort_inv)
+                            ap_min = ap_cur;
+                        break;
+                    case SORT_BY_PRATE:
+                        if ((ap_cur->nb_dataps - ap_min->nb_dataps)
+                            * options->sort_inv
+                            < 0)
+                            ap_min = ap_cur;
+                        break;
+                    case SORT_BY_CHAN:
+                        if ((ap_cur->channel - ap_min->channel) * options->sort_inv
+                            < 0)
+                            ap_min = ap_cur;
+                        break;
+                    case SORT_BY_MBIT:
+                        if ((ap_cur->max_speed - ap_min->max_speed)
+                            * options->sort_inv
+                            < 0)
+                            ap_min = ap_cur;
+                        break;
+                    case SORT_BY_ENC:
+                        if (((int)(ap_cur->security & STD_FIELD)
+                             - (int)(ap_min->security & STD_FIELD))
+                            * options->sort_inv
+                            < 0)
+                            ap_min = ap_cur;
+                        break;
+                    case SORT_BY_CIPHER:
+                        if (((int)(ap_cur->security & ENC_FIELD)
+                             - (int)(ap_min->security & ENC_FIELD))
+                            * options->sort_inv
+                            < 0)
+                            ap_min = ap_cur;
+                        break;
+                    case SORT_BY_AUTH:
+                        if (((int)(ap_cur->security & AUTH_FIELD)
+                             - (int)(ap_min->security & AUTH_FIELD))
+                            * options->sort_inv
+                            < 0)
+                            ap_min = ap_cur;
+                        break;
+                    case SORT_BY_ESSID:
+                        if ((strncasecmp((char *)ap_cur->essid,
+                                         (char *)ap_min->essid,
+                                         ESSID_LENGTH))
+                            * options->sort_inv
+                            < 0)
+                            ap_min = ap_cur;
+                        break;
+                    default: // sort by power
+                        if (ap_cur->avg_power < ap_min->avg_power)
+                            ap_min = ap_cur;
+                        break;
+                }
+                ap_cur = ap_cur->next;
+            }
+        }
 
-		if (ap_min == lopt.ap_1st) lopt.ap_1st = ap_min->next;
+        if (ap_min == options->ap_1st)
+            options->ap_1st = ap_min->next;
 
-		if (ap_min == lopt.ap_end) lopt.ap_end = ap_min->prev;
+        if (ap_min == options->ap_end)
+            options->ap_end = ap_min->prev;
 
-		if (ap_min->next) ap_min->next->prev = ap_min->prev;
+        if (ap_min->next)
+            ap_min->next->prev = ap_min->prev;
 
-		if (ap_min->prev) ap_min->prev->next = ap_min->next;
+        if (ap_min->prev)
+            ap_min->prev->next = ap_min->next;
 
-		if (new_ap_end)
-		{
-			new_ap_end->next = ap_min;
-			ap_min->prev = new_ap_end;
-			new_ap_end = ap_min;
-			new_ap_end->next = NULL;
-		}
-		else
-		{
-			new_ap_1st = new_ap_end = ap_min;
-			ap_min->next = ap_min->prev = NULL;
-		}
-	}
+        if (new_ap_end != NULL)
+        {
+            new_ap_end->next = ap_min;
+            ap_min->prev = new_ap_end;
+            new_ap_end = ap_min;
+            new_ap_end->next = NULL;
+        }
+        else
+        {
+            new_ap_1st = new_ap_end = ap_min;
+            ap_min->next = ap_min->prev = NULL;
+        }
+    }
 
-	lopt.ap_1st = new_ap_1st;
-	lopt.ap_end = new_ap_end;
+    options->ap_1st = new_ap_1st;
+    options->ap_end = new_ap_end;
 
-	/* now sort the stations */
+}
 
-	while (lopt.st_1st)
-	{
-		st_min = NULL;
-		st_cur = lopt.st_1st;
+static void sort_stas(struct local_options * const options)
+{
+    time_t tt = time(NULL);
+    struct ST_info * new_st_1st = NULL;
+    struct ST_info * new_st_end = NULL;
 
-		while (st_cur != NULL)
-		{
-			if (tt - st_cur->tlast > 60) st_min = st_cur;
+    while (options->st_1st != NULL)
+    {
+        struct ST_info * st_cur = options->st_1st;
+        struct ST_info * st_min = NULL;
 
-			st_cur = st_cur->next;
-		}
+        while (st_cur != NULL)
+        {
+            if (tt - st_cur->tlast > 60)
+                st_min = st_cur;
 
-		if (st_min == NULL)
-		{
-			st_min = st_cur = lopt.st_1st;
+            st_cur = st_cur->next;
+        }
 
-			while (st_cur != NULL)
-			{
-				if (st_cur->power < st_min->power) st_min = st_cur;
+        if (st_min == NULL)
+        {
+            st_min = st_cur = options->st_1st;
 
-				st_cur = st_cur->next;
-			}
-		}
+            while (st_cur != NULL)
+            {
+                if (st_cur->power < st_min->power)
+                    st_min = st_cur;
 
-		if (st_min == lopt.st_1st) lopt.st_1st = st_min->next;
+                st_cur = st_cur->next;
+            }
+        }
 
-		if (st_min == lopt.st_end) lopt.st_end = st_min->prev;
+        if (st_min == options->st_1st)
+            options->st_1st = st_min->next;
 
-		if (st_min->next) st_min->next->prev = st_min->prev;
+        if (st_min == options->st_end)
+            options->st_end = st_min->prev;
 
-		if (st_min->prev) st_min->prev->next = st_min->next;
+        if (st_min->next)
+            st_min->next->prev = st_min->prev;
 
-		if (new_st_end)
-		{
-			new_st_end->next = st_min;
-			st_min->prev = new_st_end;
-			new_st_end = st_min;
-			new_st_end->next = NULL;
-		}
-		else
-		{
-			new_st_1st = new_st_end = st_min;
-			st_min->next = st_min->prev = NULL;
-		}
-	}
+        if (st_min->prev)
+            st_min->prev->next = st_min->next;
 
-	lopt.st_1st = new_st_1st;
-	lopt.st_end = new_st_end;
+        if (new_st_end)
+        {
+            new_st_end->next = st_min;
+            st_min->prev = new_st_end;
+            new_st_end = st_min;
+            new_st_end->next = NULL;
+        }
+        else
+        {
+            new_st_1st = new_st_end = st_min;
+            st_min->next = st_min->prev = NULL;
+        }
+    }
+
+    options->st_1st = new_st_1st;
+    options->st_end = new_st_end;
+}
+
+static void dump_sort(void)
+{
+    sort_aps(&lopt);
+    sort_stas(&lopt);
 }
 
 static int getBatteryState(void) { return get_battery_state(); }
@@ -3533,6 +3572,12 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	if (!lopt.singlechan) columns_ap -= 4; // no RXQ in scan mode
 	if (lopt.show_uptime) columns_ap += 15; // show uptime needs more space
 
+    if (opt.output_format_wifi_scanner)
+    {
+        return;
+    }
+
+
 	nlines = 2;
 
 	if (nlines >= ws_row) return;
@@ -3576,7 +3621,10 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 	memset(strbuf, '\0', sizeof(strbuf));
 
-	moveto(1, 2);
+    if (!opt.output_format_wifi_scanner)
+    {
+        moveto(1, 2);
+    }
 	textcolor_normal();
 	textcolor_fg(TEXT_WHITE);
 
@@ -4733,7 +4781,7 @@ static void * gps_tracker_thread(void * arg)
 			}
 
 			// Record ALL GPS data from GPSD
-			if (opt.record_data)
+            if (opt.record_data && !opt.output_format_wifi_scanner)
 			{
 				fputs(line, opt.f_gps);
 			}
@@ -5059,7 +5107,7 @@ static void sighandler(int signum)
 		_exit(1);
 	}
 
-	if (signum == SIGWINCH)
+    if (signum == SIGWINCH && !opt.output_format_wifi_scanner)
 	{
 		erase_display(0);
 		fflush(stdout);
@@ -5132,7 +5180,7 @@ static int getchancount(int valid)
 {
 	int i = 0, chan_count = 0;
 
-	while (lopt.channels[i])
+	while (lopt.channels[i] != 0)
 	{
 		i++;
 		if (lopt.channels[i] != -1) chan_count++;
@@ -6128,7 +6176,10 @@ done:
 
 int main(int argc, char * argv[])
 {
-	long time_slept, cycle_time, cycle_time2;
+#define ONE_HOUR (60 * 60)
+#define ONE_MIN (60)
+
+    long time_slept, cycle_time, cycle_time2;
 	char * output_format_string;
 	int caplen = 0, i, j, fdh, freq_count;
 	int fd_raw[MAX_CARDS], arptype[MAX_CARDS];
@@ -6137,10 +6188,10 @@ int main(int argc, char * argv[])
 	int num_opts = 0;
 	int option = 0;
 	int option_index = 0;
-	char ifnam[64];
 	int wi_read_failed = 0;
 	int n = 0;
-	int output_format_first_time = 1;
+    int reset_val = 0;
+    int output_format_first_time = 1;
 #ifdef HAVE_PCRE
 	const char * pcreerror;
 	int pcreerroffset;
@@ -6198,7 +6249,11 @@ int main(int argc, char * argv[])
 		   {"showack", 0, 0, 'A'},
 		   {"detect-anomaly", 0, 0, 'E'},
 		   {"output-format", 1, 0, 'o'},
-		   {"ignore-negative-one", 0, &opt.ignore_negative_one, 1},
+           {"sys-name", 1, 0, 'X'},
+           {"loc-name", 1, 0, 'y'},
+           {"filter-seconds", 1, 0, 'F'},
+           {"file-reset-minutes", 1, 0, 'P'},
+           {"ignore-negative-one", 0, &opt.ignore_negative_one, 1 },
 		   {"manufacturer", 0, 0, 'M'},
 		   {"uptime", 0, 0, 'U'},
 		   {"write-interval", 1, 0, 'I'},
@@ -6232,7 +6287,7 @@ int main(int argc, char * argv[])
 	lopt.batt = NULL;
 	lopt.chswitch = 0;
 	opt.usegpsd = 0;
-	lopt.channels = (int *) bg_chans;
+	lopt.channels = bg_chans;
 	lopt.one_beacon = 1;
 	lopt.singlechan = 0;
 	lopt.singlefreq = 0;
@@ -6243,9 +6298,9 @@ int main(int argc, char * argv[])
 	opt.f_txt = NULL;
 	opt.f_kis = NULL;
 	opt.f_kis_xml = NULL;
-	opt.f_gps = NULL;
+    opt.f_gps = NULL;
 	opt.f_logcsv = NULL;
-	lopt.keyout = NULL;
+    lopt.keyout = NULL;
 	opt.f_xor = NULL;
 	opt.sk_len = 0;
 	opt.sk_len2 = 0;
@@ -6285,13 +6340,19 @@ int main(int argc, char * argv[])
 	opt.output_format_kismet_csv = 1;
 	opt.output_format_kismet_netxml = 1;
 	opt.output_format_log_csv = 1;
-	lopt.gps_valid_interval
+    opt.output_format_wifi_scanner = 1;
+    lopt.gps_valid_interval
 		= 5; // If we dont get a new GPS update in 5 seconds - invalidate it
 	lopt.file_write_interval = 5; // Write file every 5 seconds by default
 	lopt.maxsize_wps_seen = 6;
 	lopt.show_wps = 0;
 	lopt.background_mode = -1;
-	lopt.do_exit = 0;
+    lopt.sys_name[0] = '\0';
+    lopt.loc_name[0] = '\0';
+    lopt.filter_seconds = ONE_HOUR;
+    lopt.file_reset_minutes = ONE_MIN;
+    lopt.last_file_reset = 0;
+    lopt.do_exit = 0;
 	lopt.min_pkts = 2;
 	lopt.relative_time = 0;
 #ifdef CONFIG_LIBNL
@@ -6394,8 +6455,8 @@ int main(int argc, char * argv[])
 		option
 			= getopt_long(argc,
 						  argv,
-						  "b:c:egiw:s:t:u:m:d:N:R:aHDB:Ahf:r:EC:o:x:MUI:WK:n:T",
-						  long_options,
+                          "b:c:egiw:s:t:u:m:d:N:R:aHDB:Ahf:r:EC:o:x:MUI:WK:n:T:F:P:",
+                          long_options,
 						  &option_index);
 
 		if (option < 0) break;
@@ -6520,9 +6581,11 @@ int main(int argc, char * argv[])
 				if (lopt.channel[0] == 0)
 				{
 					lopt.channels = lopt.own_channels;
-					break;
 				}
-				lopt.channels = (int *) bg_chans;
+                else
+                {
+                    lopt.channels = bg_chans;
+                }
 				break;
 
 			case 'C':
@@ -6572,15 +6635,18 @@ int main(int argc, char * argv[])
 					}
 				}
 
-				if (freq[1] + freq[0] == 2)
-					lopt.channels = (int *) abg_chans;
-				else
-				{
-					if (freq[1] == 1)
-						lopt.channels = (int *) a_chans;
-					else
-						lopt.channels = (int *) bg_chans;
-				}
+                if (freq[1] + freq[0] == 2)
+                {
+					lopt.channels = abg_chans;
+                }
+                else if (freq[1] == 1)
+                {
+                    lopt.channels = a_chans;
+                }
+                else
+                {
+                    lopt.channels = bg_chans;
+                }
 
 				break;
 
@@ -6760,7 +6826,24 @@ int main(int argc, char * argv[])
 				lopt.min_pkts = strtoul(optarg, NULL, 10);
 				break;
 
-			case 'o':
+            case 'X':
+                strlcpy(lopt.sys_name, optarg, sizeof lopt.sys_name);
+                break;
+                    
+            case 'y':
+                strncpy(lopt.loc_name, optarg, sizeof lopt.loc_name);
+                break;
+                    
+            case 'F':
+                lopt.filter_seconds = atoi(optarg);
+                break;
+                   
+            case 'P':
+                reset_val = atoi(optarg);
+                lopt.file_reset_minutes = reset_val * 60;
+                break;
+                    
+            case 'o':
 
 				// Reset output format if it's the first time the option is
 				// specified
@@ -6773,13 +6856,14 @@ int main(int argc, char * argv[])
 					opt.output_format_kismet_csv = 0;
 					opt.output_format_kismet_netxml = 0;
 					opt.output_format_log_csv = 0;
+                    opt.output_format_wifi_scanner = 0;
 				}
 
 				// Parse the value
 				output_format_string = strtok(optarg, ",");
 				while (output_format_string != NULL)
 				{
-					if (strlen(output_format_string) != 0)
+					if (strlen(output_format_string) > 0)
 					{
 						if (strncasecmp(output_format_string, "csv", 3) == 0
 							|| strncasecmp(output_format_string, "txt", 3) == 0)
@@ -6853,14 +6937,19 @@ int main(int argc, char * argv[])
 						{
 							opt.output_format_log_csv = 1;
 						}
-						else if (strncasecmp(output_format_string, "default", 7)
+                        else if (strncasecmp(output_format_string, "wifi_scanner", 12) == 0)
+                        {
+                            opt.output_format_wifi_scanner = 1;
+                        }
+                        else if (strncasecmp(output_format_string, "default", 7)
 								 == 0)
 						{
 							opt.output_format_pcap = 1;
 							opt.output_format_csv = 1;
 							opt.output_format_kismet_csv = 1;
 							opt.output_format_kismet_netxml = 1;
-						}
+                            opt.output_format_wifi_scanner = 1;
+                        }
 						else if (strncasecmp(output_format_string, "none", 4)
 								 == 0)
 						{
@@ -6869,6 +6958,7 @@ int main(int argc, char * argv[])
 							opt.output_format_kismet_csv = 0;
 							opt.output_format_kismet_netxml = 0;
 							opt.output_format_log_csv = 0;
+                            opt.output_format_wifi_scanner = 0;
 							opt.usegpsd = 0;
 							ivs_only = 0;
 						}
@@ -7134,8 +7224,11 @@ int main(int argc, char * argv[])
 		waitpid(-1, NULL, WNOHANG);
 	}
 
-	hide_cursor();
-	erase_display(2);
+    if (!opt.output_format_wifi_scanner)
+    {
+        hide_cursor();
+        erase_display(2);
+    }
 
 	start_time = time(NULL);
 	tt1 = time(NULL);
@@ -7162,7 +7255,7 @@ int main(int argc, char * argv[])
 	if (lopt.background_mode == -1) lopt.background_mode = is_background();
 
 	if (!lopt.background_mode
-		&& pthread_create(&lopt.input_tid, NULL, (void *) input_thread, NULL)
+		&& pthread_create(&lopt.input_tid, NULL, (void *)input_thread, NULL)
 			   != 0)
 	{
 		perror("pthread_create failed");
@@ -7187,6 +7280,9 @@ int main(int argc, char * argv[])
 				dump_write_csv(lopt.ap_1st, lopt.st_1st, lopt.f_encrypt);
 			if (opt.output_format_kismet_csv)
 				dump_write_kismet_csv(lopt.ap_1st, lopt.st_1st, lopt.f_encrypt);
+            if (opt.output_format_wifi_scanner)
+                dump_write_wifi_scanner(lopt.ap_1st, lopt.st_1st, lopt.f_encrypt, lopt.filter_seconds, lopt.sys_name, lopt.loc_name);
+
 			if (opt.output_format_kismet_netxml)
 				dump_write_kismet_netxml(lopt.ap_1st,
 										 lopt.st_1st,
@@ -7514,7 +7610,7 @@ int main(int argc, char * argv[])
 
 			/* update the window size */
 
-			if (ioctl(0, TIOCGWINSZ, &(lopt.ws)) < 0)
+			if (ioctl(0, TIOCGWINSZ, &lopt.ws) < 0)
 			{
 				lopt.ws.ws_row = 25;
 				lopt.ws.ws_col = 80;
@@ -7555,19 +7651,11 @@ int main(int argc, char * argv[])
 								 "][ interface %s down ",
 								 wi_get_ifname(wi[i]));
 
-						// reopen in monitor mode
-
-						strlcpy(ifnam, wi_get_ifname(wi[i]), sizeof(ifnam));
-
-						wi_close(wi[i]);
-						wi[i] = wi_open(ifnam);
-						if (!wi[i])
+                        wi[i] = reopen_card(wi[i]);
+						if (wi[i] == NULL)
 						{
-							printf("Can't reopen %s\n", ifnam);
-
 							/* Restore terminal */
 							show_cursor();
-
 							exit(EXIT_FAILURE);
 						}
 
@@ -7621,7 +7709,9 @@ int main(int argc, char * argv[])
 	{
 		if (opt.output_format_csv)
 			dump_write_csv(lopt.ap_1st, lopt.st_1st, lopt.f_encrypt);
-		if (opt.output_format_kismet_csv)
+        if (opt.output_format_wifi_scanner)
+            dump_write_wifi_scanner(lopt.ap_1st, lopt.st_1st, lopt.f_encrypt, lopt.filter_seconds, lopt.sys_name, lopt.loc_name);
+        if (opt.output_format_kismet_csv)
 			dump_write_kismet_csv(lopt.ap_1st, lopt.st_1st, lopt.f_encrypt);
 		if (opt.output_format_kismet_netxml)
 			dump_write_kismet_netxml(lopt.ap_1st,
@@ -7629,19 +7719,19 @@ int main(int argc, char * argv[])
 									 lopt.f_encrypt,
 									 lopt.airodump_start_time);
 
-		if (opt.output_format_csv && opt.f_txt != NULL) fclose(opt.f_txt);
-		if (opt.output_format_kismet_csv && opt.f_kis != NULL)
+		if (opt.f_txt != NULL) fclose(opt.f_txt);
+		if (opt.f_kis != NULL)
 			fclose(opt.f_kis);
-		if (opt.output_format_kismet_netxml && opt.f_kis_xml != NULL)
+		if (opt.f_kis_xml != NULL)
 		{
 			fclose(opt.f_kis_xml);
 			free(lopt.airodump_start_time);
 		}
 		if (opt.f_gps != NULL) fclose(opt.f_gps);
-		if (opt.output_format_pcap && opt.f_cap != NULL) fclose(opt.f_cap);
+		if (opt.f_cap != NULL) fclose(opt.f_cap);
 		if (opt.f_ivs != NULL) fclose(opt.f_ivs);
 		if (opt.f_logcsv != NULL) fclose(opt.f_logcsv);
-	}
+    }
 
 	if (!lopt.save_gps)
 	{

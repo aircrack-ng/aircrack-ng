@@ -537,6 +537,191 @@ int dump_write_airodump_ng_logcsv_add_client(const struct AP_info * ap_cur,
 	return (0);
 }
 
+int dump_write_wifi_scanner(
+    struct AP_info * ap_1st,
+	struct ST_info * st_1st,
+	unsigned int const f_encrypt,
+	int const filter_seconds,
+    char const * const sys_name,
+    char const * const loc_name)
+{
+	struct AP_info * ap_cur = NULL;
+	struct ST_info * st_cur = NULL;
+	time_t curr_time = 0;
+
+	if (!opt.record_data || !opt.output_format_wifi_scanner)
+		return 0;
+
+	ap_cur = ap_1st;
+
+	/* Access Points */
+	while (ap_cur != NULL)
+	{
+		if (((time(NULL) - ap_cur->time_printed) < filter_seconds) && (ap_cur->old_channel == ap_cur->channel))
+		{
+			ap_cur = ap_cur->next;
+			continue;
+		}
+
+		if (memcmp(ap_cur->bssid, BROADCAST, 6) == 0)
+		{
+			ap_cur = ap_cur->next;
+			continue;
+		}
+
+		if (ap_cur->security != 0 && f_encrypt != 0
+			&& ((ap_cur->security & f_encrypt) == 0))
+		{
+			ap_cur = ap_cur->next;
+			continue;
+		}
+
+		if (is_filtered_essid(ap_cur->essid))
+		{
+			ap_cur = ap_cur->next;
+			continue;
+		}
+
+		ap_cur->time_printed = time(NULL);
+		ap_cur->old_channel = ap_cur->channel;
+
+		fprintf(opt.f_txt, "%s|%s|", sys_name, loc_name);
+
+		fprintf(opt.f_txt, "%ld|", ap_cur->tinit);
+		fprintf(opt.f_txt, "%ld|", ap_cur->tlast);
+
+		fprintf(opt.f_txt,
+				"%02X:%02X:%02X:%02X:%02X:%02X|",
+				ap_cur->bssid[0],
+				ap_cur->bssid[1],
+				ap_cur->bssid[2],
+				ap_cur->bssid[3],
+				ap_cur->bssid[4],
+				ap_cur->bssid[5]);
+
+		fprintf(opt.f_txt,                   /*printed twice to maintain output format*/
+				"%02X:%02X:%02X:%02X:%02X:%02X|",
+				ap_cur->bssid[0],
+				ap_cur->bssid[1],
+				ap_cur->bssid[2],
+				ap_cur->bssid[3],
+				ap_cur->bssid[4],
+				ap_cur->bssid[5]);
+
+
+		fprintf(opt.f_txt, "%2d|", ap_cur->channel);
+
+		if ((ap_cur->ssid_length == 0) || (ap_cur->essid[0] == 0))
+		{
+			fprintf(opt.f_txt, "<hidden-ssid>|");
+		}
+		else
+		{
+			char * essid = NULL;
+			essid = format_text_for_csv(ap_cur->essid, ap_cur->ssid_length);
+			if (essid != NULL)
+			{
+				fprintf(opt.f_txt, "%s|", essid);
+				free(essid);
+			}
+			else
+			{
+				fprintf(opt.f_txt, "|");
+			}
+		}
+
+		fprintf(opt.f_txt, "%3d\r\n", ap_cur->avg_power);
+		ap_cur = ap_cur->next;
+	}
+
+	/*   Process Clients */
+	st_cur = st_1st;
+
+	while (st_cur != NULL)
+	{
+		ap_cur = st_cur->base;
+		if (ap_cur->nb_pkt < 2)
+		{
+			st_cur = st_cur->next;
+			continue;
+		}
+		if (((time(NULL) - st_cur->time_printed) < filter_seconds) && (st_cur->old_channel == st_cur->channel))
+		{
+			st_cur = st_cur->next;
+			continue;
+		}
+		st_cur->time_printed = time(NULL);
+		st_cur->old_channel = st_cur->channel;
+		fprintf(opt.f_txt, "%s|%s|", sys_name, loc_name);
+		fprintf(opt.f_txt, "%ld|", st_cur->tinit);
+
+		fprintf(opt.f_txt, "%ld|", st_cur->tlast);
+		fprintf(opt.f_txt,
+				"%02X:%02X:%02X:%02X:%02X:%02X|",
+				st_cur->stmac[0],
+				st_cur->stmac[1],
+				st_cur->stmac[2],
+				st_cur->stmac[3],
+				st_cur->stmac[4],
+				st_cur->stmac[5]);
+
+		if (!memcmp(ap_cur->bssid, BROADCAST, 6))
+		{
+			fprintf(opt.f_txt, "|");
+		}
+		else
+			fprintf(opt.f_txt,
+					"%02X:%02X:%02X:%02X:%02X:%02X|",
+					ap_cur->bssid[0],
+					ap_cur->bssid[1],
+					ap_cur->bssid[2],
+					ap_cur->bssid[3],
+					ap_cur->bssid[4],
+					ap_cur->bssid[5]);
+
+		fprintf(opt.f_txt, "%2d|", st_cur->channel);
+
+		if (!memcmp(ap_cur->bssid, BROADCAST, 6))
+		{
+			fprintf(opt.f_txt, "|");
+		}
+		else
+		{
+			if ((ap_cur->ssid_length == 0) || (ap_cur->essid[0] == 0))
+			{
+				fprintf(opt.f_txt, "<hidden-ssid>|");
+			}
+			else
+			{
+				char * essid = NULL;
+				essid = format_text_for_csv(ap_cur->essid, ap_cur->ssid_length);
+				if (essid != NULL)
+				{
+					fprintf(opt.f_txt, "%s|", essid);
+					free(essid);
+				}
+				else
+				{
+					fprintf(opt.f_txt, "|");
+				}
+			}
+		}
+		fprintf(opt.f_txt, "%3d", st_cur->power);
+		fprintf(opt.f_txt, "\r\n");
+		st_cur = st_cur->next;
+	}
+
+	fflush(opt.f_txt);
+
+	curr_time = time(NULL);
+	if (((curr_time - opt.last_file_reset) > opt.file_reset_minutes) && (opt.dump_prefix != NULL) && (opt.f_txt != NULL))
+	{
+		opt.f_txt = freopen(opt.dump_prefix, "w", opt.f_txt);
+		opt.last_file_reset = curr_time;
+	}
+	return 0;
+}
+
 static char * sanitize_xml(unsigned char * text, size_t length)
 {
 	size_t i;
@@ -778,7 +963,7 @@ static int dump_write_kismet_netxml_client_info(struct ST_info * client,
 	}
 
 	/* Channel
-	   FIXME: Take G.freqoption in account */
+	   FIXME: Take opt.freqoption in account */
 	fprintf(opt.f_kis_xml, "\t\t\t<channel>%d</channel>\n", client->channel);
 
 	/* Rate: inaccurate because it's the latest rate seen */
@@ -1043,13 +1228,13 @@ int dump_write_kismet_netxml(struct AP_info * ap_1st,
 		free(manuf);
 
 		/* Channel
-		   FIXME: Take G.freqoption in account */
+		   FIXME: Take opt.freqoption in account */
 		fprintf(opt.f_kis_xml,
 				"\t\t<channel>%d</channel>\n",
 				(ap_cur->channel) == -1 ? 0 : ap_cur->channel);
 
 		/* Freq (in Mhz) and total number of packet on that frequency
-		   FIXME: Take G.freqoption in account */
+		   FIXME: Take opt.freqoption in account */
 		fprintf(opt.f_kis_xml,
 				"\t\t<freqmhz>%d %lu</freqmhz>\n",
 				(ap_cur->channel) == -1 ? 0 : getFrequencyFromChannel(
@@ -1224,12 +1409,12 @@ int dump_write_kismet_netxml(struct AP_info * ap_1st,
 			free(manuf);
 
 			/* Channel
-			   FIXME: Take G.freqoption in account */
+			   FIXME: Take opt.freqoption in account */
 			fprintf(
 				opt.f_kis_xml, "\t\t<channel>%d</channel>\n", st_cur->channel);
 
 			/* Freq (in Mhz) and total number of packet on that frequency
-			   FIXME: Take G.freqoption in account */
+			   FIXME: Take opt.freqoption in account */
 			fprintf(opt.f_kis_xml,
 					"\t\t<freqmhz>%d %lu</freqmhz>\n",
 					getFrequencyFromChannel(st_cur->channel),
