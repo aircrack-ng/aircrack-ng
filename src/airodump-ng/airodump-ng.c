@@ -2547,9 +2547,8 @@ skip_probe:
 				ap_cur->is_decloak = 1;
 				ap_cur->decloak_detect = 0;
 				list_tail_free(&ap_cur->packets);
-				memset(lopt.message, '\x00', sizeof(lopt.message));
 				snprintf(lopt.message,
-						 sizeof(lopt.message) - 1,
+						 sizeof(lopt.message),
 						 "][ Decloak: %02X:%02X:%02X:%02X:%02X:%02X ",
 						 ap_cur->bssid[0],
 						 ap_cur->bssid[1],
@@ -2726,9 +2725,8 @@ skip_probe:
 				{
 
 					// If no EAP/EAP was detected, indicate WEP cloaking
-					memset(lopt.message, '\x00', sizeof(lopt.message));
 					snprintf(lopt.message,
-							 sizeof(lopt.message) - 1,
+							 sizeof(lopt.message),
 							 "][ WEP Cloaking: %02X:%02X:%02X:%02X:%02X:%02X ",
 							 ap_cur->bssid[0],
 							 ap_cur->bssid[1],
@@ -2790,9 +2788,8 @@ skip_probe:
 
 							memcpy(st_cur->wpa.stmac, st_cur->stmac, 6);
 							memcpy(lopt.wpa_bssid, ap_cur->bssid, 6);
-							memset(lopt.message, '\x00', sizeof(lopt.message));
 							snprintf(lopt.message,
-									 sizeof(lopt.message) - 1,
+									 sizeof(lopt.message),
 									 "][ PMKID found: "
 									 "%02X:%02X:%02X:%02X:%02X:%02X ",
 									 lopt.wpa_bssid[0],
@@ -2885,9 +2882,8 @@ skip_probe:
 			{
 				memcpy(st_cur->wpa.stmac, st_cur->stmac, 6);
 				memcpy(lopt.wpa_bssid, ap_cur->bssid, 6);
-				memset(lopt.message, '\x00', sizeof(lopt.message));
 				snprintf(lopt.message,
-						 sizeof(lopt.message) - 1,
+						 sizeof(lopt.message),
 						 "][ WPA handshake: %02X:%02X:%02X:%02X:%02X:%02X ",
 						 lopt.wpa_bssid[0],
 						 lopt.wpa_bssid[1],
@@ -3670,7 +3666,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				 lopt.maxnumaps,
 				 lopt.maxaps);
 	}
-
+    /* FIXME - Don't use strncat. */
 	strncat(strbuf, buffer, (512 - strlen(strbuf) - 1));
 	memset(buffer, '\0', 512);
 
@@ -5757,30 +5753,64 @@ static int set_encryption_filter(const char * input)
 	return (0);
 }
 
+static struct wif * reopen_card(struct wif * const old)
+{
+    struct wif * new_wi;
+    char ifnam[64];
+
+    /* The interface name needs to be saved because closing the 
+     * card frees all resources associated with the wi. 
+     */
+    strlcpy(ifnam, wi_get_ifname(old), sizeof(ifnam));
+
+    wi_close(old);
+    new_wi = wi_open(ifnam);
+
+    if (new_wi == NULL)
+    {
+        printf("Can't reopen %s\n", ifnam);
+    }
+
+    return new_wi;
+}
+
+static bool reopen_cards(
+    struct local_options const * const options,
+    struct wif * const * const wi)
+{
+    bool success;
+
+    for (size_t i = 0; i < options->num_cards; i++)
+    {
+        wi[i] = reopen_card(wi[i]);
+        if (wi[i] == NULL)
+        {
+            success = false;
+            goto done;
+        }
+    }
+
+    success = true;
+
+done:
+    return success;
+}
+
 static int check_monitor(struct wif * wi[], int * fd_raw, int * fdh, int cards)
 {
-	int i, monitor;
-	char ifname[64];
-
-	for (i = 0; i < cards; i++)
+	for (size_t i = 0; i < cards; i++)
 	{
-		monitor = wi_get_monitor(wi[i]);
+		int const monitor = wi_get_monitor(wi[i]);
 		if (monitor != 0)
 		{
-			memset(lopt.message, '\x00', sizeof(lopt.message));
 			snprintf(lopt.message,
 					 sizeof(lopt.message),
 					 "][ %s reset to monitor mode",
 					 wi_get_ifname(wi[i]));
 			// reopen in monitor mode
-
-			strlcpy(ifname, wi_get_ifname(wi[i]), sizeof(ifname));
-
-			wi_close(wi[i]);
-			wi[i] = wi_open(ifname);
-			if (!wi[i])
+            wi[i] = reopen_card(wi[i]);
+			if (wi[i] == NULL)
 			{
-				printf("Can't reopen %s\n", ifname);
 				exit(1);
 			}
 
@@ -5789,7 +5819,7 @@ static int check_monitor(struct wif * wi[], int * fd_raw, int * fdh, int cards)
 		}
 	}
 
-	return (0);
+	return 0;
 }
 
 static int check_channel(struct wif * wi[], int cards)
@@ -5801,7 +5831,6 @@ static int check_channel(struct wif * wi[], int cards)
 		if (opt.ignore_negative_one == 1 && chan == -1) return (0);
 		if (lopt.channel[i] != chan)
 		{
-			memset(lopt.message, '\x00', sizeof(lopt.message));
 			snprintf(lopt.message,
 					 sizeof(lopt.message),
 					 "][ fixed channel %s: %d ",
@@ -5826,7 +5855,6 @@ static int check_frequency(struct wif * wi[], int cards)
 		if (freq < 0) continue;
 		if (lopt.frequency[i] != freq)
 		{
-			memset(lopt.message, '\x00', sizeof(lopt.message));
 			snprintf(lopt.message,
 					 sizeof(lopt.message),
 					 "][ fixed frequency %s: %d ",
@@ -5973,43 +6001,11 @@ static int rearrange_frequencies(void)
 	return (0);
 }
 
-static bool reopen_cards(
-    struct local_options const * const options,
-    struct wif * const * const wi)
-{
-    bool success;
-
-    for (size_t i = 0; i < options->num_cards; i++)
-    {
-        char ifnam[64];
-
-        /* The interface name needs to be saved because closing the 
-         * card frees all resources associated with the wi. 
-         */
-        strlcpy(ifnam, wi_get_ifname(wi[i]), sizeof(ifnam));
-
-        wi_close(wi[i]);
-        wi[i] = wi_open(ifnam);
-        if (wi[i] == NULL)
-        {
-            printf("Can't reopen %s\n", ifnam);
-            success = false;
-            goto done;
-       }
-    }
-
-    success = true;
-
-done:
-    return success;
-}
-
 static int start_monitor_process(
     struct local_options const * const options, 
     struct wif * const * const wi)
 {
     int result; /* -1: error, 0: child process, 1: parent_process */
-    struct sigaction old_action;
     int const pipe_result = pipe(options->hopper_process_pipe);
 
     IGNORE_NZ(pipe_result);
@@ -6018,7 +6014,7 @@ static int start_monitor_process(
 
     if (result == -1)
     {
-        goto done;
+        exit(EXIT_FAILURE);
     }
 
     if (result == 0)
@@ -6303,8 +6299,8 @@ int main(int argc, char * argv[])
 	resetSelection();
 
 	memset(opt.sharedkey, '\x00', sizeof(opt.sharedkey));
-	memset(lopt.message, '\x00', sizeof(lopt.message));
-	memset(&lopt.pfh_in, '\x00', sizeof(struct pcap_file_header));
+    lopt.message[0] = '\0';
+    memset(&lopt.pfh_in, '\x00', sizeof(lopt.pfh_in));
 
 	gettimeofday(&tv0, NULL);
 
@@ -7252,7 +7248,6 @@ int main(int argc, char * argv[])
 
 			if (fread(&pkh, (size_t)n, 1, lopt.f_cap_in) != 1)
 			{
-				memset(lopt.message, '\x00', sizeof(lopt.message));
 				snprintf(lopt.message,
 						 sizeof(lopt.message),
 						 "][ Finished reading input file %s.",
@@ -7274,7 +7269,6 @@ int main(int argc, char * argv[])
 
 			if (n <= 0 || n > (int) sizeof(buffer))
 			{
-				memset(lopt.message, '\x00', sizeof(lopt.message));
 				snprintf(lopt.message,
 						 sizeof(lopt.message),
 						 "][ Finished reading input file %s.",
@@ -7285,7 +7279,6 @@ int main(int argc, char * argv[])
 
 			if (fread(h80211, (size_t) n, 1, lopt.f_cap_in) != 1)
 			{
-				memset(lopt.message, '\x00', sizeof(lopt.message));
 				snprintf(lopt.message,
 						 sizeof(lopt.message),
 						 "][ Finished reading input file %s.",
@@ -7549,7 +7542,6 @@ int main(int argc, char * argv[])
 							lopt.do_exit = 1;
 							break;
 						}
-						memset(lopt.message, '\x00', sizeof(lopt.message));
 						snprintf(lopt.message,
 								 sizeof(lopt.message),
 								 "][ interface %s down ",
