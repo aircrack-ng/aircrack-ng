@@ -97,6 +97,8 @@ uint8_t tmpbuf[4096] __attribute__((aligned(16)));
 
 static const unsigned char llcnull[] = {0, 0, 0, 0};
 
+static char const unknown_manufacturer[] = "Unknown";
+
 static const char * OUI_PATHS[]
 	= {"./airodump-ng-oui.txt",
 	   "/etc/aircrack-ng/airodump-ng-oui.txt",
@@ -149,10 +151,14 @@ int is_filtered_essid(const uint8_t * essid);
 struct communication_options opt;
 static struct local_options
 {
-	struct AP_info *ap_1st, *ap_end;
-	struct ST_info *st_1st, *st_end;
-	struct NA_info * na_1st;
-	struct oui * manufList;
+	struct AP_info * ap_1st;
+    struct AP_info * ap_end;
+
+    struct ST_info * st_1st;
+    struct ST_info * st_end;
+
+    struct NA_info * na_1st;
+    struct oui * manufacturer_list;
 
 	unsigned char prev_bssid[6];
 	char ** f_essid;
@@ -248,7 +254,10 @@ static struct local_options
 	char * airodump_start_time;
 
 	pthread_t input_tid;
-	pthread_t gps_tid;
+
+    pthread_t gps_tid;
+    int gps_thread_result;
+
 	int sort_by;
 	int sort_inv;
 	int start_print_ap;
@@ -266,7 +275,8 @@ static struct local_options
 	int do_sort_always;
 
 	pthread_mutex_t mx_print; /* lock write access to ap LL   */
-	pthread_mutex_t mx_sort; /* lock write access to ap LL   */
+
+    pthread_mutex_t mx_sort; /* lock write access to ap LL   */
 
 	unsigned char selected_bssid[6]; /* bssid that is selected */
 
@@ -390,6 +400,71 @@ static void color_on(void)
 	}
 }
 
+static int
+acquire_lock(pthread_mutex_t * const mutex)
+{
+    int const lock_result = pthread_mutex_lock(mutex);
+
+    ALLEGE(lock_result == 0);
+
+    return lock_result;
+}
+
+static int
+release_lock(pthread_mutex_t * const mutex)
+{
+    int const unlock_result = pthread_mutex_unlock(mutex);
+
+    ALLEGE(unlock_result == 0);
+
+    return unlock_result;
+}
+
+static int
+initialise_lock(pthread_mutex_t * const mutex)
+{
+    int const init_result = pthread_mutex_init(mutex, NULL);
+
+    ALLEGE(init_result == 0);
+
+    return init_result;
+}
+
+static int
+acquire_sort_lock(struct local_options * const options)
+{
+    return acquire_lock(&options->mx_sort);
+}
+
+static int 
+release_sort_lock(struct local_options * const options)
+{
+    return release_lock(&options->mx_sort);
+}
+
+static int initialise_sort_lock(struct local_options * const options)
+{
+    return initialise_lock(&options->mx_sort);
+}
+
+static int
+acquire_print_lock(struct local_options * const options)
+{
+    return acquire_lock(&options->mx_print);
+}
+
+static int
+release_print_lock(struct local_options * const options)
+{
+    return release_lock(&options->mx_print);
+}
+
+static int initialise_print_lock(struct local_options * const options)
+{
+    return initialise_lock(&options->mx_print);
+}
+
+
 static void input_thread(void * arg)
 {
 	UNUSED_PARAM(arg);
@@ -496,9 +571,10 @@ static void input_thread(void * arg)
 				default:
 					break;
 			}
-			ALLEGE(pthread_mutex_lock(&(lopt.mx_sort)) == 0);
+
+            acquire_sort_lock(&lopt);
 			dump_sort();
-			ALLEGE(pthread_mutex_unlock(&(lopt.mx_sort)) == 0);
+            release_sort_lock(&lopt);
 		}
 
 		if (keycode == KEY_SPACE)
@@ -508,11 +584,10 @@ static void input_thread(void * arg)
 			{
 				snprintf(
 					lopt.message, sizeof(lopt.message), "][ paused output");
-				ALLEGE(pthread_mutex_lock(&(lopt.mx_print)) == 0);
 
+                acquire_print_lock(&lopt);
 				dump_print(lopt.ws.ws_row, lopt.ws.ws_col, lopt.num_cards);
-
-				ALLEGE(pthread_mutex_unlock(&(lopt.mx_print)) == 0);
+                release_print_lock(&lopt);
 			}
 			else
 				snprintf(
@@ -640,21 +715,18 @@ static void input_thread(void * arg)
 
 		if (lopt.do_exit == 0 && !lopt.do_pause)
 		{
-			ALLEGE(pthread_mutex_lock(&(lopt.mx_print)) == 0);
-
-			dump_print(lopt.ws.ws_row, lopt.ws.ws_col, lopt.num_cards);
-
-			ALLEGE(pthread_mutex_unlock(&(lopt.mx_print)) == 0);
-		}
+            acquire_print_lock(&lopt);
+            dump_print(lopt.ws.ws_row, lopt.ws.ws_col, lopt.num_cards);
+            release_print_lock(&lopt);
+        }
 	}
 }
 
 static FILE * open_oui_file(void)
 {
-	int i;
 	FILE * fp = NULL;
 
-	for (i = 0; OUI_PATHS[i] != NULL; i++)
+	for (size_t i = 0; OUI_PATHS[i] != NULL; i++)
 	{
 		fp = fopen(OUI_PATHS[i], "r");
 		if (fp != NULL)
@@ -663,67 +735,65 @@ static FILE * open_oui_file(void)
 		}
 	}
 
-	return (fp);
+	return fp;
+}
+
+static void oui_list_free(struct oui * * const oui_list)
+{
+    struct oui * oui = *oui_list;
+
+    *oui_list = NULL;
+
+    while (oui != NULL)
+    {
+        struct oui * const next = oui->next;
+
+        free(oui->manufacturer);
+        free(oui);
+
+        oui = next;
+    }
 }
 
 static struct oui * load_oui_file(void)
 {
 	FILE * fp;
-	char * manuf;
 	char buffer[BUFSIZ];
-	unsigned char a[2];
-	unsigned char b[2];
-	unsigned char c[2];
-	struct oui *oui_ptr = NULL, *oui_head = NULL;
+    struct oui * oui_head = NULL;
+    struct oui * * oui_next = &oui_head; 
+
 
 	fp = open_oui_file();
-	if (!fp)
+	if (fp == NULL)
 	{
-		return (NULL);
+		goto done;
 	}
 
-	memset(buffer, 0x00, sizeof(buffer));
 	while (fgets(buffer, sizeof(buffer), fp) != NULL)
 	{
-		if (!(strstr(buffer, "(hex)"))) continue;
+        unsigned char a[2] = { 0 };
+        unsigned char b[2] = { 0 };
+        unsigned char c[2] = { 0 };
 
-		memset(a, 0x00, sizeof(a));
-		memset(b, 0x00, sizeof(b));
-		memset(c, 0x00, sizeof(c));
+        if (strstr(buffer, "(hex)") == NULL)
+        {
+            continue;
+        }
+
 		// Remove leading/trailing whitespaces.
 		trim(buffer);
 		if (sscanf(buffer, "%2c-%2c-%2c", (char *) a, (char *) b, (char *) c)
 			== 3)
 		{
-			if (oui_ptr == NULL)
-			{
-				if (!(oui_ptr = (struct oui *) malloc(sizeof(struct oui))))
-				{
-					fclose(fp);
-					perror("malloc failed");
-					return (NULL);
-				}
-			}
-			else
-			{
-				if (!(oui_ptr->next
-					  = (struct oui *) malloc(sizeof(struct oui))))
-				{
-					fclose(fp);
-					perror("malloc failed");
+            struct oui * const oui_ptr = calloc(1, sizeof *oui_ptr);
 
-					while (oui_head != NULL)
-					{
-						oui_ptr = oui_head->next;
-						free(oui_head);
-						oui_head = oui_ptr;
-					}
-					return (NULL);
-				}
-				oui_ptr = oui_ptr->next;
+            if (oui_ptr == NULL)
+            {
+                oui_list_free(&oui_head);
+                perror("oui_alloc failed");
+                goto done;
 			}
-			memset(oui_ptr->id, 0x00, sizeof(oui_ptr->id));
-			memset(oui_ptr->manuf, 0x00, sizeof(oui_ptr->manuf));
+
 			snprintf(oui_ptr->id,
 					 sizeof(oui_ptr->id),
 					 "%c%c:%c%c:%c%c",
@@ -733,23 +803,27 @@ static struct oui * load_oui_file(void)
 					 b[1],
 					 c[0],
 					 c[1]);
-			manuf = get_manufacturer_from_string(buffer);
-			if (manuf != NULL)
+
+            char * const oui_ptr->manufacturer = 
+                get_manufacturer_from_string(buffer);
+
+            if (oui_ptr->manufacturer == NULL)
 			{
-				snprintf(oui_ptr->manuf, sizeof(oui_ptr->manuf), "%s", manuf);
-				free(manuf);
+                oui_ptr->manufacturer = strdup(unknown_manufacturer);
 			}
-			else
-			{
-				snprintf(oui_ptr->manuf, sizeof(oui_ptr->manuf), "Unknown");
-			}
-			if (oui_head == NULL) oui_head = oui_ptr;
-			oui_ptr->next = NULL;
-		}
+
+            *oui_next = oui_ptr;
+            oui_next = &oui_ptr->next;
+        }
 	}
 
-	fclose(fp);
-	return (oui_head);
+done:
+    if (fp != NULL)
+    {
+        fclose(fp);
+    }
+
+	return oui_head;
 }
 
 static const char usage[] =
@@ -833,22 +907,18 @@ static int is_filtered_netmask(const uint8_t * bssid)
 {
 	REQUIRE(bssid != NULL);
 
-	unsigned char mac1[6];
-	unsigned char mac2[6];
-	int i;
+    unsigned char mac1[MAC_ADDRESS_SIZE];
+    unsigned char mac2[MAC_ADDRESS_SIZE];
 
-	for (i = 0; i < 6; i++)
+    for (size_t i = 0; i < MAC_ADDRESS_SIZE; i++)
 	{
 		mac1[i] = bssid[i] & opt.f_netmask[i];
 		mac2[i] = opt.f_bssid[i] & opt.f_netmask[i];
 	}
 
-	if (memcmp(mac1, mac2, 6) != 0)
-	{
-		return (1);
-	}
+    bool const is_filtered = memcmp(mac1, mac2, MAC_ADDRESS_SIZE) != 0;
 
-	return (0);
+	return is_filtered;
 }
 
 int is_filtered_essid(const uint8_t * essid)
@@ -1050,7 +1120,6 @@ static int update_dataps(void)
 static int list_tail_free(struct pkt_buf ** list)
 {
 	struct pkt_buf ** pkts;
-	struct pkt_buf * next;
 
 	if (list == NULL) return 1;
 
@@ -1058,45 +1127,49 @@ static int list_tail_free(struct pkt_buf ** list)
 
 	while (*pkts != NULL)
 	{
-		next = (*pkts)->next;
-		if ((*pkts)->packet)
-		{
-			free((*pkts)->packet);
-			(*pkts)->packet = NULL;
-		}
+        struct pkt_buf * const next = (*pkts)->next;
+
+        free((*pkts)->packet);
+        (*pkts)->packet = NULL;
 
 		free(*pkts);
-		*pkts = NULL;
 		*pkts = next;
 	}
 
 	*list = NULL;
 
-	return (0);
+	return 0;
 }
 
 static int
-list_add_packet(struct pkt_buf ** list, int length, unsigned char * packet)
+list_add_packet(struct pkt_buf * * const list, int const length, unsigned char * packet)
 {
-	struct pkt_buf * next;
+	struct pkt_buf * new_pkt_buf;
 
 	if (length <= 0) return 1;
 	if (packet == NULL) return 1;
 	if (list == NULL) return 1;
 
-	next = *list;
+    new_pkt_buf = calloc(1, sizeof *new_pkt_buf);
+    if (new_pkt_buf == NULL)
+    {
+        return 1;
+    }
 
-	*list = (struct pkt_buf *) malloc(sizeof(struct pkt_buf));
-	if (*list == NULL) return 1;
-	(*list)->packet = (unsigned char *) malloc((size_t) length);
-	if ((*list)->packet == NULL) return 1;
+    new_pkt_buf->packet = malloc((size_t)length);
+    if (new_pkt_buf->packet == NULL)
+    {
+        free(new_pkt_buf);
+        return 1;
+    }
 
-	memcpy((*list)->packet, packet, (size_t) length);
-	(*list)->next = next;
-	(*list)->length = (uint16_t) length;
-	gettimeofday(&((*list)->ctime), NULL);
+    memcpy(new_pkt_buf->packet, packet, (size_t)length);
+    new_pkt_buf->length = (uint16_t)length;
+    gettimeofday(&new_pkt_buf->ctime, NULL);
+    new_pkt_buf->next = *list;
+    *list = new_pkt_buf;
 
-	return (0);
+	return 0;
 }
 
 /*
@@ -1139,7 +1212,7 @@ list_check_decloak(struct pkt_buf ** list, int length, const uint8_t * packet)
 					   / 1000;
 			if (timediff > BUFFER_TIME)
 			{
-				list_tail_free(&(next->next));
+				list_tail_free(&next->next);
 				break;
 			}
 		}
@@ -1178,7 +1251,7 @@ list_check_decloak(struct pkt_buf ** list, int length, const uint8_t * packet)
 		next = next->next;
 	}
 
-	return (1); // didn't find decloak
+	return 1; // didn't find decloak
 }
 
 static int remove_namac(unsigned char * mac)
@@ -1545,7 +1618,10 @@ static int dump_add_packet(unsigned char * h80211,
 
 	while (st_cur != NULL)
 	{
-		if (!memcmp(st_cur->stmac, stmac, 6)) break;
+        if (!memcmp(st_cur->stmac, stmac, 6))
+        {
+            break;
+        }
 
 		st_prv = st_cur;
 		st_cur = st_cur->next;
@@ -1620,8 +1696,10 @@ static int dump_add_packet(unsigned char * h80211,
 		lopt.st_end = st_cur;
 	}
 
-	if (st_cur->base == NULL || memcmp(ap_cur->bssid, BROADCAST, 6) != 0)
+    if (st_cur->base == NULL || memcmp(ap_cur->bssid, BROADCAST, 6) != 0)
+    {
 		st_cur->base = ap_cur;
+    }
 
 	// update bitrate to station
 	if ((h80211[1] & 3) == 2) st_cur->rate_to = ri->ri_rate;
@@ -2449,15 +2527,15 @@ skip_probe:
 
 		if (z == 24)
 		{
-			if (list_check_decloak(&(ap_cur->packets), caplen, h80211) != 0)
+			if (list_check_decloak(&ap_cur->packets, caplen, h80211) != 0)
 			{
-				list_add_packet(&(ap_cur->packets), caplen, h80211);
+				list_add_packet(&ap_cur->packets, caplen, h80211);
 			}
 			else
 			{
 				ap_cur->is_decloak = 1;
 				ap_cur->decloak_detect = 0;
-				list_tail_free(&(ap_cur->packets));
+				list_tail_free(&ap_cur->packets);
 				memset(lopt.message, '\x00', sizeof(lopt.message));
 				snprintf(lopt.message,
 						 sizeof(lopt.message) - 1,
@@ -2905,17 +2983,17 @@ write_packet:
 			p = h80211 + 4;
 			while (p <= h80211 + 16 && p <= h80211 + caplen)
 			{
-				memcpy(namac, p, 6);
+				memcpy(namac, p, sizeof namac);
 
-				if (memcmp(namac, NULL_MAC, 6) == 0)
+                if (memcmp(namac, NULL_MAC, sizeof namac) == 0)
 				{
-					p += 6;
+                    p += sizeof namac;
 					continue;
 				}
 
-				if (memcmp(namac, BROADCAST, 6) == 0)
+                if (memcmp(namac, BROADCAST, sizeof namac) == 0)
 				{
-					p += 6;
+                    p += sizeof namac;
 					continue;
 				}
 
@@ -2926,7 +3004,10 @@ write_packet:
 
 					while (ap_cur != NULL)
 					{
-						if (!memcmp(ap_cur->bssid, namac, 6)) break;
+                        if (memcmp(ap_cur->bssid, namac, sizeof ap_cur->bssid) == 0)
+                        {
+                            break;
+                        }
 
 						ap_cur = ap_cur->next;
 					}
@@ -2935,7 +3016,7 @@ write_packet:
 
 					if (ap_cur != NULL)
 					{
-						p += 6;
+                        p += sizeof namac;
 						continue;
 					}
 
@@ -2944,7 +3025,10 @@ write_packet:
 
 					while (st_cur != NULL)
 					{
-						if (!memcmp(st_cur->stmac, namac, 6)) break;
+                        if (memcmp(st_cur->stmac, namac, sizeof st_cur->stmac) == 0)
+                        {
+                            break;
+                        }
 
 						st_cur = st_cur->next;
 					}
@@ -2953,7 +3037,7 @@ write_packet:
 
 					if (st_cur != NULL)
 					{
-						p += 6;
+                        p += sizeof namac;
 						continue;
 					}
 				}
@@ -2965,7 +3049,10 @@ write_packet:
 
 				while (na_cur != NULL)
 				{
-					if (!memcmp(na_cur->namac, namac, 6)) break;
+                    if (memcmp(na_cur->namac, namac, sizeof na_cur->namac) == 0)
+                    {
+                        break;
+                    }
 
 					na_prv = na_cur;
 					na_cur = na_cur->next;
@@ -2976,25 +3063,16 @@ write_packet:
 
 				if (na_cur == NULL)
 				{
-					if (!(na_cur
-						  = (struct NA_info *) malloc(sizeof(struct NA_info))))
+                    na_cur = calloc(1, sizeof *na_cur);
+					if (na_cur == NULL)
 					{
-						perror("malloc failed");
-						return (1);
+						perror("calloc failed");
+						return 1;
 					}
 
-					memset(na_cur, 0, sizeof(struct NA_info));
+                    memcpy(na_cur->namac, namac, sizeof na_cur->namac);
 
-					if (lopt.na_1st == NULL)
-						lopt.na_1st = na_cur;
-					else
-						na_prv->next = na_cur;
-
-					memcpy(na_cur->namac, namac, 6);
-
-					na_cur->prev = na_prv;
-
-					gettimeofday(&(na_cur->tv), NULL);
+					gettimeofday(&na_cur->tv, NULL);
 					na_cur->tinit = time(NULL);
 					na_cur->tlast = time(NULL);
 
@@ -3006,7 +3084,13 @@ write_packet:
 					na_cur->cts = 0;
 					na_cur->rts_r = 0;
 					na_cur->rts_t = 0;
-				}
+
+                    if (lopt.na_1st == NULL)
+                        lopt.na_1st = na_cur;
+                    else
+                        na_prv->next = na_cur;
+                    na_cur->prev = na_prv;
+                }
 
 				/* update the last time seen & power*/
 
@@ -3035,7 +3119,7 @@ write_packet:
 				}
 
 				/*grab next mac (for rts frames)*/
-				p += 6;
+                p += sizeof namac;
 			}
 		}
 	}
@@ -3286,12 +3370,12 @@ static char * getStringTimeFromSec(double seconds)
 
 	if (seconds < 0) return (NULL);
 
-	ret = (char *) calloc(1, 256);
+	ret = calloc(256, sizeof *ret);
 	ALLEGE(ret != NULL);
 
-	HourTime = (char *) calloc(1, 128);
+	HourTime = calloc(128, sizeof *HourTime);
 	ALLEGE(HourTime != NULL);
-	MinTime = (char *) calloc(1, 128);
+	MinTime = calloc(128, sizeof MinTime);
 	ALLEGE(MinTime != NULL);
 
 	hour[0] = (int) (seconds);
@@ -3333,16 +3417,16 @@ static char * getBatteryString(void)
 
 	if (batt_time <= 60)
 	{
-		ret = (char *) calloc(1, 2);
+		ret = calloc(2, sizeof *ret);
 		ALLEGE(ret != NULL);
 		ret[0] = ']';
-		return (ret);
+		return ret;
 	}
 
 	batt_string = getStringTimeFromSec((double) batt_time);
 	ALLEGE(batt_string != NULL);
 
-	ret = (char *) calloc(1, 256);
+	ret = calloc(256, sizeof *ret);
 	ALLEGE(ret != NULL);
 
 	snprintf(ret, 256, "][ BAT: %s ]", batt_string);
@@ -3447,9 +3531,9 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 	if (lopt.do_sort_always)
 	{
-		ALLEGE(pthread_mutex_lock(&(lopt.mx_sort)) == 0);
+        acquire_sort_lock(&lopt);
 		dump_sort();
-		ALLEGE(pthread_mutex_unlock(&(lopt.mx_sort)) == 0);
+        release_sort_lock(&lopt);
 	}
 
 	tt = time(NULL);
@@ -4263,117 +4347,119 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	erase_display(0);
 }
 
-#define OUI_STR_SIZE 8
-#define MANUF_SIZE 128
+static struct oui * oui_lookup(struct oui * const list, char const * oui)
+{
+    struct oui * ptr = list;
+
+    while (ptr != NULL)
+    {
+        bool const found = strcasecmp(ptr->id, oui) == 0;
+
+        if (found)
+        {
+            goto done;
+        }
+        ptr = ptr->next;
+    }
+
+done:
+    return ptr;
+}
+
 static char *
 get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2)
 {
-	char oui[OUI_STR_SIZE + 1];
-	char *manuf, *rmanuf;
-	char * manuf_str;
-	struct oui * ptr;
-	FILE * fp;
-	char buffer[BUFSIZ];
-	char temp[OUI_STR_SIZE + 1];
-	unsigned char a[2];
-	unsigned char b[2];
-	unsigned char c[2];
-	int found = 0;
+	char oui[OUI_STR_SIZE];
+    char * manuf; 
+    FILE * const fp = NULL;
 
-	if ((manuf = (char *) calloc(1, MANUF_SIZE * sizeof(char))) == NULL)
-	{
-		perror("calloc failed");
-		return (NULL);
-	}
+	snprintf(oui, sizeof oui, "%02X:%02X:%02X", mac0, mac1, mac2);
 
-	snprintf(oui, sizeof(oui), "%02X:%02X:%02X", mac0, mac1, mac2);
-
-	if (lopt.manufList != NULL)
+    if (lopt.manufacturer_list != NULL)
 	{
 		// Search in the list
-		ptr = lopt.manufList;
-		while (ptr != NULL)
-		{
-			found = !strncasecmp(ptr->id, oui, OUI_STR_SIZE);
-			if (found)
-			{
-				memcpy(manuf, ptr->manuf, MANUF_SIZE);
-				break;
-			}
-			ptr = ptr->next;
-		}
+        struct oui const * const ptr = oui_lookup(lopt.manufacturer_list, oui);
+
+        if (ptr != NULL)
+        {
+            manuf = strdup(ptr->manufacturer);
+            ALLEGE(manuf != NULL);
+        }
+        goto done;
 	}
 	else
 	{
 		// If the file exist, then query it each time we need to get a
 		// manufacturer.
-		fp = open_oui_file();
+        fp = open_oui_file();
 
-		if (fp != NULL)
-		{
+        if (fp == NULL)
+        {
+            manuf = NULL;
+            goto done;
+        }
+        char buffer[BUFSIZ];
 
-			memset(buffer, 0x00, sizeof(buffer));
-			while (fgets(buffer, sizeof(buffer), fp) != NULL)
-			{
-				if (strstr(buffer, "(hex)") == NULL)
-				{
-					continue;
-				}
+        while (fgets(buffer, sizeof(buffer), fp) != NULL)
+        {
+            unsigned char a[2] = { 0 };
+            unsigned char b[2] = { 0 };
+            unsigned char c[2] = { 0 };
 
-				memset(a, 0x00, sizeof(a));
-				memset(b, 0x00, sizeof(b));
-				memset(c, 0x00, sizeof(c));
-				if (sscanf(buffer,
-						   "%2c-%2c-%2c",
-						   (char *) a,
-						   (char *) b,
-						   (char *) c)
-					== 3)
-				{
-					snprintf(temp,
-							 sizeof(temp),
-							 "%c%c:%c%c:%c%c",
-							 a[0],
-							 a[1],
-							 b[0],
-							 b[1],
-							 c[0],
-							 c[1]);
-					found = !memcmp(temp, oui, strlen(oui));
-					if (found)
-					{
-						manuf_str = get_manufacturer_from_string(buffer);
-						if (manuf_str != NULL)
-						{
-							snprintf(manuf, MANUF_SIZE, "%s", manuf_str);
-							free(manuf_str);
-						}
+            if (strstr(buffer, "(hex)") == NULL)
+            {
+                continue;
+            }
 
-						break;
-					}
-				}
-				memset(buffer, 0x00, sizeof(buffer));
-			}
+            if (sscanf(buffer,
+                       "%2c-%2c-%2c",
+                       (char *) a,
+                       (char *) b,
+                       (char *) c)
+                == 3)
+            {
+                char temp[OUI_STR_SIZE];
 
-			fclose(fp);
-		}
+                snprintf(temp,
+                         sizeof(temp),
+                         "%c%c:%c%c:%c%c",
+                         a[0],
+                         a[1],
+                         b[0],
+                         b[1],
+                         c[0],
+                         c[1]);
+
+                bool const found = strcasecmp(temp, oui) == 0;
+
+                if (found)
+                {
+                    manuf = get_manufacturer_from_string(buffer);
+                    ALLEGE(manuf != NULL);
+
+                    goto done;
+                }
+            }
+        }
 	}
 
-	// Not found, use "Unknown".
-	if (!found || *manuf == '\0')
+    manuf = NULL;
+
+done:
+	if (manuf == NULL)
 	{
-		memcpy(manuf, "Unknown", 7);
-		manuf[7] = '\0';
-	}
+        // Not found.
+        manuf = strdup(unknown_manufacturer);
+        ALLEGE(manuf != NULL);
+    }
 
-	// Going in a smaller buffer
-	rmanuf = (char *) realloc(manuf, (strlen(manuf) + 1) * sizeof(char));
-	ALLEGE(rmanuf != NULL);
+    if (fp != NULL)
+    {
+        fclose(fp);
+    }
 
-	return (rmanuf);
+	return manuf;
 }
-#undef OUI_STR_SIZE
-#undef MANUF_SIZE
 
 /* Read at least one full line from the network.
  *
@@ -4534,17 +4620,13 @@ static void * gps_tracker_thread(void * arg)
 	fd_set read_fd;
 	struct timeval timeout;
 
-	(void) arg;
+    static int const success = 0;
+    static int const failure = -1;
 
-	int * return_success = malloc(sizeof(int));
-	ALLEGE(return_success != NULL);
-	int * return_error = malloc(sizeof(int));
-	ALLEGE(return_error != NULL);
+    int * const return_value = (int *)arg;
+    ALLEGE(return_value != NULL); 
 
-	*return_success = 0;
-	*return_error = -1;
-
-	// Incase we GPSd goes down or we lose connection or a fix, we keep trying to connect inside the while loop
+	// In case we GPSd goes down or we lose connection or a fix, we keep trying to connect inside the while loop
 	while (lopt.do_exit == 0)
 	{
 		// If our socket connection to GPSD has been attempted and failed wait before trying again - used to prevent locking the CPU on socket retries
@@ -4786,16 +4868,16 @@ static void * gps_tracker_thread(void * arg)
 				snprintf(line, sizeof(line) - 1, "PVTAD\r\n");
 				if (send(gpsd_sock, line, 7, 0) != 7)
 				{
-					free(return_success);
-					return (return_error);
+                    *return_value = failure;
+                    goto done;
 				}
 
 				memset(line, 0, sizeof(line));
 				if (recv(gpsd_sock, line, sizeof(line) - 1, 0) <= 0)
 				{
-					free(return_success);
-					return (return_error);
-				}
+                    *return_value = failure;
+                    goto done;
+                }
 
 				if (memcmp(line, "GPSD,P=", 7) != 0) continue;
 
@@ -4835,8 +4917,10 @@ static void * gps_tracker_thread(void * arg)
 		}
 	}
 
-	free(return_error);
-	return (return_success);
+    *return_value = success;
+
+done:
+    return return_value; 
 }
 
 static void sighandler(int signum)
@@ -5257,13 +5341,10 @@ static int getchannels(const char * optarg)
 	chan_remain = chan_max;
 
 	// create a writable string
-	optc = optchan = (char *) malloc(strlen(optarg) + 1);
+	optc = optchan = strdup(optarg);
 	ALLEGE(optc != NULL);
-	ALLEGE(optchan != NULL);
-	strncpy(optchan, optarg, strlen(optarg));
-	optchan[strlen(optarg)] = '\0';
 
-	tmp_channels = (int *) malloc(sizeof(int) * (chan_max + 1));
+    tmp_channels = calloc(chan_max + 1, sizeof(int));
 	ALLEGE(tmp_channels != NULL);
 
 	// split string in tokens, separated by ','
@@ -5387,13 +5468,10 @@ static int getfrequencies(
 	freq_remain = freq_max;
 
 	// create a writable string
-	optc = optfreq = (char *) malloc(strlen(optarg) + 1);
+	optc = optfreq = strdup(optarg);
 	ALLEGE(optc != NULL);
-	ALLEGE(optfreq != NULL);
-	strncpy(optfreq, optarg, strlen(optarg));
-	optfreq[strlen(optarg)] = '\0';
 
-	tmp_frequencies = (int *) malloc(sizeof(int) * (freq_max + 1));
+    tmp_frequencies = calloc(freq_max + 1, sizeof(int));
 	ALLEGE(tmp_frequencies != NULL);
 
 	// split string in tokens, separated by ','
@@ -5608,8 +5686,7 @@ static int check_monitor(struct wif * wi[], int * fd_raw, int * fdh, int cards)
 					 wi_get_ifname(wi[i]));
 			// reopen in monitor mode
 
-			strncpy(ifname, wi_get_ifname(wi[i]), sizeof(ifname) - 1);
-			ifname[sizeof(ifname) - 1] = 0;
+			strlcpy(ifname, wi_get_ifname(wi[i]), sizeof(ifname));
 
 			wi_close(wi[i]);
 			wi[i] = wi_open(ifname);
@@ -5623,6 +5700,7 @@ static int check_monitor(struct wif * wi[], int * fd_raw, int * fdh, int cards)
 			if (fd_raw[i] > *fdh) *fdh = fd_raw[i];
 		}
 	}
+
 	return (0);
 }
 
@@ -5773,7 +5851,7 @@ static int rearrange_frequencies(void)
 	left = count;
 	pos = 0;
 
-	freqs = calloc(count + 1, sizeof(int));
+	freqs = calloc(count + 1, sizeof *freqs);
 	ALLEGE(freqs != NULL);
 	round_done = 0;
 
@@ -5827,12 +5905,11 @@ int main(int argc, char * argv[])
 	int pcreerroffset;
 #endif
 
-	struct AP_info *ap_cur, *ap_next;
-	struct ST_info *st_cur, *st_next;
-	struct NA_info *na_cur, *na_next;
-	struct oui *oui_cur, *oui_next;
+	struct AP_info * ap_cur;
+    struct ST_info * st_cur;
+    struct NA_info * na_cur;
 
-	struct pcap_pkthdr pkh;
+    struct pcap_pkthdr pkh;
 
 	time_t tt1, tt2, start_time;
 
@@ -5895,8 +5972,8 @@ int main(int argc, char * argv[])
 	console_utf8_enable();
 	ac_crypto_init();
 
-	ALLEGE(pthread_mutex_init(&(lopt.mx_print), NULL) == 0);
-	ALLEGE(pthread_mutex_init(&(lopt.mx_sort), NULL) == 0);
+    initialise_print_lock(&lopt);
+    initialise_sort_lock(&lopt);
 
 	textstyle(TEXT_RESET); //(TEXT_RESET, TEXT_BLACK, TEXT_WHITE);
 
@@ -5959,7 +6036,7 @@ int main(int argc, char * argv[])
 	lopt.f_cap_in = NULL;
 	lopt.detect_anomaly = 0;
 	lopt.airodump_start_time = NULL;
-	lopt.manufList = NULL;
+    lopt.manufacturer_list = NULL;
 
 	opt.output_format_pcap = 1;
 	opt.output_format_csv = 1;
@@ -5993,11 +6070,12 @@ int main(int argc, char * argv[])
 
 	lt = localtime(&tv0.tv_sec);
 
-	lopt.keyout = (char *) malloc(512);
+    static size_t const keyout_buf_size = 512;
+    lopt.keyout = malloc(keyout_buf_size);
 	ALLEGE(lopt.keyout != NULL);
-	memset(lopt.keyout, 0, 512);
+
 	snprintf(lopt.keyout,
-			 511,
+             keyout_buf_size,
 			 "keyout-%02d%02d-%02d%02d%02d.keys",
 			 lt->tm_mon + 1,
 			 lt->tm_mday,
@@ -6697,8 +6775,7 @@ int main(int argc, char * argv[])
 					*/
 					for (i = 0; i < lopt.num_cards; i++)
 					{
-						strncpy(ifnam, wi_get_ifname(wi[i]), sizeof(ifnam) - 1);
-						ifnam[sizeof(ifnam) - 1] = 0;
+						strlcpy(ifnam, wi_get_ifname(wi[i]), sizeof(ifnam));
 
 						wi_close(wi[i]);
 						wi[i] = wi_open(ifnam);
@@ -6763,8 +6840,7 @@ int main(int argc, char * argv[])
 					*/
 					for (i = 0; i < lopt.num_cards; i++)
 					{
-						strncpy(ifnam, wi_get_ifname(wi[i]), sizeof(ifnam) - 1);
-						ifnam[sizeof(ifnam) - 1] = 0;
+						strlcpy(ifnam, wi_get_ifname(wi[i]), sizeof(ifnam));
 
 						wi_close(wi[i]);
 						wi[i] = wi_open(ifnam);
@@ -6869,14 +6945,14 @@ int main(int argc, char * argv[])
 	/* fill oui struct if ram is greater than 32 MB */
 	if (get_ram_size() > MIN_RAM_SIZE_LOAD_OUI_RAM)
 	{
-		lopt.manufList = load_oui_file();
+        lopt.manufacturer_list = load_oui_file();
 	}
 
 	/* start the GPS tracker */
 
 	if (opt.usegpsd)
 	{
-		if (pthread_create(&lopt.gps_tid, NULL, &gps_tracker_thread, NULL) != 0)
+        if (pthread_create(&lopt.gps_tid, NULL, &gps_tracker_thread, &lopt.gps_thread_result) != 0)
 		{
 			perror("Could not create GPS thread");
 			return (EXIT_FAILURE);
@@ -6897,32 +6973,24 @@ int main(int argc, char * argv[])
 
 	lopt.batt = getBatteryString();
 
-	lopt.elapsed_time = (char *) calloc(1, 4);
-	if (lopt.elapsed_time == NULL)
-	{
-		perror("Error allocating memory");
-		return (EXIT_FAILURE);
-	}
-	strncpy(lopt.elapsed_time, "0 s", 4);
-	lopt.elapsed_time[3] = '\0';
+    lopt.elapsed_time = strdup("0 s");
+    ALLEGE(lopt.elapsed_time != NULL);
 
 	/* Create start time string for kismet netxml file */
-	lopt.airodump_start_time = (char *) calloc(1, 1000 * sizeof(char));
-	ALLEGE(lopt.airodump_start_time != NULL);
-	strncpy(lopt.airodump_start_time, ctime(&start_time), 1000 - 1);
-	lopt.airodump_start_time[strlen(lopt.airodump_start_time) - 1]
-		= 0; // remove new line
-	lopt.airodump_start_time = (char *) realloc( //-V701
-		lopt.airodump_start_time,
-		sizeof(char) * (strlen(lopt.airodump_start_time) + 1));
-	ALLEGE(lopt.airodump_start_time != NULL);
+    lopt.airodump_start_time = strdup(ctime(&start_time));
+    ALLEGE(lopt.airodump_start_time != NULL);
+    // remove new line
+    if (strlen(lopt.airodump_start_time) > 0)
+    {
+        lopt.airodump_start_time[strlen(lopt.airodump_start_time) - 1] = 0;
+    }
 
 	// Do not start the interactive mode input thread if running in the
 	// background
 	if (lopt.background_mode == -1) lopt.background_mode = is_background();
 
 	if (!lopt.background_mode
-		&& pthread_create(&(lopt.input_tid), NULL, (void *) input_thread, NULL)
+		&& pthread_create(&lopt.input_tid, NULL, (void *) input_thread, NULL)
 			   != 0)
 	{
 		perror("pthread_create failed");
@@ -6957,22 +7025,19 @@ int main(int argc, char * argv[])
 			if (lopt.sort_by != SORT_BY_NOTHING)
 			{
 				/* sort the APs by power */
-				ALLEGE(pthread_mutex_lock(&(lopt.mx_sort)) == 0);
+                acquire_sort_lock(&lopt); 
 				dump_sort();
-				ALLEGE(pthread_mutex_unlock(&(lopt.mx_sort)) == 0);
+                release_sort_lock(&lopt);
 			}
 
 			/* update the battery state */
-			free(lopt.batt);
-			lopt.batt = NULL;
-
 			tt2 = time(NULL);
-			lopt.batt = getBatteryString();
+            free(lopt.batt);
+            lopt.batt = getBatteryString();
 
 			/* update elapsed time */
 
 			free(lopt.elapsed_time);
-			lopt.elapsed_time = NULL;
 			lopt.elapsed_time = getStringTimeFromSec(difftime(tt2, start_time));
 
 			/* flush the output files */
@@ -7286,12 +7351,10 @@ int main(int argc, char * argv[])
 
 			if (!lopt.do_pause && !lopt.background_mode)
 			{
-				ALLEGE(pthread_mutex_lock(&(lopt.mx_print)) == 0);
-
+                acquire_print_lock(&lopt);
 				dump_print(lopt.ws.ws_row, lopt.ws.ws_col, lopt.num_cards);
-
-				ALLEGE(pthread_mutex_unlock(&(lopt.mx_print)) == 0);
-			}
+                release_print_lock(&lopt);
+            }
 			continue;
 		}
 
@@ -7322,8 +7385,7 @@ int main(int argc, char * argv[])
 
 						// reopen in monitor mode
 
-						strncpy(ifnam, wi_get_ifname(wi[i]), sizeof(ifnam) - 1);
-						ifnam[sizeof(ifnam) - 1] = 0;
+						strlcpy(ifnam, wi_get_ifname(wi[i]), sizeof(ifnam));
 
 						wi_close(wi[i]);
 						wi[i] = wi_open(ifnam);
@@ -7365,7 +7427,7 @@ int main(int argc, char * argv[])
 
 	if (lopt.batt) free(lopt.batt);
 
-	if (lopt.elapsed_time) free(lopt.elapsed_time);
+	free(lopt.elapsed_time);
 
 	if (lopt.own_channels) free(lopt.own_channels);
 
@@ -7411,15 +7473,15 @@ int main(int argc, char * argv[])
 
 	if (!lopt.save_gps)
 	{
-		snprintf((char *) buffer, 4096, "%s-%02d.gps", argv[2], opt.f_index);
-		unlink((char *) buffer);
+		snprintf((char *)buffer, sizeof buffer, "%s-%02d.gps", argv[2], opt.f_index);
+		unlink((char *)buffer);
 	}
 
 	if (opt.usegpsd)
 	{
 		void * retval = NULL;
+
 		pthread_join(lopt.gps_tid, &retval);
-		if (retval != NULL) free(retval);
 	}
 
 	if (!lopt.background_mode)
@@ -7428,63 +7490,51 @@ int main(int argc, char * argv[])
 	}
 
 	ap_cur = lopt.ap_1st;
-
 	while (ap_cur != NULL)
 	{
-		// Clean content of ap_cur list (first element: lopt.ap_1st)
+        struct AP_info * const ap_next = ap_cur->next;
+
+        // Clean content of ap_cur list (first element: lopt.ap_1st)
 		uniqueiv_wipe(ap_cur->uiv_root);
 
-		list_tail_free(&(ap_cur->packets));
+		list_tail_free(&ap_cur->packets);
 
-		if (lopt.manufList) free(ap_cur->manuf);
+        if (lopt.detect_anomaly)
+        {
+            data_wipe(ap_cur->data_root);
+        }
 
-		if (lopt.detect_anomaly) data_wipe(ap_cur->data_root);
+        free(ap_cur->manuf);
+        free(ap_cur);
 
-		ap_cur = ap_cur->next;
-	}
-
-	ap_cur = lopt.ap_1st;
-
-	while (ap_cur != NULL)
-	{
-		// Freeing AP List
-		ap_next = ap_cur->next;
-		free(ap_cur);
-		ap_cur = ap_next;
+        ap_cur = ap_next;
 	}
 
 	st_cur = lopt.st_1st;
-
 	while (st_cur != NULL)
 	{
-		st_next = st_cur->next;
-		if (lopt.manufList) free(st_cur->manuf);
+        struct ST_info * const st_next = st_cur->next;
+
+        free(st_cur->manuf);
 		free(st_cur);
+
 		st_cur = st_next;
 	}
 
 	na_cur = lopt.na_1st;
-
 	while (na_cur != NULL)
 	{
-		na_next = na_cur->next;
+        struct NA_info * const na_next = na_cur->next;
+
 		free(na_cur);
+
 		na_cur = na_next;
 	}
 
-	if (lopt.manufList)
-	{
-		oui_cur = lopt.manufList;
-		while (oui_cur != NULL)
-		{
-			oui_next = oui_cur->next;
-			free(oui_cur);
-			oui_cur = oui_next;
-		}
-	}
+    oui_list_free(&lopt.manufacturer_list);
 
 	reset_term();
 	show_cursor();
 
-	return (EXIT_SUCCESS);
+	return EXIT_SUCCESS;
 }

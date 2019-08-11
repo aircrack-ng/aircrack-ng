@@ -601,56 +601,77 @@ static char * sanitize_xml(unsigned char * text, size_t length)
 	return (newtext);
 }
 
+static void strip_eol(char * const buffer)
+{
+	size_t len;
+	char *last_char;
+
+	len = strlen(buffer);
+	if (len == 0)
+	{
+		goto done;
+	}
+	last_char = &buffer[len - 1];
+	if (*last_char == '\n' || *last_char == '\r')
+	{
+		*last_char = '\0';
+	}
+
+	len = strlen(buffer);
+	if (len == 0)
+	{
+		goto done;
+	}
+	last_char = &buffer[len - 1]; 
+	if (*last_char == '\n' || *last_char == '\r')
+	{
+		*last_char = '\0';
+	}
+
+done:
+	return;
+}
+
 char * get_manufacturer_from_string(char * buffer)
 {
 	char * manuf = NULL;
 	char * buffer_manuf;
-	if (buffer != NULL && strlen(buffer) > 0)
+
+	if (buffer == NULL || strlen(buffer) == 0)
 	{
-		buffer_manuf = strstr(buffer, "(hex)");
-		if (buffer_manuf != NULL)
-		{
-			buffer_manuf += 6; // skip '(hex)' and one more character (there's
-			// at least one 'space' character after that
-			// string)
-			while (*buffer_manuf == '\t' || *buffer_manuf == ' ')
-			{
-				++buffer_manuf;
-			}
+		goto done;
+	}
+	static char const hex_field[] = "(hex)";
 
-			// Did we stop at the manufacturer
-			if (*buffer_manuf != '\0')
-			{
+	buffer_manuf = strstr(buffer, hex_field);
 
-				// First make sure there's no end of line
-				if (buffer_manuf[strlen(buffer_manuf) - 1] == '\n'
-					|| buffer_manuf[strlen(buffer_manuf) - 1] == '\r')
-				{
-					buffer_manuf[strlen(buffer_manuf) - 1] = '\0';
-					if (*buffer_manuf != '\0'
-						&& (buffer_manuf[strlen(buffer_manuf) - 1] == '\n'
-							|| buffer[strlen(buffer_manuf) - 1] == '\r'))
-					{
-						buffer_manuf[strlen(buffer_manuf) - 1] = '\0';
-					}
-				}
-				if (*buffer_manuf != '\0')
-				{
-					if ((manuf = (char *) malloc((strlen(buffer_manuf) + 1)
-												 * sizeof(char)))
-						== NULL)
-					{
-						perror("malloc failed");
-						return (NULL);
-					}
-					snprintf(
-						manuf, strlen(buffer_manuf) + 1, "%s", buffer_manuf);
-				}
-			}
-		}
+	if (buffer_manuf == NULL)
+	{
+		goto done;
+	}
+	buffer_manuf += strlen(hex_field);
+	while (*buffer_manuf == '\t' || *buffer_manuf == ' ')
+	{
+		++buffer_manuf;
 	}
 
-	return (manuf);
+	// Did we stop at the manufacturer
+	if (*buffer_manuf == '\0')
+	{
+		goto done;
+	}
+	// First make sure there's no end of line
+	strip_eol(buffer_manuf);
+
+	if (*buffer_manuf == '\0')
+	{
+		goto done;
+	}
+
+	manuf = strdup(buffer_manuf);
+
+done:
+	return manuf;
 }
 
 #define KISMET_NETXML_HEADER_BEGIN                                             \

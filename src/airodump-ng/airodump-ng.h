@@ -125,14 +125,17 @@ struct pkt_buf
 	struct timeval ctime; /* capture time */
 };
 
+#define OUI_STR_SIZE sizeof "00:00:00"
+#define MANUF_SIZE 128
+#define MAC_ADDRESS_SIZE 6
+
 /* oui struct for list management */
 struct oui
 {
-	char id[9]; /* TODO: Don't use ASCII chars to compare, use unsigned char[3]
-				   (later) with the value (hex ascii will have to be converted)
-				   */
-	char
-		manuf[128]; /* TODO: Switch to a char * later to improve memory usage */
+    char id[OUI_STR_SIZE]; /* TODO: Don't use ASCII chars to compare, use unsigned char[3]
+                   (later) with the value (hex ascii will have to be converted)
+                   */
+    char * manufacturer;
 	struct oui * next;
 };
 
@@ -145,7 +148,7 @@ struct NA_info
 	struct NA_info * prev; /* the prev client in list   */
 	struct NA_info * next; /* the next client in list   */
 	time_t tinit, tlast; /* first and last time seen  */
-	unsigned char namac[6]; /* the stations MAC address  */
+    unsigned char namac[MAC_ADDRESS_SIZE]; /* the stations MAC address  */
 	int power; /* last signal power         */
 	int channel; /* captured on channel       */
 	int ack; /* number of ACK frames      */
