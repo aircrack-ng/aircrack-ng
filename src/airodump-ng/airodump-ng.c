@@ -4972,12 +4972,11 @@ sigchld_handler(int signum)
     int const status = wait_proc(-1, &pid);
 }
 
-static void read_hopper_process_data(struct local_optons * const options)
+static void read_hopper_process_data(struct local_options * const options)
 {
     struct hopper_data_st hopper_data;
     int read_result;
 
-    errno = 0;
     do
     {
         read_result = read(options->hopper_process_pipe[0], &hopper_data, sizeof hopper_data);
@@ -5022,11 +5021,6 @@ static void read_hopper_process_data(struct local_optons * const options)
 
 done:
     return;
-}
-
-static void sigusr1_handler(int signum)
-{
-    read_hopper_process_data(&lopt);
 }
 
 static void sighandler(int signum)
@@ -5221,9 +5215,6 @@ channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 
                     IGNORE_LTZ(write(lopt.hopper_process_pipe[1], &hopper_data, sizeof hopper_data));
 
-                    /* XXX - Remove this signal. */
-                    kill(parent, SIGUSR1);
-
 					usleep(1000);
 				}
 				continue;
@@ -5248,9 +5239,6 @@ channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
                 }; 
 
                 IGNORE_LTZ(write(lopt.hopper_process_pipe[1], &hopper_data, sizeof hopper_data)); 
-
-                /* XXX - Remove this signal. */
-                kill(parent, SIGUSR1);
 
                 if (lopt.active_scan_sim > 0)
                     send_probe_request(wi[card]); 
@@ -5345,9 +5333,6 @@ frequency_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 
                     IGNORE_LTZ(write(lopt.hopper_process_pipe[1], &hopper_data, sizeof hopper_data)); 
 
-                    /* XXX - Remove this signal. */
-                    kill(parent, SIGUSR1);
-
 					usleep(1000);
 				}
 				continue;
@@ -5368,9 +5353,6 @@ frequency_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
                 };
 
                 IGNORE_LTZ(write(lopt.hopper_process_pipe[1], &hopper_data, sizeof hopper_data));
-
-                /* XXX - Remove this signal. */
-                kill(parent, SIGUSR1);
 
 				usleep(1000);
 			}
@@ -5991,31 +5973,9 @@ static int rearrange_frequencies(void)
 	return (0);
 }
 
-static void install_hopper_process_signal_handler(
-    int const signum,
-    struct sigaction * const old_action)
-{
-    struct sigaction action;
-
-    action.sa_flags = 0;
-    action.sa_handler = &sigusr1_handler;
-    sigemptyset(&action.sa_mask);
-
-    if (sigaction(signum, &action, old_action) == -1)
-        perror("sigaction(SIGUSR1)");
-}
-
-static void restore_signal_handler(
-    int const signum, 
-    struct sigaction const * const old_action)
-{
-    if (sigaction(signum, old_action, NULL) == -1)
-    {
-        perror("sigaction -> previous error");
-    }
-}
-
-static bool reopen_cards(struct local_options const * const options)
+static bool reopen_cards(
+    struct local_options const * const options,
+    struct wif * const * const wi)
 {
     bool success;
 
@@ -6044,28 +6004,31 @@ done:
     return success;
 }
 
-static void start_frequency_hopper_process(void)
+static int start_monitor_process(
+    struct local_options const * const options, 
+    struct wif * const * const wi)
 {
+    int result; /* -1: error, 0: child process, 1: parent_process */
     struct sigaction old_action;
-    int const process_signum = SIGUSR1;
+    int const pipe_result = pipe(options->hopper_process_pipe);
 
-    IGNORE_NZ(pipe(lopt.hopper_process_pipe));
+    IGNORE_NZ(pipe_result);
 
-    install_hopper_process_signal_handler(process_signum, &old_action);
+    result = fork();
 
-    if (fork() == 0)
+    if (result == -1)
+    {
+        goto done;
+    }
+
+    if (result == 0)
     {
         /* This is the child process. */
-
-        /* The child doesn't handle SIGUSR1 signals, so restore the 
-         * handler to its previous setting. 
-         */
-        restore_signal_handler(process_signum, &old_action);
 
         /* Close the read end of the communications pipe as the child 
          * only writes data for the parent to read. 
          */
-        close(lopt.hopper_process_pipe[0]);
+        close(options->hopper_process_pipe[0]);
 
         /* reopen cards. This way parent & child don't share
         * resources for
@@ -6073,7 +6036,7 @@ static void start_frequency_hopper_process(void)
         * problems.  -sorbo
         */
 
-        if (!reopen_cards(&lopt))
+        if (!reopen_cards(options, wi))
         {
             exit(EXIT_FAILURE);
         }
@@ -6083,9 +6046,6 @@ static void start_frequency_hopper_process(void)
         {
             perror("setuid");
         }
-
-        frequency_hopper(wi, lopt.num_cards, freq_count, main_pid);
-        exit(EXIT_FAILURE);
     }
     else
     {
@@ -6093,68 +6053,82 @@ static void start_frequency_hopper_process(void)
         /* Close the write end of the communications pipe as the parent 
          * only reads data written by the child. 
          */
-        close(lopt.hopper_process_pipe[1]);
+        close(options->hopper_process_pipe[1]);
+    }
+
+done:
+    return result;
+}
+
+static void start_frequency_hopper_process(
+    struct local_options const * const options,
+    struct wif * const * const wi,
+    int const frequency_count)
+{
+    pid_t const main_pid = getpid();
+    int const result = start_monitor_process(options, wi);
+
+    if (result == 0)
+    {
+        frequency_hopper(wi, options->num_cards, frequency_count, main_pid);
+        exit(EXIT_FAILURE);
     }
 }
 
-static void start_channel_hopper_process(void)
+static void start_channel_hopper_process(
+    struct local_options const * const options,
+    struct wif * const * const wi,
+    int const channel_count)
 {
-    struct sigaction old_action;
-    int const process_signum = SIGUSR1;
+    pid_t const main_pid = getpid();
+    int const result = start_monitor_process(options, wi);
 
-    IGNORE_NZ(pipe(lopt.hopper_process_pipe));
-
-    install_hopper_process_signal_handler(process_signum, &old_action);
-
-    if (fork() == 0)
+    if (result == 0)
     {
-        /* This is the child process. */
-
-        /* The child doesn't handle SIGUSR1 signals, so restore the 
-         * handler to its previous setting. 
-         */
-        restore_signal_handler(process_signum, &old_action);
-
-        /* Close the read end of the communications pipe as the child 
-         * only writes data for the parent to read. 
-         */
-        close(lopt.hopper_process_pipe[0]);
-
-        /* reopen cards.  This way parent & child don't share
-        * resources for
-        * accessing the card (e.g. file descriptors) which may cause
-        * problems.  -sorbo
-        */
-
-        if (!reopen_cards(&lopt))
-        {
-            exit(EXIT_FAILURE);
-        }
-
-        /* Drop privileges */
-        if (setuid(getuid()) == -1)
-        {
-            perror("setuid");
-        }
-
-        channel_hopper(wi, lopt.num_cards, chan_count, main_pid);
+        channel_hopper(wi, options->num_cards, channel_count, main_pid);
         exit(EXIT_FAILURE);
     }
-    else
+}
+
+static void check_monitor_process(struct local_options * const options)
+{
+    fd_set rfds;
+
+    if (options->hopper_process_pipe[0] == -1)
     {
-        /* This is the parent process. */
-        /* Close the write end of the communications pipe as the parent 
-         * only reads data written by the child. 
-         */
-        close(lopt.hopper_process_pipe[1]);
+        goto done;
     }
+
+    int pipe_ready;
+    do
+    {
+        struct timeval tv =
+        {
+            .tv_sec = 0,
+            .tv_usec = 0
+        };
+        FD_ZERO(&rfds);
+        FD_SET(options->hopper_process_pipe[0], &rfds); // NOLINT(hicpp-signed-bitwise)
+        pipe_ready = select(options->hopper_process_pipe[0], &rfds, NULL, NULL, &tv);
+    }
+    while (pipe_ready < 0 && errno == ENITR);
+
+    if (pipe_ready != 1)
+    {
+        goto done;
+    }
+
+    read_hopper_process_data(options);
+
+done:
+    return;
 }
 
 int main(int argc, char * argv[])
 {
 	long time_slept, cycle_time, cycle_time2;
 	char * output_format_string;
-	int caplen = 0, i, j, fdh, chan_count, freq_count;
+	int caplen = 0, i, j, fdh, freq_count;
 	int fd_raw[MAX_CARDS], arptype[MAX_CARDS];
 	int ivs_only, found;
 	int freq[2];
@@ -6231,8 +6205,6 @@ int main(int argc, char * argv[])
 		   {"min-packets", 1, 0, 'n'},
 		   {"real-time", 0, 0, 'T'},
 		   {0, 0, 0, 0}};
-
-	pid_t const main_pid = getpid();
 
 	console_utf8_enable();
 	ac_crypto_init();
@@ -7007,7 +6979,8 @@ int main(int argc, char * argv[])
 
             detect_frequencies(wi[0], &detected_frequencies);
 
-            lopt.frequency[0] = getfrequencies(&detected_frequencies, lopt.freqstring);
+            lopt.frequency[0] = 
+                getfrequencies(&detected_frequencies, lopt.freqstring);
 
             detected_frequencies_cleanup(&detected_frequencies); 
 
@@ -7026,7 +6999,7 @@ int main(int argc, char * argv[])
 
 			if (lopt.frequency[0] == 0)
 			{
-                start_frequency_hopper_process();
+                start_frequency_hopper_process(&lopt, wi, freq_count);
 			}
 			else
 			{
@@ -7040,14 +7013,14 @@ int main(int argc, char * argv[])
 		}
 		else // use channels
 		{
-			chan_count = getchancount(0);
-
 			/* find the interface index */
 			/* start a child to hop between channels */
 
 			if (lopt.channel[0] == 0)
 			{
-                start_channel_hopper_process();
+                int const chan_count = getchancount(0);
+
+                start_channel_hopper_process(&lopt, wi, chan_count);
 			}
 			else
 			{
@@ -7074,7 +7047,8 @@ int main(int argc, char * argv[])
 	/* check if there is an input file */
 	if (opt.s_file != NULL)
 	{
-		if (!(lopt.f_cap_in = fopen(opt.s_file, "rb")))
+        lopt.f_cap_in = fopen(opt.s_file, "rb");
+        if (lopt.f_cap_in == NULL)
 		{
 			perror("open failed");
 			return (EXIT_FAILURE);
@@ -7198,6 +7172,8 @@ int main(int argc, char * argv[])
 			break;
 		}
 
+        check_monitor_process(&lopt);
+
 		if (time(NULL) - tt1 >= lopt.file_write_interval)
 		{
 			/* update the text output files */
@@ -7274,7 +7250,7 @@ int main(int argc, char * argv[])
 			/* Read one packet */
 			n = sizeof(pkh);
 
-			if (fread(&pkh, (size_t) n, 1, lopt.f_cap_in) != 1)
+			if (fread(&pkh, (size_t)n, 1, lopt.f_cap_in) != 1)
 			{
 				memset(lopt.message, '\x00', sizeof(lopt.message));
 				snprintf(lopt.message,
@@ -7519,8 +7495,10 @@ int main(int argc, char * argv[])
 				return (EXIT_FAILURE);
 			}
 		}
-		else
+        else
+        {
 			usleep(1);
+        }
 
 		gettimeofday(&tv2, NULL);
 
@@ -7673,9 +7651,7 @@ int main(int argc, char * argv[])
 
 	if (opt.usegpsd)
 	{
-		void * retval = NULL;
-
-		pthread_join(lopt.gps_tid, &retval);
+		pthread_join(lopt.gps_tid, NULL);
 	}
 
 	if (!lopt.background_mode)
