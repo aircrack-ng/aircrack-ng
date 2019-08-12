@@ -541,7 +541,8 @@ int dump_write_wifi_scanner(
     struct AP_info * ap_1st,
 	struct ST_info * st_1st,
 	unsigned int const f_encrypt,
-	int const filter_seconds,
+	time_t const filter_seconds,
+    int const file_reset_minutes,
     char const * const sys_name,
     char const * const loc_name)
 {
@@ -714,9 +715,11 @@ int dump_write_wifi_scanner(
 	fflush(opt.f_txt);
 
 	curr_time = time(NULL);
-	if (((curr_time - opt.last_file_reset) > opt.file_reset_minutes) && (opt.dump_prefix != NULL) && (opt.f_txt != NULL))
+	if ((curr_time - opt.last_file_reset) > file_reset_minutes 
+		&& opt.wifi_scanner_filename != NULL
+		&& opt.f_txt != NULL)
 	{
-		opt.f_txt = freopen(opt.dump_prefix, "w", opt.f_txt);
+		opt.f_txt = freopen(opt.wifi_scanner_filename, "w", opt.f_txt);
 		opt.last_file_reset = curr_time;
 	}
 	return 0;

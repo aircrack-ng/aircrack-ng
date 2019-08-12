@@ -56,7 +56,8 @@ int dump_write_kismet_csv(struct AP_info * ap_1st,
 int dump_write_wifi_scanner(struct AP_info * ap_1st,
                             struct ST_info * st_1st,
                             unsigned int const f_encrypt,
-                            int const filter_seconds,
+                            time_t const filter_seconds,
+                            int const file_reset_minutes,
                             char const * const sys_name,
                             char const * const loc_name);
 

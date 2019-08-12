@@ -159,6 +159,8 @@ struct communication_options
 	int output_format_kismet_netxml;
 	int output_format_log_csv;
     int output_format_wifi_scanner;
+    char * wifi_scanner_filename;
+    time_t last_file_reset; 
 
 	int usegpsd; /* do we use GPSd?      */
 	int record_data; /* do we record data?   */

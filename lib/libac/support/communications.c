@@ -1045,6 +1045,7 @@ int dump_initialize_multi_format(char * prefix, int ivs_only)
             fprintf(stderr, "Could not create \"%s\".\n", ofn);
             return 1;
         }
+        opt.wifi_scanner_filename = strdup(ofn);
     }
 
 	/* create the output packet capture file */

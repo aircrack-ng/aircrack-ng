@@ -312,9 +312,6 @@ static struct local_options
 	struct tm gps_time; /* the timestamp from the gps data */
     char sys_name[256];  /* system name value for wifi scanner custom format */
     char loc_name[256];  /* location name value for wifi scanner custom format */
-    time_t filter_seconds;
-    int file_reset_minutes;
-    time_t last_file_reset;
 #ifdef CONFIG_LIBNL
 	unsigned int htval;
 #endif
@@ -323,6 +320,9 @@ static struct local_options
 	unsigned long min_pkts;
 
 	int relative_time; /* read PCAP in psuedo-real-time */
+
+    time_t filter_seconds;
+    int file_reset_minutes;
 } lopt;
 
 static void resetSelection(void)
@@ -6351,7 +6351,7 @@ int main(int argc, char * argv[])
     lopt.loc_name[0] = '\0';
     lopt.filter_seconds = ONE_HOUR;
     lopt.file_reset_minutes = ONE_MIN;
-    lopt.last_file_reset = 0;
+    opt.last_file_reset = 0;
     lopt.do_exit = 0;
 	lopt.min_pkts = 2;
 	lopt.relative_time = 0;
@@ -7281,7 +7281,13 @@ int main(int argc, char * argv[])
 			if (opt.output_format_kismet_csv)
 				dump_write_kismet_csv(lopt.ap_1st, lopt.st_1st, lopt.f_encrypt);
             if (opt.output_format_wifi_scanner)
-                dump_write_wifi_scanner(lopt.ap_1st, lopt.st_1st, lopt.f_encrypt, lopt.filter_seconds, lopt.sys_name, lopt.loc_name);
+                dump_write_wifi_scanner(lopt.ap_1st, 
+                                        lopt.st_1st, 
+                                        lopt.f_encrypt, 
+                                        lopt.filter_seconds, 
+                                        lopt.file_reset_minutes,
+                                        lopt.sys_name,
+                                        lopt.loc_name);
 
 			if (opt.output_format_kismet_netxml)
 				dump_write_kismet_netxml(lopt.ap_1st,
@@ -7710,7 +7716,13 @@ int main(int argc, char * argv[])
 		if (opt.output_format_csv)
 			dump_write_csv(lopt.ap_1st, lopt.st_1st, lopt.f_encrypt);
         if (opt.output_format_wifi_scanner)
-            dump_write_wifi_scanner(lopt.ap_1st, lopt.st_1st, lopt.f_encrypt, lopt.filter_seconds, lopt.sys_name, lopt.loc_name);
+            dump_write_wifi_scanner(lopt.ap_1st, 
+                                    lopt.st_1st, 
+                                    lopt.f_encrypt, 
+                                    lopt.filter_seconds, 
+                                    lopt.file_reset_minutes,
+                                    lopt.sys_name,
+                                    lopt.loc_name);
         if (opt.output_format_kismet_csv)
 			dump_write_kismet_csv(lopt.ap_1st, lopt.st_1st, lopt.f_encrypt);
 		if (opt.output_format_kismet_netxml)
@@ -7719,18 +7731,24 @@ int main(int argc, char * argv[])
 									 lopt.f_encrypt,
 									 lopt.airodump_start_time);
 
-		if (opt.f_txt != NULL) fclose(opt.f_txt);
+		if (opt.f_txt != NULL) 
+            fclose(opt.f_txt);
+        free(opt.wifi_scanner_filename);
+        opt.wifi_scanner_filename = NULL;
 		if (opt.f_kis != NULL)
 			fclose(opt.f_kis);
 		if (opt.f_kis_xml != NULL)
-		{
 			fclose(opt.f_kis_xml);
-			free(lopt.airodump_start_time);
-		}
-		if (opt.f_gps != NULL) fclose(opt.f_gps);
-		if (opt.f_cap != NULL) fclose(opt.f_cap);
-		if (opt.f_ivs != NULL) fclose(opt.f_ivs);
-		if (opt.f_logcsv != NULL) fclose(opt.f_logcsv);
+        free(lopt.airodump_start_time);
+        lopt.airodump_start_time = NULL;
+        if (opt.f_gps != NULL)
+            fclose(opt.f_gps);
+		if (opt.f_cap != NULL)
+             fclose(opt.f_cap);
+		if (opt.f_ivs != NULL) 
+            fclose(opt.f_ivs);
+		if (opt.f_logcsv != NULL) 
+            fclose(opt.f_logcsv);
     }
 
 	if (!lopt.save_gps)
