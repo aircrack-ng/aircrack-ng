@@ -45,7 +45,8 @@ struct priv_file
 {
 	int pf_fd;
 	int pf_chan;
-	int pf_rate;
+    int pf_ht_chan;
+    int pf_rate;
 	int pf_dtl;
 	uint32_t pf_magic;
 	unsigned char pf_mac[6];
@@ -291,6 +292,15 @@ static int file_set_channel(struct wif * wi, int chan)
 	return 0;
 }
 
+static int file_set_ht_channel(struct wif * wi, int chan, unsigned int htval)
+{
+    struct priv_file * pf = wi_priv(wi);
+
+    pf->pf_ht_chan = htval;
+
+    return 0;
+}
+
 static int file_get_channel(struct wif * wi)
 {
 	struct priv_file * pf = wi_priv(wi);
@@ -364,7 +374,8 @@ struct wif * file_open(char * iface)
 	wi->wi_write = file_write;
 	wi->wi_set_channel = file_set_channel;
 	wi->wi_get_channel = file_get_channel;
-	wi->wi_set_rate = file_set_rate;
+    wi->wi_set_ht_channel = file_set_ht_channel;
+    wi->wi_set_rate = file_set_rate;
 	wi->wi_get_rate = file_get_rate;
 	wi->wi_close = file_close;
 	wi->wi_fd = file_fd;
@@ -380,7 +391,10 @@ struct wif * file_open(char * iface)
 
 	if ((rc = read(fd, &pfh, sizeof(pfh))) != sizeof(pfh)) goto __err;
 
-	if (pfh.magic != TCPDUMP_MAGIC && pfh.magic != TCPDUMP_CIGAM) goto __err;
+    if (pfh.magic != TCPDUMP_MAGIC && pfh.magic != TCPDUMP_CIGAM)
+    {
+        goto __err;
+    }
 
 	if (pfh.magic == TCPDUMP_CIGAM)
 	{
@@ -389,14 +403,16 @@ struct wif * file_open(char * iface)
 		pfh.linktype = ___my_swab32(pfh.linktype);
 	}
 
-	if (pfh.version_major != PCAP_VERSION_MAJOR
-		|| pfh.version_minor != PCAP_VERSION_MINOR)
+    if (pfh.version_major != PCAP_VERSION_MAJOR
+        || pfh.version_minor != PCAP_VERSION_MINOR)
+    {
 		goto __err;
+    }
 
 	pf->pf_dtl = pfh.linktype;
 	pf->pf_magic = pfh.magic;
 
-	return wi;
+    return wi;
 
 __err:
 	wi_close(wi);
