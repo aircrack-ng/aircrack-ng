@@ -196,6 +196,7 @@ static struct local_options
 	int frequency[MAX_CARDS]; /* current frequency #    */
 
     int hopper_process_pipe[2];
+    int signal_event_pipe[2]; 
 
 	float gps_loc[8]; /* gps coordinates      */
 	int save_gps; /* keep gps file flag   */
@@ -607,7 +608,7 @@ static void input_thread(void * arg)
 
 		if (keycode == KEY_SPACE)
 		{
-			lopt.do_pause = (lopt.do_pause + 1) % 2;
+			lopt.do_pause = !lopt.do_pause;
 			if (lopt.do_pause)
 			{
 				snprintf(
@@ -5025,68 +5026,117 @@ sigchld_handler(int signum)
     (void)status;
 }
 
-static void read_hopper_process_data(struct local_options * const options)
+static void process_hopper_process_data(
+    struct local_options * const options,
+    struct hopper_data_st const * const hopper_data)
 {
-    struct hopper_data_st hopper_data;
-    int read_result;
-
-    do
-    {
-        read_result = read(options->hopper_process_pipe[0], &hopper_data, sizeof hopper_data);
-    }
-    while (read_result < 0 && errno == EINTR);
-
-    if (read_result < 0)
-    {
-        // error occurred
-        perror("read");
-        goto done;
-    }
-    else if (read_result == 0)
-    {
-        // EOF
-        perror("EOF encountered read(opt.cd_pipe[0])");
-        goto done;
-    }
-
-    if (read_result != sizeof hopper_data)
-    {
-        goto done;
-    }
-
-    if (hopper_data.card < 0 || hopper_data.card >= ArrayCount(options->frequency))
+    if (hopper_data->card < 0 || hopper_data->card >= ArrayCount(options->frequency))
     {
         // invalid received data
         fprintf(stderr,
                 "Invalid data received for read(opt.cd_pipe[0]), got %d\n",
-                hopper_data.card);
+                hopper_data->card);
         goto done;
     }
 
     if (options->freqoption != 0)
     {
-        options->frequency[hopper_data.card] = hopper_data.u.frequency;
+        options->frequency[hopper_data->card] = hopper_data->u.frequency;
     }
     else
     {
-        options->channel[hopper_data.card] = hopper_data.u.channel;
+        options->channel[hopper_data->card] = hopper_data->u.channel;
     }
 
 done:
     return;
 }
 
+static void update_window_size(struct winsize * const ws)
+{
+    if (ioctl(0, TIOCGWINSZ, ws) < 0)
+    {
+        static unsigned short int const default_windows_rows = 25;
+        static unsigned short int const default_windows_cols = 80;
+
+        ws->ws_row = default_windows_rows;
+        ws->ws_col = default_windows_cols;
+    }
+}
+
+static void signal_event_shutdown(struct local_options * const options)
+{
+    if (options->signal_event_pipe[0] != -1)
+    {
+        int const fd = lopt.signal_event_pipe[0];
+
+        lopt.signal_event_pipe[0] = -1;
+        close(fd);
+    }
+
+    if (options->signal_event_pipe[1] != -1)
+    {
+        int const fd = lopt.signal_event_pipe[1];
+
+        options->signal_event_pipe[1] = -1;
+        close(fd);
+    }
+}
+
+static void handle_window_changed_event(struct local_options const * const options)
+{
+    if (!opt.output_format_wifi_scanner)
+    {
+        erase_display(0);
+        fflush(stdout);
+    }
+}
+
+static void handle_terminate_event(struct local_options * const options)
+{
+    show_cursor();
+    reset_term();
+    fprintf(stdout, "Quitting...\n");
+    fflush(stdout); 
+
+    lopt.do_exit = 1;
+}
+
+typedef enum
+{
+    signal_event_window_changed,
+    signal_event_terminate
+} signal_event_t;
+
+static void send_event(int const fd, int const event)
+{
+    if (fd != -1)
+    {
+        IGNORE_LTZ(write(fd, &event, sizeof event));
+    }
+}
+
+static void send_window_changed_event(struct local_options const * const options)
+{
+    send_event(options->signal_event_pipe[1], signal_event_window_changed);
+}
+
+static void send_terminate_event(struct local_options const * const options)
+{
+    send_event(options->signal_event_pipe[1], signal_event_terminate);
+}
+
 static void sighandler(int signum)
 {
 	if (signum == SIGINT || signum == SIGTERM)
 	{
-		lopt.do_exit = 1;
-		show_cursor();
-		reset_term();
-		fprintf(stdout, "Quitting...\n");
+        send_terminate_event(&lopt);
 	}
-
-	if (signum == SIGSEGV)
+    else if (signum == SIGWINCH)
+    {
+        send_window_changed_event(&lopt);
+    }
+    else if (signum == SIGSEGV)
 	{
 		fprintf(stderr,
 				"Caught signal 11 (SIGSEGV). Please"
@@ -5094,25 +5144,6 @@ static void sighandler(int signum)
 		show_cursor();
 		fflush(stdout);
 		exit(1);
-	}
-
-	if (signum == SIGALRM)
-	{
-#if defined(__sun__)
-		fprintf(stdout,
-#else
-		dprintf(STDERR_FILENO,
-#endif
-				"Caught signal 14 (SIGALRM). Please"
-				" contact the author!\n\n");
-		show_cursor();
-		_exit(1);
-	}
-
-    if (signum == SIGWINCH && !opt.output_format_wifi_scanner)
-	{
-		erase_display(0);
-		fflush(stdout);
 	}
 }
 
@@ -6146,12 +6177,14 @@ static void start_channel_hopper_process(
     }
 }
 
-static void check_monitor_process(struct local_options * const options)
+static bool pipe_has_data_ready(int const fd)
 {
+    bool have_data_ready;
     fd_set rfds;
 
-    if (options->hopper_process_pipe[0] == -1)
+    if (fd == -1)
     {
+        have_data_ready = false;
         goto done;
     }
 
@@ -6164,21 +6197,88 @@ static void check_monitor_process(struct local_options * const options)
             .tv_usec = 0
         };
         FD_ZERO(&rfds);
-        FD_SET(options->hopper_process_pipe[0], &rfds); // NOLINT(hicpp-signed-bitwise)
-        pipe_ready = select(options->hopper_process_pipe[0], &rfds, NULL, NULL, &tv);
+        FD_SET(fd, &rfds); // NOLINT(hicpp-signed-bitwise)
+        pipe_ready = select(fd + 1, &rfds, NULL, NULL, &tv);
     }
     while (pipe_ready < 0 && errno == EINTR);
 
-    if (pipe_ready != 1)
+    if (pipe_ready <= 0 || !FD_ISSET(fd, &rfds))
     {
+        have_data_ready = false;
         goto done;
     }
 
-    read_hopper_process_data(options);
+    have_data_ready = true;
 
 done:
-    return;
+    return have_data_ready;
 }
+
+static bool pipe_read(int const fd, void * const data, size_t data_size)
+{
+    bool have_read_data;
+
+    if (!pipe_has_data_ready(fd))
+    {
+        have_read_data = false;
+        goto done;
+    }
+
+    int read_result;
+    do
+    {
+        read_result = read(fd, data, data_size);
+    }
+    while (read_result < 0 && errno == EINTR);
+
+    have_read_data = read_result == data_size;
+
+done:
+    return have_read_data;
+}
+
+static void check_monitor_process(struct local_options * const options)
+{
+    struct hopper_data_st hopper_data = { 0 };
+
+    while (pipe_read(options->hopper_process_pipe[0], 
+                     &hopper_data, 
+                     sizeof hopper_data))
+    {
+        process_hopper_process_data(options, &hopper_data);
+    }
+}
+
+static void process_event(
+    struct local_options * const options, 
+    signal_event_t const event)
+{
+    switch (event)
+    {
+        case signal_event_window_changed:
+            handle_window_changed_event(options);
+            break;
+        case signal_event_terminate:
+            handle_terminate_event(options);
+            break;
+        default:
+            /* Unknown event. */
+            break;
+    }
+}
+
+static void check_for_signal_events(struct local_options * const options)
+{
+    int event = 0;
+
+    while (pipe_read(options->signal_event_pipe[0], 
+                     &event, 
+                     sizeof event))
+    {
+        process_event(options, event);
+    }
+}
+
 
 int main(int argc, char * argv[])
 {
@@ -6340,6 +6440,8 @@ int main(int argc, char * argv[])
 
     lopt.hopper_process_pipe[0] = -1;
     lopt.hopper_process_pipe[1] = -1; 
+    lopt.signal_event_pipe[0] = -1;
+    lopt.signal_event_pipe[1] = -1;
 
 	opt.output_format_pcap = 1;
 	opt.output_format_csv = 1;
@@ -7192,6 +7294,9 @@ int main(int argc, char * argv[])
 		if (dump_initialize_multi_format(lopt.dump_prefix, ivs_only))
 			return (EXIT_FAILURE);
 
+    int const pipe_result = pipe(lopt.signal_event_pipe);
+    IGNORE_NZ(pipe_result);
+
 	struct sigaction action;
 	action.sa_flags = 0;
 	action.sa_handler = &sighandler;
@@ -7268,13 +7373,17 @@ int main(int argc, char * argv[])
 		return (EXIT_FAILURE);
 	}
 
+    update_window_size(&lopt.ws);
+
 	while (1)
 	{
-		if (lopt.do_exit)
-		{
-			break;
-		}
         check_monitor_process(&lopt);
+        check_for_signal_events(&lopt);
+
+        if (lopt.do_exit)
+        {
+            break;
+        }
 
 		if (time(NULL) - tt1 >= lopt.file_write_interval)
 		{
@@ -7353,7 +7462,6 @@ int main(int argc, char * argv[])
 				if (lopt.singlefreq) check_frequency(wi, lopt.num_cards);
 			}
 		}
-
 		if (opt.s_file != NULL)
 		{
 			static struct timeval prev_tv = {0, 0};
@@ -7613,19 +7721,13 @@ int main(int argc, char * argv[])
 		time_slept += 1000000UL * (tv2.tv_sec - tv1.tv_sec)
 					  + (tv2.tv_usec - tv1.tv_usec);
 
-		if (time_slept > REFRESH_RATE && time_slept > lopt.update_s * 1000000)
+        if (time_slept > REFRESH_RATE && time_slept > lopt.update_s * 1000000)
 		{
 			time_slept = 0;
 
 			update_dataps();
 
-			/* update the window size */
-
-			if (ioctl(0, TIOCGWINSZ, &lopt.ws) < 0)
-			{
-				lopt.ws.ws_row = 25;
-				lopt.ws.ws_col = 80;
-			}
+            update_window_size(&lopt.ws);
 
 			/* display the list of access points we have */
 
@@ -7818,6 +7920,8 @@ int main(int argc, char * argv[])
 
 	reset_term();
 	show_cursor();
+
+    signal_event_shutdown(&lopt);
 
 	return EXIT_SUCCESS;
 }
