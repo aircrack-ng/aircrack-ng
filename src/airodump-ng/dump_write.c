@@ -621,8 +621,9 @@ int dump_write_wifi_scanner(
 		}
 		else
 		{
-			char * essid = NULL;
-			essid = format_text_for_csv(ap_cur->essid, ap_cur->ssid_length);
+			char * const essid = 
+				format_text_for_csv(ap_cur->essid, ap_cur->ssid_length);
+
 			if (essid != NULL)
 			{
 				fprintf(opt.f_wifi, "%s|", essid);
