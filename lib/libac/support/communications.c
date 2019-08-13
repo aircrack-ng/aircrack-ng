@@ -1038,8 +1038,8 @@ int dump_initialize_multi_format(char * prefix, int ivs_only)
         snprintf(
             ofn, ofn_len, "%s-%02d.%s", prefix, opt.f_index, WIFI_EXT);
 
-        opt.f_txt = fopen(ofn, "wb+");
-        if (opt.f_txt == NULL)
+        opt.f_wifi = fopen(ofn, "wb+");
+        if (opt.f_wifi == NULL)
         {
             perror("fopen failed");
             fprintf(stderr, "Could not create \"%s\".\n", ofn);

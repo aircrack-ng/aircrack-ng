@@ -107,7 +107,7 @@
 	"\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00"
 
 // milliseconds to store last packets
-#define BUFFER_TIME 3000
+#define BUFFER_TIME_MILLISECS 3000
 
 extern int get_ram_size(void);
 

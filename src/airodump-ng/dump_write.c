@@ -548,10 +548,13 @@ int dump_write_wifi_scanner(
 {
 	struct AP_info * ap_cur = NULL;
 	struct ST_info * st_cur = NULL;
-	time_t curr_time = 0;
 
-	if (!opt.record_data || !opt.output_format_wifi_scanner)
+	if (!opt.record_data 
+		|| !opt.output_format_wifi_scanner 
+		|| opt.f_wifi == NULL)
+	{
 		return 0;
+	}
 
 	ap_cur = ap_1st;
 
@@ -586,12 +589,12 @@ int dump_write_wifi_scanner(
 		ap_cur->time_printed = time(NULL);
 		ap_cur->old_channel = ap_cur->channel;
 
-		fprintf(opt.f_txt, "%s|%s|", sys_name, loc_name);
+		fprintf(opt.f_wifi, "%s|%s|", sys_name, loc_name);
 
-		fprintf(opt.f_txt, "%ld|", ap_cur->tinit);
-		fprintf(opt.f_txt, "%ld|", ap_cur->tlast);
+		fprintf(opt.f_wifi, "%ld|", ap_cur->tinit);
+		fprintf(opt.f_wifi, "%ld|", ap_cur->tlast);
 
-		fprintf(opt.f_txt,
+		fprintf(opt.f_wifi,
 				"%02X:%02X:%02X:%02X:%02X:%02X|",
 				ap_cur->bssid[0],
 				ap_cur->bssid[1],
@@ -600,7 +603,7 @@ int dump_write_wifi_scanner(
 				ap_cur->bssid[4],
 				ap_cur->bssid[5]);
 
-		fprintf(opt.f_txt,                   /*printed twice to maintain output format*/
+		fprintf(opt.f_wifi,                   /*printed twice to maintain output format*/
 				"%02X:%02X:%02X:%02X:%02X:%02X|",
 				ap_cur->bssid[0],
 				ap_cur->bssid[1],
@@ -610,11 +613,11 @@ int dump_write_wifi_scanner(
 				ap_cur->bssid[5]);
 
 
-		fprintf(opt.f_txt, "%2d|", ap_cur->channel);
+		fprintf(opt.f_wifi, "%2d|", ap_cur->channel);
 
 		if ((ap_cur->ssid_length == 0) || (ap_cur->essid[0] == 0))
 		{
-			fprintf(opt.f_txt, "<hidden-ssid>|");
+			fprintf(opt.f_wifi, "<hidden-ssid>|");
 		}
 		else
 		{
@@ -622,16 +625,16 @@ int dump_write_wifi_scanner(
 			essid = format_text_for_csv(ap_cur->essid, ap_cur->ssid_length);
 			if (essid != NULL)
 			{
-				fprintf(opt.f_txt, "%s|", essid);
+				fprintf(opt.f_wifi, "%s|", essid);
 				free(essid);
 			}
 			else
 			{
-				fprintf(opt.f_txt, "|");
+				fprintf(opt.f_wifi, "|");
 			}
 		}
 
-		fprintf(opt.f_txt, "%3d\r\n", ap_cur->avg_power);
+		fprintf(opt.f_wifi, "%3d\r\n", ap_cur->avg_power);
 		ap_cur = ap_cur->next;
 	}
 
@@ -653,11 +656,11 @@ int dump_write_wifi_scanner(
 		}
 		st_cur->time_printed = time(NULL);
 		st_cur->old_channel = st_cur->channel;
-		fprintf(opt.f_txt, "%s|%s|", sys_name, loc_name);
-		fprintf(opt.f_txt, "%ld|", st_cur->tinit);
+		fprintf(opt.f_wifi, "%s|%s|", sys_name, loc_name);
+		fprintf(opt.f_wifi, "%ld|", st_cur->tinit);
 
-		fprintf(opt.f_txt, "%ld|", st_cur->tlast);
-		fprintf(opt.f_txt,
+		fprintf(opt.f_wifi, "%ld|", st_cur->tlast);
+		fprintf(opt.f_wifi,
 				"%02X:%02X:%02X:%02X:%02X:%02X|",
 				st_cur->stmac[0],
 				st_cur->stmac[1],
@@ -668,10 +671,10 @@ int dump_write_wifi_scanner(
 
 		if (!memcmp(ap_cur->bssid, BROADCAST, 6))
 		{
-			fprintf(opt.f_txt, "|");
+			fprintf(opt.f_wifi, "|");
 		}
 		else
-			fprintf(opt.f_txt,
+			fprintf(opt.f_wifi,
 					"%02X:%02X:%02X:%02X:%02X:%02X|",
 					ap_cur->bssid[0],
 					ap_cur->bssid[1],
@@ -680,17 +683,17 @@ int dump_write_wifi_scanner(
 					ap_cur->bssid[4],
 					ap_cur->bssid[5]);
 
-		fprintf(opt.f_txt, "%2d|", st_cur->channel);
+		fprintf(opt.f_wifi, "%2d|", st_cur->channel);
 
 		if (!memcmp(ap_cur->bssid, BROADCAST, 6))
 		{
-			fprintf(opt.f_txt, "|");
+			fprintf(opt.f_wifi, "|");
 		}
 		else
 		{
 			if ((ap_cur->ssid_length == 0) || (ap_cur->essid[0] == 0))
 			{
-				fprintf(opt.f_txt, "<hidden-ssid>|");
+				fprintf(opt.f_wifi, "<hidden-ssid>|");
 			}
 			else
 			{
@@ -698,30 +701,31 @@ int dump_write_wifi_scanner(
 				essid = format_text_for_csv(ap_cur->essid, ap_cur->ssid_length);
 				if (essid != NULL)
 				{
-					fprintf(opt.f_txt, "%s|", essid);
+					fprintf(opt.f_wifi, "%s|", essid);
 					free(essid);
 				}
 				else
 				{
-					fprintf(opt.f_txt, "|");
+					fprintf(opt.f_wifi, "|");
 				}
 			}
 		}
-		fprintf(opt.f_txt, "%3d", st_cur->power);
-		fprintf(opt.f_txt, "\r\n");
+		fprintf(opt.f_wifi, "%3d", st_cur->power);
+		fprintf(opt.f_wifi, "\r\n");
 		st_cur = st_cur->next;
 	}
 
-	fflush(opt.f_txt);
+	fflush(opt.f_wifi);
 
-	curr_time = time(NULL);
-	if ((curr_time - opt.last_file_reset) > file_reset_minutes 
-		&& opt.wifi_scanner_filename != NULL
-		&& opt.f_txt != NULL)
+	time_t const current_time = time(NULL);
+
+	if ((current_time - opt.last_file_reset) > file_reset_minutes
+		&& opt.wifi_scanner_filename != NULL)
 	{
-		opt.f_txt = freopen(opt.wifi_scanner_filename, "w", opt.f_txt);
-		opt.last_file_reset = curr_time;
+		opt.f_wifi = freopen(opt.wifi_scanner_filename, "w", opt.f_wifi);
+		opt.last_file_reset = current_time;
 	}
+
 	return 0;
 }
 

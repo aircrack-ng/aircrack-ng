@@ -323,7 +323,7 @@ static struct local_options
 	int relative_time; /* read PCAP in psuedo-real-time */
 
     time_t filter_seconds;
-    int file_reset_minutes;
+    int file_reset_seconds;
 } lopt;
 
 static void resetSelection(void)
@@ -1148,7 +1148,7 @@ static int update_dataps(void)
 	return (0);
 }
 
-static int list_tail_free(struct pkt_buf ** list)
+static int list_tail_free(struct pkt_buf * * list)
 {
 	struct pkt_buf ** pkts;
 
@@ -1228,7 +1228,7 @@ list_check_decloak(struct pkt_buf ** list, int length, const uint8_t * packet)
 	timediff = (((tv1.tv_sec - ((*list)->ctime.tv_sec)) * 1000000UL)
 				+ (tv1.tv_usec - ((*list)->ctime.tv_usec)))
 			   / 1000;
-	if (timediff > BUFFER_TIME)
+    if (timediff > BUFFER_TIME_MILLISECS)
 	{
 		list_tail_free(list);
 		next = NULL;
@@ -1241,7 +1241,7 @@ list_check_decloak(struct pkt_buf ** list, int length, const uint8_t * packet)
 			timediff = (((tv1.tv_sec - (next->next->ctime.tv_sec)) * 1000000UL)
 						+ (tv1.tv_usec - (next->next->ctime.tv_usec)))
 					   / 1000;
-			if (timediff > BUFFER_TIME)
+            if (timediff > BUFFER_TIME_MILLISECS)
 			{
 				list_tail_free(&next->next);
 				break;
@@ -3172,7 +3172,7 @@ write_packet:
 			return (1);
 		}
 
-		fflush(stdout);
+        fflush(opt.f_cap);
 
 		n = pkh.caplen;
 
@@ -3182,7 +3182,7 @@ write_packet:
 			return (1);
 		}
 
-		fflush(stdout);
+        fflush(opt.f_cap);
 	}
 
 	return (0);
@@ -6279,6 +6279,18 @@ static void check_for_signal_events(struct local_options * const options)
     }
 }
 
+static void flush_output_files(void)
+{
+    if (opt.f_cap != NULL)
+    {
+        fflush(opt.f_cap);
+    }
+
+    if (opt.f_ivs != NULL)
+    {
+        fflush(opt.f_ivs);
+    }
+}
 
 int main(int argc, char * argv[])
 {
@@ -6402,6 +6414,7 @@ int main(int argc, char * argv[])
 	opt.f_cap = NULL;
 	opt.f_ivs = NULL;
 	opt.f_txt = NULL;
+    opt.f_wifi = NULL;
 	opt.f_kis = NULL;
 	opt.f_kis_xml = NULL;
     opt.f_gps = NULL;
@@ -6458,7 +6471,7 @@ int main(int argc, char * argv[])
     lopt.sys_name[0] = '\0';
     lopt.loc_name[0] = '\0';
     lopt.filter_seconds = ONE_HOUR;
-    lopt.file_reset_minutes = ONE_MIN;
+    lopt.file_reset_seconds = ONE_MIN;
     opt.last_file_reset = 0;
     lopt.do_exit = 0;
 	lopt.min_pkts = 2;
@@ -6939,16 +6952,16 @@ int main(int argc, char * argv[])
                 break;
                     
             case 'y':
-                strncpy(lopt.loc_name, optarg, sizeof lopt.loc_name);
+                strlcpy(lopt.loc_name, optarg, sizeof lopt.loc_name);
                 break;
                     
             case 'F':
-                lopt.filter_seconds = atoi(optarg);
+                lopt.filter_seconds = strtoul(optarg, NULL, 10);
                 break;
                    
             case 'P':
-                reset_val = atoi(optarg);
-                lopt.file_reset_minutes = reset_val * 60;
+                reset_val = strtoul(optarg, NULL, 10);
+                lopt.file_reset_seconds = reset_val * ONE_MIN;
                 break;
                     
             case 'o':
@@ -7390,18 +7403,27 @@ int main(int argc, char * argv[])
 			/* update the text output files */
 
 			tt1 = time(NULL);
-			if (opt.output_format_csv)
+
+            if (opt.output_format_csv)
+            {
 				dump_write_csv(lopt.ap_1st, lopt.st_1st, lopt.f_encrypt);
-			if (opt.output_format_kismet_csv)
+            }
+
+            if (opt.output_format_kismet_csv)
+            {
 				dump_write_kismet_csv(lopt.ap_1st, lopt.st_1st, lopt.f_encrypt);
+            }
+
             if (opt.output_format_wifi_scanner)
+            {
                 dump_write_wifi_scanner(lopt.ap_1st, 
                                         lopt.st_1st, 
                                         lopt.f_encrypt, 
                                         lopt.filter_seconds, 
-                                        lopt.file_reset_minutes,
+                                        lopt.file_reset_seconds,
                                         lopt.sys_name,
                                         lopt.loc_name);
+            }
 
 			if (opt.output_format_kismet_netxml)
 				dump_write_kismet_netxml(lopt.ap_1st,
@@ -7430,10 +7452,7 @@ int main(int argc, char * argv[])
 			free(lopt.elapsed_time);
 			lopt.elapsed_time = getStringTimeFromSec(difftime(tt2, start_time));
 
-			/* flush the output files */
-
-			if (opt.f_cap != NULL) fflush(opt.f_cap);
-			if (opt.f_ivs != NULL) fflush(opt.f_ivs);
+            flush_output_files();
 		}
 
 		gettimeofday(&tv1, NULL);
@@ -7790,7 +7809,7 @@ int main(int argc, char * argv[])
 			dump_add_packet(h80211, caplen, &ri, i);
 		}
 
-		if (quitting && time(NULL) - quitting_event_ts > 3)
+		if (quitting > 0 && (time(NULL) - quitting_event_ts) > 3)
 		{
 			quitting_event_ts = 0;
 			quitting = 0;
@@ -7798,64 +7817,99 @@ int main(int argc, char * argv[])
 		}
 	}
 
-	if (lopt.batt) free(lopt.batt);
-
+	free(lopt.batt);
 	free(lopt.elapsed_time);
-
-	if (lopt.own_channels) free(lopt.own_channels);
-
-	if (lopt.f_essid) free(lopt.f_essid);
-
-	if (opt.prefix) free(opt.prefix);
-
-	if (opt.f_cap_name) free(opt.f_cap_name);
-
-	if (lopt.keyout) free(lopt.keyout);
+	free(lopt.own_channels);
+	free(lopt.f_essid);
+	free(opt.prefix);
+	free(opt.f_cap_name);
+	free(lopt.keyout);
 
 #ifdef HAVE_PCRE
 	if (lopt.f_essid_regex) pcre_free(lopt.f_essid_regex);
 #endif
 
-	for (i = 0; i < lopt.num_cards; i++) wi_close(wi[i]);
+    for (i = 0; i < lopt.num_cards; i++)
+    {
+        wi_close(wi[i]);
+    }
 
 	if (opt.record_data)
 	{
-		if (opt.output_format_csv)
+        if (opt.output_format_csv)
+        {
 			dump_write_csv(lopt.ap_1st, lopt.st_1st, lopt.f_encrypt);
+        }
+
         if (opt.output_format_wifi_scanner)
+        {
             dump_write_wifi_scanner(lopt.ap_1st, 
                                     lopt.st_1st, 
                                     lopt.f_encrypt, 
                                     lopt.filter_seconds, 
-                                    lopt.file_reset_minutes,
+                                    lopt.file_reset_seconds,
                                     lopt.sys_name,
                                     lopt.loc_name);
-        if (opt.output_format_kismet_csv)
-			dump_write_kismet_csv(lopt.ap_1st, lopt.st_1st, lopt.f_encrypt);
-		if (opt.output_format_kismet_netxml)
-			dump_write_kismet_netxml(lopt.ap_1st,
-									 lopt.st_1st,
-									 lopt.f_encrypt,
-									 lopt.airodump_start_time);
+        }
 
-		if (opt.f_txt != NULL) 
+        if (opt.output_format_kismet_csv)
+        {
+			dump_write_kismet_csv(lopt.ap_1st, lopt.st_1st, lopt.f_encrypt);
+        }
+
+        if (opt.output_format_kismet_netxml)
+        {
+			dump_write_kismet_netxml(lopt.ap_1st,
+                                     lopt.st_1st,
+                                     lopt.f_encrypt,
+                                     lopt.airodump_start_time);
+        }
+
+        if (opt.f_txt != NULL)
+        {
             fclose(opt.f_txt);
+        }
+
+        if (opt.f_wifi != NULL)
+        {
+            fclose(opt.f_wifi);
+        }
+
         free(opt.wifi_scanner_filename);
         opt.wifi_scanner_filename = NULL;
-		if (opt.f_kis != NULL)
+
+        if (opt.f_kis != NULL)
+        {
 			fclose(opt.f_kis);
-		if (opt.f_kis_xml != NULL)
+        }
+
+        if (opt.f_kis_xml != NULL)
+        {
 			fclose(opt.f_kis_xml);
+        }
+
         free(lopt.airodump_start_time);
         lopt.airodump_start_time = NULL;
+
         if (opt.f_gps != NULL)
+        {
             fclose(opt.f_gps);
-		if (opt.f_cap != NULL)
+        }
+
+        if (opt.f_cap != NULL)
+        {
              fclose(opt.f_cap);
-		if (opt.f_ivs != NULL) 
+        }
+
+        if (opt.f_ivs != NULL)
+        {
             fclose(opt.f_ivs);
-		if (opt.f_logcsv != NULL) 
+        }
+
+        if (opt.f_logcsv != NULL)
+        {
             fclose(opt.f_logcsv);
+        }
     }
 
 	if (!lopt.save_gps)
