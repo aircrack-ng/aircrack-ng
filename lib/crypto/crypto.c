@@ -207,14 +207,14 @@ void calc_mic(struct AP_info * ap,
 
 	memcpy(pke, "Pairwise key expansion", 23);
 
-	if (memcmp(ap->wpa.stmac, ap->bssid, 6) < 0)
+	if (MAC_ADDRESS_COMPARE((mac_address *)ap->wpa.stmac, &ap->bssid) < 0)
 	{
 		memcpy(pke + 23, ap->wpa.stmac, 6);
-		memcpy(pke + 29, ap->bssid, 6);
+		memcpy(pke + 29, &ap->bssid, 6);
 	}
 	else
 	{
-		memcpy(pke + 23, ap->bssid, 6);
+		memcpy(pke + 23, &ap->bssid, 6);
 		memcpy(pke + 29, ap->wpa.stmac, 6);
 	}
 

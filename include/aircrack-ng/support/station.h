@@ -32,13 +32,16 @@
  *  files in the program, then also delete it here.
  */
 
+#ifndef AIRCRACK_NG_STATION_H
+#define AIRCRACK_NG_STATION_H
+
 #include <aircrack-ng/ce-wpa/crypto_engine.h>
 #include <aircrack-ng/adt/avl_tree.h>
 #include <aircrack-ng/support/pcap_local.h>
 #include <aircrack-ng/ptw/aircrack-ptw-lib.h>
 
-#ifndef AIRCRACK_NG_STATION_H
-#define AIRCRACK_NG_STATION_H
+
+#include "aircrack-ng/osdep/mac_header.h"
 
 #define NB_PRB 10 /* size of probed ESSID ring buffer */
 
@@ -136,7 +139,7 @@ struct AP_info
 	char * manuf; /* the access point's manufacturer */
 	unsigned long long timestamp; /* Timestamp to calculate uptime   */
 
-	uint8_t bssid[6]; /* access point MAC address     */
+	mac_address bssid; /* access point MAC address     */
 	uint8_t essid[ESSID_LENGTH + 1]; /* access point identifier      */
 	uint8_t lanip[4]; /* IP address if unencrypted    */
 	uint8_t * ivbuf; /* table holding WEP IV data    */

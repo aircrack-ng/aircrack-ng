@@ -151,7 +151,7 @@ int dump_write_csv(struct AP_info * ap_1st,
 
 	while (ap_cur != NULL)
 	{
-		if (memcmp(ap_cur->bssid, BROADCAST, 6) == 0)
+		if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
 		{
 			ap_cur = ap_cur->next;
 			continue;
@@ -172,12 +172,12 @@ int dump_write_csv(struct AP_info * ap_1st,
 
 		fprintf(opt.f_txt,
 				"%02X:%02X:%02X:%02X:%02X:%02X, ",
-				ap_cur->bssid[0],
-				ap_cur->bssid[1],
-				ap_cur->bssid[2],
-				ap_cur->bssid[3],
-				ap_cur->bssid[4],
-				ap_cur->bssid[5]);
+				ap_cur->bssid.addr[0],
+                ap_cur->bssid.addr[1],
+                ap_cur->bssid.addr[2],
+                ap_cur->bssid.addr[3],
+                ap_cur->bssid.addr[4],
+                ap_cur->bssid.addr[5]);
 
 		ltime = localtime(&ap_cur->tinit);
 
@@ -346,17 +346,21 @@ int dump_write_csv(struct AP_info * ap_1st,
 
 		fprintf(opt.f_txt, "%3d, %8lu, ", st_cur->power, st_cur->nb_pkt);
 
-		if (!memcmp(ap_cur->bssid, BROADCAST, 6))
+        if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
+        {
 			fprintf(opt.f_txt, "(not associated) ,");
-		else
+        }
+        else
+        {
 			fprintf(opt.f_txt,
-					"%02X:%02X:%02X:%02X:%02X:%02X,",
-					ap_cur->bssid[0],
-					ap_cur->bssid[1],
-					ap_cur->bssid[2],
-					ap_cur->bssid[3],
-					ap_cur->bssid[4],
-					ap_cur->bssid[5]);
+                    "%02X:%02X:%02X:%02X:%02X:%02X,",
+                    ap_cur->bssid.addr[0],
+                    ap_cur->bssid.addr[1],
+                    ap_cur->bssid.addr[2],
+                    ap_cur->bssid.addr[3],
+                    ap_cur->bssid.addr[4],
+                    ap_cur->bssid.addr[5]);
+        }
 
 		probes_written = 0;
 		for (i = 0; i < NB_PRB; i++)
@@ -438,12 +442,12 @@ int dump_write_airodump_ng_logcsv_add_ap(const struct AP_info * ap_cur,
 	// BSSID
 	fprintf(opt.f_logcsv,
 			"%02X:%02X:%02X:%02X:%02X:%02X,",
-			ap_cur->bssid[0],
-			ap_cur->bssid[1],
-			ap_cur->bssid[2],
-			ap_cur->bssid[3],
-			ap_cur->bssid[4],
-			ap_cur->bssid[5]);
+            ap_cur->bssid.addr[0],
+            ap_cur->bssid.addr[1],
+            ap_cur->bssid.addr[2],
+            ap_cur->bssid.addr[3],
+            ap_cur->bssid.addr[4],
+            ap_cur->bssid.addr[5]);
 
 	// RSSI
 	fprintf(opt.f_logcsv, "%d,", ri_power);
@@ -567,7 +571,7 @@ int dump_write_wifi_scanner(
 			continue;
 		}
 
-		if (memcmp(ap_cur->bssid, BROADCAST, 6) == 0)
+		if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
 		{
 			ap_cur = ap_cur->next;
 			continue;
@@ -596,21 +600,21 @@ int dump_write_wifi_scanner(
 
 		fprintf(opt.f_wifi,
 				"%02X:%02X:%02X:%02X:%02X:%02X|",
-				ap_cur->bssid[0],
-				ap_cur->bssid[1],
-				ap_cur->bssid[2],
-				ap_cur->bssid[3],
-				ap_cur->bssid[4],
-				ap_cur->bssid[5]);
+                ap_cur->bssid.addr[0],
+                ap_cur->bssid.addr[1],
+                ap_cur->bssid.addr[2],
+                ap_cur->bssid.addr[3],
+                ap_cur->bssid.addr[4],
+                ap_cur->bssid.addr[5]);
 
 		fprintf(opt.f_wifi,                   /*printed twice to maintain output format*/
 				"%02X:%02X:%02X:%02X:%02X:%02X|",
-				ap_cur->bssid[0],
-				ap_cur->bssid[1],
-				ap_cur->bssid[2],
-				ap_cur->bssid[3],
-				ap_cur->bssid[4],
-				ap_cur->bssid[5]);
+                ap_cur->bssid.addr[0],
+                ap_cur->bssid.addr[1],
+                ap_cur->bssid.addr[2],
+                ap_cur->bssid.addr[3],
+                ap_cur->bssid.addr[4],
+                ap_cur->bssid.addr[5]);
 
 
 		fprintf(opt.f_wifi, "%2d|", ap_cur->channel);
@@ -670,23 +674,25 @@ int dump_write_wifi_scanner(
 				st_cur->stmac[4],
 				st_cur->stmac[5]);
 
-		if (!memcmp(ap_cur->bssid, BROADCAST, 6))
+		if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
 		{
 			fprintf(opt.f_wifi, "|");
 		}
-		else
+        else
+        {
 			fprintf(opt.f_wifi,
-					"%02X:%02X:%02X:%02X:%02X:%02X|",
-					ap_cur->bssid[0],
-					ap_cur->bssid[1],
-					ap_cur->bssid[2],
-					ap_cur->bssid[3],
-					ap_cur->bssid[4],
-					ap_cur->bssid[5]);
+                    "%02X:%02X:%02X:%02X:%02X:%02X|",
+                    ap_cur->bssid.addr[0],
+                    ap_cur->bssid.addr[1],
+                    ap_cur->bssid.addr[2],
+                    ap_cur->bssid.addr[3],
+                    ap_cur->bssid.addr[4],
+                    ap_cur->bssid.addr[5]);
+        }
 
 		fprintf(opt.f_wifi, "%2d|", st_cur->channel);
 
-		if (!memcmp(ap_cur->bssid, BROADCAST, 6))
+		if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
 		{
 			fprintf(opt.f_wifi, "|");
 		}
@@ -893,7 +899,7 @@ static int dump_write_kismet_netxml_client_info(struct ST_info * client,
 	}
 
 	is_unassociated = (client->base == NULL
-					   || memcmp(client->base->bssid, BROADCAST, 6) == 0);
+					   || MAC_ADDRESS_IS_BROADCAST(&client->base->bssid));
 
 	strncpy(first_time, ctime(&client->tinit), TIME_STR_LENGTH - 1);
 	first_time[strlen(first_time) - 1] = 0; // remove new line
@@ -1104,7 +1110,7 @@ int dump_write_kismet_netxml(struct AP_info * ap_1st,
 	network_number = 0;
 	while (ap_cur != NULL)
 	{
-		if (memcmp(ap_cur->bssid, BROADCAST, 6) == 0)
+		if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
 		{
 			ap_cur = ap_cur->next;
 			continue;
@@ -1220,12 +1226,12 @@ int dump_write_kismet_netxml(struct AP_info * ap_1st,
 		/* BSSID */
 		fprintf(opt.f_kis_xml,
 				"\t\t<BSSID>%02X:%02X:%02X:%02X:%02X:%02X</BSSID>\n",
-				ap_cur->bssid[0],
-				ap_cur->bssid[1],
-				ap_cur->bssid[2],
-				ap_cur->bssid[3],
-				ap_cur->bssid[4],
-				ap_cur->bssid[5]);
+                ap_cur->bssid.addr[0],
+                ap_cur->bssid.addr[1],
+                ap_cur->bssid.addr[2],
+                ap_cur->bssid.addr[3],
+                ap_cur->bssid.addr[4],
+                ap_cur->bssid.addr[5]);
 
 		/* Manufacturer, if set using standard oui list */
 		manuf = sanitize_xml((unsigned char *) ap_cur->manuf,
@@ -1284,8 +1290,9 @@ int dump_write_kismet_netxml(struct AP_info * ap_1st,
 		while (st_cur != NULL)
 		{
 			/* Check if the station is associated to the current AP */
-			if (memcmp(st_cur->stmac, BROADCAST, 6) != 0 && st_cur->base != NULL
-				&& memcmp(st_cur->base->bssid, ap_cur->bssid, 6) == 0)
+			if (!MAC_ADDRESS_IS_BROADCAST((mac_address *)st_cur->stmac) 
+                && st_cur->base != NULL
+				&& MAC_ADDRESS_EQUAL(&st_cur->base->bssid, &ap_cur->bssid))
 			{
 				dump_write_kismet_netxml_client_info(st_cur, ++client_nbr);
 			}
@@ -1379,7 +1386,7 @@ int dump_write_kismet_netxml(struct AP_info * ap_1st,
 	{
 		/* If not associated and not Broadcast Mac */
 		if (st_cur->base == NULL
-			|| memcmp(st_cur->base->bssid, BROADCAST, 6) == 0)
+			|| MAC_ADDRESS_IS_BROADCAST(&st_cur->base->bssid))
 		{
 			++network_number; // Network Number
 
@@ -1590,7 +1597,7 @@ int dump_write_kismet_csv(struct AP_info * ap_1st,
 	k = 1;
 	while (ap_cur != NULL)
 	{
-		if (memcmp(ap_cur->bssid, BROADCAST, 6) == 0)
+		if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
 		{
 			ap_cur = ap_cur->next;
 			continue;
@@ -1625,12 +1632,12 @@ int dump_write_kismet_csv(struct AP_info * ap_1st,
 		// BSSID
 		fprintf(opt.f_kis,
 				"%02X:%02X:%02X:%02X:%02X:%02X;",
-				ap_cur->bssid[0],
-				ap_cur->bssid[1],
-				ap_cur->bssid[2],
-				ap_cur->bssid[3],
-				ap_cur->bssid[4],
-				ap_cur->bssid[5]);
+                ap_cur->bssid.addr[0],
+                ap_cur->bssid.addr[1],
+                ap_cur->bssid.addr[2],
+                ap_cur->bssid.addr[3],
+                ap_cur->bssid.addr[4],
+                ap_cur->bssid.addr[5]);
 
 		// Info
 		fprintf(opt.f_kis, ";");

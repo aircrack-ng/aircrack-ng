@@ -263,7 +263,10 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 
 	while (ap_cur != NULL)
 	{
-		if (!memcmp(ap_cur->bssid, bssid, 6)) break;
+        if (MAC_ADDRESS_EQUAL(&ap_cur->bssid, (mac_address *)bssid))
+        {
+            break;
+        }
 
 		ap_prv = ap_cur;
 		ap_cur = ap_cur->next;
@@ -273,20 +276,23 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 
 	if (ap_cur == NULL)
 	{
-		if (!(ap_cur = (struct AP_info *) malloc(sizeof(struct AP_info))))
+        ap_cur = calloc(1, sizeof *ap_cur);
+		if (ap_cur == NULL)
 		{
 			perror("malloc failed");
 			return (FAILURE);
 		}
 
-		memset(ap_cur, 0, sizeof(struct AP_info));
-
-		if (G.ap_1st == NULL)
+        if (G.ap_1st == NULL)
+        {
 			G.ap_1st = ap_cur;
-		else
+        }
+        else
+        {
 			ap_prv->next = ap_cur;
+        }
 
-		memcpy(ap_cur->bssid, bssid, 6);
+		MAC_ADDRESS_COPY(&ap_cur->bssid, (mac_address *)bssid);
 
 		ap_cur->prev = ap_prv;
 
@@ -378,8 +384,10 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 		G.st_end = st_cur;
 	}
 
-	if (st_cur->base == NULL || memcmp(ap_cur->bssid, BROADCAST, 6) != 0)
-		st_cur->base = ap_cur;
+    if (st_cur->base == NULL || !MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
+    {
+        st_cur->base = ap_cur;
+    }
 
 skip_station:
 
@@ -408,20 +416,20 @@ skip_station:
 
 				if (G.f_ivs != NULL && !ap_cur->essid_stored)
 				{
-					memset(&ivs2, '\x00', sizeof(struct ivs2_pkthdr));
+                    memset(&ivs2, '\x00', sizeof ivs2);
 					ivs2.flags |= IVS2_ESSID;
 					ivs2.len += ap_cur->ssid_length;
 
-					if (memcmp(G.prev_bssid, ap_cur->bssid, 6) != 0)
+					if (!MAC_ADDRESS_EQUAL((mac_address *)G.prev_bssid, &ap_cur->bssid))
 					{
 						ivs2.flags |= IVS2_BSSID;
 						ivs2.len += 6;
-						memcpy(G.prev_bssid, ap_cur->bssid, 6);
+						MAC_ADDRESS_COPY((mac_address *)G.prev_bssid, &ap_cur->bssid);
 					}
 
 					/* write header */
-					if (fwrite(&ivs2, 1, sizeof(struct ivs2_pkthdr), G.f_ivs)
-						!= (size_t) sizeof(struct ivs2_pkthdr))
+                    if (fwrite(&ivs2, 1, sizeof(ivs2), G.f_ivs)
+                        != sizeof(ivs2))
 					{
 						perror("fwrite(IV header) failed");
 						return (EXIT_FAILURE);
@@ -430,10 +438,10 @@ skip_station:
 					/* write BSSID */
 					if (ivs2.flags & IVS2_BSSID)
 					{
-						if (fwrite(ap_cur->bssid, 1, 6, G.f_ivs) != (size_t) 6)
+                        if (fwrite(&ap_cur->bssid, 1, sizeof ap_cur->bssid, G.f_ivs) != sizeof ap_cur->bssid)
 						{
 							perror("fwrite(IV bssid) failed");
-							return (EXIT_FAILURE);
+							return EXIT_FAILURE;
 						}
 					}
 
@@ -442,11 +450,11 @@ skip_station:
 						!= (size_t) ap_cur->ssid_length)
 					{
 						perror("fwrite(IV essid) failed");
-						return (1);
+						return 1;
 					}
 
 					ap_cur->essid_stored = 1;
-					return (ESSID);
+					return ESSID;
 				}
 
 				for (i = 0; i < n; i++)
@@ -481,32 +489,32 @@ skip_station:
 
 				if (G.f_ivs != NULL && !ap_cur->essid_stored)
 				{
-					memset(&ivs2, '\x00', sizeof(struct ivs2_pkthdr));
+                    memset(&ivs2, '\x00', sizeof(ivs2));
 					ivs2.flags |= IVS2_ESSID;
 					ivs2.len += ap_cur->ssid_length;
 
-					if (memcmp(G.prev_bssid, ap_cur->bssid, 6) != 0)
+					if (!MAC_ADDRESS_EQUAL((mac_address *)G.prev_bssid, &ap_cur->bssid))
 					{
 						ivs2.flags |= IVS2_BSSID;
-						ivs2.len += 6;
-						memcpy(G.prev_bssid, ap_cur->bssid, 6);
+                        ivs2.len += MAC_ADDRESS_LEN;
+						MAC_ADDRESS_COPY((mac_address *)G.prev_bssid, &ap_cur->bssid);
 					}
 
 					/* write header */
-					if (fwrite(&ivs2, 1, sizeof(struct ivs2_pkthdr), G.f_ivs)
-						!= (size_t) sizeof(struct ivs2_pkthdr))
+                    if (fwrite(&ivs2, 1, sizeof(ivs2), G.f_ivs)
+                        != (size_t)sizeof(ivs2))
 					{
 						perror("fwrite(IV header) failed");
-						return (EXIT_FAILURE);
+						return EXIT_FAILURE;
 					}
 
 					/* write BSSID */
 					if (ivs2.flags & IVS2_BSSID)
 					{
-						if (fwrite(ap_cur->bssid, 1, 6, G.f_ivs) != (size_t) 6)
+                        if (fwrite(&ap_cur->bssid, 1, sizeof ap_cur->bssid, G.f_ivs) != sizeof ap_cur->bssid)
 						{
 							perror("fwrite(IV bssid) failed");
-							return (EXIT_FAILURE);
+							return EXIT_FAILURE;
 						}
 					}
 
@@ -515,11 +523,11 @@ skip_station:
 						!= (size_t) ap_cur->ssid_length)
 					{
 						perror("fwrite(IV essid) failed");
-						return (EXIT_FAILURE);
+						return EXIT_FAILURE;
 					}
 
 					ap_cur->essid_stored = 1;
-					return (ESSID);
+					return ESSID;
 				}
 
 				for (i = 0; i < n; i++)
@@ -602,28 +610,28 @@ skip_station:
 						// clear is now the keystream
 					}
 
-					if (memcmp(G.prev_bssid, ap_cur->bssid, 6) != 0)
+					if (!MAC_ADDRESS_EQUAL((mac_address *)G.prev_bssid, &ap_cur->bssid))
 					{
 						ivs2.flags |= IVS2_BSSID;
 						ivs2.len += 6;
-						memcpy(G.prev_bssid, ap_cur->bssid, 6);
+						MAC_ADDRESS_COPY((mac_address *)G.prev_bssid, &ap_cur->bssid);
 					}
 
-					if (fwrite(&ivs2, 1, sizeof(struct ivs2_pkthdr), G.f_ivs)
-						!= (size_t) sizeof(struct ivs2_pkthdr))
+                    if (fwrite(&ivs2, 1, sizeof(ivs2), G.f_ivs)
+                        != sizeof(ivs2))
 					{
 						perror("fwrite(IV header) failed");
-						return (EXIT_FAILURE);
+						return EXIT_FAILURE;
 					}
 
 					if (ivs2.flags & IVS2_BSSID)
 					{
-						if (fwrite(ap_cur->bssid, 1, 6, G.f_ivs) != (size_t) 6)
+                        if (fwrite(&ap_cur->bssid, 1, sizeof ap_cur->bssid, G.f_ivs) != sizeof ap_cur->bssid)
 						{
 							perror("fwrite(IV bssid) failed");
-							return (EXIT_FAILURE);
+							return EXIT_FAILURE;
 						}
-						ivs2.len -= 6;
+                        ivs2.len -= MAC_ADDRESS_LEN;
 					}
 
 					if (fwrite(h80211 + z, 1, 4, G.f_ivs) != (size_t) 4)
@@ -727,16 +735,16 @@ skip_station:
 						ivs2.len = sizeof(struct WPA_hdsk);
 						ivs2.flags |= IVS2_WPA;
 
-						if (memcmp(G.prev_bssid, ap_cur->bssid, 6) != 0)
+						if (!MAC_ADDRESS_EQUAL((mac_address *)G.prev_bssid, &ap_cur->bssid))
 						{
 							ivs2.flags |= IVS2_BSSID;
-							ivs2.len += 6;
-							memcpy(G.prev_bssid, ap_cur->bssid, 6);
+							ivs2.len += MAC_ADDRESS_LEN;
+							MAC_ADDRESS_COPY((mac_address *)G.prev_bssid, &ap_cur->bssid);
 						}
 
 						if (fwrite(
-								&ivs2, 1, sizeof(struct ivs2_pkthdr), G.f_ivs)
-							!= (size_t) sizeof(struct ivs2_pkthdr))
+                                   &ivs2, 1, sizeof(ivs2), G.f_ivs)
+                            != sizeof(ivs2))
 						{
 							perror("fwrite(IV header) failed");
 							return (EXIT_FAILURE);
@@ -744,32 +752,32 @@ skip_station:
 
 						if (ivs2.flags & IVS2_BSSID)
 						{
-							if (fwrite(ap_cur->bssid, 1, 6, G.f_ivs)
-								!= (size_t) 6)
+                            if (fwrite(&ap_cur->bssid, 1, sizeof ap_cur->bssid, G.f_ivs)
+                                != sizeof ap_cur->bssid)
 							{
 								perror("fwrite(IV bssid) failed");
 								return (EXIT_FAILURE);
 							}
-							ivs2.len -= 6;
+                            ivs2.len -= sizeof ap_cur->bssid;
 						}
 
-						if (fwrite(&(st_cur->wpa),
+						if (fwrite(&st_cur->wpa,
 								   1,
-								   sizeof(struct WPA_hdsk),
+                                   sizeof(st_cur->wpa),
 								   G.f_ivs)
-							!= (size_t) sizeof(struct WPA_hdsk))
+                            != sizeof(st_cur->wpa))
 						{
 							perror("fwrite(IV wpa_hdsk) failed");
 							return (EXIT_FAILURE);
 						}
-						return (WPA);
+						return WPA;
 					}
 				}
 			}
 		}
 	}
 
-	return (0);
+	return 0;
 }
 
 int main(int argc, char * argv[])
