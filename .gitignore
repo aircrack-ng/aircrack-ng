@@ -68,8 +68,6 @@ src/Makefile.in
 /.clang_complete
 CMakeLists.txt
 /cmake-build-*
-*.gcda
-*.gcno
 Makefile
 !/contrib/commview/Makefile
 !/contrib/airpcap/Makefile
@@ -102,9 +100,10 @@ coverage*.info
 /GSYMS
 /GTAGS
 /VERSION
-/aminclude_static.am
-/config.h
-/config.h.in
 /include/aircrack-ng/version.h
 /manpages/*.1
 /manpages/*.8
+*.vpj
+*.vpw
+*.vpwhistu
+*.vtg
