@@ -49,23 +49,18 @@
 #include "aircrack-ng/ce-wep/uniqueiv.h"
 
 /* allocate root structure */
+static size_t const root_bucket_size = 256;
+static size_t const level_1_bucket_size = 256;
+static size_t const level_2_bucket_size = 32;
 
-unsigned char ** uniqueiv_init(void)
+unsigned char * * uniqueiv_init(void)
 {
-	int i;
-
 	/* allocate root bucket (level 0) as vector of pointers */
 
-	unsigned char ** uiv_root
-		= (unsigned char **) malloc(256 * sizeof(unsigned char *));
+	unsigned char * * const uiv_root
+        = calloc(root_bucket_size, sizeof(unsigned char *));
 
-	if (uiv_root == NULL) return (NULL);
-
-	/* setup initial state as empty */
-
-	for (i = 0; i < 256; ++i) uiv_root[i] = NULL;
-
-	return (uiv_root);
+	return uiv_root;
 }
 
 /* update records with new IV */
@@ -74,9 +69,11 @@ int uniqueiv_mark(unsigned char ** uiv_root, unsigned char IV[3])
 {
 	unsigned char ** uiv_lvl1;
 	unsigned char * uiv_lvl2;
-	short i;
 
-	if (uiv_root == NULL) return (0);
+    if (uiv_root == NULL)
+    {
+        return 0;
+    }
 
 	/* select bucket from level 1 */
 
@@ -88,13 +85,12 @@ int uniqueiv_mark(unsigned char ** uiv_root, unsigned char IV[3])
 	{
 		/* allocate level 2 bucket being a vector of bits */
 
-		uiv_lvl1 = (unsigned char **) malloc(256 * sizeof(unsigned char *));
+        uiv_lvl1 = calloc(level_1_bucket_size, sizeof(unsigned char *));
 
-		if (uiv_lvl1 == NULL) return (1);
-
-		/* setup initial state as empty */
-
-		for (i = 0; i < 256; i++) uiv_lvl1[i] = NULL;
+        if (uiv_lvl1 == NULL)
+        {
+            return 1;
+        }
 
 		/* link to parent bucket */
 
@@ -103,7 +99,7 @@ int uniqueiv_mark(unsigned char ** uiv_root, unsigned char IV[3])
 
 	/* select bucket from level 2 */
 
-	uiv_lvl2 = (unsigned char *) uiv_lvl1[IV[1]];
+	uiv_lvl2 = uiv_lvl1[IV[1]];
 
 	/* create if it doesn't exist */
 
@@ -111,13 +107,12 @@ int uniqueiv_mark(unsigned char ** uiv_root, unsigned char IV[3])
 	{
 		/* allocate level 2 bucket as a vector of pointers */
 
-		uiv_lvl2 = (unsigned char *) malloc(32 * sizeof(unsigned char));
+        uiv_lvl2 = calloc(level_2_bucket_size, sizeof(unsigned char));
 
-		if (uiv_lvl2 == NULL) return (1);
-
-		/* setup initial state as empty */
-
-		for (i = 0; i < 32; i++) uiv_lvl2[i] = 0;
+        if (uiv_lvl2 == NULL)
+        {
+            return 1;
+        }
 
 		/* link to parent bucket */
 
@@ -128,21 +123,21 @@ int uniqueiv_mark(unsigned char ** uiv_root, unsigned char IV[3])
 
 	uiv_lvl2[BITWISE_OFFT(IV[0])] |= BITWISE_MASK(IV[0]);
 
-	return (0);
+	return 0;
 }
 
 /* check if already seen IV */
 
 int uniqueiv_check(unsigned char ** uiv_root, unsigned char IV[3])
 {
-	unsigned char ** uiv_lvl1;
+	unsigned char * * uiv_lvl1;
 	unsigned char * uiv_lvl2;
 
 	if (uiv_root == NULL) return (IV_NOTHERE);
 
 	/* select bucket from level 1 */
 
-	uiv_lvl1 = (unsigned char **) uiv_root[IV[2]];
+	uiv_lvl1 = (unsigned char * *) uiv_root[IV[2]];
 
 	/* stop here if not even allocated */
 
@@ -176,30 +171,24 @@ void uniqueiv_wipe(unsigned char ** uiv_root)
 
 	/* recursively wipe out allocated buckets */
 
-	for (i = 0; i < 256; ++i)
+    for (i = 0; i < root_bucket_size; ++i)
 	{
 		uiv_lvl1 = (unsigned char **) uiv_root[i];
 
 		if (uiv_lvl1 != NULL)
 		{
-			for (j = 0; j < 256; ++j)
+            for (j = 0; j < level_1_bucket_size; ++j)
 			{
 				uiv_lvl2 = (unsigned char *) uiv_lvl1[j];
 
-				if (uiv_lvl2 != NULL)
-				{
-					free(uiv_lvl2);
-					uiv_lvl2 = NULL;
-				}
+                free(uiv_lvl2);
 			}
 
 			free(uiv_lvl1);
-			uiv_lvl1 = NULL;
 		}
 	}
 
 	free(uiv_root);
-	uiv_root = NULL;
 
 	return;
 }
@@ -210,7 +199,7 @@ unsigned char * data_init(void)
 	unsigned char * IVs
 		= (unsigned char *) calloc(256 * 256 * 256 * 3, sizeof(unsigned char));
 	ALLEGE(IVs != NULL);
-	return (IVs);
+	return IVs;
 }
 
 /* Checking WEP packet:
@@ -264,5 +253,5 @@ int data_check(unsigned char * data_root,
 
 void data_wipe(unsigned char * data)
 {
-	if (data) free(data);
+	free(data);
 }

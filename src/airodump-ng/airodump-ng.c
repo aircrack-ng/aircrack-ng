@@ -2765,7 +2765,10 @@ skip_probe:
 			if (opt.f_ivs == NULL && lopt.detect_anomaly)
 			{
 				// Only allocate this when seeing WEP AP
-				if (ap_cur->data_root == NULL) ap_cur->data_root = data_init();
+				if (ap_cur->data_root == NULL)
+				{
+					ap_cur->data_root = data_init();
+				}
 
 				// Only works with full capture, not IV-only captures
 				if (data_check(ap_cur->data_root, &h80211[z], &h80211[z + 4])
@@ -5804,45 +5807,72 @@ static int setup_card(char * iface, struct wif ** wis)
 	return (0);
 }
 
-static int init_cards(const char * cardstr, char * iface[], struct wif ** wi)
+static bool name_already_specified(
+	char const * const interface_name, 
+	char * * const iface, 
+	size_t if_count)
+{
+	bool already_specified;
+
+	for (size_t i = 0; i < if_count; i++)
+	{
+		if (strcmp(iface[i], interface_name) == 0)
+		{
+			already_specified = true;
+			goto done;
+		}
+	}
+
+	already_specified = false;
+
+done:
+	return already_specified;
+}
+
+static int init_cards(
+	const char * cardstr, 
+	char * * const iface, 
+	struct wif * * wi)
 {
 	char * buffer;
-	char * buf;
+	char * buf = NULL;
 	int if_count = 0;
-	int i = 0, again = 0;
+	char * interface_name;
 
 	// Check card string is valid
-	if (cardstr == NULL || cardstr[0] == 0)
+	if (cardstr == NULL || cardstr[0] == '0')
 	{
-		return (-1);
+		if_count = -1;
+		goto done;
 	}
 
 	buf = buffer = strdup(cardstr);
 	if (buf == NULL)
 	{
-		return -1;
+		if_count = -1;
+		goto done;
 	}
 
-	while (((iface[if_count] = strsep(&buffer, ",")) != NULL)
+	while (((interface_name = strsep(&buffer, ",")) != NULL)
 		   && (if_count < MAX_CARDS))
 	{
-		again = 0;
-		for (i = 0; i < if_count; i++)
+		/* Ignore repeated interface names. */
+		if (name_already_specified(interface_name, iface, if_count))
 		{
-			if (strcmp(iface[i], iface[if_count]) == 0) again = 1;
+			continue;
 		}
-        if (again)
-        {
-            continue;
-        }
-		if (setup_card(iface[if_count], &wi[if_count]) != 0)
+
+		if (setup_card(interface_name, &wi[if_count]) != 0)
 		{
-			free(buf);
-			return (-1);
+			if_count = -1;
+			goto done;
 		}
+
+		iface[if_count] = interface_name;
 		if_count++;
 	}
 
+done:
 	free(buf);
 
 	return if_count;
@@ -6318,6 +6348,81 @@ static void flush_output_files(void)
     }
 }
 
+static void na_info_list_free(struct NA_info * * const list)
+{
+	struct NA_info * * const entry = list;
+
+	if (entry == NULL)
+	{
+		goto done;
+	}
+
+	while (*entry != NULL)
+	{
+		struct NA_info * const na_next = (*entry)->next;
+
+		free(*entry);
+
+		*entry = na_next;
+	}
+
+done:
+	return;
+}
+
+static void sta_list_free(struct ST_info * * const list)
+{
+	struct ST_info * * const entry = list;
+
+	if (list == NULL)
+	{
+		goto done;
+	}
+
+	while (*entry != NULL)
+	{
+		struct ST_info * const st_next = (*entry)->next;
+
+		free((*entry)->manuf);
+		free(*entry);
+
+		*entry = st_next;
+	}
+
+done:
+	return;
+}
+
+static void ap_list_free(struct AP_info * * const list)
+{
+	struct AP_info *  * const entry = list;
+
+	if (entry == NULL)
+	{
+		goto done;
+	}
+
+	while (*entry != NULL)
+	{
+		struct AP_info * const ap_next = (*entry)->next;
+
+		// Clean content of ap_cur list (first element: lopt.ap_1st)
+		uniqueiv_wipe((*entry)->uiv_root);
+
+		list_tail_free(&(*entry)->packets);
+
+		data_wipe((*entry)->data_root);
+
+		free((*entry)->manuf);
+		free(*entry);
+
+		*entry = ap_next;
+	}
+
+done:
+	return;
+}
+
 int main(int argc, char * argv[])
 {
 #define ONE_HOUR (60 * 60)
@@ -6340,11 +6445,6 @@ int main(int argc, char * argv[])
 	const char * pcreerror;
 	int pcreerroffset;
 #endif
-
-	struct AP_info * ap_cur;
-    struct ST_info * st_cur;
-    struct NA_info * na_cur;
-
     struct pcap_pkthdr pkh;
 
 	time_t tt1, tt2, start_time;
@@ -7849,6 +7949,8 @@ int main(int argc, char * argv[])
 		}
 	}
 
+	signal_event_shutdown(&lopt); 
+
 	free(lopt.batt);
 	free(lopt.elapsed_time);
 	free(lopt.own_channels);
@@ -7960,54 +8062,16 @@ int main(int argc, char * argv[])
 		pthread_join(lopt.input_tid, NULL);
 	}
 
-	ap_cur = lopt.ap_1st;
-	while (ap_cur != NULL)
-	{
-        struct AP_info * const ap_next = ap_cur->next;
+	ap_list_free(&lopt.ap_1st);
 
-        // Clean content of ap_cur list (first element: lopt.ap_1st)
-		uniqueiv_wipe(ap_cur->uiv_root);
+	sta_list_free(&lopt.st_1st);
 
-		list_tail_free(&ap_cur->packets);
+	na_info_list_free(&lopt.na_1st);
 
-        if (lopt.detect_anomaly)
-        {
-            data_wipe(ap_cur->data_root);
-        }
-
-        free(ap_cur->manuf);
-        free(ap_cur);
-
-        ap_cur = ap_next;
-	}
-
-	st_cur = lopt.st_1st;
-	while (st_cur != NULL)
-	{
-        struct ST_info * const st_next = st_cur->next;
-
-        free(st_cur->manuf);
-		free(st_cur);
-
-		st_cur = st_next;
-	}
-
-	na_cur = lopt.na_1st;
-	while (na_cur != NULL)
-	{
-        struct NA_info * const na_next = na_cur->next;
-
-		free(na_cur);
-
-		na_cur = na_next;
-	}
-
-    oui_list_free(&lopt.manufacturer_list);
+	oui_list_free(&lopt.manufacturer_list);
 
 	reset_term();
 	show_cursor();
-
-    signal_event_shutdown(&lopt);
 
 	return EXIT_SUCCESS;
 }
