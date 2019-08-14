@@ -5874,7 +5874,7 @@ static int set_encryption_filter(const char * input)
 static struct wif * reopen_card(struct wif * const old)
 {
     struct wif * new_wi;
-    char ifnam[64];
+	char ifnam[MAX_IFACE_NAME];
 
     /* The interface name needs to be saved because closing the 
      * card frees all resources associated with the wi. 

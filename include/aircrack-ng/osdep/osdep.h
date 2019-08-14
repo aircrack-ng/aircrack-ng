@@ -83,7 +83,7 @@ struct rx_info
  * This structure represents a single interface.  It should be created with
  * wi_open and destroyed with wi_close.
  */
-#define MAX_IFACE_NAME 64
+#define MAX_IFACE_NAME 128
 struct wif
 {
 	int (*wi_read)(struct wif * wi,
