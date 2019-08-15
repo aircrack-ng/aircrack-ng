@@ -940,7 +940,13 @@ static int find_first_free_file_index(char const * const prefix)
 }
 
 /* setup the output files */
-int dump_initialize_multi_format(char * prefix, int ivs_only)
+int dump_initialize_multi_format(
+    char * prefix, 
+	int ivs_only,
+	char const * const sys_name,
+	char const * const location_name,
+	time_t const filter_seconds,
+	int const file_reset_seconds)
 {
 	REQUIRE(prefix != NULL);
 	REQUIRE(strlen(prefix) > 0);
@@ -1068,23 +1074,6 @@ int dump_initialize_multi_format(char * prefix, int ivs_only)
 		}
 	}
 
-    if (opt.output_format_wifi_scanner)
-    {
-        snprintf(
-            ofn, ofn_len, "%s-%02d.%s", prefix, opt.f_index, WIFI_EXT);
-
-        opt.f_wifi = fopen(ofn, "wb+");
-        if (opt.f_wifi == NULL)
-        {
-            perror("fopen failed");
-            fprintf(stderr, "Could not create \"%s\".\n", ofn);
-            free(ofn);
-
-            return 1;
-        }
-        opt.wifi_scanner_filename = strdup(ofn);
-    }
-
 	/* create the output packet capture file */
 	if (opt.output_format_pcap)
 	{
@@ -1183,7 +1172,7 @@ int dump_initialize(char * prefix)
 {
 	opt.output_format_pcap = 1;
 
-	return dump_initialize_multi_format(prefix, 0);
+	return dump_initialize_multi_format(prefix, 0, NULL, NULL, 0, 0);
 }
 
 int check_shared_key(const uint8_t * h80211, size_t caplen)

@@ -160,9 +160,8 @@ struct communication_options
 	int output_format_kismet_csv;
 	int output_format_kismet_netxml;
 	int output_format_log_csv;
-    int output_format_wifi_scanner;
-    char * wifi_scanner_filename;
-    time_t last_file_reset; 
+
+	int output_format_wifi_scanner;
 
 	int usegpsd; /* do we use GPSd?      */
 	int record_data; /* do we record data?   */
@@ -373,7 +372,13 @@ int capture_ask_packet(int * caplen, int just_grab);
 int filter_packet(unsigned char * h80211, int caplen);
 
 int dump_initialize(char * prefix);
-int dump_initialize_multi_format(char * prefix, int ivs_only);
+int dump_initialize_multi_format(
+	char * prefix,
+	int ivs_only,
+	char const * const sys_name,
+	char const * const location_name,
+	time_t const filter_seconds,
+	int const file_reset_seconds);
 
 int check_shared_key(const uint8_t * h80211, size_t caplen);
 int encrypt_data(uint8_t * data, size_t length);

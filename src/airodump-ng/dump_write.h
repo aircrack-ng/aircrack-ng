@@ -35,6 +35,16 @@
 #include "ap_list.h"
 #include "aircrack-ng/osdep/sta_list.h"
 
+struct dump_context_st
+{
+    void * priv;
+    void (*dump)(struct dump_context_st * dump,
+                 struct ap_list_head * const ap_list,
+                 struct sta_list_head * const sta_list,
+                 unsigned int const f_encrypt);
+    void (*close)(struct dump_context_st * dump);
+}; 
+
 int dump_write_csv(struct ap_list_head * const ap_list,
 				   struct sta_list_head * const sta_list,
 				   unsigned int f_encrypt);
@@ -60,14 +70,5 @@ int dump_write_kismet_netxml(struct ap_list_head * const ap_list,
 int dump_write_kismet_csv(struct ap_list_head * const ap_list,
                           struct sta_list_head * const sta_list,
 						  unsigned int f_encrypt);
-
-int dump_write_wifi_scanner(struct ap_list_head * const ap_list,
-                            struct sta_list_head * const sta_list,
-                            unsigned int const f_encrypt,
-                            time_t const filter_seconds,
-                            int const file_reset_seconds,
-                            char const * const sys_name,
-                            char const * const loc_name);
-
 
 #endif /* _AIRODUMP_NG_DUMP_WRITE_H_ */
