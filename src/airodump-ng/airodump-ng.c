@@ -5203,10 +5203,10 @@ static int send_probe_request(struct wif * wi)
 		}
 
 		perror("wi_write()");
-		return (-1);
+		return -1;
 	}
 
-	return (0);
+	return 0;
 }
 
 static int send_probe_requests(struct wif * wi[], int cards)
@@ -5214,8 +5214,7 @@ static int send_probe_requests(struct wif * wi[], int cards)
 	REQUIRE(wi != NULL);
 	REQUIRE(cards > 0);
 
-	int i = 0;
-	for (i = 0; i < cards; i++)
+	for (size_t i = 0; i < cards; i++)
 	{
 		send_probe_request(wi[i]);
 	}
@@ -5223,18 +5222,28 @@ static int send_probe_requests(struct wif * wi[], int cards)
 	return (0);
 }
 
-static int getchancount(int valid)
+static int get_channel_count(
+	int const * const channels, 
+	int count_valid_channels_only)
 {
-	int i = 0, chan_count = 0;
+	int total_channel_count = 0; 
+	int valid_channel_count = 0;
 
-	while (lopt.channels[i] != 0)
+	while (channels[total_channel_count] != 0)
 	{
-		i++;
-		if (lopt.channels[i] != -1) chan_count++;
+		total_channel_count++;
+		if (channels[total_channel_count] != -1)
+		{
+			valid_channel_count++;
+		}
 	}
 
-	if (valid) return (chan_count);
-	return (i);
+	int const channel_count = 
+		count_valid_channels_only 
+			? valid_channel_count 
+			: total_channel_count;
+
+	return channel_count;
 }
 
 static int getfreqcount(int valid)
@@ -5277,7 +5286,7 @@ channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 				j = if_num - 1;
 				card = if_num - 1;
 
-				if (getchancount(1) > if_num)
+				if (get_channel_count(lopt.channels, 1) > if_num)
 				{
 					while (again)
 					{
@@ -7316,7 +7325,7 @@ int main(int argc, char * argv[])
 
 			if (lopt.channel[0] == 0)
 			{
-                int const chan_count = getchancount(0);
+				int const chan_count = get_channel_count(lopt.channels, 0);
 
                 start_channel_hopper_process(&lopt, wi, chan_count);
 			}
