@@ -177,18 +177,9 @@ TAILQ_HEAD(na_list_head, NA_info);
 
 static struct local_options
 {
-	/* Two AP lists are maintained. The spare list is used when 
-	 * sorting items. After sorting into the spare list, the index 
-	 * is updated to point to the sorted list.
-	 */
 	struct ap_list_head ap_list;
 
-	/* Two STA lists are maintained. The spare list is used when 
-	 * sorting items. After sorting into the spare list, the index 
-	 * is updated to point to the sorted list. 
-	 */
-	struct sta_list_head sta_list[2];
-	size_t current_sta_list_index;
+	struct sta_list_head sta_list;
 
 	struct na_list_head na_list;
 
@@ -400,7 +391,7 @@ static void color_on(void)
 			continue;
 		}
 
-		TAILQ_FOREACH_REVERSE(st_cur, &lopt.sta_list[lopt.current_sta_list_index], sta_list_head, entry)
+		TAILQ_FOREACH_REVERSE(st_cur, &lopt.sta_list, sta_list_head, entry)
 		{
 			if (st_cur->base != ap_cur
 				|| (time(NULL) - st_cur->tlast) > lopt.berlin)
@@ -611,11 +602,7 @@ static void input_thread(void * arg)
 					break;
 			}
 
-            acquire_sort_lock(&lopt);
-
 			dump_sort();
-
-			release_sort_lock(&lopt);
 		}
 
 		if (keycode == KEY_SPACE)
@@ -1091,7 +1078,7 @@ static void update_rx_quality(void)
 	/* stations */
 	struct ST_info * st_cur;
 
-	TAILQ_FOREACH(st_cur, &lopt.sta_list[lopt.current_sta_list_index], entry)
+	TAILQ_FOREACH(st_cur, &lopt.sta_list, entry)
 	{
 		time_diff = 1000000UL * (cur_time.tv_sec - st_cur->ftimer.tv_sec)
 					+ (cur_time.tv_usec - st_cur->ftimer.tv_usec);
@@ -1739,7 +1726,7 @@ static int dump_add_packet(
 
 	/* update our chained list of wireless stations */
 
-	st_cur = sta_info_lookup(&lopt.sta_list[lopt.current_sta_list_index], &stmac);
+	st_cur = sta_info_lookup(&lopt.sta_list, &stmac);
 
 	/* If it's a new client, add it */
 	if (st_cur == NULL)
@@ -1800,7 +1787,7 @@ static int dump_add_packet(
 			st_cur->ssid_length[i] = 0;
 		}
 
-		TAILQ_INSERT_TAIL(&lopt.sta_list[lopt.current_sta_list_index], st_cur, entry);
+		TAILQ_INSERT_TAIL(&lopt.sta_list, st_cur, entry);
 	}
 
     if (st_cur->base == NULL || !MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
@@ -3138,7 +3125,7 @@ write_packet:
 					}
 
 					/* check STA list */
-					st_cur = sta_info_lookup(&lopt.sta_list[lopt.current_sta_list_index], &namac);
+					st_cur = sta_info_lookup(&lopt.sta_list, &namac);
 
 					/* If it's a client, try next mac */
 					if (st_cur != NULL)
@@ -3378,26 +3365,27 @@ static void sort_aps(struct local_options * const options)
 		TAILQ_INSERT_TAIL(&sorted_list, ap_min, entry);
     }
 
-	/* Start using the sorted list. */
+	/* The original list is now empty. 
+	 * Concatenate the sorted list to it so that it contains the 
+	 * sorted entries. 
+	 */
 	TAILQ_CONCAT(&options->ap_list, &sorted_list, entry);
 }
 
 static void sort_stas(struct local_options * const options)
 {
     time_t tt = time(NULL);
-	size_t const sorted_list_index = (options->current_sta_list_index + 1) & 1;
+	struct sta_list_head sorted_list= TAILQ_HEAD_INITIALIZER(sorted_list);
 
-	TAILQ_INIT(&options->sta_list[sorted_list_index]);
-
-	while (TAILQ_FIRST(&options->sta_list[options->current_sta_list_index]) != NULL)
+	while (TAILQ_FIRST(&options->sta_list) != NULL)
     {
-		struct ST_info * st_cur = TAILQ_FIRST(&options->sta_list[options->current_sta_list_index]);
+		struct ST_info * st_cur;
         struct ST_info * st_min = NULL;
 
 		/* Don't sort entries older than 60 seconds. */
-		TAILQ_FOREACH(st_cur, &options->sta_list[options->current_sta_list_index], entry)
+		TAILQ_FOREACH(st_cur, &options->sta_list, entry)
         {
-			if (tt - st_cur->tlast > 60)
+			if ((tt - st_cur->tlast) > 60)
 			{
                 st_min = st_cur;
 			}
@@ -3405,9 +3393,9 @@ static void sort_stas(struct local_options * const options)
 
         if (st_min == NULL)
         {
-			st_min = TAILQ_FIRST(&options->sta_list[options->current_sta_list_index]); 
+			st_min = TAILQ_FIRST(&options->sta_list); 
 
-			TAILQ_FOREACH(st_cur, &options->sta_list[options->current_sta_list_index], entry)
+			TAILQ_FOREACH(st_cur, &options->sta_list, entry)
             {
 				if (st_min == st_cur)
 				{
@@ -3421,17 +3409,25 @@ static void sort_stas(struct local_options * const options)
             }
         }
 
-		TAILQ_REMOVE(&options->sta_list[options->current_sta_list_index], st_min, entry);
-		TAILQ_INSERT_TAIL(&options->sta_list[sorted_list_index], st_min, entry);
+		TAILQ_REMOVE(&options->sta_list, st_min, entry);
+		TAILQ_INSERT_TAIL(&sorted_list, st_min, entry);
     }
 
-	options->current_sta_list_index = sorted_list_index;
+	/* The original list is now empty. 
+	 * Concatenate the sorted list to it so that it contains the 
+	 * sorted entries. 
+	 */
+	TAILQ_CONCAT(&options->sta_list, &sorted_list, entry);
 }
 
 static void dump_sort(void)
 {
-    sort_aps(&lopt);
+	acquire_sort_lock(&lopt);
+
+	sort_aps(&lopt);
     sort_stas(&lopt);
+
+	release_sort_lock(&lopt);
 }
 
 static int getBatteryState(void) { return get_battery_state(); }
@@ -3621,11 +3617,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 	if (lopt.do_sort_always)
 	{
-        acquire_sort_lock(&lopt);
-
 		dump_sort();
-
-		release_sort_lock(&lopt);
 	}
 
 	tt = time(NULL);
@@ -4276,7 +4268,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				textcolor_fg(ap_cur->marked_color);
 			}
 
-			TAILQ_FOREACH_REVERSE(st_cur, &lopt.sta_list[lopt.current_sta_list_index], sta_list_head, entry)
+			TAILQ_FOREACH_REVERSE(st_cur, &lopt.sta_list, sta_list_head, entry)
 			{
 				if (st_cur->base != ap_cur
 					|| (time(NULL) - st_cur->tlast) > lopt.berlin)
@@ -6579,14 +6571,8 @@ int main(int argc, char * argv[])
 #endif
 
 	TAILQ_INIT(&lopt.na_list);
-	/* TODO: helper function. Use pointer rather than index. */
 	TAILQ_INIT(&lopt.ap_list);
-
-	/* TODO: helper function. Use pointer rather than index. */
-	TAILQ_INIT(&lopt.sta_list[0]);
-	TAILQ_INIT(&lopt.sta_list[1]); 
-	lopt.current_sta_list_index = 0; 
-
+	TAILQ_INIT(&lopt.sta_list);
 
 	// Default selection.
 	resetSelection();
@@ -7525,14 +7511,14 @@ int main(int argc, char * argv[])
             if (opt.output_format_csv)
             {
 				dump_write_csv(&lopt.ap_list, 
-							   &lopt.sta_list[lopt.current_sta_list_index], 
+							   &lopt.sta_list, 
 							   lopt.f_encrypt);
             }
 
             if (opt.output_format_wifi_scanner)
             {
 				dump_write_wifi_scanner(&lopt.ap_list,
-										&lopt.sta_list[lopt.current_sta_list_index],
+										&lopt.sta_list,
                                         lopt.f_encrypt,
                                         lopt.filter_seconds,
                                         lopt.file_reset_seconds,
@@ -7543,13 +7529,13 @@ int main(int argc, char * argv[])
             if (opt.output_format_kismet_csv)
             {
 				dump_write_kismet_csv(&lopt.ap_list, 
-									  &lopt.sta_list[lopt.current_sta_list_index],
+									  &lopt.sta_list,
 									  lopt.f_encrypt);
             }
 
 			if (opt.output_format_kismet_netxml)
 				dump_write_kismet_netxml(&lopt.ap_list,
-										 &lopt.sta_list[lopt.current_sta_list_index],
+										 &lopt.sta_list,
 										 lopt.f_encrypt,
 										 lopt.airodump_start_time);
 		}
@@ -7558,12 +7544,7 @@ int main(int argc, char * argv[])
 		{
 			if (lopt.sort_by != SORT_BY_NOTHING)
 			{
-				/* sort the APs by power */
-                acquire_sort_lock(&lopt); 
-
 				dump_sort();
-
-                release_sort_lock(&lopt);
 			}
 
 			/* update the battery state */
@@ -7968,14 +7949,14 @@ int main(int argc, char * argv[])
         if (opt.output_format_csv)
         {
 			dump_write_csv(&lopt.ap_list, 
-						   &lopt.sta_list[lopt.current_sta_list_index], 
+						   &lopt.sta_list, 
 						   lopt.f_encrypt);
         }
 
         if (opt.output_format_wifi_scanner)
         {
 			dump_write_wifi_scanner(&lopt.ap_list,
-									&lopt.sta_list[lopt.current_sta_list_index],
+									&lopt.sta_list,
                                     lopt.f_encrypt, 
                                     lopt.filter_seconds, 
                                     lopt.file_reset_seconds,
@@ -7986,14 +7967,14 @@ int main(int argc, char * argv[])
         if (opt.output_format_kismet_csv)
         {
 			dump_write_kismet_csv(&lopt.ap_list, 
-								  &lopt.sta_list[lopt.current_sta_list_index],
+								  &lopt.sta_list,
 								  lopt.f_encrypt);
         }
 
         if (opt.output_format_kismet_netxml)
         {
 			dump_write_kismet_netxml(&lopt.ap_list,
-									 &lopt.sta_list[lopt.current_sta_list_index],
+									 &lopt.sta_list,
                                      lopt.f_encrypt,
                                      lopt.airodump_start_time);
         }
@@ -8063,7 +8044,7 @@ int main(int argc, char * argv[])
 
 	ap_list_free(&lopt.ap_list);
 
-	sta_list_free(&lopt.sta_list[lopt.current_sta_list_index]);
+	sta_list_free(&lopt.sta_list);
 
 	na_info_list_free(&lopt.na_list);
 
