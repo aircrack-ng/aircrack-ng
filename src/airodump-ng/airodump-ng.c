@@ -170,6 +170,9 @@ int is_filtered_essid(const uint8_t * essid);
 
 /* bunch of global stuff */
 struct communication_options opt;
+
+TAILQ_HEAD(na_list_head, NA_info);
+
 static struct local_options
 {
 	struct AP_info * ap_1st;
@@ -178,7 +181,8 @@ static struct local_options
     struct ST_info * st_1st;
     struct ST_info * st_end;
 
-    struct NA_info * na_1st;
+	struct na_list_head na_list;
+
     struct oui * manufacturer_list;
 
     mac_address prev_bssid;
@@ -1140,9 +1144,7 @@ static int update_dataps(void)
 		ap_cur = ap_cur->prev;
 	}
 
-	na_cur = lopt.na_1st;
-
-	while (na_cur != NULL)
+	TAILQ_FOREACH(na_cur, &lopt.na_list, entry)
 	{
 		sec = (tv.tv_sec - na_cur->tv.tv_sec);
 		usec = (tv.tv_usec - na_cur->tv.tv_usec);
@@ -1159,7 +1161,6 @@ static int update_dataps(void)
 			na_cur->ack_old = na_cur->ack;
 			gettimeofday(&(na_cur->tv), NULL);
 		}
-		na_cur = na_cur->next;
 	}
 
 	return (0);
@@ -1302,46 +1303,49 @@ list_check_decloak(struct pkt_buf ** list, int length, const uint8_t * packet)
 	return 1; // didn't find decloak
 }
 
+static void na_info_free(struct NA_info * const na_cur)
+{
+	if (na_cur != NULL)
+	{
+		TAILQ_REMOVE(&lopt.na_list, na_cur, entry);
+		free(na_cur);
+	}
+}
+
+static void na_info_list_free(struct na_list_head * const list_head)
+{
+	struct NA_info * na_cur;
+	struct NA_info * na_temp;
+
+	TAILQ_FOREACH_SAFE(na_cur, list_head, entry, na_temp)
+	{
+		na_info_free(na_cur);
+	}
+
+	return;
+}
+
 static int remove_namac(mac_address const * const mac)
 {
-	struct NA_info * na_cur = NULL;
-	struct NA_info * na_prv = NULL;
+	struct NA_info * na_cur;
 
 	if (mac == NULL)
 	{
-		return (-1);
+		return -1;
 	}
 
-	na_cur = lopt.na_1st;
-	na_prv = NULL;
-
-	while (na_cur != NULL)
+	TAILQ_FOREACH(na_cur, &lopt.na_list, entry)
 	{
 		if (MAC_ADDRESS_EQUAL(&na_cur->namac, mac))
 		{
 			break;
 		}
-
-		na_prv = na_cur;
-		na_cur = na_cur->next;
 	}
 
-	/* if it's known, remove it */
-	if (na_cur != NULL)
-	{
-		/* first in linked list */
-		if (na_cur == lopt.na_1st)
-		{
-			lopt.na_1st = na_cur->next;
-		}
-		else
-		{
-			na_prv->next = na_cur->next;
-		}
-		free(na_cur);
-	}
+	/* If it's known, remove it */
+	na_info_free(na_cur);
 
-	return (0);
+	return 0;
 }
 
 // NOTE(jbenden): This is also in ivstools.c
@@ -1375,7 +1379,6 @@ static int dump_add_packet(unsigned char * h80211,
 	struct NA_info * na_cur = NULL;
 	struct AP_info * ap_prv = NULL;
 	struct ST_info * st_prv = NULL;
-	struct NA_info * na_prv = NULL;
 
 	MAC_ADDRESS_CLEAR(&bssid);
 	MAC_ADDRESS_CLEAR(&stmac);
@@ -3132,20 +3135,14 @@ write_packet:
 					}
 				}
 
-				/* not found in either AP list or ST list, look through NA list
+				/* Not found in either AP list or ST list, look through NA list
 				 */
-				na_cur = lopt.na_1st;
-				na_prv = NULL;
-
-				while (na_cur != NULL)
+				TAILQ_FOREACH(na_cur, &lopt.na_list, entry)
 				{
                     if (MAC_ADDRESS_EQUAL(&na_cur->namac, &namac))
                     {
                         break;
                     }
-
-					na_prv = na_cur;
-					na_cur = na_cur->next;
 				}
 
 				/* update our chained list of unknown stations */
@@ -3175,10 +3172,7 @@ write_packet:
 					na_cur->rts_r = 0;
 					na_cur->rts_t = 0;
 
-                    if (lopt.na_1st == NULL)
-                        lopt.na_1st = na_cur;
-                    else
-                        na_prv->next = na_cur;
+					TAILQ_INSERT_TAIL(&lopt.na_list, na_cur, entry);
                 }
 
 				/* update the last time seen & power*/
@@ -4424,19 +4418,19 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 		console_puts(strbuf);
 		CHECK_END_OF_SCREEN();
 
-		na_cur = lopt.na_1st;
-
-		while (na_cur != NULL)
+		TAILQ_FOREACH(na_cur, &lopt.na_list, entry)
 		{
 			if (time(NULL) - na_cur->tlast > 120)
 			{
-				na_cur = na_cur->next;
 				continue;
 			}
 
 			nlines++;
 
-			if (nlines >= (ws_row - 1)) return;
+			if (nlines >= (ws_row - 1))
+			{
+				return;
+			}
 
 			printf(" %02X:%02X:%02X:%02X:%02X:%02X",
 				   na_cur->namac.addr[0],
@@ -4457,8 +4451,6 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 			erase_line(0);
 			putchar('\n');
-
-			na_cur = na_cur->next;
 		}
 	}
 
@@ -6379,28 +6371,6 @@ static void flush_output_files(void)
     }
 }
 
-static void na_info_list_free(struct NA_info * * const list)
-{
-	struct NA_info * * const entry = list;
-
-	if (entry == NULL)
-	{
-		goto done;
-	}
-
-	while (*entry != NULL)
-	{
-		struct NA_info * const na_next = (*entry)->next;
-
-		free(*entry);
-
-		*entry = na_next;
-	}
-
-done:
-	return;
-}
-
 static void sta_list_free(struct ST_info * * const list)
 {
 	struct ST_info * * const entry = list;
@@ -6639,6 +6609,8 @@ int main(int argc, char * argv[])
 #ifdef HAVE_PCRE
 	lopt.f_essid_regex = NULL;
 #endif
+
+	TAILQ_INIT(&lopt.na_list);
 
 	// Default selection.
 	resetSelection();
@@ -8097,7 +8069,7 @@ int main(int argc, char * argv[])
 
 	sta_list_free(&lopt.st_1st);
 
-	na_info_list_free(&lopt.na_1st);
+	na_info_list_free(&lopt.na_list);
 
 	oui_list_free(&lopt.manufacturer_list);
 

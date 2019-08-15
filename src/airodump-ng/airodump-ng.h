@@ -32,6 +32,8 @@
 #ifndef _AIRODUMP_NG_H_
 #define _AIRODUMP_NG_H_
 
+#include "queue.h"
+
 #include <sys/ioctl.h>
 #if !defined(TIOCGWINSZ) && !defined(linux)
 #include <sys/termios.h>
@@ -144,7 +146,8 @@ struct oui
 
 struct NA_info
 {
-	struct NA_info * next; /* the next client in list   */
+	TAILQ_ENTRY(NA_info) entry;
+
 	time_t tinit, tlast; /* first and last time seen  */
     mac_address namac; /* the stations MAC address  */
 	int power; /* last signal power         */
