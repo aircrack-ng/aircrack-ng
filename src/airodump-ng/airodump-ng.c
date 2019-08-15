@@ -534,7 +534,10 @@ static void input_thread(void * arg)
 		{
 			lopt.sort_by++;
 
-			if (lopt.sort_by > MAX_SORT) lopt.sort_by = 0;
+			if (lopt.sort_by > MAX_SORT)
+			{
+				lopt.sort_by = 0;
+			}
 
 			switch (lopt.sort_by)
 			{
@@ -1380,6 +1383,111 @@ static struct AP_info * ap_info_lookup(
 	return ap_cur;
 }
 
+static struct AP_info * ap_info_new(mac_address const * const bssid)
+{
+	struct AP_info * const ap_cur = calloc(1, sizeof(*ap_cur));
+
+	if (ap_cur == NULL)
+	{
+		perror("calloc failed");
+		goto done;
+	}
+
+	MAC_ADDRESS_COPY(&ap_cur->bssid, bssid);
+	if (ap_cur->manuf == NULL)
+	{
+		ap_cur->manuf = 
+			get_manufacturer(ap_cur->bssid.addr[0], 
+							 ap_cur->bssid.addr[1], 
+							 ap_cur->bssid.addr[2]);
+	}
+
+	ap_cur->nb_pkt = 0;
+
+	ap_cur->tinit = time(NULL);
+	ap_cur->tlast = ap_cur->tinit;
+	ap_cur->time_printed = 0;
+
+	ap_cur->avg_power = -1;
+	ap_cur->best_power = -1;
+	ap_cur->power_index = -1;
+
+	for (size_t i = 0; i < NB_PWR; i++)
+	{
+		ap_cur->power_lvl[i] = -1;
+	}
+
+	ap_cur->channel = -1;
+	ap_cur->old_channel = -1;
+	ap_cur->max_speed = -1;
+	ap_cur->security = 0;
+
+	ap_cur->ivbuf = NULL;
+	ap_cur->ivbuf_size = 0;
+	ap_cur->uiv_root = uniqueiv_init();
+
+	ap_cur->nb_data = 0;
+	ap_cur->nb_dataps = 0;
+	ap_cur->nb_data_old = 0;
+	gettimeofday(&ap_cur->tv, NULL);
+
+	ap_cur->dict_started = 0;
+
+	ap_cur->key = NULL;
+
+	ap_cur->nb_bcn = 0;
+
+	ap_cur->rx_quality = 0;
+	ap_cur->fcapt = 0;
+	ap_cur->fmiss = 0;
+	ap_cur->last_seq = 0;
+	gettimeofday(&ap_cur->ftimef, NULL);
+	gettimeofday(&ap_cur->ftimel, NULL);
+	gettimeofday(&ap_cur->ftimer, NULL);
+
+	ap_cur->ssid_length = 0;
+	ap_cur->essid_stored = 0;
+	memset(ap_cur->essid, 0, sizeof ap_cur->essid);
+	ap_cur->timestamp = 0;
+
+	ap_cur->decloak_detect = lopt.decloak;
+	ap_cur->is_decloak = 0;
+
+	TAILQ_INIT(&ap_cur->pkt_list);
+
+	ap_cur->marked = 0;
+	ap_cur->marked_color = 1;
+
+	ap_cur->data_root = NULL;
+	ap_cur->EAP_detected = 0;
+	memcpy(ap_cur->gps_loc_min, lopt.gps_loc, sizeof(float) * 5); //-V512
+	memcpy(ap_cur->gps_loc_max, lopt.gps_loc, sizeof(float) * 5); //-V512
+	memcpy(ap_cur->gps_loc_best, lopt.gps_loc, sizeof(float) * 5); //-V512
+
+	/* 802.11n and ac */
+	ap_cur->channel_width = CHANNEL_22MHZ; // 20MHz by default
+	memset(ap_cur->standard, 0, sizeof ap_cur->standard);
+
+	ap_cur->n_channel.sec_channel = -1;
+	ap_cur->n_channel.short_gi_20 = 0;
+	ap_cur->n_channel.short_gi_40 = 0;
+	ap_cur->n_channel.any_chan_width = 0;
+	ap_cur->n_channel.mcs_index = -1;
+
+	ap_cur->ac_channel.center_sgmt[0] = 0;
+	ap_cur->ac_channel.center_sgmt[1] = 0;
+	ap_cur->ac_channel.mu_mimo = 0;
+	ap_cur->ac_channel.short_gi_80 = 0;
+	ap_cur->ac_channel.short_gi_160 = 0;
+	ap_cur->ac_channel.split_chan = 0;
+	ap_cur->ac_channel.mhz_160_chan = 0;
+	ap_cur->ac_channel.wave_2 = 0;
+	memset(ap_cur->ac_channel.mcs_index, 0, sizeof ap_cur->ac_channel.mcs_index);
+
+done:
+	return ap_cur;
+}
+
 static struct ST_info * sta_info_lookup(
 	struct sta_list_head * const sta_list, 
 	mac_address const * const mac)
@@ -1394,6 +1502,66 @@ static struct ST_info * sta_info_lookup(
 		}
 	}
 
+	return st_cur;
+}
+
+static struct ST_info * st_info_new(mac_address const * const stmac)
+{
+	struct ST_info * const st_cur = calloc(1, sizeof(*st_cur));
+
+	if (st_cur == NULL)
+	{
+		perror("calloc failed");
+		goto done;
+	}
+
+	MAC_ADDRESS_COPY(&st_cur->stmac, stmac);
+
+	if (st_cur->manuf == NULL)
+	{
+		st_cur->manuf = get_manufacturer(
+			st_cur->stmac.addr[0], st_cur->stmac.addr[1], st_cur->stmac.addr[2]);
+	}
+
+	st_cur->nb_pkt = 0;
+
+	st_cur->tinit = time(NULL);
+	st_cur->tlast = st_cur->tinit;
+	st_cur->time_printed = 0;
+
+	st_cur->power = -1;
+	st_cur->best_power = -1;
+	st_cur->rate_to = -1;
+	st_cur->rate_from = -1;
+
+	st_cur->probe_index = -1;
+	st_cur->missed = 0;
+	st_cur->lastseq = 0;
+	st_cur->qos_fr_ds = 0;
+	st_cur->qos_to_ds = 0;
+	st_cur->channel = 0;
+	st_cur->old_channel = 0;
+
+	gettimeofday(&(st_cur->ftimer), NULL);
+
+	memcpy(st_cur->gps_loc_min, //-V512
+		   lopt.gps_loc,
+		   sizeof(st_cur->gps_loc_min));
+	memcpy(st_cur->gps_loc_max, //-V512
+		   lopt.gps_loc,
+		   sizeof(st_cur->gps_loc_max));
+	memcpy( //-V512
+		st_cur->gps_loc_best,
+		lopt.gps_loc,
+		sizeof(st_cur->gps_loc_best));
+
+	for (size_t i = 0; i < NB_PRB; i++)
+	{
+		memset(st_cur->probes[i], 0, sizeof(st_cur->probes[i]));
+		st_cur->ssid_length[i] = 0;
+	}
+
+done:
 	return st_cur;
 }
 
@@ -1502,106 +1670,16 @@ static int dump_add_packet(
 	/* If it's a new access point, add it */
 	if (ap_cur == NULL)
 	{
-        ap_cur = calloc(1, sizeof(*ap_cur));
+		ap_cur = ap_info_new(&bssid);
 		if (ap_cur == NULL)
 		{
-			perror("calloc failed");
 			return (1);
 		}
 
-		/* if mac is listed as unknown, remove it */
-		remove_namac(&bssid);
-
-		MAC_ADDRESS_COPY(&ap_cur->bssid, &bssid);
-		if (ap_cur->manuf == NULL)
-		{
-			ap_cur->manuf = get_manufacturer(
-				ap_cur->bssid.addr[0], ap_cur->bssid.addr[1], ap_cur->bssid.addr[2]);
-		}
-
-		ap_cur->nb_pkt = 0;
-
-		ap_cur->tinit = time(NULL);
-		ap_cur->tlast = time(NULL);
-        ap_cur->time_printed = 0; 
-
-		ap_cur->avg_power = -1;
-		ap_cur->best_power = -1;
-		ap_cur->power_index = -1;
-
-		for (i = 0; i < NB_PWR; i++)
-		{
-			ap_cur->power_lvl[i] = -1;
-		}
-
-		ap_cur->channel = -1;
-        ap_cur->old_channel = -1;
-        ap_cur->max_speed = -1;
-		ap_cur->security = 0;
-
-		ap_cur->ivbuf = NULL;
-		ap_cur->ivbuf_size = 0;
-		ap_cur->uiv_root = uniqueiv_init();
-
-		ap_cur->nb_data = 0;
-		ap_cur->nb_dataps = 0;
-		ap_cur->nb_data_old = 0;
-		gettimeofday(&(ap_cur->tv), NULL);
-
-		ap_cur->dict_started = 0;
-
-		ap_cur->key = NULL;
-
-		ap_cur->nb_bcn = 0;
-
-		ap_cur->rx_quality = 0;
-		ap_cur->fcapt = 0;
-		ap_cur->fmiss = 0;
-		ap_cur->last_seq = 0;
-		gettimeofday(&(ap_cur->ftimef), NULL);
-		gettimeofday(&(ap_cur->ftimel), NULL);
-		gettimeofday(&(ap_cur->ftimer), NULL);
-
-		ap_cur->ssid_length = 0;
-		ap_cur->essid_stored = 0;
-        memset(ap_cur->essid, 0, sizeof ap_cur->essid);
-		ap_cur->timestamp = 0;
-
-		ap_cur->decloak_detect = lopt.decloak;
-		ap_cur->is_decloak = 0;
-
-		TAILQ_INIT(&ap_cur->pkt_list);
-
-		ap_cur->marked = 0;
-		ap_cur->marked_color = 1;
-
-		ap_cur->data_root = NULL;
-		ap_cur->EAP_detected = 0;
-		memcpy(ap_cur->gps_loc_min, lopt.gps_loc, sizeof(float) * 5); //-V512
-		memcpy(ap_cur->gps_loc_max, lopt.gps_loc, sizeof(float) * 5); //-V512
-		memcpy(ap_cur->gps_loc_best, lopt.gps_loc, sizeof(float) * 5); //-V512
-
-		/* 802.11n and ac */
-		ap_cur->channel_width = CHANNEL_22MHZ; // 20MHz by default
-        memset(ap_cur->standard, 0, sizeof ap_cur->standard);
-
-		ap_cur->n_channel.sec_channel = -1;
-		ap_cur->n_channel.short_gi_20 = 0;
-		ap_cur->n_channel.short_gi_40 = 0;
-		ap_cur->n_channel.any_chan_width = 0;
-		ap_cur->n_channel.mcs_index = -1;
-
-		ap_cur->ac_channel.center_sgmt[0] = 0;
-		ap_cur->ac_channel.center_sgmt[1] = 0;
-		ap_cur->ac_channel.mu_mimo = 0;
-		ap_cur->ac_channel.short_gi_80 = 0;
-		ap_cur->ac_channel.short_gi_160 = 0;
-		ap_cur->ac_channel.split_chan = 0;
-		ap_cur->ac_channel.mhz_160_chan = 0;
-		ap_cur->ac_channel.wave_2 = 0;
-        memset(ap_cur->ac_channel.mcs_index, 0, sizeof ap_cur->ac_channel.mcs_index);
-
 		TAILQ_INSERT_TAIL(&lopt.ap_list, ap_cur, entry);
+
+		/* If mac is listed as unknown, remove it */
+		remove_namac(&bssid);
 	}
 
 	/* update the last time seen */
@@ -1735,63 +1813,16 @@ static int dump_add_packet(
 	/* If it's a new client, add it */
 	if (st_cur == NULL)
 	{
-        st_cur = calloc(1, sizeof(*st_cur));
+		st_cur = st_info_new(&stmac);
         if (st_cur == NULL)
 		{
-			perror("calloc failed");
 			return (1);
 		}
 
-		/* if mac is listed as unknown, remove it */
-		remove_namac(&stmac);
-
-        MAC_ADDRESS_COPY(&st_cur->stmac, &stmac);
-
-		if (st_cur->manuf == NULL)
-		{
-			st_cur->manuf = get_manufacturer(
-				st_cur->stmac.addr[0], st_cur->stmac.addr[1], st_cur->stmac.addr[2]);
-		}
-
-		st_cur->nb_pkt = 0;
-
-		st_cur->tinit = time(NULL);
-		st_cur->tlast = time(NULL);
-        st_cur->time_printed = 0;
-
-		st_cur->power = -1;
-		st_cur->best_power = -1;
-		st_cur->rate_to = -1;
-		st_cur->rate_from = -1;
-
-		st_cur->probe_index = -1;
-		st_cur->missed = 0;
-		st_cur->lastseq = 0;
-		st_cur->qos_fr_ds = 0;
-		st_cur->qos_to_ds = 0;
-		st_cur->channel = 0;
-        st_cur->old_channel = 0; 
-
-		gettimeofday(&(st_cur->ftimer), NULL);
-
-		memcpy(st_cur->gps_loc_min, //-V512
-			   lopt.gps_loc,
-			   sizeof(st_cur->gps_loc_min));
-		memcpy(st_cur->gps_loc_max, //-V512
-			   lopt.gps_loc,
-			   sizeof(st_cur->gps_loc_max));
-		memcpy( //-V512
-			st_cur->gps_loc_best,
-			lopt.gps_loc,
-			sizeof(st_cur->gps_loc_best));
-
-		for (i = 0; i < NB_PRB; i++)
-		{
-			memset(st_cur->probes[i], 0, sizeof(st_cur->probes[i]));
-			st_cur->ssid_length[i] = 0;
-		}
-
 		TAILQ_INSERT_TAIL(&lopt.sta_list, st_cur, entry);
+
+		/* If mac is listed as unknown, remove it */
+		remove_namac(&stmac);
 	}
 
     if (st_cur->base == NULL || !MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))

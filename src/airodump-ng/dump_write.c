@@ -567,7 +567,8 @@ int dump_write_wifi_scanner(
 	/* Access Points */
 	TAILQ_FOREACH(ap_cur, ap_list, entry)
 	{
-		if (((time(NULL) - ap_cur->time_printed) < filter_seconds) && (ap_cur->old_channel == ap_cur->channel))
+		if ((time(NULL) - ap_cur->time_printed) < filter_seconds
+            && ap_cur->old_channel == ap_cur->channel)
 		{
 			continue;
 		}
@@ -651,7 +652,8 @@ int dump_write_wifi_scanner(
 			continue;
 		}
 
-		if (((time(NULL) - st_cur->time_printed) < filter_seconds) && (st_cur->old_channel == st_cur->channel))
+		if ((time(NULL) - st_cur->time_printed) < filter_seconds
+            && st_cur->old_channel == st_cur->channel)
 		{
 			continue;
 		}
@@ -670,14 +672,10 @@ int dump_write_wifi_scanner(
                 st_cur->stmac.addr[4],
                 st_cur->stmac.addr[5]);
 
-		if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
-		{
-			fprintf(opt.f_wifi, "|");
-		}
-        else
+		if (!MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
         {
 			fprintf(opt.f_wifi,
-                    "%02X:%02X:%02X:%02X:%02X:%02X|",
+                    "%02X:%02X:%02X:%02X:%02X:%02X",
                     ap_cur->bssid.addr[0],
                     ap_cur->bssid.addr[1],
                     ap_cur->bssid.addr[2],
@@ -685,35 +683,28 @@ int dump_write_wifi_scanner(
                     ap_cur->bssid.addr[4],
                     ap_cur->bssid.addr[5]);
         }
-
+        fprintf(opt.f_wifi, "|"); 
 		fprintf(opt.f_wifi, "%2d|", st_cur->channel);
 
-		if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
-		{
-			fprintf(opt.f_wifi, "|");
-		}
-		else
+		if (!MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
 		{
 			if ((ap_cur->ssid_length == 0) || (ap_cur->essid[0] == 0))
 			{
-				fprintf(opt.f_wifi, "<hidden-ssid>|");
+				fprintf(opt.f_wifi, "<hidden-ssid>");
 			}
 			else
 			{
-				char * essid = NULL;
-				essid = format_text_for_csv(ap_cur->essid, ap_cur->ssid_length);
+				char * const essid = 
+                    format_text_for_csv(ap_cur->essid, ap_cur->ssid_length);
 				if (essid != NULL)
 				{
-					fprintf(opt.f_wifi, "%s|", essid);
+					fprintf(opt.f_wifi, "%s", essid);
 					free(essid);
-				}
-				else
-				{
-					fprintf(opt.f_wifi, "|");
 				}
 			}
 		}
-		fprintf(opt.f_wifi, "%3d", st_cur->power);
+        fprintf(opt.f_wifi, "|");
+        fprintf(opt.f_wifi, "%3d", st_cur->power);
 		fprintf(opt.f_wifi, "\r\n");
 	}
 

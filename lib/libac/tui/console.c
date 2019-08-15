@@ -190,7 +190,10 @@ int mygetch(void)
 	tcsetattr(STDIN_FILENO, TCSANOW, &newt);
 
 	char c;
-	if (read(STDIN_FILENO, &c, sizeof(char)) > 0) ch = (int) c;
+    if (read(STDIN_FILENO, &c, sizeof(char)) > 0)
+    {
+        ch = (int) c;
+    }
 
 	tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
 
