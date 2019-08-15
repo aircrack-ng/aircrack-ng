@@ -183,8 +183,9 @@ static struct local_options
     struct ST_info * st_1st;
     struct ST_info * st_end;
 
-	/* Two lists are maintained. The spare list is used when 
-	 * sorting items. 
+	/* Two AP lists are maintained. The spare list is used when 
+	 * sorting items. After sorting into the spare list, the index 
+	 * is updated. 
 	 */
 	struct ap_list_head ap_list[2];
 	size_t current_ap_list_index;
@@ -1324,16 +1325,13 @@ static void na_info_list_free(struct na_list_head * const list_head)
 	return;
 }
 
-static int remove_namac(mac_address const * const mac)
+static struct NA_info * na_info_lookup(
+	struct na_list_head * const list, 
+	mac_address const * const mac)
 {
 	struct NA_info * na_cur;
 
-	if (mac == NULL)
-	{
-		return -1;
-	}
-
-	TAILQ_FOREACH(na_cur, &lopt.na_list, entry)
+	TAILQ_FOREACH(na_cur, list, entry)
 	{
 		if (MAC_ADDRESS_EQUAL(&na_cur->namac, mac))
 		{
@@ -1341,10 +1339,34 @@ static int remove_namac(mac_address const * const mac)
 		}
 	}
 
+	return na_cur;
+}
+
+static int remove_namac(mac_address const * const mac)
+{
+	struct NA_info * const na_cur = na_info_lookup(&lopt.na_list, mac);
+
 	/* If it's known, remove it */
 	na_info_free(na_cur);
 
 	return 0;
+}
+
+static struct AP_info * ap_info_lookup(
+	struct ap_list_head * ap_list, 
+	mac_address const * const mac)
+{
+	struct AP_info * ap_cur;
+
+	TAILQ_FOREACH(ap_cur, ap_list, entry)
+	{
+		if (MAC_ADDRESS_EQUAL(&ap_cur->bssid, mac))
+		{
+			break;
+		}
+	}
+
+	return ap_cur;
 }
 
 // NOTE(jbenden): This is also in ivstools.c
@@ -1441,13 +1463,7 @@ static int dump_add_packet(unsigned char * h80211,
 	}
 
 	/* update our chained list of access points */
-	TAILQ_FOREACH(ap_cur, &lopt.ap_list[lopt.current_ap_list_index], entry)
-	{
-        if (MAC_ADDRESS_EQUAL(&ap_cur->bssid, &bssid))
-        {
-            break;
-        }
-	}
+	ap_cur = ap_info_lookup(&lopt.ap_list[lopt.current_ap_list_index], &bssid);
 
 	/* If it's a new access point, add it */
 	if (ap_cur == NULL)
@@ -3072,13 +3088,7 @@ write_packet:
 				if (lopt.hide_known)
 				{
 					/* Check AP list. */
-					TAILQ_FOREACH(ap_cur, &lopt.ap_list[lopt.current_ap_list_index], entry)
-					{
-                        if (MAC_ADDRESS_EQUAL(&ap_cur->bssid, &namac))
-                        {
-                            break;
-                        }
-					}
+					ap_cur = ap_info_lookup(&lopt.ap_list[lopt.current_ap_list_index], &namac);
 
 					/* If it's an AP, try next mac */
 					if (ap_cur != NULL)
@@ -3111,13 +3121,7 @@ write_packet:
 
 				/* Not found in either AP list or ST list, look through NA list
 				 */
-				TAILQ_FOREACH(na_cur, &lopt.na_list, entry)
-				{
-                    if (MAC_ADDRESS_EQUAL(&na_cur->namac, &namac))
-                    {
-                        break;
-                    }
-				}
+				na_cur = na_info_lookup(&lopt.na_list, &namac);
 
 				/* update our chained list of unknown stations */
 				/* if it's a new mac, add it */
@@ -3813,7 +3817,8 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 		TAILQ_FOREACH_REVERSE(ap_cur, &lopt.ap_list[lopt.current_ap_list_index], ap_list_head, entry)
 		{
 			/* skip APs with only one packet, or those older than 2 min.
-		* always skip if bssid == broadcast */
+			 * always skip if bssid == broadcast*  
+			 */
 			if (IsAp2BeSkipped(ap_cur))
 			{
 				if (lopt.p_selected_ap == ap_cur)
@@ -7878,7 +7883,10 @@ int main(int argc, char * argv[])
 						}
 
 						fd_raw[i] = wi_fd(wi[i]);
-						if (fd_raw[i] > fdh) fdh = fd_raw[i];
+						if (fd_raw[i] > fdh)
+						{
+							fdh = fd_raw[i];
+						}
 
 						break;
 					}
