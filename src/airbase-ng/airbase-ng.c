@@ -1408,12 +1408,12 @@ static int store_wpa_handshake(struct ST_info * st_cur)
 			 sizeof(ofn) - 1,
 			 "wpa-%02d-%02X-%02X-%02X-%02X-%02X-%02X.%s",
 			 opt.f_index,
-			 st_cur->stmac[0],
-			 st_cur->stmac[1],
-			 st_cur->stmac[2],
-			 st_cur->stmac[3],
-			 st_cur->stmac[4],
-			 st_cur->stmac[5],
+			 st_cur->stmac.addr[0],
+			 st_cur->stmac.addr[1],
+			 st_cur->stmac.addr[2],
+			 st_cur->stmac.addr[3],
+			 st_cur->stmac.addr[4],
+			 st_cur->stmac.addr[5],
 			 IVS2_EXTENSION);
 
 	opt.f_index++;
@@ -1614,7 +1614,10 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 
 	while (st_cur != NULL)
 	{
-		if (!memcmp(st_cur->stmac, smac, 6)) break;
+		if (MAC_ADDRESS_EQUAL(&st_cur->stmac, (mac_address *)smac))
+		{
+			break;
+		}
 
 		st_prv = st_cur;
 		st_cur = st_cur->next;
@@ -1637,7 +1640,7 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 		else
 			st_prv->next = st_cur;
 
-		memcpy(st_cur->stmac, smac, 6);
+		MAC_ADDRESS_COPY(&st_cur->stmac, (mac_address *)smac);
 
 		st_cur->prev = st_prv;
 
@@ -1895,7 +1898,7 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 					st_cur->wpa.state |= 4;
 					st_cur->wpa.keyver = (uint8_t)(packet[z + 8 + 6] & 7);
 
-					memcpy(st_cur->wpa.stmac, st_cur->stmac, 6);
+					MAC_ADDRESS_COPY(&st_cur->wpa.stmac, &st_cur->stmac);
 
 					store_wpa_handshake(st_cur);
 					if (!opt.quiet)
@@ -3712,8 +3715,8 @@ int main(int argc, char * argv[])
 		return (EXIT_FAILURE);
 	}
 
-	if ((memcmp(opt.f_netmask, NULL_MAC, 6) != 0)
-		&& (memcmp(opt.f_bssid, NULL_MAC, 6) == 0))
+	if (memcmp(opt.f_netmask, NULL_MAC, 6) != 0
+		&& MAC_ADDRESS_IS_EMPTY(&opt.f_bssid))
 	{
 		printf("Notice: specify bssid \"--bssid\" with \"--netmask\"\n");
 		printf("\"%s --help\" for help.\n", argv[0]);

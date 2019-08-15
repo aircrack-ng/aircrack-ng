@@ -48,6 +48,7 @@
 #include <aircrack-ng/defs.h>
 #include <aircrack-ng/support/pcap_local.h>
 #include <aircrack-ng/osdep/osdep.h>
+#include <aircrack-ng/osdep/mac_header.h>
 #include <aircrack-ng/support/common.h>
 #include <aircrack-ng/third-party/ieee80211.h>
 
@@ -80,7 +81,7 @@ static const int bitrates[] = {RATE_1M,
 
 struct communication_options
 {
-	uint8_t f_bssid[6];
+	mac_address f_bssid;
 	uint8_t f_dmac[6];
 	uint8_t f_smac[6];
 	uint8_t f_netmask[6];

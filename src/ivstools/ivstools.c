@@ -354,7 +354,10 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 
 	while (st_cur != NULL)
 	{
-		if (!memcmp(st_cur->stmac, stmac, 6)) break;
+		if (MAC_ADDRESS_EQUAL(&st_cur->stmac, (mac_address *)stmac))
+		{
+			break;
+		}
 
 		st_prv = st_cur;
 		st_cur = st_cur->next;
@@ -377,7 +380,7 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 		else
 			st_prv->next = st_cur;
 
-		memcpy(st_cur->stmac, stmac, 6);
+		MAC_ADDRESS_COPY(&st_cur->stmac, (mac_address *)stmac);
 
 		st_cur->prev = st_prv;
 
@@ -726,7 +729,7 @@ skip_station:
 
 				if (st_cur->wpa.state == 15)
 				{
-					memcpy(st_cur->wpa.stmac, st_cur->stmac, 6);
+					MAC_ADDRESS_COPY(&st_cur->wpa.stmac, &st_cur->stmac);
 
 					if (G.f_ivs != NULL)
 					{

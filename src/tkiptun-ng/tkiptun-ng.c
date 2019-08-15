@@ -333,15 +333,17 @@ static int check_received(unsigned char * packet, unsigned length)
 			break;
 	}
 
-	if (memcmp(bssid, opt.f_bssid, 6) != 0)
+	if (!MAC_ADDRESS_EQUAL((mac_address *)bssid, &opt.f_bssid))
 	{
 		return (0);
 	}
 	else
 	{
-		if (memcmp(dmac, lopt.wpa.stmac, 6) != 0
-			&& memcmp(smac, lopt.wpa.stmac, 6) != 0)
+		if (!MAC_ADDRESS_EQUAL((mac_address *)dmac, &lopt.wpa.stmac)
+			&& !MAC_ADDRESS_EQUAL((mac_address *)smac, &lopt.wpa.stmac))
+		{
 			return (0);
+		}
 	}
 
 	if (z + 26 > length) return (0);
@@ -439,7 +441,7 @@ static int check_received(unsigned char * packet, unsigned length)
 
 				if (lopt.wpa.state == 7)
 				{
-					memcpy(lopt.wpa.stmac, opt.r_smac, 6);
+					MAC_ADDRESS_COPY(&lopt.wpa.stmac, (mac_address *)opt.r_smac);
 					PCT;
 					printf("WPA handshake: %02X:%02X:%02X:%02X:%02X:%02X "
 						   "captured\n",
@@ -520,14 +522,14 @@ static int build_arp_request(unsigned char * packet, int * length, int toDS)
 	packet[3] = 0x00;
 	if (toDS)
 	{
-		memcpy(packet + 4, opt.f_bssid, 6);
+		MAC_ADDRESS_COPY((mac_address *)(packet + 4), &opt.f_bssid);
 		memcpy(packet + 10, opt.r_smac, 6);
 		memcpy(packet + 16, lopt.r_apmac, 6);
 	}
 	else
 	{
 		memcpy(packet + 4, opt.r_smac, 6);
-		memcpy(packet + 10, opt.f_bssid, 6);
+		MAC_ADDRESS_COPY((mac_address *)(packet + 10), &opt.f_bssid);
 		memcpy(packet + 16, lopt.r_apmac, 6);
 	}
 
@@ -2185,17 +2187,17 @@ static int getHDSK(void)
 			PCT;
 			printf("Sending 4 directed DeAuth. STMAC:"
 				   " [%02X:%02X:%02X:%02X:%02X:%02X] [%2d|%2d ACKs]\r",
-				   lopt.wpa.stmac[0],
-				   lopt.wpa.stmac[1],
-				   lopt.wpa.stmac[2],
-				   lopt.wpa.stmac[3],
-				   lopt.wpa.stmac[4],
-				   lopt.wpa.stmac[5],
+				   lopt.wpa.stmac.addr[0],
+				   lopt.wpa.stmac.addr[1],
+				   lopt.wpa.stmac.addr[2],
+				   lopt.wpa.stmac.addr[3],
+				   lopt.wpa.stmac.addr[4],
+				   lopt.wpa.stmac.addr[5],
 				   sacks,
 				   aacks);
 		}
 
-		memcpy(h80211 + 4, lopt.wpa.stmac, 6);
+		MAC_ADDRESS_COPY((mac_address *)(h80211 + 4), &lopt.wpa.stmac);
 		memcpy(h80211 + 10, opt.r_bssid, 6);
 
 		if (send_packet(_wi_out, h80211, 26, kNoChange) < 0) return (1);
@@ -2203,7 +2205,7 @@ static int getHDSK(void)
 		usleep(2000);
 
 		memcpy(h80211 + 4, opt.r_bssid, 6);
-		memcpy(h80211 + 10, lopt.wpa.stmac, 6);
+		MAC_ADDRESS_COPY((mac_address *)(h80211 + 10), &lopt.wpa.stmac);
 
 		if (send_packet(_wi_out, h80211, 26, kNoChange) < 0) return (1);
 
@@ -2234,7 +2236,7 @@ static int getHDSK(void)
 			if (caplen != 10) continue;
 			if (h80211[0] == 0xD4)
 			{
-				if (memcmp(h80211 + 4, lopt.wpa.stmac, 6) == 0)
+				if (MAC_ADDRESS_EQUAL((mac_address *)(h80211 + 4), &lopt.wpa.stmac))
 				{
 					aacks++;
 				}
@@ -2245,12 +2247,12 @@ static int getHDSK(void)
 				PCT;
 				printf("Sending 4 directed DeAuth. STMAC:"
 					   " [%02X:%02X:%02X:%02X:%02X:%02X] [%2d|%2d ACKs]\r",
-					   lopt.wpa.stmac[0],
-					   lopt.wpa.stmac[1],
-					   lopt.wpa.stmac[2],
-					   lopt.wpa.stmac[3],
-					   lopt.wpa.stmac[4],
-					   lopt.wpa.stmac[5],
+					   lopt.wpa.stmac.addr[0],
+					   lopt.wpa.stmac.addr[1],
+					   lopt.wpa.stmac.addr[2],
+					   lopt.wpa.stmac.addr[3],
+					   lopt.wpa.stmac.addr[4],
+					   lopt.wpa.stmac.addr[5],
 					   sacks,
 					   aacks);
 			}
@@ -2418,7 +2420,7 @@ int main(int argc, char * argv[])
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (1);
 				}
-				if (getmac(optarg, 1, opt.f_bssid) != 0)
+				if (getmac(optarg, 1, (uint8_t *)&opt.f_bssid) != 0)
 				{
 					printf("Invalid AP MAC address.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
@@ -2444,7 +2446,7 @@ int main(int argc, char * argv[])
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (1);
 				}
-				if (getmac(optarg, 1, lopt.wpa.stmac) != 0)
+				if (getmac(optarg, 1, (uint8_t *)&lopt.wpa.stmac) != 0)
 				{
 					printf("Invalid source MAC address.\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
@@ -2837,9 +2839,9 @@ int main(int argc, char * argv[])
 			   NULL,
 			   0,
 			   0,
-			   opt.f_bssid,
+			   (uint8_t *)&opt.f_bssid,
 			   opt.r_bssid,
-			   (uint8_t *) opt.r_essid,
+			   (uint8_t *)opt.r_essid,
 			   0 /* ignore_negative_one */,
 			   opt.nodetect)
 		!= 0)
@@ -2880,7 +2882,7 @@ int main(int argc, char * argv[])
 	{
 		lopt.wpa_sta.next = NULL;
 		memcpy(lopt.wpa_sta.stmac, opt.r_smac, 6);
-		memcpy(lopt.wpa_sta.bssid, opt.f_bssid, 6);
+		MAC_ADDRESS_COPY((mac_address *)lopt.wpa_sta.bssid, &opt.f_bssid);
 		memcpy(lopt.wpa_sta.snonce, lopt.wpa.snonce, 32);
 		memcpy(lopt.wpa_sta.anonce, lopt.wpa.anonce, 32);
 		memset(lopt.wpa_sta.keymic, 0, sizeof(lopt.wpa_sta.keymic));

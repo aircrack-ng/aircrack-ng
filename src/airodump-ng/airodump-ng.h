@@ -147,7 +147,7 @@ struct NA_info
 	struct NA_info * prev; /* the prev client in list   */
 	struct NA_info * next; /* the next client in list   */
 	time_t tinit, tlast; /* first and last time seen  */
-    unsigned char namac[MAC_ADDRESS_LEN]; /* the stations MAC address  */
+    mac_address namac; /* the stations MAC address  */
 	int power; /* last signal power         */
 	int channel; /* captured on channel       */
 	int ack; /* number of ACK frames      */

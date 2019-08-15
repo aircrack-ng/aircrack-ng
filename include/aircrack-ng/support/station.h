@@ -193,7 +193,9 @@ struct ST_info
 	struct ST_info * prev; /* the prev client in list   */
 	struct ST_info * next; /* the next client in list   */
 	struct AP_info * base; /* AP this client belongs to */
-	uint8_t stmac[6]; /* the client's MAC address  */
+
+	mac_address stmac; /* the client's MAC address  */
+
 	struct WPA_hdsk wpa; /* WPA handshake data        */
 
 	char * manuf; /* the client's manufacturer */

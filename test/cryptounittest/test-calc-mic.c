@@ -108,14 +108,14 @@ int main(int argc, char ** argv)
 
 	struct WPA_hdsk wpa; /* valid WPA handshake data     */
 	memset(&wpa, 0, sizeof(wpa));
-	memcpy(&wpa.stmac, &stmac, 6);
+	MAC_ADDRESS_COPY(&wpa.stmac, (mac_address *)stmac);
 	memcpy(&wpa.snonce, &snonce, 32);
 	memcpy(&wpa.anonce, &anonce, 32);
 	memcpy(&wpa.keymic, &keymic, 16);
 	memcpy(&wpa.eapol, &eapol, 256);
 	wpa.eapol_size = 121;
 	wpa.state = 7;
-	memcpy(&ap->bssid, bssid, 6);
+    MAC_ADDRESS_COPY(&ap->bssid, (mac_address *)bssid);
 	memcpy(&ap->essid, essid, 33);
 
 	unsigned char pmk[32];

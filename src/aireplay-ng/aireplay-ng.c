@@ -418,7 +418,7 @@ static int do_attack_deauth(void)
 			   NULL,
 			   0,
 			   1,
-			   opt.f_bssid,
+			   (uint8_t *)&opt.f_bssid,
 			   opt.r_bssid,
 			   (uint8_t *) opt.r_essid,
 			   opt.ignore_negative_one,
@@ -610,7 +610,7 @@ static int do_attack_fake_auth(void)
 			   capa,
 			   0,
 			   1,
-			   opt.f_bssid,
+			   (uint8_t *)&opt.f_bssid,
 			   opt.r_bssid,
 			   (uint8_t *) opt.r_essid,
 			   opt.ignore_negative_one,
@@ -659,9 +659,8 @@ static int do_attack_fake_auth(void)
 				if (ska && keystreamlen == 0)
 				{
 					opt.fast = 1; // don't ask for approval
-					memcpy(opt.f_bssid,
-						   opt.r_bssid,
-						   6); // make the filter bssid the same, that is used
+					MAC_ADDRESS_COPY(&opt.f_bssid, (mac_address *)opt.r_bssid); 
+					// make the filter bssid the same, that is used
 					// for auth'ing
 					if (opt.prga == NULL)
 					{
@@ -1652,7 +1651,7 @@ static int do_attack_arp_resend(void)
 			   NULL,
 			   1,
 			   1,
-			   opt.f_bssid,
+			   (uint8_t *)&opt.f_bssid,
 			   opt.r_bssid,
 			   (uint8_t *) opt.r_essid,
 			   opt.ignore_negative_one,
@@ -1967,7 +1966,7 @@ static int do_attack_arp_resend(void)
 				{
 					/* keep as a ToDS packet */
 
-					memcpy(h80211 + 4, opt.f_bssid, 6);
+					MAC_ADDRESS_COPY((mac_address *)(h80211 + 4), &opt.f_bssid);
 					memcpy(h80211 + 10, opt.r_smac, 6);
 					memcpy(h80211 + 16, opt.f_dmac, 6);
 
@@ -1981,7 +1980,7 @@ static int do_attack_arp_resend(void)
 						/* keep as a FromDS packet */
 
 						memcpy(h80211 + 4, opt.f_dmac, 6);
-						memcpy(h80211 + 10, opt.f_bssid, 6);
+						MAC_ADDRESS_COPY((mac_address *)(h80211 + 10), &opt.f_bssid);
 						memcpy(h80211 + 16, opt.r_smac, 6);
 
 						h80211[1] = 0x42; /* FromDS & WEP  */
@@ -1990,7 +1989,7 @@ static int do_attack_arp_resend(void)
 					{
 						/* rewrite header to make it a ToDS packet */
 
-						memcpy(h80211 + 4, opt.f_bssid, 6);
+						MAC_ADDRESS_COPY((mac_address *)(h80211 + 4), &opt.f_bssid);
 						memcpy(h80211 + 10, opt.r_smac, 6);
 						memcpy(h80211 + 16, opt.f_dmac, 6);
 
@@ -2111,15 +2110,15 @@ static int do_attack_caffe_latte(void)
 			   NULL,
 			   1,
 			   1,
-			   opt.f_bssid,
+			   (uint8_t *)&opt.f_bssid,
 			   opt.r_bssid,
-			   (uint8_t *) opt.r_essid,
+			   (uint8_t *)opt.r_essid,
 			   opt.ignore_negative_one,
 			   opt.nodetect)
 		!= 0)
 		return (EXIT_FAILURE);
 
-	if (memcmp(opt.f_bssid, NULL_MAC, 6) == 0)
+	if (MAC_ADDRESS_IS_EMPTY(&opt.f_bssid))
 	{
 		printf("Please specify a BSSID (-b).\n");
 		return (1);
@@ -2400,7 +2399,7 @@ static int do_attack_caffe_latte(void)
 			}
 		}
 
-		if (h80211[0] == 0xD4 && !memcmp(h80211 + 4, opt.f_bssid, 6))
+		if (h80211[0] == 0xD4 && MAC_ADDRESS_EQUAL((mac_address *)(h80211 + 4), &opt.f_bssid))
 		{
 			nb_ack_pkt++;
 		}
@@ -2430,7 +2429,7 @@ static int do_attack_caffe_latte(void)
 
 						memcpy(h80211 + 4, BROADCAST, 6);
 						memcpy(h80211 + 10, opt.r_smac, 6);
-						memcpy(h80211 + 16, opt.f_bssid, 6);
+						MAC_ADDRESS_COPY((mac_address *)(h80211 + 16), &opt.f_bssid);
 
 						h80211[1] = 0x40; /* WEP  */
 					}
@@ -2449,8 +2448,8 @@ static int do_attack_caffe_latte(void)
 						/* rewrite to a FromDS packet */
 
 						memcpy(h80211 + 4, BROADCAST, 6);
-						memcpy(h80211 + 10, opt.f_bssid, 6);
-						memcpy(h80211 + 16, opt.f_bssid, 6);
+						MAC_ADDRESS_COPY((mac_address *)(h80211 + 10), &opt.f_bssid);
+						MAC_ADDRESS_COPY((mac_address *)(h80211 + 16), &opt.f_bssid);
 
 						h80211[1] = 0x42; /* ToDS & WEP  */
 					}
@@ -2594,9 +2593,9 @@ static int do_attack_migmode(void)
 			   NULL,
 			   1,
 			   1,
-			   opt.f_bssid,
+			   (uint8_t *)&opt.f_bssid,
 			   opt.r_bssid,
-			   (uint8_t *) opt.r_essid,
+			   (uint8_t *)opt.r_essid,
 			   opt.ignore_negative_one,
 			   opt.nodetect)
 		!= 0)
@@ -2605,7 +2604,7 @@ static int do_attack_migmode(void)
 		return 1;
 	}
 
-	if (memcmp(opt.f_bssid, NULL_MAC, 6) == 0)
+	if (MAC_ADDRESS_IS_EMPTY(&opt.f_bssid))
 	{
 		printf("Please specify a BSSID (-b).\n");
 		free(arp);
@@ -2887,7 +2886,8 @@ static int do_attack_migmode(void)
 			}
 		}
 
-		if (h80211[0] == 0xD4 && !memcmp(h80211 + 4, opt.f_bssid, 6))
+		if (h80211[0] == 0xD4 
+			&& MAC_ADDRESS_EQUAL((mac_address *)(h80211 + 4), &opt.f_bssid))
 		{
 			nb_ack_pkt++;
 		}
@@ -2920,7 +2920,7 @@ static int do_attack_migmode(void)
 
 						/* rewrite to a ToDS packet */
 
-						memcpy(h80211 + 4, opt.f_bssid, 6);
+						MAC_ADDRESS_COPY((mac_address *)(h80211 + 4), &opt.f_bssid);
 						memcpy(h80211 + 10, opt.r_smac, 6);
 						memcpy(h80211 + 16, BROADCAST, 6);
 
@@ -3363,9 +3363,9 @@ static int do_attack_chopchop(void)
 			   NULL,
 			   1,
 			   0,
-			   opt.f_bssid,
+			   (uint8_t *)&opt.f_bssid,
 			   opt.r_bssid,
-			   (uint8_t *) opt.r_essid,
+			   (uint8_t *)opt.r_essid,
 			   opt.ignore_negative_one,
 			   opt.nodetect)
 		!= 0)
@@ -3392,7 +3392,7 @@ static int do_attack_chopchop(void)
 		memcpy(packet, NULL_DATA, 24);
 		memcpy(packet + 4, "\xFF\xFF\xFF\xFF\xFF\xFF", 6);
 		memcpy(packet + 10, opt.r_smac, 6);
-		memcpy(packet + 16, opt.f_bssid, 6);
+		MAC_ADDRESS_COPY((mac_address *)(packet + 16), &opt.f_bssid);
 
 		packet[0] = 0x08; // make it a data packet
 		packet[1] = 0x41; // set encryption and ToDS=1
@@ -4154,9 +4154,9 @@ static int do_attack_fragment(void)
 			   NULL,
 			   1,
 			   1,
-			   opt.f_bssid,
+			   (uint8_t *)&opt.f_bssid,
 			   opt.r_bssid,
-			   (uint8_t *) opt.r_essid,
+			   (uint8_t *)opt.r_essid,
 			   opt.ignore_negative_one,
 			   opt.nodetect)
 		!= 0)
@@ -4228,7 +4228,7 @@ static int do_attack_fragment(void)
 
 			arplen = 60;
 			make_arp_request(h80211,
-							 opt.f_bssid,
+							 (uint8_t *)&opt.f_bssid,
 							 opt.r_smac,
 							 opt.r_dmac,
 							 opt.r_sip,
@@ -4357,7 +4357,7 @@ static int do_attack_fragment(void)
 		if (again == NEW_IV) continue;
 
 		make_arp_request(h80211,
-						 opt.f_bssid,
+						 (uint8_t *)&opt.f_bssid,
 						 opt.r_smac,
 						 opt.r_dmac,
 						 opt.r_sip,
@@ -4413,7 +4413,7 @@ static int do_attack_fragment(void)
 			arplen = 408;
 
 			make_arp_request(h80211,
-							 opt.f_bssid,
+							 (uint8_t *)&opt.f_bssid,
 							 opt.r_smac,
 							 opt.r_dmac,
 							 opt.r_sip,
@@ -4539,7 +4539,7 @@ static int do_attack_fragment(void)
 		if (again == NEW_IV) continue;
 
 		make_arp_request(h80211,
-						 opt.f_bssid,
+						 (uint8_t *)&opt.f_bssid,
 						 opt.r_smac,
 						 opt.r_dmac,
 						 opt.r_sip,
@@ -4571,7 +4571,7 @@ static int do_attack_fragment(void)
 			printf("Trying to get 1500 bytes of a keystream\n");
 
 			make_arp_request(h80211,
-							 opt.f_bssid,
+							 (uint8_t *)&opt.f_bssid,
 							 opt.r_smac,
 							 opt.r_dmac,
 							 opt.r_sip,
@@ -4711,7 +4711,7 @@ static int do_attack_fragment(void)
 			length = 1500;
 
 		make_arp_request(h80211,
-						 opt.f_bssid,
+						 (uint8_t *)&opt.f_bssid,
 						 opt.r_smac,
 						 opt.r_dmac,
 						 opt.r_sip,
@@ -5160,7 +5160,7 @@ static int do_attack_test(void)
 			   NULL,
 			   0,
 			   0,
-			   opt.f_bssid,
+			   (uint8_t *)&opt.f_bssid,
 			   opt.r_bssid,
 			   (uint8_t *) opt.r_essid,
 			   opt.ignore_negative_one,
@@ -5715,17 +5715,17 @@ static int do_attack_test(void)
 			opt.f_dmac[4] = rand_u8();
 			opt.f_dmac[5] = rand_u8();
 
-			opt.f_bssid[0] = 0x00;
-			opt.f_bssid[1] = rand_u8();
-			opt.f_bssid[2] = rand_u8();
-			opt.f_bssid[3] = rand_u8();
-			opt.f_bssid[4] = rand_u8();
-			opt.f_bssid[5] = rand_u8();
+			opt.f_bssid.addr[0] = 0x00;
+			opt.f_bssid.addr[1] = rand_u8();
+			opt.f_bssid.addr[2] = rand_u8();
+			opt.f_bssid.addr[3] = rand_u8();
+			opt.f_bssid.addr[4] = rand_u8();
+			opt.f_bssid.addr[5] = rand_u8();
 
 			if (i == 0) // attack -0
 			{
 				memcpy(h80211, DEAUTH_REQ, 26);
-				memcpy(h80211 + 16, opt.f_bssid, 6);
+				MAC_ADDRESS_COPY((mac_address *)(h80211 + 16), &opt.f_bssid);
 				memcpy(h80211 + 4, opt.f_dmac, 6);
 				memcpy(h80211 + 10, opt.f_smac, 6);
 
@@ -5739,7 +5739,7 @@ static int do_attack_test(void)
 				memcpy(h80211, AUTH_REQ, 30);
 				memcpy(h80211 + 4, opt.f_dmac, 6);
 				memcpy(h80211 + 10, opt.f_smac, 6);
-				memcpy(h80211 + 16, opt.f_bssid, 6);
+				MAC_ADDRESS_COPY((mac_address *)(h80211 + 16), &opt.f_bssid);
 
 				opt.f_iswep = 0;
 				opt.f_tods = 0;
@@ -5751,7 +5751,7 @@ static int do_attack_test(void)
 				memcpy(h80211, ska_auth3, 24); //-V512
 				memcpy(h80211 + 4, opt.f_dmac, 6);
 				memcpy(h80211 + 10, opt.f_smac, 6);
-				memcpy(h80211 + 16, opt.f_bssid, 6);
+				MAC_ADDRESS_COPY((mac_address *)(h80211 + 16), &opt.f_bssid);
 
 				// iv+idx
 				h80211[24] = 0x86;
@@ -5770,7 +5770,7 @@ static int do_attack_test(void)
 			else if (i == 3) // attack -3
 			{
 				memcpy(h80211, NULL_DATA, 24);
-				memcpy(h80211 + 4, opt.f_bssid, 6);
+				MAC_ADDRESS_COPY((mac_address *)(h80211 + 4), &opt.f_bssid);
 				memcpy(h80211 + 10, opt.f_smac, 6);
 				memcpy(h80211 + 16, opt.f_dmac, 6);
 
@@ -5791,7 +5791,7 @@ static int do_attack_test(void)
 			else if (i == 4) // attack -5
 			{
 				memcpy(h80211, NULL_DATA, 24);
-				memcpy(h80211 + 4, opt.f_bssid, 6);
+				MAC_ADDRESS_COPY((mac_address *)(h80211 + 4), &opt.f_bssid);
 				memcpy(h80211 + 10, opt.f_smac, 6);
 				memcpy(h80211 + 16, opt.f_dmac, 6);
 
@@ -6061,7 +6061,7 @@ int main(int argc, char * argv[])
 
 			case 'b':
 
-				if (getmac(optarg, 1, opt.f_bssid) != 0)
+				if (getmac(optarg, 1, (uint8_t *)&opt.f_bssid) != 0)
 				{
 					printf("Invalid BSSID (AP MAC address).\n");
 					printf("\"%s --help\" for help.\n", argv[0]);

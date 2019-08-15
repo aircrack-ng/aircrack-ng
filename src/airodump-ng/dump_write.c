@@ -315,12 +315,12 @@ int dump_write_csv(struct AP_info * ap_1st,
 
 		fprintf(opt.f_txt,
 				"%02X:%02X:%02X:%02X:%02X:%02X, ",
-				st_cur->stmac[0],
-				st_cur->stmac[1],
-				st_cur->stmac[2],
-				st_cur->stmac[3],
-				st_cur->stmac[4],
-				st_cur->stmac[5]);
+                st_cur->stmac.addr[0],
+                st_cur->stmac.addr[1],
+                st_cur->stmac.addr[2],
+                st_cur->stmac.addr[3],
+                st_cur->stmac.addr[4],
+                st_cur->stmac.addr[5]);
 
 		ltime = localtime(&st_cur->tinit);
 
@@ -514,12 +514,12 @@ int dump_write_airodump_ng_logcsv_add_client(const struct AP_info * ap_cur,
 	// BSSID
 	fprintf(opt.f_logcsv,
 			"%02X:%02X:%02X:%02X:%02X:%02X,",
-			st_cur->stmac[0],
-			st_cur->stmac[1],
-			st_cur->stmac[2],
-			st_cur->stmac[3],
-			st_cur->stmac[4],
-			st_cur->stmac[5]);
+            st_cur->stmac.addr[0],
+            st_cur->stmac.addr[1],
+            st_cur->stmac.addr[2],
+            st_cur->stmac.addr[3],
+            st_cur->stmac.addr[4],
+            st_cur->stmac.addr[5]);
 
 	// RSSI
 	fprintf(opt.f_logcsv, "%d,", ri_power);
@@ -667,12 +667,12 @@ int dump_write_wifi_scanner(
 		fprintf(opt.f_wifi, "%ld|", st_cur->tlast);
 		fprintf(opt.f_wifi,
 				"%02X:%02X:%02X:%02X:%02X:%02X|",
-				st_cur->stmac[0],
-				st_cur->stmac[1],
-				st_cur->stmac[2],
-				st_cur->stmac[3],
-				st_cur->stmac[4],
-				st_cur->stmac[5]);
+                st_cur->stmac.addr[0],
+                st_cur->stmac.addr[1],
+                st_cur->stmac.addr[2],
+                st_cur->stmac.addr[3],
+                st_cur->stmac.addr[4],
+                st_cur->stmac.addr[5]);
 
 		if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
 		{
@@ -918,12 +918,12 @@ static int dump_write_kismet_netxml_client_info(struct ST_info * client,
 
 	fprintf(opt.f_kis_xml,
 			"\t\t\t<client-mac>%02X:%02X:%02X:%02X:%02X:%02X</client-mac>\n",
-			client->stmac[0],
-			client->stmac[1],
-			client->stmac[2],
-			client->stmac[3],
-			client->stmac[4],
-			client->stmac[5]);
+            client->stmac.addr[0],
+            client->stmac.addr[1],
+            client->stmac.addr[2],
+            client->stmac.addr[3],
+            client->stmac.addr[4],
+            client->stmac.addr[5]);
 
 	/* Manufacturer, if set using standard oui list */
 	manuf
@@ -1290,7 +1290,7 @@ int dump_write_kismet_netxml(struct AP_info * ap_1st,
 		while (st_cur != NULL)
 		{
 			/* Check if the station is associated to the current AP */
-			if (!MAC_ADDRESS_IS_BROADCAST((mac_address *)st_cur->stmac) 
+			if (!MAC_ADDRESS_IS_BROADCAST(&st_cur->stmac) 
                 && st_cur->base != NULL
 				&& MAC_ADDRESS_EQUAL(&st_cur->base->bssid, &ap_cur->bssid))
 			{
@@ -1408,12 +1408,12 @@ int dump_write_kismet_netxml(struct AP_info * ap_1st,
 			/* BSSID */
 			fprintf(opt.f_kis_xml,
 					"\t\t<BSSID>%02X:%02X:%02X:%02X:%02X:%02X</BSSID>\n",
-					st_cur->stmac[0],
-					st_cur->stmac[1],
-					st_cur->stmac[2],
-					st_cur->stmac[3],
-					st_cur->stmac[4],
-					st_cur->stmac[5]);
+                    st_cur->stmac.addr[0],
+                    st_cur->stmac.addr[1],
+                    st_cur->stmac.addr[2],
+                    st_cur->stmac.addr[3],
+                    st_cur->stmac.addr[4],
+                    st_cur->stmac.addr[5]);
 
 			/* Manufacturer, if set using standard oui list */
 			manuf = sanitize_xml((unsigned char *) st_cur->manuf,

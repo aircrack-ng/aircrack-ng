@@ -220,21 +220,20 @@ static void swap_ra_ta(unsigned char * h80211)
 	memcpy(h80211 + 10, mbuf, 6);
 }
 
-static int is_filtered_netmask(unsigned char * bssid)
+static int is_filtered_netmask(mac_address const * const bssid)
 {
 	REQUIRE(bssid != NULL);
 
-	unsigned char mac1[6];
-	unsigned char mac2[6];
-	int i;
+	mac_address mac1;
+	mac_address mac2;
 
-	for (i = 0; i < 6; i++)
+	for (size_t i = 0; i < sizeof mac1; i++)
 	{
-		mac1[i] = bssid[i] & opt.f_netmask[i];
-		mac2[i] = opt.f_bssid[i] & opt.f_netmask[i];
+		mac1.addr[i] = bssid->addr[i] & opt.f_netmask[i];
+		mac2.addr[i] = opt.f_bssid.addr[i] & opt.f_netmask[i];
 	}
 
-	if (memcmp(mac1, mac2, 6) != 0)
+	if (!MAC_ADDRESS_EQUAL(&mac1, &mac2))
 	{
 		return (1);
 	}
@@ -1137,13 +1136,13 @@ int main(int argc, char * argv[])
 				}
 				break;
 			case 'd':
-				if (memcmp(opt.f_bssid, NULL_MAC, 6) != 0)
+				if (!MAC_ADDRESS_IS_EMPTY(&opt.f_bssid))
 				{
 					printf("Notice: bssid already given\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
 					break;
 				}
-				if (getmac(optarg, 1, opt.f_bssid) != 0)
+				if (getmac(optarg, 1, (uint8_t *)&opt.f_bssid) != 0)
 				{
 					printf("Notice: invalid bssid\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
@@ -1202,8 +1201,8 @@ int main(int argc, char * argv[])
 		return (EXIT_FAILURE);
 	}
 
-	if ((memcmp(opt.f_netmask, NULL_MAC, 6) != 0)
-		&& (memcmp(opt.f_bssid, NULL_MAC, 6) == 0))
+	if (memcmp(opt.f_netmask, NULL_MAC, 6) != 0
+		&& MAC_ADDRESS_IS_EMPTY(&opt.f_bssid))
 	{
 		printf("Notice: specify bssid \"--bssid\" with \"--netmask\"\n");
 		printf("\"%s --help\" for help.\n", argv[0]);
@@ -1505,7 +1504,7 @@ int main(int argc, char * argv[])
 
 			if (lopt.repeat)
 			{
-				if (memcmp(opt.f_bssid, NULL_MAC, 6) != 0)
+				if (!MAC_ADDRESS_IS_EMPTY(&opt.f_bssid))
 				{
 					switch (h80211[1] & 3)
 					{
@@ -1524,11 +1523,17 @@ int main(int argc, char * argv[])
 					}
 					if (memcmp(opt.f_netmask, NULL_MAC, 6) != 0)
 					{
-						if (is_filtered_netmask(bssid)) continue;
+						if (is_filtered_netmask((mac_address *)bssid))
+						{
+							continue;
+						}
 					}
 					else
 					{
-						if (memcmp(opt.f_bssid, bssid, 6) != 0) continue;
+						if (!MAC_ADDRESS_EQUAL(&opt.f_bssid, (mac_address *)bssid))
+						{
+							continue;
+						}
 					}
 				}
 				send_packet(_wi_out, h80211, (size_t) caplen, kNoChange);

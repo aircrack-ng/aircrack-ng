@@ -1381,8 +1381,8 @@ static int packet_reader__update_ap_info(struct AP_info * ap_cur,
 		}
 		memset(st_cur, 0, sizeof(struct ST_info));
 
-		memcpy(st_cur->stmac, stmac, sizeof(st_cur->stmac));
-		c_avl_insert(ap_cur->stations, st_cur->stmac, st_cur);
+		MAC_ADDRESS_COPY(&st_cur->stmac, (mac_address *)stmac);
+		c_avl_insert(ap_cur->stations, &st_cur->stmac, st_cur);
 	}
 
 skip_station:
@@ -1710,7 +1710,7 @@ skip_station:
 		|| (st_cur->wpa.state > 0 && st_cur->wpa.pmkid[0] != 0x00))
 	{
 		/* got one valid handshake */
-		memcpy(st_cur->wpa.stmac, stmac, ETHER_ADDR_LEN);
+		MAC_ADDRESS_COPY(&st_cur->wpa.stmac, (mac_address *)stmac);
 		memcpy(&ap_cur->wpa, &st_cur->wpa, sizeof(struct WPA_hdsk));
 	}
 
@@ -3950,7 +3950,7 @@ static int crack_wpa_thread(void * arg)
 
 	dso_ac_crypto_engine_calc_pke(&engine,
 								  (uint8_t *)&ap->bssid,
-								  ap->wpa.stmac,
+								  (uint8_t *)&ap->wpa.stmac,
 								  ap->wpa.anonce,
 								  ap->wpa.snonce,
 								  threadid);
@@ -4064,7 +4064,7 @@ static int crack_wpa_pmkid_thread(void * arg)
 	dso_ac_crypto_engine_thread_init(&engine, threadid);
 
 	dso_ac_crypto_engine_set_pmkid_salt(
-		&engine, (uint8_t *)&ap->bssid, ap->wpa.stmac, threadid);
+		&engine, (uint8_t *)&ap->bssid, (uint8_t *)&ap->wpa.stmac, threadid);
 
 #ifdef XDEBUG
 	printf("Thread # %d starting...\n", threadid);
@@ -4364,12 +4364,12 @@ static int display_wpa_hash_information(struct AP_info * ap_cur)
 		   ap_cur->bssid.addr[4],
 		   ap_cur->bssid.addr[5]);
 	printf("[*] STA: %02X:%02X:%02X:%02X:%02X:%02X",
-		   ap_cur->wpa.stmac[0],
-		   ap_cur->wpa.stmac[1],
-		   ap_cur->wpa.stmac[2],
-		   ap_cur->wpa.stmac[3],
-		   ap_cur->wpa.stmac[4],
-		   ap_cur->wpa.stmac[5]);
+		   ap_cur->wpa.stmac.addr[0],
+		   ap_cur->wpa.stmac.addr[1],
+		   ap_cur->wpa.stmac.addr[2],
+		   ap_cur->wpa.stmac.addr[3],
+		   ap_cur->wpa.stmac.addr[4],
+		   ap_cur->wpa.stmac.addr[5]);
 
 	printf("\n[*] anonce:");
 	for (i = 0; i < sizeof(ap_cur->wpa.anonce); i++)
@@ -4442,14 +4442,13 @@ static int do_make_wkp(struct AP_info * ap_cur)
 	MAC_ADDRESS_COPY((mac_address *)&frametmp[0x514], &ap_cur->bssid);
 
 	// Station Mac
-	ptmp = (char *) ap_cur->wpa.stmac;
-	memcpy(&frametmp[0x51a], ptmp, ETHER_ADDR_LEN);
+	MAC_ADDRESS_COPY((mac_address *)&frametmp[0x51a], &ap_cur->wpa.stmac);
 
 	// ESSID
 	memcpy(&frametmp[0x520], ap_cur->essid, sizeof(ap_cur->essid));
 
 	// ESSID length
-	frametmp[0x540] = (uint8_t) ustrlen(ap_cur->essid);
+	frametmp[0x540] = (uint8_t)ustrlen(ap_cur->essid);
 
 	// WPA Key version
 	frametmp[0x544] = ap_cur->wpa.keyver;
@@ -4502,7 +4501,7 @@ static hccap_t ap_to_hccap(struct AP_info * ap)
 
 	memcpy(&hccap.essid, &ap->essid, sizeof(ap->essid));
 	MAC_ADDRESS_COPY((mac_address *)hccap.mac1, &ap->bssid);
-	memcpy(&hccap.mac2, &ap->wpa.stmac, sizeof(ap->wpa.stmac));
+	MAC_ADDRESS_COPY((mac_address *)hccap.mac2, &ap->wpa.stmac);
 	memcpy(&hccap.nonce1, &ap->wpa.snonce, sizeof(ap->wpa.snonce));
 	memcpy(&hccap.nonce2, &ap->wpa.anonce, sizeof(ap->wpa.anonce));
 	memcpy(&hccap.eapol, &ap->wpa.eapol, sizeof(ap->wpa.eapol));
@@ -4595,7 +4594,7 @@ struct AP_info * hccapx_to_ap(struct hccapx * hx)
 		   &hx->essid,
 		   MIN(sizeof(hx->essid), sizeof(ap->essid)));
 	MAC_ADDRESS_COPY(&ap->bssid, (mac_address *)hx->mac_ap);
-	memcpy(&ap->wpa.stmac, &hx->mac_sta, sizeof(hx->mac_sta));
+	MAC_ADDRESS_COPY(&ap->wpa.stmac, (mac_address *)hx->mac_sta);
 	memcpy(&ap->wpa.snonce, &hx->nonce_sta, sizeof(hx->nonce_sta));
 	memcpy(&ap->wpa.anonce, &hx->nonce_ap, sizeof(hx->nonce_ap));
 	memcpy(&ap->wpa.eapol, &hx->eapol, sizeof(hx->eapol));
@@ -4669,7 +4668,7 @@ static hccapx_t ap_to_hccapx(struct AP_info * ap)
 
 	memcpy(&hx.essid, &ap->essid, sizeof(hx.essid)); //-V512
 	MAC_ADDRESS_COPY((mac_address *)hx.mac_ap, &ap->bssid);
-	memcpy(&hx.mac_sta, &ap->wpa.stmac, sizeof(ap->wpa.stmac));
+	MAC_ADDRESS_COPY((mac_address *)hx.mac_sta, &ap->wpa.stmac);
 	memcpy(&hx.keyver, &ap->wpa.keyver, sizeof(ap->wpa.keyver));
 	memcpy(&hx.keymic, &ap->wpa.keymic, sizeof(ap->wpa.keymic));
 	memcpy(&hx.nonce_sta, &ap->wpa.snonce, sizeof(ap->wpa.snonce));
@@ -6535,7 +6534,7 @@ int main(int argc, char * argv[])
 							 + H16800_BSSID_LEN
 							 + 1,
 						 H16800_STMAC_LEN,
-						 ap_cur->wpa.stmac,
+						 (uint8_t *)&ap_cur->wpa.stmac,
 						 sizeof(ap_cur->wpa.stmac));
 		hexStringToArray(
 			(char *) _pmkid_16800_str + H16800_PMKID_LEN + 1 + H16800_BSSID_LEN

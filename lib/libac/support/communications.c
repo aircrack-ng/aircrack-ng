@@ -445,14 +445,21 @@ int filter_packet(unsigned char * h80211, int caplen)
 			abort();
 	}
 
-	if (memcmp(opt.f_bssid, NULL_MAC, ETHER_ADDR_LEN) != 0)
-		if (memcmp(h80211 + mi_b, opt.f_bssid, ETHER_ADDR_LEN) != 0) return (1);
+	if (!MAC_ADDRESS_IS_EMPTY(&opt.f_bssid)
+		&& !MAC_ADDRESS_EQUAL((mac_address *)(h80211 + mi_b), &opt.f_bssid))
+	{
+		return 1;
+	}
 
-	if (memcmp(opt.f_bssid, opt.f_smac, ETHER_ADDR_LEN) == 0)
+	if (MAC_ADDRESS_EQUAL(&opt.f_bssid, (mac_address *)opt.f_smac))
 	{
 		if (memcmp(opt.f_smac, NULL_MAC, ETHER_ADDR_LEN) != 0)
+		{
 			if (memcmp(h80211 + mi_s, opt.f_smac, ETHER_ADDR_LEN - 1) != 0)
+			{
 				return (1);
+			}
+		}
 	}
 	else
 	{
@@ -461,7 +468,7 @@ int filter_packet(unsigned char * h80211, int caplen)
 				return (1);
 	}
 
-	if (memcmp(opt.f_bssid, opt.f_dmac, ETHER_ADDR_LEN) == 0)
+	if (MAC_ADDRESS_EQUAL(&opt.f_bssid, (mac_address *)opt.f_dmac))
 	{
 		if (memcmp(opt.f_dmac, NULL_MAC, ETHER_ADDR_LEN) != 0)
 			if (memcmp(h80211 + mi_d, opt.f_dmac, ETHER_ADDR_LEN - 1) != 0)
