@@ -128,14 +128,13 @@ static char * format_text_for_csv(const unsigned char * input, size_t len)
 	return (rret) ? (rret) : (ret);
 }
 
-int dump_write_csv(struct AP_info * ap_1st,
+int dump_write_csv(struct ap_list_head * ap_list,
 				   struct ST_info * st_1st,
 				   unsigned int f_encrypt)
 {
 	int i, probes_written;
 	struct tm * ltime;
 	struct AP_info * ap_cur;
-	struct ST_info * st_cur;
 	char * temp;
 
 	if (!opt.record_data || !opt.output_format_csv) return (0);
@@ -147,26 +146,21 @@ int dump_write_csv(struct AP_info * ap_1st,
 			"Privacy, Cipher, Authentication, Power, # beacons, # IV, LAN IP, "
 			"ID-length, ESSID, Key\r\n");
 
-	ap_cur = ap_1st;
-
-	while (ap_cur != NULL)
+	TAILQ_FOREACH(ap_cur, ap_list, entry)
 	{
 		if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
 		{
-			ap_cur = ap_cur->next;
 			continue;
 		}
 
 		if (ap_cur->security != 0 && f_encrypt != 0
 			&& ((ap_cur->security & f_encrypt) == 0))
 		{
-			ap_cur = ap_cur->next;
 			continue;
 		}
 
 		if (is_filtered_essid(ap_cur->essid))
 		{
-			ap_cur = ap_cur->next;
 			continue;
 		}
 
@@ -236,8 +230,10 @@ int dump_write_csv(struct AP_info * ap_1st,
 
 		fprintf(opt.f_txt, ",");
 
-		if ((ap_cur->security & AUTH_FIELD) == 0)
+        if ((ap_cur->security & AUTH_FIELD) == 0)
+        {
 			fprintf(opt.f_txt, "   ");
+        }
 		else
 		{
 			if (ap_cur->security & AUTH_SAE) fprintf(opt.f_txt, " SAE");
@@ -245,13 +241,23 @@ int dump_write_csv(struct AP_info * ap_1st,
 			if (ap_cur->security & AUTH_CMAC) fprintf(opt.f_txt, " CMAC");
 			if (ap_cur->security & AUTH_PSK)
 			{
-				if (ap_cur->security & STD_WEP)
+                if (ap_cur->security & STD_WEP)
+                {
 					fprintf(opt.f_txt, " SKA");
-				else
+                }
+                else
+                {
 					fprintf(opt.f_txt, " PSK");
+                }
 			}
-			if (ap_cur->security & AUTH_OWE) fprintf(opt.f_txt, " OWE");
-			if (ap_cur->security & AUTH_OPN) fprintf(opt.f_txt, " OPN");
+            if (ap_cur->security & AUTH_OWE)
+            {
+                fprintf(opt.f_txt, " OWE");
+            }
+            if (ap_cur->security & AUTH_OPN)
+            {
+                fprintf(opt.f_txt, " OPN");
+            }
 		}
 
 		fprintf(opt.f_txt,
@@ -269,8 +275,10 @@ int dump_write_csv(struct AP_info * ap_1st,
 
 		fprintf(opt.f_txt, "%3d, ", ap_cur->ssid_length);
 
-		if (verifyssid(ap_cur->essid))
+        if (verifyssid(ap_cur->essid))
+        {
 			fprintf(opt.f_txt, "%s, ", ap_cur->essid);
+        }
 		else
 		{
 			temp = format_text_for_csv(ap_cur->essid,
@@ -287,21 +295,22 @@ int dump_write_csv(struct AP_info * ap_1st,
 			for (i = 0; i < (int) strlen(ap_cur->key); i++)
 			{
 				fprintf(opt.f_txt, "%02X", ap_cur->key[i]);
-				if (i < (int) (strlen(ap_cur->key) - 1))
+                if (i < (int)(strlen(ap_cur->key) - 1))
+                {
 					fprintf(opt.f_txt, ":");
+                }
 			}
 		}
 
 		fprintf(opt.f_txt, "\r\n");
-
-		ap_cur = ap_cur->next;
 	}
 
 	fprintf(opt.f_txt,
 			"\r\nStation MAC, First time seen, Last time seen, "
 			"Power, # packets, BSSID, Probed ESSIDs\r\n");
 
-	st_cur = st_1st;
+    struct ST_info * st_cur;
+    st_cur = st_1st;
 
 	while (st_cur != NULL)
 	{
@@ -542,7 +551,7 @@ int dump_write_airodump_ng_logcsv_add_client(const struct AP_info * ap_cur,
 }
 
 int dump_write_wifi_scanner(
-    struct AP_info * ap_1st,
+    struct ap_list_head * const ap_list,
 	struct ST_info * st_1st,
 	unsigned int const f_encrypt,
 	time_t const filter_seconds,
@@ -550,8 +559,7 @@ int dump_write_wifi_scanner(
     char const * const sys_name,
     char const * const loc_name)
 {
-	struct AP_info * ap_cur = NULL;
-	struct ST_info * st_cur = NULL;
+	struct AP_info * ap_cur;
 
 	if (!opt.record_data 
 		|| !opt.output_format_wifi_scanner 
@@ -560,33 +568,27 @@ int dump_write_wifi_scanner(
 		return 0;
 	}
 
-	ap_cur = ap_1st;
-
 	/* Access Points */
-	while (ap_cur != NULL)
+	TAILQ_FOREACH(ap_cur, ap_list, entry)
 	{
 		if (((time(NULL) - ap_cur->time_printed) < filter_seconds) && (ap_cur->old_channel == ap_cur->channel))
 		{
-			ap_cur = ap_cur->next;
 			continue;
 		}
 
 		if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
 		{
-			ap_cur = ap_cur->next;
 			continue;
 		}
 
 		if (ap_cur->security != 0 && f_encrypt != 0
 			&& ((ap_cur->security & f_encrypt) == 0))
 		{
-			ap_cur = ap_cur->next;
 			continue;
 		}
 
 		if (is_filtered_essid(ap_cur->essid))
 		{
-			ap_cur = ap_cur->next;
 			continue;
 		}
 
@@ -640,11 +642,10 @@ int dump_write_wifi_scanner(
 		}
 
 		fprintf(opt.f_wifi, "%3d\r\n", ap_cur->avg_power);
-		ap_cur = ap_cur->next;
 	}
 
 	/*   Process Clients */
-	st_cur = st_1st;
+    struct ST_info * st_cur = st_1st;
 
 	while (st_cur != NULL)
 	{
@@ -1076,7 +1077,7 @@ static int dump_write_kismet_netxml_client_info(struct ST_info * client,
 }
 
 #define NETXML_ENCRYPTION_TAG "%s<encryption>%s</encryption>\n"
-int dump_write_kismet_netxml(struct AP_info * ap_1st,
+int dump_write_kismet_netxml(struct ap_list_head * const ap_list,
 							 struct ST_info * st_1st,
 							 unsigned int f_encrypt,
 							 char * airodump_start_time)
@@ -1105,27 +1106,23 @@ int dump_write_kismet_netxml(struct AP_info * ap_1st,
 			airodump_start_time,
 			KISMET_NETXML_HEADER_END);
 
-	ap_cur = ap_1st;
-
 	network_number = 0;
-	while (ap_cur != NULL)
+
+    TAILQ_FOREACH(ap_cur, ap_list, entry)
 	{
 		if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
 		{
-			ap_cur = ap_cur->next;
 			continue;
 		}
 
 		if (ap_cur->security != 0 && f_encrypt != 0
 			&& ((ap_cur->security & f_encrypt) == 0))
 		{
-			ap_cur = ap_cur->next;
 			continue;
 		}
 
 		if (is_filtered_essid(ap_cur->essid))
 		{
-			ap_cur = ap_cur->next;
 			continue;
 		}
 
@@ -1377,7 +1374,6 @@ int dump_write_kismet_netxml(struct AP_info * ap_1st,
 		fprintf(opt.f_kis_xml, "\t</wireless-network>\n");
 		//-------- End of XML
 
-		ap_cur = ap_cur->next;
 	}
 
 	/* Write all unassociated stations */
@@ -1574,7 +1570,7 @@ int dump_write_kismet_netxml(struct AP_info * ap_1st,
 	"GPSMinAlt;GPSMinSpd;GPSMaxLat;GPSMaxLon;GPSMaxAlt;GPSMaxSpd;GPSBestLat;"  \
 	"GPSBestLon;GPSBestAlt;DataSize;IPType;IP;\n"
 
-int dump_write_kismet_csv(struct AP_info * ap_1st,
+int dump_write_kismet_csv(struct ap_list_head * const ap_list,
 						  struct ST_info * st_1st,
 						  unsigned int f_encrypt)
 {
@@ -1592,27 +1588,23 @@ int dump_write_kismet_csv(struct AP_info * ap_1st,
 
 	fprintf(opt.f_kis, KISMET_HEADER);
 
-	ap_cur = ap_1st;
-
 	k = 1;
-	while (ap_cur != NULL)
+
+    TAILQ_FOREACH(ap_cur, ap_list, entry)
 	{
 		if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
 		{
-			ap_cur = ap_cur->next;
 			continue;
 		}
 
 		if (ap_cur->security != 0 && f_encrypt != 0
 			&& ((ap_cur->security & f_encrypt) == 0))
 		{
-			ap_cur = ap_cur->next;
 			continue;
 		}
 
 		if (is_filtered_essid(ap_cur->essid) || ap_cur->nb_pkt < 2)
 		{
-			ap_cur = ap_cur->next;
 			continue;
 		}
 
@@ -1782,7 +1774,6 @@ int dump_write_kismet_csv(struct AP_info * ap_1st,
 
 		fprintf(opt.f_kis, "\r\n");
 
-		ap_cur = ap_cur->next;
 		k++;
 	}
 
