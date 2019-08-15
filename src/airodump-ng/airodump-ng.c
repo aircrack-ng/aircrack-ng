@@ -404,7 +404,7 @@ static void color_on(void)
 		TAILQ_FOREACH_REVERSE(st_cur, &lopt.sta_list[lopt.current_sta_list_index], sta_list_head, entry)
 		{
 			if (st_cur->base != ap_cur
-				|| time(NULL) - st_cur->tlast > lopt.berlin)
+				|| (time(NULL) - st_cur->tlast) > lopt.berlin)
 			{
 				continue;
 			}
@@ -613,8 +613,10 @@ static void input_thread(void * arg)
 			}
 
             acquire_sort_lock(&lopt);
+
 			dump_sort();
-            release_sort_lock(&lopt);
+
+			release_sort_lock(&lopt);
 		}
 
 		if (keycode == KEY_SPACE)
@@ -637,6 +639,7 @@ static void input_thread(void * arg)
 		if (keycode == KEY_r)
 		{
 			lopt.do_sort_always = (lopt.do_sort_always + 1) % 2;
+
 			if (lopt.do_sort_always)
 				snprintf(lopt.message,
 						 sizeof(lopt.message),
@@ -1156,38 +1159,83 @@ static int update_dataps(void)
 	return (0);
 }
 
-static int list_tail_free(struct pkt_buf * * list)
+static void packet_buf_free(struct pkt_buf * const pkt_buf)
 {
-	struct pkt_buf ** pkts;
+	free(pkt_buf->packet);
+	free(pkt_buf);
+}
 
-	if (list == NULL) return 1;
-
-	pkts = list;
-
-	while (*pkts != NULL)
+static int packet_list_free(struct pkt_list_head * const pkt_list)
+{
+	while (TAILQ_FIRST(pkt_list) != NULL)
 	{
-        struct pkt_buf * const next = (*pkts)->next;
+		struct pkt_buf * const pkt_buf = TAILQ_FIRST(pkt_list);
 
-        free((*pkts)->packet);
-        (*pkts)->packet = NULL;
+		TAILQ_REMOVE(pkt_list, pkt_buf, entry);
 
-		free(*pkts);
-		*pkts = next;
+		packet_buf_free(pkt_buf);
 	}
-
-	*list = NULL;
 
 	return 0;
 }
 
+static void ap_purge_old_packets(
+	struct AP_info * const ap_cur, 
+	struct timeval const * const current_time,
+	unsigned long const age_limit_millisecs)
+{
+	struct pkt_buf * pkt_buf;
+	struct pkt_buf * temp; 
+	bool found_old_packet = false;
+
+	TAILQ_FOREACH_SAFE(pkt_buf, &ap_cur->pkt_list, entry, temp)
+	{
+		if (!found_old_packet)
+		{
+			unsigned long const time_diff =
+			(((current_time->tv_sec - (pkt_buf->ctime.tv_sec)) * 1000000UL)
+				 + (current_time->tv_usec - (pkt_buf->ctime.tv_usec)))
+				/ 1000;
+
+			if (time_diff > age_limit_millisecs)
+			{
+				found_old_packet = true;
+			}
+		}
+
+		if (found_old_packet)
+		{
+			TAILQ_REMOVE(&ap_cur->pkt_list, pkt_buf, entry);
+
+			packet_buf_free(pkt_buf);
+		}
+	}
+
+}
+
+static void aps_purge_old_packets(
+	struct local_options * const options,
+	unsigned long const age_limit_millisecs)
+{
+	struct timeval current_time;
+
+	gettimeofday(&current_time, NULL);
+
+	struct AP_info * ap_cur;
+
+	TAILQ_FOREACH(ap_cur, &options->ap_list[options->current_ap_list_index], entry)
+	{
+		ap_purge_old_packets(ap_cur, &current_time, age_limit_millisecs);
+	}
+}
+
 static int
-list_add_packet(struct pkt_buf * * const list, int const length, unsigned char * packet)
+list_add_packet(struct pkt_list_head * const pkt_list, int const length, unsigned char * packet)
 {
 	struct pkt_buf * new_pkt_buf;
 
 	if (length <= 0) return 1;
 	if (packet == NULL) return 1;
-	if (list == NULL) return 1;
 
     new_pkt_buf = calloc(1, sizeof *new_pkt_buf);
     if (new_pkt_buf == NULL)
@@ -1204,9 +1252,10 @@ list_add_packet(struct pkt_buf * * const list, int const length, unsigned char *
 
     memcpy(new_pkt_buf->packet, packet, (size_t)length);
     new_pkt_buf->length = (uint16_t)length;
+
     gettimeofday(&new_pkt_buf->ctime, NULL);
-    new_pkt_buf->next = *list;
-    *list = new_pkt_buf;
+
+	TAILQ_INSERT_HEAD(pkt_list, new_pkt_buf, entry);
 
 	return 0;
 }
@@ -1218,43 +1267,23 @@ list_add_packet(struct pkt_buf * * const list, int const length, unsigned char *
  * so with the same IV it should always be encrypted to the same thing.
  */
 static int
-list_check_decloak(struct pkt_buf ** list, int length, const uint8_t * packet)
+list_check_decloak(struct pkt_list_head * const pkt_list, int length, const uint8_t * packet)
 {
 	struct pkt_buf * next;
-	struct timeval tv1;
-	unsigned long timediff;
 	int i, correct;
 
-	if (packet == NULL) return (1);
-	if (list == NULL) return (1);
-	if (*list == NULL) return (1);
-	if (length <= 0) return (1);
-	next = *list;
-
-	gettimeofday(&tv1, NULL);
-
-	timediff = (((tv1.tv_sec - ((*list)->ctime.tv_sec)) * 1000000UL)
-				+ (tv1.tv_usec - ((*list)->ctime.tv_usec)))
-			   / 1000;
-    if (timediff > BUFFER_TIME_MILLISECS)
+	if (packet == NULL)
 	{
-		list_tail_free(list);
-		next = NULL;
+		return 1;
 	}
 
-	while (next != NULL)
+	if (length <= 0)
 	{
-		if (next->next != NULL)
-		{
-			timediff = (((tv1.tv_sec - (next->next->ctime.tv_sec)) * 1000000UL)
-						+ (tv1.tv_usec - (next->next->ctime.tv_usec)))
-					   / 1000;
-            if (timediff > BUFFER_TIME_MILLISECS)
-			{
-				list_tail_free(&next->next);
-				break;
-			}
-		}
+		return 1;
+	}
+
+	TAILQ_FOREACH(next, pkt_list, entry)
+	{
 		if ((next->length + 4) == length)
 		{
 			correct = 1;
@@ -1285,9 +1314,11 @@ list_check_decloak(struct pkt_buf ** list, int length, const uint8_t * packet)
 					}
 				}
 			}
-			if (correct == 1) return (0); // found decloaking!
+			if (correct == 1)
+			{
+				return 0; // found decloaking!
+			}
 		}
-		next = next->next;
 	}
 
 	return 1; // didn't find decloak
@@ -1548,7 +1579,8 @@ static int dump_add_packet(
 
 		ap_cur->decloak_detect = lopt.decloak;
 		ap_cur->is_decloak = 0;
-		ap_cur->packets = NULL;
+
+		TAILQ_INIT(&ap_cur->pkt_list);
 
 		ap_cur->marked = 0;
 		ap_cur->marked_color = 1;
@@ -2607,24 +2639,29 @@ skip_probe:
 
 		if (z == 24)
 		{
-			if (list_check_decloak(&ap_cur->packets, caplen, h80211) != 0)
+			if (ap_cur->decloak_detect)
 			{
-				list_add_packet(&ap_cur->packets, caplen, h80211);
-			}
-			else
-			{
-				ap_cur->is_decloak = 1;
-				ap_cur->decloak_detect = 0;
-				list_tail_free(&ap_cur->packets);
-				snprintf(lopt.message,
-						 sizeof(lopt.message),
-						 "][ Decloak: %02X:%02X:%02X:%02X:%02X:%02X ",
-						 ap_cur->bssid.addr[0],
-                         ap_cur->bssid.addr[1],
-                         ap_cur->bssid.addr[2],
-                         ap_cur->bssid.addr[3],
-                         ap_cur->bssid.addr[4],
-                         ap_cur->bssid.addr[5]);
+				if (list_check_decloak(&ap_cur->pkt_list, caplen, h80211) != 0)
+				{
+					list_add_packet(&ap_cur->pkt_list, caplen, h80211);
+				}
+				else
+				{
+					ap_cur->is_decloak = 1;
+					ap_cur->decloak_detect = 0;
+
+					packet_list_free(&ap_cur->pkt_list);
+
+					snprintf(lopt.message,
+							 sizeof(lopt.message),
+							 "][ Decloak: %02X:%02X:%02X:%02X:%02X:%02X ",
+							 ap_cur->bssid.addr[0],
+							 ap_cur->bssid.addr[1],
+							 ap_cur->bssid.addr[2],
+							 ap_cur->bssid.addr[3],
+							 ap_cur->bssid.addr[4],
+							 ap_cur->bssid.addr[5]);
+				}
 			}
 		}
 
@@ -3263,6 +3300,7 @@ static void sort_aps(struct local_options * const options)
 					/* There's no point in comparing an entry with itself. */
 					continue;
 				}
+
 				switch (options->sort_by)
 				{
 					case SORT_BY_BSSID:
@@ -3513,7 +3551,7 @@ static int IsAp2BeSkipped(struct AP_info * ap_cur)
 	REQUIRE(ap_cur != NULL);
 
 	if (ap_cur->nb_pkt < lopt.min_pkts
-		|| time(NULL) - ap_cur->tlast > lopt.berlin
+		|| (time(NULL) - ap_cur->tlast) > lopt.berlin
 		|| MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
 	{
 		return (1);
@@ -3563,13 +3601,20 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	int num_ap;
 	int num_sta;
 
-	if (!lopt.singlechan) columns_ap -= 4; // no RXQ in scan mode
-	if (lopt.show_uptime) columns_ap += 15; // show uptime needs more space
+	if (opt.output_format_wifi_scanner)
+	{
+		return;
+	}
 
-    if (opt.output_format_wifi_scanner)
-    {
-        return;
-    }
+	if (!lopt.singlechan)
+	{
+		columns_ap -= 4; // no RXQ in scan mode
+	}
+
+	if (lopt.show_uptime)
+	{
+		columns_ap += 15; // show uptime needs more space
+	}
 
 	nlines = 2;
 
@@ -3581,8 +3626,10 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	if (lopt.do_sort_always)
 	{
         acquire_sort_lock(&lopt);
+
 		dump_sort();
-        release_sort_lock(&lopt);
+
+		release_sort_lock(&lopt);
 	}
 
 	tt = time(NULL);
@@ -4198,7 +4245,8 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 		TAILQ_FOREACH_REVERSE(ap_cur, &lopt.ap_list[lopt.current_ap_list_index], ap_list_head, entry)
 		{
-			if (ap_cur->nb_pkt < 2 || time(NULL) - ap_cur->tlast > lopt.berlin)
+			if (ap_cur->nb_pkt < 2 
+				|| (time(NULL) - ap_cur->tlast) > lopt.berlin)
 			{
 				continue;
 			}
@@ -4235,7 +4283,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			TAILQ_FOREACH_REVERSE(st_cur, &lopt.sta_list[lopt.current_sta_list_index], sta_list_head, entry)
 			{
 				if (st_cur->base != ap_cur
-					|| time(NULL) - st_cur->tlast > lopt.berlin)
+					|| (time(NULL) - st_cur->tlast) > lopt.berlin)
 				{
 					continue;
 				}
@@ -6339,7 +6387,7 @@ static void ap_list_free(struct ap_list_head * const ap_list)
 		// Clean content of ap_cur list (first element: lopt.ap_1st)
 		uniqueiv_wipe(ap_cur->uiv_root);
 
-		list_tail_free(&ap_cur->packets);
+		packet_list_free(&ap_cur->pkt_list);
 
 		data_wipe(ap_cur->data_root);
 
@@ -6667,13 +6715,14 @@ int main(int argc, char * argv[])
 			{
 				char * invalid_str = NULL;
 				long int bg_mode = strtol(optarg, &invalid_str, 10);
+
 				if ((invalid_str && *invalid_str != 0)
 					|| !(bg_mode == 0 || bg_mode == 1))
 				{
 					printf("Invalid background mode. Must be '0' or '1'\n");
 					exit(EXIT_FAILURE);
 				}
-				lopt.background_mode = (char) bg_mode;
+				lopt.background_mode = bg_mode;
 				break;
 			}
 			case 'I':
@@ -6928,8 +6977,10 @@ int main(int argc, char * argv[])
 
 				lopt.is_berlin = 1;
 				lopt.berlin = (int) strtol(optarg, NULL, 10);
-
-				if (lopt.berlin <= 0) lopt.berlin = 120;
+				if (lopt.berlin <= 0)
+				{
+					lopt.berlin = 120;
+				}
 
 				break;
 
@@ -7445,7 +7496,10 @@ int main(int argc, char * argv[])
 
 	// Do not start the interactive mode input thread if running in the
 	// background
-	if (lopt.background_mode == -1) lopt.background_mode = is_background();
+	if (lopt.background_mode == -1)
+	{
+		lopt.background_mode = is_background();
+	}
 
 	if (!lopt.background_mode
 		&& pthread_create(&lopt.input_tid, NULL, (void *)input_thread, NULL)
@@ -7461,6 +7515,7 @@ int main(int argc, char * argv[])
 	{
         check_monitor_process(&lopt);
         check_for_signal_events(&lopt);
+		aps_purge_old_packets(&lopt, BUFFER_TIME_MILLISECS); 
 
         if (lopt.do_exit)
         {
@@ -7511,7 +7566,9 @@ int main(int argc, char * argv[])
 			{
 				/* sort the APs by power */
                 acquire_sort_lock(&lopt); 
+
 				dump_sort();
+
                 release_sort_lock(&lopt);
 			}
 

@@ -42,7 +42,7 @@
 
 #include "aircrack-ng/osdep/mac_header.h"
 #include "aircrack-ng/osdep/queue.h"
-
+#include "aircrack-ng/osdep/pkt_list.h"
 
 #define NB_PRB 10 /* size of probed ESSID ring buffer */
 
@@ -171,7 +171,9 @@ struct AP_info
 	char * key; /* if wep-key found by dict */
 
 	char decloak_detect; /* run decloak detection? */
-	struct pkt_buf * packets; /* list of captured packets (last few seconds) */
+
+	struct pkt_list_head pkt_list;
+
 	char is_decloak; /* detected decloak */
 
 	// This feature eats 48Mb per AP

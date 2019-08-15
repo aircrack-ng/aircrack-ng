@@ -118,15 +118,6 @@ extern const unsigned char crc_chop_tbl[256][4];
 
 #define MIN_RAM_SIZE_LOAD_OUI_RAM 32768
 
-/* linked list of received packets for the last few seconds */
-struct pkt_buf
-{
-	struct pkt_buf * next; /* next packet in list */
-	unsigned char * packet; /* packet */
-	unsigned short length; /* packet length */
-	struct timeval ctime; /* capture time */
-};
-
 #define OUI_STR_SIZE sizeof "00:00:00"
 #define MANUF_SIZE 128
 
