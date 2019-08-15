@@ -33,9 +33,10 @@
 #define _AIRODUMP_NG_DUMP_WRITE_H_
 
 #include "ap_list.h"
+#include "aircrack-ng/osdep/sta_list.h"
 
 int dump_write_csv(struct ap_list_head * const ap_list,
-				   struct ST_info * st_1st,
+				   struct sta_list_head * const sta_list,
 				   unsigned int f_encrypt);
 
 int dump_write_airodump_ng_logcsv_add_ap(const struct AP_info * ap_cur,
@@ -52,16 +53,16 @@ int dump_write_airodump_ng_logcsv_add_client(const struct AP_info * ap_cur,
 char * get_manufacturer_from_string(char * buffer);
 
 int dump_write_kismet_netxml(struct ap_list_head * const ap_list,
-							 struct ST_info * st_1st,
+                             struct sta_list_head * const sta_list,
 							 unsigned int f_encrypt,
 							 char * airodump_start_time);
 
 int dump_write_kismet_csv(struct ap_list_head * const ap_list,
-						  struct ST_info * st_1st,
+                          struct sta_list_head * const sta_list,
 						  unsigned int f_encrypt);
 
 int dump_write_wifi_scanner(struct ap_list_head * const ap_list,
-                            struct ST_info * st_1st,
+                            struct sta_list_head * const sta_list,
                             unsigned int const f_encrypt,
                             time_t const filter_seconds,
                             int const file_reset_minutes,

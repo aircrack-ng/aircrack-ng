@@ -76,6 +76,8 @@
 #include "aircrack-ng/support/fragments.h"
 #include "aircrack-ng/osdep/osdep.h"
 #include "aircrack-ng/support/common.h"
+#include "aircrack-ng/osdep/sta_list.h"
+
 
 #define EXT_IN 0x01
 #define EXT_OUT 0x02
@@ -210,7 +212,7 @@ static const char usage[]
 struct communication_options opt;
 static struct local_options
 {
-	struct ST_info *st_1st, *st_end;
+	struct sta_list_head sta_list;
 
 	char * dump_prefix;
 	char * keyout;
@@ -1504,6 +1506,23 @@ static int store_wpa_handshake(struct ST_info * st_cur)
 	return (0);
 }
 
+static struct ST_info * sta_info_lookup(
+	struct sta_list_head * const sta_list, 
+	mac_address const * const mac)
+{
+	struct ST_info * st_cur;
+
+	TAILQ_FOREACH(st_cur, sta_list, entry)
+	{
+		if (MAC_ADDRESS_EQUAL(&st_cur->stmac, mac))
+		{
+			break;
+		}
+	}
+
+	return st_cur;
+}
+
 static int
 packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 {
@@ -1531,11 +1550,10 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 	unsigned z;
 
 	struct ST_info * st_cur = NULL;
-	struct ST_info * st_prv = NULL;
 
 	reasso = 0;
 	fixed = 0;
-	memset(essid, 0, 256);
+	memset(essid, 0, sizeof essid);
 
 	ALLEGE(pthread_mutex_lock(&mx_cap) == 0);
 	if (lopt.record_data) capture_packet(packet, (int) length);
@@ -1609,40 +1627,19 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 	}
 
 	/* check list of clients */
-	st_cur = lopt.st_1st;
-	st_prv = NULL;
-
-	while (st_cur != NULL)
-	{
-		if (MAC_ADDRESS_EQUAL(&st_cur->stmac, (mac_address *)smac))
-		{
-			break;
-		}
-
-		st_prv = st_cur;
-		st_cur = st_cur->next;
-	}
-
+	st_cur = sta_info_lookup(&lopt.sta_list, (mac_address *)smac);
 	/* if it's a new client, add it */
 
 	if (st_cur == NULL)
 	{
-		if (!(st_cur = (struct ST_info *) malloc(sizeof(struct ST_info))))
+		st_cur = calloc(1, sizeof *st_cur);
+		if (st_cur == NULL)
 		{
 			perror("malloc failed");
 			return (1);
 		}
 
-		memset(st_cur, 0, sizeof(struct ST_info));
-
-		if (lopt.st_1st == NULL)
-			lopt.st_1st = st_cur;
-		else
-			st_prv->next = st_cur;
-
 		MAC_ADDRESS_COPY(&st_cur->stmac, (mac_address *)smac);
-
-		st_cur->prev = st_prv;
 
 		st_cur->tinit = time(NULL);
 		st_cur->tlast = time(NULL);
@@ -1669,7 +1666,7 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 		st_cur->wpahash = 0;
 		st_cur->wep = 0;
 
-		lopt.st_end = st_cur;
+		TAILQ_INSERT_TAIL(&lopt.sta_list, st_cur, entry);
 	}
 
 	/* Got a data packet with our bssid set and ToDS==1*/

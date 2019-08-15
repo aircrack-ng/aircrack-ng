@@ -190,8 +190,8 @@ struct AP_info
 /** linked list of detected clients */
 struct ST_info
 {
-	struct ST_info * prev; /* the prev client in list   */
-	struct ST_info * next; /* the next client in list   */
+	TAILQ_ENTRY(ST_info) entry;
+
 	struct AP_info * base; /* AP this client belongs to */
 
 	mac_address stmac; /* the client's MAC address  */
@@ -206,8 +206,10 @@ struct ST_info
 	uint8_t essid[ESSID_LENGTH + 1]; /* last associated essid     */
 	int essid_length; /* essid length of last asso */
 	int probe_index; /* probed ESSIDs ring index  */
+
 	char probes[NB_PRB][MAX_IE_ELEMENT_SIZE]; /* probed ESSIDs ring buffer */
 	int ssid_length[NB_PRB]; /* ssid lengths ring buffer  */
+
 	int power; /* last signal power         */
 	int best_power; /* best signal power    */
 	int rate_to; /* last bitrate to station   */

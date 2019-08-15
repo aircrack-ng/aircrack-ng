@@ -54,6 +54,7 @@
 #include "aircrack-ng/support/common.h"
 #include "aircrack-ng/third-party/eapol.h"
 #include "aircrack-ng/tui/console.h"
+#include "aircrack-ng/osdep/sta_list.h"
 
 #define FAILURE -1
 #define IVS 1
@@ -69,7 +70,7 @@ static struct globals
 {
 	struct ap_list_head ap_list;
 
-    struct ST_info *st_1st, *st_end;
+	struct sta_list_head sta_list; 
 
 	unsigned char prev_bssid[6];
 	FILE * f_ivs; /* output ivs file      */
@@ -205,6 +206,40 @@ static int merge(int argc, char * argv[])
 	return (EXIT_SUCCESS);
 }
 
+static struct ST_info * sta_info_lookup(
+	struct sta_list_head * const sta_list,
+	mac_address const * const mac)
+{
+	struct ST_info * st_cur;
+
+	TAILQ_FOREACH(st_cur, sta_list, entry)
+	{
+		if (MAC_ADDRESS_EQUAL(&st_cur->stmac, mac))
+		{
+			break;
+		}
+	}
+
+	return st_cur;
+}
+
+static struct AP_info * ap_info_lookup(
+	struct ap_list_head * ap_list,
+	mac_address const * const mac)
+{
+	struct AP_info * ap_cur;
+
+	TAILQ_FOREACH(ap_cur, ap_list, entry)
+	{
+		if (MAC_ADDRESS_EQUAL(&ap_cur->bssid, mac))
+		{
+			break;
+		}
+	}
+
+	return ap_cur;
+}
+
 // NOTE(jbenden): This is also in airodump-ng.c
 static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 {
@@ -223,9 +258,7 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 	int weight[16];
 	int num_xor, o;
 
-	struct AP_info * ap_cur = NULL;
-	struct ST_info * st_cur = NULL;
-	struct ST_info * st_prv = NULL;
+	struct ST_info * st_cur = NULL; 
 
 	/* skip packets smaller than a 802.11 header */
 
@@ -258,17 +291,13 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 	}
 
 	/* update our chained list of access points */
+	struct AP_info * ap_cur;
 
-	TAILQ_FOREACH(ap_cur, &G.ap_list, entry)
-	{
-        if (MAC_ADDRESS_EQUAL(&ap_cur->bssid, (mac_address *)bssid))
-        {
-            break;
-        }
-	}
+	ap_cur = ap_info_lookup(&G.ap_list,(mac_address *)bssid);
 
     /* If it's a new access point, add it */
-	if (ap_cur == NULL)
+
+    if (ap_cur == NULL)
 	{
         ap_cur = calloc(1, sizeof *ap_cur);
 		if (ap_cur == NULL)
@@ -332,43 +361,23 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 
 	/* update our chained list of wireless stations */
 
-	st_cur = G.st_1st;
-	st_prv = NULL;
+    st_cur = sta_info_lookup(&G.sta_list,(mac_address *)stmac);
 
-	while (st_cur != NULL)
-	{
-		if (MAC_ADDRESS_EQUAL(&st_cur->stmac, (mac_address *)stmac))
-		{
-			break;
-		}
-
-		st_prv = st_cur;
-		st_cur = st_cur->next;
-	}
-
-	/* if it's a new client, add it */
+    /* If it's a new client, add it */
 
 	if (st_cur == NULL)
 	{
-		if (!(st_cur = (struct ST_info *) malloc(sizeof(struct ST_info))))
+		st_cur = calloc(1, sizeof st_cur);
+		if (st_cur == NULL)
 		{
 			perror("malloc failed");
 			return (EXIT_FAILURE);
 		}
 
-		memset(st_cur, 0, sizeof(struct ST_info));
-
-		if (G.st_1st == NULL)
-			G.st_1st = st_cur;
-		else
-			st_prv->next = st_cur;
-
 		MAC_ADDRESS_COPY(&st_cur->stmac, (mac_address *)stmac);
 
-		st_cur->prev = st_prv;
-
-		G.st_end = st_cur;
-	}
+		TAILQ_INSERT_TAIL(&G.sta_list, st_cur, entry);
+    }
 
     if (st_cur->base == NULL || !MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
     {
@@ -780,6 +789,9 @@ int main(int argc, char * argv[])
 	struct pcap_file_header pfh;
 	struct pcap_pkthdr pkh;
 	struct ivs2_filehdr fivs2;
+
+	TAILQ_INIT(&G.ap_list);
+	TAILQ_INIT(&G.sta_list); 
 
 	if (argc < 4)
 	{

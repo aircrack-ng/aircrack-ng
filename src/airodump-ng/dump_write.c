@@ -129,7 +129,7 @@ static char * format_text_for_csv(const unsigned char * input, size_t len)
 }
 
 int dump_write_csv(struct ap_list_head * ap_list,
-				   struct ST_info * st_1st,
+                   struct sta_list_head * const sta_list,
 				   unsigned int f_encrypt)
 {
 	int i, probes_written;
@@ -310,15 +310,13 @@ int dump_write_csv(struct ap_list_head * ap_list,
 			"Power, # packets, BSSID, Probed ESSIDs\r\n");
 
     struct ST_info * st_cur;
-    st_cur = st_1st;
 
-	while (st_cur != NULL)
+	TAILQ_FOREACH(st_cur, sta_list, entry)
 	{
 		ap_cur = st_cur->base;
 
 		if (ap_cur->nb_pkt < 2)
 		{
-			st_cur = st_cur->next;
 			continue;
 		}
 
@@ -404,8 +402,6 @@ int dump_write_csv(struct ap_list_head * ap_list,
 		}
 
 		fprintf(opt.f_txt, "\r\n");
-
-		st_cur = st_cur->next;
 	}
 
 	fprintf(opt.f_txt, "\r\n");
@@ -552,7 +548,7 @@ int dump_write_airodump_ng_logcsv_add_client(const struct AP_info * ap_cur,
 
 int dump_write_wifi_scanner(
     struct ap_list_head * const ap_list,
-	struct ST_info * st_1st,
+    struct sta_list_head * const sta_list,
 	unsigned int const f_encrypt,
 	time_t const filter_seconds,
     int const file_reset_minutes,
@@ -645,19 +641,18 @@ int dump_write_wifi_scanner(
 	}
 
 	/*   Process Clients */
-    struct ST_info * st_cur = st_1st;
+    struct ST_info * st_cur;
 
-	while (st_cur != NULL)
+	TAILQ_FOREACH(st_cur, sta_list, entry)
 	{
 		ap_cur = st_cur->base;
 		if (ap_cur->nb_pkt < 2)
 		{
-			st_cur = st_cur->next;
 			continue;
 		}
+
 		if (((time(NULL) - st_cur->time_printed) < filter_seconds) && (st_cur->old_channel == st_cur->channel))
 		{
-			st_cur = st_cur->next;
 			continue;
 		}
 		st_cur->time_printed = time(NULL);
@@ -720,7 +715,6 @@ int dump_write_wifi_scanner(
 		}
 		fprintf(opt.f_wifi, "%3d", st_cur->power);
 		fprintf(opt.f_wifi, "\r\n");
-		st_cur = st_cur->next;
 	}
 
 	fflush(opt.f_wifi);
@@ -1078,14 +1072,13 @@ static int dump_write_kismet_netxml_client_info(struct ST_info * client,
 
 #define NETXML_ENCRYPTION_TAG "%s<encryption>%s</encryption>\n"
 int dump_write_kismet_netxml(struct ap_list_head * const ap_list,
-							 struct ST_info * st_1st,
+                             struct sta_list_head * const sta_list,
 							 unsigned int f_encrypt,
 							 char * airodump_start_time)
 {
 	int network_number, average_power, client_max_rate, max_power, client_nbr,
 		fp;
 	off_t fpos;
-	struct AP_info * ap_cur;
 	struct ST_info * st_cur;
 	char first_time[TIME_STR_LENGTH];
 	char last_time[TIME_STR_LENGTH];
@@ -1108,6 +1101,7 @@ int dump_write_kismet_netxml(struct ap_list_head * const ap_list,
 
 	network_number = 0;
 
+    struct AP_info * ap_cur;
     TAILQ_FOREACH(ap_cur, ap_list, entry)
 	{
 		if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
@@ -1281,10 +1275,9 @@ int dump_write_kismet_netxml(struct ap_list_head * const ap_list,
 		fprintf(opt.f_kis_xml, "\t\t<datasize>0</datasize>\n");
 
 		/* Client information */
-		st_cur = st_1st;
 		client_nbr = 0;
 
-		while (st_cur != NULL)
+		TAILQ_FOREACH(st_cur, sta_list, entry)
 		{
 			/* Check if the station is associated to the current AP */
 			if (!MAC_ADDRESS_IS_BROADCAST(&st_cur->stmac) 
@@ -1293,9 +1286,6 @@ int dump_write_kismet_netxml(struct ap_list_head * const ap_list,
 			{
 				dump_write_kismet_netxml_client_info(st_cur, ++client_nbr);
 			}
-
-			/* Next client */
-			st_cur = st_cur->next;
 		}
 
 		/* SNR information */
@@ -1377,8 +1367,7 @@ int dump_write_kismet_netxml(struct ap_list_head * const ap_list,
 	}
 
 	/* Write all unassociated stations */
-	st_cur = st_1st;
-	while (st_cur != NULL)
+	TAILQ_FOREACH(st_cur, sta_list, entry)
 	{
 		/* If not associated and not Broadcast Mac */
 		if (st_cur->base == NULL
@@ -1538,7 +1527,6 @@ int dump_write_kismet_netxml(struct ap_list_head * const ap_list,
 
 			fprintf(opt.f_kis_xml, "\t</wireless-network>");
 		}
-		st_cur = st_cur->next;
 	}
 	/* TODO: Also go through na_1st */
 
@@ -1571,13 +1559,12 @@ int dump_write_kismet_netxml(struct ap_list_head * const ap_list,
 	"GPSBestLon;GPSBestAlt;DataSize;IPType;IP;\n"
 
 int dump_write_kismet_csv(struct ap_list_head * const ap_list,
-						  struct ST_info * st_1st,
+                          struct sta_list_head * const sta_list,
 						  unsigned int f_encrypt)
 {
-	UNUSED_PARAM(st_1st);
+	UNUSED_PARAM(sta_list);
 
 	int i, k;
-	struct AP_info * ap_cur;
 
 	if (!opt.record_data || !opt.output_format_kismet_csv) return (0);
 
@@ -1589,6 +1576,8 @@ int dump_write_kismet_csv(struct ap_list_head * const ap_list,
 	fprintf(opt.f_kis, KISMET_HEADER);
 
 	k = 1;
+
+    struct AP_info * ap_cur;
 
     TAILQ_FOREACH(ap_cur, ap_list, entry)
 	{

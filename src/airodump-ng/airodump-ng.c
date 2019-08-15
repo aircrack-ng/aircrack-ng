@@ -92,6 +92,7 @@
 #include "radiotap/radiotap_iter.h"
 #include "strlcpy.h"
 #include "ap_list.h"
+#include "aircrack-ng/osdep/sta_list.h"
 
 struct devices dev;
 uint8_t h80211[4096] __attribute__((aligned(16)));
@@ -173,27 +174,24 @@ int is_filtered_essid(const uint8_t * essid);
 struct communication_options opt;
 
 TAILQ_HEAD(na_list_head, NA_info);
-TAILQ_HEAD(sta_list_head, ST_info);
 
 static struct local_options
 {
-	struct AP_info * ap_1st;
-    struct AP_info * ap_end;
-
-    struct ST_info * st_1st;
-    struct ST_info * st_end;
-
 	/* Two AP lists are maintained. The spare list is used when 
 	 * sorting items. After sorting into the spare list, the index 
-	 * is updated. 
+	 * is updated to point to the sorted list.
 	 */
 	struct ap_list_head ap_list[2];
 	size_t current_ap_list_index;
 
-	struct sta_list_head sta_list; 
-	struct na_list_head na_list; 
+	/* Two STA lists are maintained. The spare list is used when 
+	 * sorting items. After sorting into the spare list, the index 
+	 * is updated to point to the sorted list. 
+	 */
+	struct sta_list_head sta_list[2];
+	size_t current_sta_list_index;
 
-
+	struct na_list_head na_list;
 
     struct oui * manufacturer_list;
 
@@ -403,21 +401,17 @@ static void color_on(void)
 			continue;
 		}
 
-		st_cur = lopt.st_end;
-
-		while (st_cur != NULL)
+		TAILQ_FOREACH_REVERSE(st_cur, &lopt.sta_list[lopt.current_sta_list_index], sta_list_head, entry)
 		{
 			if (st_cur->base != ap_cur
 				|| time(NULL) - st_cur->tlast > lopt.berlin)
 			{
-				st_cur = st_cur->prev;
 				continue;
 			}
 
 			if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid)
 				&& lopt.asso_client)
 			{
-				st_cur = st_cur->prev;
 				continue;
 			}
 
@@ -442,8 +436,6 @@ static void color_on(void)
 			{
 				ap_cur->marked_color = 1;
 			}
-
-			st_cur = st_cur->prev;
 		}
 	}
 }
@@ -695,7 +687,7 @@ static void input_thread(void * arg)
 		{
 			if (lopt.p_selected_ap == NULL)
 			{
-				lopt.p_selected_ap = lopt.ap_end;
+				lopt.p_selected_ap = TAILQ_LAST(&lopt.ap_list[lopt.current_ap_list_index], ap_list_head);
 				lopt.en_selection_direction = selection_direction_down;
 				snprintf(lopt.message,
 						 sizeof(lopt.message),
@@ -1095,9 +1087,9 @@ static void update_rx_quality(void)
 	}
 
 	/* stations */
-	struct ST_info * st_cur = lopt.st_1st;
+	struct ST_info * st_cur;
 
-	while (st_cur != NULL)
+	TAILQ_FOREACH(st_cur, &lopt.sta_list[lopt.current_sta_list_index], entry)
 	{
 		time_diff = 1000000UL * (cur_time.tv_sec - st_cur->ftimer.tv_sec)
 					+ (cur_time.tv_usec - st_cur->ftimer.tv_usec);
@@ -1107,8 +1099,6 @@ static void update_rx_quality(void)
 			st_cur->missed = 0;
 			gettimeofday(&(st_cur->ftimer), NULL);
 		}
-
-		st_cur = st_cur->next;
 	}
 }
 
@@ -1369,11 +1359,29 @@ static struct AP_info * ap_info_lookup(
 	return ap_cur;
 }
 
+static struct ST_info * sta_info_lookup(
+	struct sta_list_head * const sta_list, 
+	mac_address const * const mac)
+{
+	struct ST_info * st_cur;
+
+	TAILQ_FOREACH(st_cur, sta_list, entry)
+	{
+		if (MAC_ADDRESS_EQUAL(&st_cur->stmac, mac))
+		{
+			break;
+		}
+	}
+
+	return st_cur;
+}
+
 // NOTE(jbenden): This is also in ivstools.c
-static int dump_add_packet(unsigned char * h80211,
-						   int caplen,
-						   struct rx_info * ri,
-						   int cardnum)
+static int dump_add_packet(
+	unsigned char * h80211,
+	size_t const caplen,
+	struct rx_info * ri,
+	int cardnum)
 {
 	REQUIRE(h80211 != NULL);
 
@@ -1396,20 +1404,23 @@ static int dump_add_packet(unsigned char * h80211,
 	int num_xor = 0;
 
 	struct AP_info * ap_cur = NULL;
-	struct ST_info * st_cur = NULL;
-	struct NA_info * na_cur = NULL;
-	struct ST_info * st_prv = NULL;
+	struct ST_info * st_cur = NULL; 
 
 	MAC_ADDRESS_CLEAR(&bssid);
 	MAC_ADDRESS_CLEAR(&stmac);
 	MAC_ADDRESS_CLEAR(&namac); 
 
 	/* skip all non probe response frames in active scanning simulation mode */
-	if (lopt.active_scan_sim > 0 && h80211[0] != 0x50) return (0);
+	if (lopt.active_scan_sim > 0 && h80211[0] != 0x50)
+	{
+		return (0);
+	}
 
-	/* skip packets smaller than a 802.11 header */
-
-	if (caplen < (int) sizeof(struct ieee80211_frame)) goto write_packet;
+	/* Skip packets smaller than a 802.11 header. */
+	if (caplen < (int)sizeof(struct ieee80211_frame))
+	{
+		goto write_packet;
+	}
 
 	/* skip (uninteresting) control frames */
 
@@ -1419,7 +1430,9 @@ static int dump_add_packet(unsigned char * h80211,
 	/* if it's a LLC null packet, just forget it (may change in the future) */
 
 	if (caplen > 28)
+	{
 		if (memcmp(h80211 + 24, llcnull, 4) == 0) return (0);
+	}
 
 	/* grab the sequence number */
 	seq = ((h80211[22] >> 4) + (h80211[23] << 4));
@@ -1695,22 +1708,9 @@ static int dump_add_packet(unsigned char * h80211,
 
 	/* update our chained list of wireless stations */
 
-	st_cur = lopt.st_1st;
-	st_prv = NULL;
+	st_cur = sta_info_lookup(&lopt.sta_list[lopt.current_sta_list_index], &stmac);
 
-	while (st_cur != NULL)
-	{
-        if (MAC_ADDRESS_EQUAL(&st_cur->stmac, &stmac))
-        {
-            break;
-        }
-
-		st_prv = st_cur;
-		st_cur = st_cur->next;
-	}
-
-	/* if it's a new client, add it */
-
+	/* If it's a new client, add it */
 	if (st_cur == NULL)
 	{
         st_cur = calloc(1, sizeof(*st_cur));
@@ -1723,15 +1723,6 @@ static int dump_add_packet(unsigned char * h80211,
 		/* if mac is listed as unknown, remove it */
 		remove_namac(&stmac);
 
-        if (lopt.st_1st == NULL)
-        {
-			lopt.st_1st = st_cur;
-        }
-        else
-        {
-			st_prv->next = st_cur;
-        }
-
         MAC_ADDRESS_COPY(&st_cur->stmac, &stmac);
 
 		if (st_cur->manuf == NULL)
@@ -1741,8 +1732,6 @@ static int dump_add_packet(unsigned char * h80211,
 		}
 
 		st_cur->nb_pkt = 0;
-
-		st_cur->prev = st_prv;
 
 		st_cur->tinit = time(NULL);
 		st_cur->tlast = time(NULL);
@@ -1780,7 +1769,7 @@ static int dump_add_packet(unsigned char * h80211,
 			st_cur->ssid_length[i] = 0;
 		}
 
-		lopt.st_end = st_cur;
+		TAILQ_INSERT_TAIL(&lopt.sta_list[lopt.current_sta_list_index], st_cur, entry);
 	}
 
     if (st_cur->base == NULL || !MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
@@ -2639,7 +2628,10 @@ skip_probe:
 			}
 		}
 
-		if (z + 26 > (unsigned) caplen) goto write_packet;
+		if (z + 26 > (unsigned)caplen)
+		{
+			goto write_packet;
+		}
 
 		if (h80211[z] == h80211[z + 1] && h80211[z + 2] == 0x03)
 		{
@@ -2687,7 +2679,10 @@ skip_probe:
 			}
 		}
 
-		if (z + 10 > (unsigned) caplen) goto write_packet;
+		if (z + 10 > (unsigned)caplen)
+		{
+			goto write_packet;
+		}
 
 		if (ap_cur->security & STD_WEP)
 		{
@@ -2705,7 +2700,10 @@ skip_probe:
 
 					/* datalen = caplen - (header+iv+ivs) */
 					dlen = caplen - z - 4 - 4; // original data len
-					if (dlen > 2048) dlen = 2048;
+					if (dlen > 2048)
+					{
+						dlen = 2048;
+					}
 					// get cleartext + len + 4(iv+idx)
 					num_xor = known_clear(clear, &clen, weight, h80211, dlen);
 					if (num_xor == 1)
@@ -2831,7 +2829,10 @@ skip_probe:
 		/* Check if 802.11e (QoS) */
 		if ((h80211[0] & 0x80) == 0x80) z += 2;
 
-		if (z + 26 > (unsigned) caplen) goto write_packet;
+		if (z + 26 > (unsigned)caplen)
+		{
+			goto write_packet;
+		}
 
 		z += 6; // skip LLC header
 
@@ -2889,7 +2890,10 @@ skip_probe:
 
 			/* frame 2 or 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1 */
 
-			if (z + 17 + 32 > (unsigned) caplen) goto write_packet;
+			if (z + 17 + 32 > (unsigned)caplen)
+			{
+				goto write_packet;
+			}
 
 			if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
 				&& (h80211[z + 6] & 0x80) == 0
@@ -3098,20 +3102,9 @@ write_packet:
 					}
 
 					/* check STA list */
-					st_cur = lopt.st_1st;
+					st_cur = sta_info_lookup(&lopt.sta_list[lopt.current_sta_list_index], &namac);
 
-					while (st_cur != NULL)
-					{
-                        if (MAC_ADDRESS_EQUAL(&st_cur->stmac, &namac))
-                        {
-                            break;
-                        }
-
-						st_cur = st_cur->next;
-					}
-
-					/* if it's a client, try next mac */
-
+					/* If it's a client, try next mac */
 					if (st_cur != NULL)
 					{
                         p += sizeof namac;
@@ -3121,6 +3114,8 @@ write_packet:
 
 				/* Not found in either AP list or ST list, look through NA list
 				 */
+				struct NA_info * na_cur;
+
 				na_cur = na_info_lookup(&lopt.na_list, &namac);
 
 				/* update our chained list of unknown stations */
@@ -3356,63 +3351,47 @@ static void sort_aps(struct local_options * const options)
 static void sort_stas(struct local_options * const options)
 {
     time_t tt = time(NULL);
-    struct ST_info * new_st_1st = NULL;
-    struct ST_info * new_st_end = NULL;
+	size_t const sorted_list_index = (options->current_sta_list_index + 1) & 1;
 
-    while (options->st_1st != NULL)
+	TAILQ_INIT(&options->sta_list[sorted_list_index]);
+
+	while (TAILQ_FIRST(&options->sta_list[options->current_sta_list_index]) != NULL)
     {
-        struct ST_info * st_cur = options->st_1st;
+		struct ST_info * st_cur = TAILQ_FIRST(&options->sta_list[options->current_sta_list_index]);
         struct ST_info * st_min = NULL;
 
-        while (st_cur != NULL)
+		/* Don't sort entries older than 60 seconds. */
+		TAILQ_FOREACH(st_cur, &options->sta_list[options->current_sta_list_index], entry)
         {
-            if (tt - st_cur->tlast > 60)
+			if (tt - st_cur->tlast > 60)
+			{
                 st_min = st_cur;
-
-            st_cur = st_cur->next;
+			}
         }
 
         if (st_min == NULL)
         {
-            st_min = st_cur = options->st_1st;
+			st_min = TAILQ_FIRST(&options->sta_list[options->current_sta_list_index]); 
 
-            while (st_cur != NULL)
+			TAILQ_FOREACH(st_cur, &options->sta_list[options->current_sta_list_index], entry)
             {
-                if (st_cur->power < st_min->power)
+				if (st_min == st_cur)
+				{
+					/* There's no point in comparing an entry with itself. */
+					continue;
+				}
+				if (st_cur->power < st_min->power)
+				{
                     st_min = st_cur;
-
-                st_cur = st_cur->next;
+				}
             }
         }
 
-        if (st_min == options->st_1st)
-            options->st_1st = st_min->next;
-
-        if (st_min == options->st_end)
-            options->st_end = st_min->prev;
-
-        if (st_min->next)
-            st_min->next->prev = st_min->prev;
-
-        if (st_min->prev)
-            st_min->prev->next = st_min->next;
-
-        if (new_st_end)
-        {
-            new_st_end->next = st_min;
-            st_min->prev = new_st_end;
-            new_st_end = st_min;
-            new_st_end->next = NULL;
-        }
-        else
-        {
-            new_st_1st = new_st_end = st_min;
-            st_min->next = st_min->prev = NULL;
-        }
+		TAILQ_REMOVE(&options->sta_list[options->current_sta_list_index], st_min, entry);
+		TAILQ_INSERT_TAIL(&options->sta_list[sorted_list_index], st_min, entry);
     }
 
-    options->st_1st = new_st_1st;
-    options->st_end = new_st_end;
+	options->current_sta_list_index = sorted_list_index;
 }
 
 static void dump_sort(void)
@@ -4242,8 +4221,6 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				return;
 			}
 
-			st_cur = lopt.st_end;
-
 			if (lopt.p_selected_ap
 				&& MAC_ADDRESS_EQUAL(&lopt.selected_bssid, &ap_cur->bssid))
 			{
@@ -4255,19 +4232,17 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				textcolor_fg(ap_cur->marked_color);
 			}
 
-			while (st_cur != NULL)
+			TAILQ_FOREACH_REVERSE(st_cur, &lopt.sta_list[lopt.current_sta_list_index], sta_list_head, entry)
 			{
 				if (st_cur->base != ap_cur
 					|| time(NULL) - st_cur->tlast > lopt.berlin)
 				{
-					st_cur = st_cur->prev;
 					continue;
 				}
 
 				if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid)
                     && lopt.asso_client)
 				{
-					st_cur = st_cur->prev;
 					continue;
 				}
 
@@ -4346,8 +4321,6 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 				erase_line(0);
 				putchar('\n');
-
-				st_cur = st_cur->prev;
 			}
 
 			if ((lopt.p_selected_ap
@@ -6342,36 +6315,27 @@ static void flush_output_files(void)
     }
 }
 
-static void sta_list_free(struct ST_info * * const list)
+static void sta_list_free(struct sta_list_head * const sta_list)
 {
-	struct ST_info * * const entry = list;
-
-	if (list == NULL)
+	while (TAILQ_FIRST(sta_list) != NULL)
 	{
-		goto done;
+		struct ST_info * const st_cur = TAILQ_FIRST(sta_list); 
+
+		TAILQ_REMOVE(sta_list, st_cur, entry);
+
+		free(st_cur->manuf);
+		free(st_cur);
 	}
-
-	while (*entry != NULL)
-	{
-		struct ST_info * const st_next = (*entry)->next;
-
-		free((*entry)->manuf);
-		free(*entry);
-
-		*entry = st_next;
-	}
-
-done:
-	return;
 }
 
-static void ap_list_free(struct ap_list_head * const list)
+static void ap_list_free(struct ap_list_head * const ap_list)
 {
-	while (TAILQ_FIRST(list) != NULL)
+	while (TAILQ_FIRST(ap_list) != NULL)
 	{
-		struct AP_info * const ap_cur = TAILQ_FIRST(list);
+		struct AP_info * const ap_cur = TAILQ_FIRST(ap_list);
 
-		TAILQ_REMOVE(list, ap_cur, entry);
+		TAILQ_REMOVE(ap_list, ap_cur, entry);
+
 		// Clean content of ap_cur list (first element: lopt.ap_1st)
 		uniqueiv_wipe(ap_cur->uiv_root);
 
@@ -6571,9 +6535,16 @@ int main(int argc, char * argv[])
 #endif
 
 	TAILQ_INIT(&lopt.na_list);
+	/* TODO: helper function. Use pointer rather than index. */
 	TAILQ_INIT(&lopt.ap_list[0]);
 	TAILQ_INIT(&lopt.ap_list[1]); 
 	lopt.current_ap_list_index = 0;
+
+	/* TODO: helper function. Use pointer rather than index. */
+	TAILQ_INIT(&lopt.sta_list[0]);
+	TAILQ_INIT(&lopt.sta_list[1]); 
+	lopt.current_sta_list_index = 0; 
+
 
 	// Default selection.
 	resetSelection();
@@ -7504,13 +7475,15 @@ int main(int argc, char * argv[])
 
             if (opt.output_format_csv)
             {
-				dump_write_csv(&lopt.ap_list[lopt.current_ap_list_index], lopt.st_1st, lopt.f_encrypt);
+				dump_write_csv(&lopt.ap_list[lopt.current_ap_list_index], 
+							   &lopt.sta_list[lopt.current_sta_list_index], 
+							   lopt.f_encrypt);
             }
 
             if (opt.output_format_wifi_scanner)
             {
 				dump_write_wifi_scanner(&lopt.ap_list[lopt.current_ap_list_index],
-                                        lopt.st_1st,
+										&lopt.sta_list[lopt.current_sta_list_index],
                                         lopt.f_encrypt,
                                         lopt.filter_seconds,
                                         lopt.file_reset_seconds,
@@ -7521,13 +7494,13 @@ int main(int argc, char * argv[])
             if (opt.output_format_kismet_csv)
             {
 				dump_write_kismet_csv(&lopt.ap_list[lopt.current_ap_list_index], 
-									  lopt.st_1st, 
+									  &lopt.sta_list[lopt.current_sta_list_index],
 									  lopt.f_encrypt);
             }
 
 			if (opt.output_format_kismet_netxml)
 				dump_write_kismet_netxml(&lopt.ap_list[lopt.current_ap_list_index],
-										 lopt.st_1st,
+										 &lopt.sta_list[lopt.current_sta_list_index],
 										 lopt.f_encrypt,
 										 lopt.airodump_start_time);
 		}
@@ -7943,13 +7916,15 @@ int main(int argc, char * argv[])
 	{
         if (opt.output_format_csv)
         {
-			dump_write_csv(&lopt.ap_list[lopt.current_ap_list_index], lopt.st_1st, lopt.f_encrypt);
+			dump_write_csv(&lopt.ap_list[lopt.current_ap_list_index], 
+						   &lopt.sta_list[lopt.current_sta_list_index], 
+						   lopt.f_encrypt);
         }
 
         if (opt.output_format_wifi_scanner)
         {
 			dump_write_wifi_scanner(&lopt.ap_list[lopt.current_ap_list_index],
-                                    lopt.st_1st, 
+									&lopt.sta_list[lopt.current_sta_list_index],
                                     lopt.f_encrypt, 
                                     lopt.filter_seconds, 
                                     lopt.file_reset_seconds,
@@ -7960,14 +7935,14 @@ int main(int argc, char * argv[])
         if (opt.output_format_kismet_csv)
         {
 			dump_write_kismet_csv(&lopt.ap_list[lopt.current_ap_list_index], 
-								  lopt.st_1st, 
+								  &lopt.sta_list[lopt.current_sta_list_index],
 								  lopt.f_encrypt);
         }
 
         if (opt.output_format_kismet_netxml)
         {
 			dump_write_kismet_netxml(&lopt.ap_list[lopt.current_ap_list_index],
-                                     lopt.st_1st,
+									 &lopt.sta_list[lopt.current_sta_list_index],
                                      lopt.f_encrypt,
                                      lopt.airodump_start_time);
         }
@@ -8037,7 +8012,7 @@ int main(int argc, char * argv[])
 
 	ap_list_free(&lopt.ap_list[lopt.current_ap_list_index]);
 
-	sta_list_free(&lopt.st_1st);
+	sta_list_free(&lopt.sta_list[lopt.current_sta_list_index]);
 
 	na_info_list_free(&lopt.na_list);
 
