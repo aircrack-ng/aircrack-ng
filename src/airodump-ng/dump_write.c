@@ -551,7 +551,7 @@ int dump_write_wifi_scanner(
     struct sta_list_head * const sta_list,
 	unsigned int const f_encrypt,
 	time_t const filter_seconds,
-    int const file_reset_minutes,
+    int const file_reset_seconds,
     char const * const sys_name,
     char const * const loc_name)
 {
@@ -712,7 +712,7 @@ int dump_write_wifi_scanner(
 
 	time_t const current_time = time(NULL);
 
-	if ((current_time - opt.last_file_reset) > file_reset_minutes
+    if ((current_time - opt.last_file_reset) > file_reset_seconds
 		&& opt.wifi_scanner_filename != NULL)
 	{
 		opt.f_wifi = freopen(opt.wifi_scanner_filename, "w", opt.f_wifi);

@@ -1739,7 +1739,6 @@ static int dump_add_packet(
 		if (opt.record_data && opt.output_format_log_csv)
 		{
 			/* Write out our rolling log every time we see data from an AP */
-
 			dump_write_airodump_ng_logcsv_add_ap(
 				ap_cur, ri->ri_power, &lopt.gps_time, lopt.gps_loc);
 		}
@@ -6584,7 +6583,8 @@ int main(int argc, char * argv[])
 	opt.output_format_kismet_netxml = 1;
 	opt.output_format_log_csv = 1;
     opt.output_format_wifi_scanner = 1;
-    lopt.gps_valid_interval
+
+	lopt.gps_valid_interval
 		= 5; // If we dont get a new GPS update in 5 seconds - invalidate it
 	lopt.file_write_interval = 5; // Write file every 5 seconds by default
 	lopt.maxsize_wps_seen = 6;
@@ -6913,6 +6913,7 @@ int main(int argc, char * argv[])
 					opt.output_format_kismet_csv = 0;
 					opt.output_format_kismet_netxml = 0;
 					opt.output_format_log_csv = 0;
+					opt.output_format_wifi_scanner = 0;
 				}
 
 				if (opt.output_format_pcap)
@@ -7200,8 +7201,9 @@ int main(int argc, char * argv[])
 							opt.output_format_csv = 1;
 							opt.output_format_kismet_csv = 1;
 							opt.output_format_kismet_netxml = 1;
-                            opt.output_format_wifi_scanner = 1;
-                        }
+							opt.output_format_log_csv = 1;
+							opt.output_format_wifi_scanner = 1;
+						}
 						else if (strncasecmp(output_format_string, "none", 4)
 								 == 0)
 						{
