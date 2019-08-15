@@ -429,7 +429,9 @@ static void color_on(void)
                 }
 			}
 			else
+			{
 				ap_cur->marked_color = 1;
+			}
 
 			st_cur = st_cur->prev;
 		}
@@ -1004,17 +1006,13 @@ int is_filtered_essid(const uint8_t * essid)
 static void update_rx_quality(void)
 {
 	unsigned long time_diff, capt_time, miss_time;
-	int missed_frames;
-	struct AP_info * ap_cur = NULL;
-	struct ST_info * st_cur = NULL;
 	struct timeval cur_time;
-
-	ap_cur = lopt.ap_1st;
-	st_cur = lopt.st_1st;
 
 	gettimeofday(&cur_time, NULL);
 
-	/* accesspoints */
+	/* access points */
+	struct AP_info * ap_cur = lopt.ap_1st;
+
 	while (ap_cur != NULL)
 	{
 		time_diff = 1000000UL * (cur_time.tv_sec - ap_cur->ftimer.tv_sec)
@@ -1051,8 +1049,8 @@ static void update_rx_quality(void)
 				// captured; extrapolated by assuming a constant framerate
 				if (capt_time > 0 && miss_time > 200000)
 				{
-					missed_frames
-						= (int) (((float) miss_time / (float) capt_time)
+					int const missed_frames = 
+						(int) (((float) miss_time / (float) capt_time)
 								 * ((float) ap_cur->fcapt
 									+ (float) ap_cur->fmiss));
 					ap_cur->fmiss += missed_frames;
@@ -1072,18 +1070,26 @@ static void update_rx_quality(void)
 				ap_cur->rx_quality = 0; /* no packets -> zero quality */
 
 			/* normalize, in case the seq numbers are not iterating */
-			if (ap_cur->rx_quality > 100) ap_cur->rx_quality = 100;
-			if (ap_cur->rx_quality < 0) ap_cur->rx_quality = 0;
+			if (ap_cur->rx_quality > 100)
+			{
+				ap_cur->rx_quality = 100;
+			}
+			if (ap_cur->rx_quality < 0)
+			{
+				ap_cur->rx_quality = 0;
+			}
 
 			/* reset variables */
 			ap_cur->fcapt = 0;
 			ap_cur->fmiss = 0;
-			gettimeofday(&(ap_cur->ftimer), NULL);
+			gettimeofday(&ap_cur->ftimer, NULL);
 		}
 		ap_cur = ap_cur->next;
 	}
 
 	/* stations */
+	struct ST_info * st_cur = lopt.st_1st;
+
 	while (st_cur != NULL)
 	{
 		time_diff = 1000000UL * (cur_time.tv_sec - st_cur->ftimer.tv_sec)
@@ -1463,15 +1469,6 @@ static int dump_add_packet(unsigned char * h80211,
 		/* if mac is listed as unknown, remove it */
 		remove_namac(&bssid);
 
-        if (lopt.ap_1st == NULL)
-        {
-			lopt.ap_1st = ap_cur;
-        }
-        else if (ap_prv != NULL)
-        {
-			ap_prv->next = ap_cur;
-        }
-
 		MAC_ADDRESS_COPY(&ap_cur->bssid, &bssid);
 		if (ap_cur->manuf == NULL)
 		{
@@ -1480,7 +1477,6 @@ static int dump_add_packet(unsigned char * h80211,
 		}
 
 		ap_cur->nb_pkt = 0;
-		ap_cur->prev = ap_prv;
 
 		ap_cur->tinit = time(NULL);
 		ap_cur->tlast = time(NULL);
@@ -1490,7 +1486,10 @@ static int dump_add_packet(unsigned char * h80211,
 		ap_cur->best_power = -1;
 		ap_cur->power_index = -1;
 
-		for (i = 0; i < NB_PWR; i++) ap_cur->power_lvl[i] = -1;
+		for (i = 0; i < NB_PWR; i++)
+		{
+			ap_cur->power_lvl[i] = -1;
+		}
 
 		ap_cur->channel = -1;
         ap_cur->old_channel = -1;
@@ -1509,8 +1508,6 @@ static int dump_add_packet(unsigned char * h80211,
 		ap_cur->dict_started = 0;
 
 		ap_cur->key = NULL;
-
-		lopt.ap_end = ap_cur;
 
 		ap_cur->nb_bcn = 0;
 
@@ -1559,6 +1556,19 @@ static int dump_add_packet(unsigned char * h80211,
 		ap_cur->ac_channel.mhz_160_chan = 0;
 		ap_cur->ac_channel.wave_2 = 0;
         memset(ap_cur->ac_channel.mcs_index, 0, sizeof ap_cur->ac_channel.mcs_index);
+
+		/* FIXME - Use a generic list (e.g. TAILQ or SIMPLEQ) */
+		if (lopt.ap_1st == NULL)
+		{
+			lopt.ap_1st = ap_cur;
+		}
+		else if (ap_prv != NULL)
+		{
+			ap_prv->next = ap_cur;
+		}
+		ap_cur->prev = ap_prv;
+		lopt.ap_end = ap_cur; 
+
 	}
 
 	/* update the last time seen */
@@ -3169,7 +3179,6 @@ write_packet:
                         lopt.na_1st = na_cur;
                     else
                         na_prv->next = na_cur;
-                    na_cur->prev = na_prv;
                 }
 
 				/* update the last time seen & power*/

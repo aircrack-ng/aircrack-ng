@@ -144,7 +144,6 @@ struct oui
 
 struct NA_info
 {
-	struct NA_info * prev; /* the prev client in list   */
 	struct NA_info * next; /* the next client in list   */
 	time_t tinit, tlast; /* first and last time seen  */
     mac_address namac; /* the stations MAC address  */
