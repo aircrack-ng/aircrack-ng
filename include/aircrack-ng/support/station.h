@@ -40,8 +40,9 @@
 #include <aircrack-ng/support/pcap_local.h>
 #include <aircrack-ng/ptw/aircrack-ptw-lib.h>
 
-
 #include "aircrack-ng/osdep/mac_header.h"
+#include "aircrack-ng/osdep/queue.h"
+
 
 #define NB_PRB 10 /* size of probed ESSID ring buffer */
 
@@ -104,8 +105,7 @@ enum channel_width_enum
 /** linked list of detected access points. */
 struct AP_info
 {
-	struct AP_info * prev; /* prev. AP in list         */
-	struct AP_info * next; /* next  AP in list         */
+	TAILQ_ENTRY(AP_info) entry;
 
 	time_t tinit, tlast; /* first and last time seen */
 

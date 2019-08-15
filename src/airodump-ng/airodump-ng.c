@@ -172,6 +172,8 @@ int is_filtered_essid(const uint8_t * essid);
 struct communication_options opt;
 
 TAILQ_HEAD(na_list_head, NA_info);
+TAILQ_HEAD(ap_list_head, AP_info);
+TAILQ_HEAD(sta_list_head, ST_info);
 
 static struct local_options
 {
@@ -181,7 +183,16 @@ static struct local_options
     struct ST_info * st_1st;
     struct ST_info * st_end;
 
-	struct na_list_head na_list;
+	/* Two lists are maintained. The spare list is used when 
+	 * sorting items. 
+	 */
+	struct ap_list_head ap_list[2];
+	size_t current_ap_list_index;
+
+	struct sta_list_head sta_list; 
+	struct na_list_head na_list; 
+
+
 
     struct oui * manufacturer_list;
 
@@ -351,12 +362,10 @@ static void color_off(void)
 {
 	struct AP_info * ap_cur;
 
-	ap_cur = lopt.ap_1st;
-	while (ap_cur != NULL)
+	TAILQ_FOREACH(ap_cur, &lopt.ap_list[lopt.current_ap_list_index], entry)
 	{
 		ap_cur->marked = 0;
 		ap_cur->marked_color = 1;
-		ap_cur = ap_cur->next;
 	}
 
 	textcolor_normal();
@@ -366,26 +375,23 @@ static void color_off(void)
 static void color_on(void)
 {
 	struct AP_info * ap_cur;
-	struct ST_info * st_cur;
 	int color = 1;
 
 	color_off();
 
-	ap_cur = lopt.ap_end;
-
-	while (ap_cur != NULL)
+	TAILQ_FOREACH_REVERSE(ap_cur, &lopt.ap_list[lopt.current_ap_list_index], ap_list_head, entry)
 	{
+		struct ST_info * st_cur;
+
 		if (ap_cur->nb_pkt < lopt.min_pkts
 			|| time(NULL) - ap_cur->tlast > lopt.berlin)
 		{
-			ap_cur = ap_cur->prev;
 			continue;
 		}
 
 		if (ap_cur->security != 0 && lopt.f_encrypt != 0
 			&& ((ap_cur->security & lopt.f_encrypt) == 0))
 		{
-			ap_cur = ap_cur->prev;
 			continue;
 		}
 
@@ -393,7 +399,6 @@ static void color_on(void)
 		if (!MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid)
 			&& is_filtered_essid(ap_cur->essid))
 		{
-			ap_cur = ap_cur->prev;
 			continue;
 		}
 
@@ -408,29 +413,29 @@ static void color_on(void)
 				continue;
 			}
 
-			if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid) 
-                && lopt.asso_client)
+			if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid)
+				&& lopt.asso_client)
 			{
 				st_cur = st_cur->prev;
 				continue;
 			}
 
-            if (color > TEXT_MAX_COLOR)
-            {
-                color++;
-            }
+			if (color > TEXT_MAX_COLOR)
+			{
+				color++;
+			}
 
 			if (!ap_cur->marked)
 			{
 				ap_cur->marked = 1;
-                if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
-                {
+				if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
+				{
 					ap_cur->marked_color = 1;
-                }
-                else
-                {
+				}
+				else
+				{
 					ap_cur->marked_color = color++;
-                }
+				}
 			}
 			else
 			{
@@ -439,8 +444,6 @@ static void color_on(void)
 
 			st_cur = st_cur->prev;
 		}
-
-		ap_cur = ap_cur->prev;
 	}
 }
 
@@ -658,18 +661,18 @@ static void input_thread(void * arg)
 
 		if (keycode == KEY_ARROW_DOWN)
 		{
-			if (lopt.p_selected_ap && lopt.p_selected_ap->prev)
+			if (lopt.p_selected_ap && TAILQ_PREV(lopt.p_selected_ap, ap_list_head, entry) != NULL)
 			{
-				lopt.p_selected_ap = lopt.p_selected_ap->prev;
+				lopt.p_selected_ap = TAILQ_PREV(lopt.p_selected_ap, ap_list_head, entry);
 				lopt.en_selection_direction = selection_direction_down;
 			}
 		}
 
 		if (keycode == KEY_ARROW_UP)
 		{
-			if (lopt.p_selected_ap && lopt.p_selected_ap->next)
+			if (lopt.p_selected_ap && TAILQ_NEXT(lopt.p_selected_ap, entry) != NULL)
 			{
-				lopt.p_selected_ap = lopt.p_selected_ap->next;
+				lopt.p_selected_ap = TAILQ_NEXT(lopt.p_selected_ap, entry);
 				lopt.en_selection_direction = selection_direction_up;
 			}
 		}
@@ -1015,9 +1018,9 @@ static void update_rx_quality(void)
 	gettimeofday(&cur_time, NULL);
 
 	/* access points */
-	struct AP_info * ap_cur = lopt.ap_1st;
+	struct AP_info * ap_cur;
 
-	while (ap_cur != NULL)
+	TAILQ_FOREACH(ap_cur, &lopt.ap_list[lopt.current_ap_list_index], entry)
 	{
 		time_diff = 1000000UL * (cur_time.tv_sec - ap_cur->ftimer.tv_sec)
 					+ (cur_time.tv_usec - ap_cur->ftimer.tv_usec);
@@ -1088,7 +1091,6 @@ static void update_rx_quality(void)
 			ap_cur->fmiss = 0;
 			gettimeofday(&ap_cur->ftimer, NULL);
 		}
-		ap_cur = ap_cur->next;
 	}
 
 	/* stations */
@@ -1122,9 +1124,7 @@ static int update_dataps(void)
 
 	gettimeofday(&tv, NULL);
 
-	ap_cur = lopt.ap_end;
-
-	while (ap_cur != NULL)
+	TAILQ_FOREACH_REVERSE(ap_cur, &lopt.ap_list[lopt.current_ap_list_index], ap_list_head, entry)
 	{
 		sec = (tv.tv_sec - ap_cur->tv.tv_sec);
 		usec = (tv.tv_usec - ap_cur->tv.tv_usec);
@@ -1141,7 +1141,6 @@ static int update_dataps(void)
 			ap_cur->nb_data_old = ap_cur->nb_data;
 			gettimeofday(&(ap_cur->tv), NULL);
 		}
-		ap_cur = ap_cur->prev;
 	}
 
 	TAILQ_FOREACH(na_cur, &lopt.na_list, entry)
@@ -1377,7 +1376,6 @@ static int dump_add_packet(unsigned char * h80211,
 	struct AP_info * ap_cur = NULL;
 	struct ST_info * st_cur = NULL;
 	struct NA_info * na_cur = NULL;
-	struct AP_info * ap_prv = NULL;
 	struct ST_info * st_prv = NULL;
 
 	MAC_ADDRESS_CLEAR(&bssid);
@@ -1443,23 +1441,15 @@ static int dump_add_packet(unsigned char * h80211,
 	}
 
 	/* update our chained list of access points */
-
-	ap_cur = lopt.ap_1st;
-	ap_prv = NULL;
-
-	while (ap_cur != NULL)
+	TAILQ_FOREACH(ap_cur, &lopt.ap_list[lopt.current_ap_list_index], entry)
 	{
         if (MAC_ADDRESS_EQUAL(&ap_cur->bssid, &bssid))
         {
             break;
         }
-
-		ap_prv = ap_cur;
-		ap_cur = ap_cur->next;
 	}
 
-	/* if it's a new access point, add it */
-
+	/* If it's a new access point, add it */
 	if (ap_cur == NULL)
 	{
         ap_cur = calloc(1, sizeof(*ap_cur));
@@ -1560,18 +1550,7 @@ static int dump_add_packet(unsigned char * h80211,
 		ap_cur->ac_channel.wave_2 = 0;
         memset(ap_cur->ac_channel.mcs_index, 0, sizeof ap_cur->ac_channel.mcs_index);
 
-		/* FIXME - Use a generic list (e.g. TAILQ or SIMPLEQ) */
-		if (lopt.ap_1st == NULL)
-		{
-			lopt.ap_1st = ap_cur;
-		}
-		else if (ap_prv != NULL)
-		{
-			ap_prv->next = ap_cur;
-		}
-		ap_cur->prev = ap_prv;
-		lopt.ap_end = ap_cur; 
-
+		TAILQ_INSERT_TAIL(&lopt.ap_list[lopt.current_ap_list_index], ap_cur, entry);
 	}
 
 	/* update the last time seen */
@@ -3092,28 +3071,23 @@ write_packet:
 
 				if (lopt.hide_known)
 				{
-					/* check AP list */
-					ap_cur = lopt.ap_1st;
-
-					while (ap_cur != NULL)
+					/* Check AP list. */
+					TAILQ_FOREACH(ap_cur, &lopt.ap_list[lopt.current_ap_list_index], entry)
 					{
                         if (MAC_ADDRESS_EQUAL(&ap_cur->bssid, &namac))
                         {
                             break;
                         }
-
-						ap_cur = ap_cur->next;
 					}
 
-					/* if it's an AP, try next mac */
-
+					/* If it's an AP, try next mac */
 					if (ap_cur != NULL)
 					{
                         p += sizeof namac;
 						continue;
 					}
 
-					/* check ST list */
+					/* check STA list */
 					st_cur = lopt.st_1st;
 
 					while (st_cur != NULL)
@@ -3243,28 +3217,31 @@ write_packet:
 static void sort_aps(struct local_options * const options)
 {
     time_t tt = time(NULL);
-    struct AP_info * new_ap_1st = NULL;
-    struct AP_info * new_ap_end = NULL;
+	size_t const sorted_list_index = 
+		(options->current_ap_list_index + 1) & 1;
 
     /* Sort the aps by WHATEVER first, */
     /* Can't 'sort' be used to sort these entries? */
 
-    while (options->ap_1st != NULL)
+	TAILQ_INIT(&lopt.ap_list[sorted_list_index]);
+
+	while (TAILQ_FIRST(&options->ap_list[options->current_ap_list_index]) != NULL)
     {
-        struct AP_info * ap_cur = options->ap_1st;
+		struct AP_info * ap_cur;
         struct AP_info * ap_min = NULL;
 
-        while (ap_cur != NULL)
+		/* Only the most recent entries are sorted. */
+		TAILQ_FOREACH(ap_cur, &options->ap_list[options->current_ap_list_index], entry)
         {
-            if (tt - ap_cur->tlast > 20)
+			if (tt - ap_cur->tlast > 20)
+			{
                 ap_min = ap_cur;
-
-            ap_cur = ap_cur->next;
+			}
         }
 
         if (ap_min == NULL)
         {
-            ap_min = ap_cur = options->ap_1st;
+			ap_min = TAILQ_FIRST(&options->ap_list[options->current_ap_list_index]);
 
 /* 
 #define SORT_BY_BSSID	1
@@ -3280,115 +3257,96 @@ static void sort_aps(struct local_options * const options)
 #define SORT_BY_ESSID	12
 */
 
-            while (ap_cur != NULL)
-            {
-                switch (options->sort_by)
-                {
-                    case SORT_BY_BSSID:
-                        if (MAC_ADDRESS_COMPARE(&ap_cur->bssid, &ap_min->bssid)
-                            * options->sort_inv
-                            < 0)
-                            ap_min = ap_cur;
-                        break;
-                    case SORT_BY_POWER:
-                        if ((ap_cur->avg_power - ap_min->avg_power)
-                            * options->sort_inv
-                            < 0)
-                            ap_min = ap_cur;
-                        break;
-                    case SORT_BY_BEACON:
-                        if ((ap_cur->nb_bcn < ap_min->nb_bcn) && options->sort_inv)
-                            ap_min = ap_cur;
-                        break;
-                    case SORT_BY_DATA:
-                        if ((ap_cur->nb_data < ap_min->nb_data)
-                            && options->sort_inv)
-                            ap_min = ap_cur;
-                        break;
-                    case SORT_BY_PRATE:
-                        if ((ap_cur->nb_dataps - ap_min->nb_dataps)
-                            * options->sort_inv
-                            < 0)
-                            ap_min = ap_cur;
-                        break;
-                    case SORT_BY_CHAN:
-                        if ((ap_cur->channel - ap_min->channel) * options->sort_inv
-                            < 0)
-                            ap_min = ap_cur;
-                        break;
-                    case SORT_BY_MBIT:
-                        if ((ap_cur->max_speed - ap_min->max_speed)
-                            * options->sort_inv
-                            < 0)
-                            ap_min = ap_cur;
-                        break;
-                    case SORT_BY_ENC:
-                        if (((int)(ap_cur->security & STD_FIELD)
-                             - (int)(ap_min->security & STD_FIELD))
-                            * options->sort_inv
-                            < 0)
-                            ap_min = ap_cur;
-                        break;
-                    case SORT_BY_CIPHER:
-                        if (((int)(ap_cur->security & ENC_FIELD)
-                             - (int)(ap_min->security & ENC_FIELD))
-                            * options->sort_inv
-                            < 0)
-                            ap_min = ap_cur;
-                        break;
-                    case SORT_BY_AUTH:
-                        if (((int)(ap_cur->security & AUTH_FIELD)
-                             - (int)(ap_min->security & AUTH_FIELD))
-                            * options->sort_inv
-                            < 0)
-                            ap_min = ap_cur;
-                        break;
-                    case SORT_BY_ESSID:
-                        if ((strncasecmp((char *)ap_cur->essid,
-                                         (char *)ap_min->essid,
-                                         ESSID_LENGTH))
-                            * options->sort_inv
-                            < 0)
-                            ap_min = ap_cur;
-                        break;
-                    default: // sort by power
-                        if (ap_cur->avg_power < ap_min->avg_power)
-                            ap_min = ap_cur;
-                        break;
-                }
-                ap_cur = ap_cur->next;
-            }
+			TAILQ_FOREACH(ap_cur, &options->ap_list[options->current_ap_list_index], entry)
+			{
+				if (ap_min == ap_cur)
+				{
+					/* There's no point in comparing an entry with itself. */
+					continue;
+				}
+				switch (options->sort_by)
+				{
+					case SORT_BY_BSSID:
+						if (MAC_ADDRESS_COMPARE(&ap_cur->bssid, &ap_min->bssid)
+							* options->sort_inv
+							< 0)
+							ap_min = ap_cur;
+						break;
+					case SORT_BY_POWER:
+						if ((ap_cur->avg_power - ap_min->avg_power)
+							* options->sort_inv
+							< 0)
+							ap_min = ap_cur;
+						break;
+					case SORT_BY_BEACON:
+						if ((ap_cur->nb_bcn < ap_min->nb_bcn) && options->sort_inv)
+							ap_min = ap_cur;
+						break;
+					case SORT_BY_DATA:
+						if ((ap_cur->nb_data < ap_min->nb_data)
+							&& options->sort_inv)
+							ap_min = ap_cur;
+						break;
+					case SORT_BY_PRATE:
+						if ((ap_cur->nb_dataps - ap_min->nb_dataps)
+							* options->sort_inv
+							< 0)
+							ap_min = ap_cur;
+						break;
+					case SORT_BY_CHAN:
+						if ((ap_cur->channel - ap_min->channel) * options->sort_inv
+							< 0)
+							ap_min = ap_cur;
+						break;
+					case SORT_BY_MBIT:
+						if ((ap_cur->max_speed - ap_min->max_speed)
+							* options->sort_inv
+							< 0)
+							ap_min = ap_cur;
+						break;
+					case SORT_BY_ENC:
+						if (((int)(ap_cur->security & STD_FIELD)
+							 - (int)(ap_min->security & STD_FIELD))
+							* options->sort_inv
+							< 0)
+							ap_min = ap_cur;
+						break;
+					case SORT_BY_CIPHER:
+						if (((int)(ap_cur->security & ENC_FIELD)
+							 - (int)(ap_min->security & ENC_FIELD))
+							* options->sort_inv
+							< 0)
+							ap_min = ap_cur;
+						break;
+					case SORT_BY_AUTH:
+						if (((int)(ap_cur->security & AUTH_FIELD)
+							 - (int)(ap_min->security & AUTH_FIELD))
+							* options->sort_inv
+							< 0)
+							ap_min = ap_cur;
+						break;
+					case SORT_BY_ESSID:
+						if ((strncasecmp((char *)ap_cur->essid,
+										 (char *)ap_min->essid,
+										 ESSID_LENGTH))
+							* options->sort_inv
+							< 0)
+							ap_min = ap_cur;
+						break;
+					default: // sort by power
+						if (ap_cur->avg_power < ap_min->avg_power)
+							ap_min = ap_cur;
+						break;
+				}
+			}
         }
 
-        if (ap_min == options->ap_1st)
-            options->ap_1st = ap_min->next;
-
-        if (ap_min == options->ap_end)
-            options->ap_end = ap_min->prev;
-
-        if (ap_min->next)
-            ap_min->next->prev = ap_min->prev;
-
-        if (ap_min->prev)
-            ap_min->prev->next = ap_min->next;
-
-        if (new_ap_end != NULL)
-        {
-            new_ap_end->next = ap_min;
-            ap_min->prev = new_ap_end;
-            new_ap_end = ap_min;
-            new_ap_end->next = NULL;
-        }
-        else
-        {
-            new_ap_1st = new_ap_end = ap_min;
-            ap_min->next = ap_min->prev = NULL;
-        }
+		TAILQ_REMOVE(&options->ap_list[options->current_ap_list_index], ap_min, entry);
+		TAILQ_INSERT_TAIL(&options->ap_list[sorted_list_index], ap_min, entry);
     }
 
-    options->ap_1st = new_ap_1st;
-    options->ap_end = new_ap_end;
-
+	/* Start using the sorted list. */
+	options->current_ap_list_index = sorted_list_index;
 }
 
 static void sort_stas(struct local_options * const options)
@@ -3651,23 +3609,23 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	{
 		lopt.maxaps = 0;
 		lopt.numaps = 0;
-		ap_cur = lopt.ap_end;
 
-		while (ap_cur != NULL)
+		TAILQ_FOREACH_REVERSE(ap_cur, &lopt.ap_list[lopt.current_ap_list_index], ap_list_head, entry)
 		{
 			lopt.maxaps++;
 			if (ap_cur->nb_pkt < 2 
                 || (time(NULL) - ap_cur->tlast) > lopt.berlin
 				|| MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
 			{
-				ap_cur = ap_cur->prev;
 				continue;
 			}
 			lopt.numaps++;
-			ap_cur = ap_cur->prev;
 		}
 
-		if (lopt.numaps > lopt.maxnumaps) lopt.maxnumaps = lopt.numaps;
+		if (lopt.numaps > lopt.maxnumaps)
+		{
+			lopt.maxnumaps = lopt.numaps;
+		}
 	}
 
 	/*
@@ -3850,11 +3808,9 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 		move(CURSOR_DOWN, 1);
 		CHECK_END_OF_SCREEN();
 
-		ap_cur = lopt.ap_end;
-
 		num_ap = 0;
 
-		while (ap_cur != NULL)
+		TAILQ_FOREACH_REVERSE(ap_cur, &lopt.ap_list[lopt.current_ap_list_index], ap_list_head, entry)
 		{
 			/* skip APs with only one packet, or those older than 2 min.
 		* always skip if bssid == broadcast */
@@ -3863,51 +3819,54 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				if (lopt.p_selected_ap == ap_cur)
 				{ //the selected AP is skipped (will not be printed), we have to go to the next printable AP
 					struct AP_info * ap_tmp;
-					if (selection_direction_up
-						== lopt.en_selection_direction) //UP arrow was last pressed
+
+					if (selection_direction_up == lopt.en_selection_direction)
 					{
-						ap_tmp = ap_cur->next;
-						if (ap_tmp)
+						//UP arrow was last pressed
+						ap_tmp = TAILQ_NEXT(ap_cur, entry);
+						if (ap_tmp != NULL)
 						{
-							while ((0 != (lopt.p_selected_ap = ap_tmp))
+							while ((NULL != (lopt.p_selected_ap = ap_tmp))
 								   && IsAp2BeSkipped(ap_tmp))
-								ap_tmp = ap_tmp->next;
-						}
-						if (!ap_tmp) //we have reached the first element in the list, so go in another direction
-						{ //upon we have an AP that is not skipped
-							ap_tmp = ap_cur->prev;
-							if (ap_tmp)
 							{
-								while ((0 != (lopt.p_selected_ap = ap_tmp))
+								ap_tmp = TAILQ_NEXT(ap_tmp, entry);
+							}
+						}
+						if (ap_tmp == NULL) //we have reached the first element in the list, so go in another direction
+						{ //upon we have an AP that is not skipped
+							ap_tmp = TAILQ_PREV(ap_cur, ap_list_head, entry);
+							if (ap_tmp != NULL)
+							{
+								while ((NULL != (lopt.p_selected_ap = ap_tmp))
 									   && IsAp2BeSkipped(ap_tmp))
-									ap_tmp = ap_tmp->prev;
+									ap_tmp = TAILQ_PREV(ap_tmp, ap_list_head, entry);
 							}
 						}
 					}
-					else if (
-						selection_direction_down
-						== lopt.en_selection_direction) //DOWN arrow was last pressed
+					else if (selection_direction_down == lopt.en_selection_direction)
 					{
-						ap_tmp = ap_cur->prev;
-						if (ap_tmp)
+						//DOWN arrow was last pressed
+						ap_tmp = TAILQ_PREV(ap_cur, ap_list_head, entry); 
+						if (ap_tmp != NULL)
 						{
-							while ((0 != (lopt.p_selected_ap = ap_tmp))
+							while ((NULL != (lopt.p_selected_ap = ap_tmp))
 								   && IsAp2BeSkipped(ap_tmp))
-								ap_tmp = ap_tmp->prev;
-						}
-						if (!ap_tmp) //we have reached the last element in the list, so go in another direction
-						{ //upon we have an AP that is not skipped
-							ap_tmp = ap_cur->next;
-							if (ap_tmp)
 							{
-								while ((0 != (lopt.p_selected_ap = ap_tmp))
+								ap_tmp = TAILQ_PREV(ap_tmp, ap_list_head, entry); 
+							}
+						}
+						if (ap_tmp == NULL) //we have reached the last element in the list, so go in another direction
+						{ //upon we have an AP that is not skipped
+							ap_tmp = TAILQ_NEXT(ap_cur, entry); 
+							if (ap_tmp != NULL)
+							{
+								while ((NULL != (lopt.p_selected_ap = ap_tmp))
 									   && IsAp2BeSkipped(ap_tmp))
-									ap_tmp = ap_tmp->next;
+									ap_tmp = TAILQ_NEXT(ap_tmp, entry); 
 							}
 						}
 					}
 				}
-				ap_cur = ap_cur->prev;
 				continue;
 			}
 
@@ -3915,7 +3874,6 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 			if (num_ap < lopt.start_print_ap)
 			{
-				ap_cur = ap_cur->prev;
 				continue;
 			}
 
@@ -4147,8 +4105,10 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 					}
 					len = strlen(strbuf);
 
-					if ((ssize_t) lopt.maxsize_wps_seen <= len - wps_len)
+					if ((ssize_t)lopt.maxsize_wps_seen <= len - wps_len)
+					{
 						lopt.maxsize_wps_seen = (u_int) MAX(len - wps_len, 6);
+					}
 					else
 					{
 						// pad output
@@ -4228,8 +4188,6 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			{
 				textstyle(TEXT_RESET);
 			}
-
-			ap_cur = ap_cur->prev;
 		}
 
 		/* print some information about each detected station */
@@ -4252,22 +4210,18 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 		move(CURSOR_DOWN, 1);
 		CHECK_END_OF_SCREEN();
 
-		ap_cur = lopt.ap_end;
-
 		num_sta = 0;
 
-		while (ap_cur != NULL)
+		TAILQ_FOREACH_REVERSE(ap_cur, &lopt.ap_list[lopt.current_ap_list_index], ap_list_head, entry)
 		{
 			if (ap_cur->nb_pkt < 2 || time(NULL) - ap_cur->tlast > lopt.berlin)
 			{
-				ap_cur = ap_cur->prev;
 				continue;
 			}
 
 			if (ap_cur->security != 0 && lopt.f_encrypt != 0
 				&& ((ap_cur->security & lopt.f_encrypt) == 0))
 			{
-				ap_cur = ap_cur->prev;
 				continue;
 			}
 
@@ -4275,11 +4229,13 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			if (!MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid)
 				&& is_filtered_essid(ap_cur->essid))
 			{
-				ap_cur = ap_cur->prev;
 				continue;
 			}
 
-			if (nlines >= (ws_row - 1)) return;
+			if (nlines >= (ws_row - 1))
+			{
+				return;
+			}
 
 			st_cur = lopt.st_end;
 
@@ -4312,7 +4268,10 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 				num_sta++;
 
-				if (lopt.start_print_sta > num_sta) continue;
+				if (lopt.start_print_sta > num_sta)
+				{
+					continue;
+				}
 
 				nlines++;
 
@@ -4392,8 +4351,6 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			{
 				textstyle(TEXT_RESET);
 			}
-
-			ap_cur = ap_cur->prev;
 		}
 	}
 
@@ -6394,34 +6351,23 @@ done:
 	return;
 }
 
-static void ap_list_free(struct AP_info * * const list)
+static void ap_list_free(struct ap_list_head * const list)
 {
-	struct AP_info *  * const entry = list;
-
-	if (entry == NULL)
+	while (TAILQ_FIRST(list) != NULL)
 	{
-		goto done;
-	}
+		struct AP_info * const ap_cur = TAILQ_FIRST(list);
 
-	while (*entry != NULL)
-	{
-		struct AP_info * const ap_next = (*entry)->next;
-
+		TAILQ_REMOVE(list, ap_cur, entry);
 		// Clean content of ap_cur list (first element: lopt.ap_1st)
-		uniqueiv_wipe((*entry)->uiv_root);
+		uniqueiv_wipe(ap_cur->uiv_root);
 
-		list_tail_free(&(*entry)->packets);
+		list_tail_free(&ap_cur->packets);
 
-		data_wipe((*entry)->data_root);
+		data_wipe(ap_cur->data_root);
 
-		free((*entry)->manuf);
-		free(*entry);
-
-		*entry = ap_next;
+		free(ap_cur->manuf);
+		free(ap_cur);
 	}
-
-done:
-	return;
 }
 
 int main(int argc, char * argv[])
@@ -6611,6 +6557,9 @@ int main(int argc, char * argv[])
 #endif
 
 	TAILQ_INIT(&lopt.na_list);
+	TAILQ_INIT(&lopt.ap_list[0]);
+	TAILQ_INIT(&lopt.ap_list[1]); 
+	lopt.current_ap_list_index = 0;
 
 	// Default selection.
 	resetSelection();
@@ -8065,7 +8014,7 @@ int main(int argc, char * argv[])
 		pthread_join(lopt.input_tid, NULL);
 	}
 
-	ap_list_free(&lopt.ap_1st);
+	ap_list_free(&lopt.ap_list[lopt.current_ap_list_index]);
 
 	sta_list_free(&lopt.st_1st);
 

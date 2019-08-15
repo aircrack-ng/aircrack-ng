@@ -63,11 +63,13 @@
 #include "aircrack-ng/support/station.h"
 
 /* bunch of global stuff */
+TAILQ_HEAD(ap_list_head, AP_info); 
 
 static struct globals
 {
-	struct AP_info *ap_1st, *ap_end;
-	struct ST_info *st_1st, *st_end;
+	struct ap_list_head ap_list;
+
+    struct ST_info *st_1st, *st_end;
 
 	unsigned char prev_bssid[6];
 	FILE * f_ivs; /* output ivs file      */
@@ -223,7 +225,6 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 
 	struct AP_info * ap_cur = NULL;
 	struct ST_info * st_cur = NULL;
-	struct AP_info * ap_prv = NULL;
 	struct ST_info * st_prv = NULL;
 
 	/* skip packets smaller than a 802.11 header */
@@ -258,22 +259,15 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 
 	/* update our chained list of access points */
 
-	ap_cur = G.ap_1st;
-	ap_prv = NULL;
-
-	while (ap_cur != NULL)
+	TAILQ_FOREACH(ap_cur, &G.ap_list, entry)
 	{
         if (MAC_ADDRESS_EQUAL(&ap_cur->bssid, (mac_address *)bssid))
         {
             break;
         }
-
-		ap_prv = ap_cur;
-		ap_cur = ap_cur->next;
 	}
 
-	/* if it's a new access point, add it */
-
+    /* If it's a new access point, add it */
 	if (ap_cur == NULL)
 	{
         ap_cur = calloc(1, sizeof *ap_cur);
@@ -283,26 +277,15 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 			return (FAILURE);
 		}
 
-        if (G.ap_1st == NULL)
-        {
-			G.ap_1st = ap_cur;
-        }
-        else
-        {
-			ap_prv->next = ap_cur;
-        }
-
 		MAC_ADDRESS_COPY(&ap_cur->bssid, (mac_address *)bssid);
 
-		ap_cur->prev = ap_prv;
-
 		ap_cur->uiv_root = uniqueiv_init();
-
-		G.ap_end = ap_cur;
 
 		ap_cur->ssid_length = 0;
 		ap_cur->wpa_stored = 0;
 		ap_cur->essid_stored = 0;
+
+		TAILQ_INSERT_HEAD(&G.ap_list, ap_cur, entry);
 	}
 
 #if 0
