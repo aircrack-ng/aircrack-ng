@@ -737,7 +737,9 @@ static void input_thread(void * arg)
 					 "][ reset selection to default");
 		}
 
-		if (lopt.do_exit == 0 && !lopt.do_pause)
+		if (lopt.do_exit == 0 
+			&& !lopt.do_pause 
+			&& !opt.output_format_wifi_scanner)
 		{
 			if (lopt.do_sort_always)
 			{
@@ -3708,11 +3710,6 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	int num_ap;
 	int num_sta;
 
-	if (opt.output_format_wifi_scanner)
-	{
-		return;
-	}
-
 	if (!lopt.singlechan)
 	{
 		columns_ap -= 4; // no RXQ in scan mode
@@ -3877,14 +3874,20 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 	if (lopt.show_ap)
 	{
-		strbuf[0] = 0;
+		strbuf[0] = '\0';
 		strcat(strbuf, " BSSID              PWR ");
 
-		if (lopt.singlechan) strcat(strbuf, "RXQ ");
+		if (lopt.singlechan)
+		{
+			strcat(strbuf, "RXQ ");
+		}
 
 		strcat(strbuf, " Beacons    #Data, #/s  CH   MB   ENC CIPHER  AUTH ");
 
-		if (lopt.show_uptime) strcat(strbuf, "        UPTIME ");
+		if (lopt.show_uptime)
+		{
+			strcat(strbuf, "        UPTIME ");
+		}
 
 		if (lopt.show_wps)
 		{
@@ -8031,22 +8034,6 @@ int main(int argc, char * argv[])
 			update_dataps();
 
             update_window_size(&lopt.ws);
-
-			/* display the list of access points we have */
-
-			if (!lopt.do_pause && !lopt.background_mode)
-			{
-				if (lopt.do_sort_always)
-				{
-					dump_sort();
-				}
-
-				ap_list_lock_acquire(&lopt);
-
-				dump_print(lopt.ws.ws_row, lopt.ws.ws_col, lopt.num_cards);
-
-				ap_list_lock_release(&lopt);
-            }
 
 			continue;
 		}
