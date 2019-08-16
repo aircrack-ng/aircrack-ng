@@ -304,9 +304,7 @@ static struct local_options
 	int do_pause;
 	int do_sort_always;
 
-	pthread_mutex_t mx_print; /* lock write access to ap LL   */
-
-    pthread_mutex_t mx_sort; /* lock write access to ap LL   */
+	pthread_mutex_t ap_list_lock; /* lock write access to ap linked list. */
 
 	mac_address selected_bssid; /* bssid that is selected */
 
@@ -447,55 +445,38 @@ acquire_lock(pthread_mutex_t * const mutex)
 static int
 release_lock(pthread_mutex_t * const mutex)
 {
-    int const unlock_result = pthread_mutex_unlock(mutex);
+	int const result = pthread_mutex_unlock(mutex);
 
-    ALLEGE(unlock_result == 0);
+	ALLEGE(result == 0);
 
-    return unlock_result;
+	return result;
 }
 
 static int
 initialise_lock(pthread_mutex_t * const mutex)
 {
-    int const init_result = pthread_mutex_init(mutex, NULL);
+	int const result = pthread_mutex_init(mutex, NULL);
 
-    ALLEGE(init_result == 0);
+	ALLEGE(result == 0);
 
-    return init_result;
+    return result;
 }
 
 static int
-acquire_sort_lock(struct local_options * const options)
+ap_list_lock_acquire(struct local_options * const options)
 {
-    return acquire_lock(&options->mx_sort);
-}
-
-static int 
-release_sort_lock(struct local_options * const options)
-{
-    return release_lock(&options->mx_sort);
-}
-
-static int initialise_sort_lock(struct local_options * const options)
-{
-    return initialise_lock(&options->mx_sort);
+	return acquire_lock(&options->ap_list_lock);
 }
 
 static int
-acquire_print_lock(struct local_options * const options)
+ap_list_lock_release(struct local_options * const options)
 {
-    return acquire_lock(&options->mx_print);
+	return release_lock(&options->ap_list_lock);
 }
 
-static int
-release_print_lock(struct local_options * const options)
+static int ap_list_lock_initialise(struct local_options * const options)
 {
-    return release_lock(&options->mx_print);
-}
-
-static int initialise_print_lock(struct local_options * const options)
-{
-    return initialise_lock(&options->mx_print);
+	return initialise_lock(&options->ap_list_lock);
 }
 
 
@@ -506,6 +487,7 @@ static void input_thread(void * arg)
 	while (lopt.do_exit == 0)
 	{
 		int keycode = 0;
+		bool next_pause_setting = lopt.do_pause;
 
 		keycode = mygetch();
 
@@ -614,35 +596,35 @@ static void input_thread(void * arg)
 
 		if (keycode == KEY_SPACE)
 		{
-			lopt.do_pause = !lopt.do_pause;
-			if (lopt.do_pause)
+			next_pause_setting = !lopt.do_pause;
+			if (next_pause_setting)
 			{
 				snprintf(
 					lopt.message, sizeof(lopt.message), "][ paused output");
-
-                acquire_print_lock(&lopt);
-
-				dump_print(lopt.ws.ws_row, lopt.ws.ws_col, lopt.num_cards);
-
-				release_print_lock(&lopt);
 			}
 			else
+			{
 				snprintf(
 					lopt.message, sizeof(lopt.message), "][ resumed output");
+			}
 		}
 
 		if (keycode == KEY_r)
 		{
-			lopt.do_sort_always = (lopt.do_sort_always + 1) % 2;
+			lopt.do_sort_always = (lopt.do_sort_always + 1) & 1;
 
 			if (lopt.do_sort_always)
+			{
 				snprintf(lopt.message,
 						 sizeof(lopt.message),
 						 "][ realtime sorting activated");
+			}
 			else
+			{
 				snprintf(lopt.message,
 						 sizeof(lopt.message),
 						 "][ realtime sorting deactivated");
+			}
 		}
 
 		if (keycode == KEY_m)
@@ -672,13 +654,17 @@ static void input_thread(void * arg)
 		{
 			lopt.sort_inv *= -1;
 			if (lopt.sort_inv < 0)
+			{
 				snprintf(lopt.message,
 						 sizeof(lopt.message),
 						 "][ inverted sorting order");
+			}
 			else
+			{
 				snprintf(lopt.message,
 						 sizeof(lopt.message),
 						 "][ normal sorting order");
+			}
 		}
 
 		if (keycode == KEY_TAB)
@@ -753,12 +739,18 @@ static void input_thread(void * arg)
 
 		if (lopt.do_exit == 0 && !lopt.do_pause)
 		{
-            acquire_print_lock(&lopt);
+			if (lopt.do_sort_always)
+			{
+				dump_sort();
+			}
+
+			ap_list_lock_acquire(&lopt);
 
 			dump_print(lopt.ws.ws_row, lopt.ws.ws_col, lopt.num_cards);
 
-			release_print_lock(&lopt);
+			ap_list_lock_release(&lopt);
         }
+		lopt.do_pause = next_pause_setting;
 	}
 }
 
@@ -1750,6 +1742,8 @@ static void dump_add_packet(
 		}
 	}
 
+	ap_list_lock_acquire(&lopt); 
+
 	/* update our chained list of access points */
 	ap_cur = ap_info_lookup(&lopt.ap_list, &bssid);
 
@@ -1759,6 +1753,7 @@ static void dump_add_packet(
 		ap_cur = ap_info_new(&bssid);
 		if (ap_cur == NULL)
 		{
+			ap_list_lock_release(&lopt);
 			return;
 		}
 
@@ -1767,6 +1762,8 @@ static void dump_add_packet(
 		/* If mac is listed as unknown, remove it */
 		remove_namac(&bssid);
 	}
+
+	ap_list_lock_release(&lopt); 
 
 	/* update the last time seen */
 
@@ -1892,8 +1889,9 @@ static void dump_add_packet(
 			abort();
 	}
 
-	/* update our chained list of wireless stations */
+	ap_list_lock_acquire(&lopt);
 
+	/* update our chained list of wireless stations */
 	st_cur = sta_info_lookup(&lopt.sta_list, &stmac);
 
 	/* If it's a new client, add it */
@@ -1902,6 +1900,7 @@ static void dump_add_packet(
 		st_cur = st_info_new(&stmac);
         if (st_cur == NULL)
 		{
+			ap_list_lock_release(&lopt);
 			return;
 		}
 
@@ -1910,6 +1909,8 @@ static void dump_add_packet(
 		/* If mac is listed as unknown, remove it */
 		remove_namac(&stmac);
 	}
+
+	ap_list_lock_release(&lopt); 
 
     if (st_cur->base == NULL || !MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
     {
@@ -3341,7 +3342,7 @@ write_packet:
 						break;
 				}
 
-				/*grab next mac (for rts frames)*/
+				/* grab next mac (for rts frames)*/
                 p += sizeof namac;
 			}
 		}
@@ -3536,12 +3537,12 @@ static void sort_stas(struct local_options * const options)
 
 static void dump_sort(void)
 {
-	acquire_sort_lock(&lopt);
+	ap_list_lock_acquire(&lopt);
 
 	sort_aps(&lopt);
     sort_stas(&lopt);
 
-	release_sort_lock(&lopt);
+	ap_list_lock_release(&lopt);
 }
 
 static int getBatteryState(void) { return get_battery_state(); }
@@ -3728,11 +3729,6 @@ static void dump_print(int ws_row, int ws_col, int if_num)
     {
         return;
     }
-
-	if (lopt.do_sort_always)
-	{
-		dump_sort();
-	}
 
 	tt = time(NULL);
 	lt = localtime(&tt);
@@ -6668,8 +6664,7 @@ int main(int argc, char * argv[])
 	console_utf8_enable();
 	ac_crypto_init();
 
-    initialise_print_lock(&lopt);
-    initialise_sort_lock(&lopt);
+	ap_list_lock_initialise(&lopt);
 
 	textstyle(TEXT_RESET); //(TEXT_RESET, TEXT_BLACK, TEXT_WHITE);
 
@@ -8041,12 +8036,18 @@ int main(int argc, char * argv[])
 
 			if (!lopt.do_pause && !lopt.background_mode)
 			{
-                acquire_print_lock(&lopt);
+				if (lopt.do_sort_always)
+				{
+					dump_sort();
+				}
+
+				ap_list_lock_acquire(&lopt);
 
 				dump_print(lopt.ws.ws_row, lopt.ws.ws_col, lopt.num_cards);
 
-				release_print_lock(&lopt);
+				ap_list_lock_release(&lopt);
             }
+
 			continue;
 		}
 
@@ -8056,7 +8057,6 @@ int main(int argc, char * argv[])
 			{
 				if (FD_ISSET(fd_raw[i], &rfds)) // NOLINT(hicpp-signed-bitwise)
 				{
-
 					memset(buffer, 0, sizeof(buffer));
 					h80211 = buffer;
 					if ((caplen = wi_read(
