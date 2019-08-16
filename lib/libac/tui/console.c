@@ -47,6 +47,7 @@
 #include "aircrack-ng/tui/console.h"
 
 #define channel stdout
+static const char escape_char = 0x1b;
 
 void textcolor(int attr, int fg, int bg)
 {
@@ -54,7 +55,7 @@ void textcolor(int attr, int fg, int bg)
 
 	/* Command is the control command to the terminal */
 	snprintf(
-		command, sizeof(command), "%c[%d;%d;%dm", 0x1B, attr, fg + 30, bg + 40);
+		command, sizeof(command), "%c[%d;%d;%dm", escape_char, attr, fg + 30, bg + 40);
 	fprintf(channel, "%s", command);
 	fflush(channel);
 }
@@ -116,7 +117,7 @@ void moveto(int x, int y)
 	}
 
 	// send ANSI sequence to move the cursor.
-	snprintf(command, sizeof(command), "%c[%d;%dH", 0x1B, y, x);
+	snprintf(command, sizeof(command), "%c[%d;%dH", escape_char, y, x);
 	fprintf(channel, "%s", command);
 	fflush(channel);
 }
@@ -127,7 +128,7 @@ void move(int which, int n)
 	static const char movement[] = {'A', 'B', 'C', 'D'};
 
 	assert(which >= 0 && which < 4);
-	snprintf(command, sizeof(command), "%c[%d%c", 0x1B, n, movement[which]);
+	snprintf(command, sizeof(command), "%c[%d%c", escape_char, n, movement[which]);
 	fprintf(channel, "%s", command);
 	fflush(channel);
 }
@@ -136,7 +137,7 @@ void erase_display(int n)
 {
 	char command[13];
 
-	snprintf(command, sizeof(command), "%c[%dJ", 0x1B, n);
+	snprintf(command, sizeof(command), "%c[%dJ", escape_char, n);
 	fprintf(channel, "%s", command);
 	fflush(channel);
 }
@@ -145,7 +146,7 @@ void erase_line(int n)
 {
 	char command[13];
 
-	snprintf(command, sizeof(command), "%c[%dK", 0x1B, n);
+	snprintf(command, sizeof(command), "%c[%dK", escape_char, n);
 	fprintf(channel, "%s", command);
 	fflush(channel);
 }
@@ -154,7 +155,7 @@ void textcolor_normal(void)
 {
 	char command[13];
 
-	snprintf(command, sizeof(command), "%c[22m", 0x1B);
+	snprintf(command, sizeof(command), "%c[22m", escape_char);
 	fprintf(channel, "%s", command);
 	fflush(channel);
 }
@@ -163,7 +164,7 @@ void hide_cursor(void)
 {
 	char command[13];
 
-	snprintf(command, sizeof(command), "%c[?25l", 0x1B);
+	snprintf(command, sizeof(command), "%c[?25l", escape_char);
 	fprintf(channel, "%s", command);
 	fflush(channel);
 }
@@ -172,7 +173,7 @@ void show_cursor(void)
 {
 	char command[13];
 
-	snprintf(command, sizeof(command), "%c[?25h", 0x1B);
+	snprintf(command, sizeof(command), "%c[?25h", escape_char);
 	fprintf(channel, "%s", command);
 	fflush(channel);
 }
