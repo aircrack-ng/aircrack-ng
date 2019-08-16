@@ -3973,7 +3973,9 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 							{
 								while ((NULL != (lopt.p_selected_ap = ap_tmp))
 									   && IsAp2BeSkipped(ap_tmp))
+								{
 									ap_tmp = TAILQ_PREV(ap_tmp, ap_list_head, entry);
+                                }
 							}
 						}
 					}
@@ -5202,25 +5204,6 @@ static void update_window_size(struct winsize * const ws)
     }
 }
 
-static void signal_event_shutdown(struct local_options * const options)
-{
-    if (options->signal_event_pipe[0] != -1)
-    {
-        int const fd = lopt.signal_event_pipe[0];
-
-        lopt.signal_event_pipe[0] = -1;
-        close(fd);
-    }
-
-    if (options->signal_event_pipe[1] != -1)
-    {
-        int const fd = lopt.signal_event_pipe[1];
-
-        options->signal_event_pipe[1] = -1;
-        close(fd);
-    }
-}
-
 static void handle_window_changed_event(struct local_options const * const options)
 {
     if (!opt.output_format_wifi_scanner)
@@ -5282,6 +5265,62 @@ static void sighandler(int signum)
 		show_cursor();
 		fflush(stdout);
 		exit(1);
+	}
+}
+
+static void signal_event_shutdown(int * const signal_event_pipe)
+{
+	if (signal_event_pipe[0] != -1)
+	{
+		int const fd = signal_event_pipe[0];
+
+		signal_event_pipe[0] = -1;
+		close(fd);
+	}
+
+	if (signal_event_pipe[1] != -1)
+	{
+		int const fd = signal_event_pipe[1];
+
+		signal_event_pipe[1] = -1;
+		close(fd);
+	}
+}
+
+static void signal_event_initialise(int * const signal_event_pipe)
+{
+	int const pipe_result = pipe(signal_event_pipe);
+	IGNORE_NZ(pipe_result);
+
+	struct sigaction action;
+	action.sa_flags = 0;
+	action.sa_handler = &sighandler;
+	sigemptyset(&action.sa_mask);
+
+	if (sigaction(SIGINT, &action, NULL) == -1)
+	{
+		perror("sigaction(SIGINT)");
+	}
+	if (sigaction(SIGSEGV, &action, NULL) == -1)
+	{
+		perror("sigaction(SIGSEGV)");
+	}
+	if (sigaction(SIGTERM, &action, NULL) == -1)
+	{
+		perror("sigaction(SIGTERM)");
+	}
+	if (sigaction(SIGWINCH, &action, NULL) == -1)
+	{
+		perror("sigaction(SIGWINCH)");
+	}
+
+	/* Using a separate handler for reaping zombies. */
+	action.sa_flags = 0;
+	action.sa_handler = &sigchld_handler;
+	sigemptyset(&action.sa_mask);
+	if (sigaction(SIGCHLD, &action, NULL) == -1)
+	{
+		perror("sigaction(SIGCHLD)");
 	}
 }
 
@@ -6040,13 +6079,11 @@ static struct wif * reopen_card(struct wif * const old)
     return new_wi;
 }
 
-static bool reopen_cards(
-    struct local_options const * const options,
-    struct wif * * const wi)
+static bool reopen_cards(struct wif * * const wi, size_t const num_cards)
 {
     bool success;
 
-    for (size_t i = 0; i < options->num_cards; i++)
+    for (size_t i = 0; i < num_cards; i++)
     {
         wi[i] = reopen_card(wi[i]);
         if (wi[i] == NULL)
@@ -6060,6 +6097,14 @@ static bool reopen_cards(
 
 done:
     return success;
+}
+
+static void close_cards(struct wif * * const wi, size_t const num_cards)
+{
+	for (size_t i = 0; i < num_cards; i++)
+	{
+		wi_close(wi[i]);
+	}
 }
 
 static int check_monitor(struct wif * wi[], int * fd_raw, int * fdh, int cards)
@@ -6267,6 +6312,14 @@ static int rearrange_frequencies(void)
 	return (0);
 }
 
+static void drop_privileges(void)
+{
+	if (setuid(getuid()) == -1)
+	{
+		perror("setuid");
+	}
+}
+
 static int start_monitor_process(
     struct local_options * const options, 
     struct wif * * const wi)
@@ -6298,16 +6351,12 @@ static int start_monitor_process(
         * problems.  -sorbo
         */
 
-        if (!reopen_cards(options, wi))
+        if (!reopen_cards(wi, options->num_cards))
         {
             exit(EXIT_FAILURE);
         }
 
-        /* Drop privileges */
-        if (setuid(getuid()) == -1)
-        {
-            perror("setuid");
-        }
+		drop_privileges();
     }
     else
     {
@@ -6579,6 +6628,50 @@ static void update_output_files(void)
 								 &lopt.sta_list,
 								 lopt.f_encrypt,
 								 lopt.airodump_start_time);
+	}
+}
+
+static void close_output_files(void)
+{
+	if (opt.f_txt != NULL)
+	{
+		fclose(opt.f_txt);
+	}
+
+	if (lopt.wifi_dump_context != NULL)
+	{
+		lopt.wifi_dump_context->close(lopt.wifi_dump_context);
+		lopt.wifi_dump_context = NULL;
+	}
+
+	if (opt.f_kis != NULL)
+	{
+		fclose(opt.f_kis);
+	}
+
+	if (opt.f_kis_xml != NULL)
+	{
+		fclose(opt.f_kis_xml);
+	}
+
+	if (opt.f_gps != NULL)
+	{
+		fclose(opt.f_gps);
+	}
+
+	if (opt.f_cap != NULL)
+	{
+		fclose(opt.f_cap);
+	}
+
+	if (opt.f_ivs != NULL)
+	{
+		fclose(opt.f_ivs);
+	}
+
+	if (opt.f_logcsv != NULL)
+	{
+		fclose(opt.f_logcsv);
 	}
 }
 
@@ -7551,11 +7644,7 @@ int main(int argc, char * argv[])
 		}
 	}
 
-	/* Drop privileges */
-	if (setuid(getuid()) == -1)
-	{
-		perror("setuid");
-	}
+	drop_privileges();
 
     /* Check if an input file was specified. */
 	if (opt.s_file != NULL)
@@ -7582,6 +7671,10 @@ int main(int argc, char * argv[])
             return (EXIT_FAILURE);
         }
 
+        /* FIXME - needed while there are two methods of opening 
+         * update files. The method above is used by multiple apps that 
+         * don't support some of the output formats. 
+         */
 		if (!dump_initialise_custom_dump_formats(lopt.dump_prefix,
 												 lopt.sys_name,
 												 lopt.loc_name,
@@ -7592,26 +7685,7 @@ int main(int argc, char * argv[])
 		}
     }
 
-    int const pipe_result = pipe(lopt.signal_event_pipe);
-    IGNORE_NZ(pipe_result);
-
-	struct sigaction action;
-	action.sa_flags = 0;
-	action.sa_handler = &sighandler;
-	sigemptyset(&action.sa_mask);
-
-	if (sigaction(SIGINT, &action, NULL) == -1) perror("sigaction(SIGINT)");
-	if (sigaction(SIGSEGV, &action, NULL) == -1) perror("sigaction(SIGSEGV)");
-	if (sigaction(SIGTERM, &action, NULL) == -1) perror("sigaction(SIGTERM)");
-	if (sigaction(SIGWINCH, &action, NULL) == -1) perror("sigaction(SIGWINCH)");
-
-    action.sa_flags = 0;
-    action.sa_handler = &sigchld_handler;
-    sigemptyset(&action.sa_mask); 
-    if (sigaction(SIGCHLD, &action, NULL) == -1)
-    {
-        perror("sigaction(SIGCHLD)");
-    }
+	signal_event_initialise(lopt.signal_event_pipe);
 
 	/* fill oui struct if ram is greater than 32 MB */
 	if (get_ram_size() > MIN_RAM_SIZE_LOAD_OUI_RAM)
@@ -7921,7 +7995,8 @@ int main(int argc, char * argv[])
 		}
 	}
 
-	signal_event_shutdown(&lopt); 
+    /* TODO: Restore signal handlers. */
+    signal_event_shutdown(lopt.signal_event_pipe);
 
 	free(lopt.batt);
 	free(lopt.elapsed_time);
@@ -7934,58 +8009,21 @@ int main(int argc, char * argv[])
 	packet_reader_close(lopt.packet_reader_context);
 
 #ifdef HAVE_PCRE
-	if (lopt.f_essid_regex) pcre_free(lopt.f_essid_regex);
+	if (lopt.f_essid_regex)
+	{
+        pcre_free(lopt.f_essid_regex);
+    }
 #endif
 
-    for (i = 0; i < lopt.num_cards; i++)
-    {
-        wi_close(wi[i]);
-    }
+	close_cards(wi, lopt.num_cards);
 
+    /* FIXME: - Shouldn't need to check this flag. Just check 
+     * pointer values etc. 
+     */
 	if (opt.record_data)
 	{
 		update_output_files();
-
-        if (opt.f_txt != NULL)
-        {
-            fclose(opt.f_txt);
-        }
-
-		if (lopt.wifi_dump_context != NULL)
-        {
-			lopt.wifi_dump_context->close(lopt.wifi_dump_context);
-			lopt.wifi_dump_context = NULL;
-        }
-
-        if (opt.f_kis != NULL)
-        {
-			fclose(opt.f_kis);
-        }
-
-        if (opt.f_kis_xml != NULL)
-        {
-			fclose(opt.f_kis_xml);
-        }
-
-        if (opt.f_gps != NULL)
-        {
-            fclose(opt.f_gps);
-        }
-
-        if (opt.f_cap != NULL)
-        {
-             fclose(opt.f_cap);
-        }
-
-        if (opt.f_ivs != NULL)
-        {
-            fclose(opt.f_ivs);
-        }
-
-        if (opt.f_logcsv != NULL)
-        {
-            fclose(opt.f_logcsv);
-        }
+		close_output_files();
 
 		free(lopt.airodump_start_time);
 		lopt.airodump_start_time = NULL;
