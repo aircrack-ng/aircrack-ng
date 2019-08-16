@@ -6106,24 +6106,6 @@ static int getfrequencies(
 	return 0; // frequency hopping
 }
 
-static int setup_card(char * iface, struct wif ** wis)
-{
-	REQUIRE(iface != NULL);
-	REQUIRE(wis != NULL);
-
-	struct wif * wi;
-
-	wi = wi_open(iface);
-	if (wi == NULL)
-	{
-        return -1;
-    }
-
-	*wis = wi;
-
-	return 0;
-}
-
 static bool name_already_specified(
 	char const * const interface_name, 
 	char * * const iface, 
@@ -6179,7 +6161,8 @@ static int init_cards(
 			continue;
 		}
 
-		if (setup_card(interface_name, &wi[if_count]) != 0)
+		wi[if_count] = wi_open(interface_name);
+		if (wi[if_count] == NULL)
 		{
 			if_count = -1;
 			goto done;
