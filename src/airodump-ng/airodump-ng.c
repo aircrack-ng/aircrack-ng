@@ -134,7 +134,8 @@ static int read_pkts = 0;
 
 enum
 {
-    channel_list_sentinel = 0
+	channel_list_invalid = -1,
+	channel_list_sentinel = 0
 };
 
 static int abg_chans[] = 
@@ -5339,8 +5340,11 @@ static void prepare_terminal(struct local_options const * const options)
 
 static void handle_terminate_event(struct local_options * const options)
 {
-    fprintf(stdout, "Quitting...\n");
-    fflush(stdout); 
+	if (options->should_update_stdout)
+	{
+		fprintf(stdout, "Quitting...\n");
+        fflush(stdout); 
+	}
 
     lopt.do_exit = 1;
 }
@@ -5517,7 +5521,7 @@ static int get_channel_count(
 	while (channels[total_channel_count] != 0)
 	{
 		total_channel_count++;
-		if (channels[total_channel_count] != -1)
+		if (channels[total_channel_count] != channel_list_invalid)
 		{
 			valid_channel_count++;
 		}
@@ -5533,16 +5537,24 @@ static int get_channel_count(
 
 static int getfreqcount(int valid)
 {
-	int i = 0, freq_count = 0;
+	int i = 0; 
+    int freq_count = 0;
 
 	while (lopt.own_frequencies[i])
 	{
 		i++;
-		if (lopt.own_frequencies[i] != -1) freq_count++;
+		if (lopt.own_frequencies[i] != -1)
+		{
+			freq_count++;
+        }
 	}
 
-	if (valid) return (freq_count);
-	return (i);
+	if (valid)
+	{
+        return freq_count;
+    }
+
+	return i;
 }
 
 static void
@@ -5589,7 +5601,7 @@ channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 				}
 			}
 
-			if (lopt.channels[ch_idx] == -1)
+			if (lopt.channels[ch_idx] == channel_list_invalid)
 			{
 				j--;
 				cai--;
@@ -5639,7 +5651,7 @@ channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 			}
 			else
 			{
-				lopt.channels[ch_idx] = -1; /* remove invalid channel */
+				lopt.channels[ch_idx] = channel_list_invalid; /* remove invalid channel */
 				j--;
 				cai--;
 				continue;
@@ -5816,7 +5828,10 @@ static int getchannels(const char * optarg)
 	int * tmp_channels;
 
 	// got a NULL pointer?
-	if (optarg == NULL) return (-1);
+	if (optarg == NULL)
+	{
+        return -1;
+    }
 
 	chan_remain = chan_max;
 
@@ -5824,7 +5839,7 @@ static int getchannels(const char * optarg)
 	optc = optchan = strdup(optarg);
 	ALLEGE(optc != NULL);
 
-    tmp_channels = calloc(chan_max + 1, sizeof(int));
+    tmp_channels = calloc(chan_max + 1, sizeof *tmp_channels);
 	ALLEGE(tmp_channels != NULL);
 
 	// split string in tokens, separated by ','
@@ -5844,7 +5859,7 @@ static int getchannels(const char * optarg)
 					{
 						free(tmp_channels);
 						free(optc);
-						return (-1);
+						return -1;
 					}
 				}
 
@@ -5854,7 +5869,7 @@ static int getchannels(const char * optarg)
 					{
 						free(tmp_channels);
 						free(optc);
-						return (-1);
+						return -1;
 					}
 					for (i = chan_first; i <= chan_last; i++)
 					{
@@ -5869,14 +5884,14 @@ static int getchannels(const char * optarg)
 				{
 					free(tmp_channels);
 					free(optc);
-					return (-1);
+					return -1;
 				}
 			}
 			else
 			{
 				free(tmp_channels);
 				free(optc);
-				return (-1);
+				return -1;
 			}
 		}
 		else
@@ -5888,7 +5903,7 @@ static int getchannels(const char * optarg)
 				{
 					free(tmp_channels);
 					free(optc);
-					return (-1);
+					return -1;
 				}
 			}
 
@@ -5904,13 +5919,13 @@ static int getchannels(const char * optarg)
 			{
 				free(tmp_channels);
 				free(optc);
-				return (-1);
+				return -1;
 			}
 		}
 	}
 
 	lopt.own_channels
-		= (int *) malloc(sizeof(int) * (chan_max - chan_remain + 1));
+		= malloc((chan_max - chan_remain + 1) * sizeof *lopt.own_channels);
 	ALLEGE(lopt.own_channels != NULL);
 
 	if (chan_max > 0 && chan_max >= chan_remain) //-V560
@@ -5925,9 +5940,17 @@ static int getchannels(const char * optarg)
 
 	free(tmp_channels);
 	free(optc);
-	if (i == 1) return (lopt.own_channels[0]);
-	if (i == 0) return (-1);
-	return (0);
+
+	if (i == 1)
+	{
+        return lopt.own_channels[0];
+    }
+	if (i == 0)
+	{
+        return -1;
+    }
+
+	return 0;
 }
 
 /* parse a string, for example "1,2,3-7,11" */
@@ -5943,7 +5966,10 @@ static int getfrequencies(
 	int * tmp_frequencies;
 
 	// got a NULL pointer?
-	if (optarg == NULL) return -1;
+	if (optarg == NULL)
+	{
+        return -1;
+    }
 
 	freq_remain = freq_max;
 
@@ -5970,7 +5996,7 @@ static int getfrequencies(
 					{
 						free(tmp_frequencies);
 						free(optc);
-						return (-1);
+						return -1;
 					}
 				}
 
@@ -5980,7 +6006,7 @@ static int getfrequencies(
 					{
 						free(tmp_frequencies);
 						free(optc);
-						return (-1);
+						return -1;
 					}
 					for (i = freq_first; i <= freq_last; i++)
 					{
@@ -5995,14 +6021,14 @@ static int getfrequencies(
 				{
 					free(tmp_frequencies);
 					free(optc);
-					return (-1);
+					return -1;
 				}
 			}
 			else
 			{
 				free(tmp_frequencies);
 				free(optc);
-				return (-1);
+				return -1;
 			}
 		}
 		else
@@ -6014,7 +6040,7 @@ static int getfrequencies(
 				{
 					free(tmp_frequencies);
 					free(optc);
-					return (-1);
+					return -1;
 				}
 			}
 
@@ -6046,13 +6072,13 @@ static int getfrequencies(
 			{
 				free(tmp_frequencies);
 				free(optc);
-				return (-1);
+				return -1;
 			}
 		}
 	}
 
 	lopt.own_frequencies
-		= (int *) malloc(sizeof(int) * (freq_max - freq_remain + 1));
+		= malloc((freq_max - freq_remain + 1) * sizeof *lopt.own_frequencies);
 	ALLEGE(lopt.own_frequencies != NULL);
 
 	if (freq_max > 0 && freq_max >= freq_remain) //-V560
@@ -6067,9 +6093,17 @@ static int getfrequencies(
 
 	free(tmp_frequencies);
 	free(optc);
-	if (i == 1) return (lopt.own_frequencies[0]); // exactly 1 frequency given
-	if (i == 0) return (-1); // error occurred
-	return (0); // frequency hopping
+	if (i == 1)
+	{
+        return lopt.own_frequencies[0]; // exactly 1 frequency given
+    }
+
+	if (i == 0)
+	{
+        return -1; // error occurred
+    }
+
+	return 0; // frequency hopping
 }
 
 static int setup_card(char * iface, struct wif ** wis)
@@ -6080,10 +6114,14 @@ static int setup_card(char * iface, struct wif ** wis)
 	struct wif * wi;
 
 	wi = wi_open(iface);
-	if (!wi) return (-1);
+	if (wi == NULL)
+	{
+        return -1;
+    }
+
 	*wis = wi;
 
-	return (0);
+	return 0;
 }
 
 static bool name_already_specified(
@@ -6261,7 +6299,11 @@ static int check_channel(struct wif * wi[], int cards)
 	{
 		int const chan = wi_get_channel(wi[i]);
 
-		if (opt.ignore_negative_one == 1 && chan == -1) return (0);
+		if (opt.ignore_negative_one == 1 && chan == channel_list_invalid)
+		{
+            return (0);
+        }
+
 		if (lopt.channel[i] != chan)
 		{
 			snprintf(lopt.message,
@@ -6276,6 +6318,7 @@ static int check_channel(struct wif * wi[], int cards)
 #endif
 		}
 	}
+
 	return 0;
 }
 
