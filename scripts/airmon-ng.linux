@@ -552,6 +552,7 @@ startwlIface() {
 
 setChannelMac80211() {
 	setLink ${1} up
+	local i=0
 	if [ -n "${CH}" ]; then
 		if [ ${CH} -lt 1000 ]; then
 			if [ -r "/sys/class/net/$1/phy80211/name" ]; then
