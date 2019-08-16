@@ -3759,29 +3759,38 @@ static char * parse_timestamp(unsigned long long timestamp)
 	return (s);
 }
 
-static int IsAp2BeSkipped(struct AP_info * ap_cur)
+static bool IsAp2BeSkipped(struct AP_info * ap_cur)
 {
+	bool should_skip;
+
 	REQUIRE(ap_cur != NULL);
 
 	if (ap_cur->nb_pkt < lopt.min_pkts
 		|| (time(NULL) - ap_cur->tlast) > lopt.berlin
 		|| MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
 	{
-		return (1);
+		should_skip = true;
+		goto done;
 	}
 
-	if (ap_cur->security != 0 && lopt.f_encrypt != 0
+	if (ap_cur->security != 0 
+        && lopt.f_encrypt != 0
 		&& ((ap_cur->security & lopt.f_encrypt) == 0))
 	{
-		return (1);
+		should_skip = true;
+		goto done;
 	}
 
 	if (is_filtered_essid(ap_cur->essid))
 	{
-		return (1);
+		should_skip = true;
+		goto done;
 	}
 
-	return (0);
+	should_skip = false;
+
+done:
+	return should_skip;
 }
 
 #define CHECK_END_OF_SCREEN()                                                  \
@@ -4104,11 +4113,15 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 						}
 					}
 				}
+
 				continue;
 			}
 
 			num_ap++;
 
+            /* FIXME - start_print_ap is always 1, so all APs are always 
+             * printed. Is that what is desired? 
+             */
 			if (num_ap < lopt.start_print_ap)
 			{
 				continue;
@@ -4116,7 +4129,10 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 			nlines++;
 
-			if (nlines > (ws_row - 1)) return;
+			if (nlines > (ws_row - 1))
+			{
+                return;
+            }
 
 			snprintf(strbuf,
 					 sizeof(strbuf),
@@ -4255,7 +4271,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				len = strlen(strbuf);
 			}
 
-			if (lopt.p_selected_ap && (lopt.p_selected_ap == ap_cur))
+			if (lopt.p_selected_ap != NULL && lopt.p_selected_ap == ap_cur)
 			{
 				if (lopt.mark_cur_ap)
 				{
@@ -4420,7 +4436,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			strbuf[ws_col - 1] = '\0';
 			console_puts(strbuf);
 
-			if ((lopt.p_selected_ap && (lopt.p_selected_ap == ap_cur))
+			if ((lopt.p_selected_ap != NULL && lopt.p_selected_ap == ap_cur)
 				|| (ap_cur->marked))
 			{
 				textstyle(TEXT_RESET);
@@ -4475,7 +4491,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				return;
 			}
 
-			if (lopt.p_selected_ap
+			if (lopt.p_selected_ap != NULL
 				&& MAC_ADDRESS_EQUAL(&lopt.selected_bssid, &ap_cur->bssid))
 			{
 				textstyle(TEXT_REVERSE);
@@ -4502,6 +4518,9 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 				num_sta++;
 
+                /* FIXME - start_print_sta is always 1, so only one STA is ever 
+                 * printed. Is that what is desired? 
+                 */
 				if (lopt.start_print_sta > num_sta)
 				{
 					continue;
@@ -4577,7 +4596,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				putchar('\n');
 			}
 
-			if ((lopt.p_selected_ap
+			if ((lopt.p_selected_ap != NULL
 				 && MAC_ADDRESS_EQUAL(&lopt.selected_bssid, &ap_cur->bssid))
 				|| (ap_cur->marked))
 			{
