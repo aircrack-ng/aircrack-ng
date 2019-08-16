@@ -94,6 +94,7 @@
 #include "ap_list.h"
 #include "aircrack-ng/osdep/sta_list.h"
 #include "dump_write_wifi_scanner.h"
+#include "packet_reader.h"
 
 struct devices dev;
 uint8_t h80211[4096] __attribute__((aligned(16)));
@@ -271,7 +272,7 @@ static struct local_options
 	int hopfreq;
 
 	char * s_iface; /* source interface to read from */
-	FILE * f_cap_in;
+	packet_reader_context_st * packet_reader_context;
 	struct pcap_file_header pfh_in;
 	int detect_anomaly; /* Detect WIPS protecting WEP in action */
 
@@ -6547,7 +6548,7 @@ done:
 	return success;
 }
 
-static void write_output_files(void)
+static void update_output_files(void)
 {
 	if (opt.output_format_csv)
 	{
@@ -6587,37 +6588,37 @@ int main(int argc, char * argv[])
 
     long time_slept, cycle_time, cycle_time2;
 	char * output_format_string;
-	int caplen = 0, i, j, fdh, freq_count;
-	int fd_raw[MAX_CARDS], arptype[MAX_CARDS];
+	int i, j, fdh, freq_count;
+	size_t caplen;
+	int fd_raw[MAX_CARDS]; 
+    int arptype[MAX_CARDS];
+	struct wif * wi[MAX_CARDS];
+	char * iface[MAX_CARDS];
 	int ivs_only, found;
 	int freq[2];
 	int num_opts = 0;
 	int option = 0;
 	int option_index = 0;
 	int wi_read_failed = 0;
-	int n = 0;
     int reset_val = 0;
     int output_format_first_time = 1;
 #ifdef HAVE_PCRE
 	const char * pcreerror;
 	int pcreerroffset;
 #endif
-    struct pcap_pkthdr pkh;
 
 	time_t tt1, tt2, start_time;
 
-	struct wif * wi[MAX_CARDS];
 	struct rx_info ri;
-	unsigned char tmpbuf[4096];
 	unsigned char buffer[4096];
 	unsigned char * h80211;
-	char * iface[MAX_CARDS];
 
 	struct timeval tv0;
 	struct timeval tv1;
 	struct timeval tv2;
 	struct timeval tv3;
 	struct timeval tv4;
+	struct timeval prev_tv = {.tv_sec = 0, .tv_usec = 0 };
 	struct tm * lt;
 
 	/*
@@ -6728,7 +6729,7 @@ int main(int argc, char * argv[])
 	lopt.hopfreq = DEFAULT_HOPFREQ;
 	opt.s_file = NULL;
 	lopt.s_iface = NULL;
-	lopt.f_cap_in = NULL;
+	lopt.packet_reader_context = NULL;
 	lopt.detect_anomaly = 0;
 	lopt.airodump_start_time = NULL;
     lopt.manufacturer_list = NULL;
@@ -7432,7 +7433,7 @@ int main(int argc, char * argv[])
 		}
 	} while (1);
 
-	if (argc - optind != 1 && opt.s_file == NULL)
+	if ((argc - optind) != 1 && opt.s_file == NULL)
 	{
 		if (argc == 1)
 		{
@@ -7449,7 +7450,10 @@ int main(int argc, char * argv[])
 		return (EXIT_FAILURE);
 	}
 
-	if (argc - optind == 1) lopt.s_iface = argv[argc - 1];
+	if ((argc - optind) == 1)
+	{
+        lopt.s_iface = argv[argc - 1];
+    }
 
 	if (memcmp(opt.f_netmask, NULL_MAC, 6) != 0
 		&& MAC_ADDRESS_IS_EMPTY(&opt.f_bssid))
@@ -7460,7 +7464,9 @@ int main(int argc, char * argv[])
 	}
 
 	if (lopt.show_wps && lopt.show_manufacturer)
+	{
 		lopt.maxsize_essid_seen += lopt.maxsize_wps_seen;
+    }
 
 	if (lopt.s_iface != NULL)
 	{
@@ -7550,46 +7556,13 @@ int main(int argc, char * argv[])
 		perror("setuid");
 	}
 
-	/* check if there is an input file */
+    /* Check if an input file was specified. */
 	if (opt.s_file != NULL)
 	{
-        lopt.f_cap_in = fopen(opt.s_file, "rb");
-        if (lopt.f_cap_in == NULL)
+		lopt.packet_reader_context = packet_reader_open(opt.s_file);
+		if (lopt.packet_reader_context == NULL)
 		{
 			perror("open failed");
-			return (EXIT_FAILURE);
-		}
-
-		n = sizeof(struct pcap_file_header);
-
-		if (fread(&lopt.pfh_in, 1, (size_t) n, lopt.f_cap_in) != (size_t) n)
-		{
-			perror("fread(pcap file header) failed");
-			return (EXIT_FAILURE);
-		}
-
-		if (lopt.pfh_in.magic != TCPDUMP_MAGIC
-			&& lopt.pfh_in.magic != TCPDUMP_CIGAM)
-		{
-			fprintf(stderr,
-					"\"%s\" isn't a pcap file (expected "
-					"TCPDUMP_MAGIC).\n",
-					opt.s_file);
-			return (EXIT_FAILURE);
-		}
-
-		if (lopt.pfh_in.magic == TCPDUMP_CIGAM) SWAP32(lopt.pfh_in.linktype);
-
-		if (lopt.pfh_in.linktype != LINKTYPE_IEEE802_11
-			&& lopt.pfh_in.linktype != LINKTYPE_PRISM_HEADER
-			&& lopt.pfh_in.linktype != LINKTYPE_RADIOTAP_HDR
-			&& lopt.pfh_in.linktype != LINKTYPE_PPI_HDR)
-		{
-			fprintf(stderr,
-					"Wrong linktype from pcap file header "
-					"(expected LINKTYPE_IEEE802_11) -\n"
-					"this doesn't look like a regular 802.11 "
-					"capture.\n");
 			return (EXIT_FAILURE);
 		}
 	}
@@ -7682,7 +7655,7 @@ int main(int argc, char * argv[])
     // remove new line
     if (strlen(lopt.airodump_start_time) > 0)
     {
-        lopt.airodump_start_time[strlen(lopt.airodump_start_time) - 1] = 0;
+        lopt.airodump_start_time[strlen(lopt.airodump_start_time) - 1] = '\0';
     }
 
 	// Do not start the interactive mode input thread if running in the
@@ -7710,16 +7683,17 @@ int main(int argc, char * argv[])
 
         if (lopt.do_exit)
         {
+            /* This flag may have been set by a signal event. */
             break;
         }
 
-		if ((time(NULL)) - tt1 >= lopt.file_write_interval)
+		time_t const seconds_since_last_output_write = time(NULL) - tt1;
+
+		if (seconds_since_last_output_write >= lopt.file_write_interval)
 		{
 			/* update the output files */
-
 			tt1 = time(NULL);
-
-			write_output_files();
+			update_output_files();
 		}
 
 		if (time(NULL) - tt2 > 5)
@@ -7735,7 +7709,6 @@ int main(int argc, char * argv[])
             lopt.batt = getBatteryString();
 
 			/* update elapsed time */
-
 			free(lopt.elapsed_time);
 			lopt.elapsed_time = getStringTimeFromSec(difftime(tt2, start_time));
 
@@ -7764,220 +7737,67 @@ int main(int argc, char * argv[])
 			if (lopt.s_iface != NULL)
 			{
 				check_monitor(wi, fd_raw, &fdh, lopt.num_cards);
-				if (lopt.singlechan) check_channel(wi, lopt.num_cards);
-				if (lopt.singlefreq) check_frequency(wi, lopt.num_cards);
+				if (lopt.singlechan)
+				{
+                    check_channel(wi, lopt.num_cards);
+                }
+				if (lopt.singlefreq)
+				{
+                    check_frequency(wi, lopt.num_cards);
+                }
 			}
 		}
-		if (opt.s_file != NULL)
+
+		h80211 = buffer;
+
+		if (lopt.packet_reader_context != NULL)
 		{
-			static struct timeval prev_tv = {0, 0};
-
 			/* Read one packet */
-			n = sizeof(pkh);
+			struct pcap_pkthdr pkh;
+			packet_reader_result_t const result =
+				packet_reader_read(lopt.packet_reader_context, buffer, sizeof buffer, &caplen, &ri, &pkh);
 
-			if (fread(&pkh, (size_t)n, 1, lopt.f_cap_in) != 1)
+			if (result == packet_reader_result_skip)
+			{
+                continue;
+			}
+			else if (result == packet_reader_result_done)
 			{
 				snprintf(lopt.message,
 						 sizeof(lopt.message),
 						 "][ Finished reading input file %s.",
 						 opt.s_file);
-				opt.s_file = NULL;
-				continue;
-			}
-
-			if (lopt.pfh_in.magic == TCPDUMP_CIGAM)
-			{
-				SWAP32(pkh.caplen);
-				SWAP32(pkh.len);
-			}
-
-			n = caplen = pkh.caplen;
-
-			memset(buffer, 0, sizeof(buffer));
-			h80211 = buffer;
-
-			if (n <= 0 || n > (int) sizeof(buffer))
-			{
-				snprintf(lopt.message,
-						 sizeof(lopt.message),
-						 "][ Finished reading input file %s.",
-						 opt.s_file);
-				opt.s_file = NULL;
-				continue;
-			}
-
-			if (fread(h80211, (size_t) n, 1, lopt.f_cap_in) != 1)
-			{
-				snprintf(lopt.message,
-						 sizeof(lopt.message),
-						 "][ Finished reading input file %s.",
-						 opt.s_file);
-				opt.s_file = NULL;
-				continue;
-			}
-
-			if (lopt.pfh_in.linktype == LINKTYPE_PRISM_HEADER)
-			{
-				if (h80211[7] == 0x40)
-				{
-					n = 64;
-					ri.ri_power = -((int32_t) load32_le(h80211 + 0x33));
-					ri.ri_noise = (int32_t) load32_le(h80211 + 0x33 + 12);
-					ri.ri_rate = load32_le(h80211 + 0x33 + 24) * 500000;
-				}
-				else
-				{
-					n = load32_le(h80211 + 4);
-					ri.ri_mactime = load64_le(h80211 + 0x5C - 48);
-					ri.ri_channel = load32_le(h80211 + 0x5C - 36);
-					ri.ri_power = -((int32_t) load32_le(h80211 + 0x5C));
-					ri.ri_noise = (int32_t) load32_le(h80211 + 0x5C + 12);
-					ri.ri_rate = load32_le(h80211 + 0x5C + 24) * 500000;
-				}
-
-				if (n < 8 || n >= caplen) continue;
-
-				memcpy(tmpbuf, h80211, (size_t) caplen);
-				caplen -= n;
-				memcpy(h80211, tmpbuf + n, (size_t) caplen);
-			}
-
-			if (lopt.pfh_in.linktype == LINKTYPE_RADIOTAP_HDR)
-			{
-				/* remove the radiotap header */
-
-				n = load16_le(h80211 + 2);
-
-				if (n <= 0 || n >= caplen) continue;
-
-				int got_signal = 0;
-				int got_noise = 0;
-				struct ieee80211_radiotap_iterator iterator;
-				struct ieee80211_radiotap_header * rthdr;
-
-				rthdr = (struct ieee80211_radiotap_header *) h80211;
-
-				if (ieee80211_radiotap_iterator_init(
-						&iterator, rthdr, caplen, NULL)
-					< 0)
-					continue;
-
-				/* go through the radiotap arguments we have been given
-				 * by the driver
-				 */
-
-				while (ieee80211_radiotap_iterator_next(&iterator) >= 0)
-				{
-					switch (iterator.this_arg_index)
-					{
-						case IEEE80211_RADIOTAP_TSFT:
-							ri.ri_mactime = le64_to_cpu(
-								*((uint64_t *) iterator.this_arg));
-							break;
-
-						case IEEE80211_RADIOTAP_DBM_ANTSIGNAL:
-							if (!got_signal)
-							{
-								if (*iterator.this_arg < 127)
-									ri.ri_power = *iterator.this_arg;
-								else
-									ri.ri_power = *iterator.this_arg - 255;
-
-								got_signal = 1;
-							}
-							break;
-
-						case IEEE80211_RADIOTAP_DB_ANTSIGNAL:
-							if (!got_signal)
-							{
-								if (*iterator.this_arg < 127)
-									ri.ri_power = *iterator.this_arg;
-								else
-									ri.ri_power = *iterator.this_arg - 255;
-
-								got_signal = 1;
-							}
-							break;
-
-						case IEEE80211_RADIOTAP_DBM_ANTNOISE:
-							if (!got_noise)
-							{
-								if (*iterator.this_arg < 127)
-									ri.ri_noise = *iterator.this_arg;
-								else
-									ri.ri_noise = *iterator.this_arg - 255;
-
-								got_noise = 1;
-							}
-							break;
-
-						case IEEE80211_RADIOTAP_DB_ANTNOISE:
-							if (!got_noise)
-							{
-								if (*iterator.this_arg < 127)
-									ri.ri_noise = *iterator.this_arg;
-								else
-									ri.ri_noise = *iterator.this_arg - 255;
-
-								got_noise = 1;
-							}
-							break;
-
-						case IEEE80211_RADIOTAP_ANTENNA:
-							ri.ri_antenna = *iterator.this_arg;
-							break;
-
-						case IEEE80211_RADIOTAP_CHANNEL:
-							ri.ri_channel = getChannelFromFrequency(
-								le16toh(*(uint16_t *) iterator.this_arg));
-							break;
-
-						case IEEE80211_RADIOTAP_RATE:
-							ri.ri_rate = (*iterator.this_arg) * 500000;
-							break;
-					}
-				}
-
-				memcpy(tmpbuf, h80211, (size_t) caplen);
-				caplen -= n;
-				memcpy(h80211, tmpbuf + n, (size_t) caplen);
-			}
-
-			if (lopt.pfh_in.linktype == LINKTYPE_PPI_HDR)
-			{
-				/* remove the PPI header */
-
-				n = load16_le(h80211 + 2);
-
-				if (n <= 0 || n >= caplen) continue;
-
-				/* for a while Kismet logged broken PPI headers */
-				if (n == 24 && load16_le(h80211 + 8) == 2) n = 32;
-
-				if (n <= 0 || n >= caplen) continue; //-V560
-
-				memcpy(tmpbuf, h80211, (size_t) caplen);
-				caplen -= n;
-				memcpy(h80211, tmpbuf + n, (size_t) caplen);
+				packet_reader_close(lopt.packet_reader_context);
+				lopt.packet_reader_context = NULL;
+                continue;
 			}
 
 			read_pkts++;
+
+			static size_t const file_dummy_card_number = 0;
+			dump_add_packet(buffer, caplen, &ri, file_dummy_card_number);
 
 			if (lopt.relative_time && prev_tv.tv_sec != 0
 				&& prev_tv.tv_usec != 0)
 			{
 				// handle delaying this packet
-				struct timeval pkt_tv;
-				pkt_tv.tv_sec = pkh.tv_sec;
-				pkt_tv.tv_usec = pkh.tv_usec;
+				struct timeval pkt_tv = {
+					.tv_sec = pkh.tv_sec,
+					.tv_usec = pkh.tv_usec
+				};
 
 				const useconds_t usec_diff
 					= (useconds_t) time_diff(&prev_tv, &pkt_tv);
 
-				if (usec_diff > 0) usleep(usec_diff);
+				if (usec_diff > 0)
+				{
+                    usleep(usec_diff);
+                }
 			}
 			else if (read_pkts % 10 == 0)
+			{
 				usleep(1);
+            }
 
 			// track the packet's timestamp
 			prev_tv.tv_sec = pkh.tv_sec;
@@ -8038,7 +7858,7 @@ int main(int argc, char * argv[])
 			continue;
 		}
 
-		if (opt.s_file == NULL && lopt.s_iface != NULL)
+		if (lopt.packet_reader_context == NULL && lopt.s_iface != NULL)
 		{
 			for (i = 0; i < lopt.num_cards; i++)
 			{
@@ -8085,16 +7905,18 @@ int main(int argc, char * argv[])
 				}
 			}
 		}
-		else if (opt.s_file != NULL)
-		{
-			dump_add_packet(h80211, caplen, &ri, i);
-		}
 
-		if (quitting > 0 && (time(NULL) - quitting_event_ts) > 3)
+		if (quitting > 0)
 		{
-			quitting_event_ts = 0;
-			quitting = 0;
-			snprintf(lopt.message, sizeof(lopt.message), "]");
+			time_t const seconds_since_last_quit_event = time(NULL) - quitting_event_ts;
+			size_t const maximum_quit_event_interval_seconds = 3;
+            
+			if (seconds_since_last_quit_event > maximum_quit_event_interval_seconds)
+			{
+                quitting_event_ts = 0;
+                quitting = 0;
+                snprintf(lopt.message, sizeof(lopt.message), "]");
+			}
 		}
 	}
 
@@ -8108,6 +7930,8 @@ int main(int argc, char * argv[])
 	free(opt.f_cap_name);
 	free(lopt.keyout);
 
+	packet_reader_close(lopt.packet_reader_context);
+
 #ifdef HAVE_PCRE
 	if (lopt.f_essid_regex) pcre_free(lopt.f_essid_regex);
 #endif
@@ -8119,7 +7943,7 @@ int main(int argc, char * argv[])
 
 	if (opt.record_data)
 	{
-		write_output_files();
+		update_output_files();
 
         if (opt.f_txt != NULL)
         {
