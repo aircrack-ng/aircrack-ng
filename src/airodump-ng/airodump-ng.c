@@ -6675,6 +6675,24 @@ static void close_output_files(void)
 	}
 }
 
+static void do_quit_request_timeout_check(
+    char * const message_buffer, 
+    size_t message_buffer_size)
+{
+	if (quitting > 0)
+	{
+		time_t const seconds_since_last_quit_event = time(NULL) - quitting_event_ts;
+		size_t const maximum_quit_event_interval_seconds = 3;
+
+		if (seconds_since_last_quit_event > maximum_quit_event_interval_seconds)
+		{
+			quitting_event_ts = 0;
+			quitting = 0;
+			snprintf(message_buffer, message_buffer_size, "]");
+		}
+	}
+}
+
 int main(int argc, char * argv[])
 {
 #define ONE_HOUR (60 * 60)
@@ -7930,6 +7948,7 @@ int main(int argc, char * argv[])
 
             update_window_size(&lopt.ws);
 
+            /* XXX - Why continue. Why not read a packet if one is ready? */
 			continue;
 		}
 
@@ -7981,18 +8000,7 @@ int main(int argc, char * argv[])
 			}
 		}
 
-		if (quitting > 0)
-		{
-			time_t const seconds_since_last_quit_event = time(NULL) - quitting_event_ts;
-			size_t const maximum_quit_event_interval_seconds = 3;
-            
-			if (seconds_since_last_quit_event > maximum_quit_event_interval_seconds)
-			{
-                quitting_event_ts = 0;
-                quitting = 0;
-                snprintf(lopt.message, sizeof(lopt.message), "]");
-			}
-		}
+		do_quit_request_timeout_check(lopt.message, sizeof(lopt.message));
 	}
 
     /* TODO: Restore signal handlers. */
