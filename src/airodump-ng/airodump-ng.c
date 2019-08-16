@@ -96,6 +96,17 @@
 #include "dump_write_wifi_scanner.h"
 #include "packet_reader.h"
 
+typedef int (* ap_sort_fn)(
+	struct AP_info const * const a,
+	struct AP_info const * const b,
+   int const sort_direction);
+
+typedef struct ap_sort_info_st
+{
+	char const * description;
+	ap_sort_fn ap_sort;
+} ap_sort_info_st; 
+
 struct devices dev;
 uint8_t h80211[4096] __attribute__((aligned(16)));
 uint8_t tmpbuf[4096] __attribute__((aligned(16)));
@@ -289,8 +300,9 @@ static struct local_options
     pthread_t gps_tid;
     int gps_thread_result;
 
-	int sort_by;
 	int sort_inv;
+	ap_sort_info_st const * sort_method;
+
 	int start_print_ap;
 	int start_print_sta;
 	struct AP_info * p_selected_ap;
@@ -334,9 +346,244 @@ static struct local_options
 
 } lopt;
 
+static int sort_bssid(
+	struct AP_info const * const a,
+	struct AP_info const * const b,
+	int const sort_direction)
+{
+	int const result =
+		MAC_ADDRESS_COMPARE(&a->bssid, &b->bssid) * sort_direction;
+
+	return result;
+}
+
+static int sort_power(
+	struct AP_info const * const a,
+	struct AP_info const * const b,
+	int const sort_direction)
+{
+	int const result = (a->avg_power - b->avg_power) * sort_direction;
+
+	return result;
+}
+
+static int sort_beacon(
+	struct AP_info const * const a,
+	struct AP_info const * const b,
+	int const sort_direction)
+{
+	int const result = (a->nb_bcn < b->nb_bcn) && (sort_direction > 0) ? -1 : 1;
+
+	return result;
+}
+
+static int sort_data(
+	struct AP_info const * const a,
+	struct AP_info const * const b,
+	int const sort_direction)
+{
+	int const result = (a->nb_data < b->nb_data) && (sort_direction > 0) ? -1 : 1;
+
+	return result;
+}
+
+static int sort_packet_rate(
+	struct AP_info const * const a,
+	struct AP_info const * const b,
+	int const sort_direction)
+{
+	int const result = (a->nb_dataps - b->nb_dataps) * sort_direction;
+
+	return result;
+}
+
+static int sort_channel(
+	struct AP_info const * const a,
+	struct AP_info const * const b,
+	int const sort_direction)
+{
+	int const result = (a->channel - b->channel) * sort_direction;
+
+	return result;
+}
+
+static int sort_mbit(
+	struct AP_info const * const a,
+	struct AP_info const * const b,
+	int const sort_direction)
+{
+	int const result = (a->max_speed - b->max_speed) * sort_direction;
+
+	return result;
+}
+
+static int sort_enc(
+	struct AP_info const * const a,
+	struct AP_info const * const b,
+	int const sort_direction)
+{
+	int const result =
+		((int)(a->security & STD_FIELD) - (int)(a->security & STD_FIELD))
+		* sort_direction;
+
+	return result;
+}
+
+static int sort_cipher(
+	struct AP_info const * const a,
+	struct AP_info const * const b,
+	int const sort_direction)
+{
+	int const result =
+		((int)(a->security & ENC_FIELD) - (int)(a->security & ENC_FIELD))
+		* sort_direction;
+
+	return result;
+}
+
+static int sort_auth(
+	struct AP_info const * const a,
+	struct AP_info const * const b,
+	int const sort_direction)
+{
+	int const result =
+		((int)(a->security & AUTH_FIELD) - (int)(a->security & AUTH_FIELD))
+		* sort_direction;
+
+	return result;
+}
+
+static int sort_essid(
+	struct AP_info const * const a,
+	struct AP_info const * const b,
+	int const sort_direction)
+{
+	int const result =
+		strncasecmp((char *)a->essid, (char *)b->essid, ESSID_LENGTH)
+		* sort_direction;
+
+	return result;
+}
+
+static int sort_default(
+	struct AP_info const * const a,
+	struct AP_info const * const b,
+	int const sort_direction)
+{
+	int const result = a->avg_power - b->avg_power;
+
+	return result;
+}
+
+static int sort_nothing(
+	struct AP_info const * const a,
+	struct AP_info const * const b,
+	int const sort_direction)
+{
+	return 0;
+}
+
+
+static ap_sort_info_st const ap_sort_infos[SORT_MAX] =
+{
+	[SORT_DEFAULT] =
+	{
+		.description = "avg pwr",
+		.ap_sort = sort_default
+	},
+	[SORT_BY_NOTHING] =
+	{
+		.description = "first seen",
+		.ap_sort = sort_nothing
+	},
+	[SORT_BY_BSSID] =
+	{
+		.description = "bssid",
+		.ap_sort = sort_bssid
+	},
+	[SORT_BY_POWER] =
+	{
+		.description = "power level",
+		.ap_sort = sort_power
+	},
+	[SORT_BY_BEACON] =
+	{
+		.description = "beacon number",
+		.ap_sort = sort_beacon
+	},
+	[SORT_BY_DATA] =
+	{
+		.description = "number of data packets",
+		.ap_sort = sort_data
+	},
+	[SORT_BY_PRATE] =
+	{
+		.description = "packet rate",
+		.ap_sort = sort_packet_rate
+	},
+	[SORT_BY_CHAN] =
+	{
+		.description = "channel",
+		.ap_sort = sort_channel
+	},
+	[SORT_BY_MBIT] =
+	{
+		.description = "max data rate",
+		.ap_sort = sort_mbit
+	},
+	[SORT_BY_ENC] =
+	{
+		.description = "encryption",
+		.ap_sort = sort_enc
+	},
+	[SORT_BY_CIPHER] =
+	{
+		.description = "cipher",
+		.ap_sort = sort_cipher
+	},
+	[SORT_BY_AUTH] =
+	{
+		.description = "authentication",
+		.ap_sort = sort_auth
+	},
+	[SORT_BY_ESSID] =
+	{
+		.description = "ESSID",
+		.ap_sort = sort_essid
+	}
+};
+
+static ap_sort_info_st const * sort_method_assign(ap_sort_type_t const sort_method_in)
+{
+	ap_sort_info_st const * sort_info;
+	ap_sort_type_t sort_method = sort_method_in;
+
+	if (sort_method < 0 || sort_method >= SORT_MAX)
+	{
+		sort_method = SORT_DEFAULT;
+	}
+
+	sort_info = &ap_sort_infos[sort_method];
+
+	ALLEGE(sort_info->ap_sort != NULL);
+	ALLEGE(sort_info->description != NULL);
+
+	return sort_info;
+}
+
+static ap_sort_info_st const * sort_method_next(ap_sort_info_st const * current)
+{
+	ALLEGE(current != NULL);
+
+	size_t const current_method_index = current - ap_sort_infos;
+	size_t const next_method_index = current_method_index + 1;
+
+	return sort_method_assign(next_method_index);
+}
+
 static void resetSelection(void)
 {
-	lopt.sort_by = SORT_BY_POWER;
+	lopt.sort_method = sort_method_assign(SORT_BY_POWER);
 	lopt.sort_inv = 1;
 
 	lopt.relative_time = 0;
@@ -480,7 +727,6 @@ static int ap_list_lock_initialise(struct local_options * const options)
 	return initialise_lock(&options->ap_list_lock);
 }
 
-
 static void input_thread(void * arg)
 {
 	UNUSED_PARAM(arg);
@@ -489,6 +735,7 @@ static void input_thread(void * arg)
 	{
 		int keycode = 0;
 		bool next_pause_setting = lopt.do_pause;
+		bool sort_required = false;
 
 		keycode = mygetch();
 
@@ -523,80 +770,11 @@ static void input_thread(void * arg)
 
 		if (keycode == KEY_s)
 		{
-			lopt.sort_by++;
-
-			if (lopt.sort_by > MAX_SORT)
-			{
-				lopt.sort_by = 0;
-			}
-
-			switch (lopt.sort_by)
-			{
-				case SORT_BY_NOTHING:
-					snprintf(lopt.message,
-							 sizeof(lopt.message),
-							 "][ sorting by first seen");
-					break;
-				case SORT_BY_BSSID:
-					snprintf(lopt.message,
-							 sizeof(lopt.message),
-							 "][ sorting by bssid");
-					break;
-				case SORT_BY_POWER:
-					snprintf(lopt.message,
-							 sizeof(lopt.message),
-							 "][ sorting by power level");
-					break;
-				case SORT_BY_BEACON:
-					snprintf(lopt.message,
-							 sizeof(lopt.message),
-							 "][ sorting by beacon number");
-					break;
-				case SORT_BY_DATA:
-					snprintf(lopt.message,
-							 sizeof(lopt.message),
-							 "][ sorting by number of data packets");
-					break;
-				case SORT_BY_PRATE:
-					snprintf(lopt.message,
-							 sizeof(lopt.message),
-							 "][ sorting by packet rate");
-					break;
-				case SORT_BY_CHAN:
-					snprintf(lopt.message,
-							 sizeof(lopt.message),
-							 "][ sorting by channel");
-					break;
-				case SORT_BY_MBIT:
-					snprintf(lopt.message,
-							 sizeof(lopt.message),
-							 "][ sorting by max data rate");
-					break;
-				case SORT_BY_ENC:
-					snprintf(lopt.message,
-							 sizeof(lopt.message),
-							 "][ sorting by encryption");
-					break;
-				case SORT_BY_CIPHER:
-					snprintf(lopt.message,
-							 sizeof(lopt.message),
-							 "][ sorting by cipher");
-					break;
-				case SORT_BY_AUTH:
-					snprintf(lopt.message,
-							 sizeof(lopt.message),
-							 "][ sorting by authentication");
-					break;
-				case SORT_BY_ESSID:
-					snprintf(lopt.message,
-							 sizeof(lopt.message),
-							 "][ sorting by ESSID");
-					break;
-				default:
-					break;
-			}
-
-			dump_sort();
+			lopt.sort_method = sort_method_next(lopt.sort_method);
+			snprintf(lopt.message,
+					 sizeof(lopt.message),
+					 "][ sorting by %s", lopt.sort_method->description);
+			sort_required = true;
 		}
 
 		if (keycode == KEY_SPACE)
@@ -676,18 +854,18 @@ static void input_thread(void * arg)
 		{
 			if (lopt.p_selected_ap == NULL)
 			{
-				lopt.p_selected_ap = TAILQ_LAST(&lopt.ap_list, ap_list_head);
 				lopt.en_selection_direction = selection_direction_down;
+				lopt.p_selected_ap = TAILQ_LAST(&lopt.ap_list, ap_list_head);
+				lopt.sort_method = sort_method_assign(SORT_BY_NOTHING);
 				snprintf(lopt.message,
 						 sizeof(lopt.message),
 						 "][ enabled AP selection");
-				lopt.sort_by = SORT_BY_NOTHING;
 			}
 			else
 			{
 				lopt.en_selection_direction = selection_direction_no;
 				lopt.p_selected_ap = NULL;
-				lopt.sort_by = SORT_BY_NOTHING;
+				lopt.sort_method = sort_method_assign(SORT_BY_NOTHING);
 				snprintf(lopt.message,
 						 sizeof(lopt.message),
 						 "][ disabled selection");
@@ -746,7 +924,7 @@ static void input_thread(void * arg)
 			&& !lopt.do_pause 
 			&& !opt.output_format_wifi_scanner)
 		{
-			if (lopt.do_sort_always)
+			if (sort_required || lopt.do_sort_always)
 			{
 				dump_sort();
 			}
@@ -3356,13 +3534,16 @@ write_packet:
 	write_cap_file(opt.f_cap, h80211, caplen, ri->ri_power);
 }
 
-static void sort_aps(struct local_options * const options)
+static void sort_aps(
+    struct local_options * const options,
+    ap_sort_info_st const * const sort_info)
 {
     time_t tt = time(NULL);
 	struct ap_list_head sorted_list = TAILQ_HEAD_INITIALIZER(sorted_list);
 
     /* Sort the aps by WHATEVER first, */
-    /* Can't 'sort' be used to sort these entries? */
+    /* Can't 'sort' (or something better) be used to sort these 
+       entries?*/
 
 	while (TAILQ_FIRST(&options->ap_list) != NULL)
     {
@@ -3382,20 +3563,6 @@ static void sort_aps(struct local_options * const options)
         {
 			ap_min = TAILQ_FIRST(&options->ap_list);
 
-/* 
-#define SORT_BY_BSSID	1
-#define SORT_BY_POWER	2
-#define SORT_BY_BEACON	3
-#define SORT_BY_DATA	4
-#define SORT_BY_PRATE	6
-#define SORT_BY_CHAN	7
-#define	SORT_BY_MBIT	8
-#define SORT_BY_ENC	9
-#define SORT_BY_CIPHER	10
-#define SORT_BY_AUTH	11
-#define SORT_BY_ESSID	12
-*/
-
 			TAILQ_FOREACH(ap_cur, &options->ap_list, entry)
 			{
 				if (ap_min == ap_cur)
@@ -3403,80 +3570,9 @@ static void sort_aps(struct local_options * const options)
 					/* There's no point in comparing an entry with itself. */
 					continue;
 				}
-
-				switch (options->sort_by)
+				if (sort_info->ap_sort(ap_cur, ap_min, options->sort_inv) < 0)
 				{
-					case SORT_BY_BSSID:
-						if (MAC_ADDRESS_COMPARE(&ap_cur->bssid, &ap_min->bssid)
-							* options->sort_inv
-							< 0)
-							ap_min = ap_cur;
-						break;
-					case SORT_BY_POWER:
-						if ((ap_cur->avg_power - ap_min->avg_power)
-							* options->sort_inv
-							< 0)
-							ap_min = ap_cur;
-						break;
-					case SORT_BY_BEACON:
-						if ((ap_cur->nb_bcn < ap_min->nb_bcn) && options->sort_inv)
-							ap_min = ap_cur;
-						break;
-					case SORT_BY_DATA:
-						if ((ap_cur->nb_data < ap_min->nb_data)
-							&& options->sort_inv)
-							ap_min = ap_cur;
-						break;
-					case SORT_BY_PRATE:
-						if ((ap_cur->nb_dataps - ap_min->nb_dataps)
-							* options->sort_inv
-							< 0)
-							ap_min = ap_cur;
-						break;
-					case SORT_BY_CHAN:
-						if ((ap_cur->channel - ap_min->channel) * options->sort_inv
-							< 0)
-							ap_min = ap_cur;
-						break;
-					case SORT_BY_MBIT:
-						if ((ap_cur->max_speed - ap_min->max_speed)
-							* options->sort_inv
-							< 0)
-							ap_min = ap_cur;
-						break;
-					case SORT_BY_ENC:
-						if (((int)(ap_cur->security & STD_FIELD)
-							 - (int)(ap_min->security & STD_FIELD))
-							* options->sort_inv
-							< 0)
-							ap_min = ap_cur;
-						break;
-					case SORT_BY_CIPHER:
-						if (((int)(ap_cur->security & ENC_FIELD)
-							 - (int)(ap_min->security & ENC_FIELD))
-							* options->sort_inv
-							< 0)
-							ap_min = ap_cur;
-						break;
-					case SORT_BY_AUTH:
-						if (((int)(ap_cur->security & AUTH_FIELD)
-							 - (int)(ap_min->security & AUTH_FIELD))
-							* options->sort_inv
-							< 0)
-							ap_min = ap_cur;
-						break;
-					case SORT_BY_ESSID:
-						if ((strncasecmp((char *)ap_cur->essid,
-										 (char *)ap_min->essid,
-										 ESSID_LENGTH))
-							* options->sort_inv
-							< 0)
-							ap_min = ap_cur;
-						break;
-					default: // sort by power
-						if (ap_cur->avg_power < ap_min->avg_power)
-							ap_min = ap_cur;
-						break;
+					ap_min = ap_cur;
 				}
 			}
         }
@@ -3515,6 +3611,7 @@ static void sort_stas(struct local_options * const options)
         {
 			st_min = TAILQ_FIRST(&options->sta_list); 
 
+            /* STAs are always sorted by power. */ 
 			TAILQ_FOREACH(st_cur, &options->sta_list, entry)
             {
 				if (st_min == st_cur)
@@ -3544,7 +3641,7 @@ static void dump_sort(void)
 {
 	ap_list_lock_acquire(&lopt);
 
-	sort_aps(&lopt);
+	sort_aps(&lopt, lopt.sort_method);
     sort_stas(&lopt);
 
 	ap_list_lock_release(&lopt);
@@ -7795,10 +7892,7 @@ int main(int argc, char * argv[])
 
 		if (time(NULL) - tt2 > 5)
 		{
-			if (lopt.sort_by != SORT_BY_NOTHING)
-			{
-				dump_sort();
-			}
+            dump_sort();
 
 			/* update the battery state */
 			tt2 = time(NULL);

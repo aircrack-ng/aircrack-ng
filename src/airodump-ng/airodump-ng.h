@@ -88,19 +88,23 @@
 #define QLT_TIME 5
 #define QLT_COUNT 25
 
-#define SORT_BY_NOTHING 0
-#define SORT_BY_BSSID 1
-#define SORT_BY_POWER 2
-#define SORT_BY_BEACON 3
-#define SORT_BY_DATA 4
-#define SORT_BY_PRATE 5
-#define SORT_BY_CHAN 6
-#define SORT_BY_MBIT 7
-#define SORT_BY_ENC 8
-#define SORT_BY_CIPHER 9
-#define SORT_BY_AUTH 10
-#define SORT_BY_ESSID 11
-#define MAX_SORT 11
+typedef enum ap_sort_type_t
+{
+	SORT_DEFAULT,
+	SORT_BY_NOTHING,
+    SORT_BY_BSSID,
+    SORT_BY_POWER,
+    SORT_BY_BEACON,
+    SORT_BY_DATA,
+    SORT_BY_PRATE,
+    SORT_BY_CHAN,
+    SORT_BY_MBIT,
+    SORT_BY_ENC,
+    SORT_BY_CIPHER,
+    SORT_BY_AUTH,
+    SORT_BY_ESSID,
+    SORT_MAX
+} ap_sort_type_t;
 
 #define RATES "\x01\x04\x02\x04\x0B\x16\x32\x08\x0C\x12\x18\x24\x30\x48\x60\x6C"
 
