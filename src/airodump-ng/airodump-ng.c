@@ -1227,12 +1227,22 @@ static void aps_purge_old_packets(
 }
 
 static int
-list_add_packet(struct pkt_list_head * const pkt_list, int const length, unsigned char * packet)
+list_add_packet(
+	struct pkt_list_head * const pkt_list, 
+	int const length, 
+	unsigned char * packet)
 {
 	struct pkt_buf * new_pkt_buf;
 
-	if (length <= 0) return 1;
-	if (packet == NULL) return 1;
+	if (length <= 0)
+	{
+		return 1;
+	}
+
+	if (packet == NULL)
+	{
+		return 1;
+	}
 
     new_pkt_buf = calloc(1, sizeof *new_pkt_buf);
     if (new_pkt_buf == NULL)
@@ -1368,6 +1378,35 @@ static int remove_namac(mac_address const * const mac)
 	na_info_free(na_cur);
 
 	return 0;
+}
+
+static struct NA_info * na_info_new(mac_address const * const mac)
+{
+	struct NA_info * na_cur = calloc(1, sizeof *na_cur);
+
+	if (na_cur == NULL)
+	{
+		perror("calloc failed");
+		goto done;
+	}
+
+	MAC_ADDRESS_COPY(&na_cur->namac, mac);
+
+	gettimeofday(&na_cur->tv, NULL);
+	na_cur->tinit = time(NULL);
+	na_cur->tlast = time(NULL);
+
+	na_cur->power = -1;
+	na_cur->channel = -1;
+	na_cur->ack = 0;
+	na_cur->ack_old = 0;
+	na_cur->ackps = 0;
+	na_cur->cts = 0;
+	na_cur->rts_r = 0;
+	na_cur->rts_t = 0;
+
+done:
+	return na_cur;
 }
 
 static struct AP_info * ap_info_lookup(
@@ -1569,15 +1608,55 @@ done:
 	return st_cur;
 }
 
+static void write_cap_file(
+	FILE * fp, 
+	uint8_t const * const h80211, 
+	size_t const caplen,
+	int32_t const ri_power)
+{
+	struct pcap_pkthdr pkh;
+	struct timeval tv; 
+
+	if (fp == NULL || caplen < 10)
+	{
+		goto done;
+	}
+
+	gettimeofday(&tv, NULL);
+
+	pkh.len = pkh.caplen = caplen;
+	pkh.tv_sec = (int32_t)tv.tv_sec;
+	pkh.tv_usec = (int32_t)((tv.tv_usec & ~0x1ff) + ri_power + 64);
+
+	/* Write the header. */
+	if (fwrite(&pkh, 1, sizeof(pkh), fp) != sizeof(pkh))
+	{
+		perror("fwrite(packet header) failed");
+		goto done;
+	}
+
+	/* Now write the data. */
+	if (fwrite(h80211, 1, caplen, fp) != caplen)
+	{
+		perror("fwrite(packet data) failed");
+		goto done;
+	}
+
+	fflush(fp);
+
+done:
+	return;
+}
+
 // NOTE(jbenden): This is also in ivstools.c
-static int dump_add_packet(
+static void dump_add_packet(
 	unsigned char * h80211,
 	size_t const caplen,
 	struct rx_info * ri,
 	int cardnum)
 {
 	REQUIRE(h80211 != NULL);
-
+	uint8_t const * const data_end = h80211 + caplen;
 	int seq, msd, offset, clen, o;
 	size_t i;
 	size_t n;
@@ -1585,8 +1664,6 @@ static int dump_add_packet(
 	unsigned z;
 	int type, length, numuni = 0;
 	size_t numauth = 0;
-	struct pcap_pkthdr pkh;
-	struct timeval tv;
 	struct ivs2_pkthdr ivs2;
 	unsigned char *p, *org_p, c;
     mac_address bssid;
@@ -1606,11 +1683,11 @@ static int dump_add_packet(
 	/* skip all non probe response frames in active scanning simulation mode */
 	if (lopt.active_scan_sim > 0 && h80211[0] != 0x50)
 	{
-		return (0);
+		return;
 	}
 
 	/* Skip packets smaller than a 802.11 header. */
-	if (caplen < (int)sizeof(struct ieee80211_frame))
+	if (caplen < sizeof(struct ieee80211_frame))
 	{
 		goto write_packet;
 	}
@@ -1618,13 +1695,18 @@ static int dump_add_packet(
 	/* skip (uninteresting) control frames */
 
 	if ((h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_CTL)
+	{
 		goto write_packet;
+	}
 
 	/* if it's a LLC null packet, just forget it (may change in the future) */
 
 	if (caplen > 28)
 	{
-		if (memcmp(h80211 + 24, llcnull, 4) == 0) return (0);
+		if (memcmp(h80211 + 24, llcnull, sizeof llcnull) == 0)
+		{
+			return;
+		}
 	}
 
 	/* grab the sequence number */
@@ -1656,14 +1738,14 @@ static int dump_add_packet(
 		{
 			if (is_filtered_netmask(&bssid))
 			{
-				return (1);
+				return;
 			}
 		}
 		else
 		{
 			if (!MAC_ADDRESS_EQUAL(&opt.f_bssid, &bssid))
 			{
-				return (1);
+				return;
 			}
 		}
 	}
@@ -1677,7 +1759,7 @@ static int dump_add_packet(
 		ap_cur = ap_info_new(&bssid);
 		if (ap_cur == NULL)
 		{
-			return (1);
+			return;
 		}
 
 		TAILQ_INSERT_TAIL(&lopt.ap_list, ap_cur, entry);
@@ -1806,6 +1888,7 @@ static int dump_add_packet(
 			goto skip_station;
 
 		default:
+			/* Can't happen. All possible cases have been checked. */
 			abort();
 	}
 
@@ -1819,7 +1902,7 @@ static int dump_add_packet(
 		st_cur = st_info_new(&stmac);
         if (st_cur == NULL)
 		{
-			return (1);
+			return;
 		}
 
 		TAILQ_INSERT_TAIL(&lopt.sta_list, st_cur, entry);
@@ -1880,7 +1963,10 @@ static int dump_add_packet(
 		if (st_cur->lastseq != 0)
 		{
 			msd = seq - st_cur->lastseq - 1;
-			if (msd > 0 && msd < 1000) st_cur->missed += msd;
+			if (msd > 0 && msd < 1000)
+			{
+				st_cur->missed += msd;
+			}
 		}
 		st_cur->lastseq = (uint16_t) seq;
 
@@ -1903,9 +1989,12 @@ skip_station:
 	{
 		p = h80211 + 24;
 
-		while (p < h80211 + caplen)
+		while (p < data_end)
 		{
-			if (p + 2 + p[1] > h80211 + caplen) break;
+			if (p + 2 + p[1] > data_end)
+			{
+				break;
+			}
 
 			if (p[0] == 0x00 && p[1] > 0 && p[2] != '\0'
 				&& (p[1] > 1 || p[2] != ' '))
@@ -1971,9 +2060,12 @@ skip_probe:
 
 		p = h80211 + 36;
 
-		while (p < h80211 + caplen)
+		while (p < data_end)
 		{
-			if (p + 2 + p[1] > h80211 + caplen) break;
+			if (p + 2 + p[1] > data_end)
+			{
+				break;
+			}
 
 			// only update the essid length if the new length is > the old one
 			if (p[0] == 0x00 && (ap_cur->ssid_length < p[1]))
@@ -2005,7 +2097,7 @@ skip_probe:
                     if (fwrite(&ivs2, 1, sizeof ivs2, opt.f_ivs) != sizeof ivs2)
 					{
 						perror("fwrite(IV header) failed");
-						return (1);
+						return;
 					}
 
 					/* write BSSID */
@@ -2015,7 +2107,7 @@ skip_probe:
                             != sizeof ap_cur->bssid)
 						{
 							perror("fwrite(IV bssid) failed");
-							return (1);
+							return;
 						}
 					}
 
@@ -2027,15 +2119,19 @@ skip_probe:
 						!= (size_t) ap_cur->ssid_length)
 					{
 						perror("fwrite(IV essid) failed");
-						return (1);
+						return;
 					}
 
 					ap_cur->essid_stored = 1;
 				}
 
 				if (verifyssid(ap_cur->essid) == 0)
+				{
 					for (i = 0; i < n; i++)
+					{
 						if (ap_cur->essid[i] < 32) ap_cur->essid[i] = '.';
+					}
+				}
 			}
 
 			/* get the maximum speed in Mb and the AP's channel */
@@ -2043,7 +2139,9 @@ skip_probe:
 			if (p[0] == 0x01 || p[0] == 0x32)
 			{
 				if (ap_cur->max_speed < (p[1 + p[1]] & 0x7F) / 2)
+				{
 					ap_cur->max_speed = (p[1 + p[1]] & 0x7F) / 2;
+				}
 			}
 
 			if (p[0] == 0x03)
@@ -2054,7 +2152,7 @@ skip_probe:
 			{
 				if (ap_cur->standard[0] == '\0')
 				{
-					ap_cur->standard[0] = 'n';
+					strlcpy(ap_cur->standard, "n", sizeof ap_cur->standard);
 				}
 
 				/* also get the channel from ht information->primary channel */
@@ -2120,7 +2218,7 @@ skip_probe:
 			{
 				if (ap_cur->standard[0] == '\0')
 				{
-					ap_cur->standard[0] = 'n';
+					strlcpy(ap_cur->standard, "n", sizeof ap_cur->standard);
 				}
 
 				// Short GI for 20/40MHz
@@ -2141,11 +2239,12 @@ skip_probe:
 				 */
 				if (ap_cur->n_channel.mcs_index == -1)
 				{
-					uint32_t rx_mcs_bitmask = 0;
-					memcpy(&rx_mcs_bitmask, p + 5, sizeof(uint32_t));
+					uint32_t rx_mcs_bitmask;
+
+					memcpy(&rx_mcs_bitmask, p + 5, sizeof(rx_mcs_bitmask));
 					while (rx_mcs_bitmask)
 					{
-						++(ap_cur->n_channel.mcs_index);
+						++ap_cur->n_channel.mcs_index;
 						rx_mcs_bitmask /= 2;
 					}
 				}
@@ -2155,24 +2254,31 @@ skip_probe:
 			if (p[0] == 0xbf && p[1] >= 12)
 			{
 				// Standard is AC
-				strcpy(ap_cur->standard, "ac");
+				strlcpy(ap_cur->standard, "ac", sizeof ap_cur->standard);
 
 				ap_cur->ac_channel.split_chan = (uint8_t)((p[3] / 4) % 4);
 
 				ap_cur->ac_channel.short_gi_80 = (uint8_t)((p[3] / 32) % 2);
 				ap_cur->ac_channel.short_gi_160 = (uint8_t)((p[3] / 64) % 2);
 
+				/* XXX - How can this result ever be anything other than 0. 
+				 * 0b11000 % 2 == 0 doesn't it? 
+				 */
 				ap_cur->ac_channel.mu_mimo = (uint8_t)((p[4] & 0b11000) % 2);
 
 				// A few things indicate Wave 2: MU-MIMO, 80+80 Channels
+				/* FIXME - is use of the || logical operator really what is 
+				 * wanted? Why the % 2 at the end if the result of the || is 
+				 * only ever 0 or 1? 
+				 */
 				ap_cur->ac_channel.wave_2
 					= (uint8_t)((ap_cur->ac_channel.mu_mimo
 								 || ap_cur->ac_channel.split_chan)
 								% 2);
 
 				// Maximum rates (16 bit)
-				uint16_t tx_mcs = 0;
-				memcpy(&tx_mcs, p + 10, sizeof(uint16_t));
+				uint16_t tx_mcs;
+				memcpy(&tx_mcs, p + 10, sizeof(tx_mcs)); /* XXX - endianness? */
 
 				// Maximum of 8 SS, each uses 2 bits
 				for (uint8_t stream_idx = 0; stream_idx < MAX_AC_MCS_INDEX;
@@ -2212,7 +2318,7 @@ skip_probe:
 			if (p[0] == 0xc0 && p[1] >= 3)
 			{
 				// Standard is AC
-				strcpy(ap_cur->standard, "ac");
+				strlcpy(ap_cur->standard, "ac", sizeof ap_cur->standard);
 
 				// Channel width
 				switch (p[2])
@@ -2246,7 +2352,7 @@ skip_probe:
 		}
 
 		// Now get max rate
-		if (ap_cur->standard[0] == 'n' || strcmp(ap_cur->standard, "ac") == 0)
+		if (strcmp(ap_cur->standard, "n") == 0 || strcmp(ap_cur->standard, "ac") == 0)
 		{
 			int sgi = 0;
 			int width = 0;
@@ -2279,18 +2385,22 @@ skip_probe:
 			{
 				// In case of ac, get the amount of spatial streams
 				int amount_ss = 1;
-				if (ap_cur->standard[0] != 'n')
+
+				if (strcmp(ap_cur->standard, "n") != 0)
 				{
 					for (amount_ss = 0;
 						 amount_ss < MAX_AC_MCS_INDEX
 						 && ap_cur->ac_channel.mcs_index[amount_ss] != 0;
 						 ++amount_ss)
+					{
+						/* Do nothing. */
 						;
+					}
 				}
 
 				// Get rate
 				float max_rate
-					= (ap_cur->standard[0] == 'n')
+					= (strcmp(ap_cur->standard, "n") == 0)
 						  ? get_80211n_rate(
 								width, sgi, ap_cur->n_channel.mcs_index)
 						  : get_80211ac_rate(
@@ -2316,18 +2426,15 @@ skip_probe:
 	{
 		p = h80211 + 36; // ignore hdr + fixed params
 
-		while (p < h80211 + caplen)
+		while (p < data_end)
 		{
-			type = p[0];
-			length = p[1];
-			if (p + 2 + length > h80211 + caplen)
+			if (p + 2 + p[1] > data_end)
 			{
-				/*                printf("error parsing tags! %p vs. %p (tag:
-				%i, length: %i,position: %i)\n", (p+2+length), (h80211+caplen),
-				type, length, (p-h80211));
-				exit(1);*/
 				break;
 			}
+
+			type = p[0];
+			length = p[1]; 
 
 			// Find WPA and RSN tags
 			if ((type == 0xDD && (length >= 8)
@@ -2359,11 +2466,17 @@ skip_probe:
 				}
 
 				// Number of pairwise cipher suites
-				if (p + 9 + offset > h80211 + caplen) break;
+				if (p + 9 + offset > data_end)
+				{
+					break;
+				}
 				numuni = p[8 + offset] + (p[9 + offset] << 8);
 
 				// Number of Authentication Key Managament suites
-				if (p + (11 + offset) + 4 * numuni > h80211 + caplen) break;
+				if (p + (11 + offset) + 4 * numuni > data_end)
+				{
+					break;
+				}
 				numauth = p[(10 + offset) + 4 * numuni]
 						  + (p[(11 + offset) + 4 * numuni] << 8);
 
@@ -2371,14 +2484,17 @@ skip_probe:
 
 				if (type != 0x30)
 				{
-					if (p + (4 * numuni) + (2 + 4 * numauth) > h80211 + caplen)
+					if (p + (4 * numuni) + (2 + 4 * numauth) > data_end)
+					{
 						break;
+					}
 				}
 				else
 				{
-					if (p + (4 * numuni) + (2 + 4 * numauth) + 2
-						> h80211 + caplen)
+					if (p + (4 * numuni) + (2 + 4 * numauth) + 2 > data_end)
+					{
 						break;
+					}
 				}
 
 				// Get the list of cipher suites
@@ -2549,9 +2665,12 @@ skip_probe:
 	{
 		p = h80211 + 28;
 
-		while (p < h80211 + caplen)
+		while (p < data_end)
 		{
-			if (p + 2 + p[1] > h80211 + caplen) break;
+			if (p + 2 + p[1] > data_end)
+			{
+				break;
+			}
 
 			if (p[0] == 0x00 && p[1] > 0 && p[2] != '\0'
 				&& (p[1] > 1 || p[2] != ' '))
@@ -2580,7 +2699,7 @@ skip_probe:
                     if (fwrite(&ivs2, 1, sizeof ivs2, opt.f_ivs) != sizeof ivs2)
 					{
 						perror("fwrite(IV header) failed");
-						return (1);
+						return;
 					}
 
 					/* write BSSID */
@@ -2590,7 +2709,7 @@ skip_probe:
                             != sizeof ap_cur->bssid)
 						{
 							perror("fwrite(IV bssid) failed");
-							return (1);
+							return;
 						}
 					}
 
@@ -2602,7 +2721,7 @@ skip_probe:
 						!= (size_t) ap_cur->ssid_length)
 					{
 						perror("fwrite(IV essid) failed");
-						return (1);
+						return;
 					}
 
 					ap_cur->essid_stored = 1;
@@ -2689,7 +2808,7 @@ skip_probe:
 			}
 		}
 
-		if (z + 26 > (unsigned)caplen)
+		if (z + 26 > caplen)
 		{
 			goto write_packet;
 		}
@@ -2740,7 +2859,7 @@ skip_probe:
 			}
 		}
 
-		if (z + 10 > (unsigned)caplen)
+		if (z + 10 > caplen)
 		{
 			goto write_packet;
 		}
@@ -2816,7 +2935,7 @@ skip_probe:
                     if (fwrite(&ivs2, 1, sizeof ivs2, opt.f_ivs) != sizeof ivs2)
 					{
 						perror("fwrite(IV header) failed");
-						return (EXIT_FAILURE);
+						return;
 					}
 
 					if (ivs2.flags & IVS2_BSSID)
@@ -2825,7 +2944,7 @@ skip_probe:
                             != sizeof ap_cur->bssid)
 						{
 							perror("fwrite(IV bssid) failed");
-							return (1);
+							return;
 						}
                         ivs2.len -= sizeof ap_cur->bssid;
 					}
@@ -2833,7 +2952,7 @@ skip_probe:
 					if (fwrite(h80211 + z, 1, 4, opt.f_ivs) != (size_t) 4)
 					{
 						perror("fwrite(IV iv+idx) failed");
-						return (EXIT_FAILURE);
+						return;
 					}
 					ivs2.len -= 4;
 
@@ -2841,7 +2960,7 @@ skip_probe:
 						!= (size_t) ivs2.len)
 					{
 						perror("fwrite(IV keystream) failed");
-						return (EXIT_FAILURE);
+						return;
 					}
 				}
 
@@ -2890,7 +3009,7 @@ skip_probe:
 		/* Check if 802.11e (QoS) */
 		if ((h80211[0] & 0x80) == 0x80) z += 2;
 
-		if (z + 26 > (unsigned)caplen)
+		if (z + 26 > caplen)
 		{
 			goto write_packet;
 		}
@@ -2951,7 +3070,7 @@ skip_probe:
 
 			/* frame 2 or 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1 */
 
-			if (z + 17 + 32 > (unsigned)caplen)
+			if (z + 17 + 32 > caplen)
 			{
 				goto write_packet;
 			}
@@ -3057,7 +3176,7 @@ skip_probe:
                     if (fwrite(&ivs2, 1, sizeof ivs2, opt.f_ivs) != sizeof ivs2)
 					{
 						perror("fwrite(IV header) failed");
-						return (EXIT_FAILURE);
+						return;
 					}
 
 					if (ivs2.flags & IVS2_BSSID)
@@ -3066,7 +3185,7 @@ skip_probe:
                             != sizeof ap_cur->bssid)
 						{
 							perror("fwrite(IV bssid) failed");
-							return (EXIT_FAILURE);
+							return;
 						}
                         ivs2.len -= MAC_ADDRESS_LEN;
 					}
@@ -3078,7 +3197,7 @@ skip_probe:
                         != sizeof st_cur->wpa)
 					{
 						perror("fwrite(IV wpa_hdsk) failed");
-						return (EXIT_FAILURE);
+						return;
 					}
 				}
 			}
@@ -3092,9 +3211,13 @@ write_packet:
 		if (h80211[0] == 0x80 && lopt.one_beacon)
 		{
 			if (!ap_cur->beacon_logged)
+			{
 				ap_cur->beacon_logged = 1;
+			}
 			else
-				return (0);
+			{
+				return;
+			}
 		}
 	}
 
@@ -3103,7 +3226,7 @@ write_packet:
 		if (((h80211[0] & 0x0C) == 0x00) && ((h80211[0] & 0xF0) == 0xB0))
 		{
 			/* authentication packet */
-			check_shared_key(h80211, (size_t) caplen);
+			check_shared_key(h80211, caplen);
 		}
 	}
 
@@ -3112,12 +3235,12 @@ write_packet:
 		if (ap_cur->security != 0 && lopt.f_encrypt != 0
 			&& ((ap_cur->security & lopt.f_encrypt) == 0))
 		{
-			return (1);
+			return;
 		}
 
 		if (is_filtered_essid(ap_cur->essid))
 		{
-			return (1);
+			return;
 		}
 	}
 
@@ -3134,7 +3257,7 @@ write_packet:
 		if (h80211[0] & 0x04)
 		{
 			p = h80211 + 4;
-			while (p <= h80211 + 16 && p <= h80211 + caplen)
+			while (p <= h80211 + 16 && (p + sizeof namac) <= data_end)
 			{
 				MAC_ADDRESS_COPY(&namac, (mac_address *)p);
 
@@ -3177,34 +3300,17 @@ write_packet:
 				 */
 				struct NA_info * na_cur;
 
+				/* Update the chained list of unknown stations. */
 				na_cur = na_info_lookup(&lopt.na_list, &namac);
 
-				/* update our chained list of unknown stations */
-				/* if it's a new mac, add it */
-
+				/* If it's a new mac, add it */
 				if (na_cur == NULL)
 				{
-                    na_cur = calloc(1, sizeof *na_cur);
+					na_cur = na_info_new(&namac);
 					if (na_cur == NULL)
 					{
-						perror("calloc failed");
-						return 1;
+						return;
 					}
-
-                    MAC_ADDRESS_COPY(&na_cur->namac, &namac);
-
-					gettimeofday(&na_cur->tv, NULL);
-					na_cur->tinit = time(NULL);
-					na_cur->tlast = time(NULL);
-
-					na_cur->power = -1;
-					na_cur->channel = -1;
-					na_cur->ack = 0;
-					na_cur->ack_old = 0;
-					na_cur->ackps = 0;
-					na_cur->cts = 0;
-					na_cur->rts_r = 0;
-					na_cur->rts_t = 0;
 
 					TAILQ_INSERT_TAIL(&lopt.na_list, na_cur, entry);
                 }
@@ -3241,37 +3347,7 @@ write_packet:
 		}
 	}
 
-	if (opt.f_cap != NULL && caplen >= 10)
-	{
-		pkh.len = pkh.caplen = (uint32_t) caplen;
-
-		gettimeofday(&tv, NULL);
-
-		pkh.tv_sec = (int32_t) tv.tv_sec;
-		pkh.tv_usec = (int32_t)((tv.tv_usec & ~0x1ff) + ri->ri_power + 64);
-
-		n = sizeof(pkh);
-
-		if (fwrite(&pkh, 1, n, opt.f_cap) != (size_t) n)
-		{
-			perror("fwrite(packet header) failed");
-			return (1);
-		}
-
-        fflush(opt.f_cap);
-
-		n = pkh.caplen;
-
-		if (fwrite(h80211, 1, n, opt.f_cap) != (size_t) n)
-		{
-			perror("fwrite(packet data) failed");
-			return (1);
-		}
-
-        fflush(opt.f_cap);
-	}
-
-	return (0);
+	write_cap_file(opt.f_cap, h80211, caplen, ri->ri_power);
 }
 
 static void sort_aps(struct local_options * const options)
@@ -3974,7 +4050,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 			len = strlen(strbuf);
 
-			if (ap_cur->standard[0])
+			if (ap_cur->standard[0] != '\0')
 			{
 				// In case of 802.11n or 802.11ac, QoS is pretty much implied
 				// Short or long preamble is not that useful anymore.
