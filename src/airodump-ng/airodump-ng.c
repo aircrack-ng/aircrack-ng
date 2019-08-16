@@ -131,6 +131,7 @@ static const char * OUI_PATHS[]
 	   NULL};
 
 static int read_pkts = 0;
+
 enum
 {
     channel_list_sentinel = 0
@@ -344,6 +345,7 @@ static struct local_options
     int file_reset_seconds;
 
 	struct dump_context_st * wifi_dump_context; 
+	bool should_update_stdout; 
 
 } lopt;
 
@@ -923,7 +925,7 @@ static void input_thread(void * arg)
 
 		if (lopt.do_exit == 0 
 			&& !lopt.do_pause 
-			&& !opt.output_format_wifi_scanner)
+			&& lopt.should_update_stdout)
 		{
 			if (sort_required || lopt.do_sort_always)
 			{
@@ -3889,7 +3891,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	if (lopt.gps_loc[0] || opt.usegpsd)
 	{
 		// If using GPS then check if we have a valid fix or not and report accordingly
-		if (lopt.gps_loc[0] != 0) //-V550
+		if (lopt.gps_loc[0] != '\0') //-V550
 		{
 			struct tm * gtime = &lopt.gps_time;
 			snprintf(buffer,
@@ -5025,7 +5027,7 @@ static void * gps_tracker_thread(void * arg)
             /* FIXME: Why does output_format_wifi_scanner need to be 
              * checked? 
              */
-            if (opt.record_data && !opt.output_format_wifi_scanner)
+            if (opt.record_data)
 			{
 				fputs(line, opt.f_gps);
 			}
@@ -5290,31 +5292,49 @@ done:
     return;
 }
 
-static void update_window_size(struct winsize * const ws)
+static void update_window_size(
+	struct local_options const * const options,
+    struct winsize * const ws)
 {
-    if (ioctl(0, TIOCGWINSZ, ws) < 0)
-    {
-        static unsigned short int const default_windows_rows = 25;
-        static unsigned short int const default_windows_cols = 80;
+	if (options->should_update_stdout)
+	{
+        if (ioctl(0, TIOCGWINSZ, ws) < 0)
+        {
+            static unsigned short int const default_windows_rows = 25;
+            static unsigned short int const default_windows_cols = 80;
 
-        ws->ws_row = default_windows_rows;
-        ws->ws_col = default_windows_cols;
-    }
+            ws->ws_row = default_windows_rows;
+            ws->ws_col = default_windows_cols;
+        }
+	}
 }
 
-static void handle_window_changed_event(struct local_options const * const options)
+static void handle_window_changed_event(
+    struct local_options const * const options)
 {
-    if (!opt.output_format_wifi_scanner)
+	if (options->should_update_stdout)
     {
         erase_display(0);
         fflush(stdout);
     }
 }
 
-static void restore_terminal(void)
+static void restore_terminal(struct local_options const * const options)
 {
-	reset_term();
-	show_cursor();
+	if (options->should_update_stdout)
+	{
+		reset_term();
+        show_cursor();
+	}
+}
+
+static void prepare_terminal(struct local_options const * const options)
+{
+	if (options->should_update_stdout)
+	{
+		hide_cursor();
+		erase_display(2);
+	}
 }
 
 static void handle_terminate_event(struct local_options * const options)
@@ -5365,7 +5385,7 @@ static void sighandler(int signum)
 				"Caught signal 11 (SIGSEGV). Please"
 				" contact the author!\n\n");
 		fflush(stdout);
-		restore_terminal();
+		restore_terminal(&lopt);
 		exit(1);
 	}
 }
@@ -6795,6 +6815,42 @@ static void do_quit_request_timeout_check(
 	}
 }
 
+static void pace_packet_reader(
+	struct local_options const * const options,
+	struct timeval * prev_tv,
+	struct pcap_pkthdr const * const pkh,
+	int const read_pkts)
+{
+    /* Control the speed that the packets are read from the file 
+     * to simulate the rate they were captured at. 
+     */
+	if (options->relative_time 
+        && prev_tv->tv_sec != 0
+		&& prev_tv->tv_usec != 0)
+	{
+		struct timeval pkt_tv = {
+			.tv_sec = pkh->tv_sec,
+			.tv_usec = pkh->tv_usec
+		};
+
+		const useconds_t usec_diff
+			= (useconds_t)time_diff(prev_tv, &pkt_tv);
+
+		if (usec_diff > 0)
+		{
+			usleep(usec_diff);
+		}
+	}
+	else if (read_pkts % 10 == 0)
+	{
+		usleep(1);
+	}
+
+    // track the packet's timestamp
+	prev_tv->tv_sec = pkh->tv_sec;
+	prev_tv->tv_usec = pkh->tv_usec;
+}
+
 int main(int argc, char * argv[])
 {
 #define ONE_HOUR (60 * 60)
@@ -6979,6 +7035,7 @@ int main(int argc, char * argv[])
 #ifdef HAVE_PCRE
 	lopt.f_essid_regex = NULL;
 #endif
+	lopt.should_update_stdout = true;
 
 	TAILQ_INIT(&lopt.na_list);
 	TAILQ_INIT(&lopt.ap_list);
@@ -7827,11 +7884,9 @@ int main(int argc, char * argv[])
 		waitpid(-1, NULL, WNOHANG);
 	}
 
-    if (!opt.output_format_wifi_scanner)
-    {
-        hide_cursor();
-        erase_display(2);
-    }
+	lopt.should_update_stdout = !opt.output_format_wifi_scanner;
+
+	prepare_terminal(&lopt);
 
 	start_time = time(NULL);
 	tt1 = time(NULL);
@@ -7868,7 +7923,7 @@ int main(int argc, char * argv[])
 		return (EXIT_FAILURE);
 	}
 
-    update_window_size(&lopt.ws);
+    update_window_size(&lopt, &lopt.ws);
 
 	while (1)
 	{
@@ -7967,33 +8022,9 @@ int main(int argc, char * argv[])
 			read_pkts++;
 
 			static size_t const file_dummy_card_number = 0;
-			dump_add_packet(buffer, caplen, &ri, file_dummy_card_number);
+			dump_add_packet(buffer, caplen, &ri, file_dummy_card_number); 
 
-			if (lopt.relative_time && prev_tv.tv_sec != 0
-				&& prev_tv.tv_usec != 0)
-			{
-				// handle delaying this packet
-				struct timeval pkt_tv = {
-					.tv_sec = pkh.tv_sec,
-					.tv_usec = pkh.tv_usec
-				};
-
-				const useconds_t usec_diff
-					= (useconds_t) time_diff(&prev_tv, &pkt_tv);
-
-				if (usec_diff > 0)
-				{
-                    usleep(usec_diff);
-                }
-			}
-			else if (read_pkts % 10 == 0)
-			{
-				usleep(1);
-            }
-
-			// track the packet's timestamp
-			prev_tv.tv_sec = pkh.tv_sec;
-			prev_tv.tv_usec = pkh.tv_usec;
+			pace_packet_reader(&lopt, &prev_tv, &pkh, read_pkts);
 		}
 		else if (lopt.s_iface != NULL)
 		{
@@ -8023,7 +8054,7 @@ int main(int argc, char * argv[])
 				}
 				perror("select failed");
 
-				restore_terminal();
+				restore_terminal(&lopt);
 
 				return EXIT_FAILURE;
 			}
@@ -8044,7 +8075,7 @@ int main(int argc, char * argv[])
 
 			update_data_packets_per_second();
 
-            update_window_size(&lopt.ws);
+            update_window_size(&lopt, &lopt.ws);
 
             /* XXX - Why continue. Why not read a packet if one is ready? */
 			continue;
@@ -8076,7 +8107,7 @@ int main(int argc, char * argv[])
                         wi[i] = reopen_card(wi[i]);
 						if (wi[i] == NULL)
 						{
-							restore_terminal(); 
+							restore_terminal(&lopt); 
 							exit(EXIT_FAILURE);
 						}
 
@@ -8158,7 +8189,7 @@ int main(int argc, char * argv[])
 
 	oui_list_free(&lopt.manufacturer_list);
 
-	restore_terminal();
+	restore_terminal(&lopt);
 
 	return EXIT_SUCCESS;
 }
