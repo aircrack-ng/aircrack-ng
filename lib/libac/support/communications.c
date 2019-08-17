@@ -969,28 +969,6 @@ int dump_initialize_multi_format(
     opt.prefix = strdup(prefix);
     ALLEGE(opt.prefix != NULL); 
 
-	/* create the output CSV file */
-
-	if (opt.output_format_csv)
-	{
-		snprintf(ofn,
-				 ofn_len,
-				 "%s-%02d.%s",
-				 prefix,
-				 opt.f_index,
-				 AIRODUMP_NG_CSV_EXT);
-
-        opt.f_txt = fopen(ofn, "wb+");
-        if (opt.f_txt == NULL)
-		{
-			perror("fopen failed");
-			fprintf(stderr, "Could not create \"%s\".\n", ofn);
-			free(ofn);
-
-            return (1);
-		}
-	}
-
 	/* create the output for a rolling log CSV file */
 	if (opt.output_format_log_csv)
 	{

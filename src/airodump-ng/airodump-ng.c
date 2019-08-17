@@ -94,6 +94,7 @@
 #include "ap_list.h"
 #include "aircrack-ng/osdep/sta_list.h"
 #include "dump_write_wifi_scanner.h"
+#include "dump_csv.h"
 #include "packet_reader.h"
 
 typedef int (* ap_sort_fn)(
@@ -344,7 +345,8 @@ static struct local_options
     int file_reset_seconds;
 	size_t max_node_age;
 
-	struct dump_context_st * wifi_dump_context; 
+	struct dump_context_st * csv_dump_context;
+	struct dump_context_st * wifi_dump_context;
 	bool should_update_stdout; 
 
 } lopt;
@@ -6833,6 +6835,15 @@ static void ap_list_free(
 	}
 }
 
+#define AIRODUMP_NG_CSV_EXT "csv"
+#define KISMET_CSV_EXT "kismet.csv"
+#define KISMET_NETXML_EXT "kismet.netxml"
+#define WIFI_EXT "wifi"
+#define AIRODUMP_NG_GPS_EXT "gps"
+#define AIRODUMP_NG_CAP_EXT "cap"
+#define AIRODUMP_NG_LOG_CSV_EXT "log.csv"
+
+
 static bool dump_initialise_custom_dump_formats(
 	char const * const prefix,
 	char const * const sys_name,
@@ -6853,10 +6864,29 @@ static bool dump_initialise_custom_dump_formats(
 	ofn = malloc(ofn_len);
 	ALLEGE(ofn != NULL);
 
+	if (opt.output_format_csv)
+	{
+        /* FIXME. Use a */
+		snprintf(
+			ofn, ofn_len, "%s-%02d.%s", prefix, opt.f_index, AIRODUMP_NG_CSV_EXT);
+
+		lopt.csv_dump_context =
+			csv_dump_open(ofn);
+
+		if (lopt.csv_dump_context == NULL)
+		{
+			fprintf(stderr, "Could not create \"%s\".\n", ofn);
+			free(ofn);
+
+			success = false;
+			goto done;
+		}
+	}
+
 	if (opt.output_format_wifi_scanner)
 	{
 		snprintf(
-			ofn, ofn_len, "%s-%02d.%s", prefix, opt.f_index, "wifi");
+			ofn, ofn_len, "%s-%02d.%s", prefix, opt.f_index, WIFI_EXT);
 
 		lopt.wifi_dump_context = 
 			wifi_scanner_dump_open(ofn, 
@@ -6885,11 +6915,12 @@ done:
 
 static void update_output_files(void)
 {
-	if (opt.output_format_csv)
+	if (lopt.csv_dump_context != NULL)
 	{
-		dump_write_csv(&lopt.ap_list,
-					   &lopt.sta_list,
-					   lopt.f_encrypt);
+		lopt.csv_dump_context->dump(lopt.csv_dump_context,
+                                    &lopt.ap_list,
+                                    &lopt.sta_list,
+                                    lopt.f_encrypt);
 	}
 
 	if (lopt.wifi_dump_context != NULL)
@@ -6918,9 +6949,10 @@ static void update_output_files(void)
 
 static void close_output_files(void)
 {
-	if (opt.f_txt != NULL)
+	if (lopt.csv_dump_context != NULL)
 	{
-		fclose(opt.f_txt);
+		lopt.csv_dump_context->close(lopt.csv_dump_context);
+		lopt.csv_dump_context = NULL;
 	}
 
 	if (lopt.wifi_dump_context != NULL)
@@ -7130,8 +7162,6 @@ int main(int argc, char * argv[])
 	opt.record_data = 0;
 	opt.f_cap = NULL;
 	opt.f_ivs = NULL;
-	opt.f_txt = NULL;
-	lopt.wifi_dump_context = NULL;
 	lopt.max_node_age = 0;
 	opt.f_kis = NULL;
 	opt.f_kis_xml = NULL;
@@ -7180,6 +7210,10 @@ int main(int argc, char * argv[])
 	opt.output_format_kismet_netxml = 1;
 	opt.output_format_log_csv = 1;
     opt.output_format_wifi_scanner = 1;
+
+    lopt.wifi_dump_context = NULL; 
+	lopt.csv_dump_context = NULL; 
+
 
 	lopt.gps_valid_interval
 		= 5; // If we dont get a new GPS update in 5 seconds - invalidate it

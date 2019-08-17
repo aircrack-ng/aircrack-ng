@@ -65,6 +65,7 @@ SRC_AV			= %D%/airventriloquist-ng/airventriloquist-ng.c
 SRC_SESSION	= %D%/aircrack-ng/session.c
 SRC_DWRITE	= %D%/airodump-ng/dump_write.c
 SRC_DWRITE_WIFI	= %D%/airodump-ng/dump_write_wifi_scanner.c
+SRC_DWRITE_CSV	= %D%/airodump-ng/dump_csv.c
 SRC_PACKET_READER	= %D%/airodump-ng/packet_reader.c
 
 bin_PROGRAMS += aircrack-ng \
@@ -130,7 +131,7 @@ aireplay_ng_SOURCES	= $(SRC_AR)
 aireplay_ng_CFLAGS	= $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
 aireplay_ng_LDADD		= $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBACCRYPTO_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_LIBS) $(CRYPTO_LIBS)
 
-airodump_ng_SOURCES		= $(SRC_ADU) $(SRC_DWRITE) $(SRC_STRLCPY) $(SRC_DWRITE_WIFI) $(SRC_PACKET_READER)
+airodump_ng_SOURCES		= $(SRC_ADU) $(SRC_DWRITE) $(SRC_STRLCPY) $(SRC_DWRITE_WIFI) $(SRC_PACKET_READER) $(SRC_DWRITE_CSV)
 airodump_ng_CFLAGS		= $(COMMON_CFLAGS) $(PCRE_CFLAGS) $(LIBNL_CFLAGS)
 airodump_ng_CPPFLAGS	= $(AM_CPPFLAGS) -I$(abs_srcdir)/src/airodump-ng
 airodump_ng_LDADD			= $(COMMON_LDADD) $(PCRE_LIBS) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBACCRYPTO_LIBS) $(LIBAIRCRACK_CE_WEP_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_LIBS) $(CRYPTO_LIBS)

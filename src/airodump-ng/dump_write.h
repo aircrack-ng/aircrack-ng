@@ -45,10 +45,6 @@ struct dump_context_st
     void (*close)(struct dump_context_st * dump);
 }; 
 
-int dump_write_csv(struct ap_list_head * const ap_list,
-				   struct sta_list_head * const sta_list,
-				   unsigned int f_encrypt);
-
 int dump_write_airodump_ng_logcsv_add_ap(const struct AP_info * ap_cur,
 										 const int32_t ri_power,
 										 struct tm * tm_gpstime,

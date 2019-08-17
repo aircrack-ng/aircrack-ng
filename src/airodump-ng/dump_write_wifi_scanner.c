@@ -480,3 +480,4 @@ struct dump_context_st * wifi_scanner_dump_open(
 done:
     return dump;
 }
+

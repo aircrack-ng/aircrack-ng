@@ -142,7 +142,6 @@ struct communication_options
 	size_t weplen;
 
 	int f_index; /* outfiles index       */
-	FILE * f_txt; /* output csv file      */
     FILE * f_wifi; /* Wi-Fi monitoring output file. */
     FILE * f_kis; /* output kismet csv file      */
 	FILE * f_kis_xml; /* output kismet netxml file */
