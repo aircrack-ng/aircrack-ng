@@ -100,21 +100,18 @@ int dump_write_airodump_ng_logcsv_add_ap(const struct AP_info * ap_cur,
 	fprintf(opt.f_logcsv, "%s,", ap_cur->essid);
 
 	// BSSID
-	fprintf(opt.f_logcsv,
-			"%02X:%02X:%02X:%02X:%02X:%02X,",
-            ap_cur->bssid.addr[0],
-            ap_cur->bssid.addr[1],
-            ap_cur->bssid.addr[2],
-            ap_cur->bssid.addr[3],
-            ap_cur->bssid.addr[4],
-            ap_cur->bssid.addr[5]);
+    fprintf_mac_address(opt.f_logcsv, &ap_cur->bssid);
+    fprintf(opt.f_logcsv, ","); 
+
 
 	// RSSI
 	fprintf(opt.f_logcsv, "%d,", ri_power);
 
 	// Network Security
-	if ((ap_cur->security & (STD_OPN | STD_WEP | STD_WPA | STD_WPA2)) == 0)
+    if ((ap_cur->security & (STD_OPN | STD_WEP | STD_WPA | STD_WPA2)) == 0)
+    {
 		fputs(" ", opt.f_logcsv);
+    }
 	else
 	{
 		if (ap_cur->security & STD_WPA2) fputs(" WPA2 ", opt.f_logcsv);
@@ -172,14 +169,9 @@ int dump_write_airodump_ng_logcsv_add_client(const struct AP_info * ap_cur,
 	fprintf(opt.f_logcsv, ",");
 
 	// BSSID
-	fprintf(opt.f_logcsv,
-			"%02X:%02X:%02X:%02X:%02X:%02X,",
-            st_cur->stmac.addr[0],
-            st_cur->stmac.addr[1],
-            st_cur->stmac.addr[2],
-            st_cur->stmac.addr[3],
-            st_cur->stmac.addr[4],
-            st_cur->stmac.addr[5]);
+    fprintf_mac_address(opt.f_logcsv, &st_cur->stmac);
+    fprintf(opt.f_logcsv, ","); 
+
 
 	// RSSI
 	fprintf(opt.f_logcsv, "%d,", ri_power);
@@ -381,18 +373,13 @@ static int dump_write_kismet_netxml_client_info(struct ST_info * client,
 			first_time,
 			last_time);
 
-	fprintf(opt.f_kis_xml,
-			"\t\t\t<client-mac>%02X:%02X:%02X:%02X:%02X:%02X</client-mac>\n",
-            client->stmac.addr[0],
-            client->stmac.addr[1],
-            client->stmac.addr[2],
-            client->stmac.addr[3],
-            client->stmac.addr[4],
-            client->stmac.addr[5]);
+    fprintf(opt.f_kis_xml, "\t\t\t<client-mac>");
+    fprintf_mac_address(opt.f_kis_xml, &client->stmac);
+    fprintf(opt.f_kis_xml, "</client-mac>\n");
 
 	/* Manufacturer, if set using standard oui list */
 	manuf
-		= sanitize_xml((unsigned char *) client->manuf, strlen(client->manuf));
+		= sanitize_xml((unsigned char *)client->manuf, strlen(client->manuf));
 	fprintf(opt.f_kis_xml,
 			"\t\t\t<client-manuf>%s</client-manuf>\n",
 			(manuf != NULL) ? manuf : "Unknown");
@@ -685,14 +672,9 @@ int dump_write_kismet_netxml(struct ap_list_head * const ap_list,
 		fprintf(opt.f_kis_xml, "\t\t</SSID>\n");
 
 		/* BSSID */
-		fprintf(opt.f_kis_xml,
-				"\t\t<BSSID>%02X:%02X:%02X:%02X:%02X:%02X</BSSID>\n",
-                ap_cur->bssid.addr[0],
-                ap_cur->bssid.addr[1],
-                ap_cur->bssid.addr[2],
-                ap_cur->bssid.addr[3],
-                ap_cur->bssid.addr[4],
-                ap_cur->bssid.addr[5]);
+        fprintf(opt.f_kis_xml, "\t\t<BSSID>");
+        fprintf_mac_address(opt.f_kis_xml, &ap_cur->bssid);
+        fprintf(opt.f_kis_xml, "</BSSID>\n");
 
 		/* Manufacturer, if set using standard oui list */
 		manuf = sanitize_xml((unsigned char *) ap_cur->manuf,
@@ -861,14 +843,9 @@ int dump_write_kismet_netxml(struct ap_list_head * const ap_list,
 					last_time);
 
 			/* BSSID */
-			fprintf(opt.f_kis_xml,
-					"\t\t<BSSID>%02X:%02X:%02X:%02X:%02X:%02X</BSSID>\n",
-                    st_cur->stmac.addr[0],
-                    st_cur->stmac.addr[1],
-                    st_cur->stmac.addr[2],
-                    st_cur->stmac.addr[3],
-                    st_cur->stmac.addr[4],
-                    st_cur->stmac.addr[5]);
+            fprintf(opt.f_kis_xml, "\t\t<BSSID>");
+            fprintf_mac_address(opt.f_kis_xml, &st_cur->stmac);
+            fprintf(opt.f_kis_xml, "</BSSID>\n");
 
 			/* Manufacturer, if set using standard oui list */
 			manuf = sanitize_xml((unsigned char *) st_cur->manuf,
@@ -1081,14 +1058,8 @@ int dump_write_kismet_csv(struct ap_list_head * const ap_list,
 		fprintf(opt.f_kis, ";");
 
 		// BSSID
-		fprintf(opt.f_kis,
-				"%02X:%02X:%02X:%02X:%02X:%02X;",
-                ap_cur->bssid.addr[0],
-                ap_cur->bssid.addr[1],
-                ap_cur->bssid.addr[2],
-                ap_cur->bssid.addr[3],
-                ap_cur->bssid.addr[4],
-                ap_cur->bssid.addr[5]);
+        fprintf_mac_address(opt.f_kis, &ap_cur->bssid);
+        fprintf(opt.f_kis, ";"); 
 
 		// Info
 		fprintf(opt.f_kis, ";");
@@ -1104,18 +1075,24 @@ int dump_write_kismet_csv(struct ap_list_head * const ap_list,
 		{
 			if (ap_cur->security & STD_WPA2)
 			{
-				if (ap_cur->security & AUTH_SAE || ap_cur->security & AUTH_OWE)
+                if (ap_cur->security & AUTH_SAE || ap_cur->security & AUTH_OWE)
+                {
 					fprintf(opt.f_kis, "WPA3,");
-				else
+                }
+                else
+                {
 					fprintf(opt.f_kis, "WPA2,");
+                }
 			}
 			if (ap_cur->security & STD_WPA) fprintf(opt.f_kis, "WPA,");
 			if (ap_cur->security & STD_WEP) fprintf(opt.f_kis, "WEP,");
 			if (ap_cur->security & STD_OPN) fprintf(opt.f_kis, "OPN,");
 		}
 
-		if ((ap_cur->security & ENC_FIELD) == 0)
+        if ((ap_cur->security & ENC_FIELD) == 0)
+        {
 			fprintf(opt.f_kis, "None,");
+        }
 		else
 		{
 			if (ap_cur->security & ENC_CCMP) fprintf(opt.f_kis, "AES-CCM,");
