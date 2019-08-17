@@ -107,7 +107,8 @@ struct AP_info
 {
 	TAILQ_ENTRY(AP_info) entry;
 
-	time_t tinit, tlast; /* first and last time seen */
+	time_t tinit; 
+    time_t tlast; /* first and last time seen */
 
     time_t time_printed;    /* last time printed */
     int channel; /* AP radio channel         */
@@ -202,7 +203,8 @@ struct ST_info
 
 	char * manuf; /* the client's manufacturer */
 
-	time_t tinit, tlast; /* first and last time seen  */
+	time_t tinit; 
+    time_t tlast; /* first and last time seen  */
     time_t time_printed; /* last time printed */
     unsigned long nb_pkt; /* total number of packets   */
 	uint8_t essid[ESSID_LENGTH + 1]; /* last associated essid     */

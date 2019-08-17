@@ -342,6 +342,7 @@ static struct local_options
 
     time_t filter_seconds;
     int file_reset_seconds;
+	size_t max_node_age;
 
 	struct dump_context_st * wifi_dump_context; 
 	bool should_update_stdout; 
@@ -1082,6 +1083,7 @@ static const char usage[] =
     "      --loc-name            : Unique Location Name\n"
     "      --filter-seconds      : Filter time (seconds)\n"
     "      --file-reset-minutes  : File reset time (minutes)\n"
+    "      -v          <minutes> : Maximum age of cached entries\n"
     "      --ignore-negative-one : Removes the message that says\n"
 	"                              fixed channel <interface>: -1\n"
 	"      --write-interval\n"
@@ -1510,11 +1512,7 @@ list_check_decloak(struct pkt_list_head * const pkt_list, int length, const uint
 
 static void na_info_free(struct NA_info * const na_cur)
 {
-	if (na_cur != NULL)
-	{
-		TAILQ_REMOVE(&lopt.na_list, na_cur, entry);
-		free(na_cur);
-	}
+    free(na_cur);
 }
 
 static void na_info_list_free(struct na_list_head * const list_head)
@@ -1524,10 +1522,10 @@ static void na_info_list_free(struct na_list_head * const list_head)
 
 	TAILQ_FOREACH_SAFE(na_cur, list_head, entry, na_temp)
 	{
+		TAILQ_REMOVE(&lopt.na_list, na_cur, entry);
+
 		na_info_free(na_cur);
 	}
-
-	return;
 }
 
 static struct NA_info * na_info_lookup(
@@ -1547,14 +1545,22 @@ static struct NA_info * na_info_lookup(
 	return na_cur;
 }
 
-static int remove_namac(mac_address const * const mac)
+static void remove_namac(mac_address const * const mac)
 {
 	struct NA_info * const na_cur = na_info_lookup(&lopt.na_list, mac);
 
+	if (na_cur == NULL)
+	{
+		goto done;
+	}
+
 	/* If it's known, remove it */
+	TAILQ_REMOVE(&lopt.na_list, na_cur, entry);
+
 	na_info_free(na_cur);
 
-	return 0;
+done:
+	return;
 }
 
 static struct NA_info * na_info_new(mac_address const * const mac)
@@ -1586,6 +1592,89 @@ done:
 	return na_cur;
 }
 
+static struct ST_info * sta_info_lookup(
+	struct sta_list_head * const sta_list,
+	mac_address const * const mac)
+{
+	struct ST_info * st_cur;
+
+	TAILQ_FOREACH(st_cur, sta_list, entry)
+	{
+		if (MAC_ADDRESS_EQUAL(&st_cur->stmac, mac))
+		{
+			break;
+		}
+	}
+
+	return st_cur;
+}
+
+static void sta_info_free(struct ST_info * const st_cur)
+{
+	free(st_cur->manuf);
+	free(st_cur);
+}
+
+static struct ST_info * st_info_new(mac_address const * const stmac)
+{
+	struct ST_info * const st_cur = calloc(1, sizeof(*st_cur));
+
+	if (st_cur == NULL)
+	{
+		perror("calloc failed");
+		goto done;
+	}
+
+	MAC_ADDRESS_COPY(&st_cur->stmac, stmac);
+
+	if (st_cur->manuf == NULL)
+	{
+		st_cur->manuf = get_manufacturer(
+			st_cur->stmac.addr[0], st_cur->stmac.addr[1], st_cur->stmac.addr[2]);
+	}
+
+	st_cur->nb_pkt = 0;
+
+	st_cur->tinit = time(NULL);
+	st_cur->tlast = st_cur->tinit;
+	st_cur->time_printed = 0;
+
+	st_cur->power = -1;
+	st_cur->best_power = -1;
+	st_cur->rate_to = -1;
+	st_cur->rate_from = -1;
+
+	st_cur->probe_index = -1;
+	st_cur->missed = 0;
+	st_cur->lastseq = 0;
+	st_cur->qos_fr_ds = 0;
+	st_cur->qos_to_ds = 0;
+	st_cur->channel = 0;
+	st_cur->old_channel = 0;
+
+	gettimeofday(&(st_cur->ftimer), NULL);
+
+	memcpy(st_cur->gps_loc_min, //-V512
+		   lopt.gps_loc,
+		   sizeof(st_cur->gps_loc_min));
+	memcpy(st_cur->gps_loc_max, //-V512
+		   lopt.gps_loc,
+		   sizeof(st_cur->gps_loc_max));
+	memcpy( //-V512
+		st_cur->gps_loc_best,
+		lopt.gps_loc,
+		sizeof(st_cur->gps_loc_best));
+
+	for (size_t i = 0; i < NB_PRB; i++)
+	{
+		memset(st_cur->probes[i], 0, sizeof(st_cur->probes[i]));
+		st_cur->ssid_length[i] = 0;
+	}
+
+done:
+	return st_cur;
+}
+
 static struct AP_info * ap_info_lookup(
 	struct ap_list_head * ap_list, 
 	mac_address const * const mac)
@@ -1601,6 +1690,38 @@ static struct AP_info * ap_info_lookup(
 	}
 
 	return ap_cur;
+}
+
+static void free_stas_with_this_base_ap(
+	struct sta_list_head * const sta_list,
+	struct AP_info * ap_cur)
+{
+	struct ST_info * st_cur;
+	struct ST_info * st_tmp;
+
+	TAILQ_FOREACH_SAFE(st_cur, sta_list, entry, st_tmp)
+	{
+		if (st_cur->base == ap_cur)
+		{
+			TAILQ_REMOVE(sta_list, st_cur, entry);
+
+			sta_info_free(st_cur);
+		}
+	}
+}
+
+static void ap_info_free(
+    struct AP_info * const ap_cur, 
+    struct sta_list_head * const sta_list)
+{
+	free_stas_with_this_base_ap(sta_list, ap_cur);
+
+	uniqueiv_wipe(ap_cur->uiv_root);
+	packet_list_free(&ap_cur->pkt_list);
+	data_wipe(ap_cur->data_root);
+	free(ap_cur->manuf);
+
+    free(ap_cur);
 }
 
 static struct AP_info * ap_info_new(mac_address const * const bssid)
@@ -1708,81 +1829,85 @@ done:
 	return ap_cur;
 }
 
-static struct ST_info * sta_info_lookup(
-	struct sta_list_head * const sta_list, 
-	mac_address const * const mac)
+static void purge_old_aps(
+	struct ap_list_head * const ap_list,
+	struct sta_list_head * const sta_list,
+	time_t const age_limit)
 {
-	struct ST_info * st_cur;
+	struct AP_info * ap_cur;
+	struct AP_info * ap_tmp;
 
-	TAILQ_FOREACH(st_cur, sta_list, entry)
+	TAILQ_FOREACH_SAFE(ap_cur, ap_list, entry, ap_tmp)
 	{
-		if (MAC_ADDRESS_EQUAL(&st_cur->stmac, mac))
+		bool const too_old = ap_cur->tlast < age_limit;
+
+		if (too_old)
 		{
-			break;
+			TAILQ_REMOVE(ap_list, ap_cur, entry);
+
+			ap_info_free(ap_cur, sta_list);
 		}
 	}
-
-	return st_cur;
 }
 
-static struct ST_info * st_info_new(mac_address const * const stmac)
+static void purge_old_stas(
+	struct sta_list_head * const sta_list,
+	time_t const age_limit)
 {
-	struct ST_info * const st_cur = calloc(1, sizeof(*st_cur));
+	struct ST_info * st_cur;
+	struct ST_info * st_tmp;
 
-	if (st_cur == NULL)
+	TAILQ_FOREACH_SAFE(st_cur, sta_list, entry, st_tmp)
 	{
-		perror("calloc failed");
+		bool const too_old = st_cur->tlast < age_limit;
+
+		if (too_old)
+		{
+			TAILQ_REMOVE(sta_list, st_cur, entry);
+
+			sta_info_free(st_cur);
+		}
+	}
+}
+
+static void purge_old_nas(
+	struct na_list_head * const na_list,
+	time_t const age_limit)
+{
+	struct NA_info * na_cur;
+	struct NA_info * na_tmp;
+
+	TAILQ_FOREACH_SAFE(na_cur, na_list, entry, na_tmp)
+	{
+		bool const too_old = na_cur->tlast < age_limit;
+
+		if (too_old)
+		{
+			TAILQ_REMOVE(na_list, na_cur, entry);
+
+			na_info_free(na_cur);
+		}
+	}
+}
+
+static void purge_old_nodes(
+    struct local_options * const options, 
+    size_t const max_age)
+{
+	if (max_age == 0) /* No limit. */
+	{
 		goto done;
 	}
 
-	MAC_ADDRESS_COPY(&st_cur->stmac, stmac);
+	time_t const current_time = time(NULL);
+	time_t const age_limit = current_time - max_age;
 
-	if (st_cur->manuf == NULL)
-	{
-		st_cur->manuf = get_manufacturer(
-			st_cur->stmac.addr[0], st_cur->stmac.addr[1], st_cur->stmac.addr[2]);
-	}
-
-	st_cur->nb_pkt = 0;
-
-	st_cur->tinit = time(NULL);
-	st_cur->tlast = st_cur->tinit;
-	st_cur->time_printed = 0;
-
-	st_cur->power = -1;
-	st_cur->best_power = -1;
-	st_cur->rate_to = -1;
-	st_cur->rate_from = -1;
-
-	st_cur->probe_index = -1;
-	st_cur->missed = 0;
-	st_cur->lastseq = 0;
-	st_cur->qos_fr_ds = 0;
-	st_cur->qos_to_ds = 0;
-	st_cur->channel = 0;
-	st_cur->old_channel = 0;
-
-	gettimeofday(&(st_cur->ftimer), NULL);
-
-	memcpy(st_cur->gps_loc_min, //-V512
-		   lopt.gps_loc,
-		   sizeof(st_cur->gps_loc_min));
-	memcpy(st_cur->gps_loc_max, //-V512
-		   lopt.gps_loc,
-		   sizeof(st_cur->gps_loc_max));
-	memcpy( //-V512
-		st_cur->gps_loc_best,
-		lopt.gps_loc,
-		sizeof(st_cur->gps_loc_best));
-
-	for (size_t i = 0; i < NB_PRB; i++)
-	{
-		memset(st_cur->probes[i], 0, sizeof(st_cur->probes[i]));
-		st_cur->ssid_length[i] = 0;
-	}
+	purge_old_nas(&options->na_list, age_limit);
+	purge_old_stas(&options->sta_list, age_limit);
+	purge_old_aps(&options->ap_list, &options->sta_list, age_limit);
 
 done:
-	return st_cur;
+	return;
 }
 
 static void write_cap_file(
@@ -6688,12 +6813,13 @@ static void sta_list_free(struct sta_list_head * const sta_list)
 
 		TAILQ_REMOVE(sta_list, st_cur, entry);
 
-		free(st_cur->manuf);
-		free(st_cur);
+		sta_info_free(st_cur);
 	}
 }
 
-static void ap_list_free(struct ap_list_head * const ap_list)
+static void ap_list_free(
+    struct ap_list_head * const ap_list,
+    struct sta_list_head * const sta_list)
 {
 	while (TAILQ_FIRST(ap_list) != NULL)
 	{
@@ -6701,15 +6827,7 @@ static void ap_list_free(struct ap_list_head * const ap_list)
 
 		TAILQ_REMOVE(ap_list, ap_cur, entry);
 
-		// Clean content of ap_cur list (first element: lopt.ap_1st)
-		uniqueiv_wipe(ap_cur->uiv_root);
-
-		packet_list_free(&ap_cur->pkt_list);
-
-		data_wipe(ap_cur->data_root);
-
-		free(ap_cur->manuf);
-		free(ap_cur);
+		ap_info_free(ap_cur, sta_list);
 	}
 }
 
@@ -6968,6 +7086,7 @@ int main(int argc, char * argv[])
            {"sys-name", 1, 0, 'X'},
            {"loc-name", 1, 0, 'y'},
            {"filter-seconds", 1, 0, 'F'},
+           {"max-age", 1, 0, 'v'},
            {"file-reset-minutes", 1, 0, 'P'},
            {"ignore-negative-one", 0, &opt.ignore_negative_one, 1 },
 		   {"manufacturer", 0, 0, 'M'},
@@ -7012,6 +7131,7 @@ int main(int argc, char * argv[])
 	opt.f_ivs = NULL;
 	opt.f_txt = NULL;
 	lopt.wifi_dump_context = NULL;
+	lopt.max_node_age = 0;
 	opt.f_kis = NULL;
 	opt.f_kis_xml = NULL;
     opt.f_gps = NULL;
@@ -7180,7 +7300,7 @@ int main(int argc, char * argv[])
 		option
 			= getopt_long(argc,
 						  argv,
-                          "b:c:egiw:s:t:u:m:d:N:R:aHDB:Ahf:r:EC:o:x:MUI:WK:n:T:F:P:",
+						  "b:c:egiw:s:t:u:m:d:N:R:aHDB:Ahf:r:EC:o:x:MUI:WK:n:T:F:P:v:",
                           long_options,
 						  &option_index);
 
@@ -7584,6 +7704,10 @@ int main(int argc, char * argv[])
             case 'P':
                 reset_val = strtoul(optarg, NULL, 10);
                 lopt.file_reset_seconds = reset_val * ONE_MIN;
+                break;
+
+            case 'v':
+				lopt.max_node_age = strtoul(optarg, NULL, 10) * ONE_MIN;
                 break;
                     
             case 'o':
@@ -8004,7 +8128,8 @@ int main(int argc, char * argv[])
 	{
         check_monitor_process(&lopt);
         check_for_signal_events(&lopt);
-		aps_purge_old_packets(&lopt, BUFFER_TIME_MILLISECS); 
+		purge_old_nodes(&lopt, lopt.max_node_age);
+        aps_purge_old_packets(&lopt, BUFFER_TIME_MILLISECS);
 
         if (lopt.do_exit)
         {
@@ -8253,9 +8378,9 @@ int main(int argc, char * argv[])
 		pthread_join(lopt.input_tid, NULL);
 	}
 
-	ap_list_free(&lopt.ap_list);
-
 	sta_list_free(&lopt.sta_list);
+
+    ap_list_free(&lopt.ap_list, &lopt.sta_list);
 
 	na_info_list_free(&lopt.na_list);
 

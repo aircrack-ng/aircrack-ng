@@ -143,7 +143,8 @@ struct NA_info
 {
 	TAILQ_ENTRY(NA_info) entry;
 
-	time_t tinit, tlast; /* first and last time seen  */
+	time_t tinit; 
+    time_t tlast; /* first and last time seen  */
     mac_address namac; /* the stations MAC address  */
 	int power; /* last signal power         */
 	int channel; /* captured on channel       */
