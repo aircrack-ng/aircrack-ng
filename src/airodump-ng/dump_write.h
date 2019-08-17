@@ -68,13 +68,13 @@ void dump_close(
 int dump_write_airodump_ng_logcsv_add_ap(const struct AP_info * ap_cur,
 										 const int32_t ri_power,
 										 struct tm * tm_gpstime,
-										 float * gps_loc);
+										 float const * const gps_loc);
 
 int dump_write_airodump_ng_logcsv_add_client(const struct AP_info * ap_cur,
 											 const struct ST_info * st_cur,
 											 const int32_t ri_power,
 											 struct tm * tm_gpstime,
-											 float * gps_loc);
+											 float const * const gps_loc);
 
 int dump_write_kismet_netxml(struct ap_list_head * const ap_list,
                              struct sta_list_head * const sta_list,

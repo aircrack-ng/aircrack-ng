@@ -940,13 +940,7 @@ static int find_first_free_file_index(char const * const prefix)
 }
 
 /* setup the output files */
-int dump_initialize_multi_format(
-    char * prefix, 
-	int ivs_only,
-	char const * const sys_name,
-	char const * const location_name,
-	time_t const filter_seconds,
-	int const file_reset_seconds)
+int dump_initialize_multi_format(char * prefix, int ivs_only)
 {
 	REQUIRE(prefix != NULL);
 	REQUIRE(strlen(prefix) > 0);
@@ -1115,7 +1109,7 @@ int dump_initialize(char * prefix)
 {
 	opt.output_format_pcap = 1;
 
-	return dump_initialize_multi_format(prefix, 0, NULL, NULL, 0, 0);
+	return dump_initialize_multi_format(prefix, 0);
 }
 
 int check_shared_key(const uint8_t * h80211, size_t caplen)

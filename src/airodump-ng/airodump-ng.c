@@ -173,6 +173,20 @@ struct communication_options opt;
 
 TAILQ_HEAD(na_list_head, NA_info);
 
+typedef struct gps_data_st gps_data_st;
+struct gps_data_st
+{
+	pthread_t gps_tid;
+	int gps_thread_result;
+	float gps_loc[8]; /* gps coordinates      */
+	int save_gps; /* keep gps file flag   */
+	int gps_valid_interval_seconds; /* how many seconds until we consider the GPS data invalid if we dont get new data */
+	char * batt; /* Battery string (Used with GPS only.) */
+	struct tm gps_time; /* the timestamp from the gps data */
+	char const * dump_prefix;
+	int f_index;
+};
+
 static struct local_options
 {
 	struct ap_list_head ap_list;
@@ -192,17 +206,13 @@ static struct local_options
 #endif
 	char * dump_prefix;
 
-	char * batt; /* Battery string (Used with GPS only.) */
-
     int channel[MAX_CARDS]; /* current channel #    */
 	int frequency[MAX_CARDS]; /* current frequency #    */
 
     int hopper_process_pipe[2];
     int signal_event_pipe[2]; 
 
-	float gps_loc[8]; /* gps coordinates      */
-	int save_gps; /* keep gps file flag   */
-	int gps_valid_interval; /* how many seconds until we consider the GPS data invalid if we dont get new data */
+	gps_data_st gps_data;
 
 	int * channels;
 
@@ -281,9 +291,6 @@ static struct local_options
 
 	pthread_t input_tid;
 
-    pthread_t gps_tid;
-    int gps_thread_result;
-
 	int sort_inv;
 	ap_sort_info_st const * sort_method;
 
@@ -313,7 +320,6 @@ static struct local_options
 	int file_write_interval;
 	u_int maxsize_wps_seen;
 	int show_wps;
-	struct tm gps_time; /* the timestamp from the gps data */
 
     char sys_name[256];  /* system name value for wifi scanner custom format */
     char loc_name[256];  /* location name value for wifi scanner custom format */
@@ -1655,16 +1661,9 @@ static struct ST_info * st_info_new(mac_address const * const stmac)
 
 	gettimeofday(&(st_cur->ftimer), NULL);
 
-	memcpy(st_cur->gps_loc_min, //-V512
-		   lopt.gps_loc,
-		   sizeof(st_cur->gps_loc_min));
-	memcpy(st_cur->gps_loc_max, //-V512
-		   lopt.gps_loc,
-		   sizeof(st_cur->gps_loc_max));
-	memcpy( //-V512
-		st_cur->gps_loc_best,
-		lopt.gps_loc,
-		sizeof(st_cur->gps_loc_best));
+	memcpy(st_cur->gps_loc_min, lopt.gps_data.gps_loc, sizeof(st_cur->gps_loc_min));
+	memcpy(st_cur->gps_loc_max, lopt.gps_data.gps_loc, sizeof(st_cur->gps_loc_max));
+	memcpy(st_cur->gps_loc_best, lopt.gps_data.gps_loc, sizeof(st_cur->gps_loc_best));
 
 	for (size_t i = 0; i < NB_PRB; i++)
 	{
@@ -1801,9 +1800,10 @@ static struct AP_info * ap_info_new(mac_address const * const bssid)
 
 	ap_cur->data_root = NULL;
 	ap_cur->EAP_detected = 0;
-	memcpy(ap_cur->gps_loc_min, lopt.gps_loc, sizeof(float) * 5); //-V512
-	memcpy(ap_cur->gps_loc_max, lopt.gps_loc, sizeof(float) * 5); //-V512
-	memcpy(ap_cur->gps_loc_best, lopt.gps_loc, sizeof(float) * 5); //-V512
+
+	memcpy(ap_cur->gps_loc_min, lopt.gps_data.gps_loc, sizeof ap_cur->gps_loc_min);
+	memcpy(ap_cur->gps_loc_max, lopt.gps_data.gps_loc, sizeof ap_cur->gps_loc_max);
+	memcpy(ap_cur->gps_loc_best, lopt.gps_data.gps_loc, sizeof ap_cur->gps_loc_best);
 
 	/* 802.11n and ac */
 	ap_cur->channel_width = CHANNEL_22MHZ; // 20MHz by default
@@ -2098,26 +2098,26 @@ static void dump_add_packet(
 		if (ap_cur->avg_power > ap_cur->best_power)
 		{
 			ap_cur->best_power = ap_cur->avg_power;
-			memcpy(ap_cur->gps_loc_best, //-V512
-				   lopt.gps_loc,
-				   sizeof(float) * 5);
+			memcpy(ap_cur->gps_loc_best,
+				   lopt.gps_data.gps_loc,
+				   sizeof ap_cur->gps_loc_best);
 		}
 
 		/* every packet in here comes from the AP */
 
-		if (lopt.gps_loc[0] > ap_cur->gps_loc_max[0])
-			ap_cur->gps_loc_max[0] = lopt.gps_loc[0];
-		if (lopt.gps_loc[1] > ap_cur->gps_loc_max[1])
-			ap_cur->gps_loc_max[1] = lopt.gps_loc[1];
-		if (lopt.gps_loc[2] > ap_cur->gps_loc_max[2])
-			ap_cur->gps_loc_max[2] = lopt.gps_loc[2];
+		if (lopt.gps_data.gps_loc[0] > ap_cur->gps_loc_max[0])
+			ap_cur->gps_loc_max[0] = lopt.gps_data.gps_loc[0];
+		if (lopt.gps_data.gps_loc[1] > ap_cur->gps_loc_max[1])
+			ap_cur->gps_loc_max[1] = lopt.gps_data.gps_loc[1];
+		if (lopt.gps_data.gps_loc[2] > ap_cur->gps_loc_max[2])
+			ap_cur->gps_loc_max[2] = lopt.gps_data.gps_loc[2];
 
-		if (lopt.gps_loc[0] < ap_cur->gps_loc_min[0])
-			ap_cur->gps_loc_min[0] = lopt.gps_loc[0];
-		if (lopt.gps_loc[1] < ap_cur->gps_loc_min[1])
-			ap_cur->gps_loc_min[1] = lopt.gps_loc[1];
-		if (lopt.gps_loc[2] < ap_cur->gps_loc_min[2])
-			ap_cur->gps_loc_min[2] = lopt.gps_loc[2];
+		if (lopt.gps_data.gps_loc[0] < ap_cur->gps_loc_min[0])
+			ap_cur->gps_loc_min[0] = lopt.gps_data.gps_loc[0];
+		if (lopt.gps_data.gps_loc[1] < ap_cur->gps_loc_min[1])
+			ap_cur->gps_loc_min[1] = lopt.gps_data.gps_loc[1];
+		if (lopt.gps_data.gps_loc[2] < ap_cur->gps_loc_min[2])
+			ap_cur->gps_loc_min[2] = lopt.gps_data.gps_loc[2];
 		//        printf("seqnum: %i\n", seq);
 
 		if (ap_cur->fcapt == 0 && ap_cur->fmiss == 0)
@@ -2133,7 +2133,7 @@ static void dump_add_packet(
 		{
 			/* Write out our rolling log every time we see data from an AP */
 			dump_write_airodump_ng_logcsv_add_ap(
-				ap_cur, ri->ri_power, &lopt.gps_time, lopt.gps_loc);
+				ap_cur, ri->ri_power, &lopt.gps_data.gps_time, lopt.gps_data.gps_loc);
 		}
 
 		//         if(ap_cur->fcapt >= QLT_COUNT) update_rx_quality();
@@ -2246,8 +2246,8 @@ static void dump_add_packet(
 		if (ri->ri_power > st_cur->best_power)
 		{
 			st_cur->best_power = ri->ri_power;
-			memcpy(ap_cur->gps_loc_best, //-V512
-				   lopt.gps_loc,
+			memcpy(ap_cur->gps_loc_best,
+				   lopt.gps_data.gps_loc,
 				   sizeof(st_cur->gps_loc_best));
 		}
 
@@ -2257,19 +2257,19 @@ static void dump_add_packet(
 		else
 			st_cur->channel = lopt.channel[cardnum];
 
-		if (lopt.gps_loc[0] > st_cur->gps_loc_max[0])
-			st_cur->gps_loc_max[0] = lopt.gps_loc[0];
-		if (lopt.gps_loc[1] > st_cur->gps_loc_max[1])
-			st_cur->gps_loc_max[1] = lopt.gps_loc[1];
-		if (lopt.gps_loc[2] > st_cur->gps_loc_max[2])
-			st_cur->gps_loc_max[2] = lopt.gps_loc[2];
+		if (lopt.gps_data.gps_loc[0] > st_cur->gps_loc_max[0])
+			st_cur->gps_loc_max[0] = lopt.gps_data.gps_loc[0];
+		if (lopt.gps_data.gps_loc[1] > st_cur->gps_loc_max[1])
+			st_cur->gps_loc_max[1] = lopt.gps_data.gps_loc[1];
+		if (lopt.gps_data.gps_loc[2] > st_cur->gps_loc_max[2])
+			st_cur->gps_loc_max[2] = lopt.gps_data.gps_loc[2];
 
-		if (lopt.gps_loc[0] < st_cur->gps_loc_min[0])
-			st_cur->gps_loc_min[0] = lopt.gps_loc[0];
-		if (lopt.gps_loc[1] < st_cur->gps_loc_min[1])
-			st_cur->gps_loc_min[1] = lopt.gps_loc[1];
-		if (lopt.gps_loc[2] < st_cur->gps_loc_min[2])
-			st_cur->gps_loc_min[2] = lopt.gps_loc[2];
+		if (lopt.gps_data.gps_loc[0] < st_cur->gps_loc_min[0])
+			st_cur->gps_loc_min[0] = lopt.gps_data.gps_loc[0];
+		if (lopt.gps_data.gps_loc[1] < st_cur->gps_loc_min[1])
+			st_cur->gps_loc_min[1] = lopt.gps_data.gps_loc[1];
+		if (lopt.gps_data.gps_loc[2] < st_cur->gps_loc_min[2])
+			st_cur->gps_loc_min[2] = lopt.gps_data.gps_loc[2];
 
 		if (st_cur->lastseq != 0)
 		{
@@ -2286,7 +2286,7 @@ static void dump_add_packet(
 		{
 			/* Write out our rolling log every time we see data from a client */
 			dump_write_airodump_ng_logcsv_add_client(
-				ap_cur, st_cur, ri->ri_power, &lopt.gps_time, lopt.gps_loc);
+				ap_cur, st_cur, ri->ri_power, &lopt.gps_data.gps_time, lopt.gps_data.gps_loc);
 		}
 	}
 
@@ -3831,19 +3831,20 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
     buffer[0] = '\0'; 
 
-	if (lopt.gps_loc[0] || opt.usegpsd)
+	if (opt.usegpsd)
 	{
 		// If using GPS then check if we have a valid fix or not and report accordingly
-		if (lopt.gps_loc[0] != '\0') //-V550
+		if (lopt.gps_data.gps_loc[0] != 0.0f)
 		{
-			struct tm * gtime = &lopt.gps_time;
+			struct tm * gtime = &lopt.gps_data.gps_time;
+
 			snprintf(buffer,
 					 sizeof(buffer) - 1,
 					 " %s[ GPS %3.6f,%3.6f %02d:%02d:%02d ][ Elapsed: %s ][ "
 					 "%04d-%02d-%02d %02d:%02d ",
-					 lopt.batt,
-					 lopt.gps_loc[0],
-					 lopt.gps_loc[1],
+					 lopt.gps_data.batt,
+					 lopt.gps_data.gps_loc[0],
+					 lopt.gps_data.gps_loc[1],
 					 gtime->tm_hour,
 					 gtime->tm_min,
 					 gtime->tm_sec,
@@ -3860,7 +3861,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				buffer,
 				sizeof(buffer) - 1,
 				" %s[ GPS %-29s ][ Elapsed: %s ][ %04d-%02d-%02d %02d:%02d ",
-				lopt.batt,
+				lopt.gps_data.batt,
 				" *** No Fix! ***",
 				lopt.elapsed_time,
 				1900 + lt->tm_year,
@@ -3875,7 +3876,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 		snprintf(buffer,
 				 sizeof(buffer) - 1,
 				 " %s[ Elapsed: %s ][ %04d-%02d-%02d %02d:%02d ",
-				 lopt.batt,
+				 lopt.gps_data.batt,
 				 lopt.elapsed_time,
 				 1900 + lt->tm_year,
 				 1 + lt->tm_mon,
@@ -4752,6 +4753,10 @@ json_get_value_for_name(const char * buffer, const char * name, char * value)
 
 static void * gps_tracker_thread(void * arg)
 {
+	gps_data_st * const gps_data = &lopt.gps_data; 
+    /* Pass in as the thread arg? 
+     * The 'result' doesn't appear to be used. 
+     */
 	int gpsd_sock;
 	char line[1537], buffer[1537], data[1537];
 	char * temp;
@@ -4812,12 +4817,16 @@ static void * gps_tracker_thread(void * arg)
 		{
 			/* Probably JSON.  Read the first line and verify it's a version of the
 			* protocol we speak. */
-			if ((pos = read_line(gpsd_sock, buffer, 0, sizeof(buffer))) <= 0)
+			pos = read_line(gpsd_sock, buffer, 0, sizeof(buffer));
+			if (pos <= 0)
+			{
 				continue;
+            }
 
-			pos = get_line_from_buffer(buffer, (size_t) pos, line);
-			is_json = (json_get_value_for_name(line, "class", data)
-					   && strncmp(data, "VERSION", 7) == 0);
+			pos = get_line_from_buffer(buffer, (size_t)pos, line);
+			is_json = 
+                json_get_value_for_name(line, "class", data) 
+                && strncmp(data, "VERSION", 7) == 0;
 
 			if (is_json)
 			{
@@ -4843,13 +4852,14 @@ static void * gps_tracker_thread(void * arg)
 		* connected to an old-style gpsd. */
 
 		// Initialisation of all GPS data to 0
-		memset(lopt.gps_loc, 0, sizeof(lopt.gps_loc));
+		memset(gps_data->gps_loc, 0, sizeof(gps_data->gps_loc));
 
 		/* Inside loop for reading the GPS coordinates/data */
 		while (lopt.do_exit == 0)
 		{
 			gpsd_tried_connection = 0; // reset socket connection test
-			usleep(500000);
+
+            usleep(500000);
 
 			// Reset all GPS data before each read so that if we lose GPS signal
 			// or drop to a 2D fix, the loss of data is accurately reflected
@@ -4857,15 +4867,14 @@ static void * gps_tracker_thread(void * arg)
 			// 0 = lat, 1 = lon, 2 = speed, 3 = heading, 4 = alt, 5 = lat error, 6 = lon error, 7 = vertical error
 
 			// Check if we need to reset/invalidate our GPS data if the data has become 'stale' based on a timeout/interval
-			if (time(NULL) - updateTime > lopt.gps_valid_interval)
+			time_t const seconds_since_last_update = time(NULL) - updateTime;
+
+			if (seconds_since_last_update > gps_data->gps_valid_interval_seconds)
 			{
-				memset(lopt.gps_loc, 0, sizeof(lopt.gps_loc));
+				memset(gps_data->gps_loc, 0, sizeof(gps_data->gps_loc));
 			}
 
 			// Record ALL GPS data from GPSD
-            /* FIXME: Why does output_format_wifi_scanner need to be 
-             * checked? 
-             */
             if (opt.record_data)
 			{
 				fputs(line, opt.f_gps);
@@ -4875,11 +4884,12 @@ static void * gps_tracker_thread(void * arg)
 			if (is_json)
 			{
 				// Format definition: http://catb.org/gpsd/gpsd_json.html
-
-				if ((pos = read_line(
-						 gpsd_sock, buffer, (size_t) pos, sizeof(buffer)))
-					<= 0)
+				pos = 
+                    read_line(gpsd_sock, buffer, (size_t)pos, sizeof(buffer));
+				if (pos <= 0)
+				{
 					break;
+                }
 				pos = get_line_from_buffer(buffer, (size_t) pos, line);
 
 				// See if we got a TPV report - aka actual GPS data if not send default 0 values
@@ -4918,7 +4928,7 @@ static void * gps_tracker_thread(void * arg)
 				// GPS Time
 				if (json_get_value_for_name(line, "time", data))
 				{
-					if (!(strptime(data, "%Y-%m-%dT%H:%M:%S", &lopt.gps_time)
+					if (!(strptime(data, "%Y-%m-%dT%H:%M:%S", &gps_data->gps_time)
 						  == NULL))
 					{
 						updateTime = time(NULL);
@@ -4928,80 +4938,80 @@ static void * gps_tracker_thread(void * arg)
 				// Latitude
 				if (json_get_value_for_name(line, "lat", data))
 				{
-					lopt.gps_loc[0] = strtof(data, NULL);
+					gps_data->gps_loc[0] = strtof(data, NULL);
 					if (errno == EINVAL || errno == ERANGE)
 					{
-						lopt.gps_loc[0] = 0;
+						gps_data->gps_loc[0] = 0.0f;
 					}
 				}
 
 				// Longitude
 				if (json_get_value_for_name(line, "lon", data))
 				{
-					lopt.gps_loc[1] = strtof(data, NULL);
+					gps_data->gps_loc[1] = strtof(data, NULL);
 					if (errno == EINVAL || errno == ERANGE)
 					{
-						lopt.gps_loc[1] = 0;
+						gps_data->gps_loc[1] = 0.0f;
 					}
 				}
 
 				// Longitude Error
 				if (json_get_value_for_name(line, "epx", data))
 				{
-					lopt.gps_loc[6] = strtof(data, NULL);
+					gps_data->gps_loc[6] = strtof(data, NULL);
 					if (errno == EINVAL || errno == ERANGE)
 					{
-						lopt.gps_loc[6] = 0;
+						gps_data->gps_loc[6] = 0.0f;
 					}
 				}
 
 				// Latitude Error
 				if (json_get_value_for_name(line, "epy", data))
 				{
-					lopt.gps_loc[5] = strtof(data, NULL);
+					gps_data->gps_loc[5] = strtof(data, NULL);
 					if (errno == EINVAL || errno == ERANGE)
 					{
-						lopt.gps_loc[5] = 0;
+						gps_data->gps_loc[5] = 00.f;
 					}
 				}
 
 				// Vertical Error
 				if (json_get_value_for_name(line, "epv", data))
 				{
-					lopt.gps_loc[7] = strtof(data, NULL);
+					gps_data->gps_loc[7] = strtof(data, NULL);
 					if (errno == EINVAL || errno == ERANGE)
 					{
-						lopt.gps_loc[7] = 0;
+						gps_data->gps_loc[7] = 0.0f;
 					}
 				}
 
 				// Altitude
 				if (json_get_value_for_name(line, "alt", data))
 				{
-					lopt.gps_loc[4] = strtof(data, NULL);
+					gps_data->gps_loc[4] = strtof(data, NULL);
 					if (errno == EINVAL || errno == ERANGE)
 					{
-						lopt.gps_loc[4] = 0;
+						gps_data->gps_loc[4] = 0.0f;
 					}
 				}
 
 				// Speed
 				if (json_get_value_for_name(line, "speed", data))
 				{
-					lopt.gps_loc[2] = strtof(data, NULL);
+					gps_data->gps_loc[2] = strtof(data, NULL);
 					if (errno == EINVAL || errno == ERANGE)
 					{
-						lopt.gps_loc[2] = 0;
+						gps_data->gps_loc[2] = 0.0f;
 					}
 				}
 
 				// Heading
 				if (json_get_value_for_name(line, "track", data))
 				{
-					lopt.gps_loc[3] = strtof(data, NULL);
+					gps_data->gps_loc[3] = strtof(data, NULL);
 					if (errno == EINVAL || errno == ERANGE)
 					{
-						lopt.gps_loc[3] = 0;
+						gps_data->gps_loc[3] = 0.0f;
 					}
 				}
 			}
@@ -5032,30 +5042,30 @@ static void * gps_tracker_thread(void * arg)
 				updateTime = time(NULL);
 				ret = sscanf(line + 7,
 							 "%f %f",
-							 &lopt.gps_loc[0],
-							 &lopt.gps_loc[1]); /* lat lon */
+							 &gps_data->gps_loc[0],
+							 &gps_data->gps_loc[1]); /* lat lon */
 				if (ret == EOF) fprintf(stderr, "Failed to parse lat lon.\n");
 
 				if ((temp = strstr(line, "V=")) == NULL) continue;
-				ret = sscanf(temp + 2, "%f", &lopt.gps_loc[2]); /* speed */
+				ret = sscanf(temp + 2, "%f", &gps_data->gps_loc[2]); /* speed */
 				if (ret == EOF) fprintf(stderr, "Failed to parse speed.\n");
 
 				if ((temp = strstr(line, "T=")) == NULL) continue;
-				ret = sscanf(temp + 2, "%f", &lopt.gps_loc[3]); /* heading */
+				ret = sscanf(temp + 2, "%f", &gps_data->gps_loc[3]); /* heading */
 				if (ret == EOF) fprintf(stderr, "Failed to parse heading.\n");
 
 				if ((temp = strstr(line, "A=")) == NULL) continue;
-				ret = sscanf(temp + 2, "%f", &lopt.gps_loc[4]); /* altitude */
+				ret = sscanf(temp + 2, "%f", &gps_data->gps_loc[4]); /* altitude */
 				if (ret == EOF) fprintf(stderr, "Failed to parse altitude.\n");
 			}
 
-			lopt.save_gps = 1;
+			gps_data->save_gps = 1;
 		}
 
 		// If we are still wanting to read GPS but encountered an error - reset data and try again
 		if (lopt.do_exit == 0)
 		{
-			memset(lopt.gps_loc, 0, sizeof(lopt.gps_loc));
+			memset(gps_data->gps_loc, 0, sizeof(gps_data->gps_loc));
 			sleep(1);
 		}
 	}
@@ -6802,6 +6812,75 @@ static void pace_packet_reader(
 	prev_tv->tv_usec = pkh->tv_usec;
 }
 
+static void gps_data_initialise(
+    gps_data_st * const gps_data, 
+    char const * const dump_prefix,
+	int const f_index)
+{
+	static const unsigned int default_gps_valid_interval_seconds = 5;
+
+	memset(gps_data, 0, sizeof *gps_data);
+
+	gps_data->gps_valid_interval_seconds = default_gps_valid_interval_seconds;
+	gps_data->dump_prefix = dump_prefix;
+	gps_data->f_index = f_index;
+}
+
+static void gps_data_cleanup(gps_data_st * const gps_data)
+{
+	free(gps_data->batt);
+}
+
+static void gps_data_update(gps_data_st * const gps_data)
+{
+	update_battery_string(&gps_data->batt);
+}
+
+static bool gps_data_start(gps_data_st * const gps_data)
+{
+	bool success;
+
+	gps_data_update(gps_data);
+
+	if (pthread_create(&gps_data->gps_tid, 
+                       NULL, 
+                       &gps_tracker_thread, 
+                       &gps_data->gps_thread_result) != 0)
+	{
+		perror("Could not create GPS thread");
+		success = false;
+		goto done;
+	}
+
+	usleep(50000);
+	waitpid(-1, NULL, WNOHANG);
+
+	success =  true;
+
+done:
+	return success;
+}
+
+static void gps_data_stop(gps_data_st * const gps_data)
+{
+	pthread_join(gps_data->gps_tid, NULL);
+
+	gps_data_cleanup(gps_data);
+
+	if (!gps_data->save_gps)
+	{
+		char buffer[PATH_MAX];
+
+		snprintf(buffer, 
+                 sizeof buffer, 
+                 "%s-%02d.gps", 
+                 gps_data->dump_prefix, 
+                 gps_data->f_index);
+
+		unlink(buffer);
+	}
+}
+
 int main(int argc, char * argv[])
 {
 	int program_exit_code;
@@ -6907,7 +6986,7 @@ int main(int argc, char * argv[])
 	lopt.num_cards = 0;
 	fdh = 0;
 	time_slept = 0;
-	lopt.batt = NULL;
+
 	lopt.chswitch = 0;
 	opt.usegpsd = 0;
 	lopt.channels = bg_chans;
@@ -6969,8 +7048,6 @@ int main(int argc, char * argv[])
 	lopt.kismet_csv_dump_context = NULL; 
 	lopt.kismet_netxml_dump_context = NULL; 
 
-	lopt.gps_valid_interval
-		= 5; // If we dont get a new GPS update in 5 seconds - invalidate it
 	lopt.file_write_interval = 5; // Write file every 5 seconds by default
 	lopt.maxsize_wps_seen = 6;
 	lopt.show_wps = 0;
@@ -7817,12 +7894,7 @@ int main(int argc, char * argv[])
 	/* open or create the output files */
     if (opt.record_data)
     {
-		if (dump_initialize_multi_format(lopt.dump_prefix, 
-										 ivs_only, 
-										 lopt.sys_name, 
-										 lopt.loc_name,
-										 lopt.filter_seconds, 
-										 lopt.file_reset_seconds))
+		if (dump_initialize_multi_format(lopt.dump_prefix, ivs_only))
         {
 			program_exit_code = EXIT_FAILURE;
 			goto done;
@@ -7849,20 +7921,17 @@ int main(int argc, char * argv[])
 
 	lopt.manufacturer_list = load_oui_file();
 
-	/* start the GPS tracker */
-
+    /* Start the GPS tracker if requested. */
 	if (opt.usegpsd)
 	{
-        if (pthread_create(&lopt.gps_tid, NULL, &gps_tracker_thread, &lopt.gps_thread_result) != 0)
+		gps_data_initialise(&lopt.gps_data, lopt.dump_prefix, opt.f_index);
+
+		if (!gps_data_start(&lopt.gps_data))
 		{
-			perror("Could not create GPS thread");
 			program_exit_code = EXIT_FAILURE;
 			goto done;
 		}
-
-		usleep(50000);
-		waitpid(-1, NULL, WNOHANG);
-	}
+    }
 
 	lopt.should_update_stdout = !opt.output_format_wifi_scanner;
 
@@ -7873,8 +7942,6 @@ int main(int argc, char * argv[])
 	tt2 = time(NULL);
 	gettimeofday(&tv3, NULL);
 	gettimeofday(&tv4, NULL);
-
-	update_battery_string(&lopt.batt);
 
     lopt.elapsed_time = strdup("0 s");
     ALLEGE(lopt.elapsed_time != NULL);
@@ -7931,7 +7998,10 @@ int main(int argc, char * argv[])
 
             dump_sort();
 
-			update_battery_string(&lopt.batt);
+			if (opt.usegpsd)
+			{
+				gps_data_update(&lopt.gps_data);
+			}
 
 			/* update elapsed time */
 			free(lopt.elapsed_time);
@@ -8106,7 +8176,11 @@ int main(int argc, char * argv[])
     /* TODO: Restore signal handlers. */
     signal_event_shutdown(lopt.signal_event_pipe);
 
-	free(lopt.batt);
+	if (opt.usegpsd)
+	{
+		gps_data_stop(&lopt.gps_data);
+	}
+
 	free(lopt.elapsed_time);
 	free(lopt.own_channels);
 	free(lopt.f_essid);
@@ -8134,19 +8208,6 @@ int main(int argc, char * argv[])
 
 		free(lopt.airodump_start_time);
 		lopt.airodump_start_time = NULL;
-	}
-
-	if (!lopt.save_gps)
-	{
-		char buffer[PATH_MAX];
-
-		snprintf(buffer, sizeof buffer, "%s-%02d.gps", argv[2], opt.f_index);
-		unlink(buffer);
-	}
-
-	if (opt.usegpsd)
-	{
-		pthread_join(lopt.gps_tid, NULL);
 	}
 
 	if (!lopt.background_mode)

@@ -70,7 +70,7 @@ extern int is_filtered_essid(unsigned char * essid); // airodump-ng.c
 int dump_write_airodump_ng_logcsv_add_ap(const struct AP_info * ap_cur,
 										 const int32_t ri_power,
 										 struct tm * tm_gpstime,
-										 float * gps_loc)
+										 float const * const gps_loc)
 {
 	if (ap_cur == NULL || !opt.output_format_log_csv || !opt.f_logcsv)
 	{
@@ -139,7 +139,7 @@ int dump_write_airodump_ng_logcsv_add_client(const struct AP_info * ap_cur,
 											 const struct ST_info * st_cur,
 											 const int32_t ri_power,
 											 struct tm * tm_gpstime,
-											 float * gps_loc)
+											 float const * const gps_loc)
 {
 	if (st_cur == NULL || !opt.output_format_log_csv || !opt.f_logcsv)
 	{

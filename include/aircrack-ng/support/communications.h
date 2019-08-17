@@ -368,13 +368,7 @@ int capture_ask_packet(int * caplen, int just_grab);
 int filter_packet(unsigned char * h80211, int caplen);
 
 int dump_initialize(char * prefix);
-int dump_initialize_multi_format(
-	char * prefix,
-	int ivs_only,
-	char const * const sys_name,
-	char const * const location_name,
-	time_t const filter_seconds,
-	int const file_reset_seconds);
+int dump_initialize_multi_format(char * prefix, int ivs_only);
 
 int check_shared_key(const uint8_t * h80211, size_t caplen);
 int encrypt_data(uint8_t * data, size_t length);
