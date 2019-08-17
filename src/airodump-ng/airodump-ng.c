@@ -191,9 +191,8 @@ static struct local_options
 	pcre * f_essid_regex;
 #endif
 	char * dump_prefix;
-	char * keyout;
 
-	char * batt; /* Battery string       */
+	char * batt; /* Battery string (Used with GPS only.) */
 
     int channel[MAX_CARDS]; /* current channel #    */
 	int frequency[MAX_CARDS]; /* current frequency #    */
@@ -6922,7 +6921,6 @@ int main(int argc, char * argv[])
 	lopt.max_node_age = 0;
     opt.f_gps = NULL;
 	opt.f_logcsv = NULL;
-    lopt.keyout = NULL;
 	opt.f_xor = NULL;
 	opt.sk_len = 0;
 	opt.sk_len2 = 0;
@@ -7006,19 +7004,6 @@ int main(int argc, char * argv[])
 	gettimeofday(&tv0, NULL);
 
 	lt = localtime(&tv0.tv_sec);
-
-    static size_t const keyout_buf_size = 512;
-    lopt.keyout = malloc(keyout_buf_size);
-	ALLEGE(lopt.keyout != NULL);
-
-	snprintf(lopt.keyout,
-             keyout_buf_size,
-			 "keyout-%02d%02d-%02d%02d%02d.keys",
-			 lt->tm_mon + 1,
-			 lt->tm_mday,
-			 lt->tm_hour,
-			 lt->tm_min,
-			 lt->tm_sec);
 
 	for (i = 0; i < MAX_CARDS; i++)
 	{
@@ -8127,7 +8112,6 @@ int main(int argc, char * argv[])
 	free(lopt.f_essid);
 	free(opt.prefix);
 	free(opt.f_cap_name);
-	free(lopt.keyout);
 
 	packet_reader_close(lopt.packet_reader_context);
 
