@@ -975,13 +975,88 @@ static void oui_list_free(struct oui * * const oui_list)
     }
 }
 
+static void strip_eol(char * const buffer)
+{
+	size_t len;
+	char * last_char;
+
+	len = strlen(buffer);
+	if (len == 0)
+	{
+		goto done;
+	}
+	last_char = &buffer[len - 1];
+	if (*last_char == '\n' || *last_char == '\r')
+	{
+		*last_char = '\0';
+	}
+
+	len = strlen(buffer);
+	if (len == 0)
+	{
+		goto done;
+	}
+	last_char = &buffer[len - 1];
+	if (*last_char == '\n' || *last_char == '\r')
+	{
+		*last_char = '\0';
+	}
+
+done:
+	return;
+}
+
+static char * get_manufacturer_from_string(char * buffer)
+{
+	char * manuf = NULL;
+	char * buffer_manuf;
+
+	if (buffer == NULL || strlen(buffer) == 0)
+	{
+		goto done;
+	}
+	static char const hex_field[] = "(hex)";
+
+	buffer_manuf = strstr(buffer, hex_field);
+
+	if (buffer_manuf == NULL)
+	{
+		goto done;
+	}
+	buffer_manuf += strlen(hex_field);
+	while (*buffer_manuf == '\t' || *buffer_manuf == ' ')
+	{
+		++buffer_manuf;
+	}
+
+	// Did we stop at the manufacturer
+	if (*buffer_manuf == '\0')
+	{
+		goto done;
+	}
+	// First make sure there's no end of line
+	strip_eol(buffer_manuf);
+
+	if (*buffer_manuf == '\0')
+	{
+		goto done;
+	}
+
+	manuf = strdup(buffer_manuf);
+
+done:
+	return manuf;
+}
+
+/* TODO - Move all oui related code into a separate module. 
+ * Use a generic list. 
+ */
 static struct oui * load_oui_file(void)
 {
 	FILE * fp;
 	char buffer[BUFSIZ];
     struct oui * oui_head = NULL;
     struct oui * * oui_next = &oui_head; 
-
 
 	fp = open_oui_file();
 	if (fp == NULL)
