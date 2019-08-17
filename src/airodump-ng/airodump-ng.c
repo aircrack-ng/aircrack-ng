@@ -94,6 +94,7 @@
 #include "ap_list.h"
 #include "aircrack-ng/osdep/sta_list.h"
 #include "packet_reader.h"
+#include "oui.h"
 
 typedef int (* ap_sort_fn)(
 	struct AP_info const * const a,
@@ -112,22 +113,6 @@ typedef struct ap_sort_info_st
 struct devices dev;
 
 static const unsigned char llcnull[] = {0, 0, 0, 0};
-
-static char const unknown_manufacturer[] = "Unknown";
-
-static const char * OUI_PATHS[]
-	= {"./airodump-ng-oui.txt",
-	   "/etc/aircrack-ng/airodump-ng-oui.txt",
-	   "/usr/local/etc/aircrack-ng/airodump-ng-oui.txt",
-	   "/usr/share/aircrack-ng/airodump-ng-oui.txt",
-	   "/var/lib/misc/oui.txt",
-	   "/usr/share/misc/oui.txt",
-	   "/var/lib/ieee-data/oui.txt",
-	   "/usr/share/ieee-data/oui.txt",
-	   "/etc/manuf/oui.txt",
-	   "/usr/share/wireshark/wireshark/manuf/oui.txt",
-	   "/usr/share/wireshark/manuf/oui.txt",
-	   NULL};
 
 enum
 {
@@ -179,8 +164,7 @@ static volatile time_t quitting_event_ts = 0;
 
 static void dump_sort(void);
 static void dump_print(int ws_row, int ws_col, int if_num);
-static char *
-get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2);
+
 int is_filtered_essid(const uint8_t * essid);
 
 /* bunch of global stuff */
@@ -196,7 +180,7 @@ static struct local_options
 
 	struct na_list_head na_list;
 
-    struct oui * manufacturer_list;
+	oui_context_st * manufacturer_list;
 
     mac_address prev_bssid;
 
@@ -945,185 +929,6 @@ static void input_thread(void * arg)
 	}
 }
 
-static FILE * open_oui_file(void)
-{
-	FILE * fp = NULL;
-
-	for (size_t i = 0; OUI_PATHS[i] != NULL; i++)
-	{
-		fp = fopen(OUI_PATHS[i], "r");
-		if (fp != NULL)
-		{
-			break;
-		}
-	}
-
-	return fp;
-}
-
-static void oui_list_free(struct oui * * const oui_list)
-{
-    struct oui * oui = *oui_list;
-
-    *oui_list = NULL;
-
-    while (oui != NULL)
-    {
-        struct oui * const next = oui->next;
-
-        free(oui->manufacturer);
-        free(oui);
-
-        oui = next;
-    }
-}
-
-static void strip_eol(char * const buffer)
-{
-	size_t len;
-	char * last_char;
-
-	len = strlen(buffer);
-	if (len == 0)
-	{
-		goto done;
-	}
-	last_char = &buffer[len - 1];
-	if (*last_char == '\n' || *last_char == '\r')
-	{
-		*last_char = '\0';
-	}
-
-	len = strlen(buffer);
-	if (len == 0)
-	{
-		goto done;
-	}
-	last_char = &buffer[len - 1];
-	if (*last_char == '\n' || *last_char == '\r')
-	{
-		*last_char = '\0';
-	}
-
-done:
-	return;
-}
-
-static char * get_manufacturer_from_string(char * buffer)
-{
-	char * manuf = NULL;
-	char * buffer_manuf;
-
-	if (buffer == NULL || strlen(buffer) == 0)
-	{
-		goto done;
-	}
-	static char const hex_field[] = "(hex)";
-
-	buffer_manuf = strstr(buffer, hex_field);
-
-	if (buffer_manuf == NULL)
-	{
-		goto done;
-	}
-	buffer_manuf += strlen(hex_field);
-	while (*buffer_manuf == '\t' || *buffer_manuf == ' ')
-	{
-		++buffer_manuf;
-	}
-
-	// Did we stop at the manufacturer
-	if (*buffer_manuf == '\0')
-	{
-		goto done;
-	}
-	// First make sure there's no end of line
-	strip_eol(buffer_manuf);
-
-	if (*buffer_manuf == '\0')
-	{
-		goto done;
-	}
-
-	manuf = strdup(buffer_manuf);
-
-done:
-	return manuf;
-}
-
-/* TODO - Move all oui related code into a separate module. 
- * Use a generic list. 
- */
-static struct oui * load_oui_file(void)
-{
-	FILE * fp;
-	char buffer[BUFSIZ];
-    struct oui * oui_head = NULL;
-    struct oui * * oui_next = &oui_head; 
-
-	fp = open_oui_file();
-	if (fp == NULL)
-	{
-		goto done;
-	}
-
-	while (fgets(buffer, sizeof(buffer), fp) != NULL)
-	{
-        unsigned char a[2] = { 0 };
-        unsigned char b[2] = { 0 };
-        unsigned char c[2] = { 0 };
-
-        if (strstr(buffer, "(hex)") == NULL)
-        {
-            continue;
-        }
-
-		// Remove leading/trailing whitespaces.
-		trim(buffer);
-		if (sscanf(buffer, "%2c-%2c-%2c", (char *) a, (char *) b, (char *) c)
-			== 3)
-		{
-            struct oui * const oui_ptr = calloc(1, sizeof *oui_ptr);
-
-            if (oui_ptr == NULL)
-            {
-                oui_list_free(&oui_head);
-                perror("oui_alloc failed");
-                goto done;
-			}
-
-			snprintf(oui_ptr->id,
-					 sizeof(oui_ptr->id),
-					 "%c%c:%c%c:%c%c",
-					 a[0],
-					 a[1],
-					 b[0],
-					 b[1],
-					 c[0],
-					 c[1]);
-
-            oui_ptr->manufacturer = 
-                get_manufacturer_from_string(buffer);
-
-            if (oui_ptr->manufacturer == NULL)
-			{
-                oui_ptr->manufacturer = strdup(unknown_manufacturer);
-			}
-
-            *oui_next = oui_ptr;
-            oui_next = &oui_ptr->next;
-        }
-	}
-
-done:
-    if (fp != NULL)
-    {
-        fclose(fp);
-    }
-
-	return oui_head;
-}
-
 static const char usage[] =
 
 	"\n"
@@ -1707,11 +1512,12 @@ static struct ST_info * st_info_new(mac_address const * const stmac)
 
 	MAC_ADDRESS_COPY(&st_cur->stmac, stmac);
 
-	if (st_cur->manuf == NULL)
-	{
-		st_cur->manuf = get_manufacturer(
-			st_cur->stmac.addr[0], st_cur->stmac.addr[1], st_cur->stmac.addr[2]);
-	}
+    st_cur->manuf = 
+        get_manufacturer_by_oui(
+            lopt.manufacturer_list,
+            st_cur->stmac.addr[0], 
+            st_cur->stmac.addr[1], 
+            st_cur->stmac.addr[2]);
 
 	st_cur->nb_pkt = 0;
 
@@ -1815,13 +1621,12 @@ static struct AP_info * ap_info_new(mac_address const * const bssid)
 	}
 
 	MAC_ADDRESS_COPY(&ap_cur->bssid, bssid);
-	if (ap_cur->manuf == NULL)
-	{
-		ap_cur->manuf = 
-			get_manufacturer(ap_cur->bssid.addr[0], 
-							 ap_cur->bssid.addr[1], 
-							 ap_cur->bssid.addr[2]);
-	}
+    ap_cur->manuf = 
+        get_manufacturer_by_oui(
+            lopt.manufacturer_list,
+            ap_cur->bssid.addr[0],
+            ap_cur->bssid.addr[1], 
+            ap_cur->bssid.addr[2]);
 
 	ap_cur->nb_pkt = 0;
 
@@ -4620,9 +4425,14 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 					}
 
 					if (ap_cur->manuf == NULL)
-						ap_cur->manuf = get_manufacturer(ap_cur->bssid.addr[0],
-                                                         ap_cur->bssid.addr[1],
-                                                         ap_cur->bssid.addr[2]);
+					{
+						ap_cur->manuf = 
+                            get_manufacturer_by_oui(
+                                lopt.manufacturer_list,
+                                ap_cur->bssid.addr[0],
+                                ap_cur->bssid.addr[1],
+                                ap_cur->bssid.addr[2]);
+                    }
 
 					snprintf(strbuf + len,
 							 sizeof(strbuf) - len - 1,
@@ -4866,125 +4676,6 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	}
 
 	erase_display(0);
-}
-
-static struct oui * oui_lookup(struct oui * const list, char const * oui)
-{
-    struct oui * ptr = list;
-
-    while (ptr != NULL)
-    {
-        bool const found = strcasecmp(ptr->id, oui) == 0;
-
-        if (found)
-        {
-            goto done;
-        }
-        ptr = ptr->next;
-    }
-
-done:
-    return ptr;
-}
-
-static char *
-get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2)
-{
-	char oui[OUI_STR_SIZE];
-    char * manuf; 
-    FILE * fp = NULL;
-
-	snprintf(oui, sizeof oui, "%02X:%02X:%02X", mac0, mac1, mac2);
-
-    if (lopt.manufacturer_list != NULL)
-	{
-		// Search in the list
-        struct oui const * const ptr = oui_lookup(lopt.manufacturer_list, oui);
-
-        if (ptr != NULL)
-        {
-            manuf = strdup(ptr->manufacturer);
-            ALLEGE(manuf != NULL);
-        }
-        else
-        {
-            manuf = NULL;
-        }
-
-        goto done;
-	}
-	else
-	{
-		// If the file exist, then query it each time we need to get a
-		// manufacturer.
-        fp = open_oui_file();
-
-        if (fp == NULL)
-        {
-            manuf = NULL;
-            goto done;
-        }
-        char buffer[BUFSIZ];
-
-        while (fgets(buffer, sizeof(buffer), fp) != NULL)
-        {
-            unsigned char a[2] = { 0 };
-            unsigned char b[2] = { 0 };
-            unsigned char c[2] = { 0 };
-
-            if (strstr(buffer, "(hex)") == NULL)
-            {
-                continue;
-            }
-
-            if (sscanf(buffer,
-                       "%2c-%2c-%2c",
-                       (char *) a,
-                       (char *) b,
-                       (char *) c)
-                == 3)
-            {
-                char temp[OUI_STR_SIZE];
-
-                snprintf(temp,
-                         sizeof(temp),
-                         "%c%c:%c%c:%c%c",
-                         a[0],
-                         a[1],
-                         b[0],
-                         b[1],
-                         c[0],
-                         c[1]);
-
-                bool const found = strcasecmp(temp, oui) == 0;
-
-                if (found)
-                {
-                    manuf = get_manufacturer_from_string(buffer);
-                    ALLEGE(manuf != NULL);
-
-                    goto done;
-                }
-            }
-        }
-	}
-
-    manuf = NULL;
-
-done:
-	if (manuf == NULL)
-	{
-        // Not found.
-        manuf = strdup(unknown_manufacturer);
-        ALLEGE(manuf != NULL);
-    }
-
-    if (fp != NULL)
-    {
-        fclose(fp);
-    }
-
-	return manuf;
 }
 
 /* Read at least one full line from the network.
@@ -8245,11 +7936,7 @@ int main(int argc, char * argv[])
 
 	signal_event_initialise(lopt.signal_event_pipe);
 
-	/* fill oui struct if ram is greater than 32 MB */
-	if (get_ram_size() > MIN_RAM_SIZE_LOAD_OUI_RAM)
-	{
-        lopt.manufacturer_list = load_oui_file();
-	}
+	lopt.manufacturer_list = load_oui_file();
 
 	/* start the GPS tracker */
 
@@ -8558,7 +8245,7 @@ int main(int argc, char * argv[])
 
 	na_info_list_free(&lopt.na_list);
 
-	oui_list_free(&lopt.manufacturer_list);
+	oui_context_free(lopt.manufacturer_list);
 
 	program_exit_code = EXIT_SUCCESS;
 

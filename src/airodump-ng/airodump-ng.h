@@ -120,21 +120,6 @@ extern int get_ram_size(void);
 extern const unsigned long int crc_tbl[256];
 extern const unsigned char crc_chop_tbl[256][4];
 
-#define MIN_RAM_SIZE_LOAD_OUI_RAM 32768
-
-#define OUI_STR_SIZE sizeof "00:00:00"
-#define MANUF_SIZE 128
-
-/* oui struct for list management */
-struct oui
-{
-    char id[OUI_STR_SIZE]; /* TODO: Don't use ASCII chars to compare, use unsigned char[3]
-                   (later) with the value (hex ascii will have to be converted)
-                   */
-    char * manufacturer;
-	struct oui * next;
-};
-
 #include "aircrack-ng/support/station.h"
 
 /* linked list of detected macs through ack, cts or rts frames */

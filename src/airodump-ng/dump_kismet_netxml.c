@@ -143,8 +143,16 @@ static int dump_write_kismet_netxml_client_info(
     fprintf(fp, "</client-mac>\n");
 
     /* Manufacturer, if set using standard oui list */
-    manuf
-        = sanitize_xml((unsigned char *)client->manuf, strlen(client->manuf));
+    if (client->manuf != NULL)
+    {
+        manuf = 
+            sanitize_xml((unsigned char *)client->manuf, strlen(client->manuf));
+    }
+    else
+    {
+        manuf = NULL;
+    }
+
     fprintf(fp,
             "\t\t\t<client-manuf>%s</client-manuf>\n",
             (manuf != NULL) ? manuf : "Unknown");
@@ -450,8 +458,15 @@ static void kismet_dump_write_netxml(
         fprintf(fp, "</BSSID>\n");
 
         /* Manufacturer, if set using standard oui list */
-        manuf = sanitize_xml((unsigned char *)ap_cur->manuf,
-                             strlen(ap_cur->manuf));
+        if (ap_cur->manuf != NULL)
+        {
+            manuf = sanitize_xml((unsigned char *)ap_cur->manuf,
+                                 strlen(ap_cur->manuf));
+        }
+        else
+        {
+            manuf = NULL;
+        }
         fprintf(fp,
                 "\t\t<manuf>%s</manuf>\n",
                 (manuf != NULL) ? manuf : "Unknown");
@@ -621,8 +636,15 @@ static void kismet_dump_write_netxml(
             fprintf(fp, "</BSSID>\n");
 
             /* Manufacturer, if set using standard oui list */
-            manuf = sanitize_xml((unsigned char *)st_cur->manuf,
-                                 strlen(st_cur->manuf));
+            if (st_cur->manuf != NULL)
+            {
+                manuf = 
+                    sanitize_xml((unsigned char *)st_cur->manuf, strlen(st_cur->manuf));
+            }
+            else
+            {
+                manuf = NULL;
+            }
             fprintf(fp,
                     "\t\t<manuf>%s</manuf>\n",
                     (manuf != NULL) ? manuf : "Unknown");
