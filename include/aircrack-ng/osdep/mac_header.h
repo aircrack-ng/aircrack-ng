@@ -63,4 +63,19 @@ static inline void MAC_ADDRESS_CLEAR(
     MAC_ADDRESS_COPY(mac, &empty_mac);
 }
 
+static inline int fprintf_mac_address(
+    FILE * const fp,
+    mac_address const * const mac)
+{
+    return fprintf(
+        fp,
+        "%02X:%02X:%02X:%02X:%02X:%02X",
+        mac->addr[0],
+        mac->addr[1],
+        mac->addr[2],
+        mac->addr[3],
+        mac->addr[4],
+        mac->addr[5]);
+}
+
 #endif /* __MAC_HEADER_H__ */

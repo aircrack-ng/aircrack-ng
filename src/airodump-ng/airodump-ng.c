@@ -1151,15 +1151,17 @@ int is_filtered_essid(const uint8_t * essid)
 	REQUIRE(essid != NULL);
 
 	int ret = 0;
-	int i;
-
-	if (lopt.f_essid)
+    /* FIXME - Remove the dependency on lopt. 
+     * This is called by dump routines, so can't be static as it 
+     * stands. 
+     */
+	if (lopt.f_essid != NULL)
 	{
-		for (i = 0; i < lopt.f_essid_count; i++)
+		for (size_t i = 0; i < lopt.f_essid_count; i++)
 		{
-			if (strncmp((char *) essid, lopt.f_essid[i], ESSID_LENGTH) == 0)
+			if (strncmp((char *)essid, lopt.f_essid[i], ESSID_LENGTH) == 0)
 			{
-				return (0);
+				return 0;
 			}
 		}
 
@@ -1171,8 +1173,8 @@ int is_filtered_essid(const uint8_t * essid)
 	{
 		return pcre_exec(lopt.f_essid_regex,
 						 NULL,
-						 (char *) essid,
-						 (int) strnlen((char *) essid, ESSID_LENGTH),
+						 (char *)essid,
+						 (int)strnlen((char *)essid, ESSID_LENGTH),
 						 0,
 						 0,
 						 NULL,
@@ -1181,7 +1183,7 @@ int is_filtered_essid(const uint8_t * essid)
 	}
 #endif
 
-	return (ret);
+	return ret;
 }
 
 static void update_rx_quality(void)
