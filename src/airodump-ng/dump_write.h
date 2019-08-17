@@ -38,7 +38,8 @@
 typedef enum dump_type_t
 {
     dump_type_csv,
-    dump_type_wifi_scanner
+    dump_type_wifi_scanner,
+    dump_type_kismet_csv,
 } dump_type_t;
 
 typedef struct dump_context_st dump_context_st;
@@ -76,9 +77,5 @@ int dump_write_kismet_netxml(struct ap_list_head * const ap_list,
                              struct sta_list_head * const sta_list,
 							 unsigned int f_encrypt,
 							 char * airodump_start_time);
-
-int dump_write_kismet_csv(struct ap_list_head * const ap_list,
-                          struct sta_list_head * const sta_list,
-						  unsigned int f_encrypt);
 
 #endif /* _AIRODUMP_NG_DUMP_WRITE_H_ */

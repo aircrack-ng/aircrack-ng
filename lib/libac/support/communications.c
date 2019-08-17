@@ -995,24 +995,6 @@ int dump_initialize_multi_format(
 				"Longitude Error, Type\r\n");
 	}
 
-	/* create the output Kismet CSV file */
-	if (opt.output_format_kismet_csv)
-	{
-		memset(ofn, 0, ofn_len);
-		snprintf(
-			ofn, ofn_len, "%s-%02d.%s", prefix, opt.f_index, KISMET_CSV_EXT);
-
-        opt.f_kis = fopen(ofn, "wb+");
-        if (opt.f_kis == NULL)
-		{
-			perror("fopen failed");
-			fprintf(stderr, "Could not create \"%s\".\n", ofn);
-			free(ofn);
-
-			return (1);
-		}
-	}
-
 	/* create the output GPS file */
 	if (opt.usegpsd)
 	{

@@ -58,6 +58,7 @@
 #include "aircrack-ng/utf8/verifyssid.h"
 #include "dump_write_wifi_scanner.h"
 #include "dump_csv.h"
+#include "dump_kismet_csv.h"
 
 extern struct communication_options opt;
 
@@ -179,7 +180,7 @@ int dump_write_airodump_ng_logcsv_add_client(const struct AP_info * ap_cur,
 	// Client => Network Security: none
 	fprintf(opt.f_logcsv, ",");
 
-	// Lat, Lon, Lat Error, Lon Errorst_cur->power
+	// Lat, Lon, Lat Error, Lon Error
 	fprintf(opt.f_logcsv,
 			"%.6f,%.6f,%.3f,%.3f,",
 			gps_loc[0],
@@ -911,7 +912,8 @@ int dump_write_kismet_netxml(struct ap_list_head * const ap_list,
 
 	/* Sometimes there can be crap at the end of the file, so truncating is a
 	   good idea.
-	   XXX: Is this really correct, I hope fileno() won't have any side effect
+       XXX: Is this really correct? I hope fileno() won't have any 
+       side effect 
 	   */
 	fp = fileno(opt.f_kis_xml);
 	fpos = ftell(opt.f_kis_xml);
@@ -919,231 +921,12 @@ int dump_write_kismet_netxml(struct ap_list_head * const ap_list,
 	{
 		return (0);
 	}
+
 	IGNORE_NZ(ftruncate(fp, fpos));
 
 	return (0);
 }
 #undef TIME_STR_LENGTH
-
-#define KISMET_HEADER                                                          \
-	"Network;NetType;ESSID;BSSID;Info;Channel;Cloaked;Encryption;Decrypted;"   \
-	"MaxRate;MaxSeenRate;Beacon;LLC;Data;Crypt;Weak;Total;Carrier;Encoding;"   \
-	"FirstTime;LastTime;BestQuality;BestSignal;BestNoise;GPSMinLat;GPSMinLon;" \
-	"GPSMinAlt;GPSMinSpd;GPSMaxLat;GPSMaxLon;GPSMaxAlt;GPSMaxSpd;GPSBestLat;"  \
-	"GPSBestLon;GPSBestAlt;DataSize;IPType;IP;\n"
-
-int dump_write_kismet_csv(struct ap_list_head * const ap_list,
-                          struct sta_list_head * const sta_list,
-						  unsigned int f_encrypt)
-{
-	UNUSED_PARAM(sta_list);
-
-	int i, k;
-
-	if (!opt.record_data || !opt.output_format_kismet_csv) return (0);
-
-	if (fseek(opt.f_kis, 0, SEEK_SET) == -1)
-	{
-		return (0);
-	}
-
-	fprintf(opt.f_kis, KISMET_HEADER);
-
-	k = 1;
-
-    struct AP_info * ap_cur;
-
-    TAILQ_FOREACH(ap_cur, ap_list, entry)
-	{
-		if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
-		{
-			continue;
-		}
-
-		if (ap_cur->security != 0 && f_encrypt != 0
-			&& ((ap_cur->security & f_encrypt) == 0))
-		{
-			continue;
-		}
-
-		if (is_filtered_essid(ap_cur->essid) || ap_cur->nb_pkt < 2)
-		{
-			continue;
-		}
-
-		// Network
-		fprintf(opt.f_kis, "%d;", k);
-
-		// NetType
-		fprintf(opt.f_kis, "infrastructure;");
-
-		// ESSID
-		for (i = 0; i < ap_cur->ssid_length; i++)
-		{
-			fprintf(opt.f_kis, "%c", ap_cur->essid[i]);
-		}
-		fprintf(opt.f_kis, ";");
-
-		// BSSID
-        fprintf_mac_address(opt.f_kis, &ap_cur->bssid);
-        fprintf(opt.f_kis, ";"); 
-
-		// Info
-		fprintf(opt.f_kis, ";");
-
-		// Channel
-		fprintf(opt.f_kis, "%d;", ap_cur->channel);
-
-		// Cloaked
-		fprintf(opt.f_kis, "No;");
-
-		// Encryption
-		if ((ap_cur->security & (STD_OPN | STD_WEP | STD_WPA | STD_WPA2)) != 0)
-		{
-			if (ap_cur->security & STD_WPA2)
-			{
-                if (ap_cur->security & AUTH_SAE || ap_cur->security & AUTH_OWE)
-                {
-					fprintf(opt.f_kis, "WPA3,");
-                }
-                else
-                {
-					fprintf(opt.f_kis, "WPA2,");
-                }
-			}
-			if (ap_cur->security & STD_WPA) fprintf(opt.f_kis, "WPA,");
-			if (ap_cur->security & STD_WEP) fprintf(opt.f_kis, "WEP,");
-			if (ap_cur->security & STD_OPN) fprintf(opt.f_kis, "OPN,");
-		}
-
-        if ((ap_cur->security & ENC_FIELD) == 0)
-        {
-			fprintf(opt.f_kis, "None,");
-        }
-		else
-		{
-			if (ap_cur->security & ENC_CCMP) fprintf(opt.f_kis, "AES-CCM,");
-			if (ap_cur->security & ENC_WRAP) fprintf(opt.f_kis, "WRAP,");
-			if (ap_cur->security & ENC_TKIP) fprintf(opt.f_kis, "TKIP,");
-			if (ap_cur->security & ENC_WEP104) fprintf(opt.f_kis, "WEP104,");
-			if (ap_cur->security & ENC_WEP40) fprintf(opt.f_kis, "WEP40,");
-			if (ap_cur->security & ENC_GCMP) fprintf(opt.f_kis, "GCMP,");
-			if (ap_cur->security & ENC_GMAC) fprintf(opt.f_kis, "GMAC,");
-			if (ap_cur->security & AUTH_SAE) fprintf(opt.f_kis, "SAE,");
-			if (ap_cur->security & AUTH_OWE) fprintf(opt.f_kis, "OWE,");
-		}
-
-		fseek(opt.f_kis, -1, SEEK_CUR);
-		fprintf(opt.f_kis, ";");
-
-		// Decrypted
-		fprintf(opt.f_kis, "No;");
-
-		// MaxRate
-		fprintf(opt.f_kis, "%d.0;", ap_cur->max_speed);
-
-		// MaxSeenRate
-		fprintf(opt.f_kis, "0;");
-
-		// Beacon
-		fprintf(opt.f_kis, "%lu;", ap_cur->nb_bcn);
-
-		// LLC
-		fprintf(opt.f_kis, "0;");
-
-		// Data
-		fprintf(opt.f_kis, "%lu;", ap_cur->nb_data);
-
-		// Crypt
-		fprintf(opt.f_kis, "0;");
-
-		// Weak
-		fprintf(opt.f_kis, "0;");
-
-		// Total
-		fprintf(opt.f_kis, "%lu;", ap_cur->nb_data);
-
-		// Carrier
-		fprintf(opt.f_kis, ";");
-
-		// Encoding
-		fprintf(opt.f_kis, ";");
-
-		// FirstTime
-		fprintf(opt.f_kis, "%s", ctime(&ap_cur->tinit));
-		fseek(opt.f_kis, -1, SEEK_CUR);
-		fprintf(opt.f_kis, ";");
-
-		// LastTime
-		fprintf(opt.f_kis, "%s", ctime(&ap_cur->tlast));
-		fseek(opt.f_kis, -1, SEEK_CUR);
-		fprintf(opt.f_kis, ";");
-
-		// BestQuality
-		fprintf(opt.f_kis, "%d;", ap_cur->avg_power);
-
-		// BestSignal
-		fprintf(opt.f_kis, "0;");
-
-		// BestNoise
-		fprintf(opt.f_kis, "0;");
-
-		// GPSMinLat
-		fprintf(opt.f_kis, "%.6f;", ap_cur->gps_loc_min[0]);
-
-		// GPSMinLon
-		fprintf(opt.f_kis, "%.6f;", ap_cur->gps_loc_min[1]);
-
-		// GPSMinAlt
-		fprintf(opt.f_kis, "%.6f;", ap_cur->gps_loc_min[2]);
-
-		// GPSMinSpd
-		fprintf(opt.f_kis, "%.6f;", ap_cur->gps_loc_min[3]);
-
-		// GPSMaxLat
-		fprintf(opt.f_kis, "%.6f;", ap_cur->gps_loc_max[0]);
-
-		// GPSMaxLon
-		fprintf(opt.f_kis, "%.6f;", ap_cur->gps_loc_max[1]);
-
-		// GPSMaxAlt
-		fprintf(opt.f_kis, "%.6f;", ap_cur->gps_loc_max[2]);
-
-		// GPSMaxSpd
-		fprintf(opt.f_kis, "%.6f;", ap_cur->gps_loc_max[3]);
-
-		// GPSBestLat
-		fprintf(opt.f_kis, "%.6f;", ap_cur->gps_loc_best[0]);
-
-		// GPSBestLon
-		fprintf(opt.f_kis, "%.6f;", ap_cur->gps_loc_best[1]);
-
-		// GPSBestAlt
-		fprintf(opt.f_kis, "%.6f;", ap_cur->gps_loc_best[2]);
-
-		// DataSize
-		fprintf(opt.f_kis, "0;");
-
-		// IPType
-		fprintf(opt.f_kis, "0;");
-
-		// IP
-		fprintf(opt.f_kis,
-				"%d.%d.%d.%d;",
-				ap_cur->lanip[0],
-				ap_cur->lanip[1],
-				ap_cur->lanip[2],
-				ap_cur->lanip[3]);
-
-		fprintf(opt.f_kis, "\r\n");
-
-		k++;
-	}
-
-	fflush(opt.f_kis);
-
-	return (0);
-}
 
 void dump_write(
     struct dump_context_st * dump,
@@ -1218,6 +1001,14 @@ struct dump_context_st * dump_open(
         case dump_type_csv:
             if (!csv_dump_open(dump,
                                filename))
+            {
+                had_error = true;
+                goto done;
+            }
+            break;
+        case dump_type_kismet_csv:
+            if (!kismet_csv_dump_open(dump,
+                                      filename))
             {
                 had_error = true;
                 goto done;

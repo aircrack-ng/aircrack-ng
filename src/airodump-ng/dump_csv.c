@@ -26,8 +26,6 @@
 
 extern int is_filtered_essid(unsigned char * essid); // airodump-ng.c
 
-#define FIELD_SEPARATOR "|"
-
 static char * format_text_for_csv(const unsigned char * input, size_t len)
 {
     // Unix style encoding
