@@ -1,9 +1,12 @@
 #ifndef __DUMP_CSV_H__
 #define __DUMP_CSV_H__
 
-#include <time.h>
+#include "dump_write.h"
 
-struct dump_context_st * csv_dump_open(
+#include <stdbool.h>
+
+bool csv_dump_open(
+    dump_context_st * const dump,
     char const * const filename);
 
 #endif /* __DUMP_CSV_H__ */

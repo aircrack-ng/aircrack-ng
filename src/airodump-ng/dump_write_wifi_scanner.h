@@ -1,9 +1,13 @@
 #ifndef __DUMP_WRITE_WIFI_SCANNER_H__
 #define __DUMP_WRITE_WIFI_SCANNER_H__
 
-#include <time.h>
+#include "dump_write.h"
 
-struct dump_context_st * wifi_scanner_dump_open(
+#include <time.h>
+#include <stdbool.h>
+
+bool wifi_scanner_dump_open(
+    dump_context_st * const dump,
     char const * const filename,
     char const * const sys_name,
     char const * const location_name,

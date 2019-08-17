@@ -20,6 +20,7 @@
 #include "aircrack-ng/support/communications.h"
 #include "dump_write_wifi_scanner.h"
 #include "dump_write.h"
+#include "dump_write_private.h"
 #include "aircrack-ng/crypto/crypto.h"
 #include "aircrack-ng/utf8/verifyssid.h"
 
@@ -332,73 +333,72 @@ struct wifi_scanner_dump_context_st
 }; 
 
 static void wifi_context_free(
-    struct wifi_scanner_dump_context_st * const wifi_context)
+    struct wifi_scanner_dump_context_st * const context)
 {
-    free((void *)wifi_context->filename);
-    free((void *)wifi_context->sys_name);
-    free((void *)wifi_context->location_name);
-    free(wifi_context);
+    free((void *)context->filename);
+    free((void *)context->sys_name);
+    free((void *)context->location_name);
+    free(context);
 }
 
 static void wifi_scanner_reset_check(
-    struct wifi_scanner_dump_context_st * const wifi_context)
+    struct wifi_scanner_dump_context_st * const context)
 {
     time_t const current_time = time(NULL);
     int const time_since_last_reset =
-        current_time - wifi_context->last_file_reset;
+        current_time - context->last_file_reset;
 
-    if (time_since_last_reset > wifi_context->file_reset_seconds
-        && wifi_context->filename != NULL)
+    if (time_since_last_reset > context->file_reset_seconds
+        && context->filename != NULL)
     {
-        wifi_context->fp = freopen(wifi_context->filename, "w", wifi_context->fp);
-        wifi_context->last_file_reset = current_time;
+        context->fp = freopen(context->filename, "w", context->fp);
+        context->last_file_reset = current_time;
     }
 }
 
-static void wifi_scanner_dump(struct dump_context_st * const dump,
+static void wifi_scanner_dump(void * const priv,
                               struct ap_list_head * const ap_list,
                               struct sta_list_head * const sta_list,
                               unsigned int const f_encrypt)
 {
-    struct wifi_scanner_dump_context_st * const wifi_context = dump->priv;
+    struct wifi_scanner_dump_context_st * const context = priv;
 
-    dump_write_wifi_scanner(wifi_context->fp,
+    dump_write_wifi_scanner(context->fp,
                             ap_list,
                             sta_list, 
                             f_encrypt, 
-                            wifi_context->filter_seconds, 
-                            wifi_context->sys_name, 
-                            wifi_context->location_name);
+                            context->filter_seconds, 
+                            context->sys_name, 
+                            context->location_name);
 
-    wifi_scanner_reset_check(wifi_context);
+    wifi_scanner_reset_check(context);
 }
 
-static void wifi_dump_close(
-    struct wifi_scanner_dump_context_st * const wifi_context)
+static void wifi_scanner_close(
+    struct wifi_scanner_dump_context_st * const context)
 {
-    if (wifi_context == NULL)
+    if (context == NULL)
     {
         goto done;
     }
 
-    if (wifi_context->fp != NULL)
+    if (context->fp != NULL)
     {
-        fclose(wifi_context->fp);
+        fclose(context->fp);
     }
 
-    wifi_context_free(wifi_context);
+    wifi_context_free(context);
 
 done:
     return;
 }
 
-static void wifi_scanner_close(struct dump_context_st * const dump)
+static void wifi_scanner_dump_close(
+    void * const priv)
 {
-    struct wifi_scanner_dump_context_st * const wifi_context = dump->priv;
+    struct wifi_scanner_dump_context_st * const context = priv;
 
-    wifi_dump_close(wifi_context);
-
-    free(dump);
+    wifi_scanner_close(context);
 }
 
 struct wifi_scanner_dump_context_st * wifi_dump_open(
@@ -409,75 +409,75 @@ struct wifi_scanner_dump_context_st * wifi_dump_open(
     int const file_reset_seconds)
 {
     bool had_error;
-    struct wifi_scanner_dump_context_st * wifi_context =
-        calloc(1, sizeof *wifi_context);
+    struct wifi_scanner_dump_context_st * context =
+        calloc(1, sizeof *context);
 
-    if (wifi_context == NULL)
+    if (context == NULL)
     {
         had_error = true;
         goto done;
     }
 
-    wifi_context->fp = fopen(filename, "wb+");
-    if (wifi_context->fp == NULL)
+    context->fp = fopen(filename, "wb+");
+    if (context->fp == NULL)
     {
         had_error = true;
         goto done;
     }
 
-    wifi_context->file_reset_seconds = file_reset_seconds;
-    wifi_context->filter_seconds = filter_seconds;
+    context->file_reset_seconds = file_reset_seconds;
+    context->filter_seconds = filter_seconds;
 
-    wifi_context->filename = strdup(filename);
-    ALLEGE(wifi_context->filename != NULL);
+    context->filename = strdup(filename);
+    ALLEGE(context->filename != NULL);
 
-    wifi_context->sys_name = strdup(sys_name);
-    ALLEGE(wifi_context->sys_name != NULL);
+    context->sys_name = strdup(sys_name);
+    ALLEGE(context->sys_name != NULL);
 
-    wifi_context->location_name = strdup(location_name);
-    ALLEGE(wifi_context->location_name != NULL);
+    context->location_name = strdup(location_name);
+    ALLEGE(context->location_name != NULL);
 
     had_error = false;
 
 done:
     if (had_error)
     {
-        wifi_dump_close(wifi_context);
-        wifi_context = NULL;
+        wifi_scanner_close(context);
+        context = NULL;
     }
 
-    return wifi_context;
+    return context;
 }
 
-struct dump_context_st * wifi_scanner_dump_open(
-    char const * const filename, 
+bool wifi_scanner_dump_open(
+    dump_context_st * const dump,
+    char const * const filename,
     char const * const sys_name, 
     char const * const location_name,
     time_t const filter_seconds,
     int const file_reset_seconds)
 {
-    struct dump_context_st * dump;
-    struct wifi_scanner_dump_context_st * const wifi_context = 
+    bool success;
+    struct wifi_scanner_dump_context_st * const context = 
         wifi_dump_open(filename, 
                        sys_name, 
                        location_name, 
                        filter_seconds, 
                        file_reset_seconds);
 
-    if (wifi_context == NULL)
+    if (context == NULL)
     {
-        dump = NULL;
+        success = false;
         goto done;
     }
 
-    dump = calloc(1, sizeof *dump);
-    ALLEGE(dump != NULL);
-
-    dump->priv = wifi_context;
+    dump->priv = context;
     dump->dump = wifi_scanner_dump;
-    dump->close = wifi_scanner_close;
+    dump->close = wifi_scanner_dump_close;
  
+    success = true;
+
 done:
-    return dump;
+    return success;
 }
 

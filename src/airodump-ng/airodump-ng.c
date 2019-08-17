@@ -93,8 +93,6 @@
 #include "strlcpy.h"
 #include "ap_list.h"
 #include "aircrack-ng/osdep/sta_list.h"
-#include "dump_write_wifi_scanner.h"
-#include "dump_csv.h"
 #include "packet_reader.h"
 
 typedef int (* ap_sort_fn)(
@@ -6871,7 +6869,12 @@ static bool dump_initialise_custom_dump_formats(
 			ofn, ofn_len, "%s-%02d.%s", prefix, opt.f_index, AIRODUMP_NG_CSV_EXT);
 
 		lopt.csv_dump_context =
-			csv_dump_open(ofn);
+			dump_open(dump_type_csv,
+					  ofn,
+					  sys_name,
+					  location_name,
+					  filter_seconds,
+					  file_reset_seconds); 
 
 		if (lopt.csv_dump_context == NULL)
 		{
@@ -6889,11 +6892,12 @@ static bool dump_initialise_custom_dump_formats(
 			ofn, ofn_len, "%s-%02d.%s", prefix, opt.f_index, WIFI_EXT);
 
 		lopt.wifi_dump_context = 
-			wifi_scanner_dump_open(ofn, 
-								   sys_name, 
-								   location_name, 
-								   filter_seconds, 
-								   file_reset_seconds);
+			dump_open(dump_type_wifi_scanner,
+                      ofn,
+                      sys_name, 
+                      location_name, 
+                      filter_seconds, 
+                      file_reset_seconds);
 
 		if (lopt.wifi_dump_context == NULL)
 		{
@@ -6917,18 +6921,18 @@ static void update_output_files(void)
 {
 	if (lopt.csv_dump_context != NULL)
 	{
-		lopt.csv_dump_context->dump(lopt.csv_dump_context,
-                                    &lopt.ap_list,
-                                    &lopt.sta_list,
-                                    lopt.f_encrypt);
+		dump_write(lopt.csv_dump_context,
+                   &lopt.ap_list,
+                   &lopt.sta_list,
+                   lopt.f_encrypt);
 	}
 
 	if (lopt.wifi_dump_context != NULL)
 	{
-		lopt.wifi_dump_context->dump(lopt.wifi_dump_context,
-									 &lopt.ap_list,
-									 &lopt.sta_list,
-									 lopt.f_encrypt);
+		dump_write(lopt.wifi_dump_context,
+                   &lopt.ap_list,
+                   &lopt.sta_list,
+                   lopt.f_encrypt);
 	}
 
 	if (opt.output_format_kismet_csv)
@@ -6951,13 +6955,13 @@ static void close_output_files(void)
 {
 	if (lopt.csv_dump_context != NULL)
 	{
-		lopt.csv_dump_context->close(lopt.csv_dump_context);
+		dump_close(lopt.csv_dump_context);
 		lopt.csv_dump_context = NULL;
 	}
 
 	if (lopt.wifi_dump_context != NULL)
 	{
-		lopt.wifi_dump_context->close(lopt.wifi_dump_context);
+		dump_close(lopt.wifi_dump_context);
 		lopt.wifi_dump_context = NULL;
 	}
 

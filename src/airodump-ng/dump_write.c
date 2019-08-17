@@ -53,8 +53,11 @@
 #include "airodump-ng.h"
 #include "aircrack-ng/support/communications.h"
 #include "dump_write.h"
+#include "dump_write_private.h"
 #include "aircrack-ng/crypto/crypto.h"
 #include "aircrack-ng/utf8/verifyssid.h"
+#include "dump_write_wifi_scanner.h"
+#include "dump_csv.h"
 
 extern struct communication_options opt;
 
@@ -1237,3 +1240,100 @@ int dump_write_kismet_csv(struct ap_list_head * const ap_list,
 
 	return (0);
 }
+
+void dump_write(
+    struct dump_context_st * dump,
+    struct ap_list_head * const ap_list,
+    struct sta_list_head * const sta_list,
+    unsigned int const f_encrypt)
+{
+    if (dump == NULL)
+    {
+        goto done;
+    }
+
+    dump->dump(dump->priv, ap_list, sta_list, f_encrypt);
+
+done:
+    return;
+}
+
+static void dump_free(struct dump_context_st * dump)
+{
+    free(dump);
+}
+
+void dump_close(struct dump_context_st * dump)
+{
+    if (dump == NULL)
+    {
+        goto done;
+    }
+
+    if (dump->close != NULL)
+    {
+        dump->close(dump->priv);
+    }
+
+    dump_free(dump);
+
+done:
+    return; 
+}
+
+struct dump_context_st * dump_open(
+    dump_type_t const  dump_type,
+    char const * const filename,
+    char const * const sys_name,
+    char const * const location_name,
+    time_t const filter_seconds,
+    int const file_reset_seconds)
+{
+    bool had_error;
+    struct dump_context_st * dump = calloc(1, sizeof *dump);
+
+    if (dump == NULL)
+    {
+        goto done;
+    }
+
+    switch (dump_type)
+    {
+        case dump_type_wifi_scanner:
+            if (!wifi_scanner_dump_open(dump,
+                                        filename,
+                                        sys_name,
+                                        location_name,
+                                        filter_seconds,
+                                        file_reset_seconds))
+            {
+                had_error = true;
+                goto done;
+            }
+            break;
+        case dump_type_csv:
+            if (!csv_dump_open(dump,
+                               filename))
+            {
+                had_error = true;
+                goto done;
+            }
+            break;
+        default:
+            had_error = true;
+            goto done;
+    }
+
+    had_error = false;
+
+done:
+    if (had_error)
+    {
+        dump_close(dump);
+        dump = NULL;
+    }
+
+    return dump;
+}
+
+

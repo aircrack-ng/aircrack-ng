@@ -35,15 +35,31 @@
 #include "ap_list.h"
 #include "aircrack-ng/osdep/sta_list.h"
 
-struct dump_context_st
+typedef enum dump_type_t
 {
-    void * priv;
-    void (*dump)(struct dump_context_st * dump,
-                 struct ap_list_head * const ap_list,
-                 struct sta_list_head * const sta_list,
-                 unsigned int const f_encrypt);
-    void (*close)(struct dump_context_st * dump);
-}; 
+    dump_type_csv,
+    dump_type_wifi_scanner
+} dump_type_t;
+
+typedef struct dump_context_st dump_context_st;
+
+struct dump_context_st * dump_open(
+    dump_type_t const dump_type,
+    char const * const filename,
+    char const * const sys_name,
+    char const * const location_name,
+    time_t const filter_seconds,
+    int const file_reset_seconds);
+
+void dump_write(
+    dump_context_st * const dump,
+    struct ap_list_head * const ap_list,
+    struct sta_list_head * const sta_list,
+    unsigned int const f_encrypt); 
+
+void dump_close(
+    dump_context_st * const dump);
+
 
 int dump_write_airodump_ng_logcsv_add_ap(const struct AP_info * ap_cur,
 										 const int32_t ri_power,

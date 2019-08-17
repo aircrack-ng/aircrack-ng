@@ -20,6 +20,7 @@
 #include "aircrack-ng/support/communications.h"
 #include "dump_csv.h"
 #include "dump_write.h"
+#include "dump_write_private.h"
 #include "aircrack-ng/crypto/crypto.h"
 #include "aircrack-ng/utf8/verifyssid.h"
 
@@ -426,12 +427,12 @@ static void csv_context_free(
 }
 
 static void csv_dump(
-    struct dump_context_st * const dump,
+    void * const priv,
     struct ap_list_head * const ap_list,
     struct sta_list_head * const sta_list,
     unsigned int const f_encrypt)
 {
-    struct csv_dump_context_st * const context = dump->priv;
+    struct csv_dump_context_st * const context = priv;
 
     dump_write_csv(context->fp,
                    ap_list,
@@ -458,13 +459,11 @@ done:
     return;
 }
 
-static void csv_close(struct dump_context_st * const dump)
+static void csv_close(void * const priv)
 {
-    struct csv_dump_context_st * const context = dump->priv;
+    struct csv_dump_context_st * const context = priv;
 
     csv_dump_close(context);
-
-    free(dump);
 }
 
 struct csv_dump_context_st * csv_dump_context_open(
@@ -499,27 +498,27 @@ done:
     return context;
 }
 
-struct dump_context_st * csv_dump_open(
+bool csv_dump_open(
+    struct dump_context_st * const dump,
     char const * const filename)
 {
-    struct dump_context_st * dump;
+    bool success;
     struct csv_dump_context_st * const context =
         csv_dump_context_open(filename);
 
     if (context == NULL)
     {
-        dump = NULL;
+        success = false;
         goto done;
     }
-
-    dump = calloc(1, sizeof *dump);
-    ALLEGE(dump != NULL);
 
     dump->priv = context;
     dump->dump = csv_dump;
     dump->close = csv_close;
 
+    success = true;
+
 done:
-    return dump;
+    return success;
 }
 
