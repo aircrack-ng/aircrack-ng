@@ -1017,23 +1017,6 @@ int dump_initialize_multi_format(
 		}
 	}
 
-	/* Create the output kismet.netxml file */
-	if (opt.output_format_kismet_netxml)
-	{
-		snprintf(
-			ofn, ofn_len, "%s-%02d.%s", prefix, opt.f_index, KISMET_NETXML_EXT);
-
-        opt.f_kis_xml = fopen(ofn, "wb+");
-		if (opt.f_kis_xml == NULL)
-		{
-			perror("fopen failed");
-			fprintf(stderr, "Could not create \"%s\".\n", ofn);
-			free(ofn);
-
-			return (1);
-		}
-	}
-
 	/* create the output packet capture file */
 	if (opt.output_format_pcap)
 	{

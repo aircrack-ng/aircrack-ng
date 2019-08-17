@@ -142,7 +142,6 @@ struct communication_options
 	size_t weplen;
 
 	int f_index; /* outfiles index       */
-	FILE * f_kis_xml; /* output kismet netxml file */
     FILE * f_gps; /* output gps file      */
 	FILE * f_cap; /* output cap file      */
 	FILE * f_ivs; /* output ivs file      */

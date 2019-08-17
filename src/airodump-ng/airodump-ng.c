@@ -345,7 +345,9 @@ static struct local_options
 
 	struct dump_context_st * csv_dump_context;
 	struct dump_context_st * kismet_csv_dump_context;
+	struct dump_context_st * kismet_netxml_dump_context;
 	struct dump_context_st * wifi_dump_context;
+
 	bool should_update_stdout;
 
 } lopt;
@@ -6923,7 +6925,9 @@ static bool dump_initialise_custom_dump_formats(
 	char const * const sys_name,
 	char const * const location_name,
 	time_t const filter_seconds,
-	int const file_reset_seconds)
+	int const file_reset_seconds,
+	char const * const airodump_start_time,
+    bool const use_gpsd)
 {
 	bool success;
 	char * ofn;
@@ -6949,7 +6953,9 @@ static bool dump_initialise_custom_dump_formats(
 					  sys_name,
 					  location_name,
 					  filter_seconds,
-					  file_reset_seconds); 
+					  file_reset_seconds,
+					  airodump_start_time,
+					  use_gpsd);
 
 		if (lopt.csv_dump_context == NULL)
 		{
@@ -6972,9 +6978,36 @@ static bool dump_initialise_custom_dump_formats(
 					  sys_name,
 					  location_name,
 					  filter_seconds,
-					  file_reset_seconds);
+					  file_reset_seconds,
+					  airodump_start_time,
+					  use_gpsd);
 
 		if (lopt.kismet_csv_dump_context == NULL)
+		{
+			fprintf(stderr, "Could not create \"%s\".\n", ofn);
+			free(ofn);
+
+			success = false;
+			goto done;
+		}
+	}
+
+	if (opt.output_format_kismet_netxml)
+	{
+		snprintf(
+			ofn, ofn_len, "%s-%02d.%s", prefix, opt.f_index, KISMET_NETXML_EXT);
+
+		lopt.kismet_netxml_dump_context =
+			dump_open(dump_type_kismet_netxml,
+					  ofn,
+					  sys_name,
+					  location_name,
+					  filter_seconds,
+					  file_reset_seconds,
+					  airodump_start_time,
+					  use_gpsd);
+
+		if (lopt.kismet_netxml_dump_context == NULL)
 		{
 			fprintf(stderr, "Could not create \"%s\".\n", ofn);
 			free(ofn);
@@ -6995,7 +7028,9 @@ static bool dump_initialise_custom_dump_formats(
                       sys_name, 
                       location_name, 
                       filter_seconds, 
-                      file_reset_seconds);
+                      file_reset_seconds,
+                      airodump_start_time,
+					  use_gpsd);
 
 		if (lopt.wifi_dump_context == NULL)
 		{
@@ -7033,20 +7068,20 @@ static void update_output_files(void)
 				   lopt.f_encrypt);
 	}
 
+	if (lopt.kismet_netxml_dump_context != NULL)
+	{
+		dump_write(lopt.kismet_netxml_dump_context,
+				   &lopt.ap_list,
+				   &lopt.sta_list,
+				   lopt.f_encrypt);
+	}
+
 	if (lopt.wifi_dump_context != NULL)
 	{
 		dump_write(lopt.wifi_dump_context,
                    &lopt.ap_list,
                    &lopt.sta_list,
                    lopt.f_encrypt);
-	}
-
-	if (opt.output_format_kismet_netxml)
-	{
-		dump_write_kismet_netxml(&lopt.ap_list,
-								 &lopt.sta_list,
-								 lopt.f_encrypt,
-								 lopt.airodump_start_time);
 	}
 }
 
@@ -7064,15 +7099,16 @@ static void close_output_files(void)
 		lopt.kismet_csv_dump_context = NULL;
 	}
 
+    if (lopt.kismet_netxml_dump_context != NULL)
+	{
+		dump_close(lopt.kismet_netxml_dump_context);
+		lopt.kismet_netxml_dump_context = NULL;
+	}
+
     if (lopt.wifi_dump_context != NULL)
 	{
 		dump_close(lopt.wifi_dump_context);
 		lopt.wifi_dump_context = NULL;
-	}
-
-	if (opt.f_kis_xml != NULL)
-	{
-		fclose(opt.f_kis_xml);
 	}
 
 	if (opt.f_gps != NULL)
@@ -7267,7 +7303,6 @@ int main(int argc, char * argv[])
 	opt.f_cap = NULL;
 	opt.f_ivs = NULL;
 	lopt.max_node_age = 0;
-	opt.f_kis_xml = NULL;
     opt.f_gps = NULL;
 	opt.f_logcsv = NULL;
     lopt.keyout = NULL;
@@ -7317,6 +7352,7 @@ int main(int argc, char * argv[])
     lopt.wifi_dump_context = NULL; 
 	lopt.csv_dump_context = NULL; 
 	lopt.kismet_csv_dump_context = NULL; 
+	lopt.kismet_netxml_dump_context = NULL; 
 
 	lopt.gps_valid_interval
 		= 5; // If we dont get a new GPS update in 5 seconds - invalidate it
@@ -8167,8 +8203,16 @@ int main(int argc, char * argv[])
 		}
 	}
 
-	/* open or create the output files */
+	/* Create start time string for kismet netxml file */
+	lopt.airodump_start_time = strdup(ctime(&start_time));
+	ALLEGE(lopt.airodump_start_time != NULL);
+	// remove new line
+	if (strlen(lopt.airodump_start_time) > 0)
+	{
+		lopt.airodump_start_time[strlen(lopt.airodump_start_time) - 1] = '\0';
+	}
 
+	/* open or create the output files */
     if (opt.record_data)
     {
 		if (dump_initialize_multi_format(lopt.dump_prefix, 
@@ -8190,7 +8234,9 @@ int main(int argc, char * argv[])
 												 lopt.sys_name,
 												 lopt.loc_name,
 												 lopt.filter_seconds,
-												 lopt.file_reset_seconds))
+												 lopt.file_reset_seconds,
+												 lopt.airodump_start_time,
+												 opt.usegpsd))
 		{
 			program_exit_code = EXIT_FAILURE;
 			goto done;
@@ -8234,15 +8280,6 @@ int main(int argc, char * argv[])
 
     lopt.elapsed_time = strdup("0 s");
     ALLEGE(lopt.elapsed_time != NULL);
-
-	/* Create start time string for kismet netxml file */
-    lopt.airodump_start_time = strdup(ctime(&start_time));
-    ALLEGE(lopt.airodump_start_time != NULL);
-    // remove new line
-    if (strlen(lopt.airodump_start_time) > 0)
-    {
-        lopt.airodump_start_time[strlen(lopt.airodump_start_time) - 1] = '\0';
-    }
 
 	// Do not start the interactive mode input thread if running in the
 	// background

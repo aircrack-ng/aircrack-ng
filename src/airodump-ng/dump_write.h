@@ -40,6 +40,7 @@ typedef enum dump_type_t
     dump_type_csv,
     dump_type_wifi_scanner,
     dump_type_kismet_csv,
+    dump_type_kismet_netxml
 } dump_type_t;
 
 typedef struct dump_context_st dump_context_st;
@@ -50,7 +51,9 @@ struct dump_context_st * dump_open(
     char const * const sys_name,
     char const * const location_name,
     time_t const filter_seconds,
-    int const file_reset_seconds);
+    int const file_reset_seconds,
+    char const * const airodump_start_time,
+    bool const use_gpsd);
 
 void dump_write(
     dump_context_st * const dump,
