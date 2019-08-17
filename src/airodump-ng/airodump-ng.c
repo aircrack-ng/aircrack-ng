@@ -7019,19 +7019,20 @@ int main(int argc, char * argv[])
 #define ONE_MIN (60)
 	int read_pkts = 0; 
 
-    long time_slept, cycle_time, cycle_time2;
+	long time_slept;
+	long cycle_time;
+	long cycle_time2;
 	char * output_format_string;
 	int i, j, fdh, freq_count;
-	size_t caplen;
 	int fd_raw[MAX_CARDS]; 
     int arptype[MAX_CARDS];
 	struct wif * wi[MAX_CARDS];
+	int wi_read_failed[MAX_CARDS] = { 0 };
 	int ivs_only, found;
 	int freq[2];
 	int num_opts = 0;
 	int option = 0;
 	int option_index = 0;
-	int wi_read_failed = 0;
     int reset_val = 0;
     int output_format_first_time = 1;
 #ifdef HAVE_PCRE
@@ -7042,8 +7043,7 @@ int main(int argc, char * argv[])
 	time_t tt1, tt2, start_time;
 
 	struct rx_info ri;
-	unsigned char buffer[4096];
-	unsigned char * h80211;
+	unsigned char h80211[4096];
 
 	struct timeval tv0;
 	struct timeval tv1;
@@ -7111,7 +7111,6 @@ int main(int argc, char * argv[])
 	memset(&opt, 0, sizeof(opt));
 	memset(&lopt, 0, sizeof(lopt));
 
-	h80211 = NULL;
 	ivs_only = 0;
 	lopt.chanoption = 0;
 	lopt.freqoption = 0;
@@ -8195,14 +8194,13 @@ int main(int argc, char * argv[])
 			}
 		}
 
-		h80211 = buffer;
-
 		if (lopt.packet_reader_context != NULL)
 		{
 			/* Read one packet */
 			struct pcap_pkthdr pkh;
+			size_t packet_length;
 			packet_reader_result_t const result =
-				packet_reader_read(lopt.packet_reader_context, buffer, sizeof buffer, &caplen, &ri, &pkh);
+				packet_reader_read(lopt.packet_reader_context, h80211, sizeof h80211, &packet_length, &ri, &pkh);
 
 			if (result == packet_reader_result_skip)
 			{
@@ -8222,7 +8220,7 @@ int main(int argc, char * argv[])
 			read_pkts++;
 
 			static size_t const file_dummy_card_number = 0;
-			dump_add_packet(buffer, caplen, &ri, file_dummy_card_number); 
+			dump_add_packet(h80211, packet_length, &ri, file_dummy_card_number);
 
 			pace_packet_reader(&lopt, &prev_tv, &pkh, read_pkts);
 		}
@@ -8286,14 +8284,12 @@ int main(int argc, char * argv[])
 			{
 				if (FD_ISSET(fd_raw[i], &rfds)) // NOLINT(hicpp-signed-bitwise)
 				{
-					memset(buffer, 0, sizeof(buffer));
-					h80211 = buffer;
-					if ((caplen = wi_read(
-							 wi[i], NULL, NULL, h80211, sizeof(buffer), &ri))
-						== -1)
+                    ssize_t packet_length = 
+                        wi_read(wi[i], NULL, NULL, h80211, sizeof(h80211), &ri);
+					if (packet_length == -1)
 					{
-						wi_read_failed++;
-						if (wi_read_failed > 1)
+						wi_read_failed[i]++;
+						if (wi_read_failed[i] > 1)
 						{
 							lopt.do_exit = 1;
 							break;
@@ -8316,11 +8312,11 @@ int main(int argc, char * argv[])
 							fdh = fd_raw[i];
 						}
 
-						break;
+						continue;
 					}
 
-					wi_read_failed = 0;
-					dump_add_packet(h80211, caplen, &ri, i);
+					wi_read_failed[i] = 0;
+					dump_add_packet(h80211, packet_length, &ri, i);
 				}
 			}
 		}
@@ -8364,8 +8360,10 @@ int main(int argc, char * argv[])
 
 	if (!lopt.save_gps)
 	{
-		snprintf((char *)buffer, sizeof buffer, "%s-%02d.gps", argv[2], opt.f_index);
-		unlink((char *)buffer);
+		char buffer[PATH_MAX];
+
+		snprintf(buffer, sizeof buffer, "%s-%02d.gps", argv[2], opt.f_index);
+		unlink(buffer);
 	}
 
 	if (opt.usegpsd)
