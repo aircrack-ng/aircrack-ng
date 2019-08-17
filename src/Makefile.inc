@@ -70,6 +70,8 @@ SRC_DWRITE_KISMET_CSV = %D%/airodump-ng/dump_kismet_csv.c
 SRC_DWRITE_KISMET_NETXML = %D%/airodump-ng/dump_kismet_netxml.c
 SRC_PACKET_READER	= %D%/airodump-ng/packet_reader.c
 SRC_OUI	= %D%/airodump-ng/oui.c
+SRC_BATTERY	= %D%/airodump-ng/battery.c
+SRC_GET_STRING_TIME_FROM_SECS = %D%/airodump-ng/get_string_time_from_seconds.c
 
 bin_PROGRAMS += aircrack-ng \
                 airdecap-ng \
@@ -134,7 +136,7 @@ aireplay_ng_SOURCES	= $(SRC_AR)
 aireplay_ng_CFLAGS	= $(COMMON_CFLAGS) $(LIBNL_CFLAGS)
 aireplay_ng_LDADD		= $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBACCRYPTO_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_LIBS) $(CRYPTO_LIBS)
 
-airodump_ng_SOURCES		= $(SRC_ADU) $(SRC_DWRITE) $(SRC_STRLCPY) $(SRC_DWRITE_WIFI) $(SRC_PACKET_READER) $(SRC_DWRITE_CSV) $(SRC_DWRITE_KISMET_CSV) $(SRC_DWRITE_KISMET_NETXML) $(SRC_OUI)
+airodump_ng_SOURCES		= $(SRC_ADU) $(SRC_DWRITE) $(SRC_STRLCPY) $(SRC_DWRITE_WIFI) $(SRC_PACKET_READER) $(SRC_DWRITE_CSV) $(SRC_DWRITE_KISMET_CSV) $(SRC_DWRITE_KISMET_NETXML) $(SRC_OUI) $(SRC_BATTERY) $(SRC_GET_STRING_TIME_FROM_SECS)
 airodump_ng_CFLAGS		= $(COMMON_CFLAGS) $(PCRE_CFLAGS) $(LIBNL_CFLAGS)
 airodump_ng_CPPFLAGS	= $(AM_CPPFLAGS) -I$(abs_srcdir)/src/airodump-ng
 airodump_ng_LDADD			= $(COMMON_LDADD) $(PCRE_LIBS) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBACCRYPTO_LIBS) $(LIBAIRCRACK_CE_WEP_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_LIBS) $(CRYPTO_LIBS)

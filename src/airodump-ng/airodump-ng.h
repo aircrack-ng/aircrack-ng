@@ -90,7 +90,8 @@
 
 typedef enum ap_sort_type_t
 {
-	SORT_DEFAULT,
+	SORT_FIRST,
+	SORT_DEFAULT = SORT_FIRST,
 	SORT_BY_NOTHING,
     SORT_BY_BSSID,
     SORT_BY_POWER,

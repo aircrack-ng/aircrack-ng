@@ -95,6 +95,8 @@
 #include "aircrack-ng/osdep/sta_list.h"
 #include "packet_reader.h"
 #include "oui.h"
+#include "battery.h"
+#include "get_string_time_from_seconds.h"
 
 typedef int (* ap_sort_fn)(
 	struct AP_info const * const a,
@@ -162,7 +164,6 @@ struct hopper_data_st
 static volatile int quitting = 0;
 static volatile time_t quitting_event_ts = 0;
 
-static void dump_sort(void);
 static void dump_print(int ws_row, int ws_col, int if_num);
 
 int is_filtered_essid(const uint8_t * essid);
@@ -290,12 +291,14 @@ static struct local_options
 	int start_print_ap;
 	int start_print_sta;
 	struct AP_info * p_selected_ap;
+
 	enum
 	{
 		selection_direction_down,
 		selection_direction_up,
 		selection_direction_no
 	} en_selection_direction;
+
 	int mark_cur_ap;
 	int num_cards;
 	int do_pause;
@@ -312,8 +315,10 @@ static struct local_options
 	u_int maxsize_wps_seen;
 	int show_wps;
 	struct tm gps_time; /* the timestamp from the gps data */
+
     char sys_name[256];  /* system name value for wifi scanner custom format */
     char loc_name[256];  /* location name value for wifi scanner custom format */
+
 #ifdef CONFIG_LIBNL
 	unsigned int htval;
 #endif
@@ -325,7 +330,8 @@ static struct local_options
 
     time_t filter_seconds;
     int file_reset_seconds;
-	size_t max_node_age;
+
+    size_t max_node_age;
 
 	struct dump_context_st * csv_dump_context;
 	struct dump_context_st * kismet_csv_dump_context;
@@ -335,6 +341,53 @@ static struct local_options
 	bool should_update_stdout;
 
 } lopt;
+
+static int
+acquire_lock(pthread_mutex_t * const mutex)
+{
+	int const lock_result = pthread_mutex_lock(mutex);
+
+	ALLEGE(lock_result == 0);
+
+	return lock_result;
+}
+
+static int
+release_lock(pthread_mutex_t * const mutex)
+{
+	int const result = pthread_mutex_unlock(mutex);
+
+	ALLEGE(result == 0);
+
+	return result;
+}
+
+static int
+initialise_lock(pthread_mutex_t * const mutex)
+{
+	int const result = pthread_mutex_init(mutex, NULL);
+
+	ALLEGE(result == 0);
+
+	return result;
+}
+
+static int
+ap_list_lock_acquire(struct local_options * const options)
+{
+	return acquire_lock(&options->ap_list_lock);
+}
+
+static int
+ap_list_lock_release(struct local_options * const options)
+{
+	return release_lock(&options->ap_list_lock);
+}
+
+static int ap_list_lock_initialise(struct local_options * const options)
+{
+	return initialise_lock(&options->ap_list_lock);
+}
 
 static int sort_bssid(
 	struct AP_info const * const a,
@@ -550,13 +603,10 @@ static ap_sort_info_st const * sort_method_assign(ap_sort_type_t const sort_meth
 
 	if (sort_method < 0 || sort_method >= SORT_MAX)
 	{
-		sort_method = SORT_DEFAULT;
+		sort_method = SORT_FIRST;
 	}
 
 	sort_info = &ap_sort_infos[sort_method];
-
-	ALLEGE(sort_info->ap_sort != NULL);
-	ALLEGE(sort_info->description != NULL);
 
 	return sort_info;
 }
@@ -670,51 +720,117 @@ static void color_on(void)
 	}
 }
 
-static int
-acquire_lock(pthread_mutex_t * const mutex)
+static void sort_aps(
+	struct local_options * const options,
+	ap_sort_info_st const * const sort_info)
 {
-    int const lock_result = pthread_mutex_lock(mutex);
+	time_t tt = time(NULL);
+	struct ap_list_head sorted_list = TAILQ_HEAD_INITIALIZER(sorted_list);
 
-    ALLEGE(lock_result == 0);
+	/* Sort the aps by WHATEVER first, */
+	/* Can't 'sort' (or something better) be used to sort these 
+	   entries?*/
 
-    return lock_result;
+	while (TAILQ_FIRST(&options->ap_list) != NULL)
+	{
+		struct AP_info * ap_cur;
+		struct AP_info * ap_min = NULL;
+
+		/* Only the most recent entries are sorted. */
+		TAILQ_FOREACH(ap_cur, &options->ap_list, entry)
+		{
+			if (tt - ap_cur->tlast > 20)
+			{
+				ap_min = ap_cur;
+			}
+		}
+
+		if (ap_min == NULL)
+		{
+			ap_min = TAILQ_FIRST(&options->ap_list);
+
+			TAILQ_FOREACH(ap_cur, &options->ap_list, entry)
+			{
+				if (ap_min == ap_cur)
+				{
+					/* There's no point in comparing an entry with itself. */
+					continue;
+				}
+				if (sort_info->ap_sort(ap_cur, ap_min, options->sort_inv) < 0)
+				{
+					ap_min = ap_cur;
+				}
+			}
+		}
+
+		TAILQ_REMOVE(&options->ap_list, ap_min, entry);
+		TAILQ_INSERT_TAIL(&sorted_list, ap_min, entry);
+	}
+
+	/* The original list is now empty. 
+	 * Concatenate the sorted list to it so that it contains the 
+	 * sorted entries. 
+	 */
+	TAILQ_CONCAT(&options->ap_list, &sorted_list, entry);
 }
 
-static int
-release_lock(pthread_mutex_t * const mutex)
+static void sort_stas(struct local_options * const options)
 {
-	int const result = pthread_mutex_unlock(mutex);
+	time_t tt = time(NULL);
+	struct sta_list_head sorted_list = TAILQ_HEAD_INITIALIZER(sorted_list);
 
-	ALLEGE(result == 0);
+	while (TAILQ_FIRST(&options->sta_list) != NULL)
+	{
+		struct ST_info * st_cur;
+		struct ST_info * st_min = NULL;
 
-	return result;
+		/* Don't sort entries older than 60 seconds. */
+		TAILQ_FOREACH(st_cur, &options->sta_list, entry)
+		{
+			if ((tt - st_cur->tlast) > 60)
+			{
+				st_min = st_cur;
+			}
+		}
+
+		if (st_min == NULL)
+		{
+			st_min = TAILQ_FIRST(&options->sta_list);
+
+			/* STAs are always sorted by power. */
+			TAILQ_FOREACH(st_cur, &options->sta_list, entry)
+			{
+				if (st_min == st_cur)
+				{
+					/* There's no point in comparing an entry with itself. */
+					continue;
+				}
+				if (st_cur->power < st_min->power)
+				{
+					st_min = st_cur;
+				}
+			}
+		}
+
+		TAILQ_REMOVE(&options->sta_list, st_min, entry);
+		TAILQ_INSERT_TAIL(&sorted_list, st_min, entry);
+	}
+
+	/* The original list is now empty. 
+	 * Concatenate the sorted list to it so that it contains the 
+	 * sorted entries. 
+	 */
+	TAILQ_CONCAT(&options->sta_list, &sorted_list, entry);
 }
 
-static int
-initialise_lock(pthread_mutex_t * const mutex)
+static void dump_sort(void)
 {
-	int const result = pthread_mutex_init(mutex, NULL);
+	ap_list_lock_acquire(&lopt);
 
-	ALLEGE(result == 0);
+	sort_aps(&lopt, lopt.sort_method);
+	sort_stas(&lopt);
 
-    return result;
-}
-
-static int
-ap_list_lock_acquire(struct local_options * const options)
-{
-	return acquire_lock(&options->ap_list_lock);
-}
-
-static int
-ap_list_lock_release(struct local_options * const options)
-{
-	return release_lock(&options->ap_list_lock);
-}
-
-static int ap_list_lock_initialise(struct local_options * const options)
-{
-	return initialise_lock(&options->ap_list_lock);
+	ap_list_lock_release(&lopt);
 }
 
 static void input_thread(void * arg)
@@ -3544,196 +3660,6 @@ write_packet:
 	}
 
 	write_cap_file(opt.f_cap, h80211, caplen, ri->ri_power);
-}
-
-static void sort_aps(
-    struct local_options * const options,
-    ap_sort_info_st const * const sort_info)
-{
-    time_t tt = time(NULL);
-	struct ap_list_head sorted_list = TAILQ_HEAD_INITIALIZER(sorted_list);
-
-    /* Sort the aps by WHATEVER first, */
-    /* Can't 'sort' (or something better) be used to sort these 
-       entries?*/
-
-	while (TAILQ_FIRST(&options->ap_list) != NULL)
-    {
-		struct AP_info * ap_cur;
-        struct AP_info * ap_min = NULL;
-
-		/* Only the most recent entries are sorted. */
-		TAILQ_FOREACH(ap_cur, &options->ap_list, entry)
-        {
-			if (tt - ap_cur->tlast > 20)
-			{
-                ap_min = ap_cur;
-			}
-        }
-
-        if (ap_min == NULL)
-        {
-			ap_min = TAILQ_FIRST(&options->ap_list);
-
-			TAILQ_FOREACH(ap_cur, &options->ap_list, entry)
-			{
-				if (ap_min == ap_cur)
-				{
-					/* There's no point in comparing an entry with itself. */
-					continue;
-				}
-				if (sort_info->ap_sort(ap_cur, ap_min, options->sort_inv) < 0)
-				{
-					ap_min = ap_cur;
-				}
-			}
-        }
-
-		TAILQ_REMOVE(&options->ap_list, ap_min, entry);
-		TAILQ_INSERT_TAIL(&sorted_list, ap_min, entry);
-    }
-
-	/* The original list is now empty. 
-	 * Concatenate the sorted list to it so that it contains the 
-	 * sorted entries. 
-	 */
-	TAILQ_CONCAT(&options->ap_list, &sorted_list, entry);
-}
-
-static void sort_stas(struct local_options * const options)
-{
-    time_t tt = time(NULL);
-	struct sta_list_head sorted_list= TAILQ_HEAD_INITIALIZER(sorted_list);
-
-	while (TAILQ_FIRST(&options->sta_list) != NULL)
-    {
-		struct ST_info * st_cur;
-        struct ST_info * st_min = NULL;
-
-		/* Don't sort entries older than 60 seconds. */
-		TAILQ_FOREACH(st_cur, &options->sta_list, entry)
-        {
-			if ((tt - st_cur->tlast) > 60)
-			{
-                st_min = st_cur;
-			}
-        }
-
-        if (st_min == NULL)
-        {
-			st_min = TAILQ_FIRST(&options->sta_list); 
-
-            /* STAs are always sorted by power. */ 
-			TAILQ_FOREACH(st_cur, &options->sta_list, entry)
-            {
-				if (st_min == st_cur)
-				{
-					/* There's no point in comparing an entry with itself. */
-					continue;
-				}
-				if (st_cur->power < st_min->power)
-				{
-                    st_min = st_cur;
-				}
-            }
-        }
-
-		TAILQ_REMOVE(&options->sta_list, st_min, entry);
-		TAILQ_INSERT_TAIL(&sorted_list, st_min, entry);
-    }
-
-	/* The original list is now empty. 
-	 * Concatenate the sorted list to it so that it contains the 
-	 * sorted entries. 
-	 */
-	TAILQ_CONCAT(&options->sta_list, &sorted_list, entry);
-}
-
-static void dump_sort(void)
-{
-	ap_list_lock_acquire(&lopt);
-
-	sort_aps(&lopt, lopt.sort_method);
-    sort_stas(&lopt);
-
-	ap_list_lock_release(&lopt);
-}
-
-static int getBatteryState(void) { return get_battery_state(); }
-
-static char * getStringTimeFromSec(double seconds)
-{
-	int hour[3];
-	char * ret;
-	char * HourTime;
-	char * MinTime;
-
-	if (seconds < 0) return (NULL);
-
-	ret = calloc(256, sizeof *ret);
-	ALLEGE(ret != NULL);
-
-	HourTime = calloc(128, sizeof *HourTime);
-	ALLEGE(HourTime != NULL);
-	MinTime = calloc(128, sizeof MinTime);
-	ALLEGE(MinTime != NULL);
-
-	hour[0] = (int) (seconds);
-	hour[1] = hour[0] / 60;
-	hour[2] = hour[1] / 60;
-	hour[0] %= 60;
-	hour[1] %= 60;
-
-	if (hour[2] != 0)
-		snprintf(
-			HourTime, 128, "%d %s", hour[2], (hour[2] == 1) ? "hour" : "hours");
-	if (hour[1] != 0)
-		snprintf(
-			MinTime, 128, "%d %s", hour[1], (hour[1] == 1) ? "min" : "mins");
-
-	if (hour[2] != 0 && hour[1] != 0)
-		snprintf(ret, 256, "%s %s", HourTime, MinTime);
-	else
-	{
-		if (hour[2] == 0 && hour[1] == 0)
-			snprintf(ret, 256, "%d s", hour[0]);
-		else
-			snprintf(ret, 256, "%s", (hour[2] == 0) ? MinTime : HourTime);
-	}
-
-	free(MinTime);
-	free(HourTime);
-
-	return (ret);
-}
-
-static char * getBatteryString(void)
-{
-	int batt_time;
-	char * ret;
-	char * batt_string;
-
-	batt_time = getBatteryState();
-
-	if (batt_time <= 60)
-	{
-		ret = calloc(2, sizeof *ret);
-		ALLEGE(ret != NULL);
-		ret[0] = ']';
-		return ret;
-	}
-
-	batt_string = getStringTimeFromSec((double) batt_time);
-	ALLEGE(batt_string != NULL);
-
-	ret = calloc(256, sizeof *ret);
-	ALLEGE(ret != NULL);
-
-	snprintf(ret, 256, "][ BAT: %s ]", batt_string);
-
-	free(batt_string);
-
-	return (ret);
 }
 
 #define TSTP_SEC                                                               \
@@ -7963,7 +7889,7 @@ int main(int argc, char * argv[])
 	gettimeofday(&tv3, NULL);
 	gettimeofday(&tv4, NULL);
 
-	lopt.batt = getBatteryString();
+	update_battery_string(&lopt.batt);
 
     lopt.elapsed_time = strdup("0 s");
     ALLEGE(lopt.elapsed_time != NULL);
@@ -7988,6 +7914,8 @@ int main(int argc, char * argv[])
 
 	while (1)
 	{
+		time_t current_time;
+
         check_monitor_process(&lopt);
         check_for_signal_events(&lopt);
 		purge_old_nodes(&lopt, lopt.max_node_age);
@@ -7999,23 +7927,26 @@ int main(int argc, char * argv[])
             break;
         }
 
-		time_t const seconds_since_last_output_write = time(NULL) - tt1;
+		current_time = time(NULL);
+		time_t const seconds_since_last_output_write = current_time - tt1;
 
 		if (seconds_since_last_output_write >= lopt.file_write_interval)
 		{
 			/* update the output files */
-			tt1 = time(NULL);
+			tt1 = current_time;
 			update_output_files();
 		}
 
-		if (time(NULL) - tt2 > 5)
+		current_time = time(NULL);
+		time_t const seconds_since_last_generic_update = current_time - tt2;
+
+		if (seconds_since_last_generic_update > 5)
 		{
+			tt2 = current_time;
+
             dump_sort();
 
-			/* update the battery state */
-			tt2 = time(NULL);
-            free(lopt.batt);
-            lopt.batt = getBatteryString();
+			update_battery_string(&lopt.batt);
 
 			/* update elapsed time */
 			free(lopt.elapsed_time);
