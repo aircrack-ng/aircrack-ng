@@ -794,6 +794,8 @@ static const char usage[] =
 	"      --gpsd                : Use GPSd\n"
 	"      --write      <prefix> : Dump file prefix\n"
 	"      -w                    : same as --write \n"
+    "      --nodecloak           : Disable decloaking\n"
+    "      -D                    : Same as --nodecloak\n"
 	"      --beacons             : Record all beacons in dump file\n"
 	"      --update       <secs> : Display update delay in seconds\n"
 	"      --showack             : Prints ack/cts/rts statistics\n"
