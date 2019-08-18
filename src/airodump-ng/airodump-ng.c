@@ -6407,7 +6407,9 @@ int main(int argc, char * argv[])
 	int pcreerroffset;
 #endif
 
-	time_t tt1, tt2, start_time;
+	time_t tt1; 
+	time_t tt2; 
+	time_t start_time;
 
 	struct rx_info ri;
 	unsigned char h80211[4096];
@@ -6419,10 +6421,6 @@ int main(int argc, char * argv[])
 	struct timeval tv4;
 	struct timeval prev_tv = {.tv_sec = 0, .tv_usec = 0 };
 	struct tm * lt;
-
-	/*
-	struct sockaddr_in provis_addr;
-	*/
 
 	fd_set rfds;
 
@@ -7381,6 +7379,7 @@ int main(int argc, char * argv[])
 	}
 
 	/* Create start time string for kismet netxml file */
+	start_time = time(NULL); 
 	lopt.airodump_start_time = strdup(ctime(&start_time));
 	ALLEGE(lopt.airodump_start_time != NULL);
 	// remove new line
@@ -7439,7 +7438,6 @@ int main(int argc, char * argv[])
 
 	prepare_terminal(&lopt);
 
-	start_time = time(NULL);
 	tt1 = time(NULL);
 	tt2 = time(NULL);
 	gettimeofday(&tv3, NULL);
