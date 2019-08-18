@@ -5402,30 +5402,86 @@ static void close_cards(struct wif * * const wi, size_t const num_cards)
 	}
 }
 
-static bool check_interface_monitor(
+static void write_monitor_mode_message(
+    char * const msg_buffer,
+    size_t const msg_buffer_size,
+    char const * const interface_name)
+{
+    snprintf(msg_buffer,
+             msg_buffer_size,
+             "][ %s reset to monitor mode",
+             interface_name);
+}
+
+static void write_fixed_channel_message(
+    char * const msg_buffer,
+    size_t const msg_buffer_size,
+    char const * const interface_name,
+    int const channel)
+{
+    snprintf(msg_buffer,
+             msg_buffer_size,
+             "][ fixed channel %s: %d ",
+             interface_name,
+             channel);
+}
+
+static void write_fixed_frequency_message(
+    char * const msg_buffer,
+    size_t const msg_buffer_size,
+    char const * const interface_name,
+    int const frequency)
+{
+    snprintf(msg_buffer,
+             msg_buffer_size,
+             "][ fixed frequency %s: %d ",
+             interface_name,
+             frequency);
+}
+
+static struct wif * check_for_monitor_mode_on_card(
+    struct wif * const wi)
+{
+    int const monitor = wi_get_monitor(wi);
+    struct wif * new_wi;
+
+    if (monitor == 0)
+    {
+        new_wi = wi;
+        goto done;
+    }
+
+    // reopen in monitor mode
+    new_wi = reopen_card(wi);
+
+    write_monitor_mode_message(
+        lopt.message,
+        sizeof(lopt.message),
+        wi_get_ifname(wi)); 
+
+done:
+    return new_wi;
+}
+
+static bool check_for_monitor_mode_on_cards(
     struct wif * * const wi, 
     size_t const num_cards)
 {
-    int success;
+    bool success;
 
     for (size_t i = 0; i < num_cards; i++)
 	{
-		int const monitor = wi_get_monitor(wi[i]);
+        struct wif * new_wi = check_for_monitor_mode_on_card(wi[i]);
 
-		if (monitor != 0)
-		{
-			snprintf(lopt.message,
-					 sizeof(lopt.message),
-					 "][ %s reset to monitor mode",
-					 wi_get_ifname(wi[i]));
-			// reopen in monitor mode
-            wi[i] = reopen_card(wi[i]);
-			if (wi[i] == NULL)
-			{
+        if (new_wi != wi[i])
+        {
+            wi[i] = new_wi;
+            if (wi[i] == NULL)
+            {
                 success = false;
                 goto done;
-			}
-		}
+            }
+        }
 	}
 
     success = true;
@@ -5434,53 +5490,120 @@ done:
 	return success;
 }
 
-static int check_channel(struct wif * wi[], int cards)
+static bool check_channel_on_card(
+    struct wif * const wi, 
+    int const desired_channel)
 {
-	for (size_t i = 0; i < cards; i++)
-	{
-		int const chan = wi_get_channel(wi[i]);
+    bool changed_channel;
+    int const current_channel = wi_get_channel(wi);
 
-        if (opt.ignore_negative_one && chan == invalid_channel)
-		{
-            return (0);
-        }
+    if (opt.ignore_negative_one && current_channel == invalid_channel)
+    {
+        changed_channel = false;
+        goto done;
+    }
 
-		if (lopt.channel[i] != chan)
-		{
-			snprintf(lopt.message,
-					 sizeof(lopt.message),
-					 "][ fixed channel %s: %d ",
-					 wi_get_ifname(wi[i]),
-					 chan);
+    if (desired_channel == current_channel)
+    {
+        changed_channel = false;
+        goto done;
+    }
+
 #ifdef CONFIG_LIBNL
-			wi_set_ht_channel(wi[i], lopt.channel[i], lopt.htval);
+    wi_set_ht_channel(wi, desired_channel, lopt.htval);
 #else
-			wi_set_channel(wi[i], lopt.channel[i]);
+    wi_set_channel(wi, desired_channel);
 #endif
-		}
-	}
 
-	return 0;
+    write_fixed_channel_message(lopt.message,
+                                sizeof(lopt.message),
+                                wi_get_ifname(wi),
+                                current_channel); 
+
+    changed_channel = true;
+
+done:
+    return changed_channel;
 }
 
-static int check_frequency(struct wif * wi[], int cards)
+static void check_channel_on_cards(
+    struct wif * * const wi, 
+    size_t const num_cards)
 {
-	for (size_t i = 0; i < cards; i++)
+    for (size_t i = 0; i < num_cards; i++)
 	{
-        int const freq = wi_get_freq(wi[i]);
-
-		if (freq < 0) continue;
-		if (lopt.frequency[i] != freq)
-		{
-			snprintf(lopt.message,
-					 sizeof(lopt.message),
-					 "][ fixed frequency %s: %d ",
-					 wi_get_ifname(wi[i]),
-					 freq);
-			wi_set_freq(wi[i], lopt.frequency[i]);
-		}
+        check_channel_on_card(wi[i], lopt.channel[i]);
 	}
-	return 0;
+}
+
+static bool check_frequency_on_card(
+    struct wif * const wi,
+    int const desired_frequency)
+{
+    bool changed_frequency;
+    int const current_frequency = wi_get_freq(wi);
+
+    /* FIXME: replace 0 with invalid_frequency if only ever -1. */
+    if (current_frequency < 0)
+    {
+        changed_frequency = false;
+        goto done;
+    }
+
+    if (desired_frequency == current_frequency)
+    {
+        changed_frequency = false;
+        goto done;
+    }
+
+    wi_set_freq(wi, desired_frequency);
+
+    write_fixed_frequency_message(lopt.message,
+                                  sizeof(lopt.message),
+                                  wi_get_ifname(wi),
+                                  current_frequency);
+
+    changed_frequency = true; 
+
+done:
+    return changed_frequency;
+}
+
+static void check_frequency_on_cards(
+    struct wif * * const wi, 
+    size_t const num_cards)
+{
+    for (size_t i = 0; i < num_cards; i++)
+	{
+        check_frequency_on_card(wi[i], lopt.frequency[i]);
+	}
+}
+
+static bool update_interface_cards(
+    struct wif * * const wi, 
+    size_t const num_cards)
+{
+    bool success;
+
+    if (!check_for_monitor_mode_on_cards(wi, lopt.num_cards))
+    {
+        success = false;
+        goto done;
+    }
+
+    if (lopt.singlechan)
+    {
+        check_channel_on_cards(wi, lopt.num_cards);
+    }
+    if (lopt.singlefreq)
+    {
+        check_frequency_on_cards(wi, lopt.num_cards);
+    }
+
+    success = true;
+
+done:
+    return success;
 }
 
 static void detect_frequency_range(
@@ -7346,22 +7469,15 @@ int main(int argc, char * argv[])
 		if (cycle_time > 500000)
 		{
 			gettimeofday(&tv3, NULL);
+
 			update_rx_quality();
+
 			if (lopt.s_iface != NULL)
 			{
-                if (!check_interface_monitor(wi, lopt.num_cards))
+                if (!update_interface_cards(wi, lopt.num_cards))
                 {
                     program_exit_code = EXIT_FAILURE;
                     goto done;
-                }
-
-				if (lopt.singlechan)
-				{
-                    check_channel(wi, lopt.num_cards);
-                }
-				if (lopt.singlefreq)
-				{
-                    check_frequency(wi, lopt.num_cards);
                 }
 			}
 		}
