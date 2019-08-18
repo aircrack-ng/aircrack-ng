@@ -97,24 +97,12 @@
 #include "oui.h"
 #include "get_string_time_from_seconds.h"
 #include "gps_tracker.h"
-
-typedef int (* ap_sort_fn)(
-	struct AP_info const * const a,
-	struct AP_info const * const b,
-   int const sort_direction);
-
-typedef struct ap_sort_info_st
-{
-	char const * description;
-	ap_sort_fn ap_sort;
-} ap_sort_info_st; 
+#include "ap_sort.h"
 
 /* Possibly only required so that this will link. Referenced 
  * in communications.c. 
  */
 struct devices dev;
-
-static const unsigned char llcnull[] = {0, 0, 0, 0};
 
 enum
 {
@@ -380,241 +368,9 @@ static int ap_list_lock_initialise(struct local_options * const options)
 	return initialise_lock(&options->ap_list_lock);
 }
 
-static int sort_bssid(
-	struct AP_info const * const a,
-	struct AP_info const * const b,
-	int const sort_direction)
-{
-	int const result =
-		MAC_ADDRESS_COMPARE(&a->bssid, &b->bssid) * sort_direction;
-
-	return result;
-}
-
-static int sort_power(
-	struct AP_info const * const a,
-	struct AP_info const * const b,
-	int const sort_direction)
-{
-	int const result = (a->avg_power - b->avg_power) * sort_direction;
-
-	return result;
-}
-
-static int sort_beacon(
-	struct AP_info const * const a,
-	struct AP_info const * const b,
-	int const sort_direction)
-{
-	int const result = (a->nb_bcn < b->nb_bcn) && (sort_direction > 0) ? -1 : 1;
-
-	return result;
-}
-
-static int sort_data(
-	struct AP_info const * const a,
-	struct AP_info const * const b,
-	int const sort_direction)
-{
-	int const result = (a->nb_data < b->nb_data) && (sort_direction > 0) ? -1 : 1;
-
-	return result;
-}
-
-static int sort_packet_rate(
-	struct AP_info const * const a,
-	struct AP_info const * const b,
-	int const sort_direction)
-{
-	int const result = (a->nb_dataps - b->nb_dataps) * sort_direction;
-
-	return result;
-}
-
-static int sort_channel(
-	struct AP_info const * const a,
-	struct AP_info const * const b,
-	int const sort_direction)
-{
-	int const result = (a->channel - b->channel) * sort_direction;
-
-	return result;
-}
-
-static int sort_mbit(
-	struct AP_info const * const a,
-	struct AP_info const * const b,
-	int const sort_direction)
-{
-	int const result = (a->max_speed - b->max_speed) * sort_direction;
-
-	return result;
-}
-
-static int sort_enc(
-	struct AP_info const * const a,
-	struct AP_info const * const b,
-	int const sort_direction)
-{
-	int const result =
-		((int)(a->security & STD_FIELD) - (int)(a->security & STD_FIELD))
-		* sort_direction;
-
-	return result;
-}
-
-static int sort_cipher(
-	struct AP_info const * const a,
-	struct AP_info const * const b,
-	int const sort_direction)
-{
-	int const result =
-		((int)(a->security & ENC_FIELD) - (int)(a->security & ENC_FIELD))
-		* sort_direction;
-
-	return result;
-}
-
-static int sort_auth(
-	struct AP_info const * const a,
-	struct AP_info const * const b,
-	int const sort_direction)
-{
-	int const result =
-		((int)(a->security & AUTH_FIELD) - (int)(a->security & AUTH_FIELD))
-		* sort_direction;
-
-	return result;
-}
-
-static int sort_essid(
-	struct AP_info const * const a,
-	struct AP_info const * const b,
-	int const sort_direction)
-{
-	int const result =
-		strncasecmp((char *)a->essid, (char *)b->essid, ESSID_LENGTH)
-		* sort_direction;
-
-	return result;
-}
-
-static int sort_default(
-	struct AP_info const * const a,
-	struct AP_info const * const b,
-	int const sort_direction)
-{
-	int const result = a->avg_power - b->avg_power;
-
-	return result;
-}
-
-static int sort_nothing(
-	struct AP_info const * const a,
-	struct AP_info const * const b,
-	int const sort_direction)
-{
-	return 0;
-}
-
-
-static ap_sort_info_st const ap_sort_infos[SORT_MAX] =
-{
-	[SORT_DEFAULT] =
-	{
-		.description = "avg pwr",
-		.ap_sort = sort_default
-	},
-	[SORT_BY_NOTHING] =
-	{
-		.description = "first seen",
-		.ap_sort = sort_nothing
-	},
-	[SORT_BY_BSSID] =
-	{
-		.description = "bssid",
-		.ap_sort = sort_bssid
-	},
-	[SORT_BY_POWER] =
-	{
-		.description = "power level",
-		.ap_sort = sort_power
-	},
-	[SORT_BY_BEACON] =
-	{
-		.description = "beacon number",
-		.ap_sort = sort_beacon
-	},
-	[SORT_BY_DATA] =
-	{
-		.description = "number of data packets",
-		.ap_sort = sort_data
-	},
-	[SORT_BY_PRATE] =
-	{
-		.description = "packet rate",
-		.ap_sort = sort_packet_rate
-	},
-	[SORT_BY_CHAN] =
-	{
-		.description = "channel",
-		.ap_sort = sort_channel
-	},
-	[SORT_BY_MBIT] =
-	{
-		.description = "max data rate",
-		.ap_sort = sort_mbit
-	},
-	[SORT_BY_ENC] =
-	{
-		.description = "encryption",
-		.ap_sort = sort_enc
-	},
-	[SORT_BY_CIPHER] =
-	{
-		.description = "cipher",
-		.ap_sort = sort_cipher
-	},
-	[SORT_BY_AUTH] =
-	{
-		.description = "authentication",
-		.ap_sort = sort_auth
-	},
-	[SORT_BY_ESSID] =
-	{
-		.description = "ESSID",
-		.ap_sort = sort_essid
-	}
-};
-
-static ap_sort_info_st const * sort_method_assign(ap_sort_type_t const sort_method_in)
-{
-	ap_sort_info_st const * sort_info;
-	ap_sort_type_t sort_method = sort_method_in;
-
-	if (sort_method < 0 || sort_method >= SORT_MAX)
-	{
-		sort_method = SORT_FIRST;
-	}
-
-	sort_info = &ap_sort_infos[sort_method];
-
-	return sort_info;
-}
-
-static ap_sort_info_st const * sort_method_next(ap_sort_info_st const * current)
-{
-	ALLEGE(current != NULL);
-
-	size_t const current_method_index = current - ap_sort_infos;
-	size_t const next_method_index = current_method_index + 1;
-
-	return sort_method_assign(next_method_index);
-}
-
 static void resetSelection(void)
 {
-	lopt.sort_method = sort_method_assign(SORT_BY_POWER);
+	lopt.sort_method = ap_sort_method_assign(SORT_BY_POWER);
 	lopt.sort_inv = 1;
 
 	lopt.relative_time = 0;
@@ -867,7 +623,7 @@ static void input_thread(void * arg)
 
 		if (keycode == KEY_s)
 		{
-			lopt.sort_method = sort_method_next(lopt.sort_method);
+			lopt.sort_method = ap_sort_method_assign_next(lopt.sort_method);
 			snprintf(lopt.message,
 					 sizeof(lopt.message),
 					 "][ sorting by %s", lopt.sort_method->description);
@@ -953,7 +709,7 @@ static void input_thread(void * arg)
 			{
 				lopt.en_selection_direction = selection_direction_down;
 				lopt.p_selected_ap = TAILQ_LAST(&lopt.ap_list, ap_list_head);
-				lopt.sort_method = sort_method_assign(SORT_BY_NOTHING);
+				lopt.sort_method = ap_sort_method_assign(SORT_BY_NOTHING);
 				snprintf(lopt.message,
 						 sizeof(lopt.message),
 						 "][ enabled AP selection");
@@ -962,7 +718,7 @@ static void input_thread(void * arg)
 			{
 				lopt.en_selection_direction = selection_direction_no;
 				lopt.p_selected_ap = NULL;
-				lopt.sort_method = sort_method_assign(SORT_BY_NOTHING);
+				lopt.sort_method = ap_sort_method_assign(SORT_BY_NOTHING);
 				snprintf(lopt.message,
 						 sizeof(lopt.message),
 						 "][ disabled selection");
@@ -1991,7 +1747,9 @@ static void dump_add_packet(
 
 	if (caplen > 28)
 	{
-		if (memcmp(h80211 + 24, llcnull, sizeof llcnull) == 0)
+		static const unsigned char llcnull[] = { 0, 0, 0, 0 };
+
+        if (memcmp(h80211 + 24, llcnull, sizeof llcnull) == 0)
 		{
 			return;
 		}

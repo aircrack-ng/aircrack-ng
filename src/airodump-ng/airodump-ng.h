@@ -88,25 +88,6 @@
 #define QLT_TIME 5
 #define QLT_COUNT 25
 
-typedef enum ap_sort_type_t
-{
-	SORT_FIRST,
-	SORT_DEFAULT = SORT_FIRST,
-	SORT_BY_NOTHING,
-    SORT_BY_BSSID,
-    SORT_BY_POWER,
-    SORT_BY_BEACON,
-    SORT_BY_DATA,
-    SORT_BY_PRATE,
-    SORT_BY_CHAN,
-    SORT_BY_MBIT,
-    SORT_BY_ENC,
-    SORT_BY_CIPHER,
-    SORT_BY_AUTH,
-    SORT_BY_ESSID,
-    SORT_MAX
-} ap_sort_type_t;
-
 #define RATES "\x01\x04\x02\x04\x0B\x16\x32\x08\x0C\x12\x18\x24\x30\x48\x60\x6C"
 
 #define PROBE_REQ                                                              \
