@@ -229,8 +229,8 @@ static int is_filtered_netmask(mac_address const * const bssid)
 
 	for (size_t i = 0; i < sizeof mac1; i++)
 	{
-		mac1.addr[i] = bssid->addr[i] & opt.f_netmask[i];
-		mac2.addr[i] = opt.f_bssid.addr[i] & opt.f_netmask[i];
+		mac1.addr[i] = bssid->addr[i] & opt.f_netmask.addr[i];
+		mac2.addr[i] = opt.f_bssid.addr[i] & opt.f_netmask.addr[i];
 	}
 
 	if (!MAC_ADDRESS_EQUAL(&mac1, &mac2))
@@ -1122,13 +1122,13 @@ int main(int argc, char * argv[])
 
 			case 'm':
 
-				if (memcmp(opt.f_netmask, NULL_MAC, 6) != 0)
+				if (!MAC_ADDRESS_IS_EMPTY(&opt.f_netmask))
 				{
 					printf("Notice: netmask already given\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
 					break;
 				}
-				if (getmac(optarg, 1, opt.f_netmask) != 0)
+				if (getmac(optarg, 1, (uint8_t *)&opt.f_netmask) != 0)
 				{
 					printf("Notice: invalid netmask\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
@@ -1201,7 +1201,7 @@ int main(int argc, char * argv[])
 		return (EXIT_FAILURE);
 	}
 
-	if (memcmp(opt.f_netmask, NULL_MAC, 6) != 0
+	if (!MAC_ADDRESS_IS_EMPTY(&opt.f_netmask)
 		&& MAC_ADDRESS_IS_EMPTY(&opt.f_bssid))
 	{
 		printf("Notice: specify bssid \"--bssid\" with \"--netmask\"\n");
@@ -1521,7 +1521,7 @@ int main(int argc, char * argv[])
 							memcpy(bssid, h80211 + 10, 6);
 							break;
 					}
-					if (memcmp(opt.f_netmask, NULL_MAC, 6) != 0)
+					if (!MAC_ADDRESS_IS_EMPTY(&opt.f_netmask))
 					{
 						if (is_filtered_netmask((mac_address *)bssid))
 						{

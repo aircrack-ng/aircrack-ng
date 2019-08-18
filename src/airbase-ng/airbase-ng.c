@@ -3712,7 +3712,7 @@ int main(int argc, char * argv[])
 		return (EXIT_FAILURE);
 	}
 
-	if (memcmp(opt.f_netmask, NULL_MAC, 6) != 0
+	if (!MAC_ADDRESS_IS_EMPTY(&opt.f_netmask)
 		&& MAC_ADDRESS_IS_EMPTY(&opt.f_bssid))
 	{
 		printf("Notice: specify bssid \"--bssid\" with \"--netmask\"\n");

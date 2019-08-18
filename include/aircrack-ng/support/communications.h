@@ -84,7 +84,8 @@ struct communication_options
 	mac_address f_bssid;
 	uint8_t f_dmac[6];
 	uint8_t f_smac[6];
-	uint8_t f_netmask[6];
+	mac_address f_netmask;
+
 	int f_minlen;
 	int f_maxlen;
 	int f_type;

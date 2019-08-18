@@ -874,8 +874,8 @@ static int is_filtered_netmask(mac_address const * const bssid)
 
     for (size_t i = 0; i < sizeof mac1; i++)
 	{
-		mac1.addr[i] = bssid->addr[i] & opt.f_netmask[i];
-		mac2.addr[i] = opt.f_bssid.addr[i] & opt.f_netmask[i];
+		mac1.addr[i] = bssid->addr[i] & opt.f_netmask.addr[i];
+		mac2.addr[i] = opt.f_bssid.addr[i] & opt.f_netmask.addr[i];
 	}
 
     bool const is_filtered = !MAC_ADDRESS_EQUAL(&mac1, &mac2);
@@ -1771,20 +1771,17 @@ static void dump_add_packet(
 
 	if (!MAC_ADDRESS_IS_EMPTY(&opt.f_bssid))
 	{
-		if (memcmp(opt.f_netmask, NULL_MAC, 6) != 0)
+		if (!MAC_ADDRESS_IS_EMPTY(&opt.f_netmask))
 		{
 			if (is_filtered_netmask(&bssid))
 			{
 				return;
 			}
 		}
-		else
-		{
-			if (!MAC_ADDRESS_EQUAL(&opt.f_bssid, &bssid))
-			{
-				return;
-			}
-		}
+		else if (!MAC_ADDRESS_EQUAL(&opt.f_bssid, &bssid))
+        {
+            return;
+        }
 	}
 
 	ap_list_lock_acquire(&lopt); 
@@ -4393,7 +4390,7 @@ static void channel_hopper_data_handler(
     {
         // invalid received data
         fprintf(stderr,
-                "Invalid data received for read(opt.cd_pipe[0]), got %d\n",
+                "Invalid card value received from hopper process, got %d\n",
                 hopper_data->card);
         goto done;
     }
@@ -6391,7 +6388,7 @@ int main(int argc, char * argv[])
 	}
 
     MAC_ADDRESS_CLEAR(&opt.f_bssid);
-    memset(opt.f_netmask, '\x00', sizeof opt.f_netmask);
+    MAC_ADDRESS_CLEAR(&opt.f_netmask);
     MAC_ADDRESS_CLEAR(&lopt.wpa_bssid);
 
 	/* check the arguments */
@@ -6769,12 +6766,12 @@ int main(int argc, char * argv[])
 
 			case 'm':
 
-				if (memcmp(opt.f_netmask, NULL_MAC, 6) != 0)
+				if (!MAC_ADDRESS_IS_EMPTY(&opt.f_netmask))
 				{
 					printf("Notice: netmask already given\n");
 					break;
 				}
-				if (getmac(optarg, 1, opt.f_netmask) != 0)
+				if (getmac(optarg, 1, (uint8_t *)&opt.f_netmask) != 0)
 				{
 					printf("Notice: invalid netmask\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
@@ -7078,7 +7075,7 @@ int main(int argc, char * argv[])
         lopt.s_iface = argv[argc - 1];
     }
 
-	if (memcmp(opt.f_netmask, NULL_MAC, 6) != 0
+	if (!MAC_ADDRESS_IS_EMPTY(&opt.f_netmask)
 		&& MAC_ADDRESS_IS_EMPTY(&opt.f_bssid))
 	{
 		printf("Notice: specify bssid \"--bssid\" with \"--netmask\"\n");
