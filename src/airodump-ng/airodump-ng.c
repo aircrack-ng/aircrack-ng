@@ -189,6 +189,7 @@ static struct local_options
 
     int channel[MAX_CARDS]; /* current channel #    */
 	int frequency[MAX_CARDS]; /* current frequency #    */
+    size_t max_consecutive_failed_interface_reads; 
 
     int channel_hopper_pipe[2];
 
@@ -320,13 +321,13 @@ static struct local_options
 
     size_t max_node_age;
 
+    /* TODO: Make an array out of these of size dump_type_COUNT. */
 	struct dump_context_st * csv_dump_context;
 	struct dump_context_st * kismet_csv_dump_context;
 	struct dump_context_st * kismet_netxml_dump_context;
 	struct dump_context_st * wifi_dump_context;
 
 	bool should_update_stdout;
-
 } lopt;
 
 static int
@@ -6432,6 +6433,7 @@ int main(int argc, char * argv[])
 	lopt.freqoption = 0;
 	lopt.num_cards = 0;
 	time_slept = 0;
+    lopt.max_consecutive_failed_interface_reads = 2;
 
 	lopt.chswitch = 0;
 	opt.usegpsd = 0;
@@ -7587,7 +7589,7 @@ int main(int argc, char * argv[])
 					if (packet_length == -1)
 					{
 						wi_read_failed[i]++;
-						if (wi_read_failed[i] > 1)
+                        if (wi_read_failed[i] >= lopt.max_consecutive_failed_interface_reads)
 						{
 							lopt.do_exit = 1;
 							break;

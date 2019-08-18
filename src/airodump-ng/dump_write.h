@@ -40,7 +40,8 @@ typedef enum dump_type_t
     dump_type_csv,
     dump_type_wifi_scanner,
     dump_type_kismet_csv,
-    dump_type_kismet_netxml
+    dump_type_kismet_netxml,
+    dump_type_COUNT /* Keep the one at the end. */
 } dump_type_t;
 
 typedef struct dump_context_st dump_context_st;
