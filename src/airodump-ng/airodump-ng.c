@@ -4665,123 +4665,6 @@ int get_frequency_count(
     return frequency_count;
 }
 
-static void
-frequency_hopper(
-    int const data_write_fd,
-    struct wif * wi[], 
-    int if_num, 
-    int chan_count, 
-    pid_t parent)
-{
-	int ch, ch_idx = 0, card = 0, chi = 0, cai = 0, j = 0, k = 0, first = 1,
-			again;
-	int dropped = 0;
-
-    /* Continue running as long as the parent is running. */
-	while (0 == kill(parent, 0))
-	{
-		for (j = 0; j < if_num; j++)
-		{
-			again = 1;
-
-			ch_idx = chi % chan_count;
-
-			card = cai % if_num;
-
-			++chi;
-			++cai;
-
-            if (lopt.channel_switching_method == channel_switching_method_hop_on_last 
-                && !first)
-			{
-				j = if_num - 1;
-				card = if_num - 1;
-
-                if (get_frequency_count(lopt.own_frequencies, true) > if_num)
-				{
-					while (again)
-					{
-						again = 0;
-						for (k = 0; k < (if_num - 1); k++)
-						{
-							if (lopt.own_frequencies[ch_idx]
-								== lopt.frequency[k])
-							{
-								again = 1;
-								ch_idx = chi % chan_count;
-								chi++;
-							}
-						}
-					}
-				}
-			}
-
-            if (lopt.own_frequencies[ch_idx] == invalid_frequency)
-			{
-				j--;
-				cai--;
-				dropped++;
-				if (dropped >= chan_count)
-				{
-					ch = wi_get_freq(wi[card]);
-					lopt.frequency[card] = ch;
-
-                    struct channel_hopper_data_st const hopper_data =
-                    {
-                        .card = card,
-                        .u.frequency = ch
-                    };
-
-                    IGNORE_LTZ(write(data_write_fd, &hopper_data, sizeof hopper_data));
-
-					usleep(1000);
-				}
-				continue;
-			}
-
-			dropped = 0;
-
-			ch = lopt.own_frequencies[ch_idx];
-
-			if (wi_set_freq(wi[card], ch) == 0)
-			{
-				lopt.frequency[card] = ch;
-
-                struct channel_hopper_data_st const hopper_data =
-                {
-                    .card = card,
-                    .u.frequency = ch
-                };
-
-                IGNORE_LTZ(write(data_write_fd, &hopper_data, sizeof hopper_data));
-
-				usleep(1000);
-			}
-			else
-			{
-                lopt.own_frequencies[ch_idx] = invalid_frequency;
-				j--;
-				cai--;
-				continue;
-			}
-		}
-
-        if (lopt.channel_switching_method == channel_switching_method_fifo)
-		{
-			chi = chi - (if_num - 1);
-		}
-
-		if (first)
-		{
-			first = 0;
-		}
-
-        usleep((useconds_t)(lopt.frequency_hop_millisecs * 1000));
-	}
-
-	exit(0);
-}
-
 static bool is_invalid_channel(int const channel)
 {
     bool is_invalid;
@@ -5670,7 +5553,11 @@ static bool start_frequency_hopper_process(
         frequency_hopper(options->channel_hopper_pipe[1], 
                          wi, 
                          options->num_cards,
-                         frequency_count, 
+                         frequency_count,
+                         lopt.channel_switching_method,
+                         lopt.own_frequencies,
+                         lopt.frequency,
+                         lopt.frequency_hop_millisecs,
                          main_pid);
 
         exit(EXIT_FAILURE);
