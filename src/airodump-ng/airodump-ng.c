@@ -7445,8 +7445,6 @@ int main(int argc, char * argv[])
 		{
 			tt2 = current_time;
 
-            dump_sort();
-
 			if (opt.usegpsd)
 			{
 				gps_tracker_update(&lopt.gps_context);
