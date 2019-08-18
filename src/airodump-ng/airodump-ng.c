@@ -6326,6 +6326,59 @@ static void pace_packet_reader(
 	prev_tv->tv_usec = pkh->tv_usec;
 }
 
+static void airodump_shutdown(struct wif * * const wi)
+{
+	/* TODO: Restore signal handlers. */
+	signal_event_shutdown(lopt.signal_event_pipe);
+
+	if (opt.usegpsd)
+	{
+		gps_tracker_stop(&lopt.gps_context);
+	}
+
+	free(lopt.elapsed_time);
+	free(lopt.own_channels);
+	free(lopt.f_essid);
+	free(opt.prefix);
+	free(opt.f_cap_name);
+
+	packet_reader_close(lopt.packet_reader_context);
+
+#ifdef HAVE_PCRE
+	if (lopt.f_essid_regex)
+	{
+		pcre_free(lopt.f_essid_regex);
+	}
+#endif
+
+	close_cards(wi, lopt.num_cards);
+
+	/* FIXME: - Shouldn't need to check this flag. Just check 
+	 * pointer values etc. 
+	 */
+	if (opt.record_data)
+	{
+		update_output_files();
+		close_output_files();
+
+		free(lopt.airodump_start_time);
+		lopt.airodump_start_time = NULL;
+	}
+
+	if (!lopt.background_mode)
+	{
+		pthread_join(lopt.input_tid, NULL);
+	}
+
+	sta_list_free(&lopt.sta_list);
+
+	ap_list_free(&lopt.ap_list, &lopt.sta_list);
+
+	na_info_list_free(&lopt.na_list);
+
+	oui_context_free(lopt.manufacturer_list);
+}
+
 int main(int argc, char * argv[])
 {
 	int program_exit_code;
@@ -7620,55 +7673,7 @@ int main(int argc, char * argv[])
 		do_quit_request_timeout_check(lopt.message, sizeof(lopt.message));
 	}
 
-    /* TODO: Restore signal handlers. */
-    signal_event_shutdown(lopt.signal_event_pipe);
-
-	if (opt.usegpsd)
-	{
-		gps_tracker_stop(&lopt.gps_context);
-	}
-
-	free(lopt.elapsed_time);
-	free(lopt.own_channels);
-	free(lopt.f_essid);
-	free(opt.prefix);
-	free(opt.f_cap_name);
-
-	packet_reader_close(lopt.packet_reader_context);
-
-#ifdef HAVE_PCRE
-	if (lopt.f_essid_regex)
-	{
-        pcre_free(lopt.f_essid_regex);
-    }
-#endif
-
-	close_cards(wi, lopt.num_cards);
-
-    /* FIXME: - Shouldn't need to check this flag. Just check 
-     * pointer values etc. 
-     */
-	if (opt.record_data)
-	{
-		update_output_files();
-		close_output_files();
-
-		free(lopt.airodump_start_time);
-		lopt.airodump_start_time = NULL;
-	}
-
-	if (!lopt.background_mode)
-	{
-		pthread_join(lopt.input_tid, NULL);
-	}
-
-	sta_list_free(&lopt.sta_list);
-
-    ap_list_free(&lopt.ap_list, &lopt.sta_list);
-
-	na_info_list_free(&lopt.na_list);
-
-	oui_context_free(lopt.manufacturer_list);
+	airodump_shutdown(wi);
 
 	program_exit_code = EXIT_SUCCESS;
 
@@ -7677,3 +7682,4 @@ done:
 
 	return program_exit_code;
 }
+
