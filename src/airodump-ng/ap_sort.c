@@ -2,6 +2,18 @@
 #include "aircrack-ng/support/communications.h"
 #include "aircrack-ng/defs.h"
 
+typedef int (* ap_compare_fn)(
+    struct AP_info const * const a,
+    struct AP_info const * const b,
+    int const sort_direction);
+
+struct ap_sort_info_st
+{
+    char const * description;
+    ap_compare_fn ap_compare;
+};
+
+
 static int sort_bssid(
     struct AP_info const * const a,
     struct AP_info const * const b,
@@ -145,67 +157,67 @@ static ap_sort_info_st const ap_sort_infos[SORT_MAX] =
     [SORT_DEFAULT] =
     {
         .description = "avg pwr",
-        .ap_sort = sort_default
+        .ap_compare = sort_default
     },
     [SORT_BY_NOTHING] =
     {
         .description = "first seen",
-        .ap_sort = sort_nothing
+        .ap_compare = sort_nothing
     },
     [SORT_BY_BSSID] =
     {
         .description = "bssid",
-        .ap_sort = sort_bssid
+        .ap_compare = sort_bssid
     },
     [SORT_BY_POWER] =
     {
         .description = "power level",
-        .ap_sort = sort_power
+        .ap_compare = sort_power
     },
     [SORT_BY_BEACON] =
     {
         .description = "beacon number",
-        .ap_sort = sort_beacon
+        .ap_compare = sort_beacon
     },
     [SORT_BY_DATA] =
     {
         .description = "number of data packets",
-        .ap_sort = sort_data
+        .ap_compare = sort_data
     },
     [SORT_BY_PRATE] =
     {
         .description = "packet rate",
-        .ap_sort = sort_packet_rate
+        .ap_compare = sort_packet_rate
     },
     [SORT_BY_CHAN] =
     {
         .description = "channel",
-        .ap_sort = sort_channel
+        .ap_compare = sort_channel
     },
     [SORT_BY_MBIT] =
     {
         .description = "max data rate",
-        .ap_sort = sort_mbit
+        .ap_compare = sort_mbit
     },
     [SORT_BY_ENC] =
     {
         .description = "encryption",
-        .ap_sort = sort_enc
+        .ap_compare = sort_enc
     },
     [SORT_BY_CIPHER] =
     {
         .description = "cipher",
-        .ap_sort = sort_cipher
+        .ap_compare = sort_cipher
     },
     [SORT_BY_AUTH] =
     {
         .description = "authentication",
-        .ap_sort = sort_auth
+        .ap_compare = sort_auth
     },
     [SORT_BY_ESSID] =
     {
         .description = "ESSID",
-        .ap_sort = sort_essid
+        .ap_compare = sort_essid
     }
 };
 
@@ -233,5 +245,20 @@ ap_sort_info_st const * ap_sort_method_assign_next(ap_sort_info_st const * curre
 
     return ap_sort_method_assign(next_method_index);
 }
+
+char const * ap_sort_method_description(ap_sort_info_st const * const sort_info)
+{
+    return sort_info->description;
+}
+
+int ap_sort_compare(
+    ap_sort_info_st const * const sort_info,
+    struct AP_info const * const a,
+    struct AP_info const * const b,
+    int const sort_direction)
+{
+    return sort_info->ap_compare(a, b, sort_direction);
+}
+
 
 

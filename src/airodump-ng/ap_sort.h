@@ -25,20 +25,19 @@ typedef enum ap_sort_type_t
     SORT_MAX
 } ap_sort_type_t; 
 
-typedef int (* ap_sort_fn)(
-    struct AP_info const * const a,
-    struct AP_info const * const b,
-    int const sort_direction);
-
-typedef struct ap_sort_info_st
-{
-    char const * description;
-    ap_sort_fn ap_sort;
-} ap_sort_info_st; 
+typedef struct ap_sort_info_st ap_sort_info_st;
 
 ap_sort_info_st const * ap_sort_method_assign(ap_sort_type_t const sort_method);
 
 ap_sort_info_st const * ap_sort_method_assign_next(ap_sort_info_st const * current);
+
+char const * ap_sort_method_description(ap_sort_info_st const * const sort_info);
+
+int ap_sort_compare(
+    ap_sort_info_st const * const sort_info,
+    struct AP_info const * const a,
+    struct AP_info const * const b,
+    int const sort_direction); 
 
 #endif /*  __AP_SORT_H__ */
 
