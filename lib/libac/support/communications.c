@@ -930,8 +930,9 @@ static int find_first_free_file_index(char const * const prefix)
             }
         }
     }
-    /* If we did all extensions then no file with that name or extension exist
-       so we can use that number */
+    /* If we did all extensions then no files with that name or 
+     * extension exist so we can use that number 
+     */
     while (i < ArrayCount(f_ext)); 
 
     free(ofn);
