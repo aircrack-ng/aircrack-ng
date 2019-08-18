@@ -98,19 +98,12 @@
 #include "get_string_time_from_seconds.h"
 #include "gps_tracker.h"
 #include "ap_compare.h"
+#include "channel_hopper.h"
 
 /* Possibly only required so that this will link. Referenced 
  * in communications.c. 
  */
 struct devices dev;
-
-enum
-{
-	invalid_channel = -1,
-    invalid_frequency = -1,
-	channel_list_sentinel = 0,
-    frequency_sentinel = 0
-};
 
 static int abg_chans[] = 
 {
@@ -139,21 +132,6 @@ struct detected_frequencies_st
     size_t count;
     size_t table_size;
     int * frequencies;
-};
-
-/* The channel/frequency hopper process sends these data 
- * structures over a pipe back to the main process. 
- * The main process then updates its record of the current 
- * channel/frequency. 
- */
-struct channel_hopper_data_st
-{
-    int card;
-    union
-    {
-        int frequency;
-        int channel;
-    } u;
 };
 
 static volatile int quitting = 0;
@@ -201,7 +179,7 @@ static struct local_options
 
 	int singlechan; /* channel hopping set 1*/
 	int singlefreq; /* frequency hopping: 1 */
-	int chswitch; /* switching method     */
+    channel_switching_method_t channel_switching_method;
 	unsigned int f_encrypt; /* encryption filter    */
 	int update_interval_seconds;
 
@@ -257,7 +235,7 @@ static struct local_options
 	int show_ack;
 	int hide_known;
 
-	int hopfreq;
+	int frequency_hop_millisecs;
 
 	char * s_iface; /* source interface to read from */
 	packet_reader_context_st * packet_reader_context;
@@ -4578,7 +4556,7 @@ static void signal_event_initialise(int * const signal_event_pipe)
 	}
 }
 
-static int send_probe_request(struct wif * wi)
+int send_probe_request(struct wif * const wi)
 {
 	REQUIRE(wi != NULL);
 
@@ -4639,7 +4617,7 @@ static int send_probe_requests(struct wif * wi[], int cards)
 	return (0);
 }
 
-static int get_channel_count(
+int get_channel_count(
 	int const * const channels, 
 	int count_valid_channels_only)
 {
@@ -4663,7 +4641,7 @@ static int get_channel_count(
 	return channel_count;
 }
 
-static int get_frequency_count(
+int get_frequency_count(
     int const * const frequencies,
     int count_valid_frequencies_only)
 {
@@ -4685,130 +4663,6 @@ static int get_frequency_count(
             : total_frequency_count;
 
     return frequency_count;
-}
-
-static void
-channel_hopper(
-    int data_write_fd,
-    struct wif * wi[], 
-    int if_num, 
-    int chan_count, 
-    pid_t parent)
-{
-	int ch, ch_idx = 0, card = 0, chi = 0, cai = 0, j = 0, k = 0, first = 1,
-			again;
-	int dropped = 0;
-
-    /* Continue running as long as the parent is running. */
-    while (0 == kill(parent, 0))
-	{
-		for (j = 0; j < if_num; j++)
-		{
-			again = 1;
-
-			ch_idx = chi % chan_count;
-
-			card = cai % if_num;
-
-			++chi;
-			++cai;
-
-			if (lopt.chswitch == 2 && !first)
-			{
-				j = if_num - 1;
-				card = if_num - 1;
-
-				if (get_channel_count(lopt.channels, 1) > if_num)
-				{
-					while (again)
-					{
-						again = 0;
-						for (k = 0; k < (if_num - 1); k++)
-						{
-							if (lopt.channels[ch_idx] == lopt.channel[k])
-							{
-								again = 1;
-								ch_idx = chi % chan_count;
-								chi++;
-							}
-						}
-					}
-				}
-			}
-
-            if (lopt.channels[ch_idx] == invalid_channel)
-			{
-				j--;
-				cai--;
-				dropped++;
-				if (dropped >= chan_count)
-				{
-					ch = wi_get_channel(wi[card]);
-					lopt.channel[card] = ch;
-
-                    struct channel_hopper_data_st const hopper_data =
-                    {
-                        .card = card,
-                        .u.channel = ch
-                    };
-
-                    IGNORE_LTZ(write(data_write_fd, &hopper_data, sizeof hopper_data));
-
-					usleep(1000);
-				}
-				continue;
-			}
-
-			dropped = 0;
-
-			ch = lopt.channels[ch_idx];
-
-#ifdef CONFIG_LIBNL
-			if (wi_set_ht_channel(wi[card], ch, lopt.htval) == 0)
-#else
-			if (wi_set_channel(wi[card], ch) == 0)
-#endif
-			{
-                lopt.channel[card] = ch;
-
-                struct channel_hopper_data_st const hopper_data =
-                {
-                    .card = card,
-                    .u.channel = ch
-                }; 
-
-                IGNORE_LTZ(write(data_write_fd, &hopper_data, sizeof hopper_data));
-
-                if (lopt.active_scan_sim > 0)
-                {
-                    send_probe_request(wi[card]); 
-                }
-
-				usleep(1000);
-			}
-			else
-			{
-                lopt.channels[ch_idx] = invalid_channel;
-				j--;
-				cai--;
-				continue;
-			}
-		}
-
-		if (lopt.chswitch == 0)
-		{
-			chi = chi - (if_num - 1);
-		}
-
-		if (first)
-		{
-			first = 0;
-		}
-
-		usleep((useconds_t)(lopt.hopfreq * 1000));
-	}
-
-	exit(0);
 }
 
 static void
@@ -4837,7 +4691,8 @@ frequency_hopper(
 			++chi;
 			++cai;
 
-			if (lopt.chswitch == 2 && !first)
+            if (lopt.channel_switching_method == channel_switching_method_hop_on_last 
+                && !first)
 			{
 				j = if_num - 1;
 				card = if_num - 1;
@@ -4911,7 +4766,7 @@ frequency_hopper(
 			}
 		}
 
-		if (lopt.chswitch == 0)
+        if (lopt.channel_switching_method == channel_switching_method_fifo)
 		{
 			chi = chi - (if_num - 1);
 		}
@@ -4921,7 +4776,7 @@ frequency_hopper(
 			first = 0;
 		}
 
-		usleep((useconds_t)(lopt.hopfreq * 1000));
+        usleep((useconds_t)(lopt.frequency_hop_millisecs * 1000));
 	}
 
 	exit(0);
@@ -5852,7 +5707,16 @@ static bool start_channel_hopper_process(
                        wi, 
                        options->num_cards, 
                        channel_count, 
-                       main_pid);
+                       lopt.channel_switching_method,
+                       lopt.channels,
+                       lopt.channel,
+                       lopt.active_scan_sim > 0,
+                       lopt.frequency_hop_millisecs,
+                       main_pid
+#ifdef CONFIG_LIBNL
+                       , lopt.htval
+#endif
+                      );
 
         exit(EXIT_FAILURE);
     }
@@ -6435,7 +6299,7 @@ int main(int argc, char * argv[])
 	time_slept = 0;
     lopt.max_consecutive_failed_interface_reads = 2;
 
-	lopt.chswitch = 0;
+    lopt.channel_switching_method = channel_switching_method_fifo;
 	opt.usegpsd = 0;
 	lopt.channels = bg_chans;
 	lopt.one_beacon = 1;
@@ -6471,7 +6335,7 @@ int main(int argc, char * argv[])
 	lopt.maxsize_essid_seen = 5; // Initial value: length of "ESSID"
 	lopt.show_manufacturer = 0;
 	lopt.show_uptime = 0;
-	lopt.hopfreq = DEFAULT_HOPFREQ;
+    lopt.frequency_hop_millisecs = DEFAULT_HOPFREQ;
 	opt.s_file = NULL;
 	lopt.s_iface = NULL;
 	lopt.packet_reader_context = NULL;
@@ -6863,18 +6727,19 @@ int main(int argc, char * argv[])
 
 			case 's':
 
-				if (strtol(optarg, NULL, 10) > 2 || errno == EINVAL)
+                if (strtol(optarg, NULL, 10) >= channel_switching_method_COUNT 
+                    || errno == EINVAL)
 				{
 					airodump_usage();
     				program_exit_code = EXIT_FAILURE;
     				goto done;
     			}
-				if (lopt.chswitch != 0)
+                if (lopt.channel_switching_method != channel_switching_method_fifo)
 				{
 					printf("Notice: switching method already given\n");
 					break;
 				}
-				lopt.chswitch = (int) strtol(optarg, NULL, 10);
+                lopt.channel_switching_method = (int)strtol(optarg, NULL, 10);
 				break;
 
 			case 'u':
@@ -6891,10 +6756,13 @@ int main(int argc, char * argv[])
 
 			case 'f':
 
-				lopt.hopfreq = (int) strtol(optarg, NULL, 10);
+                lopt.frequency_hop_millisecs = (int)strtol(optarg, NULL, 10);
 
 				/* If failed to parse or value <= 0, use default, 100ms */
-				if (lopt.hopfreq <= 0) lopt.hopfreq = DEFAULT_HOPFREQ;
+                if (lopt.frequency_hop_millisecs <= 0)
+                {
+                    lopt.frequency_hop_millisecs = DEFAULT_HOPFREQ;
+                }
 
 				break;
 
@@ -7288,7 +7156,7 @@ int main(int argc, char * argv[])
             if (lopt.channel[0] == channel_list_sentinel)
 			{
                 /* Start a child process to hop between channels. */
-                int const chan_count = get_channel_count(lopt.channels, 0);
+                int const chan_count = get_channel_count(lopt.channels, false);
 
                 start_channel_hopper_process(&lopt, wi, chan_count);
 			}

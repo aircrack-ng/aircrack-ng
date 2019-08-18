@@ -39,8 +39,24 @@
 
 #include "aircrack-ng/third-party/eapol.h"
 #include "aircrack-ng/support/pcap_local.h"
+#include "aircrack-ng/osdep/osdep.h"
 #include "aircrack-ng/osdep/queue.h"
 
+enum
+{
+    invalid_channel = -1,
+    invalid_frequency = -1,
+    channel_list_sentinel = 0,
+    frequency_sentinel = 0
+}; 
+
+typedef enum channel_switching_method_t
+{
+    channel_switching_method_fifo,
+    channel_switching_method_round_robin,
+    channel_switching_method_hop_on_last,
+    channel_switching_method_COUNT
+} channel_switching_method_t;
 
 /* some constants */
 
@@ -124,5 +140,16 @@ struct NA_info
 	int other; /* number of other frames    */
 	struct timeval tv; /* time for ack per second   */
 };
+
+int get_channel_count(
+    int const * const channels,
+    int count_valid_channels_only);
+
+int get_frequency_count(
+    int const * const frequencies,
+    int count_valid_frequencies_only);
+
+int send_probe_request(struct wif * const wi);
+
 
 #endif

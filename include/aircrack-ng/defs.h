@@ -30,6 +30,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <assert.h>
+#include <errno.h>
 
 // NOTE(jbenden): These macros violates MISRA C:2012. 20.10 - The #
 // and ## preprocessor operators should not be used.
