@@ -1,5 +1,5 @@
-#ifndef __AP_SORT_H__
-#define __AP_SORT_H__
+#ifndef __AP_COMPARE_H__
+#define __AP_COMPARE_H__
 
 #include "aircrack-ng/defs.h"
 #include "airodump-ng.h"
@@ -39,5 +39,5 @@ int ap_sort_compare(
     struct AP_info const * const b,
     int const sort_direction); 
 
-#endif /*  __AP_SORT_H__ */
+#endif /*  __AP_COMPARE_H__ */
 

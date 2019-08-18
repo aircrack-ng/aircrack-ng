@@ -97,7 +97,7 @@
 #include "oui.h"
 #include "get_string_time_from_seconds.h"
 #include "gps_tracker.h"
-#include "ap_sort.h"
+#include "ap_compare.h"
 
 /* Possibly only required so that this will link. Referenced 
  * in communications.c. 
