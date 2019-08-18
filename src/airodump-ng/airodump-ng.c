@@ -139,6 +139,11 @@ struct detected_frequencies_st
     int * frequencies;
 };
 
+/* The channel/frequency hopper process sends these data 
+ * structures over a pipe back to the main process. 
+ * The main process then updates its record of the current 
+ * channel/frequency. 
+ */
 struct hopper_data_st
 {
     int card;
@@ -194,7 +199,7 @@ static struct local_options
 	int singlefreq; /* frequency hopping: 1 */
 	int chswitch; /* switching method     */
 	unsigned int f_encrypt; /* encryption filter    */
-	int update_s; /* update delay in sec  */
+	int update_interval_seconds;
 
 	volatile int do_exit; /* interrupt flag       */
 	struct winsize ws; /* console window size  */
@@ -3619,8 +3624,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	{
 		snprintf(buffer,
 				 sizeof(buffer) - 1,
-				 " %s[ Elapsed: %s ][ %04d-%02d-%02d %02d:%02d ",
-				 lopt.gps_context.batt,
+				 "][ Elapsed: %s ][ %04d-%02d-%02d %02d:%02d ",
 				 lopt.elapsed_time,
 				 1900 + lt->tm_year,
 				 1 + lt->tm_mon,
@@ -6264,7 +6268,7 @@ int main(int argc, char * argv[])
 	lopt.f_essid = NULL;
 	lopt.f_essid_count = 0;
 	lopt.active_scan_sim = 0;
-	lopt.update_s = 0;
+	lopt.update_interval_seconds = 0;
 	lopt.decloak = 1;
 	lopt.is_berlin = 0;
 	lopt.numaps = 0;
@@ -6686,10 +6690,13 @@ int main(int argc, char * argv[])
 
 			case 'u':
 
-				lopt.update_s = (int) strtol(optarg, NULL, 10);
+			    lopt.update_interval_seconds = (int)strtol(optarg, NULL, 10);
 
-				/* If failed to parse or value <= 0, use default, 100ms */
-				if (lopt.update_s <= 0) lopt.update_s = REFRESH_RATE;
+				/* If failed to parse or value < 0, use default, 100ms */
+				if (lopt.update_interval_seconds < 0)
+				{
+					lopt.update_interval_seconds = 0;
+                }
 
 				break;
 
@@ -7339,8 +7346,8 @@ int main(int argc, char * argv[])
 				FD_SET(fd_raw[i], &rfds); // NOLINT(hicpp-signed-bitwise)
 			}
 
-			tv0.tv_sec = lopt.update_s;
-			tv0.tv_usec = (lopt.update_s == 0) ? REFRESH_RATE : 0;
+			tv0.tv_sec = lopt.update_interval_seconds;
+			tv0.tv_usec = (lopt.update_interval_seconds == 0) ? REFRESH_RATE : 0;
 
 			gettimeofday(&tv1, NULL);
 
@@ -7371,7 +7378,8 @@ int main(int argc, char * argv[])
 		time_slept += 1000000UL * (tv2.tv_sec - tv1.tv_sec)
 					  + (tv2.tv_usec - tv1.tv_usec);
 
-        if (time_slept > REFRESH_RATE && time_slept > lopt.update_s * 1000000)
+		if (time_slept > REFRESH_RATE 
+            && time_slept > lopt.update_interval_seconds * 1000000)
 		{
 			time_slept = 0;
 
