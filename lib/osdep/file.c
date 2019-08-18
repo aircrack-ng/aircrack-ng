@@ -45,6 +45,7 @@ struct priv_file
 {
 	int pf_fd;
 	int pf_chan;
+    int pf_frequency;
     int pf_ht_chan;
     int pf_rate;
 	int pf_dtl;
@@ -308,6 +309,23 @@ static int file_get_channel(struct wif * wi)
 	return pf->pf_chan;
 }
 
+static int file_set_frequency(struct wif * wi, int frequency)
+{
+    struct priv_file * pf = wi_priv(wi);
+
+    pf->pf_frequency = frequency;
+
+    return 0;
+}
+
+static int file_get_frequency(struct wif * wi)
+{
+    struct priv_file * pf = wi_priv(wi);
+
+    return pf->pf_frequency;
+}
+
+
 static int file_set_rate(struct wif * wi, int rate)
 {
 	struct priv_file * pf = wi_priv(wi);
@@ -375,6 +393,8 @@ struct wif * file_open(char * iface)
 	wi->wi_set_channel = file_set_channel;
 	wi->wi_get_channel = file_get_channel;
     wi->wi_set_ht_channel = file_set_ht_channel;
+    wi->wi_set_freq = file_set_frequency;
+    wi->wi_get_freq = file_get_frequency;
     wi->wi_set_rate = file_set_rate;
 	wi->wi_get_rate = file_get_rate;
 	wi->wi_close = file_close;
