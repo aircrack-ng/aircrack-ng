@@ -106,8 +106,10 @@ struct devices dev;
 
 enum
 {
-	channel_list_invalid = -1,
-	channel_list_sentinel = 0
+	invalid_channel = -1,
+    invalid_frequency = -1,
+	channel_list_sentinel = 0,
+    frequency_sentinel = 0
 };
 
 static int abg_chans[] = 
@@ -144,7 +146,7 @@ struct detected_frequencies_st
  * The main process then updates its record of the current 
  * channel/frequency. 
  */
-struct hopper_data_st
+struct channel_hopper_data_st
 {
     int card;
     union
@@ -188,7 +190,8 @@ static struct local_options
     int channel[MAX_CARDS]; /* current channel #    */
 	int frequency[MAX_CARDS]; /* current frequency #    */
 
-    int hopper_process_pipe[2];
+    int channel_hopper_pipe[2];
+
     int signal_event_pipe[2]; 
 
 	gps_tracker_context_st gps_context;
@@ -4391,9 +4394,9 @@ sigchld_handler(int signum)
     (void)status;
 }
 
-static void process_hopper_process_data(
+static void channel_hopper_data_handler(
     struct local_options * const options,
-    struct hopper_data_st const * const hopper_data)
+    struct channel_hopper_data_st const * const hopper_data)
 {
     if (hopper_data->card < 0 || hopper_data->card >= ArrayCount(options->frequency))
     {
@@ -4645,7 +4648,7 @@ static int get_channel_count(
 	while (channels[total_channel_count] != 0)
 	{
 		total_channel_count++;
-		if (channels[total_channel_count] != channel_list_invalid)
+        if (channels[total_channel_count] != invalid_channel)
 		{
 			valid_channel_count++;
 		}
@@ -4659,30 +4662,37 @@ static int get_channel_count(
 	return channel_count;
 }
 
-static int getfreqcount(int valid)
+static int get_frequency_count(
+    int const * const frequencies,
+    int count_valid_frequencies_only)
 {
-	int i = 0; 
-    int freq_count = 0;
+	int total_frequency_count = 0; 
+    int valid_frequency_count = 0;
 
-	while (lopt.own_frequencies[i])
+    while (frequencies[total_frequency_count] != 0)
 	{
-		i++;
-		if (lopt.own_frequencies[i] != -1)
+        total_frequency_count++;
+        if (frequencies[total_frequency_count] != invalid_frequency)
 		{
-			freq_count++;
+            valid_frequency_count++;
         }
 	}
 
-	if (valid)
-	{
-        return freq_count;
-    }
+	int const frequency_count =
+        count_valid_frequencies_only
+            ? valid_frequency_count
+            : total_frequency_count;
 
-	return i;
+    return frequency_count;
 }
 
 static void
-channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
+channel_hopper(
+    int data_write_fd,
+    struct wif * wi[], 
+    int if_num, 
+    int chan_count, 
+    pid_t parent)
 {
 	int ch, ch_idx = 0, card = 0, chi = 0, cai = 0, j = 0, k = 0, first = 1,
 			again;
@@ -4725,7 +4735,7 @@ channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 				}
 			}
 
-			if (lopt.channels[ch_idx] == channel_list_invalid)
+            if (lopt.channels[ch_idx] == invalid_channel)
 			{
 				j--;
 				cai--;
@@ -4735,13 +4745,13 @@ channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 					ch = wi_get_channel(wi[card]);
 					lopt.channel[card] = ch;
 
-                    struct hopper_data_st const hopper_data =
+                    struct channel_hopper_data_st const hopper_data =
                     {
                         .card = card,
                         .u.channel = ch
                     };
 
-                    IGNORE_LTZ(write(lopt.hopper_process_pipe[1], &hopper_data, sizeof hopper_data));
+                    IGNORE_LTZ(write(data_write_fd, &hopper_data, sizeof hopper_data));
 
 					usleep(1000);
 				}
@@ -4760,22 +4770,24 @@ channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 			{
                 lopt.channel[card] = ch;
 
-                struct hopper_data_st const hopper_data =
+                struct channel_hopper_data_st const hopper_data =
                 {
                     .card = card,
                     .u.channel = ch
                 }; 
 
-                IGNORE_LTZ(write(lopt.hopper_process_pipe[1], &hopper_data, sizeof hopper_data)); 
+                IGNORE_LTZ(write(data_write_fd, &hopper_data, sizeof hopper_data));
 
                 if (lopt.active_scan_sim > 0)
+                {
                     send_probe_request(wi[card]); 
+                }
 
 				usleep(1000);
 			}
 			else
 			{
-				lopt.channels[ch_idx] = channel_list_invalid; /* remove invalid channel */
+                lopt.channels[ch_idx] = invalid_channel;
 				j--;
 				cai--;
 				continue;
@@ -4799,7 +4811,12 @@ channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 }
 
 static void
-frequency_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
+frequency_hopper(
+    int const data_write_fd,
+    struct wif * wi[], 
+    int if_num, 
+    int chan_count, 
+    pid_t parent)
 {
 	int ch, ch_idx = 0, card = 0, chi = 0, cai = 0, j = 0, k = 0, first = 1,
 			again;
@@ -4824,7 +4841,7 @@ frequency_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 				j = if_num - 1;
 				card = if_num - 1;
 
-				if (getfreqcount(1) > if_num)
+                if (get_frequency_count(lopt.own_frequencies, true) > if_num)
 				{
 					while (again)
 					{
@@ -4843,7 +4860,7 @@ frequency_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 				}
 			}
 
-			if (lopt.own_frequencies[ch_idx] == -1)
+            if (lopt.own_frequencies[ch_idx] == invalid_frequency)
 			{
 				j--;
 				cai--;
@@ -4853,13 +4870,13 @@ frequency_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 					ch = wi_get_freq(wi[card]);
 					lopt.frequency[card] = ch;
 
-                    struct hopper_data_st const hopper_data =
+                    struct channel_hopper_data_st const hopper_data =
                     {
                         .card = card,
                         .u.frequency = ch
                     };
 
-                    IGNORE_LTZ(write(lopt.hopper_process_pipe[1], &hopper_data, sizeof hopper_data)); 
+                    IGNORE_LTZ(write(data_write_fd, &hopper_data, sizeof hopper_data));
 
 					usleep(1000);
 				}
@@ -4874,19 +4891,19 @@ frequency_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 			{
 				lopt.frequency[card] = ch;
 
-                struct hopper_data_st const hopper_data =
+                struct channel_hopper_data_st const hopper_data =
                 {
                     .card = card,
                     .u.frequency = ch
                 };
 
-                IGNORE_LTZ(write(lopt.hopper_process_pipe[1], &hopper_data, sizeof hopper_data));
+                IGNORE_LTZ(write(data_write_fd, &hopper_data, sizeof hopper_data));
 
 				usleep(1000);
 			}
 			else
 			{
-				lopt.own_frequencies[ch_idx] = -1; /* remove invalid channel */
+                lopt.own_frequencies[ch_idx] = invalid_frequency;
 				j--;
 				cai--;
 				continue;
@@ -4909,18 +4926,27 @@ frequency_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 	exit(0);
 }
 
-static inline int invalid_channel(int chan)
+static bool is_invalid_channel(int const channel)
 {
+    bool is_invalid;
 	int i = 0;
 
 	do
 	{
-		if (chan == abg_chans[i] && chan != 0) return (0);
+        if (channel == abg_chans[i] && channel != channel_list_sentinel)
+        {
+            is_invalid = false;
+            goto done;
+        }
 	} while (abg_chans[++i]);
-	return (1);
+
+    is_invalid = true;
+
+done:
+    return is_invalid;
 }
 
-static inline bool invalid_frequency(
+static bool is_invalid_frequency(
     struct detected_frequencies_st const * const detected_frequencies,
     int const freq)
 {
@@ -4997,7 +5023,7 @@ static int getchannels(const char * optarg)
 					}
 					for (i = chan_first; i <= chan_last; i++)
 					{
-						if ((!invalid_channel(i)) && (chan_remain > 0))
+						if (!is_invalid_channel(i) && chan_remain > 0)
 						{
 							tmp_channels[chan_max - chan_remain] = i;
 							chan_remain--;
@@ -5033,7 +5059,7 @@ static int getchannels(const char * optarg)
 
 			if (sscanf(token, "%u", &chan_cur) != EOF)
 			{
-				if ((!invalid_channel(chan_cur)) && (chan_remain > 0))
+				if (!is_invalid_channel(chan_cur) && chan_remain > 0)
 				{
 					tmp_channels[chan_max - chan_remain] = chan_cur;
 					chan_remain--;
@@ -5134,7 +5160,8 @@ static int getfrequencies(
 					}
 					for (i = freq_first; i <= freq_last; i++)
 					{
-                        if ((!invalid_frequency(detected_frequencies, i)) && (freq_remain > 0))
+                        if (!is_invalid_frequency(detected_frequencies, i) 
+                            && freq_remain > 0)
 						{
 							tmp_frequencies[freq_max - freq_remain] = i;
 							freq_remain--;
@@ -5170,7 +5197,8 @@ static int getfrequencies(
 
 			if (sscanf(token, "%u", &freq_cur) != EOF)
 			{
-                if ((!invalid_frequency(detected_frequencies, freq_cur)) && (freq_remain > 0))
+                if (!is_invalid_frequency(detected_frequencies, freq_cur) 
+                    && freq_remain > 0)
 				{
 					tmp_frequencies[freq_max - freq_remain] = freq_cur;
 					freq_remain--;
@@ -5183,7 +5211,7 @@ static int getfrequencies(
 					freq_last = 9999;
 					for (i = freq_first; i <= freq_last; i++)
 					{
-                        if (!invalid_frequency(detected_frequencies, i)
+                        if (!is_invalid_frequency(detected_frequencies, i)
                             && freq_remain > 0)
 						{
 							tmp_frequencies[freq_max - freq_remain] = i;
@@ -5213,7 +5241,7 @@ static int getfrequencies(
 		}
 	}
 
-	lopt.own_frequencies[i] = 0;
+	lopt.own_frequencies[i] = frequency_sentinel;
 
 	free(tmp_frequencies);
 	free(optc);
@@ -5252,7 +5280,7 @@ done:
 	return already_specified;
 }
 
-static int init_cards(
+static int initialise_cards(
 	const char * cardstr, 
 	struct wif * * wi)
 {
@@ -5374,11 +5402,16 @@ static void close_cards(struct wif * * const wi, size_t const num_cards)
 	}
 }
 
-static int check_monitor(struct wif * wi[], int * fd_raw, int * fdh, int cards)
+static bool check_interface_monitor(
+    struct wif * * const wi, 
+    size_t const num_cards)
 {
-	for (size_t i = 0; i < cards; i++)
+    int success;
+
+    for (size_t i = 0; i < num_cards; i++)
 	{
 		int const monitor = wi_get_monitor(wi[i]);
+
 		if (monitor != 0)
 		{
 			snprintf(lopt.message,
@@ -5389,15 +5422,16 @@ static int check_monitor(struct wif * wi[], int * fd_raw, int * fdh, int cards)
             wi[i] = reopen_card(wi[i]);
 			if (wi[i] == NULL)
 			{
-				exit(1);
+                success = false;
+                goto done;
 			}
-
-			fd_raw[i] = wi_fd(wi[i]);
-			if (fd_raw[i] > *fdh) *fdh = fd_raw[i];
 		}
 	}
 
-	return 0;
+    success = true;
+
+done:
+	return success;
 }
 
 static int check_channel(struct wif * wi[], int cards)
@@ -5406,7 +5440,7 @@ static int check_channel(struct wif * wi[], int cards)
 	{
 		int const chan = wi_get_channel(wi[i]);
 
-		if (opt.ignore_negative_one == 1 && chan == channel_list_invalid)
+        if (opt.ignore_negative_one && chan == invalid_channel)
 		{
             return (0);
         }
@@ -5546,7 +5580,7 @@ static int rearrange_frequencies(void)
 
 	width = DEFAULT_CWIDTH;
 
-	count = getfreqcount(0);
+    count = get_frequency_count(lopt.own_frequencies, false);
 	left = count;
 	pos = 0;
 
@@ -5558,7 +5592,10 @@ static int rearrange_frequencies(void)
 	{
 		cur_freq = lopt.own_frequencies[pos % count];
 
-		if (cur_freq == last_used) round_done = 1;
+        if (cur_freq == last_used)
+        {
+            round_done = 1;
+        }
 
 		if (((count - left) > 0) && !round_done
 			&& (ABS(last_used - cur_freq) < width))
@@ -5592,12 +5629,10 @@ static void drop_privileges(void)
 	}
 }
 
-static int start_monitor_process(
-    struct local_options * const options, 
-    struct wif * * const wi)
+static bool start_child_process(int * const pipe_handles)
 {
-    int result; /* -1: error, 0: child process, 1: parent_process */
-    int const pipe_result = pipe(options->hopper_process_pipe);
+    int result; /* -1: error, 0: child process, > 0: parent_process */
+    int const pipe_result = pipe(pipe_handles);
 
     IGNORE_NZ(pipe_result);
 
@@ -5605,7 +5640,7 @@ static int start_monitor_process(
 
     if (result == -1)
     {
-        exit(EXIT_FAILURE);
+        goto done;
     }
 
     if (result == 0)
@@ -5615,10 +5650,33 @@ static int start_monitor_process(
         /* Close the read end of the communications pipe as the child 
          * only writes data for the parent to read. 
          */
-        close(options->hopper_process_pipe[0]);
+        close(pipe_handles[0]);
+    }
+    else
+    {
+        /* This is the parent process. */
+        /* Close the write end of the communications pipe as the parent 
+         * only reads data written by the child. 
+         */
+        close(pipe_handles[1]);
+    }
 
-        /* reopen cards. This way parent & child don't share
-        * resources for
+done:
+
+    return result;
+}
+
+static bool start_frequency_hopper_process(
+    struct local_options * const options,
+    struct wif * * const wi,
+    int const frequency_count)
+{
+    pid_t const main_pid = getpid();
+    int const result = start_child_process(options->channel_hopper_pipe);
+
+    if (result == 0)
+    {
+        /* reopen cards. This way parent & child don't share resources for 
         * accessing the card (e.g. file descriptors) which may cause
         * problems.  -sorbo
         */
@@ -5628,48 +5686,56 @@ static int start_monitor_process(
             exit(EXIT_FAILURE);
         }
 
-		drop_privileges();
-    }
-    else
-    {
-        /* This is the parent process. */
-        /* Close the write end of the communications pipe as the parent 
-         * only reads data written by the child. 
-         */
-        close(options->hopper_process_pipe[1]);
-    }
+        drop_privileges();
 
-    return result;
-}
+        frequency_hopper(options->channel_hopper_pipe[1], 
+                         wi, 
+                         options->num_cards,
+                         frequency_count, 
+                         main_pid);
 
-static void start_frequency_hopper_process(
-    struct local_options * const options,
-    struct wif * * const wi,
-    int const frequency_count)
-{
-    pid_t const main_pid = getpid();
-    int const result = start_monitor_process(options, wi);
-
-    if (result == 0)
-    {
-        frequency_hopper(wi, options->num_cards, frequency_count, main_pid);
         exit(EXIT_FAILURE);
     }
+
+    bool const child_started = result > 0;
+
+    return child_started;
 }
 
-static void start_channel_hopper_process(
+static bool start_channel_hopper_process(
     struct local_options * const options,
     struct wif * * const wi,
     int const channel_count)
 {
     pid_t const main_pid = getpid();
-    int const result = start_monitor_process(options, wi);
+    int const result = start_child_process(options->channel_hopper_pipe);
 
     if (result == 0)
     {
-        channel_hopper(wi, options->num_cards, channel_count, main_pid);
+        /* reopen cards. This way parent & child don't share resources for
+        * accessing the card (e.g. file descriptors) which may cause
+        * problems.  -sorbo
+        */
+
+        if (!reopen_cards(wi, options->num_cards))
+        {
+            exit(EXIT_FAILURE);
+        }
+
+        drop_privileges();
+
+        channel_hopper(options->channel_hopper_pipe[1],
+                       wi, 
+                       options->num_cards, 
+                       channel_count, 
+                       main_pid);
+
         exit(EXIT_FAILURE);
     }
+
+    bool const child_started = result > 0;
+
+    return child_started; 
 }
 
 static bool pipe_has_data_ready(int const fd)
@@ -5732,15 +5798,15 @@ done:
     return have_read_data;
 }
 
-static void check_monitor_process(struct local_options * const options)
+static void check_for_channel_hopper_data(struct local_options * const options)
 {
-    struct hopper_data_st hopper_data = { 0 };
+    struct channel_hopper_data_st hopper_data = { 0 };
 
-    while (pipe_read(options->hopper_process_pipe[0], 
+    while (pipe_read(options->channel_hopper_pipe[0],
                      &hopper_data, 
                      sizeof hopper_data))
     {
-        process_hopper_process_data(options, &hopper_data);
+        channel_hopper_data_handler(options, &hopper_data);
     }
 }
 
@@ -6152,11 +6218,12 @@ int main(int argc, char * argv[])
 	long cycle_time;
 	long cycle_time2;
 	char * output_format_string;
-	int i, j, fdh, freq_count;
-	int fd_raw[MAX_CARDS]; 
-    int arptype[MAX_CARDS];
+    int i;
+    int freq_count;
+
 	struct wif * wi[MAX_CARDS];
 	int wi_read_failed[MAX_CARDS] = { 0 };
+
 	int ivs_only, found;
 	int freq[2];
 	int num_opts = 0;
@@ -6242,7 +6309,6 @@ int main(int argc, char * argv[])
 	lopt.chanoption = 0;
 	lopt.freqoption = 0;
 	lopt.num_cards = 0;
-	fdh = 0;
 	time_slept = 0;
 
 	lopt.chswitch = 0;
@@ -6289,8 +6355,9 @@ int main(int argc, char * argv[])
 	lopt.airodump_start_time = NULL;
     lopt.manufacturer_list = NULL;
 
-    lopt.hopper_process_pipe[0] = -1;
-    lopt.hopper_process_pipe[1] = -1; 
+    lopt.channel_hopper_pipe[0] = -1;
+    lopt.channel_hopper_pipe[1] = -1;
+
     lopt.signal_event_pipe[0] = -1;
     lopt.signal_event_pipe[1] = -1;
 
@@ -6342,9 +6409,7 @@ int main(int argc, char * argv[])
 
 	for (i = 0; i < MAX_CARDS; i++)
 	{
-		arptype[i] = 0;
-		fd_raw[i] = -1;
-		lopt.channel[i] = 0;
+        lopt.channel[i] = channel_list_sentinel;
 	}
 
     MAC_ADDRESS_CLEAR(&opt.f_bssid);
@@ -6368,7 +6433,7 @@ int main(int argc, char * argv[])
 			{
 				// we got a single dash followed by at least 2 chars
 				// lets check that against our long options to find errors
-				for (j = 0; j < num_opts; j++)
+				for (size_t j = 0; j < num_opts; j++)
 				{
 					if (strcmp(argv[i] + 1, long_options[j].name) == 0)
 					{
@@ -7047,20 +7112,13 @@ int main(int argc, char * argv[])
 
 	if (lopt.s_iface != NULL)
 	{
-		/* initialize cards */
-		lopt.num_cards = init_cards(lopt.s_iface, wi);
+        lopt.num_cards = initialise_cards(lopt.s_iface, wi);
 
 		if (lopt.num_cards <= 0 || lopt.num_cards >= MAX_CARDS)
 		{
 			printf("Failed initializing wireless card(s): %s\n", lopt.s_iface);
 			program_exit_code = EXIT_FAILURE;
 			goto done;
-		}
-
-		for (i = 0; i < lopt.num_cards; i++)
-		{
-			fd_raw[i] = wi_fd(wi[i]);
-			if (fd_raw[i] > fdh) fdh = fd_raw[i];
 		}
 
 		if (lopt.freqoption == 1 && lopt.freqstring != NULL) // use frequencies
@@ -7074,7 +7132,7 @@ int main(int argc, char * argv[])
 
             detected_frequencies_cleanup(&detected_frequencies); 
 
-			if (lopt.frequency[0] == -1)
+			if (lopt.frequency[0] == invalid_frequency)
 			{
 				printf("No valid frequency given.\n");
 				program_exit_code = EXIT_FAILURE;
@@ -7083,13 +7141,11 @@ int main(int argc, char * argv[])
 
 			rearrange_frequencies();
 
-			freq_count = getfreqcount(0);
+            freq_count = get_frequency_count(lopt.own_frequencies, false);
 
-			/* find the interface index */
-			/* start a child to hop between frequencies */
-
-			if (lopt.frequency[0] == 0)
+            if (lopt.frequency[0] == frequency_sentinel)
 			{
+                /* Start a child process to hop between frequencies. */
                 start_frequency_hopper_process(&lopt, wi, freq_count);
 			}
 			else
@@ -7105,11 +7161,10 @@ int main(int argc, char * argv[])
 		else // use channels
 		{
 			/* find the interface index */
-			/* start a child to hop between channels */
-
-			if (lopt.channel[0] == 0)
+            if (lopt.channel[0] == channel_list_sentinel)
 			{
-				int const chan_count = get_channel_count(lopt.channels, 0);
+                /* Start a child process to hop between channels. */
+                int const chan_count = get_channel_count(lopt.channels, 0);
 
                 start_channel_hopper_process(&lopt, wi, chan_count);
 			}
@@ -7233,7 +7288,7 @@ int main(int argc, char * argv[])
 	{
 		time_t current_time;
 
-        check_monitor_process(&lopt);
+        check_for_channel_hopper_data(&lopt);
         check_for_signal_events(&lopt);
 		purge_old_nodes(&lopt, lopt.max_node_age);
         aps_purge_old_packets(&lopt, BUFFER_TIME_MILLISECS);
@@ -7294,7 +7349,12 @@ int main(int argc, char * argv[])
 			update_rx_quality();
 			if (lopt.s_iface != NULL)
 			{
-				check_monitor(wi, fd_raw, &fdh, lopt.num_cards);
+                if (!check_interface_monitor(wi, lopt.num_cards))
+                {
+                    program_exit_code = EXIT_FAILURE;
+                    goto done;
+                }
+
 				if (lopt.singlechan)
 				{
                     check_channel(wi, lopt.num_cards);
@@ -7339,11 +7399,18 @@ int main(int argc, char * argv[])
 		else if (lopt.s_iface != NULL)
 		{
 			/* capture one packet */
+            int max_fd = -1;
 
 			FD_ZERO(&rfds);
 			for (i = 0; i < lopt.num_cards; i++)
 			{
-				FD_SET(fd_raw[i], &rfds); // NOLINT(hicpp-signed-bitwise)
+                int const interface_fd = wi_fd(wi[i]);
+
+                FD_SET(interface_fd, &rfds); // NOLINT(hicpp-signed-bitwise)
+                if (interface_fd > max_fd)
+                {
+                    max_fd = interface_fd;
+                }
 			}
 
 			tv0.tv_sec = lopt.update_interval_seconds;
@@ -7351,7 +7418,7 @@ int main(int argc, char * argv[])
 
 			gettimeofday(&tv1, NULL);
 
-			if (select(fdh + 1, &rfds, NULL, NULL, &tv0) < 0)
+            if (select(max_fd + 1, &rfds, NULL, NULL, &tv0) < 0)
 			{
 				if (errno == EINTR)
 				{
@@ -7395,7 +7462,7 @@ int main(int argc, char * argv[])
 		{
 			for (i = 0; i < lopt.num_cards; i++)
 			{
-				if (FD_ISSET(fd_raw[i], &rfds)) // NOLINT(hicpp-signed-bitwise)
+                if (FD_ISSET(wi_fd(wi[i]), &rfds)) // NOLINT(hicpp-signed-bitwise)
 				{
                     ssize_t packet_length = 
                         wi_read(wi[i], NULL, NULL, h80211, sizeof(h80211), &ri);
@@ -7417,12 +7484,6 @@ int main(int argc, char * argv[])
 						{
 							program_exit_code = EXIT_FAILURE;
 							goto done;
-						}
-
-						fd_raw[i] = wi_fd(wi[i]);
-						if (fd_raw[i] > fdh)
-						{
-							fdh = fd_raw[i];
 						}
 
 						continue;
