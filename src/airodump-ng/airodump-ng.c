@@ -6339,7 +6339,6 @@ int main(int argc, char * argv[])
 
 	long time_slept;
 	long cycle_time;
-	long cycle_time2;
 	char * output_format_string;
     int i;
     int freq_count;
@@ -6367,10 +6366,10 @@ int main(int argc, char * argv[])
 	unsigned char h80211[4096];
 
 	struct timeval tv0;
-	struct timeval tv1;
+	struct timeval current_time_timestamp;
 	struct timeval tv2;
 	struct timeval tv3;
-	struct timeval tv4;
+	struct timeval last_active_scan_timestamp;
 	struct timeval prev_tv = {.tv_sec = 0, .tv_usec = 0 };
 	struct tm * lt;
 
@@ -7384,7 +7383,7 @@ int main(int argc, char * argv[])
 	tt1 = time(NULL);
 	tt2 = time(NULL);
 	gettimeofday(&tv3, NULL);
-	gettimeofday(&tv4, NULL);
+    gettimeofday(&last_active_scan_timestamp, NULL);
 
     lopt.elapsed_time = strdup("0 s");
     ALLEGE(lopt.elapsed_time != NULL);
@@ -7451,22 +7450,25 @@ int main(int argc, char * argv[])
             flush_output_files();
 		}
 
-		gettimeofday(&tv1, NULL);
+        gettimeofday(&current_time_timestamp, NULL);
 
-		cycle_time = 1000000UL * (tv1.tv_sec - tv3.tv_sec)
-					 + (tv1.tv_usec - tv3.tv_usec);
-
-		cycle_time2 = 1000000UL * (tv1.tv_sec - tv4.tv_sec)
-					  + (tv1.tv_usec - tv4.tv_usec);
-
-		if (lopt.active_scan_sim > 0
-			&& cycle_time2 > lopt.active_scan_sim * 1000)
+		if (lopt.active_scan_sim > 0)
 		{
-			gettimeofday(&tv4, NULL);
-			send_probe_requests(wi, lopt.num_cards);
+            long const cycle_time2 = 1000000UL * (current_time_timestamp.tv_sec - last_active_scan_timestamp.tv_sec)
+                + (current_time_timestamp.tv_usec - last_active_scan_timestamp.tv_usec);
+
+            if (cycle_time2 > lopt.active_scan_sim * 1000)
+            {
+                gettimeofday(&last_active_scan_timestamp, NULL);
+
+                send_probe_requests(wi, lopt.num_cards);
+            }
 		}
 
-		if (cycle_time > 500000)
+        cycle_time = 1000000UL * (current_time_timestamp.tv_sec - tv3.tv_sec)
+            + (current_time_timestamp.tv_usec - tv3.tv_usec);
+
+        if (cycle_time > 500000)
 		{
 			gettimeofday(&tv3, NULL);
 
@@ -7532,7 +7534,7 @@ int main(int argc, char * argv[])
 			tv0.tv_sec = lopt.update_interval_seconds;
 			tv0.tv_usec = (lopt.update_interval_seconds == 0) ? REFRESH_RATE : 0;
 
-			gettimeofday(&tv1, NULL);
+            gettimeofday(&current_time_timestamp, NULL);
 
             if (select(max_fd + 1, &rfds, NULL, NULL, &tv0) < 0)
 			{
@@ -7540,8 +7542,8 @@ int main(int argc, char * argv[])
 				{
 					gettimeofday(&tv2, NULL);
 
-					time_slept += 1000000UL * (tv2.tv_sec - tv1.tv_sec)
-								  + (tv2.tv_usec - tv1.tv_usec);
+                    time_slept += 1000000UL * (tv2.tv_sec - current_time_timestamp.tv_sec)
+                        + (tv2.tv_usec - current_time_timestamp.tv_usec);
 
 					continue;
 				}
@@ -7558,8 +7560,8 @@ int main(int argc, char * argv[])
 
 		gettimeofday(&tv2, NULL);
 
-		time_slept += 1000000UL * (tv2.tv_sec - tv1.tv_sec)
-					  + (tv2.tv_usec - tv1.tv_usec);
+        time_slept += 1000000UL * (tv2.tv_sec - current_time_timestamp.tv_sec)
+            + (tv2.tv_usec - current_time_timestamp.tv_usec);
 
 		if (time_slept > REFRESH_RATE 
             && time_slept > lopt.update_interval_seconds * 1000000)
