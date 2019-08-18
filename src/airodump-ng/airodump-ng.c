@@ -165,9 +165,11 @@ static struct local_options
 #endif
 	char * dump_prefix;
 
+    /* TODO: Stick all this card specific state into a structure. */
     int channel[MAX_CARDS]; /* current channel #    */
 	int frequency[MAX_CARDS]; /* current frequency #    */
     size_t max_consecutive_failed_interface_reads; 
+    int wi_consecutive_failed_reads[MAX_CARDS];
 
     int channel_hopper_pipe[2];
 
@@ -1983,10 +1985,14 @@ static void dump_add_packet(
 		}
 
 		st_cur->rate_from = ri->ri_rate;
-		if (ri->ri_channel > 0 && ri->ri_channel <= HIGHEST_CHANNEL)
+        if (ri->ri_channel > 0 && ri->ri_channel <= HIGHEST_CHANNEL)
+        {
 			st_cur->channel = ri->ri_channel;
-		else
+        }
+        else
+        {
 			st_cur->channel = lopt.channel[cardnum];
+        }
 
 		if (lopt.gps_context.gps_loc[0] > st_cur->gps_loc_max[0])
 			st_cur->gps_loc_max[0] = lopt.gps_context.gps_loc[0];
@@ -2787,10 +2793,14 @@ skip_probe:
 
 		if (ap_cur->channel == -1)
 		{
-			if (ri->ri_channel > 0 && ri->ri_channel <= HIGHEST_CHANNEL)
+            if (ri->ri_channel > 0 && ri->ri_channel <= HIGHEST_CHANNEL)
+            {
 				ap_cur->channel = ri->ri_channel;
-			else
+            }
+            else
+            {
 				ap_cur->channel = lopt.channel[cardnum];
+            }
 		}
 
 		/* check the SNAP header to see if data is encrypted */
@@ -4386,7 +4396,7 @@ static void channel_hopper_data_handler(
         goto done;
     }
 
-    if (options->freqoption != 0)
+    if (options->freqoption)
     {
         options->frequency[hopper_data->card] = hopper_data->u.frequency;
     }
@@ -5137,7 +5147,10 @@ static void close_cards(struct wif * * const wi, size_t const num_cards)
 {
 	for (size_t i = 0; i < num_cards; i++)
 	{
-		wi_close(wi[i]);
+        if (wi[i] != NULL) /* May be NULL due to a reopen failure. */
+        {
+            wi_close(wi[i]);
+        }
 	}
 }
 
@@ -6082,6 +6095,93 @@ static void airodump_shutdown(struct wif * * const wi)
 	oui_context_free(lopt.manufacturer_list);
 }
 
+static int capture_packet_from_cards(
+    struct local_options * const options, 
+    struct wif * * wi, 
+    size_t num_cards,
+    uint8_t * const packet_buffer,
+    size_t packet_buffer_size)
+{
+    /* Capture one packet from each card. */
+    int result;
+    fd_set rfds;
+    int max_fd = -1;
+
+    FD_ZERO(&rfds);
+    for (size_t i = 0; i < num_cards; i++)
+    {
+        int const interface_fd = wi_fd(wi[i]);
+
+        FD_SET(interface_fd, &rfds); // NOLINT(hicpp-signed-bitwise)
+        if (interface_fd > max_fd)
+        {
+            max_fd = interface_fd;
+        }
+    }
+    struct timeval tv0 =
+    {
+        .tv_sec = options->update_interval_seconds,
+        .tv_usec = (options->update_interval_seconds == 0) ? REFRESH_RATE : 0
+    };
+
+    if (select(max_fd + 1, &rfds, NULL, NULL, &tv0) < 0)
+    {
+        if (errno == EINTR)
+        {
+            result = 0;
+            goto done;
+        }
+        perror("select failed");
+
+        result = -1;
+        goto done;
+    }
+
+    for (size_t i = 0; i < lopt.num_cards; i++)
+    {
+        if (FD_ISSET(wi_fd(wi[i]), &rfds)) // NOLINT(hicpp-signed-bitwise)
+        {
+            struct rx_info ri;
+
+            ssize_t const packet_length =
+                wi_read(wi[i], NULL, NULL, packet_buffer, packet_buffer_size, &ri);
+
+            if (packet_length == -1)
+            {
+                lopt.wi_consecutive_failed_reads[i]++;
+                if (lopt.wi_consecutive_failed_reads[i]
+                    >= lopt.max_consecutive_failed_interface_reads)
+                {
+                    lopt.do_exit = 1;
+                    break;
+                }
+
+                snprintf(lopt.message,
+                         sizeof(lopt.message),
+                         "][ interface %s down ",
+                         wi_get_ifname(wi[i]));
+
+                wi[i] = reopen_card(wi[i]);
+                if (wi[i] == NULL)
+                {
+                    result = -1;
+                    goto done;
+                }
+            }
+            else
+            {
+                options->wi_consecutive_failed_reads[i] = 0;
+                dump_add_packet(packet_buffer, packet_length, &ri, i);
+            }
+        }
+    }
+
+    result = 1;
+
+done:
+    return result;
+}
+
 int main(int argc, char * argv[])
 {
 	int program_exit_code;
@@ -6096,7 +6196,6 @@ int main(int argc, char * argv[])
     int freq_count;
 
 	struct wif * wi[MAX_CARDS];
-	int wi_read_failed[MAX_CARDS] = { 0 };
 
 	int ivs_only, found;
 	int freq[2];
@@ -6115,7 +6214,7 @@ int main(int argc, char * argv[])
 	time_t start_time;
 
 	struct rx_info ri;
-	unsigned char h80211[4096];
+	uint8_t h80211[4096];
 
 	struct timeval tv0;
 	struct timeval current_time_timestamp;
@@ -6124,8 +6223,6 @@ int main(int argc, char * argv[])
 	struct timeval last_active_scan_timestamp;
 	struct timeval prev_tv = {.tv_sec = 0, .tv_usec = 0 };
 	struct tm * lt;
-
-	fd_set rfds;
 
 	static const struct option long_options[]
 		= {{"ht20", 0, 0, '2'},
@@ -6282,9 +6379,12 @@ int main(int argc, char * argv[])
 
 	lt = localtime(&tv0.tv_sec);
 
-	for (i = 0; i < MAX_CARDS; i++)
+
+    for (i = 0; i < MAX_CARDS; i++)
 	{
         lopt.channel[i] = channel_list_sentinel;
+        lopt.frequency[i] = frequency_sentinel;
+        lopt.wi_consecutive_failed_reads[i] = 0;
 	}
 
     MAC_ADDRESS_CLEAR(&opt.f_bssid);
@@ -7000,7 +7100,7 @@ int main(int argc, char * argv[])
 			goto done;
 		}
 
-		if (lopt.freqoption == 1 && lopt.freqstring != NULL) // use frequencies
+		if (lopt.freqoption && lopt.freqstring != NULL) // use frequencies
 		{
             struct detected_frequencies_st detected_frequencies; 
 
@@ -7243,11 +7343,17 @@ int main(int argc, char * argv[])
 
 		if (lopt.packet_reader_context != NULL)
 		{
-			/* Read one packet */
+            /* Read one packet from a file. */
 			struct pcap_pkthdr pkh;
 			size_t packet_length;
 			packet_reader_result_t const result =
-				packet_reader_read(lopt.packet_reader_context, h80211, sizeof h80211, &packet_length, &ri, &pkh);
+				packet_reader_read(
+                    lopt.packet_reader_context, 
+                    h80211, 
+                    sizeof h80211, 
+                    &packet_length, 
+                    &ri, 
+                    &pkh);
 
 			if (result == packet_reader_result_skip)
 			{
@@ -7255,12 +7361,14 @@ int main(int argc, char * argv[])
 			}
 			else if (result == packet_reader_result_done)
 			{
-				snprintf(lopt.message,
-						 sizeof(lopt.message),
-						 "][ Finished reading input file %s.",
-						 opt.s_file);
 				packet_reader_close(lopt.packet_reader_context);
 				lopt.packet_reader_context = NULL;
+
+                snprintf(lopt.message,
+                         sizeof(lopt.message),
+                         "][ Finished reading input file %s.",
+                         opt.s_file);
+
                 continue;
 			}
 
@@ -7273,42 +7381,20 @@ int main(int argc, char * argv[])
 		}
 		else if (lopt.s_iface != NULL)
 		{
-			/* capture one packet */
-            int max_fd = -1;
+            /* Read a packet from each interface/card. */
+            int result = 
+                capture_packet_from_cards(
+                    &lopt, 
+                    wi, 
+                    lopt.num_cards, 
+                    h80211, 
+                    sizeof h80211);
 
-			FD_ZERO(&rfds);
-			for (i = 0; i < lopt.num_cards; i++)
-			{
-                int const interface_fd = wi_fd(wi[i]);
-
-                FD_SET(interface_fd, &rfds); // NOLINT(hicpp-signed-bitwise)
-                if (interface_fd > max_fd)
-                {
-                    max_fd = interface_fd;
-                }
-			}
-
-			tv0.tv_sec = lopt.update_interval_seconds;
-			tv0.tv_usec = (lopt.update_interval_seconds == 0) ? REFRESH_RATE : 0;
-
-            gettimeofday(&current_time_timestamp, NULL);
-
-            if (select(max_fd + 1, &rfds, NULL, NULL, &tv0) < 0)
-			{
-				if (errno == EINTR)
-				{
-					gettimeofday(&tv2, NULL);
-
-                    time_slept += 1000000UL * (tv2.tv_sec - current_time_timestamp.tv_sec)
-                        + (tv2.tv_usec - current_time_timestamp.tv_usec);
-
-					continue;
-				}
-				perror("select failed");
-
-				program_exit_code = EXIT_FAILURE;
-				goto done;
-			}
+            if (result < 0)
+            {
+                lopt.do_exit = true;
+                continue;
+            }
 		}
         else
         {
@@ -7328,46 +7414,6 @@ int main(int argc, char * argv[])
 			update_data_packets_per_second();
 
             update_window_size(&lopt, &lopt.ws);
-
-            /* XXX - Why continue. Why not read a packet if one is ready? */
-			continue;
-		}
-
-		if (lopt.packet_reader_context == NULL && lopt.s_iface != NULL)
-		{
-			for (i = 0; i < lopt.num_cards; i++)
-			{
-                if (FD_ISSET(wi_fd(wi[i]), &rfds)) // NOLINT(hicpp-signed-bitwise)
-				{
-                    ssize_t packet_length = 
-                        wi_read(wi[i], NULL, NULL, h80211, sizeof(h80211), &ri);
-					if (packet_length == -1)
-					{
-						wi_read_failed[i]++;
-                        if (wi_read_failed[i] >= lopt.max_consecutive_failed_interface_reads)
-						{
-							lopt.do_exit = 1;
-							break;
-						}
-						snprintf(lopt.message,
-								 sizeof(lopt.message),
-								 "][ interface %s down ",
-								 wi_get_ifname(wi[i]));
-
-                        wi[i] = reopen_card(wi[i]);
-						if (wi[i] == NULL)
-						{
-							program_exit_code = EXIT_FAILURE;
-							goto done;
-						}
-
-						continue;
-					}
-
-					wi_read_failed[i] = 0;
-					dump_add_packet(h80211, packet_length, &ri, i);
-				}
-			}
 		}
 
 		do_quit_request_timeout_check(lopt.message, sizeof(lopt.message));
