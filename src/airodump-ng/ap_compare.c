@@ -1,6 +1,8 @@
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
 #include "ap_compare.h"
-#include "aircrack-ng/support/communications.h"
-#include "aircrack-ng/defs.h"
 
 typedef int (* ap_compare_fn)(
     struct AP_info const * const a,
@@ -138,6 +140,7 @@ static int sort_default(
     struct AP_info const * const b,
     int const sort_direction)
 {
+    (void)sort_direction;
     int const result = a->avg_power - b->avg_power;
 
     return result;

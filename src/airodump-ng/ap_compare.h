@@ -5,7 +5,6 @@
 #include "airodump-ng.h"
 #include "aircrack-ng/support/communications.h"
 
-
 typedef enum ap_sort_type_t
 {
     SORT_FIRST,

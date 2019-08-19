@@ -1,3 +1,13 @@
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+#include "aircrack-ng/defs.h"
+#include "aircrack-ng/version.h"
+#include "aircrack-ng/support/communications.h"
+#include "aircrack-ng/crypto/crypto.h"
+#include "aircrack-ng/osdep/channel.h"
+
 #include "channel_hopper.h"
 
 #include <signal.h>

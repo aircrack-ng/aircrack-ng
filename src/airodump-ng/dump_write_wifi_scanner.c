@@ -1,28 +1,13 @@
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#include <stdio.h>
-#include <time.h>
-#include <limits.h>
-#include <string.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <unistd.h> // ftruncate
-#include <sys/types.h> // ftruncate
-#include <sys/time.h>
-#ifdef HAVE_PCRE
-#include <pcre.h>
-#endif
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include "aircrack-ng/defs.h"
 #include "airodump-ng.h"
 #include "aircrack-ng/support/communications.h"
+
 #include "dump_write_wifi_scanner.h"
-#include "dump_write.h"
 #include "dump_write_private.h"
-#include "aircrack-ng/crypto/crypto.h"
-#include "aircrack-ng/utf8/verifyssid.h"
 
 extern int is_filtered_essid(unsigned char * essid); // airodump-ng.c
 

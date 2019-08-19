@@ -48,14 +48,16 @@
 #ifdef HAVE_PCRE
 #include <pcre.h>
 #endif
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
 
 #include "aircrack-ng/defs.h"
 #include "airodump-ng.h"
 #include "aircrack-ng/support/communications.h"
 #include "dump_write.h"
 #include "dump_write_private.h"
-#include "aircrack-ng/crypto/crypto.h"
-#include "aircrack-ng/utf8/verifyssid.h"
 #include "dump_write_wifi_scanner.h"
 #include "dump_csv.h"
 #include "dump_kismet_csv.h"
