@@ -15,7 +15,7 @@
  */
 struct channel_hopper_data_st
 {
-    int card;
+    size_t card;
     union
     {
         int frequency;

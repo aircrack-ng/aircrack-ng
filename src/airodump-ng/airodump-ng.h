@@ -37,6 +37,7 @@
 #include <sys/termios.h>
 #endif
 
+#include "aircrack-ng/defs.h"
 #include "aircrack-ng/third-party/eapol.h"
 #include "aircrack-ng/support/pcap_local.h"
 #include "aircrack-ng/osdep/osdep.h"
