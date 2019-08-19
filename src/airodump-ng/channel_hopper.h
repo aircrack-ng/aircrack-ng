@@ -27,7 +27,7 @@ void
 channel_hopper(
     int const data_write_fd,
     struct wif * * const wi,
-    int const if_num,
+    size_t const if_num,
     int const chan_count,
     channel_switching_method_t const channel_switching_method,
     int * const possible_channels,
@@ -44,7 +44,7 @@ void
 frequency_hopper(
     int const data_write_fd,
     struct wif * * const wi,
-    int const if_num,
+    size_t const if_num,
     int const chan_count,
     channel_switching_method_t const channel_switching_method,
     int * const possible_frequencies,

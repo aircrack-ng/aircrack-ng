@@ -142,13 +142,13 @@ struct NA_info
 	struct timeval tv; /* time for ack per second   */
 };
 
-int get_channel_count(
+size_t get_channel_count(
     int const * const channels,
-    int count_valid_channels_only);
+    bool const count_valid_channels_only);
 
-int get_frequency_count(
+size_t get_frequency_count(
     int const * const frequencies,
-    int count_valid_frequencies_only);
+    bool const count_valid_frequencies_only);
 
 int send_probe_request(struct wif * const wi);
 

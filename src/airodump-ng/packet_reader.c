@@ -54,6 +54,12 @@ static packet_reader_result_t packet_reader_80211(
     struct rx_info * const ri)
 {
     /* Nothing to do. */
+    (void)packet_reader_context;
+    (void)packet_buffer;
+    (void)buffer_size;
+    (void)packet_length;
+    (void)ri;
+
     return packet_reader_result_ok;
 }
 
@@ -64,6 +70,9 @@ static packet_reader_result_t packet_reader_prism(
     size_t * const packet_length,
     struct rx_info * const ri)
 {
+    (void)packet_reader_context;
+    (void)buffer_size;
+
     packet_reader_result_t result;
     uint32_t n;
 
@@ -106,6 +115,9 @@ static packet_reader_result_t packet_reader_radiotap(
     size_t * const packet_length,
     struct rx_info * const ri)
 {
+    (void)packet_reader_context;
+    (void)buffer_size;
+
     packet_reader_result_t result;
     uint32_t n;
 
@@ -212,6 +224,10 @@ static packet_reader_result_t packet_reader_ppi(
     size_t * const packet_length,
     struct rx_info * const ri)
 {
+    (void)packet_reader_context;
+    (void)buffer_size;
+    (void)ri;
+
     packet_reader_result_t result;
     uint32_t n;
 

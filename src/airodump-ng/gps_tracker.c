@@ -253,8 +253,11 @@ static void * gps_tracker_thread(void * arg)
 
                 // Send ?WATCH={"json":true};
                 strcpy(line, "?WATCH={\"json\":true};\n");
-                if (send(gpsd_sock, line, strlen(line), 0) != strlen(line))
+
+                if (send(gpsd_sock, line, strlen(line), 0) != (ssize_t)strlen(line))
+                {
                     continue;
+                }
             }
         }
         else if (is_json < 0)

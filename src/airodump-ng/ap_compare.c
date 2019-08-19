@@ -93,7 +93,7 @@ static int sort_enc(
     int const sort_direction)
 {
     int const result =
-        ((int)(a->security & STD_FIELD) - (int)(a->security & STD_FIELD))
+        ((int)(a->security & STD_FIELD) - (int)(b->security & STD_FIELD))
         * sort_direction;
 
     return result;
@@ -105,7 +105,7 @@ static int sort_cipher(
     int const sort_direction)
 {
     int const result =
-        ((int)(a->security & ENC_FIELD) - (int)(a->security & ENC_FIELD))
+        ((int)(a->security & ENC_FIELD) - (int)(b->security & ENC_FIELD))
         * sort_direction;
 
     return result;
@@ -117,7 +117,7 @@ static int sort_auth(
     int const sort_direction)
 {
     int const result =
-        ((int)(a->security & AUTH_FIELD) - (int)(a->security & AUTH_FIELD))
+        ((int)(a->security & AUTH_FIELD) - (int)(b->security & AUTH_FIELD))
         * sort_direction;
 
     return result;
@@ -151,6 +151,10 @@ static int sort_nothing(
     struct AP_info const * const b,
     int const sort_direction)
 {
+    (void)a;
+    (void)b;
+    (void)sort_direction;
+
     return 0;
 }
 

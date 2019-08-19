@@ -169,7 +169,9 @@ static struct local_options
     int channel[MAX_CARDS]; /* current channel #    */
 	int frequency[MAX_CARDS]; /* current frequency #    */
     size_t max_consecutive_failed_interface_reads; 
-    int wi_consecutive_failed_reads[MAX_CARDS];
+    size_t wi_consecutive_failed_reads[MAX_CARDS];
+
+    size_t num_cards; 
 
     int channel_hopper_pipe[2];
 
@@ -269,7 +271,6 @@ static struct local_options
 	} en_selection_direction;
 
 	int mark_cur_ap;
-	int num_cards;
 	int do_pause;
 	int do_sort_always;
 
@@ -4387,7 +4388,7 @@ static void channel_hopper_data_handler(
     struct local_options * const options,
     struct channel_hopper_data_st const * const hopper_data)
 {
-    if (hopper_data->card < 0 || hopper_data->card >= ArrayCount(options->frequency))
+    if (hopper_data->card >= ArrayCount(options->frequency))
     {
         // invalid received data
         fprintf(stderr,
@@ -4627,12 +4628,12 @@ static int send_probe_requests(struct wif * * const wi, size_t num_cards)
 	return (0);
 }
 
-int get_channel_count(
+size_t get_channel_count(
 	int const * const channels, 
-	int count_valid_channels_only)
+	bool const count_valid_channels_only)
 {
-	int total_channel_count = 0; 
-	int valid_channel_count = 0;
+	size_t total_channel_count = 0; 
+    size_t valid_channel_count = 0;
 
 	while (channels[total_channel_count] != 0)
 	{
@@ -4651,12 +4652,12 @@ int get_channel_count(
 	return channel_count;
 }
 
-int get_frequency_count(
+size_t get_frequency_count(
     int const * const frequencies,
-    int count_valid_frequencies_only)
+    bool const count_valid_frequencies_only)
 {
-	int total_frequency_count = 0; 
-    int valid_frequency_count = 0;
+    size_t total_frequency_count = 0;
+    size_t valid_frequency_count = 0;
 
     while (frequencies[total_frequency_count] != 0)
 	{
@@ -5280,11 +5281,12 @@ done:
 
 static void check_channel_on_cards(
     struct wif * * const wi, 
+    int const * const current_channels,
     size_t const num_cards)
 {
     for (size_t i = 0; i < num_cards; i++)
 	{
-        check_channel_on_card(wi[i], lopt.channel[i]);
+        check_channel_on_card(wi[i], current_channels[i]);
 	}
 }
 
@@ -5322,34 +5324,39 @@ done:
 }
 
 static void check_frequency_on_cards(
-    struct wif * * const wi, 
+    struct wif * * const wi,
+    int const * const current_frequencies, 
     size_t const num_cards)
 {
     for (size_t i = 0; i < num_cards; i++)
 	{
-        check_frequency_on_card(wi[i], lopt.frequency[i]);
+        check_frequency_on_card(wi[i], current_frequencies[i]);
 	}
 }
 
 static bool update_interface_cards(
     struct wif * * const wi, 
-    size_t const num_cards)
+    size_t const num_cards,
+    bool const single_channel,
+    int const * const current_channels,
+    bool const single_frequency,
+    int const * const current_frequencies)
 {
     bool success;
 
-    if (!check_for_monitor_mode_on_cards(wi, lopt.num_cards))
+    if (!check_for_monitor_mode_on_cards(wi, num_cards))
     {
         success = false;
         goto done;
     }
 
-    if (lopt.singlechan)
+    if (single_channel)
     {
-        check_channel_on_cards(wi, lopt.num_cards);
+        check_channel_on_cards(wi, current_channels, num_cards);
     }
-    if (lopt.singlefreq)
+    if (single_frequency)
     {
-        check_frequency_on_cards(wi, lopt.num_cards);
+        check_frequency_on_cards(wi, current_frequencies, num_cards);
     }
 
     success = true;
@@ -5361,8 +5368,8 @@ done:
 static void detect_frequency_range(
     struct wif * wi, 
     struct detected_frequencies_st * const detected_frequencies,
-    size_t const start_freq, 
-    size_t const end_freq)
+    int const start_freq, 
+    int const end_freq)
 {
     for (int freq = start_freq; 
           detected_frequencies->count < detected_frequencies->table_size && freq <= end_freq; 
@@ -5449,13 +5456,13 @@ static int array_contains(const int * array, int length, int value)
 static int rearrange_frequencies(void)
 {
 	int * freqs;
-	int count, left, pos;
+	int left, pos;
 	int width, last_used = 0;
 	int cur_freq, round_done;
 
 	width = DEFAULT_CWIDTH;
 
-    count = get_frequency_count(lopt.own_frequencies, false);
+    size_t const count = get_frequency_count(lopt.own_frequencies, false);
 	left = count;
 	pos = 0;
 
@@ -5663,8 +5670,9 @@ done:
     return have_data_ready;
 }
 
-static bool pipe_read(int const fd, void * const data, size_t data_size)
+static bool pipe_read(int const fd, void * const data, size_t const data_size)
 {
+    /* data_size is the expected number of bytes to read. */ 
     bool have_read_data;
 
     if (!pipe_has_data_ready(fd))
@@ -5680,7 +5688,9 @@ static bool pipe_read(int const fd, void * const data, size_t data_size)
     }
     while (read_result < 0 && errno == EINTR);
 
-    have_read_data = read_result == data_size;
+    size_t const bytes_read = (size_t)read_result;
+
+    have_read_data = bytes_read == data_size;
 
 done:
     return have_read_data;
@@ -5995,7 +6005,7 @@ static void do_quit_request_timeout_check(
 	if (quitting > 0)
 	{
 		time_t const seconds_since_last_quit_event = time(NULL) - quitting_event_ts;
-		size_t const maximum_quit_event_interval_seconds = 3;
+        time_t const maximum_quit_event_interval_seconds = 3;
 
 		if (seconds_since_last_quit_event > maximum_quit_event_interval_seconds)
 		{
@@ -6194,13 +6204,13 @@ int main(int argc, char * argv[])
 	long cycle_time;
 	char * output_format_string;
     int i;
-    int freq_count;
+    size_t freq_count;
 
 	struct wif * wi[MAX_CARDS];
 
 	int ivs_only, found;
 	int freq[2];
-	int num_opts = 0;
+	size_t num_opts = 0;
 	int option = 0;
 	int option_index = 0;
     int reset_val = 0;
@@ -7130,7 +7140,7 @@ int main(int argc, char * argv[])
 			}
 			else
 			{
-				for (i = 0; i < lopt.num_cards; i++)
+				for (size_t i = 0; i < lopt.num_cards; i++)
 				{
 					wi_set_freq(wi[i], lopt.frequency[0]);
 					lopt.frequency[i] = lopt.frequency[0];
@@ -7144,13 +7154,13 @@ int main(int argc, char * argv[])
             if (lopt.channel[0] == channel_list_sentinel)
 			{
                 /* Start a child process to hop between channels. */
-                int const chan_count = get_channel_count(lopt.channels, false);
+                size_t const chan_count = get_channel_count(lopt.channels, false);
 
                 start_channel_hopper_process(&lopt, wi, chan_count);
 			}
 			else
 			{
-				for (i = 0; i < lopt.num_cards; i++)
+				for (size_t i = 0; i < lopt.num_cards; i++)
 				{
 #ifdef CONFIG_LIBNL
 					wi_set_ht_channel(wi[i], lopt.channel[0], lopt.htval);
@@ -7334,7 +7344,12 @@ int main(int argc, char * argv[])
 
 			if (lopt.s_iface != NULL)
 			{
-                if (!update_interface_cards(wi, lopt.num_cards))
+                if (!update_interface_cards(wi, 
+                                            lopt.num_cards, 
+                                            lopt.singlechan, 
+                                            lopt.channel,
+                                            lopt.singlefreq,
+                                            lopt.frequency))
                 {
                     had_error = true; 
                     lopt.do_exit = true; 
