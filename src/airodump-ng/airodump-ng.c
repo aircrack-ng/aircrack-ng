@@ -706,6 +706,7 @@ static void input_thread(void * arg)
 						 sizeof(lopt.message),
 						 "][ normal sorting order");
 			}
+            sort_required = true;
 		}
 
 		if (keycode == KEY_TAB)
