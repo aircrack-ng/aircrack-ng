@@ -543,7 +543,13 @@ static void sort_stas(struct local_options * const options)
 			}
 		}
 
-		if (st_min == NULL)
+        if (st_min != NULL)
+        {
+            /* Put old entries at the end of the list. */
+            TAILQ_REMOVE(&options->sta_list, st_min, entry);
+            TAILQ_INSERT_HEAD(&sorted_list, st_min, entry);
+        }
+		else
 		{
 			st_min = TAILQ_FIRST(&options->sta_list);
 
@@ -560,10 +566,10 @@ static void sort_stas(struct local_options * const options)
 					st_min = st_cur;
 				}
 			}
-		}
 
-		TAILQ_REMOVE(&options->sta_list, st_min, entry);
-		TAILQ_INSERT_TAIL(&sorted_list, st_min, entry);
+            TAILQ_REMOVE(&options->sta_list, st_min, entry);
+            TAILQ_INSERT_TAIL(&sorted_list, st_min, entry);
+		}
 	}
 
 	/* The original list is now empty.
