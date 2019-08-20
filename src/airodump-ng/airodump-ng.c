@@ -466,23 +466,33 @@ static void sort_aps(
 
 	/* Sort the aps by WHATEVER first, */
 	/* Can't 'sort' (or something better) be used to sort these 
-	   entries?*/
+     * entries? 
+     */
 
 	while (TAILQ_FIRST(&options->ap_list) != NULL)
 	{
 		struct AP_info * ap_cur;
 		struct AP_info * ap_min = NULL;
 
-		/* Only the most recent entries are sorted. */
+        /* Only the most recently seen entries are sorted. */
 		TAILQ_FOREACH(ap_cur, &options->ap_list, entry)
 		{
-			if (tt - ap_cur->tlast > 20)
+            time_t const seconds_since_last_seen = tt - ap_cur->tlast;
+            static long const sorting_age_limit_seconds = 20;
+
+            if (seconds_since_last_seen > sorting_age_limit_seconds)
 			{
 				ap_min = ap_cur;
 			}
 		}
 
-		if (ap_min == NULL)
+        if (ap_min != NULL)
+        {
+            /* Put old entries at the end of the list. */
+            TAILQ_REMOVE(&options->ap_list, ap_min, entry);
+            TAILQ_INSERT_HEAD(&sorted_list, ap_min, entry);
+        }
+        else
 		{
 			ap_min = TAILQ_FIRST(&options->ap_list);
 
@@ -493,15 +503,20 @@ static void sort_aps(
 					/* There's no point in comparing an entry with itself. */
 					continue;
 				}
-				if (ap_sort_compare(sort_info, ap_cur, ap_min, options->sort_inv) < 0)
+
+				if (ap_sort_compare(sort_info, ap_cur, ap_min, options->sort_inv) >= 0)
 				{
 					ap_min = ap_cur;
 				}
 			}
-		}
 
-		TAILQ_REMOVE(&options->ap_list, ap_min, entry);
-		TAILQ_INSERT_TAIL(&sorted_list, ap_min, entry);
+            /* Put sorted entries at the tail of the list. Dump_print() 
+             * works from the tail to the head of the list. 
+             */
+            TAILQ_REMOVE(&options->ap_list, ap_min, entry);
+            TAILQ_INSERT_TAIL(&sorted_list, ap_min, entry);
+        }
+
 	}
 
 	/* The original list is now empty. 
