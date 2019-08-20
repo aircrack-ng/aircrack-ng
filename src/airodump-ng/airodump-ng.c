@@ -459,7 +459,7 @@ static void sort_aps(
 	struct local_options * const options,
 	ap_sort_info_st const * const sort_info)
 {
-	time_t tt = time(NULL);
+	time_t const tt = time(NULL);
 	struct ap_list_head sorted_list = TAILQ_HEAD_INITIALIZER(sorted_list);
 
 	/* Sort the aps by WHATEVER first, */
@@ -526,7 +526,7 @@ static void sort_aps(
 
 static void sort_stas(struct local_options * const options)
 {
-	time_t tt = time(NULL);
+	time_t const tt = time(NULL);
 	struct sta_list_head sorted_list = TAILQ_HEAD_INITIALIZER(sorted_list);
 
 	while (TAILQ_FIRST(&options->sta_list) != NULL)
@@ -656,7 +656,7 @@ static void input_thread(void * arg)
 
 		if (keycode == KEY_r)
 		{
-			lopt.do_sort_always = (lopt.do_sort_always + 1) & 1;
+			lopt.do_sort_always = !lopt.do_sort_always;
 
 			if (lopt.do_sort_always)
 			{
@@ -679,18 +679,22 @@ static void input_thread(void * arg)
 
 		if (keycode == KEY_ARROW_DOWN)
 		{
-			if (lopt.p_selected_ap && TAILQ_PREV(lopt.p_selected_ap, ap_list_head, entry) != NULL)
+			if (lopt.p_selected_ap != NULL
+                && TAILQ_PREV(lopt.p_selected_ap, ap_list_head, entry) != NULL)
 			{
-				lopt.p_selected_ap = TAILQ_PREV(lopt.p_selected_ap, ap_list_head, entry);
+				lopt.p_selected_ap =
+                    TAILQ_PREV(lopt.p_selected_ap, ap_list_head, entry);
 				lopt.en_selection_direction = selection_direction_down;
 			}
 		}
 
 		if (keycode == KEY_ARROW_UP)
 		{
-			if (lopt.p_selected_ap && TAILQ_NEXT(lopt.p_selected_ap, entry) != NULL)
+			if (lopt.p_selected_ap != NULL
+                && TAILQ_NEXT(lopt.p_selected_ap, entry) != NULL)
 			{
-				lopt.p_selected_ap = TAILQ_NEXT(lopt.p_selected_ap, entry);
+				lopt.p_selected_ap =
+                    TAILQ_NEXT(lopt.p_selected_ap, entry);
 				lopt.en_selection_direction = selection_direction_up;
 			}
 		}
@@ -719,7 +723,6 @@ static void input_thread(void * arg)
 			{
 				lopt.en_selection_direction = selection_direction_down;
 				lopt.p_selected_ap = TAILQ_LAST(&lopt.ap_list, ap_list_head);
-				lopt.sort_method = ap_sort_method_assign(SORT_BY_NOTHING);
 				snprintf(lopt.message,
 						 sizeof(lopt.message),
 						 "][ enabled AP selection");
@@ -728,11 +731,11 @@ static void input_thread(void * arg)
 			{
 				lopt.en_selection_direction = selection_direction_no;
 				lopt.p_selected_ap = NULL;
-				lopt.sort_method = ap_sort_method_assign(SORT_BY_NOTHING);
 				snprintf(lopt.message,
 						 sizeof(lopt.message),
 						 "][ disabled selection");
 			}
+            lopt.sort_method = ap_sort_method_assign(SORT_BY_NOTHING);
 		}
 
 		if (keycode == KEY_a)
