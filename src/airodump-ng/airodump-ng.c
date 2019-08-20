@@ -4721,19 +4721,20 @@ done:
 
 static int getchannels(const char * optarg)
 {
-	unsigned int i = 0, chan_cur = 0, chan_first = 0, chan_last = 0,
-				 chan_max = 128, chan_remain = 0;
-	char *optchan = NULL, *optc;
+    int chan_cur = 0; 
+    int chan_first = 0; 
+    int chan_last = 0;
+    static size_t const chan_max = 128; 
+    size_t chan_remain = chan_max;
+    char * optchan = NULL; 
+    char * optc;
 	char * token = NULL;
 	int * tmp_channels;
 
-	// got a NULL pointer?
 	if (optarg == NULL)
 	{
         return -1;
     }
-
-	chan_remain = chan_max;
 
 	// create a writable string
 	optc = optchan = strdup(optarg);
@@ -4752,7 +4753,7 @@ static int getchannels(const char * optarg)
 			if (strchr(token, '-') == strrchr(token, '-'))
 			{
 				// are there any illegal characters?
-				for (i = 0; i < strlen(token); i++)
+				for (size_t i = 0; i < strlen(token); i++)
 				{
 					if (((token[i] < '0') || (token[i] > '9'))
 						&& (token[i] != '-'))
@@ -4771,7 +4772,7 @@ static int getchannels(const char * optarg)
 						free(optc);
 						return -1;
 					}
-					for (i = chan_first; i <= chan_last; i++)
+					for (int i = chan_first; i <= chan_last; i++)
 					{
 						if (!is_invalid_channel(i) && chan_remain > 0)
 						{
@@ -4797,7 +4798,7 @@ static int getchannels(const char * optarg)
 		else
 		{
 			// are there any illegal characters?
-			for (i = 0; i < strlen(token); i++)
+			for (size_t i = 0; i < strlen(token); i++)
 			{
 				if ((token[i] < '0') || (token[i] > '9'))
 				{
@@ -4824,28 +4825,28 @@ static int getchannels(const char * optarg)
 		}
 	}
 
-	lopt.own_channels
-		= malloc((chan_max - chan_remain + 1) * sizeof *lopt.own_channels);
+    size_t const num_channels = chan_max - chan_remain;
+
+    lopt.own_channels
+        = malloc((num_channels + 1) * sizeof *lopt.own_channels);
 	ALLEGE(lopt.own_channels != NULL);
 
-	if (chan_max > 0 && chan_max >= chan_remain) //-V560
-	{
-		for (i = 0; i < (chan_max - chan_remain); i++) //-V658
-		{
-			lopt.own_channels[i] = tmp_channels[i];
-		}
-	}
+    for (size_t i = 0; i < num_channels; i++) //-V658
+    {
+        lopt.own_channels[i] = tmp_channels[i];
+    }
 
-	lopt.own_channels[i] = 0;
+    lopt.own_channels[num_channels] = channel_list_sentinel;
 
 	free(tmp_channels);
 	free(optc);
 
-	if (i == 1)
+    if (num_channels == 1)
 	{
         return lopt.own_channels[0];
     }
-	if (i == 0)
+
+    if (num_channels == 0)
 	{
         return -1;
     }
@@ -7431,7 +7432,7 @@ int main(int argc, char * argv[])
             update_window_size(&lopt, &lopt.ws);
 		}
 
-		do_quit_request_timeout_check(lopt.message, sizeof(lopt.message));
+		do_quit_request_timeout_check(lopt.message, sizeof lopt.message);
 	}
 
 	airodump_shutdown(wi);
