@@ -3415,9 +3415,6 @@ static char * parse_timestamp(unsigned long long timestamp)
 	unsigned long long rem;
 	unsigned char days, hours, mins, secs;
 
-	// Initialize array
-	memset(s, 0, sizeof s);
-
 	// Calculate days, hours, mins and secs
 	days = (uint8_t)(timestamp / TSTP_DAY);
 	rem = timestamp % TSTP_DAY;
@@ -3427,7 +3424,7 @@ static char * parse_timestamp(unsigned long long timestamp)
 	rem %= TSTP_MIN;
 	secs = (unsigned char) (rem / TSTP_SEC);
 
-	snprintf(s, TSTP_LEN, "%3ud %02u:%02u:%02u", days, hours, mins, secs);
+	snprintf(s, sizeof s, "%3ud %02u:%02u:%02u", days, hours, mins, secs);
 #undef TSTP_LEN
 
 	return (s);
@@ -3867,32 +3864,46 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 			len = strlen(strbuf);
 
-			if ((ap_cur->security & STD_FIELD) == 0)
+            if ((ap_cur->security & STD_FIELD) == 0)
+            {
 				snprintf(strbuf + len, sizeof(strbuf) - len, "    ");
+            }
 			else
 			{
 				if (ap_cur->security & STD_WPA2)
 				{
-					if (ap_cur->security & AUTH_SAE
-						|| ap_cur->security & AUTH_OWE)
+                    if (ap_cur->security & AUTH_SAE
+                        || ap_cur->security & AUTH_OWE)
+                    {
 						snprintf(strbuf + len, sizeof(strbuf) - len, "WPA3");
-					else
+                    }
+                    else
+                    {
 						snprintf(strbuf + len, sizeof(strbuf) - len, "WPA2");
+                    }
 				}
-				else if (ap_cur->security & STD_WPA)
+                else if (ap_cur->security & STD_WPA)
+                {
 					snprintf(strbuf + len, sizeof(strbuf) - len, "WPA ");
-				else if (ap_cur->security & STD_WEP)
+                }
+                else if (ap_cur->security & STD_WEP)
+                {
 					snprintf(strbuf + len, sizeof(strbuf) - len, "WEP ");
-				else if (ap_cur->security & STD_OPN)
+                }
+                else if (ap_cur->security & STD_OPN)
+                {
 					snprintf(strbuf + len, sizeof(strbuf) - len, "OPN ");
+                }
 			}
 
 			strncat(strbuf, " ", sizeof(strbuf) - strlen(strbuf) - 1);
 
 			len = strlen(strbuf);
 
-			if ((ap_cur->security & ENC_FIELD) == 0)
+            if ((ap_cur->security & ENC_FIELD) == 0)
+            {
 				snprintf(strbuf + len, sizeof(strbuf) - len, "       ");
+            }
 			else
 			{
 				if (ap_cur->security & ENC_CCMP)
@@ -3911,27 +3922,43 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 			len = strlen(strbuf);
 
-			if ((ap_cur->security & AUTH_FIELD) == 0)
+            if ((ap_cur->security & AUTH_FIELD) == 0)
+            {
 				snprintf(strbuf + len, sizeof(strbuf) - len, "    ");
+            }
 			else
 			{
-				if (ap_cur->security & AUTH_SAE)
+                if (ap_cur->security & AUTH_SAE)
+                {
 					snprintf(strbuf + len, sizeof(strbuf) - len, "SAE ");
-				else if (ap_cur->security & AUTH_MGT)
+                }
+                else if (ap_cur->security & AUTH_MGT)
+                {
 					snprintf(strbuf + len, sizeof(strbuf) - len, "MGT ");
-				else if (ap_cur->security & AUTH_CMAC)
+                }
+                else if (ap_cur->security & AUTH_CMAC)
+                {
 					snprintf(strbuf + len, sizeof(strbuf) - len, "CMAC");
+                }
 				else if (ap_cur->security & AUTH_PSK)
 				{
-					if (ap_cur->security & STD_WEP)
+                    if (ap_cur->security & STD_WEP)
+                    {
 						snprintf(strbuf + len, sizeof(strbuf) - len, "SKA ");
-					else
+                    }
+                    else
+                    {
 						snprintf(strbuf + len, sizeof(strbuf) - len, "PSK ");
+                    }
 				}
-				else if (ap_cur->security & AUTH_OWE)
+                else if (ap_cur->security & AUTH_OWE)
+                {
 					snprintf(strbuf + len, sizeof(strbuf) - len, "OWE ");
-				else if (ap_cur->security & AUTH_OPN)
+                }
+                else if (ap_cur->security & AUTH_OPN)
+                {
 					snprintf(strbuf + len, sizeof(strbuf) - len, "OPN ");
+                }
 			}
 
 			len = strlen(strbuf);
