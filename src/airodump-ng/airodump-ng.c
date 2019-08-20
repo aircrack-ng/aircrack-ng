@@ -889,7 +889,10 @@ static void airodump_usage(void)
 	free(l_usage);
 }
 
-static int is_filtered_netmask(mac_address const * const bssid)
+static int is_filtered_netmask(
+    mac_address const * const bssid,
+    mac_address const * const f_bssid,
+    mac_address const * const f_netmask)
 {
 	REQUIRE(bssid != NULL);
 
@@ -898,13 +901,47 @@ static int is_filtered_netmask(mac_address const * const bssid)
 
     for (size_t i = 0; i < sizeof mac1; i++)
 	{
-		mac1.addr[i] = bssid->addr[i] & opt.f_netmask.addr[i];
-		mac2.addr[i] = opt.f_bssid.addr[i] & opt.f_netmask.addr[i];
+        /* FIXME - Do (a ^ b) & mask? */
+		mac1.addr[i] = bssid->addr[i] & f_netmask->addr[i];
+		mac2.addr[i] = f_bssid->addr[i] & f_netmask->addr[i];
 	}
 
     bool const is_filtered = !MAC_ADDRESS_EQUAL(&mac1, &mac2);
 
 	return is_filtered;
+}
+
+static bool bssid_is_filtered(
+    mac_address const * const bssid,
+    mac_address const * const f_bssid,
+    mac_address const * const f_netmask)
+{
+    bool is_filtered;
+
+    if (MAC_ADDRESS_IS_EMPTY(f_bssid))
+    {
+        is_filtered = false;
+        goto done;
+    }
+
+    if (!MAC_ADDRESS_IS_EMPTY(f_netmask))
+    {
+        if (is_filtered_netmask(bssid, f_bssid, f_netmask))
+        {
+            is_filtered = true;
+            goto done;
+        }
+    }
+    else if (!MAC_ADDRESS_EQUAL(f_bssid, bssid))
+    {
+        is_filtered = true;
+        goto done;
+    }
+
+    is_filtered = false;
+
+done:
+    return is_filtered;
 }
 
 int is_filtered_essid(uint8_t const * const essid)
@@ -1793,20 +1830,10 @@ static void dump_add_packet(
 			abort();
 	}
 
-	if (!MAC_ADDRESS_IS_EMPTY(&opt.f_bssid))
-	{
-		if (!MAC_ADDRESS_IS_EMPTY(&opt.f_netmask))
-		{
-			if (is_filtered_netmask(&bssid))
-			{
-				return;
-			}
-		}
-		else if (!MAC_ADDRESS_EQUAL(&opt.f_bssid, &bssid))
-        {
-            return;
-        }
-	}
+    if (bssid_is_filtered(&bssid, &opt.f_bssid, &opt.f_netmask))
+    {
+        return; /* FIXME - single exit. */
+    }
 
 	ap_list_lock_acquire(&lopt);
 
