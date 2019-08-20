@@ -39,7 +39,7 @@ static void fprintf_essid(
 }
 
 static bool should_dump_ap(
-    struct AP_info const * const ap_cur, 
+    struct AP_info const * const ap_cur,
     unsigned int const f_encrypt,
     time_t const filter_seconds,
     time_t const current_time)
@@ -92,9 +92,9 @@ static void ap_update_last_printed_details(
 }
 
 static void dump_ap_data(
-    FILE * const fp, 
-    struct AP_info const * const ap_cur, 
-    char const * const sys_name, 
+    FILE * const fp,
+    struct AP_info const * const ap_cur,
+    char const * const sys_name,
     char const * const loc_name)
 {
     fprintf(fp, "%s" FIELD_SEPARATOR "%s" FIELD_SEPARATOR, sys_name, loc_name);
@@ -113,7 +113,7 @@ static void dump_ap_data(
     fprintf(fp, "%2d" FIELD_SEPARATOR, ap_cur->channel);
 
     fprintf_essid(fp, ap_cur->essid, ap_cur->ssid_length);
-    fprintf(fp, FIELD_SEPARATOR); 
+    fprintf(fp, FIELD_SEPARATOR);
 
     fprintf(fp, "%3d\r\n", ap_cur->avg_power);
 
@@ -201,7 +201,7 @@ static void sta_update_last_printed_details(
 
 static void dump_sta_data(
     FILE * const fp,
-    struct ST_info * st_cur,
+    struct ST_info const * const st_cur,
     char const * const sys_name,
     char const * const loc_name)
 {
@@ -237,12 +237,12 @@ static void dump_sta_data(
 
 static void dump_sta(
     FILE * const fp,
-    struct ST_info * st_cur,
+    struct ST_info * const st_cur,
     time_t const filter_seconds,
     char const * const sys_name,
     char const * const loc_name)
 {
-    time_t const current_time = time(NULL); 
+    time_t const current_time = time(NULL);
 
     if (!should_dump_st(st_cur,filter_seconds,current_time))
     {
@@ -272,7 +272,7 @@ static void dump_stas(
         dump_sta(fp, st_cur, filter_seconds, sys_name, loc_name);
     }
 
-    fflush(fp); 
+    fflush(fp);
 }
 
 static void dump_write_wifi_scanner(
@@ -291,7 +291,7 @@ static void dump_write_wifi_scanner(
 	}
 
     dump_aps(fp, ap_list, f_encrypt, filter_seconds, sys_name, loc_name);
-    dump_stas(fp, sta_list, filter_seconds, sys_name, loc_name); 
+    dump_stas(fp, sta_list, filter_seconds, sys_name, loc_name);
 
 done:
 	return;
@@ -306,7 +306,7 @@ struct wifi_scanner_dump_context_st
     time_t filter_seconds;
     int file_reset_seconds;
     time_t last_file_reset;
-}; 
+};
 
 static void wifi_context_free(
     struct wifi_scanner_dump_context_st * const context)
@@ -341,10 +341,10 @@ static void wifi_scanner_dump(void * const priv,
 
     dump_write_wifi_scanner(context->fp,
                             ap_list,
-                            sta_list, 
-                            f_encrypt, 
-                            context->filter_seconds, 
-                            context->sys_name, 
+                            sta_list,
+                            f_encrypt,
+                            context->filter_seconds,
+                            context->sys_name,
                             context->location_name);
 
     wifi_scanner_reset_check(context);
@@ -413,7 +413,7 @@ struct wifi_scanner_dump_context_st * wifi_dump_open(
     context->location_name = strdup(location_name);
     ALLEGE(context->location_name != NULL);
 
-    success = true; 
+    success = true;
 
 done:
     if (!success)
@@ -428,17 +428,17 @@ done:
 bool wifi_scanner_dump_open(
     dump_context_st * const dump,
     char const * const filename,
-    char const * const sys_name, 
+    char const * const sys_name,
     char const * const location_name,
     time_t const filter_seconds,
     int const file_reset_seconds)
 {
     bool success;
-    struct wifi_scanner_dump_context_st * const context = 
-        wifi_dump_open(filename, 
-                       sys_name, 
-                       location_name, 
-                       filter_seconds, 
+    struct wifi_scanner_dump_context_st * const context =
+        wifi_dump_open(filename,
+                       sys_name,
+                       location_name,
+                       filter_seconds,
                        file_reset_seconds);
 
     if (context == NULL)
@@ -450,7 +450,7 @@ bool wifi_scanner_dump_open(
     dump->priv = context;
     dump->dump = wifi_scanner_dump;
     dump->close = wifi_scanner_dump_close;
- 
+
     success = true;
 
 done:
