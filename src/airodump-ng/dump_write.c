@@ -214,11 +214,6 @@ done:
     return;
 }
 
-static void dump_free(struct dump_context_st * dump)
-{
-    free(dump);
-}
-
 void dump_close(struct dump_context_st * dump)
 {
     if (dump == NULL)
@@ -231,7 +226,7 @@ void dump_close(struct dump_context_st * dump)
         dump->close(dump->priv);
     }
 
-    dump_free(dump);
+    free(dump);
 
 done:
     return; 
@@ -247,11 +242,12 @@ struct dump_context_st * dump_open(
     char const * const airodump_start_time,
     bool const use_gpsd)
 {
-    bool had_error;
+    bool success;
     struct dump_context_st * dump = calloc(1, sizeof *dump);
 
     if (dump == NULL)
     {
+        success = false;
         goto done;
     }
 
@@ -265,7 +261,7 @@ struct dump_context_st * dump_open(
                                         filter_seconds,
                                         file_reset_seconds))
             {
-                had_error = true;
+                success = false;
                 goto done;
             }
             break;
@@ -273,7 +269,7 @@ struct dump_context_st * dump_open(
             if (!csv_dump_open(dump,
                                filename))
             {
-                had_error = true;
+                success = false;
                 goto done;
             }
             break;
@@ -281,7 +277,7 @@ struct dump_context_st * dump_open(
             if (!kismet_csv_dump_open(dump,
                                       filename))
             {
-                had_error = true;
+                success = false;
                 goto done;
             }
             break;
@@ -291,19 +287,19 @@ struct dump_context_st * dump_open(
                                          airodump_start_time,
                                          use_gpsd))
             {
-                had_error = true;
+                success = false;
                 goto done;
             }
             break;
         default:
-            had_error = true;
+            success = false;
             goto done;
     }
 
-    had_error = false;
+    success = true; 
 
 done:
-    if (had_error)
+    if (!success)
     {
         dump_close(dump);
         dump = NULL;

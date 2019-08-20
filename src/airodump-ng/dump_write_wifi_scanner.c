@@ -393,20 +393,20 @@ struct wifi_scanner_dump_context_st * wifi_dump_open(
     time_t const filter_seconds,
     int const file_reset_seconds)
 {
-    bool had_error;
+    bool success;
     struct wifi_scanner_dump_context_st * context =
         calloc(1, sizeof *context);
 
     if (context == NULL)
     {
-        had_error = true;
+        success = false;
         goto done;
     }
 
     context->fp = fopen(filename, "wb+");
     if (context->fp == NULL)
     {
-        had_error = true;
+        success = false;
         goto done;
     }
 
@@ -422,10 +422,10 @@ struct wifi_scanner_dump_context_st * wifi_dump_open(
     context->location_name = strdup(location_name);
     ALLEGE(context->location_name != NULL);
 
-    had_error = false;
+    success = true; 
 
 done:
-    if (had_error)
+    if (!success)
     {
         wifi_scanner_close(context);
         context = NULL;
