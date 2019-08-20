@@ -9,21 +9,21 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef packet_reader_result_t (* packet_reader_fn)(
-    struct packet_reader_context_st * const packet_reader_context,
+typedef pcap_reader_result_t (* pcap_reader_fn)(
+    struct pcap_reader_context_st * const pcap_reader_context,
     uint8_t * const packet_buffer,
     size_t const buffer_size,
     size_t * const packet_length,
     struct rx_info * const ri);
 
-struct packet_reader_context_st
+struct pcap_reader_context_st
 {
     FILE * fp;
     struct pcap_file_header pfh_in;
-    packet_reader_fn packet_reader;
+    pcap_reader_fn packet_reader;
 };
 
-static void packet_reader_free(struct packet_reader_context_st * context)
+static void pcap_reader_free(struct pcap_reader_context_st * const context)
 {
     if (context == NULL)
     {
@@ -41,13 +41,13 @@ done:
     return;
 }
 
-void packet_reader_close(struct packet_reader_context_st * context)
+void pcap_reader_close(struct pcap_reader_context_st * const context)
 {
-    packet_reader_free(context);
+    pcap_reader_free(context);
 }
 
-static packet_reader_result_t packet_reader_80211(
-    struct packet_reader_context_st * const packet_reader_context,
+static pcap_reader_result_t packet_reader_80211(
+    struct pcap_reader_context_st * const packet_reader_context,
     uint8_t * const packet_buffer,
     size_t const buffer_size,
     size_t * const packet_length,
@@ -60,11 +60,11 @@ static packet_reader_result_t packet_reader_80211(
     (void)packet_length;
     (void)ri;
 
-    return packet_reader_result_ok;
+    return pcap_reader_result_ok;
 }
 
-static packet_reader_result_t packet_reader_prism(
-    struct packet_reader_context_st * const packet_reader_context,
+static pcap_reader_result_t packet_reader_prism(
+    struct pcap_reader_context_st * const packet_reader_context,
     uint8_t * const packet_buffer,
     size_t const buffer_size,
     size_t * const packet_length,
@@ -73,7 +73,7 @@ static packet_reader_result_t packet_reader_prism(
     (void)packet_reader_context;
     (void)buffer_size;
 
-    packet_reader_result_t result;
+    pcap_reader_result_t result;
     uint32_t n;
 
     if (packet_buffer[7] == 0x40)
@@ -95,21 +95,21 @@ static packet_reader_result_t packet_reader_prism(
 
     if (n < 8 || n >= *packet_length)
     {
-        result = packet_reader_result_skip;
+        result = pcap_reader_result_skip;
         goto done;
     }
 
     *packet_length -= n;
     memmove(packet_buffer, packet_buffer + n, *packet_length);
 
-    result = packet_reader_result_ok;
+    result = pcap_reader_result_ok;
 
 done:
     return result;
 }
 
-static packet_reader_result_t packet_reader_radiotap(
-    struct packet_reader_context_st * const packet_reader_context,
+static pcap_reader_result_t packet_reader_radiotap(
+    struct pcap_reader_context_st * const packet_reader_context,
     uint8_t * const packet_buffer,
     size_t const buffer_size,
     size_t * const packet_length,
@@ -118,7 +118,7 @@ static packet_reader_result_t packet_reader_radiotap(
     (void)packet_reader_context;
     (void)buffer_size;
 
-    packet_reader_result_t result;
+    pcap_reader_result_t result;
     uint32_t n;
 
     /* Remove the radiotap header. */
@@ -127,7 +127,7 @@ static packet_reader_result_t packet_reader_radiotap(
 
     if (n == 0 || n >= *packet_length)
     {
-        result = packet_reader_result_skip;
+        result = pcap_reader_result_skip;
         goto done;
     }
 
@@ -142,7 +142,7 @@ static packet_reader_result_t packet_reader_radiotap(
             &iterator, rthdr, *packet_length, NULL)
         < 0)
     {
-        result = packet_reader_result_skip;
+        result = pcap_reader_result_skip;
         goto done;
     }
 
@@ -209,16 +209,16 @@ static packet_reader_result_t packet_reader_radiotap(
     }
 
     *packet_length -= n;
-    memmove(packet_buffer, packet_buffer + n, *packet_length); 
+    memmove(packet_buffer, packet_buffer + n, *packet_length);
 
-    result = packet_reader_result_ok;
+    result = pcap_reader_result_ok;
 
 done:
     return result;
 }
 
-static packet_reader_result_t packet_reader_ppi(
-    struct packet_reader_context_st * const packet_reader_context,
+static pcap_reader_result_t packet_reader_ppi(
+    struct pcap_reader_context_st * const packet_reader_context,
     uint8_t * const packet_buffer,
     size_t const buffer_size,
     size_t * const packet_length,
@@ -228,7 +228,7 @@ static packet_reader_result_t packet_reader_ppi(
     (void)buffer_size;
     (void)ri;
 
-    packet_reader_result_t result;
+    pcap_reader_result_t result;
     uint32_t n;
 
     /* remove the PPI header */
@@ -237,7 +237,7 @@ static packet_reader_result_t packet_reader_ppi(
 
     if (n <= 0 || n >= *packet_length)
     {
-        result = packet_reader_result_skip;
+        result = pcap_reader_result_skip;
         goto done;
     }
 
@@ -249,72 +249,76 @@ static packet_reader_result_t packet_reader_ppi(
 
     if (n == 0 || n >= *packet_length)
     {
-        result = packet_reader_result_skip;
+        result = pcap_reader_result_skip;
         goto done;
     }
 
     *packet_length -= n;
-    memmove(packet_buffer, packet_buffer + n, *packet_length); 
+    memmove(packet_buffer, packet_buffer + n, *packet_length);
 
-    result = packet_reader_result_ok;
+    result = pcap_reader_result_ok;
 
 done:
     return result;
 }
 
 
-packet_reader_result_t packet_reader_read(
-    packet_reader_context_st * const context,
+pcap_reader_result_t pcap_read(
+    pcap_reader_context_st * const context,
     void * const packet_buffer,
     size_t const buffer_size,
     size_t * const packet_length,
     struct rx_info * const ri,
-    struct pcap_pkthdr * const pkh)
+    struct timeval * const packet_timestamp)
 {
-    packet_reader_result_t result;
+    struct pcap_pkthdr pkh;
+    pcap_reader_result_t result;
 
-    if (fread(pkh, 1, sizeof *pkh, context->fp) != sizeof *pkh)
+    if (fread(&pkh, 1, sizeof pkh, context->fp) != sizeof pkh)
     {
-        result = packet_reader_result_done;
+        result = pcap_reader_result_done;
         goto done;
     }
 
     if (context->pfh_in.magic == TCPDUMP_CIGAM)
     {
-        SWAP32(pkh->caplen);
-        SWAP32(pkh->len);
+        SWAP32(pkh.caplen);
+        SWAP32(pkh.len);
     }
 
-    if (pkh->caplen == 0 || pkh->caplen > buffer_size)
+    if (pkh.caplen == 0 || pkh.caplen > buffer_size)
     {
-        result = packet_reader_result_done;
+        result = pcap_reader_result_done;
         goto done;
     }
 
-    *packet_length = pkh->caplen;
+    packet_timestamp->tv_sec = pkh.tv_sec;
+    packet_timestamp->tv_usec = pkh.tv_usec;
 
-    if (fread(packet_buffer, 1, pkh->caplen, context->fp) != pkh->caplen)
+    *packet_length = pkh.caplen;
+
+    if (fread(packet_buffer, 1, pkh.caplen, context->fp) != pkh.caplen)
     {
-        result = packet_reader_result_done;
+        result = pcap_reader_result_done;
         goto done;
     }
 
     memset(ri, 0, sizeof *ri);
 
-    result = 
-        context->packet_reader(context, 
-                               packet_buffer, 
-                               buffer_size, 
-                               packet_length, 
+    result =
+        context->packet_reader(context,
+                               packet_buffer,
+                               buffer_size,
+                               packet_length,
                                ri);
 
 done:
     return result;
 }
 
-packet_reader_context_st * packet_reader_open(char const * const filename)
+pcap_reader_context_st * pcap_reader_open(char const * const filename)
 {
-    struct packet_reader_context_st * context = calloc(1, sizeof *context);
+    struct pcap_reader_context_st * context = calloc(1, sizeof *context);
     bool had_error = false;
 
     if (context == NULL)
@@ -388,7 +392,7 @@ packet_reader_context_st * packet_reader_open(char const * const filename)
 done:
     if (had_error)
     {
-        packet_reader_free(context);
+        pcap_reader_free(context);
         context = NULL;
     }
 
