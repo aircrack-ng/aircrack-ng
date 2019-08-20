@@ -1,4 +1,4 @@
-#include "packet_reader.h"
+#include "pcap_reader.h"
 #include "aircrack-ng/support/common.h"
 #include "radiotap/radiotap.h"
 #include "radiotap/radiotap_iter.h"

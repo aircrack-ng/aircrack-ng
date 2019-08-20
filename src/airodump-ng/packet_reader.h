@@ -1,5 +1,5 @@
-#ifndef __PACKET_READER_H__
-#define __PACKET_READER_H__
+#ifndef __PCAP_READER_H__
+#define __PCAP_READER_H__
 
 #include "aircrack-ng/osdep/osdep.h"
 #include "aircrack-ng/support/pcap_local.h"
@@ -27,4 +27,4 @@ pcap_reader_result_t pcap_read(
     struct rx_info * const ri,
     struct timeval * const packet_timestamp);
 
-#endif /* __PACKET_READER_H__ */
+#endif /* __PCAP_READER_H__ */

@@ -93,7 +93,7 @@
 #include "strlcpy.h"
 #include "ap_list.h"
 #include "aircrack-ng/osdep/sta_list.h"
-#include "packet_reader.h"
+#include "pcap_reader.h"
 #include "oui.h"
 #include "get_string_time_from_seconds.h"
 #include "gps_tracker.h"
