@@ -9,8 +9,6 @@
 #include "dump_kismet_csv.h"
 #include "dump_write_private.h"
 
-extern int is_filtered_essid(unsigned char * essid); // airodump-ng.c
-
 #define KISMET_HEADER                                                          \
 	"Network;NetType;ESSID;BSSID;Info;Channel;Cloaked;Encryption;Decrypted;"   \
 	"MaxRate;MaxSeenRate;Beacon;LLC;Data;Crypt;Weak;Total;Carrier;Encoding;"   \

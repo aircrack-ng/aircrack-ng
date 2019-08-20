@@ -9,129 +9,95 @@
 #include "dump_write_wifi_scanner.h"
 #include "dump_write_private.h"
 
-extern int is_filtered_essid(unsigned char * essid); // airodump-ng.c
-
 #define FIELD_SEPARATOR "|"
 
-static char * format_text_for_csv(const unsigned char * input, size_t len)
+static void fprintf_essid(
+    FILE * const fp,
+    uint8_t const * const essid,
+    size_t const ssid_length)
 {
-	// Unix style encoding
-    char * ret; 
-	size_t pos;
-	int contains_space_end;
-	static char const hex_table[] = "0123456789ABCDEF";
+    bool const have_essid =
+        ssid_length > 0 && essid[0] != '\0';
 
-	if (len == 0 || input == NULL)
-	{
-        ret = strdup("");
-		ALLEGE(ret != NULL);
-
-        goto done;
-	}
-
-	pos = 0;
-	contains_space_end = input[0] == ' ' || input[len - 1] == ' ';
-
-	// Make sure to have enough memory for all that stuff
-	ret = malloc((len * 4) + 1 + 2);
-	ALLEGE(ret != NULL);
-
-	if (contains_space_end)
-	{
-		ret[pos++] = '"';
-	}
-
-	for (size_t i = 0; i < len; i++)
-	{
-		if (!isprint(input[i]) || input[i] == ',' || input[i] == '\\'
-			|| input[i] == '"')
-		{
-			ret[pos++] = '\\';
-		}
-
-		if (isprint(input[i]))
-		{
-			ret[pos++] = input[i];
-		}
-		else if (input[i] == '\n')
-		{
-            ret[pos++] = 'n';
-		}
-        else if (input[i] == '\r')
-        {
-            ret[pos++] = 'r';
-        }
-        else if (input[i] == '\t')
-        {
-            ret[pos++] = 't';
-        }
-        else
-		{
-            uint8_t const val = input[i];
-
-			ret[pos++] = 'x';
-			ret[pos++] = hex_table[(val >> 4) & 0x0f];
-			ret[pos++] = hex_table[val & 0x0f];
-		}
-	}
-
-	if (contains_space_end)
-	{
-		ret[pos++] = '"';
-	}
-
-	ret[pos++] = '\0';
-
-    char * const rret = realloc(ret, pos);
-
-    if (rret != NULL)
+    if (!have_essid)
     {
-        ret = rret;
-    }
+        static char const hidden_ssid[] = "<hidden-ssid>";
 
-done:
-    return ret;
+        fprintf(fp, hidden_ssid);
+    }
+    else
+    {
+        char * const formatted_essid =
+            format_text_for_csv(essid, ssid_length);
+
+        if (formatted_essid != NULL)
+        {
+            fprintf(fp, "%s", formatted_essid);
+            free(formatted_essid);
+        }
+    }
 }
 
-static void dump_ap(
-    FILE * const fp,
-    struct AP_info * const ap_cur,
+static bool should_dump_ap(
+    struct AP_info const * const ap_cur, 
     unsigned int const f_encrypt,
     time_t const filter_seconds,
-    char const * const sys_name,
-    char const * const loc_name)
+    time_t const current_time)
 {
+    bool should_dump;
+
     if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
     {
+        should_dump = false;
         goto done;
     }
 
-    if (ap_cur->security != 0 
+    if (ap_cur->security != 0
         && f_encrypt != 0
         && (ap_cur->security & f_encrypt) == 0)
     {
+        should_dump = false;
         goto done;
     }
 
     if (is_filtered_essid(ap_cur->essid))
     {
+        should_dump = false;
         goto done;
     }
 
-    time_t const current_time = time(NULL);
     time_t const time_since_last_printed =
         current_time - ap_cur->time_printed;
 
     if (time_since_last_printed < filter_seconds
         && ap_cur->old_channel == ap_cur->channel)
     {
+        should_dump = false;
         goto done;
     }
 
+
+    should_dump = true;
+
+done:
+    return should_dump;
+}
+
+static void ap_update_last_printed_details(
+    struct AP_info * const ap_cur,
+    time_t const current_time)
+{
     ap_cur->time_printed = current_time;
     ap_cur->old_channel = ap_cur->channel;
+}
 
-    fprintf(fp, "%s" FIELD_SEPARATOR "%s" FIELD_SEPARATOR , sys_name, loc_name);
+static void dump_ap_data(
+    FILE * const fp, 
+    struct AP_info const * const ap_cur, 
+    char const * const sys_name, 
+    char const * const loc_name)
+{
+    fprintf(fp, "%s" FIELD_SEPARATOR "%s" FIELD_SEPARATOR, sys_name, loc_name);
 
     fprintf(fp, "%ld" FIELD_SEPARATOR, ap_cur->tinit);
 
@@ -146,27 +112,31 @@ static void dump_ap(
 
     fprintf(fp, "%2d" FIELD_SEPARATOR, ap_cur->channel);
 
-    bool const have_essid = 
-        ap_cur->ssid_length > 0 && ap_cur->essid[0] != '\0';
-
-    if (!have_essid)
-    {
-        fprintf(fp, "<hidden-ssid>");
-    }
-    else
-    {
-        char * const essid =
-            format_text_for_csv(ap_cur->essid, ap_cur->ssid_length);
-
-        if (essid != NULL)
-        {
-            fprintf(fp, "%s", essid);
-            free(essid);
-        }
-    }
-    fprintf(fp, FIELD_SEPARATOR);
+    fprintf_essid(fp, ap_cur->essid, ap_cur->ssid_length);
+    fprintf(fp, FIELD_SEPARATOR); 
 
     fprintf(fp, "%3d\r\n", ap_cur->avg_power);
+
+}
+
+static void dump_ap(
+    FILE * const fp,
+    struct AP_info * const ap_cur,
+    unsigned int const f_encrypt,
+    time_t const filter_seconds,
+    char const * const sys_name,
+    char const * const loc_name)
+{
+    time_t const current_time = time(NULL);
+
+    if (!should_dump_ap(ap_cur, f_encrypt, filter_seconds, current_time))
+    {
+        goto done;
+    }
+
+    ap_update_last_printed_details(ap_cur, current_time);
+
+    dump_ap_data(fp, ap_cur, sys_name, loc_name);
 
 done:
     return;
@@ -191,32 +161,51 @@ static void dump_aps(
     fflush(fp);
 }
 
-static void dump_sta(
-    FILE * const fp,
-    struct ST_info * st_cur,
+static bool should_dump_st(
+    struct ST_info const * const st_cur,
     time_t const filter_seconds,
-    char const * const sys_name,
-    char const * const loc_name)
+    time_t const current_time)
 {
+    bool should_dump;
     struct AP_info const * const ap_cur = st_cur->base;
 
     if (ap_cur->nb_pkt < 2)
     {
+        should_dump = false;
         goto done;
     }
 
-    time_t const current_time = time(NULL);
     time_t const time_since_last_printed =
         current_time - st_cur->time_printed;
 
     if (time_since_last_printed < filter_seconds
         && st_cur->old_channel == st_cur->channel)
     {
+        should_dump = false;
         goto done;
     }
 
+    should_dump = true;
+
+done:
+    return should_dump;
+}
+
+static void sta_update_last_printed_details(
+    struct ST_info * const st_cur,
+    time_t const current_time)
+{
     st_cur->time_printed = current_time;
     st_cur->old_channel = st_cur->channel;
+}
+
+static void dump_sta_data(
+    FILE * const fp,
+    struct ST_info * st_cur,
+    char const * const sys_name,
+    char const * const loc_name)
+{
+    struct AP_info const * const ap_cur = st_cur->base;
 
     fprintf(fp, "%s" FIELD_SEPARATOR "%s" FIELD_SEPARATOR, sys_name, loc_name);
 
@@ -237,30 +226,32 @@ static void dump_sta(
 
     if (!MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
     {
-        bool const have_essid = 
-            ap_cur->ssid_length > 0 && ap_cur->essid[0] != '\0';
-
-        if (!have_essid)
-        {
-            fprintf(fp, "<hidden-ssid>");
-        }
-        else
-        {
-            char * const essid =
-                format_text_for_csv(ap_cur->essid, ap_cur->ssid_length);
-
-            if (essid != NULL)
-            {
-                fprintf(fp, "%s", essid);
-                free(essid);
-            }
-        }
+        fprintf_essid(fp, ap_cur->essid, ap_cur->ssid_length);
     }
     fprintf(fp, FIELD_SEPARATOR);
 
     fprintf(fp, "%3d", st_cur->power);
 
     fprintf(fp, "\r\n");
+}
+
+static void dump_sta(
+    FILE * const fp,
+    struct ST_info * st_cur,
+    time_t const filter_seconds,
+    char const * const sys_name,
+    char const * const loc_name)
+{
+    time_t const current_time = time(NULL); 
+
+    if (!should_dump_st(st_cur,filter_seconds,current_time))
+    {
+        goto done;
+    }
+
+    sta_update_last_printed_details(st_cur, current_time);
+
+    dump_sta_data(fp, st_cur, sys_name, loc_name);
 
 done:
     return;

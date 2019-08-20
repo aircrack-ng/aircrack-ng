@@ -14,4 +14,6 @@ struct dump_context_st
     void (*close)(void * const priv);
 }; 
 
+char * format_text_for_csv(uint8_t const * const input, size_t const len);
+
 #endif /* __AIRODUMP_NG_DUMP_WRITE_PRIVATE__H__ */

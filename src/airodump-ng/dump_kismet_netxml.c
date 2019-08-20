@@ -9,8 +9,6 @@
 #include "dump_kismet_netxml.h"
 #include "dump_write_private.h"
 
-extern int is_filtered_essid(unsigned char * essid); // airodump-ng.c
-
 static char * sanitize_xml(unsigned char * text, size_t length)
 {
     size_t len; 

@@ -139,8 +139,6 @@ static volatile time_t quitting_event_ts = 0;
 
 static void dump_print(int ws_row, int ws_col, int if_num);
 
-int is_filtered_essid(const uint8_t * essid);
-
 /* bunch of global stuff */
 struct communication_options opt;
 
@@ -900,7 +898,7 @@ static int is_filtered_netmask(mac_address const * const bssid)
 	return is_filtered;
 }
 
-int is_filtered_essid(const uint8_t * essid)
+int is_filtered_essid(uint8_t const * const essid)
 {
 	REQUIRE(essid != NULL);
 

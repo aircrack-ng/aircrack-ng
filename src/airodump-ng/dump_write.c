@@ -67,7 +67,85 @@ extern struct communication_options opt;
 
 extern int getFrequencyFromChannel(int channel); // "aircrack-osdep/common.h"
 
-extern int is_filtered_essid(unsigned char * essid); // airodump-ng.c
+char * format_text_for_csv(uint8_t const * const input, size_t const len)
+{
+    // Unix style encoding
+    char * ret;
+    size_t pos;
+    int contains_space_end;
+    static char const hex_table[] = "0123456789ABCDEF";
+
+    if (len == 0 || input == NULL)
+    {
+        ret = strdup("");
+        ALLEGE(ret != NULL);
+
+        goto done;
+    }
+
+    pos = 0;
+    contains_space_end = input[0] == ' ' || input[len - 1] == ' ';
+
+    // Make sure to have enough memory for all that stuff
+    ret = malloc((len * 4) + 1 + 2);
+    ALLEGE(ret != NULL);
+
+    if (contains_space_end)
+    {
+        ret[pos++] = '"';
+    }
+
+    for (size_t i = 0; i < len; i++)
+    {
+        if (!isprint(input[i]) || input[i] == ',' || input[i] == '\\'
+            || input[i] == '"')
+        {
+            ret[pos++] = '\\';
+        }
+
+        if (isprint(input[i]))
+        {
+            ret[pos++] = input[i];
+        }
+        else if (input[i] == '\n')
+        {
+            ret[pos++] = 'n';
+        }
+        else if (input[i] == '\r')
+        {
+            ret[pos++] = 'r';
+        }
+        else if (input[i] == '\t')
+        {
+            ret[pos++] = 't';
+        }
+        else
+        {
+            uint8_t const val = input[i];
+
+            ret[pos++] = 'x';
+            ret[pos++] = hex_table[(val >> 4) & 0x0f];
+            ret[pos++] = hex_table[val & 0x0f];
+        }
+    }
+
+    if (contains_space_end)
+    {
+        ret[pos++] = '"';
+    }
+
+    ret[pos++] = '\0';
+
+    char * const rret = realloc(ret, pos);
+
+    if (rret != NULL)
+    {
+        ret = rret;
+    }
+
+done:
+    return ret;
+}
 
 int dump_write_airodump_ng_logcsv_add_ap(const struct AP_info * ap_cur,
 										 const int32_t ri_power,
