@@ -1859,7 +1859,6 @@ static void dump_add_packet(
 	ap_list_lock_release(&lopt);
 
 	/* update the last time seen */
-
 	ap_cur->tlast = time(NULL);
 
 	/* only update power if packets comes from
