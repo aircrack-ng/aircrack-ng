@@ -148,7 +148,6 @@ static struct local_options
 {
 	struct ap_list_head ap_list;
     struct AP_info * p_selected_ap; 
-    pthread_mutex_t ap_list_lock; /* lock write access to ap linked list. */
 
 	struct sta_list_head sta_list;
 
@@ -305,53 +304,6 @@ static struct local_options
 	bool should_update_stdout;
 } lopt;
 
-static int
-acquire_lock(pthread_mutex_t * const mutex)
-{
-	int const lock_result = pthread_mutex_lock(mutex);
-
-	ALLEGE(lock_result == 0);
-
-	return lock_result;
-}
-
-static int
-release_lock(pthread_mutex_t * const mutex)
-{
-	int const result = pthread_mutex_unlock(mutex);
-
-	ALLEGE(result == 0);
-
-	return result;
-}
-
-static int
-initialise_lock(pthread_mutex_t * const mutex)
-{
-	int const result = pthread_mutex_init(mutex, NULL);
-
-	ALLEGE(result == 0);
-
-	return result;
-}
-
-static int
-ap_list_lock_acquire(struct local_options * const options)
-{
-	return acquire_lock(&options->ap_list_lock);
-}
-
-static int
-ap_list_lock_release(struct local_options * const options)
-{
-	return release_lock(&options->ap_list_lock);
-}
-
-static int ap_list_lock_initialise(struct local_options * const options)
-{
-	return initialise_lock(&options->ap_list_lock);
-}
-
 static void resetSelection(void)
 {
 	lopt.sort_method = ap_sort_method_assign(SORT_BY_POWER);
@@ -372,15 +324,11 @@ static void color_off(void)
 {
 	struct AP_info * ap_cur;
 
-    ap_list_lock_acquire(&lopt);
-
 	TAILQ_FOREACH(ap_cur, &lopt.ap_list, entry)
 	{
 		ap_cur->marked = 0;
 		ap_cur->marked_color = 1;
 	}
-
-    ap_list_lock_release(&lopt);
 
 	textcolor_normal();
 	textcolor_fg(TEXT_WHITE);
@@ -392,8 +340,6 @@ static void color_on(void)
 	int color = 1;
 
 	color_off();
-
-    ap_list_lock_acquire(&lopt); 
 
     TAILQ_FOREACH_REVERSE(ap_cur, &lopt.ap_list, ap_list_head, entry)
 	{
@@ -455,8 +401,6 @@ static void color_on(void)
 			}
 		}
 	}
-
-    ap_list_lock_release(&lopt); 
 }
 
 static void sort_aps(
@@ -585,12 +529,8 @@ static void sort_stas(struct local_options * const options)
 
 static void dump_sort(void)
 {
-	ap_list_lock_acquire(&lopt);
-
 	sort_aps(&lopt, lopt.sort_method);
 	sort_stas(&lopt);
-
-	ap_list_lock_release(&lopt);
 }
 
 static bool periodic_sort_required(
@@ -729,8 +669,6 @@ static void handle_input_key(
 
     if (keycode == KEY_ARROW_DOWN)
     {
-        ap_list_lock_acquire(&lopt);
-
         if (lopt.p_selected_ap != NULL
             && TAILQ_PREV(lopt.p_selected_ap, ap_list_head, entry) != NULL)
         {
@@ -738,14 +676,10 @@ static void handle_input_key(
                 TAILQ_PREV(lopt.p_selected_ap, ap_list_head, entry);
             lopt.en_selection_direction = selection_direction_down;
         }
-
-        ap_list_lock_release(&lopt);
     }
 
     if (keycode == KEY_ARROW_UP)
     {
-        ap_list_lock_acquire(&lopt);
-
         if (lopt.p_selected_ap != NULL
             && TAILQ_NEXT(lopt.p_selected_ap, entry) != NULL)
         {
@@ -753,8 +687,6 @@ static void handle_input_key(
                 TAILQ_NEXT(lopt.p_selected_ap, entry);
             lopt.en_selection_direction = selection_direction_up;
         }
-
-        ap_list_lock_release(&lopt);
     }
 
     if (keycode == KEY_i)
@@ -1050,8 +982,6 @@ static void update_rx_quality(void)
 	/* access points */
 	struct AP_info * ap_cur;
 
-    ap_list_lock_acquire(&lopt);
-
 	TAILQ_FOREACH(ap_cur, &lopt.ap_list, entry)
 	{
 		time_diff = 1000000UL * (cur_time.tv_sec - ap_cur->ftimer.tv_sec)
@@ -1139,8 +1069,6 @@ static void update_rx_quality(void)
 			gettimeofday(&(st_cur->ftimer), NULL);
 		}
 	}
-
-    ap_list_lock_release(&lopt);
 }
 
 static void update_data_packets_per_second(void)
@@ -1155,8 +1083,6 @@ static void update_data_packets_per_second(void)
 	suseconds_t usec;
 
 	gettimeofday(&tv, NULL);
-
-    ap_list_lock_acquire(&lopt); 
 
 	TAILQ_FOREACH_REVERSE(ap_cur, &lopt.ap_list, ap_list_head, entry)
 	{
@@ -1176,8 +1102,6 @@ static void update_data_packets_per_second(void)
 			gettimeofday(&(ap_cur->tv), NULL);
 		}
 	}
-
-    ap_list_lock_release(&lopt); 
 
 	TAILQ_FOREACH(na_cur, &lopt.na_list, entry)
 	{
@@ -1263,14 +1187,10 @@ static void aps_purge_old_packets(
 
 	struct AP_info * ap_cur;
 
-    ap_list_lock_acquire(options); 
-
 	TAILQ_FOREACH(ap_cur, &options->ap_list, entry)
 	{
 		ap_purge_old_packets(ap_cur, &current_time, age_limit_millisecs);
 	}
-
-    ap_list_lock_release(options); 
 }
 
 static int
@@ -1716,8 +1636,6 @@ static void purge_old_aps(
     struct AP_info * ap_cur;
 	struct AP_info * ap_tmp;
 
-    ap_list_lock_acquire(options);
-
     TAILQ_FOREACH_SAFE(ap_cur, ap_list, entry, ap_tmp)
 	{
 		bool const too_old = ap_cur->tlast < age_limit;
@@ -1727,8 +1645,6 @@ static void purge_old_aps(
             remove_ap(options, ap_cur, ap_list, sta_list);
 		}
 	}
-
-    ap_list_lock_release(options); 
 }
 
 static void purge_old_stas(
@@ -1922,8 +1838,6 @@ static void dump_add_packet(
         return; /* FIXME - single exit. */
     }
 
-	ap_list_lock_acquire(&lopt);
-
 	/* update our chained list of access points */
 	ap_cur = ap_info_lookup(&lopt.ap_list, &bssid);
 
@@ -1933,7 +1847,6 @@ static void dump_add_packet(
 		ap_cur = ap_info_new(&bssid);
 		if (ap_cur == NULL)
 		{
-			ap_list_lock_release(&lopt);
 			return;
 		}
 
@@ -1942,8 +1855,6 @@ static void dump_add_packet(
 		/* If mac is listed as unknown, remove it */
 		remove_namac(&bssid);
 	}
-
-	ap_list_lock_release(&lopt);
 
 	/* update the last time seen */
 	ap_cur->tlast = time(NULL);
@@ -2068,8 +1979,6 @@ static void dump_add_packet(
 			abort();
 	}
 
-	ap_list_lock_acquire(&lopt);
-
 	/* update our chained list of wireless stations */
 	st_cur = sta_info_lookup(&lopt.sta_list, &stmac);
 
@@ -2079,7 +1988,6 @@ static void dump_add_packet(
 		st_cur = st_info_new(&stmac);
         if (st_cur == NULL)
 		{
-			ap_list_lock_release(&lopt);
 			return;
 		}
 
@@ -2088,8 +1996,6 @@ static void dump_add_packet(
 		/* If mac is listed as unknown, remove it */
 		remove_namac(&stmac);
 	}
-
-	ap_list_lock_release(&lopt);
 
     if (st_cur->base == NULL || !MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
     {
@@ -5948,16 +5854,12 @@ static void ap_list_free(struct local_options * const options)
     struct ap_list_head * const ap_list = &options->ap_list;
     struct sta_list_head * const sta_list = &options->sta_list;
 
-    ap_list_lock_acquire(&lopt);
-
     while (TAILQ_FIRST(ap_list) != NULL)
 	{
 		struct AP_info * const ap_cur = TAILQ_FIRST(ap_list);
 
         remove_ap(options, ap_cur, ap_list, sta_list);
 	}
-
-    ap_list_lock_release(&lopt);
 }
 
 #define AIRODUMP_NG_CSV_EXT "csv"
@@ -6386,11 +6288,7 @@ static void update_console_output(
             gettimeofday(time_of_last_sort, NULL);
         }
 
-        ap_list_lock_acquire(options);
-
         dump_print(options->ws.ws_row, options->ws.ws_col, options->num_cards);
-
-        ap_list_lock_release(options);
     }
 }
 
@@ -6479,8 +6377,6 @@ int main(int argc, char * argv[])
 
 	console_utf8_enable();
 	ac_crypto_init();
-
-	ap_list_lock_initialise(&lopt);
 
 	textstyle(TEXT_RESET); //(TEXT_RESET, TEXT_BLACK, TEXT_WHITE);
 
@@ -7502,7 +7398,9 @@ int main(int argc, char * argv[])
 
         if (lopt.do_exit)
         {
-            /* This flag may have been set by a signal event. */
+            /* This flag may have been set by a signal event or user 
+             * input. 
+             */
             continue;
         }
 
