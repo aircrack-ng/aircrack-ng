@@ -285,6 +285,7 @@ static struct local_options
 	unsigned int htval;
 #endif
 	int interactive_mode;
+    bool sort_required;
 
 	unsigned long min_pkts;
 
@@ -531,6 +532,8 @@ static void dump_sort(void)
 {
 	sort_aps(&lopt, lopt.sort_method);
 	sort_stas(&lopt);
+
+    lopt.sort_required = false;
 }
 
 static bool periodic_sort_required(
@@ -588,8 +591,11 @@ static void handle_input_key(
 {
     static size_t const seconds_between_sorts = 5;
     bool next_pause_setting = lopt.do_pause;
-    *sort_required =
-        periodic_sort_required(time_of_last_sort, seconds_between_sorts);
+
+    if (periodic_sort_required(time_of_last_sort, seconds_between_sorts))
+    {
+        *sort_required = true;
+    }
 
     if (keycode == KEY_q)
     {
@@ -5811,8 +5817,7 @@ static void check_for_signal_events(struct local_options * const options)
 
 static void check_for_user_input(
     struct local_options * const options, 
-    struct timeval * const time_of_last_sort,
-    bool * const sort_required)
+    struct timeval * const time_of_last_sort)
 {
     int keycode = 0;
 
@@ -5820,7 +5825,7 @@ static void check_for_user_input(
                      &keycode,
                      sizeof keycode))
     {
-        handle_input_key(keycode, time_of_last_sort, sort_required);
+        handle_input_key(keycode, time_of_last_sort, &options->sort_required);
     }
 }
 
@@ -6276,14 +6281,13 @@ done:
 
 static void update_console_output(
     struct local_options * const options,
-    bool const sort_required,
     struct timeval * const time_of_last_sort)
 {
     if (options->do_exit == 0
         && !options->do_pause
         && options->should_update_stdout)
     {
-        if (sort_required || options->do_sort_always)
+        if (options->sort_required || options->do_sort_always)
         {
             dump_sort();
             gettimeofday(time_of_last_sort, NULL);
@@ -7385,11 +7389,10 @@ int main(int argc, char * argv[])
     while (!lopt.do_exit)
 	{
 		time_t current_time;
-        bool sort_required = false;
 
         if (lopt.interactive_mode)
         {
-            check_for_user_input(&lopt, &time_of_last_sort, &sort_required);
+            check_for_user_input(&lopt, &time_of_last_sort);
         }
 
         check_for_channel_hopper_data(&lopt);
@@ -7549,7 +7552,7 @@ int main(int argc, char * argv[])
 
             if (lopt.interactive_mode)
             {
-                update_console_output(&lopt, sort_required, &time_of_last_sort);
+                update_console_output(&lopt, &time_of_last_sort);
             }
 		}
 
