@@ -173,6 +173,9 @@ static struct local_options
 
     size_t num_cards;
 
+    pthread_t input_tid;
+    int input_thread_pipe[2];
+
     int channel_hopper_pipe[2];
 
     int signal_event_pipe[2];
@@ -250,8 +253,6 @@ static struct local_options
 	/* Airodump-ng start time: for kismet netxml file */
 	char * airodump_start_time;
 
-	pthread_t input_tid;
-
 	int sort_inv;
 	ap_sort_info_st const * sort_method;
 
@@ -284,7 +285,7 @@ static struct local_options
 #ifdef CONFIG_LIBNL
 	unsigned int htval;
 #endif
-	int background_mode;
+	int interactive_mode;
 
 	unsigned long min_pkts;
 
@@ -618,233 +619,245 @@ done:
     return sort_required;
 }
 
+static void input_thread_handle_input_key(int const key_code, int const update_fd)
+{
+    switch (key_code)
+    {
+        case KEY_q:
+        case KEY_o:
+        case KEY_p:
+        case KEY_s:
+        case KEY_SPACE:
+        case KEY_r:
+        case KEY_m:
+        case KEY_ARROW_DOWN:
+        case KEY_ARROW_UP:
+        case KEY_i:
+        case KEY_TAB:
+        case KEY_a:
+        case KEY_d:
+            IGNORE_LTZ(write(update_fd, &key_code, sizeof key_code));
+            break;
+    }
+}
+
+static void handle_input_key(
+    int const keycode, 
+    struct timeval * const time_of_last_sort,
+    bool * const sort_required)
+{
+    static size_t const seconds_between_sorts = 5;
+    bool next_pause_setting = lopt.do_pause;
+    *sort_required =
+        periodic_sort_required(time_of_last_sort, seconds_between_sorts);
+
+    if (keycode == KEY_q)
+    {
+        quitting_event_ts = time(NULL);
+
+        if (++quitting > 1)
+        {
+            lopt.do_exit = 1;
+        }
+        else
+        {
+            snprintf(
+                lopt.message,
+                sizeof(lopt.message),
+                "][ Are you sure you want to quit? Press Q again to quit.");
+        }
+    }
+
+    if (keycode == KEY_o)
+    {
+        color_on();
+        snprintf(lopt.message, sizeof(lopt.message), "][ color on");
+    }
+
+    if (keycode == KEY_p)
+    {
+        color_off();
+        snprintf(lopt.message, sizeof(lopt.message), "][ color off");
+    }
+
+    if (keycode == KEY_s)
+    {
+        lopt.sort_method = ap_sort_method_assign_next(lopt.sort_method);
+        snprintf(lopt.message,
+                 sizeof(lopt.message),
+                 "][ sorting by %s", ap_sort_method_description(lopt.sort_method));
+        *sort_required = true;
+    }
+
+    if (keycode == KEY_SPACE)
+    {
+        next_pause_setting = !lopt.do_pause;
+        if (next_pause_setting)
+        {
+            snprintf(
+                lopt.message, sizeof(lopt.message), "][ paused output");
+        }
+        else
+        {
+            snprintf(
+                lopt.message, sizeof(lopt.message), "][ resumed output");
+        }
+    }
+
+    if (keycode == KEY_r)
+    {
+        lopt.do_sort_always = !lopt.do_sort_always;
+
+        if (lopt.do_sort_always)
+        {
+            snprintf(lopt.message,
+                     sizeof(lopt.message),
+                     "][ realtime sorting activated");
+        }
+        else
+        {
+            snprintf(lopt.message,
+                     sizeof(lopt.message),
+                     "][ realtime sorting deactivated");
+        }
+    }
+
+    if (keycode == KEY_m)
+    {
+        lopt.mark_cur_ap = 1;
+    }
+
+    if (keycode == KEY_ARROW_DOWN)
+    {
+        ap_list_lock_acquire(&lopt);
+
+        if (lopt.p_selected_ap != NULL
+            && TAILQ_PREV(lopt.p_selected_ap, ap_list_head, entry) != NULL)
+        {
+            lopt.p_selected_ap =
+                TAILQ_PREV(lopt.p_selected_ap, ap_list_head, entry);
+            lopt.en_selection_direction = selection_direction_down;
+        }
+
+        ap_list_lock_release(&lopt);
+    }
+
+    if (keycode == KEY_ARROW_UP)
+    {
+        ap_list_lock_acquire(&lopt);
+
+        if (lopt.p_selected_ap != NULL
+            && TAILQ_NEXT(lopt.p_selected_ap, entry) != NULL)
+        {
+            lopt.p_selected_ap =
+                TAILQ_NEXT(lopt.p_selected_ap, entry);
+            lopt.en_selection_direction = selection_direction_up;
+        }
+
+        ap_list_lock_release(&lopt);
+    }
+
+    if (keycode == KEY_i)
+    {
+        lopt.sort_inv *= -1;
+        if (lopt.sort_inv < 0)
+        {
+            snprintf(lopt.message,
+                     sizeof(lopt.message),
+                     "][ inverted sorting order");
+        }
+        else
+        {
+            snprintf(lopt.message,
+                     sizeof(lopt.message),
+                     "][ normal sorting order");
+        }
+        *sort_required = true;
+    }
+
+    if (keycode == KEY_TAB)
+    {
+        if (lopt.p_selected_ap == NULL)
+        {
+            lopt.en_selection_direction = selection_direction_down;
+            lopt.p_selected_ap = TAILQ_LAST(&lopt.ap_list, ap_list_head);
+            snprintf(lopt.message,
+                     sizeof(lopt.message),
+                     "][ enabled AP selection");
+        }
+        else
+        {
+            lopt.en_selection_direction = selection_direction_no;
+            lopt.p_selected_ap = NULL;
+            snprintf(lopt.message,
+                     sizeof(lopt.message),
+                     "][ disabled selection");
+        }
+        lopt.sort_method = ap_sort_method_assign(SORT_BY_NOTHING);
+    }
+
+    if (keycode == KEY_a)
+    {
+        if (lopt.show_ap == 1 && lopt.show_sta == 1 && lopt.show_ack == 0)
+        {
+            lopt.show_ap = 1;
+            lopt.show_sta = 1;
+            lopt.show_ack = 1;
+            snprintf(lopt.message,
+                     sizeof(lopt.message),
+                     "][ display ap+sta+ack");
+        }
+        else if (lopt.show_ap == 1 && lopt.show_sta == 1
+                 && lopt.show_ack == 1)
+        {
+            lopt.show_ap = 1;
+            lopt.show_sta = 0;
+            lopt.show_ack = 0;
+            snprintf(
+                lopt.message, sizeof(lopt.message), "][ display ap only");
+        }
+        else if (lopt.show_ap == 1 && lopt.show_sta == 0
+                 && lopt.show_ack == 0)
+        {
+            lopt.show_ap = 0;
+            lopt.show_sta = 1;
+            lopt.show_ack = 0;
+            snprintf(
+                lopt.message, sizeof(lopt.message), "][ display sta only");
+        }
+        else if (lopt.show_ap == 0 && lopt.show_sta == 1
+                 && lopt.show_ack == 0)
+        {
+            lopt.show_ap = 1;
+            lopt.show_sta = 1;
+            lopt.show_ack = 0;
+            snprintf(
+                lopt.message, sizeof(lopt.message), "][ display ap+sta");
+        }
+    }
+
+    if (keycode == KEY_d)
+    {
+        resetSelection();
+        snprintf(lopt.message,
+                 sizeof(lopt.message),
+                 "][ reset selection to default");
+    }
+
+    lopt.do_pause = next_pause_setting;
+}
+
+
 static void input_thread(void * arg)
 {
-	UNUSED_PARAM(arg);
-    struct timeval time_of_last_sort;
-
-    gettimeofday(&time_of_last_sort, NULL);
+    int * const update_fd_ptr = arg;
+    int const update_fd = *update_fd_ptr;
 
 	while (lopt.do_exit == 0)
 	{
-        static size_t const seconds_between_sorts = 5;
-		int keycode = 0;
-		bool next_pause_setting = lopt.do_pause;
-        bool sort_required = 
-            periodic_sort_required(&time_of_last_sort, seconds_between_sorts);
+        int const keycode = mygetch();
 
-		keycode = mygetch();
-
-		if (keycode == KEY_q)
-		{
-			quitting_event_ts = time(NULL);
-
-			if (++quitting > 1)
-			{
-				lopt.do_exit = 1;
-            }
-			else
-			{
-				snprintf(
-                    lopt.message,
-                    sizeof(lopt.message),
-                    "][ Are you sure you want to quit? Press Q again to quit.");
-            }
-		}
-
-		if (keycode == KEY_o)
-		{
-			color_on();
-			snprintf(lopt.message, sizeof(lopt.message), "][ color on");
-		}
-
-		if (keycode == KEY_p)
-		{
-			color_off();
-			snprintf(lopt.message, sizeof(lopt.message), "][ color off");
-		}
-
-		if (keycode == KEY_s)
-		{
-			lopt.sort_method = ap_sort_method_assign_next(lopt.sort_method);
-			snprintf(lopt.message,
-					 sizeof(lopt.message),
-					 "][ sorting by %s", ap_sort_method_description(lopt.sort_method));
-			sort_required = true;
-		}
-
-		if (keycode == KEY_SPACE)
-		{
-			next_pause_setting = !lopt.do_pause;
-			if (next_pause_setting)
-			{
-				snprintf(
-					lopt.message, sizeof(lopt.message), "][ paused output");
-			}
-			else
-			{
-				snprintf(
-					lopt.message, sizeof(lopt.message), "][ resumed output");
-			}
-		}
-
-		if (keycode == KEY_r)
-		{
-			lopt.do_sort_always = !lopt.do_sort_always;
-
-			if (lopt.do_sort_always)
-			{
-				snprintf(lopt.message,
-						 sizeof(lopt.message),
-						 "][ realtime sorting activated");
-			}
-			else
-			{
-				snprintf(lopt.message,
-						 sizeof(lopt.message),
-						 "][ realtime sorting deactivated");
-			}
-		}
-
-		if (keycode == KEY_m)
-		{
-			lopt.mark_cur_ap = 1;
-		}
-
-		if (keycode == KEY_ARROW_DOWN)
-		{
-            ap_list_lock_acquire(&lopt);
-
-			if (lopt.p_selected_ap != NULL
-                && TAILQ_PREV(lopt.p_selected_ap, ap_list_head, entry) != NULL)
-			{
-				lopt.p_selected_ap =
-                    TAILQ_PREV(lopt.p_selected_ap, ap_list_head, entry);
-				lopt.en_selection_direction = selection_direction_down;
-			}
-
-            ap_list_lock_release(&lopt);
-		}
-
-		if (keycode == KEY_ARROW_UP)
-		{
-            ap_list_lock_acquire(&lopt);
-
-            if (lopt.p_selected_ap != NULL
-                && TAILQ_NEXT(lopt.p_selected_ap, entry) != NULL)
-			{
-				lopt.p_selected_ap =
-                    TAILQ_NEXT(lopt.p_selected_ap, entry);
-				lopt.en_selection_direction = selection_direction_up;
-			}
-
-            ap_list_lock_release(&lopt);
-        }
-
-		if (keycode == KEY_i)
-		{
-			lopt.sort_inv *= -1;
-			if (lopt.sort_inv < 0)
-			{
-				snprintf(lopt.message,
-						 sizeof(lopt.message),
-						 "][ inverted sorting order");
-			}
-			else
-			{
-				snprintf(lopt.message,
-						 sizeof(lopt.message),
-						 "][ normal sorting order");
-			}
-            sort_required = true;
-		}
-
-		if (keycode == KEY_TAB)
-		{
-			if (lopt.p_selected_ap == NULL)
-			{
-				lopt.en_selection_direction = selection_direction_down;
-				lopt.p_selected_ap = TAILQ_LAST(&lopt.ap_list, ap_list_head);
-				snprintf(lopt.message,
-						 sizeof(lopt.message),
-						 "][ enabled AP selection");
-			}
-			else
-			{
-				lopt.en_selection_direction = selection_direction_no;
-				lopt.p_selected_ap = NULL;
-				snprintf(lopt.message,
-						 sizeof(lopt.message),
-						 "][ disabled selection");
-			}
-            lopt.sort_method = ap_sort_method_assign(SORT_BY_NOTHING);
-		}
-
-		if (keycode == KEY_a)
-		{
-			if (lopt.show_ap == 1 && lopt.show_sta == 1 && lopt.show_ack == 0)
-			{
-				lopt.show_ap = 1;
-				lopt.show_sta = 1;
-				lopt.show_ack = 1;
-				snprintf(lopt.message,
-						 sizeof(lopt.message),
-						 "][ display ap+sta+ack");
-			}
-			else if (lopt.show_ap == 1 && lopt.show_sta == 1
-					 && lopt.show_ack == 1)
-			{
-				lopt.show_ap = 1;
-				lopt.show_sta = 0;
-				lopt.show_ack = 0;
-				snprintf(
-					lopt.message, sizeof(lopt.message), "][ display ap only");
-			}
-			else if (lopt.show_ap == 1 && lopt.show_sta == 0
-					 && lopt.show_ack == 0)
-			{
-				lopt.show_ap = 0;
-				lopt.show_sta = 1;
-				lopt.show_ack = 0;
-				snprintf(
-					lopt.message, sizeof(lopt.message), "][ display sta only");
-			}
-			else if (lopt.show_ap == 0 && lopt.show_sta == 1
-					 && lopt.show_ack == 0)
-			{
-				lopt.show_ap = 1;
-				lopt.show_sta = 1;
-				lopt.show_ack = 0;
-				snprintf(
-					lopt.message, sizeof(lopt.message), "][ display ap+sta");
-			}
-		}
-
-		if (keycode == KEY_d)
-		{
-			resetSelection();
-			snprintf(lopt.message,
-					 sizeof(lopt.message),
-					 "][ reset selection to default");
-		}
-
-		if (lopt.do_exit == 0
-			&& !lopt.do_pause
-			&& lopt.should_update_stdout)
-		{
-			if (sort_required || lopt.do_sort_always)
-			{
-				dump_sort();
-                gettimeofday(&time_of_last_sort, NULL); 
-			}
-
-			ap_list_lock_acquire(&lopt);
-
-			dump_print(lopt.ws.ws_row, lopt.ws.ws_col, lopt.num_cards);
-
-			ap_list_lock_release(&lopt);
-        }
-		lopt.do_pause = next_pause_setting;
+        input_thread_handle_input_key(keycode, update_fd);
 	}
 }
 
@@ -5889,6 +5902,22 @@ static void check_for_signal_events(struct local_options * const options)
     }
 }
 
+static void check_for_user_input(
+    struct local_options * const options, 
+    struct timeval * const time_of_last_sort,
+    bool * const sort_required)
+{
+    int keycode = 0;
+
+    while (pipe_read(options->input_thread_pipe[0],
+                     &keycode,
+                     sizeof keycode))
+    {
+        handle_input_key(keycode, time_of_last_sort, sort_required);
+    }
+}
+
+
 static void flush_output_files(void)
 {
     if (opt.f_cap != NULL)
@@ -6239,10 +6268,12 @@ static void airodump_shutdown(struct wif * * const wi)
 		lopt.airodump_start_time = NULL;
 	}
 
-	if (!lopt.background_mode)
+    if (lopt.interactive_mode)
 	{
 		pthread_join(lopt.input_tid, NULL);
-	}
+        close(lopt.input_thread_pipe[1]);
+        close(lopt.input_thread_pipe[0]);
+    }
 
 	sta_list_free(&lopt.sta_list);
 
@@ -6340,6 +6371,29 @@ done:
     return result;
 }
 
+static void update_console_output(
+    struct local_options * const options,
+    bool const sort_required,
+    struct timeval * const time_of_last_sort)
+{
+    if (options->do_exit == 0
+        && !options->do_pause
+        && options->should_update_stdout)
+    {
+        if (sort_required || options->do_sort_always)
+        {
+            dump_sort();
+            gettimeofday(time_of_last_sort, NULL);
+        }
+
+        ap_list_lock_acquire(options);
+
+        dump_print(options->ws.ws_row, options->ws.ws_col, options->num_cards);
+
+        ap_list_lock_release(options);
+    }
+}
+
 int main(int argc, char * argv[])
 {
 	int program_exit_code;
@@ -6382,6 +6436,7 @@ int main(int argc, char * argv[])
 	struct timeval last_active_scan_timestamp;
 	struct timeval previous_timestamp = {.tv_sec = 0, .tv_usec = 0 };
 	struct tm * lt;
+    struct timeval time_of_last_sort;
 
 	static const struct option long_options[]
 		= {{"ht20", 0, 0, '2'},
@@ -6492,6 +6547,9 @@ int main(int argc, char * argv[])
     lopt.signal_event_pipe[0] = -1;
     lopt.signal_event_pipe[1] = -1;
 
+    lopt.input_thread_pipe[0] = -1;
+    lopt.input_thread_pipe[1] = -1; 
+
 	opt.output_format_pcap = 1;
 	opt.output_format_csv = 1;
 	opt.output_format_kismet_csv = 1;
@@ -6507,7 +6565,7 @@ int main(int argc, char * argv[])
 	lopt.file_write_interval = 5; // Write file every 5 seconds by default
 	lopt.maxsize_wps_seen = 6;
 	lopt.show_wps = 0;
-	lopt.background_mode = -1;
+    lopt.interactive_mode = -1;
     lopt.sys_name[0] = '\0';
     lopt.loc_name[0] = '\0';
     lopt.filter_seconds = ONE_HOUR;
@@ -6646,7 +6704,7 @@ int main(int argc, char * argv[])
 					program_exit_code = EXIT_FAILURE;
 					goto done;
 				}
-				lopt.background_mode = bg_mode;
+                lopt.interactive_mode = !bg_mode;
 				break;
 			}
 			case 'I':
@@ -7406,25 +7464,36 @@ int main(int argc, char * argv[])
 
 	// Do not start the interactive mode input thread if running in the
 	// background
-	if (lopt.background_mode == -1)
+    if (lopt.interactive_mode == -1)
 	{
-		lopt.background_mode = is_background();
+        lopt.interactive_mode = !is_background();
 	}
 
-	if (!lopt.background_mode
-		&& pthread_create(&lopt.input_tid, NULL, (void *)input_thread, NULL)
-			   != 0)
-	{
-		perror("Could not create input thread");
-		program_exit_code = EXIT_FAILURE;
-		goto done;
-	}
+    if (lopt.interactive_mode)
+    {
+        gettimeofday(&time_of_last_sort, NULL);
+        int const pipe_result = pipe(lopt.input_thread_pipe);
+        IGNORE_NZ(pipe_result);
+        if (pthread_create(&lopt.input_tid, NULL, (void *)input_thread, &lopt.input_thread_pipe[1])
+                   != 0)
+        {
+            perror("Could not create input thread");
+            program_exit_code = EXIT_FAILURE;
+            goto done;
+        }
+    }
 
     update_window_size(&lopt, &lopt.ws);
 
     while (!lopt.do_exit)
 	{
 		time_t current_time;
+        bool sort_required = false;
+
+        if (lopt.interactive_mode)
+        {
+            check_for_user_input(&lopt, &time_of_last_sort, &sort_required);
+        }
 
         check_for_channel_hopper_data(&lopt);
         check_for_signal_events(&lopt);
@@ -7574,11 +7643,15 @@ int main(int argc, char * argv[])
 		if (time_slept > REFRESH_RATE
             && time_slept > lopt.update_interval_seconds * 1000000)
 		{
-			time_slept = 0;
-
+            time_slept = 0;
 			update_data_packets_per_second();
 
             update_window_size(&lopt, &lopt.ws);
+
+            if (lopt.interactive_mode)
+            {
+                update_console_output(&lopt, sort_required, &time_of_last_sort);
+            }
 		}
 
 		do_quit_request_timeout_check(lopt.message, sizeof lopt.message);
