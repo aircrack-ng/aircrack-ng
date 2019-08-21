@@ -147,6 +147,8 @@ TAILQ_HEAD(na_list_head, NA_info);
 static struct local_options
 {
 	struct ap_list_head ap_list;
+    struct AP_info * p_selected_ap; 
+    pthread_mutex_t ap_list_lock; /* lock write access to ap linked list. */
 
 	struct sta_list_head sta_list;
 
@@ -196,10 +198,6 @@ static struct local_options
 	int * own_frequencies; /* custom frequency list  */
 
 	int asso_client; /* only show associated clients */
-
-	char * iwpriv;
-	char * iwconfig;
-	char * wlanctlng;
 
 	mac_address wpa_bssid; /* the wpa handshake bssid   */
 	char message[512];
@@ -259,7 +257,6 @@ static struct local_options
 
 	int start_print_ap;
 	int start_print_sta;
-	struct AP_info * p_selected_ap;
 
 	enum
 	{
@@ -271,8 +268,6 @@ static struct local_options
 	int mark_cur_ap;
 	int do_pause;
 	int do_sort_always;
-
-	pthread_mutex_t ap_list_lock; /* lock write access to ap linked list. */
 
 	mac_address selected_bssid; /* bssid that is selected */
 
@@ -376,11 +371,15 @@ static void color_off(void)
 {
 	struct AP_info * ap_cur;
 
+    ap_list_lock_acquire(&lopt);
+
 	TAILQ_FOREACH(ap_cur, &lopt.ap_list, entry)
 	{
 		ap_cur->marked = 0;
 		ap_cur->marked_color = 1;
 	}
+
+    ap_list_lock_release(&lopt);
 
 	textcolor_normal();
 	textcolor_fg(TEXT_WHITE);
@@ -393,7 +392,9 @@ static void color_on(void)
 
 	color_off();
 
-	TAILQ_FOREACH_REVERSE(ap_cur, &lopt.ap_list, ap_list_head, entry)
+    ap_list_lock_acquire(&lopt); 
+
+    TAILQ_FOREACH_REVERSE(ap_cur, &lopt.ap_list, ap_list_head, entry)
 	{
 		struct ST_info * st_cur;
 
@@ -453,6 +454,8 @@ static void color_on(void)
 			}
 		}
 	}
+
+    ap_list_lock_release(&lopt); 
 }
 
 static void sort_aps(
@@ -710,6 +713,8 @@ static void input_thread(void * arg)
 
 		if (keycode == KEY_ARROW_DOWN)
 		{
+            ap_list_lock_acquire(&lopt);
+
 			if (lopt.p_selected_ap != NULL
                 && TAILQ_PREV(lopt.p_selected_ap, ap_list_head, entry) != NULL)
 			{
@@ -717,18 +722,24 @@ static void input_thread(void * arg)
                     TAILQ_PREV(lopt.p_selected_ap, ap_list_head, entry);
 				lopt.en_selection_direction = selection_direction_down;
 			}
+
+            ap_list_lock_release(&lopt);
 		}
 
 		if (keycode == KEY_ARROW_UP)
 		{
-			if (lopt.p_selected_ap != NULL
+            ap_list_lock_acquire(&lopt);
+
+            if (lopt.p_selected_ap != NULL
                 && TAILQ_NEXT(lopt.p_selected_ap, entry) != NULL)
 			{
 				lopt.p_selected_ap =
                     TAILQ_NEXT(lopt.p_selected_ap, entry);
 				lopt.en_selection_direction = selection_direction_up;
 			}
-		}
+
+            ap_list_lock_release(&lopt);
+        }
 
 		if (keycode == KEY_i)
 		{
@@ -1026,6 +1037,8 @@ static void update_rx_quality(void)
 	/* access points */
 	struct AP_info * ap_cur;
 
+    ap_list_lock_acquire(&lopt);
+
 	TAILQ_FOREACH(ap_cur, &lopt.ap_list, entry)
 	{
 		time_diff = 1000000UL * (cur_time.tv_sec - ap_cur->ftimer.tv_sec)
@@ -1113,6 +1126,8 @@ static void update_rx_quality(void)
 			gettimeofday(&(st_cur->ftimer), NULL);
 		}
 	}
+
+    ap_list_lock_release(&lopt);
 }
 
 static void update_data_packets_per_second(void)
@@ -1127,6 +1142,8 @@ static void update_data_packets_per_second(void)
 	suseconds_t usec;
 
 	gettimeofday(&tv, NULL);
+
+    ap_list_lock_acquire(&lopt); 
 
 	TAILQ_FOREACH_REVERSE(ap_cur, &lopt.ap_list, ap_list_head, entry)
 	{
@@ -1146,6 +1163,8 @@ static void update_data_packets_per_second(void)
 			gettimeofday(&(ap_cur->tv), NULL);
 		}
 	}
+
+    ap_list_lock_release(&lopt); 
 
 	TAILQ_FOREACH(na_cur, &lopt.na_list, entry)
 	{
@@ -1231,10 +1250,14 @@ static void aps_purge_old_packets(
 
 	struct AP_info * ap_cur;
 
+    ap_list_lock_acquire(options); 
+
 	TAILQ_FOREACH(ap_cur, &options->ap_list, entry)
 	{
 		ap_purge_old_packets(ap_cur, &current_time, age_limit_millisecs);
 	}
+
+    ap_list_lock_release(options); 
 }
 
 static int
@@ -1507,7 +1530,7 @@ static struct AP_info * ap_info_lookup(
 {
 	struct AP_info * ap_cur;
 
-	TAILQ_FOREACH(ap_cur, ap_list, entry)
+    TAILQ_FOREACH(ap_cur, ap_list, entry)
 	{
 		if (MAC_ADDRESS_EQUAL(&ap_cur->bssid, mac))
 		{
@@ -1548,6 +1571,22 @@ static void ap_info_free(
 	free(ap_cur->manuf);
 
     free(ap_cur);
+}
+
+static void remove_ap(
+    struct local_options * const options,
+    struct AP_info * const ap_cur,
+    struct ap_list_head * const ap_list,
+    struct sta_list_head * const sta_list)
+{
+    if (options->p_selected_ap == ap_cur)
+    {
+        options->p_selected_ap = NULL;
+    }
+
+    TAILQ_REMOVE(ap_list, ap_cur, entry);
+
+    ap_info_free(ap_cur, sta_list);
 }
 
 static struct AP_info * ap_info_new(mac_address const * const bssid)
@@ -1656,24 +1695,27 @@ done:
 }
 
 static void purge_old_aps(
-	struct ap_list_head * const ap_list,
-	struct sta_list_head * const sta_list,
+    struct local_options * const options,
 	time_t const age_limit)
 {
-	struct AP_info * ap_cur;
+    struct ap_list_head * const ap_list = &options->ap_list;
+    struct sta_list_head * const sta_list = &options->sta_list;
+    struct AP_info * ap_cur;
 	struct AP_info * ap_tmp;
 
-	TAILQ_FOREACH_SAFE(ap_cur, ap_list, entry, ap_tmp)
+    ap_list_lock_acquire(options);
+
+    TAILQ_FOREACH_SAFE(ap_cur, ap_list, entry, ap_tmp)
 	{
 		bool const too_old = ap_cur->tlast < age_limit;
 
 		if (too_old)
 		{
-			TAILQ_REMOVE(ap_list, ap_cur, entry);
-
-			ap_info_free(ap_cur, sta_list);
+            remove_ap(options, ap_cur, ap_list, sta_list);
 		}
 	}
+
+    ap_list_lock_release(options); 
 }
 
 static void purge_old_stas(
@@ -1730,7 +1772,7 @@ static void purge_old_nodes(
 
 	purge_old_nas(&options->na_list, age_limit);
 	purge_old_stas(&options->sta_list, age_limit);
-	purge_old_aps(&options->ap_list, &options->sta_list, age_limit);
+	purge_old_aps(options, age_limit);
 
 done:
 	return;
@@ -4224,7 +4266,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			console_puts(strbuf);
 
 			if ((lopt.p_selected_ap != NULL && lopt.p_selected_ap == ap_cur)
-				|| (ap_cur->marked))
+				|| ap_cur->marked)
 			{
 				textstyle(TEXT_RESET);
 			}
@@ -4385,7 +4427,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 			if ((lopt.p_selected_ap != NULL
 				 && MAC_ADDRESS_EQUAL(&lopt.selected_bssid, &ap_cur->bssid))
-				|| (ap_cur->marked))
+				|| ap_cur->marked)
 			{
 				textstyle(TEXT_RESET);
 			}
@@ -5872,18 +5914,21 @@ static void sta_list_free(struct sta_list_head * const sta_list)
 	}
 }
 
-static void ap_list_free(
-    struct ap_list_head * const ap_list,
-    struct sta_list_head * const sta_list)
+static void ap_list_free(struct local_options * const options)
 {
-	while (TAILQ_FIRST(ap_list) != NULL)
+    struct ap_list_head * const ap_list = &options->ap_list;
+    struct sta_list_head * const sta_list = &options->sta_list;
+
+    ap_list_lock_acquire(&lopt);
+
+    while (TAILQ_FIRST(ap_list) != NULL)
 	{
 		struct AP_info * const ap_cur = TAILQ_FIRST(ap_list);
 
-		TAILQ_REMOVE(ap_list, ap_cur, entry);
-
-		ap_info_free(ap_cur, sta_list);
+        remove_ap(options, ap_cur, ap_list, sta_list);
 	}
+
+    ap_list_lock_release(&lopt);
 }
 
 #define AIRODUMP_NG_CSV_EXT "csv"
@@ -6201,7 +6246,7 @@ static void airodump_shutdown(struct wif * * const wi)
 
 	sta_list_free(&lopt.sta_list);
 
-	ap_list_free(&lopt.ap_list, &lopt.sta_list);
+	ap_list_free(&lopt);
 
 	na_info_list_free(&lopt.na_list);
 
