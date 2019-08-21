@@ -589,15 +589,46 @@ static void dump_sort(void)
 	ap_list_lock_release(&lopt);
 }
 
+static bool periodic_sort_required(
+    struct timeval * const time_of_last_resort, 
+    size_t const seconds_between_sorts)
+{
+    bool sort_required;
+    struct timeval current_time;
+
+    gettimeofday(&current_time, NULL);
+
+    long const time_diff = 1000000UL * (current_time.tv_sec - time_of_last_resort->tv_sec)
+        + (current_time.tv_usec - time_of_last_resort->tv_usec);
+
+    long const microseconds_between_sorts = seconds_between_sorts * 1000000; 
+
+    if (time_diff < microseconds_between_sorts)
+    {
+        sort_required = false;
+        goto done;
+    }
+
+    sort_required = true;
+
+done:
+    return sort_required;
+}
+
 static void input_thread(void * arg)
 {
 	UNUSED_PARAM(arg);
+    struct timeval time_of_last_sort;
+
+    gettimeofday(&time_of_last_sort, NULL);
 
 	while (lopt.do_exit == 0)
 	{
+        static size_t const seconds_between_sorts = 5;
 		int keycode = 0;
 		bool next_pause_setting = lopt.do_pause;
-		bool sort_required = false;
+        bool sort_required = 
+            periodic_sort_required(&time_of_last_sort, seconds_between_sorts);
 
 		keycode = mygetch();
 
@@ -793,6 +824,7 @@ static void input_thread(void * arg)
 			if (sort_required || lopt.do_sort_always)
 			{
 				dump_sort();
+                gettimeofday(&time_of_last_sort, NULL); 
 			}
 
 			ap_list_lock_acquire(&lopt);
