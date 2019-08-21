@@ -167,8 +167,6 @@ json_get_value_for_name(const char * buffer, const char * name, char * value)
 
 static void * gps_tracker_thread(void * arg)
 {
-    ALLEGE(arg != NULL);
-
     gps_tracker_context_st * const gps_context = arg;
     /* Pass in as the thread arg? 
      * The 'result' doesn't appear to be used. 
