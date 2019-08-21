@@ -3570,7 +3570,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	int columns_ap = 83;
 	int columns_sta = 74;
 	int columns_na = 68;
-	ssize_t len;
+	size_t len;
 
 	int num_ap;
 	int num_sta;
@@ -4087,7 +4087,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			{
 				if (lopt.show_wps)
 				{
-					ssize_t wps_len = len;
+					size_t wps_len = len;
 
 					if (ap_cur->wps.state != 0xFF)
 					{
@@ -4140,15 +4140,15 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 					}
 					len = strlen(strbuf);
 
-					if ((ssize_t)lopt.maxsize_wps_seen <= len - wps_len)
+					if (lopt.maxsize_wps_seen <= len - wps_len)
 					{
-						lopt.maxsize_wps_seen = (u_int) MAX(len - wps_len, 6);
+						lopt.maxsize_wps_seen = MAX(len - wps_len, 6);
 					}
 					else
 					{
 						// pad output
 						memset(strbuf + len, ' ', sizeof(strbuf) - len - 1);
-						len += lopt.maxsize_wps_seen - (len - wps_len);
+						len += lopt.maxsize_wps_seen - len - wps_len;
 						strbuf[len] = '\0';
 					}
 				}

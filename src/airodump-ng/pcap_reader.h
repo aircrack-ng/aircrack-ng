@@ -5,7 +5,7 @@
 #include "aircrack-ng/support/pcap_local.h"
 
 #include <stddef.h>
-#include <time.h>
+#include <sys/time.h>
 
 typedef struct pcap_reader_context_st pcap_reader_context_st;
 typedef enum pcap_reader_result_t

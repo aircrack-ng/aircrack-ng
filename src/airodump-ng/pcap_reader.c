@@ -262,7 +262,6 @@ done:
     return result;
 }
 
-
 pcap_reader_result_t pcap_read(
     pcap_reader_context_st * const context,
     void * const packet_buffer,

@@ -16,7 +16,7 @@
 #include <limits.h>
 #include <unistd.h>
 #include <sys/time.h>
-#include <wait.h>
+#include <sys/wait.h>
 
 /* Read at least one full line from the network.
  *
