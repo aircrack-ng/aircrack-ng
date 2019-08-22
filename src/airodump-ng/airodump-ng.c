@@ -110,6 +110,9 @@
 #define DEFAULT_CHANNEL_WIDTH_MHZ 20
 #define ONE_HOUR (60 * 60)
 #define ONE_MIN (60)
+#if defined(INCLUDE_UBUS)
+#include "ubus.h"
+#endif
 
 /* Possibly only required so that this will link. Referenced
  * in communications.c.
@@ -360,6 +363,13 @@ static struct local_options
          */
         int index;
     } filename;
+
+
+#if defined(INCLUDE_UBUS)
+    int do_ubus;
+    char const * ubus_path;
+    struct ubus_context * ubus_context;
+#endif
 
 } lopt;
 
@@ -666,6 +676,8 @@ static const char usage[] =
 	"      --manufacturer        : Display manufacturer from IEEE OUI list\n"
 	"      --uptime              : Display AP Uptime from Beacon Timestamp\n"
 	"      --wps                 : Display WPS information (if any)\n"
+    "      -S                    : Send UBUS events\n"
+    "      --ubus         <path> : path to UBUS socket\n"
 	"      --output-format\n"
 	"                  <formats> : Output format. Possible values:\n"
     "                              pcap, ivs, csv, gps, kismet, netxml, wifi_scanner"
@@ -6700,7 +6712,11 @@ int main(int argc, char * argv[])
 		   {"no-decloak", 0, 0, 'D'},
 		   {"showack", 0, 0, 'A'},
 		   {"detect-anomaly", 0, 0, 'E'},
-		   {"output-format", 1, 0, 'o'},
+#if defined(INCLUDE_UBUS)
+           {"ubus", 0, &lopt.do_ubus, 1 },
+           {"ubus-path", 1, 0, 'S' },
+#endif
+           {"output-format", 1, 0, 'o'},
            {"sys-name", 1, 0, 'X'},
            {"loc-name", 1, 0, 'y'},
            {"filter-seconds", 1, 0, 'F'},
@@ -6730,6 +6746,12 @@ int main(int argc, char * argv[])
     options_initialise(&lopt);
 
     gettimeofday(&tv0, NULL);
+
+#if defined(INCLUDE_UBUS)
+    lopt.do_ubus = false;
+    lopt.ubus_path = NULL;
+    lopt.ubus_context = NULL;
+#endif 
 
     /* Check the arguments. */
 
@@ -6790,7 +6812,7 @@ int main(int argc, char * argv[])
 		option
 			= getopt_long(argc,
 						  argv,
-						  "b:c:egiw:s:t:u:m:d:N:R:aHDB:Ahf:r:EC:o:x:MUI:WK:n:T:F:P:v:",
+						  "S:b:c:egiw:s:t:u:m:d:N:R:aHDB:Ahf:r:EC:o:x:MUI:WK:n:T:F:P:v:",
                           long_options,
 						  &option_index);
 
@@ -6801,6 +6823,12 @@ int main(int argc, char * argv[])
 			case 0:
 
 				break;
+
+#if defined(INCLUDE_UBUS)
+            case 'S':
+                lopt.ubus_path = optarg;
+                break;
+#endif
 
 			case ':':
 
@@ -7541,6 +7569,18 @@ int main(int argc, char * argv[])
 	/* Create start time string for kismet netxml file */
     lopt.airodump_start_time = time_as_string(lopt.start_time);
 
+#if defined(INCLUDE_UBUS)
+    if (lopt.do_ubus)
+    {
+        lopt.ubus_context = ubus_initialise(lopt.ubus_path);
+        if (lopt.ubus_context == NULL)
+        {
+            perror("failed to initialise UBUS");
+            program_exit_code = EXIT_FAILURE;
+            goto done;
+        }
+    }
+
 	/* open or create the output files */
     if (lopt.record_data)
     {
@@ -7758,6 +7798,8 @@ int main(int argc, char * argv[])
 	}
 
 	airodump_shutdown(&lopt, wi);
+    ubus_done();
+
 
 	program_exit_code = had_error ? EXIT_FAILURE : EXIT_SUCCESS;
 

@@ -9,6 +9,7 @@
 
 struct ubus_context * ubus_ctx;
 static const char * ubus_path;
+bool connected;
 
 static void
 ubus_add_fd(void)
@@ -37,6 +38,7 @@ ubus_reconnect_timer(struct uloop_timeout * timeout)
     }
 
     DPRINTF("Reconnected to ubus, new id: %08x\n", ubus_ctx->local_id);
+    connected = true;
     ubus_add_fd();
 }
 
@@ -44,6 +46,8 @@ static void
 ubus_connection_lost(struct ubus_context * ctx)
 {
     (void)ctx;
+    connected = false;
+    DPRINTF("disconnected from ubus\n");
     ubus_reconnect_timer(NULL);
 }
 
@@ -59,6 +63,8 @@ ubus_initialise(char const * const path)
         goto done;
     }
 
+    DPRINTF("Connected to ubus, new id: %08x\n", ubus_ctx->local_id);
+    connected = true;
     ubus_ctx->connection_lost = ubus_connection_lost;
 
     ubus_add_fd();
@@ -74,6 +80,7 @@ ubus_done(void)
     {
         uloop_fd_delete(&ubus_ctx->sock);
 
+        connected = false;
         ubus_free(ubus_ctx);
         ubus_ctx = NULL;
     }
