@@ -84,6 +84,7 @@ SRC_TERMINAL = %D%/airodump-ng/terminal.c
 SRC_IVS_LOG = %D%/airodump-ng/ivs_log.c
 SRC_PROBE_REQUEST = %D%/airodump-ng/probe_request.c
 SRC_AP_FILTER = %D%/airodump-ng/ap_filter.c
+SRC_UBUS = %D%/airodump-ng/ubus.c
 
 bin_PROGRAMS += aircrack-ng \
                 airdecap-ng \
@@ -152,6 +153,10 @@ airodump_ng_SOURCES		= $(SRC_AP_FILTER) $(SRC_PROBE_REQUEST) $(SRC_IVS_LOG) $(SR
 airodump_ng_CFLAGS		= $(COMMON_CFLAGS) $(PCRE_CFLAGS) $(LIBNL_CFLAGS) -Wall -Wextra
 airodump_ng_CPPFLAGS	= $(AM_CPPFLAGS) -I$(abs_srcdir)/src/airodump-ng
 airodump_ng_LDADD			= $(COMMON_LDADD) $(PCRE_LIBS) $(LIBAIRCRACK_OSDEP_LIBS) $(LIBACCRYPTO_LIBS) $(LIBAIRCRACK_CE_WEP_LIBS) $(AIRPCAP_LIBS) $(LIBAIRCRACK_LIBS) $(CRYPTO_LIBS)
+if UBUS_SUPPORT
+airodump_ng_SOURCES += $(SRC_UBUS)
+airodump_ng_LDADD += $(UBUS_LIBS)
+endif
 
 airserv_ng_SOURCES	= $(SRC_AS)
 airserv_ng_CFLAGS		= $(COMMON_CFLAGS) $(LIBNL_CFLAGS)

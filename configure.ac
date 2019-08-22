@@ -132,6 +132,7 @@ AIRCRACK_NG_EXPERIMENTAL
 AIRCRACK_NG_EXT_SCRIPTS
 AIRCRACK_NG_HWLOC
 AIRCRACK_NG_PCAP
+AIRCRACK_NG_UBUS
 AIRCRACK_NG_PCRE
 AIRCRACK_NG_RFKILL
 AIRCRACK_NG_SQLITE
@@ -190,6 +191,7 @@ AIRCRACK_NG_TSAN
 #
 # Automake
 #
+AM_CONDITIONAL([INCLUDE_UBUS], [test "$UBUS_SUPPORT" = yes])
 AM_CONDITIONAL([HAVE_AIRPCAP_OR_PCAP], [test "$AIRPCAP" = yes -o "$PCAP_FOUND" = yes])
 AM_CONDITIONAL([MULTIBIN], [test "$with_multibin" = yes])
 AM_CONDITIONAL([ENABLE_INSTALLED_TESTS], [test "nope" = yes]) # for glib tests
@@ -315,6 +317,7 @@ ${PACKAGE} ${VERSION}
     Zlib:                        ${HAVE_ZLIB}
 
   Features:
+    UBUS:                        ${UBUS_SUPPORT}
     CMAC Support:                ${HAVE_CMAC}
     Experimental Extra Scripts:  ${EXT_SCRIPTS}
     Experimental Features:       ${EXPERIMENTAL}
