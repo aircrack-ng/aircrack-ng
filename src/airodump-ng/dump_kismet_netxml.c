@@ -423,7 +423,7 @@ static void kismet_dump_write_netxml(
         /* ESSID */
         fprintf(fp,
                 "\t\t\t<essid cloaked=\"%s\">",
-                (ap_cur->essid[0] == 0) ? "true" : "false");
+                (ap_cur->essid[0] == '\0') ? "true" : "false");
         essid = sanitize_xml(ap_cur->essid, (size_t)ap_cur->ssid_length);
         if (essid != NULL)
         {

@@ -129,7 +129,7 @@ static int sort_essid(
     int const sort_direction)
 {
     int const result =
-        strncasecmp((char *)a->essid, (char *)b->essid, ESSID_LENGTH)
+        strncasecmp((char *)a->essid, (char *)b->essid, sizeof(a->essid) - 1)
         * sort_direction;
 
     return result;

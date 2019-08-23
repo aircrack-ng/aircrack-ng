@@ -38,17 +38,16 @@
 
 #include "aircrack-ng/utf8/verifyssid.h"
 
-int verifyssid(const unsigned char * s)
+bool verifyssid(uint8_t const * const s)
 {
-	int i;
 	unsigned char c;
 
-	if (!s || strlen((const char *) s) > 32)
+	if (s == NULL || strlen((const char *) s) > 32)
 	{ // 32 characters
 		return 0;
 	}
 
-	for (i = 0; (c = s[i++]);)
+	for (size_t i = 0; (c = s[i++]);)
 	{
 		if ((c & 0x80) == 0)
 		{ // ascii flag
@@ -84,5 +83,6 @@ int verifyssid(const unsigned char * s)
 			return 0;
 		}
 	}
+
 	return 1;
 }

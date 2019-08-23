@@ -618,7 +618,7 @@ static int do_attack_fake_auth(void)
 		!= 0)
 		return (EXIT_FAILURE);
 
-	if (verifyssid((const unsigned char *) opt.r_essid) == 0)
+	if (!verifyssid((uint8_t *)opt.r_essid))
 	{
 		printf("Please specify an ESSID (-e).\n");
 		return (EXIT_FAILURE);

@@ -346,7 +346,7 @@ int getnet(struct wif * wi,
 	{
 		if (memcmp(bssid, NULL_MAC, ETHER_ADDR_LEN) != 0)
 		{
-			if (verifyssid(r_essid) == 0)
+			if (!verifyssid(r_essid))
 			{
 				printf("Please specify an ESSID (-e).\n");
 			}

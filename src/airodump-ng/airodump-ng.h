@@ -151,6 +151,6 @@ size_t get_frequency_count(
 
 int send_probe_request(struct wif * const wi);
 
-int is_filtered_essid(uint8_t const * const essid);
+bool is_filtered_essid(uint8_t const * const essid);
 
 #endif

@@ -178,7 +178,7 @@ static void dump_write_csv(
                 ap_cur->lanip[2],
                 ap_cur->lanip[3]);
 
-        fprintf(fp, "%3d, ", ap_cur->ssid_length);
+        fprintf(fp, "%3zd, ", ap_cur->ssid_length);
 
         if (verifyssid(ap_cur->essid))
         {

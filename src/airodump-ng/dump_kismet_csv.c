@@ -23,8 +23,6 @@ static void kismet_dump_write_csv(
     unsigned int f_encrypt)
 {
     UNUSED_PARAM(sta_list);
-
-    int i; 
     int k;
 
     if (fp == NULL)
@@ -68,7 +66,7 @@ static void kismet_dump_write_csv(
         fprintf(fp, "infrastructure;");
 
         // ESSID
-        for (i = 0; i < ap_cur->ssid_length; i++)
+        for (size_t i = 0; i < ap_cur->ssid_length; i++)
         {
             fprintf(fp, "%c", ap_cur->essid[i]);
         }

@@ -397,7 +397,10 @@ skip_station:
 		{
 			if (p + 2 + p[1] > h80211 + caplen) break;
 
-			if (p[0] == 0x00) ap_cur->ssid_length = p[1];
+			if (p[0] == 0x00)
+			{
+				ap_cur->ssid_length = p[1];
+			}
 
 			if (p[0] == 0x00 && p[1] > 0 && p[2] != '\0'
 				&& (p[1] > 1 || p[2] != ' '))
@@ -406,7 +409,7 @@ skip_station:
 
 				n = p[1];
 
-				memset(ap_cur->essid, 0, ESSID_LENGTH + 1);
+				memset(ap_cur->essid, 0, sizeof ap_cur->essid);
 				memcpy(ap_cur->essid, p + 2, n);
 
 				if (G.f_ivs != NULL && !ap_cur->essid_stored)

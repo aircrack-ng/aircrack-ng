@@ -126,7 +126,7 @@ struct AP_info
 	unsigned int security; /* ENC_*, AUTH_*, STD_*     */
 	int beacon_logged; /* We need 1 beacon per AP  */
 	int dict_started; /* 1 if dict attack started */
-	int ssid_length; /* length of ssid           */
+	size_t ssid_length; /* length of ssid           */
 	float gps_loc_min[5]; /* min gps coordinates      */
 	float gps_loc_max[5]; /* max gps coordinates      */
 	float gps_loc_best[5]; /* best gps coordinates     */
