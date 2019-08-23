@@ -1564,7 +1564,11 @@ static struct AP_info * ap_info_new(mac_address const * const bssid)
 
 	ap_cur->ivbuf = NULL;
 	ap_cur->ivbuf_size = 0;
-	ap_cur->uiv_root = uniqueiv_init();
+
+    if (opt.f_ivs != NULL)
+    {
+        ap_cur->uiv_root = uniqueiv_init();
+    }
 
 	ap_cur->nb_data = 0;
 	ap_cur->nb_dataps = 0;
