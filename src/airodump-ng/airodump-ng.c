@@ -1437,7 +1437,59 @@ done:
 	return na_cur;
 }
 
-static struct ST_info * sta_info_lookup(
+static struct ST_info * st_info_new(mac_address const * const stmac)
+{
+    struct ST_info * const st_cur = calloc(1, sizeof *st_cur);
+
+    if (st_cur == NULL)
+    {
+        perror("calloc failed");
+        goto done;
+    }
+
+    MAC_ADDRESS_COPY(&st_cur->stmac, stmac);
+
+    st_cur->manuf =
+        get_manufacturer_by_oui(
+        lopt.manufacturer_list,
+        st_cur->stmac.addr);
+
+    st_cur->nb_pkt = 0;
+
+    st_cur->tinit = time(NULL);
+    st_cur->tlast = st_cur->tinit;
+    st_cur->time_printed = 0;
+
+    st_cur->power = -1;
+    st_cur->best_power = -1;
+    st_cur->rate_to = -1;
+    st_cur->rate_from = -1;
+
+    st_cur->probe_index = -1;
+    st_cur->missed = 0;
+    st_cur->lastseq = 0;
+    st_cur->qos_fr_ds = 0;
+    st_cur->qos_to_ds = 0;
+    st_cur->channel = 0;
+    st_cur->old_channel = 0;
+
+    gettimeofday(&st_cur->ftimer, NULL);
+
+    memcpy(st_cur->gps_loc_min, lopt.gps_context.gps_loc, sizeof(st_cur->gps_loc_min));
+    memcpy(st_cur->gps_loc_max, lopt.gps_context.gps_loc, sizeof(st_cur->gps_loc_max));
+    memcpy(st_cur->gps_loc_best, lopt.gps_context.gps_loc, sizeof(st_cur->gps_loc_best));
+
+    for (size_t i = 0; i < NB_PRB; i++)
+    {
+        memset(st_cur->probes[i], 0, sizeof(st_cur->probes[i]));
+        st_cur->ssid_length[i] = 0;
+    }
+
+done:
+    return st_cur;
+}
+
+static struct ST_info * sta_info_lookup_existing(
 	struct sta_list_head * const sta_list,
 	mac_address const * const mac)
 {
@@ -1454,79 +1506,57 @@ static struct ST_info * sta_info_lookup(
 	return st_cur;
 }
 
+static struct ST_info * sta_info_lookup(
+    struct sta_list_head * const sta_list,
+    mac_address const * const mac,
+    bool * const is_new)
+{
+    struct ST_info * st_cur;
+
+    st_cur = sta_info_lookup_existing(&lopt.sta_list, mac);
+    if (st_cur != NULL)
+    {
+        *is_new = false;
+        goto done;
+    }
+
+    *is_new = true;
+
+    st_cur = st_info_new(mac);
+    if (st_cur == NULL)
+    {
+        goto done;
+    }
+
+    TAILQ_INSERT_TAIL(sta_list, st_cur, entry);
+
+done:
+    return st_cur;
+}
+
 static void sta_info_free(struct ST_info * const st_cur)
 {
 	free(st_cur->manuf);
 	free(st_cur);
 }
 
-static struct ST_info * st_info_new(mac_address const * const stmac)
+static void sta_info_remove(
+    struct sta_list_head * const sta_list,
+    struct ST_info * const st_cur)
 {
-	struct ST_info * const st_cur = calloc(1, sizeof *st_cur);
+    TAILQ_REMOVE(sta_list, st_cur, entry);
 
-	if (st_cur == NULL)
-	{
-		perror("calloc failed");
-		goto done;
-	}
-
-	MAC_ADDRESS_COPY(&st_cur->stmac, stmac);
-
-    st_cur->manuf =
-        get_manufacturer_by_oui(
-            lopt.manufacturer_list,
-            st_cur->stmac.addr);
-
-	st_cur->nb_pkt = 0;
-
-	st_cur->tinit = time(NULL);
-	st_cur->tlast = st_cur->tinit;
-	st_cur->time_printed = 0;
-
-	st_cur->power = -1;
-	st_cur->best_power = -1;
-	st_cur->rate_to = -1;
-	st_cur->rate_from = -1;
-
-	st_cur->probe_index = -1;
-	st_cur->missed = 0;
-	st_cur->lastseq = 0;
-	st_cur->qos_fr_ds = 0;
-	st_cur->qos_to_ds = 0;
-	st_cur->channel = 0;
-	st_cur->old_channel = 0;
-
-	gettimeofday(&st_cur->ftimer, NULL);
-
-	memcpy(st_cur->gps_loc_min, lopt.gps_context.gps_loc, sizeof(st_cur->gps_loc_min));
-	memcpy(st_cur->gps_loc_max, lopt.gps_context.gps_loc, sizeof(st_cur->gps_loc_max));
-	memcpy(st_cur->gps_loc_best, lopt.gps_context.gps_loc, sizeof(st_cur->gps_loc_best));
-
-	for (size_t i = 0; i < NB_PRB; i++)
-	{
-		memset(st_cur->probes[i], 0, sizeof(st_cur->probes[i]));
-		st_cur->ssid_length[i] = 0;
-	}
-
-done:
-	return st_cur;
+    sta_info_free(st_cur);
 }
 
-static struct AP_info * ap_info_lookup(
-	struct ap_list_head * ap_list,
-	mac_address const * const mac)
+static void sta_list_free(struct sta_list_head * const sta_list)
 {
-	struct AP_info * ap_cur;
+    while (TAILQ_FIRST(sta_list) != NULL)
+    {
+        struct ST_info * const st_cur = TAILQ_FIRST(sta_list);
 
-    TAILQ_FOREACH(ap_cur, ap_list, entry)
-	{
-		if (MAC_ADDRESS_EQUAL(&ap_cur->bssid, mac))
-		{
-			break;
-		}
-	}
-
-	return ap_cur;
+        sta_info_remove(sta_list, st_cur);
+    }
 }
 
 static void free_stas_with_this_base_ap(
@@ -1540,9 +1570,7 @@ static void free_stas_with_this_base_ap(
 	{
 		if (st_cur->base == ap_cur)
 		{
-			TAILQ_REMOVE(sta_list, st_cur, entry);
-
-			sta_info_free(st_cur);
+            sta_info_remove(sta_list, st_cur);
 		}
 	}
 }
@@ -1575,6 +1603,19 @@ static void remove_ap(
     TAILQ_REMOVE(ap_list, ap_cur, entry);
 
     ap_info_free(ap_cur, sta_list);
+}
+
+static void ap_list_free(struct local_options * const options)
+{
+    struct ap_list_head * const ap_list = &options->ap_list;
+    struct sta_list_head * const sta_list = &options->sta_list;
+
+    while (TAILQ_FIRST(ap_list) != NULL)
+    {
+        struct AP_info * const ap_cur = TAILQ_FIRST(ap_list);
+
+        remove_ap(options, ap_cur, ap_list, sta_list);
+    }
 }
 
 static struct AP_info * ap_info_new(mac_address const * const bssid)
@@ -1684,6 +1725,51 @@ done:
 	return ap_cur;
 }
 
+static struct AP_info * ap_info_lookup_existing(
+    struct ap_list_head * ap_list,
+    mac_address const * const mac)
+{
+    struct AP_info * ap_cur;
+
+    TAILQ_FOREACH(ap_cur, ap_list, entry)
+    {
+        if (MAC_ADDRESS_EQUAL(&ap_cur->bssid, mac))
+        {
+            break;
+        }
+    }
+
+    return ap_cur;
+}
+
+static struct AP_info * ap_info_lookup(
+    struct ap_list_head * const ap_list,
+    mac_address const * const bssid,
+    bool * const is_new)
+{
+    struct AP_info * ap_cur;
+
+    ap_cur = ap_info_lookup_existing(ap_list, bssid);
+    if (ap_cur != NULL)
+    {
+        *is_new = false;
+        goto done;
+    }
+
+    *is_new = true;
+
+    ap_cur = ap_info_new(bssid);
+    if (ap_cur == NULL)
+    {
+        goto done;
+    }
+
+    TAILQ_INSERT_TAIL(ap_list, ap_cur, entry);
+
+done:
+    return ap_cur;
+}
+
 static void purge_old_aps(
     struct local_options * const options,
 	time_t const age_limit)
@@ -1717,9 +1803,7 @@ static void purge_old_stas(
 
 		if (too_old)
 		{
-			TAILQ_REMOVE(sta_list, st_cur, entry);
-
-			sta_info_free(st_cur);
+            sta_info_remove(sta_list, st_cur);
 		}
 	}
 }
@@ -1871,20 +1955,17 @@ static void dump_add_packet(
     }
 
 	/* update our chained list of access points */
-	ap_cur = ap_info_lookup(&lopt.ap_list, &bssid);
+    bool is_new_ap;
 
-	/* If it's a new access point, add it */
-	if (ap_cur == NULL)
+    ap_cur = ap_info_lookup(&lopt.ap_list, &bssid, &is_new_ap);
+    if (ap_cur == NULL)
+    {
+        return;
+    }
+
+    if (is_new_ap)
 	{
-		ap_cur = ap_info_new(&bssid);
-		if (ap_cur == NULL)
-		{
-			return;
-		}
-
-		TAILQ_INSERT_TAIL(&lopt.ap_list, ap_cur, entry);
-
-		/* If mac is listed as unknown, remove it */
+        /* If mac was listed as unknown, remove it */
         remove_namac(&lopt.na_list, &bssid);
 	}
 
@@ -2012,20 +2093,17 @@ static void dump_add_packet(
 	}
 
 	/* update our chained list of wireless stations */
-	st_cur = sta_info_lookup(&lopt.sta_list, &stmac);
+    bool is_new;
 
-	/* If it's a new client, add it */
-	if (st_cur == NULL)
+    st_cur = sta_info_lookup(&lopt.sta_list, &stmac, &is_new);
+    if (st_cur == NULL)
+    {
+        return;
+    }
+
+    if (is_new)
 	{
-		st_cur = st_info_new(&stmac);
-        if (st_cur == NULL)
-		{
-			return;
-		}
-
-		TAILQ_INSERT_TAIL(&lopt.sta_list, st_cur, entry);
-
-		/* If mac is listed as unknown, remove it */
+        /* If mac was listed as unknown, remove it. */
         remove_namac(&lopt.na_list, &stmac);
 	}
 
@@ -3418,7 +3496,7 @@ write_packet:
 				if (lopt.hide_known)
 				{
 					/* Check AP list. */
-					ap_cur = ap_info_lookup(&lopt.ap_list, &namac);
+                    ap_cur = ap_info_lookup_existing(&lopt.ap_list, &namac);
 
 					/* If it's an AP, try next mac */
 					if (ap_cur != NULL)
@@ -3428,7 +3506,7 @@ write_packet:
 					}
 
 					/* check STA list */
-					st_cur = sta_info_lookup(&lopt.sta_list, &namac);
+                    st_cur = sta_info_lookup_existing(&lopt.sta_list, &namac);
 
 					/* If it's a client, try next mac */
 					if (st_cur != NULL)
@@ -5856,31 +5934,6 @@ static void flush_output_files(void)
     {
         fflush(opt.f_ivs);
     }
-}
-
-static void sta_list_free(struct sta_list_head * const sta_list)
-{
-	while (TAILQ_FIRST(sta_list) != NULL)
-	{
-		struct ST_info * const st_cur = TAILQ_FIRST(sta_list);
-
-		TAILQ_REMOVE(sta_list, st_cur, entry);
-
-		sta_info_free(st_cur);
-	}
-}
-
-static void ap_list_free(struct local_options * const options)
-{
-    struct ap_list_head * const ap_list = &options->ap_list;
-    struct sta_list_head * const sta_list = &options->sta_list;
-
-    while (TAILQ_FIRST(ap_list) != NULL)
-	{
-		struct AP_info * const ap_cur = TAILQ_FIRST(ap_list);
-
-        remove_ap(options, ap_cur, ap_list, sta_list);
-	}
 }
 
 #define AIRODUMP_NG_CSV_EXT "csv"
