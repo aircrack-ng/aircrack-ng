@@ -331,39 +331,45 @@ static void resetSelection(void)
     MAC_ADDRESS_CLEAR(&lopt.selected_bssid);
 }
 
-static void color_off(void)
+static void clear_ap_marking(struct ap_list_head * const ap_list)
 {
-	struct AP_info * ap_cur;
+    struct AP_info * ap_cur;
 
-	TAILQ_FOREACH(ap_cur, &lopt.ap_list, entry)
-	{
-		ap_cur->marked = 0;
-		ap_cur->marked_color = 1;
-	}
+    TAILQ_FOREACH(ap_cur, ap_list, entry)
+    {
+        ap_cur->marked = 0;
+        ap_cur->marked_color = 1;
+    }
+}
+
+static void color_off(struct local_options * const options)
+{
+    clear_ap_marking(&options->ap_list);
 
 	textcolor_normal();
 	textcolor_fg(TEXT_WHITE);
 }
 
-static void color_on(void)
+static void color_on(struct local_options * const options)
 {
 	struct AP_info * ap_cur;
 	int color = 1;
 
-	color_off();
+	color_off(options);
 
-    TAILQ_FOREACH_REVERSE(ap_cur, &lopt.ap_list, ap_list_head, entry)
+    TAILQ_FOREACH_REVERSE(ap_cur, &options->ap_list, ap_list_head, entry)
 	{
 		struct ST_info * st_cur;
 
-		if (ap_cur->nb_pkt < lopt.min_pkts
-			|| time(NULL) - ap_cur->tlast > lopt.berlin)
+        if (ap_cur->nb_pkt < options->min_pkts
+            || time(NULL) - ap_cur->tlast > options->berlin)
 		{
 			continue;
 		}
 
-		if (ap_cur->security != 0 && lopt.f_encrypt != 0
-			&& ((ap_cur->security & lopt.f_encrypt) == 0))
+        if (ap_cur->security != 0 
+            && options->f_encrypt != 0
+            && (ap_cur->security & options->f_encrypt) == 0)
 		{
 			continue;
 		}
@@ -375,23 +381,23 @@ static void color_on(void)
 			continue;
 		}
 
-		TAILQ_FOREACH_REVERSE(st_cur, &lopt.sta_list, sta_list_head, entry)
+		TAILQ_FOREACH_REVERSE(st_cur, &options->sta_list, sta_list_head, entry)
 		{
 			if (st_cur->base != ap_cur
-				|| (time(NULL) - st_cur->tlast) > lopt.berlin)
+                || (time(NULL) - st_cur->tlast) > options->berlin)
 			{
 				continue;
 			}
 
 			if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid)
-				&& lopt.asso_client)
+                && options->asso_client)
 			{
 				continue;
 			}
 
 			if (color > TEXT_MAX_COLOR)
 			{
-				color++;
+				color++; /* FIXME: Is this correct? Set to 1 instead? */
 			}
 
 			if (!ap_cur->marked)
@@ -403,7 +409,8 @@ static void color_on(void)
 				}
 				else
 				{
-					ap_cur->marked_color = color++;
+					ap_cur->marked_color = color;
+                    color++;
 				}
 			}
 			else
@@ -624,13 +631,13 @@ static void handle_input_key(
 
     if (keycode == KEY_o)
     {
-        color_on();
+        color_on(&lopt);
         snprintf(lopt.message, sizeof(lopt.message), "][ color on");
     }
 
     if (keycode == KEY_p)
     {
-        color_off();
+        color_off(&lopt);
         snprintf(lopt.message, sizeof(lopt.message), "][ color off");
     }
 
