@@ -952,6 +952,14 @@ int dump_initialize_multi_format(char * prefix, int ivs_only)
                                      *  the extensions etc
                                      */
 
+
+    /* FIXME: This function has had much code removed from it 
+     * because it has unwanted side-effects when called by 
+     * airodump-ng. Other apps still want to make use of it though, 
+     * and it currently won't work for them. 
+     */
+
+
     /* Create a buffer of the length of the prefix + '-' + 2 numbers + '.'
        + longest extension ("kismet.netxml") + terminating 0. */
     ofn_len = strlen(prefix)+ ADDED_LENGTH + 1;
@@ -1015,52 +1023,6 @@ int dump_initialize_multi_format(char * prefix, int ivs_only)
 	/* create the output packet capture file */
 	if (opt.output_format_pcap)
 	{
-		struct pcap_file_header pfh;
-
-		memset(ofn, 0, ofn_len);
-		snprintf(ofn,
-				 ofn_len,
-				 "%s-%02d.%s",
-				 prefix,
-				 opt.f_index,
-				 AIRODUMP_NG_CAP_EXT);
-
-        opt.f_cap = fopen(ofn, "wb+");
-        if (opt.f_cap == NULL)
-		{
-			perror("fopen failed");
-			fprintf(stderr, "Could not create \"%s\".\n", ofn);
-			free(ofn);
-
-			return (1);
-		}
-
-        opt.f_cap_name = strdup(ofn); 
-		ALLEGE(opt.f_cap_name != NULL);
-
-		pfh.magic = TCPDUMP_MAGIC;
-		pfh.version_major = PCAP_VERSION_MAJOR;
-		pfh.version_minor = PCAP_VERSION_MINOR;
-		pfh.thiszone = 0;
-		pfh.sigfigs = 0;
-		pfh.snaplen = 65535;
-		pfh.linktype = LINKTYPE_IEEE802_11;
-
-		if (fwrite(&pfh, 1, sizeof(pfh), opt.f_cap) != (size_t) sizeof(pfh))
-		{
-			perror("fwrite(pcap file header) failed");
-			free(ofn);
-
-			return (1);
-		}
-
-		if (!opt.quiet)
-		{
-			PCT;
-			printf("Created capture file \"%s\".\n", ofn);
-		}
-
-		free(ofn);
 	}
 	else if (ivs_only)
 	{

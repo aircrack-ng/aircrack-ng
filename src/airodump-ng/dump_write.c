@@ -276,7 +276,7 @@ int dump_write_airodump_ng_logcsv_add_client(const struct AP_info * ap_cur,
 }
 
 void dump_write(
-    struct dump_context_st * dump,
+    struct dump_context_st * const dump,
     struct ap_list_head * const ap_list,
     struct sta_list_head * const sta_list,
     unsigned int const f_encrypt)
@@ -292,7 +292,7 @@ done:
     return;
 }
 
-void dump_close(struct dump_context_st * dump)
+void dump_close(struct dump_context_st * const dump)
 {
     if (dump == NULL)
     {

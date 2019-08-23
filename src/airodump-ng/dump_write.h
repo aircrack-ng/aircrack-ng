@@ -66,20 +66,17 @@ void dump_close(
     dump_context_st * const dump);
 
 
-int dump_write_airodump_ng_logcsv_add_ap(const struct AP_info * ap_cur,
-										 const int32_t ri_power,
-										 struct tm * tm_gpstime,
-										 float const * const gps_loc);
+int dump_write_airodump_ng_logcsv_add_ap(
+    const struct AP_info * ap_cur,
+    const int32_t ri_power,
+    struct tm * tm_gpstime,
+    float const * const gps_loc);
 
-int dump_write_airodump_ng_logcsv_add_client(const struct AP_info * ap_cur,
-											 const struct ST_info * st_cur,
-											 const int32_t ri_power,
-											 struct tm * tm_gpstime,
-											 float const * const gps_loc);
-
-int dump_write_kismet_netxml(struct ap_list_head * const ap_list,
-                             struct sta_list_head * const sta_list,
-							 unsigned int f_encrypt,
-							 char * airodump_start_time);
+int dump_write_airodump_ng_logcsv_add_client(
+    const struct AP_info * ap_cur,
+    const struct ST_info * st_cur,
+    const int32_t ri_power,
+    struct tm * tm_gpstime,
+    float const * const gps_loc);
 
 #endif /* _AIRODUMP_NG_DUMP_WRITE_H_ */
