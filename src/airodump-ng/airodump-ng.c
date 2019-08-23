@@ -323,17 +323,17 @@ static void reset_sort_context(struct sort_context_st * const sort_context)
     sort_context->do_sort_always = 0;
 }
 
-static void resetSelection(void)
+static void reset_selections(struct local_options * const options)
 {
-	lopt.relative_time = 0;
-	lopt.p_selected_ap = NULL;
-	lopt.en_selection_direction = selection_direction_no;
-	lopt.mark_cur_ap = 0;
-	lopt.do_pause = 0;
+	options->relative_time = 0;
+    options->p_selected_ap = NULL;
+    options->en_selection_direction = selection_direction_no;
+    options->mark_cur_ap = 0;
+    options->do_pause = 0;
 
-    reset_sort_context(&lopt.sort);
+    reset_sort_context(&options->sort);
 
-    MAC_ADDRESS_CLEAR(&lopt.selected_bssid);
+    MAC_ADDRESS_CLEAR(&options->selected_bssid);
 }
 
 static void clear_ap_marking(struct ap_list_head * const ap_list)
@@ -790,7 +790,7 @@ static void handle_input_key(
 
     if (keycode == KEY_d)
     {
-        resetSelection();
+        reset_selections(options);
         snprintf(options->message,
                  sizeof(options->message),
                  "][ reset selection to default");
@@ -1383,9 +1383,11 @@ static struct NA_info * na_info_lookup(
 	return na_cur;
 }
 
-static void remove_namac(mac_address const * const mac)
+static void remove_namac(
+    struct na_list_head * const na_list, 
+    mac_address const * const mac)
 {
-	struct NA_info * const na_cur = na_info_lookup(&lopt.na_list, mac);
+	struct NA_info * const na_cur = na_info_lookup(na_list, mac);
 
 	if (na_cur == NULL)
 	{
@@ -1393,7 +1395,7 @@ static void remove_namac(mac_address const * const mac)
 	}
 
 	/* If it's known, remove it */
-	TAILQ_REMOVE(&lopt.na_list, na_cur, entry);
+	TAILQ_REMOVE(na_list, na_cur, entry);
 
 	na_info_free(na_cur);
 
@@ -1489,7 +1491,7 @@ static struct ST_info * st_info_new(mac_address const * const stmac)
 	st_cur->channel = 0;
 	st_cur->old_channel = 0;
 
-	gettimeofday(&(st_cur->ftimer), NULL);
+	gettimeofday(&st_cur->ftimer, NULL);
 
 	memcpy(st_cur->gps_loc_min, lopt.gps_context.gps_loc, sizeof(st_cur->gps_loc_min));
 	memcpy(st_cur->gps_loc_max, lopt.gps_context.gps_loc, sizeof(st_cur->gps_loc_max));
@@ -1878,7 +1880,7 @@ static void dump_add_packet(
 		TAILQ_INSERT_TAIL(&lopt.ap_list, ap_cur, entry);
 
 		/* If mac is listed as unknown, remove it */
-		remove_namac(&bssid);
+        remove_namac(&lopt.na_list, &bssid);
 	}
 
 	/* update the last time seen */
@@ -2019,7 +2021,7 @@ static void dump_add_packet(
 		TAILQ_INSERT_TAIL(&lopt.sta_list, st_cur, entry);
 
 		/* If mac is listed as unknown, remove it */
-		remove_namac(&stmac);
+        remove_namac(&lopt.na_list, &stmac);
 	}
 
     if (st_cur->base == NULL || !MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
@@ -6527,8 +6529,7 @@ int main(int argc, char * argv[])
 	TAILQ_INIT(&lopt.ap_list);
 	TAILQ_INIT(&lopt.sta_list);
 
-	// Default selection.
-	resetSelection();
+    reset_selections(&lopt);
 
 	memset(opt.sharedkey, '\x00', sizeof(opt.sharedkey));
     lopt.message[0] = '\0';
