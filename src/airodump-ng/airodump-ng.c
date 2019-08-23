@@ -1080,56 +1080,70 @@ static void update_rx_quality(void)
 	}
 }
 
-static void update_data_packets_per_second(void)
+static void update_ap_packets_per_second(
+    struct ap_list_head * const ap_list,
+    struct timeval const * const tv)
 {
-	struct timeval tv;
-	struct AP_info * ap_cur;
-	struct NA_info * na_cur;
-	int ps;
-	unsigned long diff;
-	float pause;
-	time_t sec;
-	suseconds_t usec;
+    struct AP_info * ap_cur;
+
+    TAILQ_FOREACH(ap_cur, ap_list, entry)
+    {
+        time_t const sec = tv->tv_sec - ap_cur->tv.tv_sec; 
+        suseconds_t const usec = tv->tv_usec - ap_cur->tv.tv_usec; 
+
+#if defined(__x86_64__) && defined(__CYGWIN__)
+        float const pause = (sec * (0.0f + 1000000.0f) + usec) / (0.0f + 1000000.0f);
+#else
+        float const pause = (sec * 1000000.0f + usec) / 1000000.0f;
+#endif
+        if (pause > 2.0f)
+        {
+            unsigned long const diff = ap_cur->nb_data - ap_cur->nb_data_old;
+            int const ps = (int)(((float)diff) / pause);
+
+            ap_cur->nb_dataps = ps;
+            ap_cur->nb_data_old = ap_cur->nb_data;
+            gettimeofday(&ap_cur->tv, NULL);
+        }
+    }
+}
+
+static void update_na_packets_per_second(
+    struct na_list_head * const na_list, 
+    struct timeval * const tv)
+{
+    struct NA_info * na_cur;
+
+    TAILQ_FOREACH(na_cur, na_list, entry)
+    {
+        time_t const sec = tv->tv_sec - na_cur->tv.tv_sec;
+        suseconds_t const usec = tv->tv_usec - na_cur->tv.tv_usec;
+
+#if defined(__x86_64__) && defined(__CYGWIN__)
+        float const pause = (sec * (0.0f + 1000000.0f) + usec) / (0.0f + 1000000.0f);
+#else
+        float const pause = (sec * 1000000.0f + usec) / 1000000.0f;
+#endif
+        if (pause > 2.0f)
+        {
+            unsigned long const diff = (unsigned long)(na_cur->ack - na_cur->ack_old);
+            int const ps = (int)(((float)diff) / pause);
+
+            na_cur->ackps = ps;
+            na_cur->ack_old = na_cur->ack;
+            gettimeofday(&(na_cur->tv), NULL);
+        }
+    }
+}
+
+static void update_data_packets_per_second(struct local_options * const options)
+{
+    struct timeval tv;
 
 	gettimeofday(&tv, NULL);
 
-	TAILQ_FOREACH_REVERSE(ap_cur, &lopt.ap_list, ap_list_head, entry)
-	{
-		sec = (tv.tv_sec - ap_cur->tv.tv_sec);
-		usec = (tv.tv_usec - ap_cur->tv.tv_usec);
-#if defined(__x86_64__) && defined(__CYGWIN__)
-		pause = (((sec * (0.0f + 1000000.0f) + usec)) / ((0.0f + 1000000.0f)));
-#else
-		pause = (sec * 1000000.0f + usec) / (1000000.0f);
-#endif
-		if (pause > 2.0f)
-		{
-			diff = ap_cur->nb_data - ap_cur->nb_data_old;
-			ps = (int) (((float) diff) / pause);
-			ap_cur->nb_dataps = ps;
-			ap_cur->nb_data_old = ap_cur->nb_data;
-			gettimeofday(&ap_cur->tv, NULL);
-		}
-	}
-
-	TAILQ_FOREACH(na_cur, &lopt.na_list, entry)
-	{
-		sec = (tv.tv_sec - na_cur->tv.tv_sec);
-		usec = (tv.tv_usec - na_cur->tv.tv_usec);
-#if defined(__x86_64__) && defined(__CYGWIN__)
-		pause = (((sec * (0.0f + 1000000.0f) + usec)) / ((0.0f + 1000000.0f)));
-#else
-		pause = (sec * 1000000.0f + usec) / (1000000.0f);
-#endif
-		if (pause > 2.0f)
-		{
-			diff = (unsigned long) (na_cur->ack - na_cur->ack_old);
-			ps = (int) (((float) diff) / pause);
-			na_cur->ackps = ps;
-			na_cur->ack_old = na_cur->ack;
-			gettimeofday(&(na_cur->tv), NULL);
-		}
-	}
+    update_ap_packets_per_second(&options->ap_list, &tv);
+    update_na_packets_per_second(&options->na_list, &tv); 
 }
 
 static void packet_buf_free(struct pkt_buf * const pkt_buf)
@@ -6295,7 +6309,7 @@ static void update_console_output(struct local_options * const options)
 
 static void do_refresh(struct local_options * const options)
 {
-    update_data_packets_per_second();
+    update_data_packets_per_second(options);
 
     if (options->interactive_mode > 0
         && (!options->was_paused || !options->do_pause))
