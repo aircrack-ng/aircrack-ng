@@ -608,14 +608,13 @@ static void input_thread_handle_input_key(int const key_code, int const update_f
 
 static void handle_input_key(
     int const keycode, 
-    struct timeval * const time_of_last_sort,
-    bool * const sort_required)
+    struct local_options * const options)
 {
     static size_t const seconds_between_sorts = 5;
 
-    if (periodic_sort_required(time_of_last_sort, seconds_between_sorts))
+    if (periodic_sort_required(&options->sort.time_of_last_sort, seconds_between_sorts))
     {
-        *sort_required = true;
+        options->sort.sort_required = true;
     }
 
     if (keycode == KEY_q)
@@ -624,184 +623,176 @@ static void handle_input_key(
         quitting++;
         if (quitting > 1)
         {
-            lopt.do_exit = 1;
+            options->do_exit = 1;
         }
         else
         {
             snprintf(
-                lopt.message,
-                sizeof(lopt.message),
+                options->message,
+                sizeof(options->message),
                 "][ Are you sure you want to quit? Press Q again to quit.");
         }
     }
 
     if (keycode == KEY_o)
     {
-        color_on(&lopt);
-        snprintf(lopt.message, sizeof(lopt.message), "][ color on");
+        color_on(options);
+        snprintf(options->message, sizeof(options->message), "][ color on");
     }
 
     if (keycode == KEY_p)
     {
-        color_off(&lopt);
-        snprintf(lopt.message, sizeof(lopt.message), "][ color off");
+        color_off(options);
+        snprintf(options->message, sizeof(options->message), "][ color off");
     }
 
     if (keycode == KEY_s)
     {
-        lopt.sort.sort_context.sort_method = 
-            ap_sort_method_assign_next(lopt.sort.sort_context.sort_method);
-        snprintf(lopt.message,
-                 sizeof(lopt.message),
+        options->sort.sort_context.sort_method =
+            ap_sort_method_assign_next(options->sort.sort_context.sort_method);
+        snprintf(options->message,
+                 sizeof(options->message),
                  "][ sorting by %s", 
-                 ap_sort_method_description(lopt.sort.sort_context.sort_method));
-        *sort_required = true;
+                 ap_sort_method_description(options->sort.sort_context.sort_method));
+        options->sort.sort_required = true;
     }
 
     if (keycode == KEY_SPACE)
     {
-        lopt.do_pause = !lopt.do_pause;
-        if (lopt.do_pause)
-        {
-            snprintf(
-                lopt.message, sizeof(lopt.message), "][ paused output");
-        }
-        else
-        {
-            snprintf(
-                lopt.message, sizeof(lopt.message), "][ resumed output");
-        }
+        options->do_pause = !options->do_pause;
+        char const * const message = options->do_pause ? "paused" : "resumed";
+
+        snprintf(options->message, 
+                 sizeof(options->message), 
+                 "][ %s output", 
+                 message);
     }
 
     if (keycode == KEY_r)
     {
-        lopt.sort.do_sort_always = !lopt.sort.do_sort_always;
+        options->sort.do_sort_always = !options->sort.do_sort_always;
+        char const * const message = 
+            options->sort.do_sort_always ? "activated" : "deactivated";
 
-        if (lopt.sort.do_sort_always)
-        {
-            snprintf(lopt.message,
-                     sizeof(lopt.message),
-                     "][ realtime sorting activated");
-        }
-        else
-        {
-            snprintf(lopt.message,
-                     sizeof(lopt.message),
-                     "][ realtime sorting deactivated");
-        }
+        snprintf(options->message,
+                 sizeof(options->message),
+                 "][ realtime sorting %s", message);
     }
 
     if (keycode == KEY_m)
     {
-        lopt.mark_cur_ap = 1;
+        options->mark_cur_ap = 1;
     }
 
     if (keycode == KEY_ARROW_DOWN)
     {
-        if (lopt.p_selected_ap != NULL
-            && TAILQ_PREV(lopt.p_selected_ap, ap_list_head, entry) != NULL)
+        if (options->p_selected_ap != NULL
+            && TAILQ_PREV(options->p_selected_ap, ap_list_head, entry) != NULL)
         {
-            lopt.p_selected_ap =
-                TAILQ_PREV(lopt.p_selected_ap, ap_list_head, entry);
-            lopt.en_selection_direction = selection_direction_down;
+            options->p_selected_ap =
+                TAILQ_PREV(options->p_selected_ap, ap_list_head, entry);
+            options->en_selection_direction = selection_direction_down;
         }
     }
 
     if (keycode == KEY_ARROW_UP)
     {
-        if (lopt.p_selected_ap != NULL
-            && TAILQ_NEXT(lopt.p_selected_ap, entry) != NULL)
+        if (options->p_selected_ap != NULL
+            && TAILQ_NEXT(options->p_selected_ap, entry) != NULL)
         {
-            lopt.p_selected_ap =
-                TAILQ_NEXT(lopt.p_selected_ap, entry);
-            lopt.en_selection_direction = selection_direction_up;
+            options->p_selected_ap =
+                TAILQ_NEXT(options->p_selected_ap, entry);
+            options->en_selection_direction = selection_direction_up;
         }
     }
 
     if (keycode == KEY_i)
     {
-        lopt.sort.sort_context.sort_direction *= -1;
-        if (lopt.sort.sort_context.sort_direction < 0)
-        {
-            snprintf(lopt.message,
-                     sizeof(lopt.message),
-                     "][ inverted sorting order");
-        }
-        else
-        {
-            snprintf(lopt.message,
-                     sizeof(lopt.message),
-                     "][ normal sorting order");
-        }
-        *sort_required = true;
+        options->sort.sort_context.sort_direction *= -1;
+        char const * const message = 
+            (options->sort.sort_context.sort_direction < 0) 
+            ? "inverted" 
+            : "normal";
+
+        snprintf(options->message,
+                 sizeof(options->message),
+                 "][ %s sorting order", message);
+
+        options->sort.sort_required = true;
     }
 
     if (keycode == KEY_TAB)
     {
-        if (lopt.p_selected_ap == NULL)
+        char const * message;
+        if (options->p_selected_ap == NULL)
         {
-            lopt.en_selection_direction = selection_direction_down;
-            lopt.p_selected_ap = TAILQ_LAST(&lopt.ap_list, ap_list_head);
-            snprintf(lopt.message,
-                     sizeof(lopt.message),
-                     "][ enabled AP selection");
+            options->en_selection_direction = selection_direction_down;
+            options->p_selected_ap = TAILQ_LAST(&options->ap_list, ap_list_head);
+            message = "enabled";
         }
         else
         {
-            lopt.en_selection_direction = selection_direction_no;
-            lopt.p_selected_ap = NULL;
-            snprintf(lopt.message,
-                     sizeof(lopt.message),
-                     "][ disabled selection");
+            options->en_selection_direction = selection_direction_no;
+            options->p_selected_ap = NULL;
+            message = "disabled";
         }
-        lopt.sort.sort_context.sort_method = ap_sort_method_assign(SORT_BY_NOTHING);
+        snprintf(options->message,
+                 sizeof(options->message),
+                 "][ %s AP selection", message); 
+
+        options->sort.sort_context.sort_method = ap_sort_method_assign(SORT_BY_NOTHING);
     }
 
     if (keycode == KEY_a)
     {
-        if (lopt.show_ap == 1 && lopt.show_sta == 1 && lopt.show_ack == 0)
+        if (options->show_ap == 1 
+            && options->show_sta == 1 
+            && options->show_ack == 0)
         {
-            lopt.show_ap = 1;
-            lopt.show_sta = 1;
-            lopt.show_ack = 1;
-            snprintf(lopt.message,
-                     sizeof(lopt.message),
+            options->show_ap = 1;
+            options->show_sta = 1;
+            options->show_ack = 1;
+            snprintf(options->message,
+                     sizeof(options->message),
                      "][ display ap+sta+ack");
         }
-        else if (lopt.show_ap == 1 && lopt.show_sta == 1
-                 && lopt.show_ack == 1)
+        else if (options->show_ap == 1 
+                 && options->show_sta == 1
+                 && options->show_ack == 1)
         {
-            lopt.show_ap = 1;
-            lopt.show_sta = 0;
-            lopt.show_ack = 0;
+            options->show_ap = 1;
+            options->show_sta = 0;
+            options->show_ack = 0;
             snprintf(
-                lopt.message, sizeof(lopt.message), "][ display ap only");
+                options->message, sizeof(options->message), "][ display ap only");
         }
-        else if (lopt.show_ap == 1 && lopt.show_sta == 0
-                 && lopt.show_ack == 0)
+        else if (options->show_ap == 1 
+                 && options->show_sta == 0
+                 && options->show_ack == 0)
         {
-            lopt.show_ap = 0;
-            lopt.show_sta = 1;
-            lopt.show_ack = 0;
+            options->show_ap = 0;
+            options->show_sta = 1;
+            options->show_ack = 0;
             snprintf(
-                lopt.message, sizeof(lopt.message), "][ display sta only");
+                options->message, sizeof(options->message), "][ display sta only");
         }
-        else if (lopt.show_ap == 0 && lopt.show_sta == 1
-                 && lopt.show_ack == 0)
+        else if (options->show_ap == 0 
+                 && options->show_sta == 1
+                 && options->show_ack == 0)
         {
-            lopt.show_ap = 1;
-            lopt.show_sta = 1;
-            lopt.show_ack = 0;
+            options->show_ap = 1;
+            options->show_sta = 1;
+            options->show_ack = 0;
             snprintf(
-                lopt.message, sizeof(lopt.message), "][ display ap+sta");
+                options->message, sizeof(options->message), "][ display ap+sta");
         }
     }
 
     if (keycode == KEY_d)
     {
         resetSelection();
-        snprintf(lopt.message,
-                 sizeof(lopt.message),
+        snprintf(options->message,
+                 sizeof(options->message),
                  "][ reset selection to default");
     }
 }
@@ -5829,7 +5820,7 @@ static void check_for_user_input(struct local_options * const options)
                      &keycode,
                      sizeof keycode))
     {
-        handle_input_key(keycode, &options->sort.time_of_last_sort, &options->sort.sort_required);
+        handle_input_key(keycode, options);
     }
 }
 
