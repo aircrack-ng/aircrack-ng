@@ -47,7 +47,7 @@ enum
 {
     invalid_channel = -1,
     invalid_frequency = -1,
-    channel_list_sentinel = 0,
+    channel_sentinel = 0,
     frequency_sentinel = 0
 }; 
 
@@ -63,7 +63,6 @@ typedef enum channel_switching_method_t
 
 #define REFRESH_RATE 100000 /* default delay in us between updates */
 #define DEFAULT_HOPFREQ 250 /* default delay in ms between channel hopping */
-#define DEFAULT_CWIDTH 20 /* 20 MHz channels by default */
 
 #define NB_PRB 10 /* size of probed ESSID ring buffer */
 

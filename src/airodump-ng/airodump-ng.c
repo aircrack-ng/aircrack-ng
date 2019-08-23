@@ -100,23 +100,29 @@
 #include "ap_compare.h"
 #include "channel_hopper.h"
 
+#define DEFAULT_CHANNEL_WIDTH_MHZ 20
+
 /* Possibly only required so that this will link. Referenced
  * in communications.c.
  */
 struct devices dev;
 
+/* Note that these channel arrays can't be made const because 
+ * the channel hopper process may modify the list. 
+ * :( 
+ */
 static int abg_chans[] =
 {
     1,   7,   13,  2,   8,   3,   14,  9,   4,   10,  5,   11,  6,
 	12,  36,  38,  40,  42,  44,  46,  48,  50,  52,  54,  56,  58,
 	60,  62,  64,  100, 102, 104, 106, 108, 110, 112, 114, 116, 118,
 	120, 122, 124, 126, 128, 132, 134, 136, 138, 140, 142, 144, 149,
-    151, 153, 155, 157, 159, 161, 165, 169, 173, channel_list_sentinel
+    151, 153, 155, 157, 159, 161, 165, 169, 173, channel_sentinel
 };
 
 static int bg_chans[] =
 {
-    1, 7, 13, 2, 8, 3, 14, 9, 4, 10, 5, 11, 6, 12, channel_list_sentinel
+    1, 7, 13, 2, 8, 3, 14, 9, 4, 10, 5, 11, 6, 12, channel_sentinel
 };
 
 static int a_chans[] =
@@ -124,7 +130,7 @@ static int a_chans[] =
     36,  38,  40,  42,  44,  46,  48,  50,  52,  54,  56,  58,
 	60,  62,  64,  100, 102, 104, 106, 108, 110, 112, 114, 116,
 	118, 120, 122, 124, 126, 128, 132, 134, 136, 138, 140, 142,
-    144, 149, 151, 153, 155, 157, 159, 161, 165, 169, 173, channel_list_sentinel
+    144, 149, 151, 153, 155, 157, 159, 161, 165, 169, 173, channel_sentinel
 };
 
 struct detected_frequencies_st
@@ -1158,6 +1164,10 @@ static void ap_purge_old_packets(
 	struct pkt_buf * temp;
 	bool found_old_packet = false;
 
+    /* New packets are always added to the head of the list, so 
+     * once the first packet that is too old is found, there is no 
+     * need to check the age of the others. 
+     */
 	TAILQ_FOREACH_SAFE(pkt_buf, &ap_cur->pkt_list, entry, temp)
 	{
 		if (!found_old_packet)
@@ -1166,8 +1176,9 @@ static void ap_purge_old_packets(
 			(((current_time->tv_sec - (pkt_buf->ctime.tv_sec)) * 1000000UL)
 				 + (current_time->tv_usec - (pkt_buf->ctime.tv_usec)))
 				/ 1000;
+            bool const too_old = time_diff > age_limit_millisecs;
 
-			if (time_diff > age_limit_millisecs)
+			if (too_old)
 			{
 				found_old_packet = true;
 			}
@@ -1695,15 +1706,15 @@ static void purge_old_nas(
 
 static void purge_old_nodes(
     struct local_options * const options,
-    size_t const max_age)
+    size_t const max_age_seconds)
 {
-	if (max_age == 0) /* No limit. */
+    if (max_age_seconds == 0) /* No limit. */
 	{
 		goto done;
 	}
 
 	time_t const current_time = time(NULL);
-	time_t const age_limit = current_time - max_age;
+    time_t const age_limit = current_time - max_age_seconds;
 
 	purge_old_nas(&options->na_list, age_limit);
 	purge_old_stas(&options->sta_list, age_limit);
@@ -4709,7 +4720,7 @@ size_t get_channel_count(
 	size_t total_channel_count = 0;
     size_t valid_channel_count = 0;
 
-	while (channels[total_channel_count] != 0)
+    while (channels[total_channel_count] != channel_sentinel)
 	{
 		total_channel_count++;
         if (channels[total_channel_count] != invalid_channel)
@@ -4733,7 +4744,7 @@ size_t get_frequency_count(
     size_t total_frequency_count = 0;
     size_t valid_frequency_count = 0;
 
-    while (frequencies[total_frequency_count] != 0)
+    while (frequencies[total_frequency_count] != frequency_sentinel)
 	{
         total_frequency_count++;
         if (frequencies[total_frequency_count] != invalid_frequency)
@@ -4757,12 +4768,13 @@ static bool is_invalid_channel(int const channel)
 
 	do
 	{
-        if (channel == abg_chans[i] && channel != channel_list_sentinel)
+        if (channel == abg_chans[i] && channel != channel_sentinel)
         {
             is_invalid = false;
             goto done;
         }
-	} while (abg_chans[++i]);
+    }
+    while (abg_chans[++i] != channel_sentinel);
 
     is_invalid = true;
 
@@ -4910,7 +4922,7 @@ static int getchannels(const char * optarg)
         lopt.own_channels[i] = tmp_channels[i];
     }
 
-    lopt.own_channels[num_channels] = channel_list_sentinel;
+    lopt.own_channels[num_channels] = channel_sentinel;
 
 	free(tmp_channels);
 	free(optc);
@@ -5516,28 +5528,40 @@ static void detect_frequencies(
     printf("Done. Found %zu frequencies\n", detected_frequencies->count);
 }
 
-static int array_contains(const int * array, int length, int value)
+static bool array_contains(
+    int const * const array, 
+    size_t const length, 
+    int const value)
 {
+    bool found;
 	REQUIRE(array != NULL);
-	REQUIRE(length >= 0 && length < INT_MAX);
 
-	int i;
-	for (i = 0; i < length; i++)
-		if (array[i] == value) return (1);
+    for (size_t i = 0; i < length; i++)
+    {
+        if (array[i] == value)
+        {
+            found = true;
+            goto done;
+        }
+    }
 
-	return (0);
+    found = false;
+
+done:
+    return found;
 }
 
-static int rearrange_frequencies(void)
+static void rearrange_frequencies(int * const own_frequencies)
 {
 	int * freqs;
-	int left, pos;
-	int width, last_used = 0;
-	int cur_freq, round_done;
+    int left; 
+    int pos;
+	int last_used = 0;
+    int cur_freq; 
+    int round_done;
+    static int const width = DEFAULT_CHANNEL_WIDTH_MHZ;
 
-	width = DEFAULT_CWIDTH;
-
-    size_t const count = get_frequency_count(lopt.own_frequencies, false);
+    size_t const count = get_frequency_count(own_frequencies, false);
 	left = count;
 	pos = 0;
 
@@ -5547,21 +5571,21 @@ static int rearrange_frequencies(void)
 
 	while (left > 0)
 	{
-		cur_freq = lopt.own_frequencies[pos % count];
+		cur_freq = own_frequencies[pos % count];
 
         if (cur_freq == last_used)
         {
             round_done = 1;
         }
 
-		if (((count - left) > 0) && !round_done
-			&& (ABS(last_used - cur_freq) < width))
+		if ((count - left) > 0 
+            && !round_done
+			&& ABS(last_used - cur_freq) < width)
 		{
-			pos++;
-			continue;
+            /* Do nothing. */
+            /* FIXME: fix that conditional to be opposite in sense. */
 		}
-
-		if (!array_contains(freqs, count, cur_freq))
+        else if (!array_contains(freqs, count, cur_freq))
 		{
 			freqs[count - left] = cur_freq;
 			last_used = cur_freq;
@@ -5572,10 +5596,8 @@ static int rearrange_frequencies(void)
 		pos++;
 	}
 
-	memcpy(lopt.own_frequencies, freqs, count * sizeof(int));
+	memcpy(own_frequencies, freqs, count * sizeof *own_frequencies);
 	free(freqs);
-
-	return (0);
 }
 
 static void drop_privileges(void)
@@ -6307,7 +6329,6 @@ int main(int argc, char * argv[])
 	long cycle_time;
 	char * output_format_string;
     int i;
-    size_t freq_count;
 
 	struct wif * wi[MAX_CARDS];
 
@@ -6498,7 +6519,7 @@ int main(int argc, char * argv[])
 
     for (i = 0; i < MAX_CARDS; i++)
 	{
-        lopt.channel[i] = channel_list_sentinel;
+        lopt.channel[i] = channel_sentinel;
         lopt.frequency[i] = frequency_sentinel;
         lopt.wi_consecutive_failed_reads[i] = 0;
 	}
@@ -7234,13 +7255,14 @@ int main(int argc, char * argv[])
 				goto done;
 			}
 
-			rearrange_frequencies();
-
-            freq_count = get_frequency_count(lopt.own_frequencies, false);
+            rearrange_frequencies(lopt.own_frequencies);
 
             if (lopt.frequency[0] == frequency_sentinel)
 			{
                 /* Start a child process to hop between frequencies. */
+                size_t const freq_count = 
+                    get_frequency_count(lopt.own_frequencies, false);
+
                 start_frequency_hopper_process(&lopt, wi, freq_count);
 			}
 			else
@@ -7256,7 +7278,7 @@ int main(int argc, char * argv[])
 		else // use channels
 		{
 			/* find the interface index */
-            if (lopt.channel[0] == channel_list_sentinel)
+            if (lopt.channel[0] == channel_sentinel)
 			{
                 /* Start a child process to hop between channels. */
                 size_t const chan_count = get_channel_count(lopt.channels, false);
