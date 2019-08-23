@@ -10,16 +10,13 @@
 
 #define MIN_RAM_SIZE_LOAD_OUI_RAM 32768
 
-#define OUI_STR_SIZE sizeof "00:00:00"
+#define OUI_ID_SIZE 3
 
-/* oui struct for list management */
 struct oui
 {
     TAILQ_ENTRY(oui) entry;
 
-    char id[OUI_STR_SIZE]; /* TODO: Don't use ASCII chars to compare, use unsigned char[3]
-                             (later) with the value (hex ascii will have to be converted)
-                            */
+    uint8_t id[OUI_ID_SIZE];
     char * manufacturer;
 };
 
@@ -157,6 +154,25 @@ done:
     return manuf;
 }
 
+static void oui_initialise(
+    struct oui * const oui, 
+    char * const manufacturer, 
+    uint8_t const a, 
+    uint8_t const b, 
+    uint8_t const c)
+{
+    oui->manufacturer = manufacturer;
+
+    if (oui->manufacturer == NULL)
+    {
+        oui->manufacturer = strdup(unknown_manufacturer);
+    }
+
+    oui->id[0] = a;
+    oui->id[1] = b;
+    oui->id[3] = c;
+}
+
 oui_context_st * load_oui_file(void)
 {
     oui_context_st * context = calloc(1, sizeof *context);
@@ -188,44 +204,35 @@ oui_context_st * load_oui_file(void)
 
     while (fgets(buffer, sizeof(buffer), fp) != NULL)
     {
-        unsigned char a[2] = { 0 };
-        unsigned char b[2] = { 0 };
-        unsigned char c[2] = { 0 };
+        unsigned int a;
+        unsigned int b;
+        unsigned int c; 
 
         if (strstr(buffer, "(hex)") == NULL)
         {
             continue;
         }
 
-        // Remove leading/trailing whitespaces.
-        trim(buffer);
-        if (sscanf(buffer, "%2c-%2c-%2c", (char *)a, (char *)b, (char *)c)
-            == 3)
+        if (sscanf(buffer, "%2x-%2x-%2x", &a, &b, &c) == 3)
         {
-            struct oui * const oui_ptr = calloc(1, sizeof *oui_ptr);
+            struct oui * const oui = calloc(1, sizeof *oui);
 
-            if (oui_ptr == NULL)
+            if (oui == NULL)
             {
                 oui_list_free(&context->list_head);
                 context->have_loaded_list = false;
                 perror("oui_alloc failed");
+
                 goto done;
             }
 
-            snprintf(oui_ptr->id,
-                     sizeof(oui_ptr->id),
-                     "%c%c:%c%c:%c%c",
-                     a[0], a[1], b[0], b[1], c[0], c[1]);
+            oui_initialise(oui, 
+                           get_manufacturer_from_string(buffer), 
+                           a, 
+                           b, 
+                           c);
 
-            oui_ptr->manufacturer =
-                get_manufacturer_from_string(buffer);
-
-            if (oui_ptr->manufacturer == NULL)
-            {
-                oui_ptr->manufacturer = strdup(unknown_manufacturer);
-            }
-
-            TAILQ_INSERT_TAIL(&context->list_head, oui_ptr, entry);
+            TAILQ_INSERT_TAIL(&context->list_head, oui, entry);
         }
     }
 
@@ -254,13 +261,17 @@ done:
 
 static struct oui * oui_lookup(
     struct oui_list_head * const list, 
-    char const * const oui_id)
+    uint8_t const * const id)
 {
-    struct oui * ptr;
+    struct oui * oui;
 
-    TAILQ_FOREACH(ptr, list, entry)
+    /* A hash table might be better than a linked list in this 
+     * case. This list could get quite long, so a hash table 
+     * could speed lookups quite a bit. 
+     */
+    TAILQ_FOREACH(oui, list, entry)
     {
-        bool const found = strcasecmp(ptr->id, oui_id) == 0;
+        bool const found = memcmp(oui->id, id, sizeof oui->id) == 0;
 
         if (found)
         {
@@ -269,31 +280,25 @@ static struct oui * oui_lookup(
     }
 
 done:
-    return ptr;
+    return oui;
 }
 
 char *
 get_manufacturer_by_oui(
     oui_context_st * const context,
-    unsigned char const mac0,
-    unsigned char const mac1,
-    unsigned char const mac2)
+    uint8_t const * const mac)
 {
-    char oui[OUI_STR_SIZE];
     char * manuf;
     FILE * fp = NULL;
-
-    snprintf(oui, sizeof oui, "%02X:%02X:%02X", mac0, mac1, mac2);
 
     if (context != NULL && context->have_loaded_list)
     {
         // Search in the list
-        struct oui const * const ptr = oui_lookup(&context->list_head, oui);
+        struct oui const * const ptr = oui_lookup(&context->list_head, mac);
 
         if (ptr != NULL)
         {
             manuf = strdup(ptr->manufacturer);
-            ALLEGE(manuf != NULL);
         }
         else
         {
@@ -311,8 +316,10 @@ get_manufacturer_by_oui(
         if (fp == NULL)
         {
             manuf = NULL;
+
             goto done;
         }
+
         char buffer[BUFSIZ];
 
         while (fgets(buffer, sizeof(buffer), fp) != NULL)
@@ -320,40 +327,24 @@ get_manufacturer_by_oui(
             /* TODO: Remove this duplicated code. 
              * The same code is in load_oui_file(). 
              */
-            unsigned char a[2] = { 0 };
-            unsigned char b[2] = { 0 };
-            unsigned char c[2] = { 0 };
 
             if (strstr(buffer, "(hex)") == NULL)
             {
                 continue;
             }
 
-            if (sscanf(buffer,
-                       "%2c-%2c-%2c",
-                       (char *)a,
-                       (char *)b,
-                       (char *)c)
-                == 3)
+            unsigned int a;
+            unsigned int b;
+            unsigned int c;
+
+            if (sscanf(buffer, "%2x-%2x-%2x", &a, &b, &c) == 3)
             {
-                char temp[OUI_STR_SIZE];
-
-                snprintf(temp,
-                         sizeof(temp),
-                         "%c%c:%c%c:%c%c",
-                         a[0],
-                         a[1],
-                         b[0],
-                         b[1],
-                         c[0],
-                         c[1]);
-
-                bool const found = strcasecmp(temp, oui) == 0;
+                uint8_t const id[OUI_ID_SIZE] = {a, b, c};
+                bool const found = memcmp(id, mac, sizeof id) == 0;
 
                 if (found)
                 {
                     manuf = get_manufacturer_from_string(buffer);
-                    ALLEGE(manuf != NULL);
 
                     goto done;
                 }

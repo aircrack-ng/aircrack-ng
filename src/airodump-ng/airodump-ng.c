@@ -1424,9 +1424,7 @@ static struct ST_info * st_info_new(mac_address const * const stmac)
     st_cur->manuf =
         get_manufacturer_by_oui(
             lopt.manufacturer_list,
-            st_cur->stmac.addr[0],
-            st_cur->stmac.addr[1],
-            st_cur->stmac.addr[2]);
+            st_cur->stmac.addr);
 
 	st_cur->nb_pkt = 0;
 
@@ -1542,9 +1540,7 @@ static struct AP_info * ap_info_new(mac_address const * const bssid)
     ap_cur->manuf =
         get_manufacturer_by_oui(
             lopt.manufacturer_list,
-            ap_cur->bssid.addr[0],
-            ap_cur->bssid.addr[1],
-            ap_cur->bssid.addr[2]);
+            ap_cur->bssid.addr);
 
 	ap_cur->nb_pkt = 0;
 
@@ -4171,9 +4167,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 						ap_cur->manuf =
                             get_manufacturer_by_oui(
                                 lopt.manufacturer_list,
-                                ap_cur->bssid.addr[0],
-                                ap_cur->bssid.addr[1],
-                                ap_cur->bssid.addr[2]);
+                                ap_cur->bssid.addr);
                     }
 
 					snprintf(strbuf + len,
