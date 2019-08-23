@@ -26,6 +26,12 @@ typedef enum ap_sort_type_t
 
 typedef struct ap_sort_info_st ap_sort_info_st;
 
+struct ap_sort_context_st
+{
+    int sort_direction;
+    ap_sort_info_st const * sort_method;
+};
+
 ap_sort_info_st const * ap_sort_method_assign(ap_sort_type_t const sort_method);
 
 ap_sort_info_st const * ap_sort_method_assign_next(ap_sort_info_st const * current);
@@ -33,10 +39,9 @@ ap_sort_info_st const * ap_sort_method_assign_next(ap_sort_info_st const * curre
 char const * ap_sort_method_description(ap_sort_info_st const * const sort_info);
 
 int ap_sort_compare(
-    ap_sort_info_st const * const sort_info,
+    struct ap_sort_context_st const * const context,
     struct AP_info const * const a,
-    struct AP_info const * const b,
-    int const sort_direction); 
+    struct AP_info const * const b); 
 
 #endif /*  __AP_COMPARE_H__ */
 

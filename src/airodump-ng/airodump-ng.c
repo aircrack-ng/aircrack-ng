@@ -149,6 +149,14 @@ static void dump_print(int ws_row, int ws_col, int if_num);
 /* bunch of global stuff */
 struct communication_options opt;
 
+struct sort_context_st
+{
+    int do_sort_always;
+    bool sort_required;
+    struct timeval time_of_last_sort;
+    struct ap_sort_context_st sort_context;
+};
+
 TAILQ_HEAD(na_list_head, NA_info);
 
 static struct local_options
@@ -259,11 +267,7 @@ static struct local_options
 	/* Airodump-ng start time: for kismet netxml file */
 	char * airodump_start_time;
 
-	int sort_inv;
-	ap_sort_info_st const * sort_method;
-
-	int start_print_ap;
-	int start_print_sta;
+    struct sort_context_st sort;
 
 	enum
 	{
@@ -275,9 +279,6 @@ static struct local_options
 	int mark_cur_ap;
 	int do_pause;
     int was_paused;
-    int do_sort_always;
-    bool sort_required;
-    struct timeval time_of_last_sort; 
 
 	mac_address selected_bssid; /* bssid that is selected */
 
@@ -315,19 +316,23 @@ static struct local_options
 
 } lopt;
 
+static void reset_sort_context(struct sort_context_st * const sort_context)
+{
+    sort_context->sort_context.sort_method = ap_sort_method_assign(SORT_BY_POWER);
+    sort_context->sort_context.sort_direction = 1;
+    sort_context->do_sort_always = 0;
+}
+
 static void resetSelection(void)
 {
-	lopt.sort_method = ap_sort_method_assign(SORT_BY_POWER);
-	lopt.sort_inv = 1;
-
 	lopt.relative_time = 0;
-	lopt.start_print_ap = 1;
-	lopt.start_print_sta = 1;
 	lopt.p_selected_ap = NULL;
 	lopt.en_selection_direction = selection_direction_no;
 	lopt.mark_cur_ap = 0;
 	lopt.do_pause = 0;
-	lopt.do_sort_always = 0;
+
+    reset_sort_context(&lopt.sort);
+
     MAC_ADDRESS_CLEAR(&lopt.selected_bssid);
 }
 
@@ -423,8 +428,7 @@ static void color_on(struct local_options * const options)
 
 static void sort_aps(
     struct ap_list_head * const ap_list,
-	ap_sort_info_st const * const sort_info,
-    int const sort_invert)
+    struct sort_context_st * const sort_context)
 {
 	time_t const tt = time(NULL);
 	struct ap_list_head sorted_list = TAILQ_HEAD_INITIALIZER(sorted_list);
@@ -469,7 +473,7 @@ static void sort_aps(
 					continue;
 				}
 
-                if (ap_sort_compare(sort_info, ap_cur, ap_min, sort_invert) >= 0)
+                if (ap_sort_compare(&sort_context->sort_context, ap_cur, ap_min) >= 0)
 				{
 					ap_min = ap_cur;
 				}
@@ -546,9 +550,11 @@ static void sort_stas(struct sta_list_head * const sta_list)
 	TAILQ_CONCAT(sta_list, &sorted_list, entry);
 }
 
-static void dump_sort(struct local_options * const options)
+static void dump_sort(
+    struct local_options * const options,
+    struct sort_context_st * const sort_context)
 {
-    sort_aps(&options->ap_list, options->sort_method, options->sort_inv);
+    sort_aps(&options->ap_list, sort_context);
     sort_stas(&options->sta_list);
 }
 
@@ -643,10 +649,12 @@ static void handle_input_key(
 
     if (keycode == KEY_s)
     {
-        lopt.sort_method = ap_sort_method_assign_next(lopt.sort_method);
+        lopt.sort.sort_context.sort_method = 
+            ap_sort_method_assign_next(lopt.sort.sort_context.sort_method);
         snprintf(lopt.message,
                  sizeof(lopt.message),
-                 "][ sorting by %s", ap_sort_method_description(lopt.sort_method));
+                 "][ sorting by %s", 
+                 ap_sort_method_description(lopt.sort.sort_context.sort_method));
         *sort_required = true;
     }
 
@@ -667,9 +675,9 @@ static void handle_input_key(
 
     if (keycode == KEY_r)
     {
-        lopt.do_sort_always = !lopt.do_sort_always;
+        lopt.sort.do_sort_always = !lopt.sort.do_sort_always;
 
-        if (lopt.do_sort_always)
+        if (lopt.sort.do_sort_always)
         {
             snprintf(lopt.message,
                      sizeof(lopt.message),
@@ -712,8 +720,8 @@ static void handle_input_key(
 
     if (keycode == KEY_i)
     {
-        lopt.sort_inv *= -1;
-        if (lopt.sort_inv < 0)
+        lopt.sort.sort_context.sort_direction *= -1;
+        if (lopt.sort.sort_context.sort_direction < 0)
         {
             snprintf(lopt.message,
                      sizeof(lopt.message),
@@ -746,7 +754,7 @@ static void handle_input_key(
                      sizeof(lopt.message),
                      "][ disabled selection");
         }
-        lopt.sort_method = ap_sort_method_assign(SORT_BY_NOTHING);
+        lopt.sort.sort_context.sort_method = ap_sort_method_assign(SORT_BY_NOTHING);
     }
 
     if (keycode == KEY_a)
@@ -3859,14 +3867,6 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 			num_ap++;
 
-            /* FIXME - start_print_ap is always 1, so all APs are always
-             * printed. Is that what is desired?
-             */
-			if (num_ap < lopt.start_print_ap)
-			{
-				continue;
-			}
-
 			nlines++;
 
 			if (nlines > (ws_row - 1))
@@ -4290,14 +4290,6 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				}
 
 				num_sta++;
-
-                /* FIXME - start_print_sta is always 1, so only one STA is ever
-                 * printed. Is that what is desired?
-                 */
-				if (lopt.start_print_sta > num_sta)
-				{
-					continue;
-				}
 
 				nlines++;
 
@@ -5837,7 +5829,7 @@ static void check_for_user_input(struct local_options * const options)
                      &keycode,
                      sizeof keycode))
     {
-        handle_input_key(keycode, &options->time_of_last_sort, &options->sort_required);
+        handle_input_key(keycode, &options->sort.time_of_last_sort, &options->sort.sort_required);
     }
 }
 
@@ -6310,11 +6302,14 @@ done:
 
 static void update_console_output(struct local_options * const options)
 {
-    if (options->sort_required || options->do_sort_always)
+    struct sort_context_st * const sort_context = &options->sort;
+
+    if (sort_context->sort_required || sort_context->do_sort_always)
     {
-        dump_sort(options);
-        gettimeofday(&options->time_of_last_sort, NULL);
-        options->sort_required = false;
+        dump_sort(options, sort_context);
+
+        gettimeofday(&sort_context->time_of_last_sort, NULL);
+        sort_context->sort_required = false;
     }
 
     dump_print(options->window_size.ws_row, 
@@ -7422,8 +7417,8 @@ int main(int argc, char * argv[])
     if (lopt.interactive_mode > 0)
     {
         prepare_terminal();
-        gettimeofday(&lopt.time_of_last_sort, NULL);
-        lopt.sort_required = true;
+        gettimeofday(&lopt.sort.time_of_last_sort, NULL);
+        lopt.sort.sort_required = true;
 
         int const pipe_result = pipe(lopt.input_thread_pipe);
         IGNORE_NZ(pipe_result);

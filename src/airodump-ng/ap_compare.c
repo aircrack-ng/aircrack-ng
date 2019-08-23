@@ -259,13 +259,10 @@ char const * ap_sort_method_description(ap_sort_info_st const * const sort_info)
 }
 
 int ap_sort_compare(
-    ap_sort_info_st const * const sort_info,
+    struct ap_sort_context_st const * const context,
     struct AP_info const * const a,
-    struct AP_info const * const b,
-    int const sort_direction)
+    struct AP_info const * const b)
 {
-    return sort_info->ap_compare(a, b, sort_direction);
+    return context->sort_method->ap_compare(a, b, context->sort_direction);
 }
-
-
 
