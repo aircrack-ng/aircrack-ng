@@ -248,8 +248,8 @@ static struct local_options
 
 	char * s_iface; /* source interface to read from */
 	pcap_reader_context_st * pcap_reader_context;
-	struct pcap_file_header pfh_in;
-	int detect_anomaly; /* Detect WIPS protecting WEP in action */
+
+    int detect_anomaly; /* Detect WIPS protecting WEP in action */
 
 	char * freqstring;
 	int freqoption;
@@ -6546,12 +6546,10 @@ int main(int argc, char * argv[])
 
 	memset(opt.sharedkey, '\x00', sizeof(opt.sharedkey));
     lopt.message[0] = '\0';
-    memset(&lopt.pfh_in, '\x00', sizeof(lopt.pfh_in));
 
 	gettimeofday(&tv0, NULL);
 
 	lt = localtime(&tv0.tv_sec);
-
 
     for (i = 0; i < MAX_CARDS; i++)
 	{
