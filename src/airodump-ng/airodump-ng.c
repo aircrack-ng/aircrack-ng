@@ -196,7 +196,7 @@ static struct local_options
 	int update_interval_seconds;
 
 	volatile int do_exit; /* interrupt flag       */
-	struct winsize ws; /* console window size  */
+	struct winsize window_size; /* console window size  */
 
 	char * elapsed_time; /* capture time			*/
 
@@ -273,7 +273,10 @@ static struct local_options
 
 	int mark_cur_ap;
 	int do_pause;
-	int do_sort_always;
+    int was_paused;
+    int do_sort_always;
+    bool sort_required;
+    struct timeval time_of_last_sort; 
 
 	mac_address selected_bssid; /* bssid that is selected */
 
@@ -291,7 +294,6 @@ static struct local_options
 	unsigned int htval;
 #endif
 	int interactive_mode;
-    bool sort_required;
 
 	unsigned long min_pkts;
 
@@ -308,7 +310,6 @@ static struct local_options
 	struct dump_context_st * kismet_netxml_dump_context;
 	struct dump_context_st * wifi_dump_context;
 
-	bool should_update_stdout;
 } lopt;
 
 static void resetSelection(void)
@@ -411,8 +412,9 @@ static void color_on(void)
 }
 
 static void sort_aps(
-	struct local_options * const options,
-	ap_sort_info_st const * const sort_info)
+    struct ap_list_head * const ap_list,
+	ap_sort_info_st const * const sort_info,
+    int const sort_invert)
 {
 	time_t const tt = time(NULL);
 	struct ap_list_head sorted_list = TAILQ_HEAD_INITIALIZER(sorted_list);
@@ -422,13 +424,13 @@ static void sort_aps(
      * entries?
      */
 
-	while (TAILQ_FIRST(&options->ap_list) != NULL)
+	while (TAILQ_FIRST(ap_list) != NULL)
 	{
 		struct AP_info * ap_cur;
 		struct AP_info * ap_min = NULL;
 
         /* Only the most recently seen entries are sorted. */
-		TAILQ_FOREACH(ap_cur, &options->ap_list, entry)
+		TAILQ_FOREACH(ap_cur, ap_list, entry)
 		{
             time_t const seconds_since_last_seen = tt - ap_cur->tlast;
             static long const sorting_age_limit_seconds = 20;
@@ -442,14 +444,14 @@ static void sort_aps(
         if (ap_min != NULL)
         {
             /* Put old entries at the end of the list. */
-            TAILQ_REMOVE(&options->ap_list, ap_min, entry);
+            TAILQ_REMOVE(ap_list, ap_min, entry);
             TAILQ_INSERT_HEAD(&sorted_list, ap_min, entry);
         }
         else
 		{
-			ap_min = TAILQ_FIRST(&options->ap_list);
+			ap_min = TAILQ_FIRST(ap_list);
 
-			TAILQ_FOREACH(ap_cur, &options->ap_list, entry)
+			TAILQ_FOREACH(ap_cur, ap_list, entry)
 			{
 				if (ap_min == ap_cur)
 				{
@@ -457,7 +459,7 @@ static void sort_aps(
 					continue;
 				}
 
-				if (ap_sort_compare(sort_info, ap_cur, ap_min, options->sort_inv) >= 0)
+                if (ap_sort_compare(sort_info, ap_cur, ap_min, sort_invert) >= 0)
 				{
 					ap_min = ap_cur;
 				}
@@ -466,7 +468,7 @@ static void sort_aps(
             /* Put sorted entries at the tail of the list. Dump_print()
              * works from the tail to the head of the list.
              */
-            TAILQ_REMOVE(&options->ap_list, ap_min, entry);
+            TAILQ_REMOVE(ap_list, ap_min, entry);
             TAILQ_INSERT_TAIL(&sorted_list, ap_min, entry);
         }
 
@@ -476,21 +478,21 @@ static void sort_aps(
 	 * Concatenate the sorted list to it so that it contains the
 	 * sorted entries.
 	 */
-	TAILQ_CONCAT(&options->ap_list, &sorted_list, entry);
+	TAILQ_CONCAT(ap_list, &sorted_list, entry);
 }
 
-static void sort_stas(struct local_options * const options)
+static void sort_stas(struct sta_list_head * const sta_list)
 {
 	time_t const tt = time(NULL);
 	struct sta_list_head sorted_list = TAILQ_HEAD_INITIALIZER(sorted_list);
 
-	while (TAILQ_FIRST(&options->sta_list) != NULL)
+	while (TAILQ_FIRST(sta_list) != NULL)
 	{
 		struct ST_info * st_cur;
 		struct ST_info * st_min = NULL;
 
 		/* Don't sort entries older than 60 seconds. */
-		TAILQ_FOREACH(st_cur, &options->sta_list, entry)
+		TAILQ_FOREACH(st_cur, sta_list, entry)
 		{
 			if ((tt - st_cur->tlast) > 60)
 			{
@@ -501,15 +503,15 @@ static void sort_stas(struct local_options * const options)
         if (st_min != NULL)
         {
             /* Put old entries at the end of the list. */
-            TAILQ_REMOVE(&options->sta_list, st_min, entry);
+            TAILQ_REMOVE(sta_list, st_min, entry);
             TAILQ_INSERT_HEAD(&sorted_list, st_min, entry);
         }
 		else
 		{
-			st_min = TAILQ_FIRST(&options->sta_list);
+			st_min = TAILQ_FIRST(sta_list);
 
 			/* STAs are always sorted by power. */
-			TAILQ_FOREACH(st_cur, &options->sta_list, entry)
+			TAILQ_FOREACH(st_cur, sta_list, entry)
 			{
 				if (st_min == st_cur)
 				{
@@ -522,7 +524,7 @@ static void sort_stas(struct local_options * const options)
 				}
 			}
 
-            TAILQ_REMOVE(&options->sta_list, st_min, entry);
+            TAILQ_REMOVE(sta_list, st_min, entry);
             TAILQ_INSERT_TAIL(&sorted_list, st_min, entry);
 		}
 	}
@@ -531,15 +533,13 @@ static void sort_stas(struct local_options * const options)
 	 * Concatenate the sorted list to it so that it contains the
 	 * sorted entries.
 	 */
-	TAILQ_CONCAT(&options->sta_list, &sorted_list, entry);
+	TAILQ_CONCAT(sta_list, &sorted_list, entry);
 }
 
-static void dump_sort(void)
+static void dump_sort(struct local_options * const options)
 {
-	sort_aps(&lopt, lopt.sort_method);
-	sort_stas(&lopt);
-
-    lopt.sort_required = false;
+    sort_aps(&options->ap_list, options->sort_method, options->sort_inv);
+    sort_stas(&options->sta_list);
 }
 
 static bool periodic_sort_required(
@@ -596,7 +596,6 @@ static void handle_input_key(
     bool * const sort_required)
 {
     static size_t const seconds_between_sorts = 5;
-    bool next_pause_setting = lopt.do_pause;
 
     if (periodic_sort_required(time_of_last_sort, seconds_between_sorts))
     {
@@ -643,8 +642,8 @@ static void handle_input_key(
 
     if (keycode == KEY_SPACE)
     {
-        next_pause_setting = !lopt.do_pause;
-        if (next_pause_setting)
+        lopt.do_pause = !lopt.do_pause;
+        if (lopt.do_pause)
         {
             snprintf(
                 lopt.message, sizeof(lopt.message), "][ paused output");
@@ -787,8 +786,6 @@ static void handle_input_key(
                  sizeof(lopt.message),
                  "][ reset selection to default");
     }
-
-    lopt.do_pause = next_pause_setting;
 }
 
 
@@ -1111,7 +1108,7 @@ static void update_data_packets_per_second(void)
 			ps = (int) (((float) diff) / pause);
 			ap_cur->nb_dataps = ps;
 			ap_cur->nb_data_old = ap_cur->nb_data;
-			gettimeofday(&(ap_cur->tv), NULL);
+			gettimeofday(&ap_cur->tv, NULL);
 		}
 	}
 
@@ -1327,7 +1324,7 @@ static void na_info_list_free(struct na_list_head * const list_head)
 
 	TAILQ_FOREACH_SAFE(na_cur, list_head, entry, na_temp)
 	{
-		TAILQ_REMOVE(&lopt.na_list, na_cur, entry);
+        TAILQ_REMOVE(list_head, na_cur, entry);
 
 		na_info_free(na_cur);
 	}
@@ -4495,54 +4492,39 @@ done:
     return;
 }
 
-static void update_window_size(
-	struct local_options const * const options,
-    struct winsize * const ws)
+static void update_window_size(struct winsize * const window_size)
 {
-	if (options->should_update_stdout)
-	{
-        if (ioctl(0, TIOCGWINSZ, ws) < 0)
-        {
-            static unsigned short int const default_windows_rows = 25;
-            static unsigned short int const default_windows_cols = 80;
-
-            ws->ws_row = default_windows_rows;
-            ws->ws_col = default_windows_cols;
-        }
-	}
-}
-
-static void handle_window_changed_event(
-    struct local_options const * const options)
-{
-	if (options->should_update_stdout)
+    if (ioctl(0, TIOCGWINSZ, window_size) < 0)
     {
-        erase_display(0);
-        fflush(stdout);
+        static unsigned short int const default_windows_rows = 25;
+        static unsigned short int const default_windows_cols = 80;
+
+        window_size->ws_row = default_windows_rows;
+        window_size->ws_col = default_windows_cols;
     }
 }
 
-static void restore_terminal(struct local_options const * const options)
+static void handle_window_changed_event(void)
 {
-	if (options->should_update_stdout)
-	{
-		reset_term();
-        show_cursor();
-	}
+    erase_display(0);
+    fflush(stdout);
 }
 
-static void prepare_terminal(struct local_options const * const options)
+static void restore_terminal(void)
 {
-	if (options->should_update_stdout)
-	{
-		hide_cursor();
-		erase_display(2);
-	}
+    reset_term();
+    show_cursor();
+}
+
+static void prepare_terminal(void)
+{
+    hide_cursor();
+    erase_display(2);
 }
 
 static void handle_terminate_event(struct local_options * const options)
 {
-	if (options->should_update_stdout)
+    if (options->interactive_mode > 0)
 	{
 		fprintf(stdout, "Quitting...\n");
         fflush(stdout);
@@ -4591,7 +4573,7 @@ static void sighandler(int signum)
 				"Caught signal 11 (SIGSEGV). Please"
 				" contact the author!\n\n");
 		fflush(stdout);
-		restore_terminal(&lopt);
+		restore_terminal();
 		exit(1);
 	}
 }
@@ -5812,7 +5794,7 @@ static void process_event(
     switch (event)
     {
         case signal_event_window_changed:
-            handle_window_changed_event(options);
+            handle_window_changed_event();
             break;
         case signal_event_terminate:
             handle_terminate_event(options);
@@ -5835,9 +5817,7 @@ static void check_for_signal_events(struct local_options * const options)
     }
 }
 
-static void check_for_user_input(
-    struct local_options * const options, 
-    struct timeval * const time_of_last_sort)
+static void check_for_user_input(struct local_options * const options)
 {
     int keycode = 0;
 
@@ -5845,7 +5825,7 @@ static void check_for_user_input(
                      &keycode,
                      sizeof keycode))
     {
-        handle_input_key(keycode, time_of_last_sort, &options->sort_required);
+        handle_input_key(keycode, &options->time_of_last_sort, &options->sort_required);
     }
 }
 
@@ -6196,7 +6176,7 @@ static void airodump_shutdown(struct wif * * const wi)
 		lopt.airodump_start_time = NULL;
 	}
 
-    if (lopt.interactive_mode)
+    if (lopt.interactive_mode > 0)
 	{
 		pthread_join(lopt.input_tid, NULL);
         close(lopt.input_thread_pipe[1]);
@@ -6299,21 +6279,29 @@ done:
     return result;
 }
 
-static void update_console_output(
-    struct local_options * const options,
-    struct timeval * const time_of_last_sort)
+static void update_console_output(struct local_options * const options)
 {
-    if (options->do_exit == 0
-        && !options->do_pause
-        && options->should_update_stdout)
+    if (options->sort_required || options->do_sort_always)
     {
-        if (options->sort_required || options->do_sort_always)
-        {
-            dump_sort();
-            gettimeofday(time_of_last_sort, NULL);
-        }
+        dump_sort(options);
+        gettimeofday(&options->time_of_last_sort, NULL);
+        options->sort_required = false;
+    }
 
-        dump_print(options->ws.ws_row, options->ws.ws_col, options->num_cards);
+    dump_print(options->window_size.ws_row, 
+               options->window_size.ws_col, 
+               options->num_cards);
+}
+
+static void do_refresh(struct local_options * const options)
+{
+    update_data_packets_per_second();
+
+    if (options->interactive_mode > 0
+        && (!options->was_paused || !options->do_pause))
+    {
+        update_window_size(&options->window_size);
+        update_console_output(options);
     }
 }
 
@@ -6358,7 +6346,6 @@ int main(int argc, char * argv[])
 	struct timeval last_active_scan_timestamp;
 	struct timeval previous_timestamp = {.tv_sec = 0, .tv_usec = 0 };
 	struct tm * lt;
-    struct timeval time_of_last_sort;
 
 	static const struct option long_options[]
 		= {{"ht20", 0, 0, '2'},
@@ -6499,7 +6486,6 @@ int main(int argc, char * argv[])
 #ifdef HAVE_PCRE
 	lopt.f_essid_regex = NULL;
 #endif
-	lopt.should_update_stdout = true;
 
 	TAILQ_INIT(&lopt.na_list);
 	TAILQ_INIT(&lopt.ap_list);
@@ -7371,10 +7357,6 @@ int main(int argc, char * argv[])
 		}
     }
 
-	lopt.should_update_stdout = !opt.output_format_wifi_scanner;
-
-	prepare_terminal(&lopt);
-
 	tt1 = time(NULL);
 	tt2 = time(NULL);
 	gettimeofday(&tv3, NULL);
@@ -7383,18 +7365,27 @@ int main(int argc, char * argv[])
     lopt.elapsed_time = strdup("0 s");
     ALLEGE(lopt.elapsed_time != NULL);
 
-	// Do not start the interactive mode input thread if running in the
+    if (opt.output_format_wifi_scanner)
+    {
+        lopt.interactive_mode = false;
+    }
+
+    // Do not start the interactive mode input thread if running in the
 	// background
     if (lopt.interactive_mode == -1)
 	{
         lopt.interactive_mode = !is_background();
 	}
 
-    if (lopt.interactive_mode)
+    if (lopt.interactive_mode > 0)
     {
-        gettimeofday(&time_of_last_sort, NULL);
+        prepare_terminal();
+        gettimeofday(&lopt.time_of_last_sort, NULL);
+        lopt.sort_required = true;
+
         int const pipe_result = pipe(lopt.input_thread_pipe);
         IGNORE_NZ(pipe_result);
+
         if (pthread_create(&lopt.input_tid, NULL, (void *)input_thread, &lopt.input_thread_pipe[1])
                    != 0)
         {
@@ -7404,15 +7395,14 @@ int main(int argc, char * argv[])
         }
     }
 
-    update_window_size(&lopt, &lopt.ws);
-
     while (!lopt.do_exit)
 	{
+        lopt.was_paused = lopt.do_pause;
 		time_t current_time;
 
-        if (lopt.interactive_mode)
+        if (lopt.interactive_mode > 0)
         {
-            check_for_user_input(&lopt, &time_of_last_sort);
+            check_for_user_input(&lopt);
         }
 
         check_for_channel_hopper_data(&lopt);
@@ -7557,6 +7547,12 @@ int main(int argc, char * argv[])
 			usleep(1);
         }
 
+        if (lopt.do_exit)
+        {
+            lopt.do_exit = true;
+            continue;
+        }
+
 		gettimeofday(&tv2, NULL);
 
         time_slept += 1000000UL * (tv2.tv_sec - current_time_timestamp.tv_sec)
@@ -7566,14 +7562,7 @@ int main(int argc, char * argv[])
             && time_slept > lopt.update_interval_seconds * 1000000)
 		{
             time_slept = 0;
-			update_data_packets_per_second();
-
-            update_window_size(&lopt, &lopt.ws);
-
-            if (lopt.interactive_mode)
-            {
-                update_console_output(&lopt, &time_of_last_sort);
-            }
+            do_refresh(&lopt);
 		}
 
 		do_quit_request_timeout_check(lopt.message, sizeof lopt.message);
@@ -7584,7 +7573,10 @@ int main(int argc, char * argv[])
 	program_exit_code = had_error ? EXIT_FAILURE : EXIT_SUCCESS;
 
 done:
-	restore_terminal(&lopt);
+    if (lopt.interactive_mode > 0)
+    {
+        restore_terminal();
+    }
 
 	return program_exit_code;
 }
