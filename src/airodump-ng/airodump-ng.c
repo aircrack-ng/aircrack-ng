@@ -605,8 +605,8 @@ static void handle_input_key(
     if (keycode == KEY_q)
     {
         quitting_event_ts = time(NULL);
-
-        if (++quitting > 1)
+        quitting++;
+        if (quitting > 1)
         {
             lopt.do_exit = 1;
         }
@@ -981,103 +981,116 @@ int is_filtered_essid(uint8_t const * const essid)
 	return ret;
 }
 
-static void update_rx_quality(void)
+static void update_ap_rx_quality(
+    struct ap_list_head * const ap_list,
+    struct timeval const * const current_time)
 {
-	unsigned long time_diff, capt_time, miss_time;
-	struct timeval cur_time;
+    /* access points */
+    struct AP_info * ap_cur;
 
-	gettimeofday(&cur_time, NULL);
+    TAILQ_FOREACH(ap_cur, ap_list, entry)
+    {
+        unsigned long const time_diff = 1000000UL * (current_time->tv_sec - ap_cur->ftimer.tv_sec)
+            + (current_time->tv_usec - ap_cur->ftimer.tv_usec);
 
-	/* access points */
-	struct AP_info * ap_cur;
+        /* update every `QLT_TIME`seconds if the rate is low, or every 500ms
+         * otherwise */
+        if ((ap_cur->fcapt >= QLT_COUNT && time_diff > 500000)
+            || time_diff > (QLT_TIME * 1000000))
+        {
+            /* at least one frame captured */
+            if (ap_cur->fcapt > 1)
+            {
+                unsigned long const capt_time
+                    = (1000000UL * (ap_cur->ftimel.tv_sec
+                                    - ap_cur->ftimef.tv_sec) // time between
+                       // first and last
+                       // captured frame
+                       + (ap_cur->ftimel.tv_usec - ap_cur->ftimef.tv_usec));
 
-	TAILQ_FOREACH(ap_cur, &lopt.ap_list, entry)
-	{
-		time_diff = 1000000UL * (cur_time.tv_sec - ap_cur->ftimer.tv_sec)
-					+ (cur_time.tv_usec - ap_cur->ftimer.tv_usec);
+                unsigned long const miss_time
+                    = (1000000UL * (ap_cur->ftimef.tv_sec
+                                    - ap_cur->ftimer.tv_sec) // time between
+                       // timer reset and
+                       // first frame
+                       + (ap_cur->ftimef.tv_usec - ap_cur->ftimer.tv_usec))
+                    + (1000000UL * (current_time->tv_sec
+                                    - ap_cur->ftimel.tv_sec) // time between
+                       // last frame and
+                       // this moment
+                       + (current_time->tv_usec - ap_cur->ftimel.tv_usec));
 
-		/* update every `QLT_TIME`seconds if the rate is low, or every 500ms
-		 * otherwise */
-		if ((ap_cur->fcapt >= QLT_COUNT && time_diff > 500000)
-			|| time_diff > (QLT_TIME * 1000000))
-		{
-			/* at least one frame captured */
-			if (ap_cur->fcapt > 1)
-			{
-				capt_time
-					= (1000000UL * (ap_cur->ftimel.tv_sec
-									- ap_cur->ftimef.tv_sec) // time between
-					   // first and last
-					   // captured frame
-					   + (ap_cur->ftimel.tv_usec - ap_cur->ftimef.tv_usec));
+                // number of frames missed at the time where no frames were
+                // captured; extrapolated by assuming a constant framerate
+                if (capt_time > 0 && miss_time > 200000)
+                {
+                    int const missed_frames =
+                        (int)(((float)miss_time / (float)capt_time)
+                              * ((float)ap_cur->fcapt
+                                 + (float)ap_cur->fmiss));
+                    ap_cur->fmiss += missed_frames;
+                }
 
-				miss_time
-					= (1000000UL * (ap_cur->ftimef.tv_sec
-									- ap_cur->ftimer.tv_sec) // time between
-					   // timer reset and
-					   // first frame
-					   + (ap_cur->ftimef.tv_usec - ap_cur->ftimer.tv_usec))
-					  + (1000000UL * (cur_time.tv_sec
-									  - ap_cur->ftimel.tv_sec) // time between
-						 // last frame and
-						 // this moment
-						 + (cur_time.tv_usec - ap_cur->ftimel.tv_usec));
-
-				// number of frames missed at the time where no frames were
-				// captured; extrapolated by assuming a constant framerate
-				if (capt_time > 0 && miss_time > 200000)
-				{
-					int const missed_frames =
-						(int) (((float) miss_time / (float) capt_time)
-								 * ((float) ap_cur->fcapt
-									+ (float) ap_cur->fmiss));
-					ap_cur->fmiss += missed_frames;
-				}
-
-				ap_cur->rx_quality
-					= (int) (((float) ap_cur->fcapt
-							  / ((float) ap_cur->fcapt + (float) ap_cur->fmiss))
-							 *
+                ap_cur->rx_quality
+                    = (int)(((float)ap_cur->fcapt
+                             / ((float)ap_cur->fcapt + (float)ap_cur->fmiss))
+                            *
 #if defined(__x86_64__) && defined(__CYGWIN__)
-							 (0.0f + 100));
+                            (0.0f + 100.0f));
 #else
-							 100.0f);
+                            100.0f);
 #endif
-			}
-			else
-				ap_cur->rx_quality = 0; /* no packets -> zero quality */
+            }
+            else
+            {
+                ap_cur->rx_quality = 0; /* no packets -> zero quality */
+            }
 
-			/* normalize, in case the seq numbers are not iterating */
-			if (ap_cur->rx_quality > 100)
-			{
-				ap_cur->rx_quality = 100;
-			}
-			if (ap_cur->rx_quality < 0)
-			{
-				ap_cur->rx_quality = 0;
-			}
+            /* normalize, in case the seq numbers are not iterating */
+            if (ap_cur->rx_quality > 100)
+            {
+                ap_cur->rx_quality = 100;
+            }
+            if (ap_cur->rx_quality < 0)
+            {
+                ap_cur->rx_quality = 0;
+            }
 
-			/* reset variables */
-			ap_cur->fcapt = 0;
-			ap_cur->fmiss = 0;
-			gettimeofday(&ap_cur->ftimer, NULL);
-		}
-	}
+            /* reset variables */
+            ap_cur->fcapt = 0;
+            ap_cur->fmiss = 0;
+            gettimeofday(&ap_cur->ftimer, NULL);
+        }
+    }
+}
 
-	/* stations */
-	struct ST_info * st_cur;
+static void update_sta_rx_quality(
+    struct sta_list_head * const sta_list, 
+    struct timeval const * const current_time)
+{
+    struct ST_info * st_cur;
 
-	TAILQ_FOREACH(st_cur, &lopt.sta_list, entry)
-	{
-		time_diff = 1000000UL * (cur_time.tv_sec - st_cur->ftimer.tv_sec)
-					+ (cur_time.tv_usec - st_cur->ftimer.tv_usec);
+    TAILQ_FOREACH(st_cur, sta_list, entry)
+    {
+        unsigned long const time_diff = 1000000UL * (current_time->tv_sec - st_cur->ftimer.tv_sec)
+            + (current_time->tv_usec - st_cur->ftimer.tv_usec);
 
-		if (time_diff > 10000000)
-		{
-			st_cur->missed = 0;
-			gettimeofday(&(st_cur->ftimer), NULL);
-		}
-	}
+        if (time_diff > 10000000)
+        {
+            st_cur->missed = 0;
+            gettimeofday(&st_cur->ftimer, NULL);
+        }
+    }
+}
+
+static void update_rx_quality(struct local_options * const options)
+{
+    struct timeval current_time;
+
+    gettimeofday(&current_time, NULL);
+
+    update_ap_rx_quality(&options->ap_list, &current_time);
+    update_sta_rx_quality(&options->sta_list, &current_time);
 }
 
 static void update_ap_packets_per_second(
@@ -6021,7 +6034,7 @@ done:
 	return success;
 }
 
-static void update_output_files(void)
+static void update_dump_output_files(void)
 {
 	if (lopt.csv_dump_context != NULL)
 	{
@@ -6056,7 +6069,7 @@ static void update_output_files(void)
 	}
 }
 
-static void close_output_files(void)
+static void close_dump_output_files(void)
 {
 	if (lopt.csv_dump_context != NULL)
 	{
@@ -6183,8 +6196,8 @@ static void airodump_shutdown(struct wif * * const wi)
 	 */
 	if (opt.record_data)
 	{
-		update_output_files();
-		close_output_files();
+        update_dump_output_files();
+        close_dump_output_files();
 
 		free(lopt.airodump_start_time);
 		lopt.airodump_start_time = NULL;
@@ -6309,6 +6322,9 @@ static void update_console_output(struct local_options * const options)
 
 static void do_refresh(struct local_options * const options)
 {
+    purge_old_nodes(options, options->max_node_age);
+    aps_purge_old_packets(options, BUFFER_TIME_MILLISECS);
+
     update_data_packets_per_second(options);
 
     if (options->interactive_mode > 0
@@ -7417,12 +7433,10 @@ int main(int argc, char * argv[])
         if (lopt.interactive_mode > 0)
         {
             check_for_user_input(&lopt);
+            do_quit_request_timeout_check(lopt.message, sizeof lopt.message);
         }
 
-        check_for_channel_hopper_data(&lopt);
         check_for_signal_events(&lopt);
-		purge_old_nodes(&lopt, lopt.max_node_age);
-        aps_purge_old_packets(&lopt, BUFFER_TIME_MILLISECS);
 
         if (lopt.do_exit)
         {
@@ -7432,14 +7446,16 @@ int main(int argc, char * argv[])
             continue;
         }
 
-		current_time = time(NULL);
+        check_for_channel_hopper_data(&lopt);
+
+        current_time = time(NULL);
 		time_t const seconds_since_last_output_write = current_time - tt1;
 
 		if (seconds_since_last_output_write >= lopt.file_write_interval)
 		{
 			/* update the output files */
 			tt1 = current_time;
-			update_output_files();
+            update_dump_output_files();
 		}
 
 		current_time = time(NULL);
@@ -7483,7 +7499,7 @@ int main(int argc, char * argv[])
 		{
 			gettimeofday(&tv3, NULL);
 
-			update_rx_quality();
+			update_rx_quality(&lopt);
 
 			if (lopt.s_iface != NULL)
 			{
@@ -7578,8 +7594,6 @@ int main(int argc, char * argv[])
             time_slept = 0;
             do_refresh(&lopt);
 		}
-
-		do_quit_request_timeout_check(lopt.message, sizeof lopt.message);
 	}
 
 	airodump_shutdown(wi);
