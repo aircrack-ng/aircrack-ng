@@ -1533,7 +1533,7 @@ static struct ST_info * sta_info_lookup(
     struct sta_list_head * const sta_list = &options->sta_list;
     struct ST_info * st_cur;
 
-    st_cur = sta_info_lookup_existing(&lopt.sta_list, mac);
+    st_cur = sta_info_lookup_existing(sta_list, mac);
     if (st_cur != NULL)
     {
         *is_new = false;
@@ -1720,10 +1720,6 @@ static struct AP_info * ap_info_new(mac_address const * const bssid)
 
 	ap_cur->data_root = NULL;
 	ap_cur->EAP_detected = 0;
-
-	memcpy(ap_cur->gps_loc_min, lopt.gps_context.gps_loc, sizeof ap_cur->gps_loc_min);
-	memcpy(ap_cur->gps_loc_max, lopt.gps_context.gps_loc, sizeof ap_cur->gps_loc_max);
-	memcpy(ap_cur->gps_loc_best, lopt.gps_context.gps_loc, sizeof ap_cur->gps_loc_best);
 
 	/* 802.11n and ac */
 	ap_cur->channel_width = CHANNEL_22MHZ; // 20MHz by default
@@ -3633,14 +3629,16 @@ static char * parse_timestamp(unsigned long long timestamp)
 	return (s);
 }
 
-static bool IsAp2BeSkipped(struct AP_info * ap_cur)
+static bool ap_should_not_be_printed(
+    struct local_options const * const options, 
+    struct AP_info const * const ap_cur)
 {
 	bool should_skip;
 
 	REQUIRE(ap_cur != NULL);
 
-	if (ap_cur->nb_pkt < lopt.min_pkts
-		|| (time(NULL) - ap_cur->tlast) > lopt.berlin
+	if (ap_cur->nb_pkt < options->min_pkts
+        || (time(NULL) - ap_cur->tlast) > options->berlin
 		|| MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
 	{
 		should_skip = true;
@@ -3648,8 +3646,8 @@ static bool IsAp2BeSkipped(struct AP_info * ap_cur)
 	}
 
 	if (ap_cur->security != 0
-        && lopt.f_encrypt != 0
-		&& ((ap_cur->security & lopt.f_encrypt) == 0))
+        && options->f_encrypt != 0
+        && ((ap_cur->security & options->f_encrypt) == 0))
 	{
 		should_skip = true;
 		goto done;
@@ -3932,7 +3930,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			/* skip APs with only one packet, or those older than 2 min.
 			 * always skip if bssid == broadcast*
 			 */
-			if (IsAp2BeSkipped(ap_cur))
+            if (ap_should_not_be_printed(&lopt, ap_cur))
 			{
 				if (lopt.p_selected_ap == ap_cur)
 				{ //the selected AP is skipped (will not be printed), we have to go to the next printable AP
@@ -3945,7 +3943,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 						if (ap_tmp != NULL)
 						{
 							while ((NULL != (lopt.p_selected_ap = ap_tmp))
-								   && IsAp2BeSkipped(ap_tmp))
+                                   && ap_should_not_be_printed(&lopt, ap_tmp))
 							{
 								ap_tmp = TAILQ_NEXT(ap_tmp, entry);
 							}
@@ -3956,7 +3954,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 							if (ap_tmp != NULL)
 							{
 								while ((NULL != (lopt.p_selected_ap = ap_tmp))
-									   && IsAp2BeSkipped(ap_tmp))
+                                       && ap_should_not_be_printed(&lopt, ap_tmp))
 								{
 									ap_tmp = TAILQ_PREV(ap_tmp, ap_list_head, entry);
                                 }
@@ -3970,7 +3968,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 						if (ap_tmp != NULL)
 						{
 							while ((NULL != (lopt.p_selected_ap = ap_tmp))
-								   && IsAp2BeSkipped(ap_tmp))
+                                   && ap_should_not_be_printed(&lopt, ap_tmp))
 							{
 								ap_tmp = TAILQ_PREV(ap_tmp, ap_list_head, entry);
 							}
@@ -3981,7 +3979,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 							if (ap_tmp != NULL)
 							{
 								while ((NULL != (lopt.p_selected_ap = ap_tmp))
-									   && IsAp2BeSkipped(ap_tmp))
+                                       && ap_should_not_be_printed(&lopt, ap_tmp))
 									ap_tmp = TAILQ_NEXT(ap_tmp, entry);
 							}
 						}
@@ -4663,7 +4661,7 @@ static void handle_terminate_event(struct local_options * const options)
         fflush(stdout);
 	}
 
-    lopt.do_exit = 1;
+    options->do_exit = 1;
 }
 
 typedef enum
@@ -4920,7 +4918,9 @@ done:
 
 /* parse a string, for example "1,2,3-7,11" */
 
-static int getchannels(const char * optarg)
+static int getchannels(
+    struct local_options * const options, 
+    const char * optarg)
 {
     int chan_cur = 0;
     int chan_first = 0;
@@ -5028,23 +5028,23 @@ static int getchannels(const char * optarg)
 
     size_t const num_channels = chan_max - chan_remain;
 
-    lopt.own_channels
-        = malloc((num_channels + 1) * sizeof *lopt.own_channels);
-	ALLEGE(lopt.own_channels != NULL);
+    options->own_channels
+        = malloc((num_channels + 1) * sizeof *options->own_channels);
+    ALLEGE(options->own_channels != NULL);
 
     for (size_t i = 0; i < num_channels; i++) //-V658
     {
-        lopt.own_channels[i] = tmp_channels[i];
+        options->own_channels[i] = tmp_channels[i];
     }
 
-    lopt.own_channels[num_channels] = channel_sentinel;
+    options->own_channels[num_channels] = channel_sentinel;
 
 	free(tmp_channels);
 	free(optc);
 
     if (num_channels == 1)
 	{
-        return lopt.own_channels[0];
+        return options->own_channels[0];
     }
 
     if (num_channels == 0)
@@ -5058,6 +5058,7 @@ static int getchannels(const char * optarg)
 /* parse a string, for example "1,2,3-7,11" */
 
 static int getfrequencies(
+    struct local_options * const options,
     struct detected_frequencies_st * const detected_frequencies,
     const char * optarg)
 {
@@ -5181,25 +5182,25 @@ static int getfrequencies(
 		}
 	}
 
-	lopt.own_frequencies
-		= malloc((freq_max - freq_remain + 1) * sizeof *lopt.own_frequencies);
-	ALLEGE(lopt.own_frequencies != NULL);
+    options->own_frequencies
+        = malloc((freq_max - freq_remain + 1) * sizeof *options->own_frequencies);
+    ALLEGE(options->own_frequencies != NULL);
 
 	if (freq_max > 0 && freq_max >= freq_remain) //-V560
 	{
 		for (i = 0; i < (freq_max - freq_remain); i++) //-V658
 		{
-			lopt.own_frequencies[i] = tmp_frequencies[i];
+            options->own_frequencies[i] = tmp_frequencies[i];
 		}
 	}
 
-	lopt.own_frequencies[i] = frequency_sentinel;
+    options->own_frequencies[i] = frequency_sentinel;
 
 	free(tmp_frequencies);
 	free(optc);
 	if (i == 1)
 	{
-        return lopt.own_frequencies[0]; // exactly 1 frequency given
+        return options->own_frequencies[0]; // exactly 1 frequency given
     }
 
 	if (i == 0)
@@ -5282,27 +5283,44 @@ done:
 	return if_count;
 }
 
-static int set_encryption_filter(const char * input)
+static unsigned int set_encryption_filter(char const * const input)
 {
-	if (input == NULL) return (1);
+    unsigned int encryption_filter = 0;
 
-	if (strlen(input) < 3) return (1);
+    if (input == NULL)
+    {
+        encryption_filter = 0; 
+        goto done;
+    }
 
-	if (strcasecmp(input, "opn") == 0) lopt.f_encrypt |= STD_OPN;
+    if (strcasecmp(input, "opn") == 0)
+    {
+        encryption_filter |= STD_OPN;
+    }
 
-	if (strcasecmp(input, "wep") == 0) lopt.f_encrypt |= STD_WEP;
+    if (strcasecmp(input, "wep") == 0)
+    {
+        encryption_filter |= STD_WEP;
+    }
 
 	if (strcasecmp(input, "wpa") == 0)
 	{
-		lopt.f_encrypt |= STD_WPA;
-		lopt.f_encrypt |= STD_WPA2;
+        encryption_filter |= STD_WPA;
+        encryption_filter |= STD_WPA2;
 	}
 
-	if (strcasecmp(input, "wpa1") == 0) lopt.f_encrypt |= STD_WPA;
+    if (strcasecmp(input, "wpa1") == 0)
+    {
+        encryption_filter |= STD_WPA;
+    }
 
-	if (strcasecmp(input, "wpa2") == 0) lopt.f_encrypt |= STD_WPA2;
+    if (strcasecmp(input, "wpa2") == 0)
+    {
+        encryption_filter |= STD_WPA2;
+    }
 
-	return (0);
+done:
+    return encryption_filter;
 }
 
 static struct wif * reopen_card(struct wif * const old)
@@ -5395,7 +5413,9 @@ static void write_fixed_frequency_message(
 }
 
 static struct wif * check_for_monitor_mode_on_card(
-    struct wif * const wi)
+    struct wif * const wi,
+    char * const msg_buffer,
+    size_t const msg_buffer_size)
 {
     int const monitor = wi_get_monitor(wi);
     struct wif * new_wi;
@@ -5410,8 +5430,8 @@ static struct wif * check_for_monitor_mode_on_card(
     new_wi = reopen_card(wi);
 
     write_monitor_mode_message(
-        lopt.message,
-        sizeof(lopt.message),
+        msg_buffer,
+        msg_buffer_size,
         wi_get_ifname(wi));
 
 done:
@@ -5420,13 +5440,16 @@ done:
 
 static bool check_for_monitor_mode_on_cards(
     struct wif * * const wi,
-    size_t const num_cards)
+    size_t const num_cards,
+    char * const msg_buffer,
+    size_t const msg_buffer_size)
 {
     bool success;
 
     for (size_t i = 0; i < num_cards; i++)
 	{
-        struct wif * new_wi = check_for_monitor_mode_on_card(wi[i]);
+        struct wif * new_wi = 
+            check_for_monitor_mode_on_card(wi[i], msg_buffer, msg_buffer_size);
 
         if (new_wi != wi[i])
         {
@@ -5447,12 +5470,19 @@ done:
 
 static bool check_channel_on_card(
     struct wif * const wi,
-    int const desired_channel)
+    int const desired_channel,
+    char * const msg_buffer,
+    size_t const msg_buffer_size,
+    int const ignore_negative_one
+#ifdef CONFIG_LIBNL
+    , unsigned int htval
+#endif
+    )
 {
     bool changed_channel;
     int const current_channel = wi_get_channel(wi);
 
-    if (lopt.ignore_negative_one && current_channel == invalid_channel)
+    if (ignore_negative_one && current_channel == invalid_channel)
     {
         changed_channel = false;
         goto done;
@@ -5465,13 +5495,13 @@ static bool check_channel_on_card(
     }
 
 #ifdef CONFIG_LIBNL
-    wi_set_ht_channel(wi, desired_channel, lopt.htval);
+    wi_set_ht_channel(wi, desired_channel, htval);
 #else
     wi_set_channel(wi, desired_channel);
 #endif
 
-    write_fixed_channel_message(lopt.message,
-                                sizeof(lopt.message),
+    write_fixed_channel_message(msg_buffer,
+                                msg_buffer_size,
                                 wi_get_ifname(wi),
                                 current_channel);
 
@@ -5484,17 +5514,29 @@ done:
 static void check_channel_on_cards(
     struct wif * * const wi,
     int const * const current_channels,
-    size_t const num_cards)
+    size_t const num_cards,
+    char * const msg_buffer,
+    size_t const msg_buffer_size)
 {
     for (size_t i = 0; i < num_cards; i++)
 	{
-        check_channel_on_card(wi[i], current_channels[i]);
+        check_channel_on_card(wi[i], 
+                              current_channels[i], 
+                              msg_buffer, 
+                              msg_buffer_size, 
+                              lopt.ignore_negative_one
+#ifdef CONFIG_LIBNL
+                              , lopt.htval
+#endif
+                             );
 	}
 }
 
 static bool check_frequency_on_card(
     struct wif * const wi,
-    int const desired_frequency)
+    int const desired_frequency,
+    char * const msg_buffer,
+    size_t const msg_buffer_size)
 {
     bool changed_frequency;
     int const current_frequency = wi_get_freq(wi);
@@ -5514,8 +5556,8 @@ static bool check_frequency_on_card(
 
     wi_set_freq(wi, desired_frequency);
 
-    write_fixed_frequency_message(lopt.message,
-                                  sizeof(lopt.message),
+    write_fixed_frequency_message(msg_buffer,
+                                  msg_buffer_size,
                                   wi_get_ifname(wi),
                                   current_frequency);
 
@@ -5528,11 +5570,13 @@ done:
 static void check_frequency_on_cards(
     struct wif * * const wi,
     int const * const current_frequencies,
-    size_t const num_cards)
+    size_t const num_cards,
+    char * const msg_buffer,
+    size_t const msg_buffer_size)
 {
     for (size_t i = 0; i < num_cards; i++)
 	{
-        check_frequency_on_card(wi[i], current_frequencies[i]);
+        check_frequency_on_card(wi[i], current_frequencies[i], msg_buffer, msg_buffer_size);
 	}
 }
 
@@ -5542,11 +5586,13 @@ static bool update_interface_cards(
     bool const single_channel,
     int const * const current_channels,
     bool const single_frequency,
-    int const * const current_frequencies)
+    int const * const current_frequencies,
+    char * const msg_buffer,
+    size_t const msg_buffer_size)
 {
     bool success;
 
-    if (!check_for_monitor_mode_on_cards(wi, num_cards))
+    if (!check_for_monitor_mode_on_cards(wi, num_cards, msg_buffer, msg_buffer_size))
     {
         success = false;
         goto done;
@@ -5554,11 +5600,11 @@ static bool update_interface_cards(
 
     if (single_channel)
     {
-        check_channel_on_cards(wi, current_channels, num_cards);
+        check_channel_on_cards(wi, current_channels, num_cards, msg_buffer, msg_buffer_size);
     }
     if (single_frequency)
     {
-        check_frequency_on_cards(wi, current_frequencies, num_cards);
+        check_frequency_on_cards(wi, current_frequencies, num_cards, msg_buffer, msg_buffer_size);
     }
 
     success = true;
@@ -5786,10 +5832,10 @@ static bool start_frequency_hopper_process(
                          wi,
                          options->num_cards,
                          frequency_count,
-                         lopt.channel_switching_method,
-                         lopt.own_frequencies,
-                         lopt.frequency,
-                         lopt.frequency_hop_millisecs,
+                         options->channel_switching_method,
+                         options->own_frequencies,
+                         options->frequency,
+                         options->frequency_hop_millisecs,
                          main_pid);
 
         exit(EXIT_FAILURE);
@@ -5826,14 +5872,14 @@ static bool start_channel_hopper_process(
                        wi,
                        options->num_cards,
                        channel_count,
-                       lopt.channel_switching_method,
-                       lopt.channels,
-                       lopt.channel,
-                       lopt.active_scan_sim > 0,
-                       lopt.frequency_hop_millisecs,
+                       options->channel_switching_method,
+                       options->channels,
+                       options->channel,
+                       options->active_scan_sim > 0,
+                       options->frequency_hop_millisecs,
                        main_pid
 #ifdef CONFIG_LIBNL
-                       , lopt.htval
+                       , options->htval
 #endif
                       );
 
@@ -5963,11 +6009,11 @@ static void check_for_user_input(struct local_options * const options)
 }
 
 
-static void flush_output_files(void)
+static void flush_output_files(struct local_options * const options)
 {
-    if (lopt.f_ivs != NULL)
+    if (options->f_ivs != NULL)
     {
-        fflush(lopt.f_ivs);
+        fflush(options->f_ivs);
     }
 }
 
@@ -6405,7 +6451,7 @@ static int capture_packet_from_cards(
         goto done;
     }
 
-    for (size_t i = 0; i < lopt.num_cards; i++)
+    for (size_t i = 0; i < options->num_cards; i++)
     {
         if (FD_ISSET(wi_fd(wi[i]), &rfds)) // NOLINT(hicpp-signed-bitwise)
         {
@@ -6416,16 +6462,16 @@ static int capture_packet_from_cards(
 
             if (packet_length == -1)
             {
-                lopt.wi_consecutive_failed_reads[i]++;
-                if (lopt.wi_consecutive_failed_reads[i]
-                    >= lopt.max_consecutive_failed_interface_reads)
+                options->wi_consecutive_failed_reads[i]++;
+                if (options->wi_consecutive_failed_reads[i]
+                    >= options->max_consecutive_failed_interface_reads)
                 {
-                    lopt.do_exit = 1;
+                    options->do_exit = 1;
                     break;
                 }
 
-                snprintf(lopt.message,
-                         sizeof(lopt.message),
+                snprintf(options->message,
+                         sizeof(options->message),
                          "][ interface %s down ",
                          wi_get_ifname(wi[i]));
 
@@ -6888,7 +6934,7 @@ int main(int argc, char * argv[])
 					break;
 				}
 
-				lopt.channel[0] = getchannels(optarg);
+				lopt.channel[0] = getchannels(&lopt, optarg);
 
 				if (lopt.channel[0] < 0)
 				{
@@ -7155,7 +7201,7 @@ int main(int argc, char * argv[])
 
 			case 't':
 
-				set_encryption_filter(optarg);
+                lopt.f_encrypt = set_encryption_filter(optarg);
 				break;
 
 			case 'n':
@@ -7417,7 +7463,7 @@ int main(int argc, char * argv[])
             detect_frequencies(wi[0], &detected_frequencies);
 
             lopt.frequency[0] =
-                getfrequencies(&detected_frequencies, lopt.freqstring);
+                getfrequencies(&lopt, &detected_frequencies, lopt.freqstring);
 
             detected_frequencies_cleanup(&detected_frequencies);
 
@@ -7609,7 +7655,7 @@ int main(int argc, char * argv[])
 			free(lopt.elapsed_time);
 			lopt.elapsed_time = getStringTimeFromSec(difftime(tt2, start_time));
 
-            flush_output_files();
+            flush_output_files(&lopt);
 		}
 
         gettimeofday(&current_time_timestamp, NULL);
@@ -7643,7 +7689,9 @@ int main(int argc, char * argv[])
                                             lopt.singlechan,
                                             lopt.channel,
                                             lopt.singlefreq,
-                                            lopt.frequency))
+                                            lopt.frequency,
+                                            lopt.message,
+                                            sizeof lopt.message))
                 {
                     had_error = true;
                     lopt.do_exit = true;
