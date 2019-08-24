@@ -820,13 +820,19 @@ static void handle_input_key(
     }
 }
 
+struct input_thread_args_st
+{
+    volatile int * do_exit;
+    int update_fd;
+};
 
 static void input_thread(void * arg)
 {
-    int * const update_fd_ptr = arg;
-    int const update_fd = *update_fd_ptr;
+    struct input_thread_args_st * const input_args = arg;
+    volatile int * do_exit = input_args->do_exit;
+    int const update_fd = input_args->update_fd;
 
-	while (lopt.do_exit == 0)
+    while (!(*do_exit))
 	{
         int const keycode = mygetch();
 
@@ -6563,7 +6569,11 @@ static void dump_contexts_initialise(
 
 int main(int argc, char * argv[])
 {
-	int program_exit_code;
+    /* The user thread args must remain in scope as long as the 
+     * thread is running. 
+     */
+    struct input_thread_args_st input_thread_args;
+    int program_exit_code;
     bool had_error = false;
 #define ONE_HOUR (60 * 60)
 #define ONE_MIN (60)
@@ -7610,8 +7620,6 @@ int main(int argc, char * argv[])
         lopt.interactive_mode = false;
     }
 
-    // Do not start the interactive mode input thread if running in the
-	// background
     if (lopt.interactive_mode == -1)
 	{
         lopt.interactive_mode = !is_background();
@@ -7625,7 +7633,13 @@ int main(int argc, char * argv[])
         int const pipe_result = pipe(lopt.input_thread_pipe);
         IGNORE_NZ(pipe_result);
 
-        if (pthread_create(&lopt.input_tid, NULL, (void *)input_thread, &lopt.input_thread_pipe[1])
+        /* Only start the user input thread if running in interactive 
+         * mode. 
+         */
+        input_thread_args.do_exit = &lopt.do_exit;
+        input_thread_args.update_fd = lopt.input_thread_pipe[1];
+
+        if (pthread_create(&lopt.input_tid, NULL, (void *)input_thread, &input_thread_args)
                    != 0)
         {
             perror("Could not create input thread");
