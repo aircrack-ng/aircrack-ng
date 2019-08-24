@@ -6416,6 +6416,53 @@ static void airodump_shutdown(
     oui_context_free(options->manufacturer_list);
 }
 
+static bool handle_ready_wi_interface(
+    struct local_options * const options, 
+    struct wif * * const wi,
+    size_t const interface_index,
+    uint8_t * const packet_buffer,
+    size_t packet_buffer_size)
+{
+    bool success;
+    struct rx_info ri;
+
+    ssize_t const packet_length =
+        wi_read(*wi, NULL, NULL, packet_buffer, packet_buffer_size, &ri);
+
+    if (packet_length == -1)
+    {
+        options->wi_consecutive_failed_reads[interface_index]++;
+        if (options->wi_consecutive_failed_reads[interface_index]
+            >= options->max_consecutive_failed_interface_reads)
+        {
+            success = false;
+            goto done;
+        }
+
+        snprintf(options->message,
+                 sizeof(options->message),
+                 "][ interface %s down ",
+                 wi_get_ifname(*wi));
+
+        *wi = reopen_card(*wi);
+        if (*wi == NULL)
+        {
+            success = false;
+            goto done;
+        }
+    }
+    else
+    {
+        options->wi_consecutive_failed_reads[interface_index] = 0;
+        dump_add_packet(packet_buffer, packet_length, &ri, interface_index);
+    }
+
+    success = true;
+
+done:
+    return success;
+}
+
 static int capture_packet_from_cards(
     struct local_options * const options,
     struct wif * * wi,
@@ -6462,37 +6509,15 @@ static int capture_packet_from_cards(
     {
         if (FD_ISSET(wi_fd(wi[i]), &rfds)) // NOLINT(hicpp-signed-bitwise)
         {
-            struct rx_info ri;
-
-            ssize_t const packet_length =
-                wi_read(wi[i], NULL, NULL, packet_buffer, packet_buffer_size, &ri);
-
-            if (packet_length == -1)
+            if (!handle_ready_wi_interface(
+                    options, 
+                    &wi[i], 
+                    i, 
+                    packet_buffer, 
+                    packet_buffer_size))
             {
-                options->wi_consecutive_failed_reads[i]++;
-                if (options->wi_consecutive_failed_reads[i]
-                    >= options->max_consecutive_failed_interface_reads)
-                {
-                    options->do_exit = 1;
-                    break;
-                }
-
-                snprintf(options->message,
-                         sizeof(options->message),
-                         "][ interface %s down ",
-                         wi_get_ifname(wi[i]));
-
-                wi[i] = reopen_card(wi[i]);
-                if (wi[i] == NULL)
-                {
-                    result = -1;
-                    goto done;
-                }
-            }
-            else
-            {
-                options->wi_consecutive_failed_reads[i] = 0;
-                dump_add_packet(packet_buffer, packet_length, &ri, i);
+                result = -1;
+                goto done;
             }
         }
     }
