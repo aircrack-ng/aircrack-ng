@@ -279,8 +279,8 @@ static struct local_options
 	} en_selection_direction;
 
 	int mark_cur_ap;
-	int do_pause;
-    int was_paused;
+	bool paused;
+    bool was_paused;
 
 	mac_address selected_bssid; /* bssid that is selected */
 
@@ -346,7 +346,7 @@ static void reset_selections(struct local_options * const options)
     options->p_selected_ap = NULL;
     options->en_selection_direction = selection_direction_no;
     options->mark_cur_ap = 0;
-    options->do_pause = 0;
+    options->paused = false;
 
     reset_sort_context(&options->sort);
 
@@ -676,8 +676,13 @@ static void handle_input_key(
 
     if (keycode == KEY_SPACE)
     {
-        options->do_pause = !options->do_pause;
-        char const * const message = options->do_pause ? "paused" : "resumed";
+        if (!options->paused)
+        {
+            options->was_paused = false;
+        }
+        options->paused = !options->paused;
+
+        char const * const message = options->paused ? "paused" : "resumed";
 
         snprintf(options->message, 
                  sizeof(options->message), 
@@ -5011,7 +5016,7 @@ static int getchannels(
 /* parse a string, for example "1,2,3-7,11" */
 
 static int getfrequencies(
-    struct local_options * const options,
+    int * * const own_frequencies,
     struct detected_frequencies_st * const detected_frequencies,
     const char * optarg)
 {
@@ -5135,25 +5140,25 @@ static int getfrequencies(
 		}
 	}
 
-    options->own_frequencies
-        = malloc((freq_max - freq_remain + 1) * sizeof *options->own_frequencies);
-    ALLEGE(options->own_frequencies != NULL);
+    *own_frequencies
+        = malloc((freq_max - freq_remain + 1) * sizeof *own_frequencies);
+    ALLEGE(*own_frequencies != NULL);
 
 	if (freq_max > 0 && freq_max >= freq_remain) //-V560
 	{
 		for (i = 0; i < (freq_max - freq_remain); i++) //-V658
 		{
-            options->own_frequencies[i] = tmp_frequencies[i];
+            (*own_frequencies)[i] = tmp_frequencies[i];
 		}
 	}
 
-    options->own_frequencies[i] = frequency_sentinel;
+    (*own_frequencies)[i] = frequency_sentinel;
 
 	free(tmp_frequencies);
 	free(optc);
 	if (i == 1)
 	{
-        return options->own_frequencies[0]; // exactly 1 frequency given
+        return (*own_frequencies)[0]; // exactly 1 frequency given
     }
 
 	if (i == 0)
@@ -6494,8 +6499,10 @@ static void do_refresh(struct local_options * const options)
     update_data_packets_per_second(options);
 
     if (options->interactive_mode > 0
-        && (!options->was_paused || !options->do_pause))
+        && (!options->paused || !options->was_paused))
     {
+        options->was_paused = options->paused;
+
         update_window_size(&options->window_size);
         update_console_output(options);
     }
@@ -6893,11 +6900,15 @@ int main(int argc, char * argv[])
 
 				if (lopt.channel[0] > 0 || lopt.chanoption == 1)
 				{
-					if (lopt.chanoption == 1)
+                    if (lopt.chanoption == 1)
+                    {
 						printf("Notice: Channel range already given\n");
-					else
+                    }
+                    else
+                    {
 						printf("Notice: Channel already given (%d)\n",
-							   lopt.channel[0]);
+                               lopt.channel[0]);
+                    }
 					break;
 				}
 
@@ -6926,11 +6937,15 @@ int main(int argc, char * argv[])
 
 				if (lopt.channel[0] > 0 || lopt.chanoption == 1)
 				{
-					if (lopt.chanoption == 1)
+                    if (lopt.chanoption == 1)
+                    {
 						printf("Notice: Channel range already given\n");
-					else
+                    }
+                    else
+                    {
 						printf("Notice: Channel already given (%d)\n",
-							   lopt.channel[0]);
+                               lopt.channel[0]);
+                    }
 					break;
 				}
 
@@ -6941,7 +6956,6 @@ int main(int argc, char * argv[])
 				}
 
 				lopt.freqstring = optarg;
-
 				lopt.freqoption = 1;
 
 				break;
@@ -6957,15 +6971,20 @@ int main(int argc, char * argv[])
 
 				for (i = 0; i < (int) strlen(optarg); i++)
 				{
-					if (optarg[i] == 'a')
+                    if (optarg[i] == 'a')
+                    {
 						freq[1] = 1;
-					else if (optarg[i] == 'b' || optarg[i] == 'g')
+                    }
+                    else if (optarg[i] == 'b' || optarg[i] == 'g')
+                    {
 						freq[0] = 1;
+                    }
 					else
 					{
 						printf("Error: invalid band (%c)\n", optarg[i]);
 						printf("\"%s --help\" for help.\n", argv[0]);
-						program_exit_code = EXIT_FAILURE;
+
+                        program_exit_code = EXIT_FAILURE;
 						goto done;
 					}
 				}
@@ -7005,6 +7024,7 @@ int main(int argc, char * argv[])
 					fprintf(stderr,
 							"Invalid output format: IVS and PCAP "
 							"format cannot be used together.\n");
+
 					program_exit_code = EXIT_FAILURE;
 					goto done;
 				}
@@ -7343,12 +7363,16 @@ int main(int argc, char * argv[])
 
 				lopt.active_scan_sim = (int) strtol(optarg, NULL, 10);
 
-				if (lopt.active_scan_sim <= 0) lopt.active_scan_sim = 0;
+                if (lopt.active_scan_sim < 0)
+                {
+                    lopt.active_scan_sim = 0;
+                }
 				break;
 
 			case '2':
 #ifndef CONFIG_LIBNL
 				printf("HT Channel unsupported\n");
+
 				program_exit_code = EXIT_FAILURE;
 				goto done;
 #else
@@ -7358,6 +7382,7 @@ int main(int argc, char * argv[])
 			case '3':
 #ifndef CONFIG_LIBNL
 				printf("HT Channel unsupported\n");
+
 				program_exit_code = EXIT_FAILURE;
 				goto done;
 #else
@@ -7367,6 +7392,7 @@ int main(int argc, char * argv[])
 			case '5':
 #ifndef CONFIG_LIBNL
 				printf("HT Channel unsupported\n");
+
 				program_exit_code = EXIT_FAILURE;
 				goto done;
 #else
@@ -7395,6 +7421,7 @@ int main(int argc, char * argv[])
 		{
 			printf("\"%s --help\" for help.\n", argv[0]);
 		}
+
 		program_exit_code = EXIT_FAILURE;
 		goto done;
 	}
@@ -7436,7 +7463,9 @@ int main(int argc, char * argv[])
             detect_frequencies(wi[0], &detected_frequencies);
 
             lopt.frequency[0] =
-                getfrequencies(&lopt, &detected_frequencies, lopt.freqstring);
+                getfrequencies(&lopt.own_frequencies, 
+                               &detected_frequencies, 
+                               lopt.freqstring);
 
             detected_frequencies_cleanup(&detected_frequencies);
 
@@ -7581,7 +7610,6 @@ int main(int argc, char * argv[])
 
     while (!lopt.do_exit)
 	{
-        lopt.was_paused = lopt.do_pause;
 		time_t current_time;
 
         if (lopt.interactive_mode > 0)
