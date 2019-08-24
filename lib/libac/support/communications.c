@@ -1209,18 +1209,35 @@ int check_shared_key(
         shared_key->f_xor = NULL;
 	}
 
-	snprintf(ofn,
-			 sizeof(ofn) - 1,
-			 "%s-%02d-%02X-%02X-%02X-%02X-%02X-%02X.%s",
-			 prefix,
-			 f_index,
-             *(shared_key->sharedkey[0] + m_bmac),
-             *(shared_key->sharedkey[0] + m_bmac + 1),
-             *(shared_key->sharedkey[0] + m_bmac + 2),
-             *(shared_key->sharedkey[0] + m_bmac + 3),
-             *(shared_key->sharedkey[0] + m_bmac + 4),
-             *(shared_key->sharedkey[0] + m_bmac + 5),
-			 "xor");
+    if (f_index < 0)
+    {
+        snprintf(ofn,
+                 sizeof(ofn) - 1,
+                 "%s-%02X-%02X-%02X-%02X-%02X-%02X.%s",
+                 prefix,
+                 *(shared_key->sharedkey[0] + m_bmac),
+                 *(shared_key->sharedkey[0] + m_bmac + 1),
+                 *(shared_key->sharedkey[0] + m_bmac + 2),
+                 *(shared_key->sharedkey[0] + m_bmac + 3),
+                 *(shared_key->sharedkey[0] + m_bmac + 4),
+                 *(shared_key->sharedkey[0] + m_bmac + 5),
+                 "xor");
+    }
+    else
+    {
+        snprintf(ofn,
+                 sizeof(ofn) - 1,
+                 "%s-%02d-%02X-%02X-%02X-%02X-%02X-%02X.%s",
+                 prefix,
+                 f_index,
+                 *(shared_key->sharedkey[0] + m_bmac),
+                 *(shared_key->sharedkey[0] + m_bmac + 1),
+                 *(shared_key->sharedkey[0] + m_bmac + 2),
+                 *(shared_key->sharedkey[0] + m_bmac + 3),
+                 *(shared_key->sharedkey[0] + m_bmac + 4),
+                 *(shared_key->sharedkey[0] + m_bmac + 5),
+                 "xor");
+    }
 
     if (maybe_broken && (shared_key->f_xor = fopen(ofn, "r")))
 	{

@@ -503,8 +503,6 @@ static void gps_tracker_cleanup(gps_tracker_context_st * const gps_context)
 
 void gps_tracker_initialise(
     gps_tracker_context_st * const gps_context,
-    char const * const dump_prefix,
-    int const f_index,
     FILE * const fp,
     volatile int * do_exit)
 {
@@ -513,8 +511,6 @@ void gps_tracker_initialise(
     memset(gps_context, 0, sizeof *gps_context);
 
     gps_context->gps_valid_interval_seconds = default_gps_valid_interval_seconds;
-    gps_context->dump_prefix = dump_prefix;
-    gps_context->f_index = f_index;
     gps_context->fp = fp;
     gps_context->do_exit = do_exit;
 }
@@ -554,18 +550,5 @@ void gps_tracker_stop(gps_tracker_context_st * const gps_context)
     pthread_join(gps_context->gps_tid, NULL);
 
     gps_tracker_cleanup(gps_context);
-
-    if (!gps_context->save_gps)
-    {
-        char buffer[PATH_MAX];
-
-        snprintf(buffer,
-                 sizeof buffer,
-                 "%s-%02d.gps",
-                 gps_context->dump_prefix,
-                 gps_context->f_index);
-
-        unlink(buffer);
-    }
 }
 
