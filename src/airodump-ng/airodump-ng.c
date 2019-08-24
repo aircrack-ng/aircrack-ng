@@ -453,7 +453,7 @@ static void color_on(struct local_options * const options)
 
 static void sort_aps(
     struct ap_list_head * const ap_list,
-    struct sort_context_st * const sort_context)
+    struct ap_sort_context_st const * const sort_context)
 {
 	time_t const tt = time(NULL);
 	struct ap_list_head sorted_list = TAILQ_HEAD_INITIALIZER(sorted_list);
@@ -498,7 +498,7 @@ static void sort_aps(
 					continue;
 				}
 
-                if (ap_sort_compare(&sort_context->sort_context, ap_cur, ap_min) >= 0)
+                if (ap_sort_compare(sort_context, ap_cur, ap_min) >= 0)
 				{
 					ap_min = ap_cur;
 				}
@@ -577,7 +577,7 @@ static void sort_stas(struct sta_list_head * const sta_list)
 
 static void dump_sort(
     struct local_options * const options,
-    struct sort_context_st * const sort_context)
+    struct ap_sort_context_st const * const sort_context)
 {
     sort_aps(&options->ap_list, sort_context);
     sort_stas(&options->sta_list);
@@ -6487,7 +6487,7 @@ static void update_console_output(struct local_options * const options)
 
     if (sort_context->sort_required || sort_context->do_sort_always)
     {
-        dump_sort(options, sort_context);
+        dump_sort(options, &sort_context->sort_context);
 
         gettimeofday(&sort_context->time_of_last_sort, NULL);
         sort_context->sort_required = false;
