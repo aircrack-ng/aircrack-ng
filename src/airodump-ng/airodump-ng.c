@@ -149,7 +149,6 @@ struct sort_context_st
 {
     int do_sort_always;
     bool sort_required;
-    struct timeval time_of_last_sort;
     struct ap_sort_context_st sort_context;
 };
 
@@ -593,32 +592,6 @@ static void dump_sort(
     sort_stas(&options->sta_list);
 }
 
-static bool periodic_sort_required(
-    struct timeval * const time_of_last_resort, 
-    size_t const seconds_between_sorts)
-{
-    bool sort_required;
-    struct timeval current_time;
-
-    gettimeofday(&current_time, NULL);
-
-    long const time_diff = 1000000UL * (current_time.tv_sec - time_of_last_resort->tv_sec)
-        + (current_time.tv_usec - time_of_last_resort->tv_usec);
-
-    long const microseconds_between_sorts = seconds_between_sorts * 1000000; 
-
-    if (time_diff < microseconds_between_sorts)
-    {
-        sort_required = false;
-        goto done;
-    }
-
-    sort_required = true;
-
-done:
-    return sort_required;
-}
-
 static void input_thread_handle_input_key(int const key_code, int const update_fd)
 {
     switch (key_code)
@@ -645,13 +618,6 @@ static void handle_input_key(
     int const keycode, 
     struct local_options * const options)
 {
-    static size_t const seconds_between_sorts = 5;
-
-    if (periodic_sort_required(&options->sort.time_of_last_sort, seconds_between_sorts))
-    {
-        options->sort.sort_required = true;
-    }
-
     if (keycode == KEY_q)
     {
         options->quitting_event_ts = time(NULL);
@@ -6493,8 +6459,6 @@ static void update_console_output(struct local_options * const options)
     if (sort_context->sort_required || sort_context->do_sort_always)
     {
         dump_sort(options, &sort_context->sort_context);
-
-        gettimeofday(&sort_context->time_of_last_sort, NULL);
         sort_context->sort_required = false;
     }
 
@@ -7587,7 +7551,6 @@ int main(int argc, char * argv[])
     if (lopt.interactive_mode > 0)
     {
         prepare_terminal();
-        gettimeofday(&lopt.sort.time_of_last_sort, NULL);
         lopt.sort.sort_required = true;
 
         int const pipe_result = pipe(lopt.input_thread_pipe);
@@ -7636,10 +7599,15 @@ int main(int argc, char * argv[])
 
 		current_time = time(NULL);
 		time_t const seconds_since_last_generic_update = current_time - tt2;
+        time_t const generic_update_interval_seconds = 5;
+        bool const generic_update_required =
+            seconds_since_last_generic_update > generic_update_interval_seconds;
 
-		if (seconds_since_last_generic_update > 5)
+        if (generic_update_required)
 		{
 			tt2 = current_time;
+
+            lopt.sort.sort_required = true;
 
             if (lopt.use_gpsd)
 			{
