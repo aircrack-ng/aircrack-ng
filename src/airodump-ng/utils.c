@@ -2,6 +2,7 @@
 #include "aircrack-ng/defs.h"
 
 #include <string.h>
+#include <sys/wait.h>
 
 char * time_as_string(time_t const time)
 {
@@ -47,6 +48,35 @@ char const * create_output_filename(
     }
 
     return buffer;
+}
+
+int wait_proc(pid_t in, pid_t * out)
+{
+    int stat = 0;
+    pid_t pid;
+
+    do
+    {
+        pid = waitpid(in, &stat, WNOHANG);
+    }
+    while (pid < 0 && errno == EINTR);
+
+    if (out != NULL)
+    {
+        *out = pid;
+    }
+
+    int status = -1;
+    if (WIFEXITED(stat))
+    {
+        status = WEXITSTATUS(stat);
+    }
+    else if (WIFSIGNALED(stat))
+    {
+        status = WTERMSIG(stat);
+    }
+
+    return status;
 }
 
 

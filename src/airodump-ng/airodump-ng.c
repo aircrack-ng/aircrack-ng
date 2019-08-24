@@ -4551,36 +4551,6 @@ done:
     terminal_clear_to_end_of_screen();
 }
 
-static int
-wait_proc(pid_t in, pid_t * out)
-{
-    int stat = 0;
-    pid_t pid;
-
-    do
-    {
-        pid = waitpid(in, &stat, WNOHANG);
-    }
-    while (pid < 0 && errno == EINTR);
-
-    if (out != NULL)
-    {
-        *out = pid;
-    }
-
-    int status = -1;
-    if (WIFEXITED(stat))
-    {
-        status = WEXITSTATUS(stat);
-    }
-    else if (WIFSIGNALED(stat))
-    {
-        status = WTERMSIG(stat);
-    }
-
-    return status;
-}
-
 static void
 sigchld_handler(int signum)
 {
