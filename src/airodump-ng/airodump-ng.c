@@ -100,6 +100,7 @@
 #include "ap_compare.h"
 #include "channel_hopper.h"
 #include "packet_writer.h"
+#include "essid_filter.h"
 
 #define DEFAULT_CHANNEL_WIDTH_MHZ 20
 
@@ -173,11 +174,8 @@ static struct local_options
 
     struct shared_key_context_st shared_key; 
 
-	char ** f_essid;
-	size_t f_essid_count;
-#ifdef HAVE_PCRE
-	pcre * f_essid_regex;
-#endif
+    struct essid_filter_context_st essid_filter;
+
 	char * dump_prefix;
 
     /* TODO: Stick all this card specific state into a structure. */
@@ -400,7 +398,7 @@ static void color_on(struct local_options * const options)
 
 		// Don't filter unassociated clients by ESSID
 		if (!MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid)
-			&& is_filtered_essid(ap_cur->essid))
+			&& is_filtered_essid(&options->essid_filter, ap_cur->essid))
 		{
 			continue;
 		}
@@ -967,51 +965,6 @@ static bool bssid_is_filtered(
 
 done:
     return is_filtered;
-}
-
-bool is_filtered_essid(uint8_t const * const essid)
-{
-    bool is_filtered = false;
-    REQUIRE(essid != NULL);
-
-    /* FIXME - Remove the dependency on lopt.
-     * This is called by dump routines, so can't be static as it
-     * stands.
-     */
-	if (lopt.f_essid != NULL)
-	{
-		for (size_t i = 0; i < lopt.f_essid_count; i++)
-		{
-			if (strncmp((char *)essid, lopt.f_essid[i], ESSID_LENGTH) == 0)
-			{
-                is_filtered = false;
-                goto done;
-			}
-		}
-
-        /* Some filters are configured but no match was found. so 
-         * this will be filtered unless the pcre exec finds a match. 
-         */
-		is_filtered = true;
-	}
-
-#ifdef HAVE_PCRE
-	if (lopt.f_essid_regex != NULL)
-	{
-		is_filtered = pcre_exec(lopt.f_essid_regex,
-                                NULL,
-                                (char *)essid,
-                                (int)strnlen((char *)essid, ESSID_LENGTH),
-                                0,
-                                0,
-                                NULL,
-                                0)
-			           < 0;
-	}
-#endif
-
-done:
-	return is_filtered;
 }
 
 static void update_ap_rx_quality(
@@ -3394,7 +3347,7 @@ skip_probe:
 				}
 			}
 
-			if (st_cur->wpa.state == 7 && !is_filtered_essid(ap_cur->essid))
+            if (st_cur->wpa.state == 7 && !is_filtered_essid(&lopt.essid_filter, ap_cur->essid))
 			{
 				MAC_ADDRESS_COPY(&st_cur->wpa.stmac, &st_cur->stmac);
 				MAC_ADDRESS_COPY(&lopt.wpa_bssid, &ap_cur->bssid);
@@ -3489,7 +3442,7 @@ write_packet:
 			return;
 		}
 
-		if (is_filtered_essid(ap_cur->essid))
+        if (is_filtered_essid(&lopt.essid_filter, ap_cur->essid))
 		{
 			return;
 		}
@@ -3653,7 +3606,7 @@ static bool ap_should_not_be_printed(
 		goto done;
 	}
 
-	if (is_filtered_essid(ap_cur->essid))
+	if (is_filtered_essid(&options->essid_filter, ap_cur->essid))
 	{
 		should_skip = true;
 		goto done;
@@ -4378,7 +4331,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 			// Don't filter unassociated clients by ESSID
 			if (!MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid)
-				&& is_filtered_essid(ap_cur->essid))
+				&& is_filtered_essid(&lopt.essid_filter, ap_cur->essid))
 			{
 				continue;
 			}
@@ -5516,7 +5469,12 @@ static void check_channel_on_cards(
     int const * const current_channels,
     size_t const num_cards,
     char * const msg_buffer,
-    size_t const msg_buffer_size)
+    size_t const msg_buffer_size,
+    int const ignore_negative_one
+#ifdef CONFIG_LIBNL
+    , unsigned int htval
+#endif
+    )
 {
     for (size_t i = 0; i < num_cards; i++)
 	{
@@ -5524,9 +5482,9 @@ static void check_channel_on_cards(
                               current_channels[i], 
                               msg_buffer, 
                               msg_buffer_size, 
-                              lopt.ignore_negative_one
+                              ignore_negative_one
 #ifdef CONFIG_LIBNL
-                              , lopt.htval
+                              , htval
 #endif
                              );
 	}
@@ -5588,7 +5546,12 @@ static bool update_interface_cards(
     bool const single_frequency,
     int const * const current_frequencies,
     char * const msg_buffer,
-    size_t const msg_buffer_size)
+    size_t const msg_buffer_size,
+    int const ignore_negative_one
+#ifdef CONFIG_LIBNL
+    , unsigned int htval
+#endif
+    )
 {
     bool success;
 
@@ -5600,11 +5563,24 @@ static bool update_interface_cards(
 
     if (single_channel)
     {
-        check_channel_on_cards(wi, current_channels, num_cards, msg_buffer, msg_buffer_size);
+        check_channel_on_cards(wi, 
+                               current_channels, 
+                               num_cards, 
+                               msg_buffer, 
+                               msg_buffer_size,
+                               ignore_negative_one
+#ifdef CONFIG_LIBNL
+                               , htval
+#endif
+                               );
     }
     if (single_frequency)
     {
-        check_frequency_on_cards(wi, current_frequencies, num_cards, msg_buffer, msg_buffer_size);
+        check_frequency_on_cards(wi, 
+                                 current_frequencies, 
+                                 num_cards, 
+                                 msg_buffer, 
+                                 msg_buffer_size);
     }
 
     success = true;
@@ -6266,7 +6242,8 @@ static void update_dump_output_files(struct local_options * const options)
             dump_write(dump_context,
                        &options->ap_list,
                        &options->sta_list,
-                       options->f_encrypt);
+                       options->f_encrypt,
+                       &options->essid_filter);
         }
     }
 }
@@ -6373,14 +6350,14 @@ static void airodump_shutdown(
 
     free(options->elapsed_time);
     free(options->own_channels);
-    free(options->f_essid);
 
     pcap_reader_close(options->pcap_reader_context);
 
+    free(options->essid_filter.f_essid);
 #ifdef HAVE_PCRE
-    if (options->f_essid_regex != NULL)
+    if (options->essid_filter.f_essid_regex != NULL)
 	{
-        pcre_free(options->f_essid_regex);
+        pcre_free(options->essid_filter.f_essid_regex);
 	}
 #endif
 
@@ -6676,8 +6653,10 @@ int main(int argc, char * argv[])
 
     lopt.f_encrypt = 0;
 	lopt.asso_client = 0;
-	lopt.f_essid = NULL;
-	lopt.f_essid_count = 0;
+
+    lopt.essid_filter.f_essid = NULL;
+    lopt.essid_filter.f_essid_count = 0;
+
 	lopt.active_scan_sim = 0;
 	lopt.update_interval_seconds = 0;
 	lopt.decloak = 1;
@@ -6728,8 +6707,9 @@ int main(int argc, char * argv[])
 #ifdef CONFIG_LIBNL
 	lopt.htval = CHANNEL_NO_HT;
 #endif
+
 #ifdef HAVE_PCRE
-	lopt.f_essid_regex = NULL;
+	lopt.essid_filter.f_essid_regex = NULL;
 #endif
 
 	TAILQ_INIT(&lopt.na_list);
@@ -7161,18 +7141,18 @@ int main(int argc, char * argv[])
 
 			case 'N':
 
-				lopt.f_essid_count++;
-				lopt.f_essid = (char **) realloc( //-V701
-					lopt.f_essid,
-					lopt.f_essid_count * sizeof(char *));
-				ALLEGE(lopt.f_essid != NULL);
-				lopt.f_essid[lopt.f_essid_count - 1] = optarg;
+            lopt.essid_filter.f_essid_count++;
+                lopt.essid_filter.f_essid = (char * *)realloc( //-V701
+                    lopt.essid_filter.f_essid,
+                    lopt.essid_filter.f_essid_count * sizeof(char *));
+                ALLEGE(lopt.essid_filter.f_essid != NULL);
+                lopt.essid_filter.f_essid[lopt.essid_filter.f_essid_count - 1] = optarg;
 				break;
 
 			case 'R':
 
 #ifdef HAVE_PCRE
-				if (lopt.f_essid_regex != NULL)
+                if (lopt.essid_filter.f_essid_regex != NULL)
 				{
 					printf("Error: ESSID regular expression already given. "
 						   "Aborting\n");
@@ -7180,10 +7160,10 @@ int main(int argc, char * argv[])
 					goto done;
 				}
 
-				lopt.f_essid_regex
+                lopt.essid_filter.f_essid_regex
 					= pcre_compile(optarg, 0, &pcreerror, &pcreerroffset, NULL);
 
-				if (lopt.f_essid_regex == NULL)
+                if (lopt.essid_filter.f_essid_regex == NULL)
 				{
 					printf("Error: regular expression compilation failed at "
 						   "offset %d: %s; aborting\n",
@@ -7691,7 +7671,12 @@ int main(int argc, char * argv[])
                                             lopt.singlefreq,
                                             lopt.frequency,
                                             lopt.message,
-                                            sizeof lopt.message))
+                                            sizeof lopt.message,
+                                            lopt.ignore_negative_one
+#ifdef CONFIG_LIBNL
+                                            , lopt.htval
+#endif
+                                            ))
                 {
                     had_error = true;
                     lopt.do_exit = true;

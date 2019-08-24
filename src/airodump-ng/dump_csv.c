@@ -14,7 +14,8 @@ static void dump_write_csv(
     FILE * const fp,
     struct ap_list_head * ap_list,
     struct sta_list_head * const sta_list,
-    unsigned int f_encrypt)
+    unsigned int f_encrypt,
+    struct essid_filter_context_st const * const essid_filter)
 {
     int i, probes_written;
     struct tm * ltime;
@@ -46,7 +47,7 @@ static void dump_write_csv(
             continue;
         }
 
-        if (is_filtered_essid(ap_cur->essid))
+        if (is_filtered_essid(essid_filter, ap_cur->essid))
         {
             continue;
         }
@@ -332,14 +333,16 @@ static void csv_dump(
     void * const priv,
     struct ap_list_head * const ap_list,
     struct sta_list_head * const sta_list,
-    unsigned int const f_encrypt)
+    unsigned int const f_encrypt,
+    struct essid_filter_context_st const * const essid_filter)
 {
     struct csv_dump_context_st * const context = priv;
 
     dump_write_csv(context->fp,
                    ap_list,
                    sta_list,
-                   f_encrypt);
+                   f_encrypt, 
+                   essid_filter);
 }
 
 static void csv_dump_close(

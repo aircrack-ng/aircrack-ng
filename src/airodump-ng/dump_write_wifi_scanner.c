@@ -42,7 +42,8 @@ static bool should_dump_ap(
     struct AP_info const * const ap_cur,
     unsigned int const f_encrypt,
     time_t const filter_seconds,
-    time_t const current_time)
+    time_t const current_time,
+    struct essid_filter_context_st const * const essid_filter)
 {
     bool should_dump;
 
@@ -60,7 +61,7 @@ static bool should_dump_ap(
         goto done;
     }
 
-    if (is_filtered_essid(ap_cur->essid))
+    if (is_filtered_essid(essid_filter, ap_cur->essid))
     {
         should_dump = false;
         goto done;
@@ -125,11 +126,12 @@ static void dump_ap(
     unsigned int const f_encrypt,
     time_t const filter_seconds,
     char const * const sys_name,
-    char const * const loc_name)
+    char const * const loc_name,
+    struct essid_filter_context_st const * const essid_filter)
 {
     time_t const current_time = time(NULL);
 
-    if (!should_dump_ap(ap_cur, f_encrypt, filter_seconds, current_time))
+    if (!should_dump_ap(ap_cur, f_encrypt, filter_seconds, current_time, essid_filter))
     {
         goto done;
     }
@@ -148,14 +150,21 @@ static void dump_aps(
     unsigned int const f_encrypt,
     time_t const filter_seconds,
     char const * const sys_name,
-    char const * const loc_name)
+    char const * const loc_name,
+    struct essid_filter_context_st const * const essid_filter)
 {
     struct AP_info * ap_cur;
 
     /* Access Points */
     TAILQ_FOREACH(ap_cur, ap_list, entry)
     {
-        dump_ap(fp, ap_cur, f_encrypt, filter_seconds, sys_name, loc_name);
+        dump_ap(fp, 
+                ap_cur, 
+                f_encrypt, 
+                filter_seconds, 
+                sys_name, 
+                loc_name, 
+                essid_filter);
     }
 
     fflush(fp);
@@ -282,7 +291,8 @@ static void dump_write_wifi_scanner(
 	unsigned int const f_encrypt,
 	time_t const filter_seconds,
     char const * const sys_name,
-    char const * const loc_name)
+    char const * const loc_name,
+    struct essid_filter_context_st const * const essid_filter)
 {
 	if (fp == NULL)
 	{
@@ -290,7 +300,14 @@ static void dump_write_wifi_scanner(
         goto done;
 	}
 
-    dump_aps(fp, ap_list, f_encrypt, filter_seconds, sys_name, loc_name);
+    dump_aps(fp, 
+             ap_list, 
+             f_encrypt, 
+             filter_seconds, 
+             sys_name, 
+             loc_name, 
+             essid_filter);
+
     dump_stas(fp, sta_list, filter_seconds, sys_name, loc_name);
 
 done:
@@ -335,7 +352,8 @@ static void wifi_scanner_reset_check(
 static void wifi_scanner_dump(void * const priv,
                               struct ap_list_head * const ap_list,
                               struct sta_list_head * const sta_list,
-                              unsigned int const f_encrypt)
+                              unsigned int const f_encrypt,
+                              struct essid_filter_context_st const * const essid_filter)
 {
     struct wifi_scanner_dump_context_st * const context = priv;
 
@@ -345,7 +363,8 @@ static void wifi_scanner_dump(void * const priv,
                             f_encrypt,
                             context->filter_seconds,
                             context->sys_name,
-                            context->location_name);
+                            context->location_name,
+                            essid_filter);
 
     wifi_scanner_reset_check(context);
 }

@@ -34,6 +34,7 @@
 
 #include "ap_list.h"
 #include "aircrack-ng/osdep/sta_list.h"
+#include "essid_filter.h"
 
 typedef enum dump_type_t
 {
@@ -60,7 +61,8 @@ void dump_write(
     dump_context_st * const dump,
     struct ap_list_head * const ap_list,
     struct sta_list_head * const sta_list,
-    unsigned int const f_encrypt); 
+    unsigned int const f_encrypt,
+    struct essid_filter_context_st const * const essid_filter); 
 
 void dump_close(
     dump_context_st * const dump);

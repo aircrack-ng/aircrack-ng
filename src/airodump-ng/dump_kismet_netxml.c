@@ -292,7 +292,8 @@ static void kismet_dump_write_netxml(
     struct sta_list_head * const sta_list,
     unsigned int f_encrypt,
     char const * const airodump_start_time,
-    bool const use_gpsd)
+    bool const use_gpsd,
+    struct essid_filter_context_st const * const essid_filter)
 {
     int network_number, average_power, client_max_rate, max_power, client_nbr;
     off_t fpos;
@@ -336,7 +337,7 @@ static void kismet_dump_write_netxml(
             continue;
         }
 
-        if (is_filtered_essid(ap_cur->essid))
+        if (is_filtered_essid(essid_filter, ap_cur->essid))
         {
             continue;
         }
@@ -796,7 +797,8 @@ static void kismet_netxml_dump(
     void * const priv,
     struct ap_list_head * const ap_list,
     struct sta_list_head * const sta_list,
-    unsigned int const f_encrypt)
+    unsigned int const f_encrypt,
+    struct essid_filter_context_st const * const essid_filter)
 {
     struct kismet_netxml_dump_context_st * const context = priv;
 
@@ -805,7 +807,8 @@ static void kismet_netxml_dump(
                              sta_list,
                              f_encrypt,
                              context->airodump_start_time,
-                             context->use_gpsd);
+                             context->use_gpsd,
+                             essid_filter);
 }
 
 static void kismet_netxml_dump_close(

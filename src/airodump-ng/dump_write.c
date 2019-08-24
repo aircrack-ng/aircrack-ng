@@ -287,14 +287,15 @@ void dump_write(
     struct dump_context_st * const dump,
     struct ap_list_head * const ap_list,
     struct sta_list_head * const sta_list,
-    unsigned int const f_encrypt)
+    unsigned int const f_encrypt,
+    struct essid_filter_context_st const * const essid_filter)
 {
     if (dump == NULL)
     {
         goto done;
     }
 
-    dump->dump(dump->priv, ap_list, sta_list, f_encrypt);
+    dump->dump(dump->priv, ap_list, sta_list, f_encrypt, essid_filter);
 
 done:
     return;

@@ -10,7 +10,8 @@ struct dump_context_st
     void (*dump)(void * const priv,
                  struct ap_list_head * const ap_list,
                  struct sta_list_head * const sta_list,
-                 unsigned int const f_encrypt);
+                 unsigned int const f_encryptessid_filter,
+                 struct essid_filter_context_st const * const essid_filter);
     void (*close)(void * const priv);
 }; 
 
