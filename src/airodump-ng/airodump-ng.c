@@ -343,8 +343,8 @@ static struct local_options
 
 static void reset_sort_context(struct sort_context_st * const sort_context)
 {
-    sort_context->sort_context.sort_method = ap_sort_method_assign(SORT_BY_POWER);
-    sort_context->sort_context.sort_direction = 1;
+    ap_sort_context_initialise(&sort_context->sort_context, SORT_BY_POWER);
+
     sort_context->do_sort_always = 0;
 }
 
@@ -673,12 +673,11 @@ static void handle_input_key(
 
     if (keycode == KEY_s)
     {
-        options->sort.sort_context.sort_method =
-            ap_sort_method_assign_next(options->sort.sort_context.sort_method);
+        ap_sort_context_next_sort_method(&options->sort.sort_context);
         snprintf(options->message,
                  sizeof(options->message),
                  "][ sorting by %s", 
-                 ap_sort_method_description(options->sort.sort_context.sort_method));
+                 ap_sort_context_description(&options->sort.sort_context));
         options->sort.sort_required = true;
     }
 
@@ -739,11 +738,9 @@ static void handle_input_key(
 
     if (keycode == KEY_i)
     {
-        options->sort.sort_context.sort_direction *= -1;
-        char const * const message = 
-            (options->sort.sort_context.sort_direction < 0) 
-            ? "inverted" 
-            : "normal";
+        bool const is_inverted = 
+            ap_sort_context_invert_direction(&options->sort.sort_context);
+        char const * const message = is_inverted ? "inverted" : "normal";
 
         snprintf(options->message,
                  sizeof(options->message),
@@ -771,7 +768,8 @@ static void handle_input_key(
                  sizeof(options->message),
                  "][ %s AP selection", message); 
 
-        options->sort.sort_context.sort_method = ap_sort_method_assign(SORT_BY_NOTHING);
+        ap_sort_context_assign_sort_method(&options->sort.sort_context, 
+                                           SORT_BY_NOTHING);
     }
 
     if (keycode == KEY_a)

@@ -228,7 +228,8 @@ static ap_sort_info_st const ap_sort_infos[SORT_MAX] =
     }
 };
 
-ap_sort_info_st const * ap_sort_method_assign(ap_sort_type_t const sort_method_in)
+static ap_sort_info_st const * ap_sort_method_assign(
+    ap_sort_type_t const sort_method_in)
 {
     ap_sort_info_st const * sort_info;
     ap_sort_type_t sort_method = sort_method_in;
@@ -243,7 +244,8 @@ ap_sort_info_st const * ap_sort_method_assign(ap_sort_type_t const sort_method_i
     return sort_info;
 }
 
-ap_sort_info_st const * ap_sort_method_assign_next(ap_sort_info_st const * current)
+static ap_sort_info_st const * ap_sort_method_assign_next(
+    ap_sort_info_st const * current)
 {
     ALLEGE(current != NULL);
 
@@ -253,9 +255,16 @@ ap_sort_info_st const * ap_sort_method_assign_next(ap_sort_info_st const * curre
     return ap_sort_method_assign(next_method_index);
 }
 
-char const * ap_sort_method_description(ap_sort_info_st const * const sort_info)
+static char const * ap_sort_method_description(
+    ap_sort_info_st const * const sort_info)
 {
     return sort_info->description;
+}
+
+char const * ap_sort_context_description(
+    struct ap_sort_context_st const * const context)
+{
+    return ap_sort_method_description(context->sort_method);
 }
 
 int ap_sort_compare(
@@ -266,3 +275,31 @@ int ap_sort_compare(
     return context->sort_method->ap_compare(a, b, context->sort_direction);
 }
 
+void ap_sort_context_next_sort_method(
+    struct ap_sort_context_st * const context)
+{
+    context->sort_method = ap_sort_method_assign_next(context->sort_method);
+}
+
+void ap_sort_context_assign_sort_method(
+    struct ap_sort_context_st * const context,
+    ap_sort_type_t const sort_method)
+{
+    context->sort_method = ap_sort_method_assign(sort_method);
+}
+
+bool ap_sort_context_invert_direction(
+    struct ap_sort_context_st * const context)
+{
+    context->sort_direction *= -1;
+
+    return context->sort_direction < 0;
+}
+
+void ap_sort_context_initialise(
+    struct ap_sort_context_st * const context,
+    ap_sort_type_t const sort_method)
+{
+    context->sort_method = ap_sort_method_assign(sort_method);
+    context->sort_direction = 1;
+}
