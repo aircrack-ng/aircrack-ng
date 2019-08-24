@@ -309,7 +309,7 @@ static struct local_options
 
 	unsigned long min_pkts;
 
-	int relative_time; /* read PCAP in psuedo-real-time */
+	bool relative_time; /* read PCAP file in psuedo-real-time */
 
     time_t filter_seconds;
     int file_reset_seconds;
@@ -360,7 +360,7 @@ static void reset_sort_context(struct sort_context_st * const sort_context)
 
 static void reset_selections(struct local_options * const options)
 {
-	options->relative_time = 0;
+	options->relative_time = false;
     options->p_selected_ap = NULL;
     options->en_selection_direction = selection_direction_no;
     options->mark_cur_ap = 0;
@@ -5992,7 +5992,6 @@ static void check_for_user_input(struct local_options * const options)
     }
 }
 
-
 static void flush_output_files(struct local_options * const options)
 {
     if (options->ivs.fp != NULL)
@@ -6318,7 +6317,6 @@ static void do_quit_request_timeout_check(
 }
 
 static void pace_pcap_reader(
-	struct local_options const * const options,
 	struct timeval * const previous_timestamp,
 	struct timeval * const packet_timestamp,
 	int const read_pkts)
@@ -6326,8 +6324,7 @@ static void pace_pcap_reader(
     /* Control the speed that the packets are read from the file
      * to simulate the rate they were captured at.
      */
-	if (options->relative_time
-        && previous_timestamp->tv_sec != 0
+	if (previous_timestamp->tv_sec != 0
 		&& previous_timestamp->tv_usec != 0)
 	{
 		const useconds_t usec_diff
@@ -6686,7 +6683,7 @@ int main(int argc, char * argv[])
     lopt.file_reset_seconds = ONE_MIN;
     lopt.do_exit = 0;
 	lopt.min_pkts = 2;
-	lopt.relative_time = 0;
+	lopt.relative_time = false;
 #ifdef CONFIG_LIBNL
 	lopt.htval = CHANNEL_NO_HT;
 #endif
@@ -6837,7 +6834,7 @@ int main(int argc, char * argv[])
 				break;
 
 			case 'T':
-				lopt.relative_time = 1;
+				lopt.relative_time = true;
 				break;
 
 			case 'E':
@@ -7717,10 +7714,13 @@ int main(int argc, char * argv[])
                 static size_t const file_dummy_card_number = 0;
                 dump_add_packet(h80211, packet_length, &ri, file_dummy_card_number);
 
-                pace_pcap_reader(&lopt,
-                                 &previous_timestamp,
-                                 &packet_timestamp,
-                                 read_pkts);
+                if (lopt.relative_time)
+                {
+                    pace_pcap_reader(&lopt,
+                                     &previous_timestamp,
+                                     &packet_timestamp,
+                                     read_pkts);
+                }
             }
             else if (result == pcap_reader_result_done)
 			{
