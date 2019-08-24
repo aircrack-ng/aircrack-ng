@@ -498,7 +498,7 @@ static void sort_aps(
 					continue;
 				}
 
-                if (ap_sort_compare(sort_context, ap_cur, ap_min) >= 0)
+                if (ap_sort_compare(sort_context, ap_cur, ap_min) > 0)
 				{
 					ap_min = ap_cur;
 				}
