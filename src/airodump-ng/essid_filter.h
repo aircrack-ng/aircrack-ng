@@ -15,7 +15,7 @@
 
 struct essid_filter_context_st
 {
-    char * * f_essid;
+    char const * * f_essid;
     size_t f_essid_count;
 #ifdef HAVE_PCRE
     pcre * f_essid_regex;
@@ -25,6 +25,22 @@ struct essid_filter_context_st
 bool is_filtered_essid(
     struct essid_filter_context_st const * const context,
     uint8_t const * const essid);
+
+void essid_filter_context_initialise(
+    struct essid_filter_context_st * const essid_filter);
+
+void essid_filter_context_cleanup(
+    struct essid_filter_context_st * const essid_filter);
+
+void essid_filter_context_add_essid(
+    struct essid_filter_context_st * const essid_filter,
+    char const * const essid);
+
+int essid_filter_context_add_regex(
+    struct essid_filter_context_st * const essid_filter,
+    char const * const essid_regex,
+    char const * * const pcreerror,
+    int * const pcreerroffset);
 
 #endif
 

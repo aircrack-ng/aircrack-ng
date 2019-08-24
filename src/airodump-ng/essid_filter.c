@@ -50,4 +50,56 @@ done:
     return is_filtered;
 }
 
+int essid_filter_context_add_regex(
+    struct essid_filter_context_st * const essid_filter,
+    char const * const essid_regex,
+    char const * * const pcreerror, 
+    int * const pcreerroffset)
+{
+    int added;
+
+    if (essid_filter->f_essid_regex != NULL)
+    {
+        added = -1;
+        goto done;
+    }
+
+    essid_filter->f_essid_regex
+        = pcre_compile(essid_regex, 0, pcreerror, pcreerroffset, NULL);
+
+    added = essid_filter->f_essid_regex != NULL;
+
+done:
+    return added;
+}
+
+void essid_filter_context_add_essid(
+    struct essid_filter_context_st * const essid_filter,
+    char const * const essid)
+{
+    essid_filter->f_essid_count++;
+    essid_filter->f_essid = 
+        realloc(essid_filter->f_essid,
+                essid_filter->f_essid_count * sizeof(char *));
+    ALLEGE(essid_filter->f_essid != NULL);
+    essid_filter->f_essid[essid_filter->f_essid_count - 1] = essid;
+}
+
+void essid_filter_context_initialise(
+    struct essid_filter_context_st * const essid_filter)
+{
+    memset(essid_filter, 0, sizeof *essid_filter);
+}
+
+void essid_filter_context_cleanup(
+    struct essid_filter_context_st * const essid_filter)
+{
+    free(essid_filter->f_essid);
+#ifdef HAVE_PCRE
+    if (essid_filter->f_essid_regex != NULL)
+    {
+        pcre_free(essid_filter->f_essid_regex);
+    }
+#endif
+}
 

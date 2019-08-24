@@ -142,9 +142,6 @@ struct detected_frequencies_st
     int * frequencies;
 };
 
-static volatile int quitting = 0;
-static volatile time_t quitting_event_ts = 0;
-
 static void dump_print(int ws_row, int ws_col, int if_num);
 
 struct sort_context_st
@@ -159,7 +156,10 @@ TAILQ_HEAD(na_list_head, NA_info);
 
 static struct local_options
 {
-	struct ap_list_head ap_list;
+    int quitting;
+    time_t quitting_event_ts;
+
+    struct ap_list_head ap_list;
     struct AP_info * p_selected_ap; 
 
 	struct sta_list_head sta_list;
@@ -636,9 +636,9 @@ static void handle_input_key(
 
     if (keycode == KEY_q)
     {
-        quitting_event_ts = time(NULL);
-        quitting++;
-        if (quitting > 1)
+        options->quitting_event_ts = time(NULL);
+        options->quitting++;
+        if (options->quitting > 1)
         {
             options->do_exit = 1;
         }
@@ -5555,7 +5555,10 @@ static bool update_interface_cards(
 {
     bool success;
 
-    if (!check_for_monitor_mode_on_cards(wi, num_cards, msg_buffer, msg_buffer_size))
+    if (!check_for_monitor_mode_on_cards(wi, 
+                                         num_cards, 
+                                         msg_buffer, 
+                                         msg_buffer_size))
     {
         success = false;
         goto done;
@@ -6289,19 +6292,18 @@ static void close_output_files(struct local_options * const options)
 }
 
 static void do_quit_request_timeout_check(
-    char * const message_buffer,
-    size_t message_buffer_size)
+    struct local_options * const options)
 {
-	if (quitting > 0)
+    if (options->quitting > 0)
 	{
-		time_t const seconds_since_last_quit_event = time(NULL) - quitting_event_ts;
+        time_t const seconds_since_last_quit_event = time(NULL) - options->quitting_event_ts;
         time_t const maximum_quit_event_interval_seconds = 3;
 
 		if (seconds_since_last_quit_event > maximum_quit_event_interval_seconds)
 		{
-			quitting_event_ts = 0;
-			quitting = 0;
-			snprintf(message_buffer, message_buffer_size, "]");
+            options->quitting_event_ts = 0;
+            options->quitting = 0;
+            snprintf(options->message, sizeof options->message, "]");
 		}
 	}
 }
@@ -6353,13 +6355,7 @@ static void airodump_shutdown(
 
     pcap_reader_close(options->pcap_reader_context);
 
-    free(options->essid_filter.f_essid);
-#ifdef HAVE_PCRE
-    if (options->essid_filter.f_essid_regex != NULL)
-	{
-        pcre_free(options->essid_filter.f_essid_regex);
-	}
-#endif
+    essid_filter_context_cleanup(&lopt.essid_filter);
 
     close_cards(wi, options->num_cards);
 
@@ -6555,10 +6551,6 @@ int main(int argc, char * argv[])
 	int option_index = 0;
     int reset_val = 0;
     int output_format_first_time = 1;
-#ifdef HAVE_PCRE
-	const char * pcreerror;
-	int pcreerroffset;
-#endif
 
 	time_t tt1;
 	time_t tt2;
@@ -6654,9 +6646,6 @@ int main(int argc, char * argv[])
     lopt.f_encrypt = 0;
 	lopt.asso_client = 0;
 
-    lopt.essid_filter.f_essid = NULL;
-    lopt.essid_filter.f_essid_count = 0;
-
 	lopt.active_scan_sim = 0;
 	lopt.update_interval_seconds = 0;
 	lopt.decloak = 1;
@@ -6708,9 +6697,7 @@ int main(int argc, char * argv[])
 	lopt.htval = CHANNEL_NO_HT;
 #endif
 
-#ifdef HAVE_PCRE
-	lopt.essid_filter.f_essid_regex = NULL;
-#endif
+    essid_filter_context_initialise(&lopt.essid_filter);
 
 	TAILQ_INIT(&lopt.na_list);
 	TAILQ_INIT(&lopt.ap_list);
@@ -7140,41 +7127,47 @@ int main(int argc, char * argv[])
 				break;
 
 			case 'N':
-
-            lopt.essid_filter.f_essid_count++;
-                lopt.essid_filter.f_essid = (char * *)realloc( //-V701
-                    lopt.essid_filter.f_essid,
-                    lopt.essid_filter.f_essid_count * sizeof(char *));
-                ALLEGE(lopt.essid_filter.f_essid != NULL);
-                lopt.essid_filter.f_essid[lopt.essid_filter.f_essid_count - 1] = optarg;
+                essid_filter_context_add_essid(&lopt.essid_filter, optarg);
 				break;
 
 			case 'R':
 
 #ifdef HAVE_PCRE
-                if (lopt.essid_filter.f_essid_regex != NULL)
-				{
-					printf("Error: ESSID regular expression already given. "
-						   "Aborting\n");
-					program_exit_code = EXIT_FAILURE;
-					goto done;
-				}
+                {
+                    char const * pcreerror;
+                    int pcreerroffset;
 
-                lopt.essid_filter.f_essid_regex
-					= pcre_compile(optarg, 0, &pcreerror, &pcreerroffset, NULL);
+                    int const added =
+                        essid_filter_context_add_regex(
+                            &lopt.essid_filter, 
+                            optarg, 
+                            &pcreerror, 
+                            &pcreerroffset);
 
-                if (lopt.essid_filter.f_essid_regex == NULL)
-				{
-					printf("Error: regular expression compilation failed at "
-						   "offset %d: %s; aborting\n",
-						   pcreerroffset,
-						   pcreerror);
-					program_exit_code = EXIT_FAILURE;
-					goto done;
-				}
+                    if (added < 0)
+                    {
+                        printf("Error: ESSID regular expression already given. "
+                               "Aborting\n");
+
+                        program_exit_code = EXIT_FAILURE;
+                        goto done;
+                    }
+                    else if (added == 0)
+                    {
+                        printf("Error: regular expression compilation failed at "
+                               "offset %d: %s; aborting\n",
+                               pcreerroffset,
+                               pcreerror);
+
+                        program_exit_code = EXIT_FAILURE;
+                        goto done;
+                    }
+                }
 #else
 				printf("Error: Airodump-ng wasn't compiled with pcre support; "
 					   "aborting\n");
+                program_exit_code = EXIT_FAILURE;
+                goto done;
 #endif
 
 				break;
@@ -7594,7 +7587,7 @@ int main(int argc, char * argv[])
         if (lopt.interactive_mode > 0)
         {
             check_for_user_input(&lopt);
-            do_quit_request_timeout_check(lopt.message, sizeof lopt.message);
+            do_quit_request_timeout_check(&lopt);
         }
 
         check_for_signal_events(&lopt);
