@@ -201,7 +201,7 @@ static struct local_options
 	int singlechan; /* channel hopping set 1*/
 	int singlefreq; /* frequency hopping: 1 */
     channel_switching_method_t channel_switching_method;
-	unsigned int f_encrypt; /* encryption filter    */
+	unsigned int encryption_filter;
 	int update_interval_seconds;
 
 	volatile int do_exit; /* interrupt flag       */
@@ -372,6 +372,18 @@ static void clear_ap_marking(struct ap_list_head * const ap_list)
     }
 }
 
+static bool ap_has_required_security(
+    unsigned int ap_security, 
+    unsigned int required_security)
+{
+    bool const has_required =
+        ap_security == 0
+        || required_security == 0
+        || (ap_security & required_security) != 0;
+
+    return has_required;
+}
+
 static void color_off(struct local_options * const options)
 {
     clear_ap_marking(&options->ap_list);
@@ -397,12 +409,10 @@ static void color_on(struct local_options * const options)
 			continue;
 		}
 
-        if (ap_cur->security != 0 
-            && options->f_encrypt != 0
-            && (ap_cur->security & options->f_encrypt) == 0)
-		{
-			continue;
-		}
+        if (!ap_has_required_security(ap_cur->security, options->encryption_filter))
+        {
+            continue;
+        }
 
 		// Don't filter unassociated clients by ESSID
 		if (!MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid)
@@ -3447,12 +3457,10 @@ write_packet:
 
 	if (ap_cur != NULL)
 	{
-		if (ap_cur->security != 0 
-            && lopt.f_encrypt != 0
-			&& (ap_cur->security & lopt.f_encrypt) == 0)
-		{
-			return;
-		}
+        if (!ap_has_required_security(ap_cur->security, lopt.encryption_filter))
+        {
+            return;
+        }
 
         if (is_filtered_essid(&lopt.essid_filter, ap_cur->essid))
 		{
@@ -3610,13 +3618,11 @@ static bool ap_should_not_be_printed(
 		goto done;
 	}
 
-	if (ap_cur->security != 0
-        && options->f_encrypt != 0
-        && ((ap_cur->security & options->f_encrypt) == 0))
-	{
-		should_skip = true;
-		goto done;
-	}
+    if (!ap_has_required_security(ap_cur->security, lopt.encryption_filter))
+    {
+        should_skip = true;
+        goto done;
+    }
 
 	if (is_filtered_essid(&options->essid_filter, ap_cur->essid))
 	{
@@ -4335,11 +4341,10 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				continue;
 			}
 
-			if (ap_cur->security != 0 && lopt.f_encrypt != 0
-				&& ((ap_cur->security & lopt.f_encrypt) == 0))
-			{
-				continue;
-			}
+            if (!ap_has_required_security(ap_cur->security, lopt.encryption_filter))
+            {
+                continue;
+            }
 
 			// Don't filter unassociated clients by ESSID
 			if (!MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid)
@@ -6257,7 +6262,7 @@ static void update_dump_output_files(struct local_options * const options)
             dump_write(dump_context,
                        &options->ap_list,
                        &options->sta_list,
-                       options->f_encrypt,
+                       options->encryption_filter,
                        &options->essid_filter);
         }
     }
@@ -6639,7 +6644,7 @@ int main(int argc, char * argv[])
     lopt.shared_key.sk_start = 0;
     memset(lopt.shared_key.sharedkey, '\x00', sizeof(lopt.shared_key.sharedkey));
 
-    lopt.f_encrypt = 0;
+    lopt.encryption_filter = 0;
 	lopt.asso_client = 0;
 
 	lopt.active_scan_sim = 0;
@@ -7183,7 +7188,7 @@ int main(int argc, char * argv[])
 
 			case 't':
 
-                lopt.f_encrypt = set_encryption_filter(optarg);
+                lopt.encryption_filter = set_encryption_filter(optarg);
 				break;
 
 			case 'n':
