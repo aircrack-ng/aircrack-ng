@@ -4883,8 +4883,8 @@ done:
 
 /* parse a string, for example "1,2,3-7,11" */
 
-static int getchannels(
-    struct local_options * const options, 
+static int get_channels(
+    int * * const own_channels, 
     const char * optarg)
 {
     int chan_cur = 0;
@@ -4993,23 +4993,23 @@ static int getchannels(
 
     size_t const num_channels = chan_max - chan_remain;
 
-    options->own_channels
-        = malloc((num_channels + 1) * sizeof *options->own_channels);
-    ALLEGE(options->own_channels != NULL);
+    *own_channels
+        = malloc((num_channels + 1) * sizeof *own_channels);
+    ALLEGE(*own_channels != NULL);
 
     for (size_t i = 0; i < num_channels; i++) //-V658
     {
-        options->own_channels[i] = tmp_channels[i];
+        (*own_channels)[i] = tmp_channels[i];
     }
 
-    options->own_channels[num_channels] = channel_sentinel;
+    (*own_channels)[num_channels] = channel_sentinel;
 
 	free(tmp_channels);
 	free(optc);
 
     if (num_channels == 1)
 	{
-        return options->own_channels[0];
+        return (*own_channels)[0];
     }
 
     if (num_channels == 0)
@@ -6901,7 +6901,7 @@ int main(int argc, char * argv[])
 					break;
 				}
 
-				lopt.channel[0] = getchannels(&lopt, optarg);
+				lopt.channel[0] = get_channels(&lopt.own_channels, optarg);
 
 				if (lopt.channel[0] < 0)
 				{
