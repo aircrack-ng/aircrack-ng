@@ -6551,7 +6551,7 @@ static void do_refresh(struct local_options * const options)
     update_data_packets_per_second(options);
 
     if (options->interactive_mode > 0
-        && (!options->console_output.paused || !options->console_output.required))
+        && (!options->console_output.paused || options->console_output.required))
     {
         options->console_output.required = false;
 
