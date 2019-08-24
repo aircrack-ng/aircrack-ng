@@ -6570,6 +6570,51 @@ static void dump_contexts_initialise(
     }
 }
 
+static bool read_one_packet_from_file(
+    struct local_options * const options,
+    uint8_t * const packet_buffer,
+    size_t packet_buffer_size,
+    struct timeval * const packet_timestamp)
+{
+    bool read_a_packet;
+    size_t packet_length;
+    struct rx_info ri;
+
+    pcap_reader_result_t const result =
+        pcap_read(options->pcap_reader_context,
+                  packet_buffer,
+                  packet_buffer_size,
+                  &packet_length,
+                  &ri,
+                  packet_timestamp);
+
+    if (result == pcap_reader_result_ok)
+    {
+        static size_t const file_dummy_card_number = 0;
+        dump_add_packet(packet_buffer, packet_length, &ri, file_dummy_card_number);
+
+        read_a_packet = true;
+        goto done;
+    }
+
+    read_a_packet = false;
+
+    if (result == pcap_reader_result_done)
+    {
+        pcap_reader_close(lopt.pcap_reader_context);
+        lopt.pcap_reader_context = NULL;
+
+        snprintf(lopt.message,
+                 sizeof(lopt.message),
+                 "][ Finished reading input file %s.",
+                 lopt.s_file);
+
+    }
+
+done:
+    return read_a_packet;
+}
+
 int main(int argc, char * argv[])
 {
     /* The user thread args must remain in scope as long as the 
@@ -6601,7 +6646,6 @@ int main(int argc, char * argv[])
 	time_t tt2;
 	time_t start_time;
 
-	struct rx_info ri;
 	uint8_t h80211[4096];
 
 	struct timeval tv0;
@@ -7756,24 +7800,12 @@ int main(int argc, char * argv[])
 
 		if (lopt.pcap_reader_context != NULL)
 		{
-            /* Read one packet from a file. */
-            struct timeval packet_timestamp;
-			size_t packet_length;
-			pcap_reader_result_t const result =
-				pcap_read(lopt.pcap_reader_context,
-                          h80211,
-                          sizeof h80211,
-                          &packet_length,
-                          &ri,
-                          &packet_timestamp);
+            struct timeval packet_timestamp; 
 
-            if (result == pcap_reader_result_ok)
+            /* Read one packet from a file. */
+            if (read_one_packet_from_file(&lopt, h80211, sizeof h80211, &packet_timestamp))
             {
                 read_pkts++;
-
-                static size_t const file_dummy_card_number = 0;
-                dump_add_packet(h80211, packet_length, &ri, file_dummy_card_number);
-
                 if (lopt.relative_time)
                 {
                     pace_pcap_reader(&previous_timestamp,
@@ -7781,17 +7813,6 @@ int main(int argc, char * argv[])
                                      read_pkts);
                 }
             }
-            else if (result == pcap_reader_result_done)
-			{
-				pcap_reader_close(lopt.pcap_reader_context);
-				lopt.pcap_reader_context = NULL;
-
-                snprintf(lopt.message,
-                         sizeof(lopt.message),
-                         "][ Finished reading input file %s.",
-                         lopt.s_file);
-
-			}
 		}
 		else if (lopt.s_iface != NULL)
 		{
