@@ -32,6 +32,8 @@
 #ifndef AIRCRACK_NG_CONSOLE_H
 #define AIRCRACK_NG_CONSOLE_H
 
+#include <stdio.h>
+
 /**
  * Styling attributes for \a textstyle function.
  */

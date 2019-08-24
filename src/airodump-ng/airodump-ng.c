@@ -102,6 +102,7 @@
 #include "packet_writer.h"
 #include "essid_filter.h"
 #include "utils.h"
+#include "terminal.h"
 
 #define DEFAULT_CHANNEL_WIDTH_MHZ 20
 
@@ -527,7 +528,7 @@ static void sort_aps(
 				}
 			}
 
-            /* Put sorted entries at the tail of the list. Dump_print()
+            /* Put sorted entries at the tail of the list. dump_print()
              * works from the tail to the head of the list.
              */
             TAILQ_REMOVE(ap_list, ap_min, entry);
@@ -3642,18 +3643,19 @@ done:
 	return should_skip;
 }
 
-#define CHECK_END_OF_SCREEN()                                                  \
+#define CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, where)              \
 	do                                                                         \
 	{                                                                          \
-		++nlines;                                                              \
-		if (nlines >= (ws_row - 1))                                            \
+		if (nlines >= (screen_height - 1))                                     \
 		{                                                                      \
-			erase_display(0);                                                  \
-			return;                                                            \
-		};                                                                     \
+            goto where;                                                        \
+		}                                                                      \
 	} while (0)
 
-static void dump_print(int ws_row, int ws_col, int if_num)
+static void dump_print(
+    int const screen_height, 
+    int const screen_width, 
+    int const if_num)
 {
 	time_t tt;
 	struct tm * lt;
@@ -3684,7 +3686,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 	nlines = 2;
 
-    if (nlines >= ws_row)
+    if (nlines >= screen_height)
     {
         return;
     }
@@ -3720,7 +3722,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	 *  and current time
 	 */
 
-    moveto(1, 2);
+    terminal_move_cursor_to(1, 2);
 	textcolor_normal();
 	textcolor_fg(TEXT_WHITE);
 
@@ -3819,17 +3821,20 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 		strncat(strbuf, lopt.message, (sizeof strbuf - strlen(strbuf) - 1));
 	}
 
-	strbuf[ws_col - 1] = '\0';
+	strbuf[screen_width - 1] = '\0';
 
 	ALLEGE(strchr(strbuf, '\n') == NULL);
-	console_puts(strbuf);
-	CHECK_END_OF_SCREEN();
+
+    console_puts(strbuf);
+    nlines++;
+    CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
 
 	/* print some information about each detected AP */
 
-	erase_line(0);
-	move(CURSOR_DOWN, 1);
-	CHECK_END_OF_SCREEN();
+    terminal_clear_line_from_cursor_right();
+    terminal_move_cursor_down(1);
+    nlines++;
+    CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done); 
 
 	if (lopt.show_ap)
 	{
@@ -3852,7 +3857,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 		{
             /* FIXME: Clean up all this output. */
 			strcat(strbuf, "WPS   ");
-			if (ws_col > (columns_ap - 4))
+			if (screen_width > (columns_ap - 4))
 			{
 				memset(strbuf + strlen(strbuf),
 					   ' ',
@@ -3880,7 +3885,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 		{
 			strcat(strbuf, "ESSID");
 
-			if (lopt.show_manufacturer && (ws_col > (columns_ap - 4)))
+			if (lopt.show_manufacturer && (screen_width > (columns_ap - 4)))
 			{
 				// write spaces (32).
 				memset(strbuf + columns_ap, ' ', lopt.maxsize_essid_seen - 5);
@@ -3890,13 +3895,15 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 						 "  MANUFACTURER");
 			}
 		}
-		strbuf[ws_col - 1] = '\0';
+		strbuf[screen_width - 1] = '\0';
 		console_puts(strbuf);
-		CHECK_END_OF_SCREEN();
+        nlines++;
+        CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done); 
 
-		erase_line(0);
-		move(CURSOR_DOWN, 1);
-		CHECK_END_OF_SCREEN();
+        terminal_clear_line_from_cursor_right();
+        terminal_move_cursor_down(1);
+        nlines++;
+        CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done); 
 
 		num_ap = 0;
 
@@ -3968,7 +3975,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 			nlines++;
 
-			if (nlines > (ws_row - 1))
+			if (nlines > (screen_height - 1))
 			{
                 return;
             }
@@ -4170,7 +4177,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 			memset(strbuf + len, ' ', sizeof(strbuf) - len - 1);
 
-			if (ws_col > (columns_ap - 4))
+			if (screen_width > (columns_ap - 4))
 			{
 				if (lopt.show_wps)
 				{
@@ -4303,9 +4310,9 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			len = strlen(strbuf);
 
 			// write spaces (32) until the end of column
-			memset(strbuf + len, ' ', (size_t) ws_col - 1);
+			memset(strbuf + len, ' ', (size_t) screen_width - 1);
 
-			strbuf[ws_col - 1] = '\0';
+			strbuf[screen_width - 1] = '\0';
 			console_puts(strbuf);
 
 			if ((lopt.p_selected_ap != NULL && lopt.p_selected_ap == ap_cur)
@@ -4317,23 +4324,26 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 		/* print some information about each detected station */
 
-		erase_line(0);
-		move(CURSOR_DOWN, 1);
-		CHECK_END_OF_SCREEN();
-	}
+        terminal_clear_line_from_cursor_right();
+        terminal_move_cursor_down(1);
+        nlines++;
+        CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
+    }
 
 	if (lopt.show_sta)
 	{
 		strcpy(strbuf,
 			   " BSSID              STATION "
 			   "           PWR   Rate    Lost    Frames  Notes  Probes");
-		strbuf[ws_col - 1] = '\0';
+		strbuf[screen_width - 1] = '\0';
 		console_puts(strbuf);
-		CHECK_END_OF_SCREEN();
+        nlines++;
+        CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done); 
 
-		erase_line(0);
-		move(CURSOR_DOWN, 1);
-		CHECK_END_OF_SCREEN();
+        terminal_clear_line_from_cursor_right();
+        terminal_move_cursor_down(1);
+        nlines++;
+        CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done); 
 
 		num_sta = 0;
 
@@ -4357,7 +4367,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				continue;
 			}
 
-			if (nlines >= (ws_row - 1))
+			if (nlines >= (screen_height - 1))
 			{
 				return;
 			}
@@ -4391,7 +4401,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 				nlines++;
 
-                if (nlines >= (ws_row - 1))
+                if (nlines >= (screen_height - 1))
                 {
                     return;
                 }
@@ -4431,7 +4441,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 						   ? "PMKID"
 						   : (st_cur->wpa.state == 7 ? "EAPOL" : ""));
 
-				if (ws_col > (columns_sta - 6))
+				if (screen_width > (columns_sta - 6))
 				{
 					memset(ssid_list, 0, sizeof(ssid_list));
 
@@ -4460,12 +4470,12 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 							< 0
 						? abort()
 						: (void) 0;
-					strbuf[MAX(ws_col - 75, 0)] = '\0';
+					strbuf[MAX(screen_width - 75, 0)] = '\0';
 					printf(" %s", strbuf);
 				}
 
-				erase_line(0);
-				putchar('\n');
+                terminal_clear_line_from_cursor_right();
+                putchar('\n');
 			}
 
 			if ((lopt.p_selected_ap != NULL
@@ -4481,22 +4491,25 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	{
 		/* print some information about each unknown station */
 
-		erase_line(0);
-		move(CURSOR_DOWN, 1);
-		CHECK_END_OF_SCREEN();
+        terminal_clear_line_from_cursor_right();
+        terminal_move_cursor_down(1);
+        nlines++;
+        CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done); 
 
 		memcpy(strbuf,
 			   " MAC       "
 			   "          CH PWR    ACK ACK/s    CTS RTS_RX RTS_TX  OTHER",
 			   (size_t) columns_na);
-		strbuf[ws_col - 1] = '\0';
+		strbuf[screen_width - 1] = '\0';
 		console_puts(strbuf);
-		CHECK_END_OF_SCREEN();
+        nlines++;
+        CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done); 
 
-		memset(strbuf, ' ', (size_t) ws_col - 1);
-		strbuf[ws_col - 1] = '\0';
+		memset(strbuf, ' ', (size_t) screen_width - 1);
+		strbuf[screen_width - 1] = '\0';
 		console_puts(strbuf);
-		CHECK_END_OF_SCREEN();
+        nlines++;
+        CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done); 
 
 		TAILQ_FOREACH(na_cur, &lopt.na_list, entry)
 		{
@@ -4507,7 +4520,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 			nlines++;
 
-			if (nlines >= (ws_row - 1))
+			if (nlines >= (screen_height - 1))
 			{
 				return;
 			}
@@ -4529,12 +4542,13 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			printf(" %6d", na_cur->rts_t);
 			printf(" %6d", na_cur->other);
 
-			erase_line(0);
-			putchar('\n');
+            terminal_clear_line_from_cursor_right();
+            putchar('\n');
 		}
 	}
 
-	erase_display(0);
+done:
+    terminal_clear_to_end_of_screen();
 }
 
 static int
@@ -4617,20 +4631,7 @@ static void update_window_size(struct winsize * const window_size)
 
 static void handle_window_changed_event(void)
 {
-    erase_display(0);
-    fflush(stdout);
-}
-
-static void restore_terminal(void)
-{
-    reset_term();
-    show_cursor();
-}
-
-static void prepare_terminal(void)
-{
-    hide_cursor();
-    erase_display(2);
+    terminal_clear_to_end_of_screen();
 }
 
 static void handle_terminate_event(struct local_options * const options)
@@ -4676,8 +4677,10 @@ static void sighandler(int signum)
 				"Caught signal 11 (SIGSEGV). Please"
 				" contact the author!\n\n");
 		fflush(stdout);
-		restore_terminal();
-		exit(1);
+
+        terminal_restore();
+
+        exit(1);
 	}
 }
 
@@ -7632,7 +7635,7 @@ int main(int argc, char * argv[])
 
     if (lopt.interactive_mode > 0)
     {
-        prepare_terminal();
+        terminal_prepare();
         lopt.sort.sort_required = true;
 
         int const pipe_result = pipe(lopt.input_thread_pipe);
@@ -7844,7 +7847,7 @@ int main(int argc, char * argv[])
 done:
     if (lopt.interactive_mode > 0)
     {
-        restore_terminal();
+        terminal_restore();
     }
 
 	return program_exit_code;
