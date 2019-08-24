@@ -592,7 +592,9 @@ static void dump_sort(
     sort_stas(&options->sta_list);
 }
 
-static void input_thread_handle_input_key(int const key_code, int const update_fd)
+static void input_thread_handle_input_key(
+    int const key_code, 
+    int const update_fd)
 {
     switch (key_code)
     {
@@ -1193,7 +1195,7 @@ static void ap_purge_old_packets(
 }
 
 static void aps_purge_old_packets(
-	struct local_options * const options,
+	struct ap_list_head * const ap_list,
 	unsigned long const age_limit_millisecs)
 {
 	struct timeval current_time;
@@ -1202,7 +1204,7 @@ static void aps_purge_old_packets(
 
 	struct AP_info * ap_cur;
 
-	TAILQ_FOREACH(ap_cur, &options->ap_list, entry)
+	TAILQ_FOREACH(ap_cur, ap_list, entry)
 	{
 		ap_purge_old_packets(ap_cur, &current_time, age_limit_millisecs);
 	}
@@ -1567,30 +1569,27 @@ static void ap_info_free(
 
 static void remove_ap(
     struct local_options * const options,
-    struct AP_info * const ap_cur,
-    struct ap_list_head * const ap_list,
-    struct sta_list_head * const sta_list)
+    struct AP_info * const ap_cur)
 {
+    TAILQ_REMOVE(&options->ap_list, ap_cur, entry);
+
     if (options->p_selected_ap == ap_cur)
     {
         options->p_selected_ap = NULL;
     }
 
-    TAILQ_REMOVE(ap_list, ap_cur, entry);
-
-    ap_info_free(ap_cur, sta_list);
+    ap_info_free(ap_cur, &options->sta_list);
 }
 
 static void ap_list_free(struct local_options * const options)
 {
     struct ap_list_head * const ap_list = &options->ap_list;
-    struct sta_list_head * const sta_list = &options->sta_list;
 
     while (TAILQ_FIRST(ap_list) != NULL)
     {
         struct AP_info * const ap_cur = TAILQ_FIRST(ap_list);
 
-        remove_ap(options, ap_cur, ap_list, sta_list);
+        remove_ap(options, ap_cur);
     }
 }
 
@@ -1767,7 +1766,6 @@ static void purge_old_aps(
 	time_t const age_limit)
 {
     struct ap_list_head * const ap_list = &options->ap_list;
-    struct sta_list_head * const sta_list = &options->sta_list;
     struct AP_info * ap_cur;
 	struct AP_info * ap_tmp;
 
@@ -1777,7 +1775,7 @@ static void purge_old_aps(
 
 		if (too_old)
 		{
-            remove_ap(options, ap_cur, ap_list, sta_list);
+            remove_ap(options, ap_cur);
 		}
 	}
 }
@@ -4635,25 +4633,17 @@ static void send_event(int const fd, int const event)
     }
 }
 
-static void send_window_changed_event(struct local_options const * const options)
-{
-    send_event(options->signal_event_pipe[1], signal_event_window_changed);
-}
-
-static void send_terminate_event(struct local_options const * const options)
-{
-    send_event(options->signal_event_pipe[1], signal_event_terminate);
-}
-
 static void sighandler(int signum)
 {
+    int const pipe_fd = lopt.signal_event_pipe[1];
+
 	if (signum == SIGINT || signum == SIGTERM)
 	{
-        send_terminate_event(&lopt);
-	}
+        send_event(pipe_fd, signal_event_terminate);
+    }
     else if (signum == SIGWINCH)
     {
-        send_window_changed_event(&lopt);
+        send_event(pipe_fd, signal_event_window_changed);
     }
     else if (signum == SIGSEGV)
 	{
@@ -6491,7 +6481,7 @@ static void update_console_output(struct local_options * const options)
 static void do_refresh(struct local_options * const options)
 {
     purge_old_nodes(options, options->max_node_age);
-    aps_purge_old_packets(options, BUFFER_TIME_MILLISECS);
+    aps_purge_old_packets(&options->ap_list, BUFFER_TIME_MILLISECS);
 
     update_data_packets_per_second(options);
 
