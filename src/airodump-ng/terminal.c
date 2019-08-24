@@ -36,6 +36,8 @@ void terminal_restore(void)
 {
     textcolor_normal();
     textcolor_fg(TEXT_WHITE);
+    textstyle(TEXT_RESET);
+
     reset_term();
     show_cursor();
 }

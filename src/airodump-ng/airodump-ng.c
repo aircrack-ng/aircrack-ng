@@ -7584,11 +7584,11 @@ int main(int argc, char * argv[])
 		}
 		else // use channels
 		{
-			/* find the interface index */
             if (lopt.channel[0] == channel_sentinel)
 			{
                 /* Start a child process to hop between channels. */
-                size_t const chan_count = get_channel_count(lopt.channels, false);
+                size_t const chan_count = 
+                    get_channel_count(lopt.channels, false);
 
                 start_channel_hopper_process(&lopt, wi, chan_count);
 			}
@@ -7719,8 +7719,10 @@ int main(int argc, char * argv[])
 
         current_time = time(NULL);
 		time_t const seconds_since_last_output_write = current_time - tt1;
+        bool const need_to_update_dump_outputs =
+            seconds_since_last_output_write >= lopt.file_write_interval;
 
-		if (seconds_since_last_output_write >= lopt.file_write_interval)
+        if (need_to_update_dump_outputs)
 		{
 			/* update the output files */
 			tt1 = current_time;
@@ -7757,8 +7759,10 @@ int main(int argc, char * argv[])
 		{
             long const cycle_time2 = 1000000UL * (current_time_timestamp.tv_sec - last_active_scan_timestamp.tv_sec)
                 + (current_time_timestamp.tv_usec - last_active_scan_timestamp.tv_usec);
+            bool const probe_requests_required =
+                cycle_time2 > lopt.active_scan_sim * 1000;
 
-            if (cycle_time2 > lopt.active_scan_sim * 1000)
+            if (probe_requests_required)
             {
                 gettimeofday(&last_active_scan_timestamp, NULL);
 
@@ -7847,9 +7851,11 @@ int main(int argc, char * argv[])
 
         time_slept += 1000000UL * (tv2.tv_sec - current_time_timestamp.tv_sec)
             + (tv2.tv_usec - current_time_timestamp.tv_usec);
+        bool const refresh_required =
+            time_slept > REFRESH_RATE
+            && time_slept > lopt.update_interval_seconds * 1000000;
 
-		if (time_slept > REFRESH_RATE
-            && time_slept > lopt.update_interval_seconds * 1000000)
+        if (refresh_required)
 		{
             time_slept = 0;
             do_refresh(&lopt);
