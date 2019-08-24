@@ -147,19 +147,21 @@ done:
     return ret;
 }
 
-int dump_write_airodump_ng_logcsv_add_ap(const struct AP_info * ap_cur,
-										 const int32_t ri_power,
-										 struct tm * tm_gpstime,
-										 float const * const gps_loc)
+int dump_write_airodump_ng_logcsv_add_ap(
+    FILE * fp,
+    const struct AP_info * ap_cur,
+    const int32_t ri_power,
+    struct tm * tm_gpstime,
+    float const * const gps_loc)
 {
-	if (ap_cur == NULL || !opt.output_format_log_csv || !opt.f_logcsv)
+	if (ap_cur == NULL || fp == NULL)
 	{
-		return (0);
+		return 0;
 	}
 
 	// Local computer time
 	const struct tm * ltime = localtime(&ap_cur->tlast);
-	fprintf(opt.f_logcsv,
+	fprintf(fp,
 			"%04d-%02d-%02d %02d:%02d:%02d,",
 			1900 + ltime->tm_year,
 			1 + ltime->tm_mon,
@@ -169,7 +171,7 @@ int dump_write_airodump_ng_logcsv_add_ap(const struct AP_info * ap_cur,
 			ltime->tm_sec);
 
 	// Gps time
-	fprintf(opt.f_logcsv,
+    fprintf(fp,
 			"%04d-%02d-%02d %02d:%02d:%02d,",
 			1900 + tm_gpstime->tm_year,
 			1 + tm_gpstime->tm_mon,
@@ -179,33 +181,37 @@ int dump_write_airodump_ng_logcsv_add_ap(const struct AP_info * ap_cur,
 			tm_gpstime->tm_sec);
 
 	// ESSID
-	fprintf(opt.f_logcsv, "%s,", ap_cur->essid);
+    fprintf(fp, "%s,", ap_cur->essid);
 
 	// BSSID
-    fprintf_mac_address(opt.f_logcsv, &ap_cur->bssid);
-    fprintf(opt.f_logcsv, ","); 
+    fprintf_mac_address(fp, &ap_cur->bssid);
+    fprintf(fp, ",");
 
 
 	// RSSI
-	fprintf(opt.f_logcsv, "%d,", ri_power);
+    fprintf(fp, "%d,", ri_power);
 
 	// Network Security
     if ((ap_cur->security & (STD_OPN | STD_WEP | STD_WPA | STD_WPA2)) == 0)
     {
-		fputs(" ", opt.f_logcsv);
+        fputs(" ", fp);
     }
 	else
 	{
-		if (ap_cur->security & STD_WPA2) fputs(" WPA2 ", opt.f_logcsv);
-		if (ap_cur->security & STD_WPA) fputs(" WPA ", opt.f_logcsv);
-		if (ap_cur->security & STD_WEP) fputs(" WEP ", opt.f_logcsv);
-		if (ap_cur->security & STD_OPN) fputs(" OPN", opt.f_logcsv);
+		if (ap_cur->security & STD_WPA2) 
+            fputs(" WPA2 ", fp);
+        if (ap_cur->security & STD_WPA)
+            fputs(" WPA ", fp);
+        if (ap_cur->security & STD_WEP)
+            fputs(" WEP ", fp);
+        if (ap_cur->security & STD_OPN)
+            fputs(" OPN", fp);
 	}
 
-	fputs(",", opt.f_logcsv);
+    fputs(",", fp);
 
 	// Lat, Lon, Lat Error, Lon Error
-	fprintf(opt.f_logcsv,
+    fprintf(fp,
 			"%.6f,%.6f,%.3f,%.3f,AP\r\n",
 			gps_loc[0],
 			gps_loc[1],
@@ -215,20 +221,22 @@ int dump_write_airodump_ng_logcsv_add_ap(const struct AP_info * ap_cur,
 	return (0);
 }
 
-int dump_write_airodump_ng_logcsv_add_client(const struct AP_info * ap_cur,
-											 const struct ST_info * st_cur,
-											 const int32_t ri_power,
-											 struct tm * tm_gpstime,
-											 float const * const gps_loc)
+int dump_write_airodump_ng_logcsv_add_client(
+    FILE * const fp,
+    const struct AP_info * ap_cur,
+    const struct ST_info * st_cur,
+    const int32_t ri_power,
+    struct tm * tm_gpstime,
+    float const * const gps_loc)
 {
-	if (st_cur == NULL || !opt.output_format_log_csv || !opt.f_logcsv)
+    if (st_cur == NULL || fp == NULL)
 	{
-		return (0);
+		return 0;
 	}
 
 	// Local computer time
 	struct tm * ltime = localtime(&ap_cur->tlast);
-	fprintf(opt.f_logcsv,
+    fprintf(fp,
 			"%04d-%02d-%02d %02d:%02d:%02d,",
 			1900 + ltime->tm_year,
 			1 + ltime->tm_mon,
@@ -238,7 +246,7 @@ int dump_write_airodump_ng_logcsv_add_client(const struct AP_info * ap_cur,
 			ltime->tm_sec);
 
 	// GPS time
-	fprintf(opt.f_logcsv,
+    fprintf(fp,
 			"%04d-%02d-%02d %02d:%02d:%02d,",
 			1900 + tm_gpstime->tm_year,
 			1 + tm_gpstime->tm_mon,
@@ -248,21 +256,21 @@ int dump_write_airodump_ng_logcsv_add_client(const struct AP_info * ap_cur,
 			tm_gpstime->tm_sec);
 
 	// Client => No ESSID
-	fprintf(opt.f_logcsv, ",");
+    fprintf(fp, ",");
 
 	// BSSID
-    fprintf_mac_address(opt.f_logcsv, &st_cur->stmac);
-    fprintf(opt.f_logcsv, ","); 
+    fprintf_mac_address(fp, &st_cur->stmac);
+    fprintf(fp, ",");
 
 
 	// RSSI
-	fprintf(opt.f_logcsv, "%d,", ri_power);
+    fprintf(fp, "%d,", ri_power);
 
 	// Client => Network Security: none
-	fprintf(opt.f_logcsv, ",");
+    fprintf(fp, ",");
 
 	// Lat, Lon, Lat Error, Lon Error
-	fprintf(opt.f_logcsv,
+    fprintf(fp,
 			"%.6f,%.6f,%.3f,%.3f,",
 			gps_loc[0],
 			gps_loc[1],
@@ -270,7 +278,7 @@ int dump_write_airodump_ng_logcsv_add_client(const struct AP_info * ap_cur,
 			gps_loc[6]);
 
 	// Type
-	fprintf(opt.f_logcsv, "Client\r\n");
+    fprintf(fp, "Client\r\n");
 
 	return (0);
 }

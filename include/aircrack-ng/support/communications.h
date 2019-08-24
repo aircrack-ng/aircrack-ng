@@ -79,6 +79,17 @@ static const int bitrates[] = {RATE_1M,
 							   RATE_48M,
 							   RATE_54M};
 
+struct shared_key_context_st
+{
+	FILE * f_xor; /* output prga file     */
+	unsigned char sharedkey[3][4096]; /* array for 3 packets with a size of \
+							   up to 4096Byte */
+
+	time_t sk_start;
+	size_t sk_len;
+	size_t sk_len2;
+};
+
 struct communication_options
 {
 	mac_address f_bssid;
@@ -143,31 +154,13 @@ struct communication_options
 	size_t weplen;
 
 	int f_index; /* outfiles index       */
-    FILE * f_gps; /* output gps file      */
 	FILE * f_cap; /* output cap file      */
-	FILE * f_ivs; /* output ivs file      */
-	FILE * f_xor; /* output prga file     */
-	FILE * f_logcsv; /* output rolling AP/GPS csv log */
 
-	char * f_cap_name;
 	char * prefix;
 
 	int output_format_pcap;
-	int output_format_csv;
-	int output_format_kismet_csv;
-	int output_format_kismet_netxml;
-	int output_format_log_csv;
 
-	int output_format_wifi_scanner;
-
-	int usegpsd; /* do we use GPSd?      */
-	int record_data; /* do we record data?   */
-
-	unsigned char sharedkey[3][4096]; /* array for 3 packets with a size of \
-							   up to 4096Byte */
-	time_t sk_start;
-	size_t sk_len;
-	size_t sk_len2;
+	struct shared_key_context_st shared_key;
 
 	int quiet;
 	int verbose;
@@ -369,9 +362,16 @@ int capture_ask_packet(int * caplen, int just_grab);
 int filter_packet(unsigned char * h80211, int caplen);
 
 int dump_initialize(char * prefix);
-int dump_initialize_multi_format(char * prefix, int ivs_only);
+int dump_initialize_multi_format(char * prefix);
 
-int check_shared_key(const uint8_t * h80211, size_t caplen);
+int check_shared_key(
+    struct shared_key_context_st * shared_key,
+	const uint8_t * h80211, 
+	size_t caplen, 
+	char const * const prefix, 
+	int const f_index,
+    bool const quiet);
+
 int encrypt_data(uint8_t * data, size_t length);
 
 int create_wep_packet(uint8_t * packet, size_t * length, size_t hdrlen);
@@ -383,5 +383,8 @@ int set_final_ip(uint8_t * buf, uint8_t * mymac);
 int msleep(int msec);
 int read_prga(unsigned char ** dest, char * file);
 int set_bitrate(struct wif * wi, int rate);
+
+int find_first_free_file_index(char const * const prefix);
+
 
 #endif //AIRCRACK_NG_COMMUNICATIONS_H

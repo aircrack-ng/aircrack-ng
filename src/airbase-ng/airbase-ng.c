@@ -2398,7 +2398,7 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 						length += bytes2use;
 					}
 					my_send_packet(packet, length);
-					check_shared_key(packet, length);
+					check_shared_key(&opt.shared_key, packet, length, opt.prefix, opt.f_index, opt.quiet);
 
 					return (0);
 				}
@@ -2406,7 +2406,7 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 				// second response
 				if ((packet[1] & 0x40) == 0x40)
 				{
-					check_shared_key(packet, length);
+					check_shared_key(&opt.shared_key, packet, length, opt.prefix, opt.f_index, opt.quiet);
 					packet[1] = 0x00; // not encrypted
 					memcpy(packet + 4, smac, 6);
 					memcpy(packet + 10, dmac, 6);
@@ -2420,7 +2420,7 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 
 					length = z + 6;
 					my_send_packet(packet, length);
-					check_shared_key(packet, length);
+					check_shared_key(&opt.shared_key, packet, length, opt.prefix, opt.f_index, opt.quiet);
 					if (!opt.quiet) PCT;
 					printf("SKA from %02X:%02X:%02X:%02X:%02X:%02X\n",
 						   smac[0],
