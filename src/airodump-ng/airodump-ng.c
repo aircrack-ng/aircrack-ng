@@ -6503,7 +6503,7 @@ done:
     return result;
 }
 
-static void update_console_output(struct local_options * const options)
+static void update_console(struct local_options * const options)
 {
     struct sort_context_st * const sort_context = &options->sort;
 
@@ -6531,7 +6531,7 @@ static void do_refresh(struct local_options * const options)
         options->console_output.required = false;
 
         update_window_size(&options->window_size);
-        update_console_output(options);
+        update_console(options);
     }
 }
 
