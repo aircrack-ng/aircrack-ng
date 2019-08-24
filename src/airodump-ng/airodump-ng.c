@@ -101,6 +101,7 @@
 #include "channel_hopper.h"
 #include "packet_writer.h"
 #include "essid_filter.h"
+#include "utils.h"
 
 #define DEFAULT_CHANNEL_WIDTH_MHZ 20
 
@@ -279,7 +280,14 @@ static struct local_options
 	} en_selection_direction;
 
 	int mark_cur_ap;
-	bool paused;
+
+    struct
+    {
+        bool paused;
+        bool required;
+    } console_output;
+
+    bool paused;
     bool was_paused;
 
 	mac_address selected_bssid; /* bssid that is selected */
@@ -346,7 +354,7 @@ static void reset_selections(struct local_options * const options)
     options->p_selected_ap = NULL;
     options->en_selection_direction = selection_direction_no;
     options->mark_cur_ap = 0;
-    options->paused = false;
+    options->console_output.paused = false;
 
     reset_sort_context(&options->sort);
 
@@ -676,13 +684,14 @@ static void handle_input_key(
 
     if (keycode == KEY_SPACE)
     {
-        if (!options->paused)
+        options->console_output.paused = !options->console_output.paused;
+        if (options->console_output.paused)
         {
-            options->was_paused = false;
+            /* So that the 'paused' indication will get displayed. */
+            options->console_output.required = true;
         }
-        options->paused = !options->paused;
 
-        char const * const message = options->paused ? "paused" : "resumed";
+        char const * const message = options->console_output.paused ? "paused" : "resumed";
 
         snprintf(options->message, 
                  sizeof(options->message), 
@@ -6499,9 +6508,9 @@ static void do_refresh(struct local_options * const options)
     update_data_packets_per_second(options);
 
     if (options->interactive_mode > 0
-        && (!options->paused || !options->was_paused))
+        && (!options->console_output.paused || !options->console_output.required))
     {
-        options->was_paused = options->paused;
+        options->console_output.required = false;
 
         update_window_size(&options->window_size);
         update_console_output(options);
