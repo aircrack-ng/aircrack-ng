@@ -1406,7 +1406,7 @@ static void sta_populate_gps(
     memcpy(st_cur->gps_loc_best, gps_coordinates, sizeof(st_cur->gps_loc_best));
 }
 
-static struct ST_info * st_info_new(mac_address const * const stmac)
+static struct ST_info * st_info_alloc(mac_address const * const stmac)
 {
     struct ST_info * const st_cur = calloc(1, sizeof *st_cur);
 
@@ -1449,6 +1449,28 @@ done:
     return st_cur;
 }
 
+static struct ST_info * sta_info_new(
+    struct local_options * const options, 
+    mac_address const * const mac)
+{
+    struct ST_info * const st_cur = st_info_alloc(mac);
+
+    if (st_cur == NULL)
+    {
+        goto done;
+    }
+
+    st_cur->manuf =
+        get_manufacturer_by_oui(options->manufacturer_list, mac->addr);
+
+    sta_populate_gps(st_cur, options->gps_context.gps_loc);
+
+    TAILQ_INSERT_TAIL(&options->sta_list, st_cur, entry);
+
+done:
+    return st_cur;
+}
+
 static struct ST_info * sta_info_lookup_existing(
 	struct sta_list_head * const sta_list,
 	mac_address const * const mac)
@@ -1471,30 +1493,18 @@ static struct ST_info * sta_info_lookup(
     mac_address const * const mac,
     bool * const is_new)
 {
-    struct sta_list_head * const sta_list = &options->sta_list;
     struct ST_info * st_cur;
 
-    st_cur = sta_info_lookup_existing(sta_list, mac);
+    st_cur = sta_info_lookup_existing(&options->sta_list, mac);
     if (st_cur != NULL)
     {
         *is_new = false;
+
         goto done;
     }
 
     *is_new = true;
-
-    st_cur = st_info_new(mac);
-    if (st_cur == NULL)
-    {
-        goto done;
-    }
-
-    st_cur->manuf =
-        get_manufacturer_by_oui(options->manufacturer_list, mac->addr);
-
-    sta_populate_gps(st_cur, options->gps_context.gps_loc);
-
-    TAILQ_INSERT_TAIL(sta_list, st_cur, entry);
+    st_cur = sta_info_new(options, mac);
 
 done:
     return st_cur;
@@ -1593,7 +1603,7 @@ static void ap_info_populate_gps(
     memcpy(ap_cur->gps_loc_best, gps_coordinates, sizeof(ap_cur->gps_loc_best));
 }
 
-static struct AP_info * ap_info_new(mac_address const * const bssid)
+static struct AP_info * ap_info_alloc(mac_address const * const bssid)
 {
 	struct AP_info * const ap_cur = calloc(1, sizeof(*ap_cur));
 
@@ -1686,6 +1696,34 @@ done:
 	return ap_cur;
 }
 
+static struct AP_info * ap_info_new(
+    struct local_options * options, 
+    mac_address const * const bssid)
+{
+    struct AP_info * const ap_cur = ap_info_alloc(bssid);
+
+    if (ap_cur == NULL)
+    {
+        goto done;
+    }
+
+    ap_cur->manuf =
+        get_manufacturer_by_oui(options->manufacturer_list, bssid->addr);
+
+    if (options->f_ivs != NULL)
+    {
+        ap_cur->uiv_root = uniqueiv_init();
+    }
+
+    ap_cur->decloak_detect = options->decloak;
+    ap_info_populate_gps(ap_cur, options->gps_context.gps_loc);
+
+    TAILQ_INSERT_TAIL(&options->ap_list, ap_cur, entry);
+
+done:
+    return ap_cur;
+}
+
 static struct AP_info * ap_info_lookup_existing(
     struct ap_list_head * ap_list,
     mac_address const * const mac)
@@ -1708,10 +1746,9 @@ static struct AP_info * ap_info_lookup(
     mac_address const * const bssid,
     bool * const is_new)
 {
-    struct ap_list_head * const ap_list = &options->ap_list;
     struct AP_info * ap_cur;
 
-    ap_cur = ap_info_lookup_existing(ap_list, bssid);
+    ap_cur = ap_info_lookup_existing(&options->ap_list, bssid);
     if (ap_cur != NULL)
     {
         *is_new = false;
@@ -1719,23 +1756,7 @@ static struct AP_info * ap_info_lookup(
     }
 
     *is_new = true;
-
-    ap_cur = ap_info_new(bssid);
-    if (ap_cur == NULL)
-    {
-        goto done;
-    }
-
-    ap_cur->manuf =
-        get_manufacturer_by_oui(options->manufacturer_list, bssid->addr);
-    if (options->f_ivs != NULL)
-    {
-        ap_cur->uiv_root = uniqueiv_init();
-    }
-    ap_cur->decloak_detect = options->decloak; 
-    ap_info_populate_gps(ap_cur, options->gps_context.gps_loc);
-
-    TAILQ_INSERT_TAIL(ap_list, ap_cur, entry);
+    ap_cur = ap_info_new(options, bssid);
 
 done:
     return ap_cur;
