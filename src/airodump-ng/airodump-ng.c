@@ -1162,15 +1162,22 @@ static void packet_buf_free(struct pkt_buf * const pkt_buf)
 	free(pkt_buf);
 }
 
+static void packet_buf_remove(
+    struct pkt_list_head * const pkt_list,
+    struct pkt_buf * const pkt_buf)
+{
+    TAILQ_REMOVE(pkt_list, pkt_buf, entry);
+
+    packet_buf_free(pkt_buf);
+}
+
 static int packet_list_free(struct pkt_list_head * const pkt_list)
 {
 	while (TAILQ_FIRST(pkt_list) != NULL)
 	{
 		struct pkt_buf * const pkt_buf = TAILQ_FIRST(pkt_list);
 
-		TAILQ_REMOVE(pkt_list, pkt_buf, entry);
-
-		packet_buf_free(pkt_buf);
+        packet_buf_remove(pkt_list, pkt_buf);
 	}
 
 	return 0;
@@ -1207,9 +1214,7 @@ static void ap_purge_old_packets(
 
 		if (found_old_packet)
 		{
-			TAILQ_REMOVE(&ap_cur->pkt_list, pkt_buf, entry);
-
-			packet_buf_free(pkt_buf);
+            packet_buf_remove(&ap_cur->pkt_list, pkt_buf);
 		}
 	}
 
@@ -1341,20 +1346,72 @@ static void na_info_free(struct NA_info * const na_cur)
     free(na_cur);
 }
 
-static void na_info_list_free(struct na_list_head * const list_head)
+static void na_info_remove(
+    struct na_list_head * const na_list,
+    struct NA_info * const na_cur)
 {
-	struct NA_info * na_cur;
-	struct NA_info * na_temp;
+    TAILQ_REMOVE(na_list, na_cur, entry);
 
-	TAILQ_FOREACH_SAFE(na_cur, list_head, entry, na_temp)
+    na_info_free(na_cur);
+}
+
+static void na_info_list_free(struct na_list_head * const na_list)
+{
+    while (TAILQ_FIRST(na_list) != NULL)
 	{
-        TAILQ_REMOVE(list_head, na_cur, entry);
+        struct NA_info * const na_cur = TAILQ_FIRST(na_list);
 
-		na_info_free(na_cur);
+        na_info_remove(na_list, na_cur);
 	}
 }
 
-static struct NA_info * na_info_lookup(
+static struct NA_info * na_info_alloc(mac_address const * const mac)
+{
+    struct NA_info * na_cur = calloc(1, sizeof *na_cur);
+
+    if (na_cur == NULL)
+    {
+        perror("calloc failed");
+        goto done;
+    }
+
+    MAC_ADDRESS_COPY(&na_cur->namac, mac);
+
+    gettimeofday(&na_cur->tv, NULL);
+    na_cur->tinit = time(NULL);
+    na_cur->tlast = time(NULL);
+
+    na_cur->power = -1;
+    na_cur->channel = -1;
+    na_cur->ack = 0;
+    na_cur->ack_old = 0;
+    na_cur->ackps = 0;
+    na_cur->cts = 0;
+    na_cur->rts_r = 0;
+    na_cur->rts_t = 0;
+
+done:
+    return na_cur;
+}
+
+static struct NA_info * na_info_new(
+    struct na_list_head * const na_list, 
+    mac_address const * const mac)
+{
+    struct NA_info * const na_cur = na_info_alloc(mac);
+
+    if (na_cur == NULL)
+    {
+        goto done;
+    }
+
+    TAILQ_INSERT_TAIL(na_list, na_cur, entry);
+
+done:
+    return na_cur;
+}
+
+static struct NA_info * na_info_lookup_existing(
 	struct na_list_head * const list,
 	mac_address const * const mac)
 {
@@ -1371,53 +1428,39 @@ static struct NA_info * na_info_lookup(
 	return na_cur;
 }
 
+struct NA_info * na_info_lookup(
+    struct na_list_head * const na_list, 
+    mac_address const * const mac)
+{
+    struct NA_info * na_cur;
+
+    na_cur = na_info_lookup_existing(na_list, mac);
+    if (na_cur != NULL)
+    {
+        goto done;
+    }
+
+    na_cur = na_info_new(na_list, mac);
+
+done:
+    return na_cur;
+}
+
 static void remove_namac(
     struct na_list_head * const na_list, 
     mac_address const * const mac)
 {
-	struct NA_info * const na_cur = na_info_lookup(na_list, mac);
+    struct NA_info * const na_cur = na_info_lookup_existing(na_list, mac);
 
 	if (na_cur == NULL)
 	{
 		goto done;
 	}
 
-	/* If it's known, remove it */
-	TAILQ_REMOVE(na_list, na_cur, entry);
-
-	na_info_free(na_cur);
+    na_info_remove(na_list, na_cur);
 
 done:
 	return;
-}
-
-static struct NA_info * na_info_new(mac_address const * const mac)
-{
-	struct NA_info * na_cur = calloc(1, sizeof *na_cur);
-
-	if (na_cur == NULL)
-	{
-		perror("calloc failed");
-		goto done;
-	}
-
-	MAC_ADDRESS_COPY(&na_cur->namac, mac);
-
-	gettimeofday(&na_cur->tv, NULL);
-	na_cur->tinit = time(NULL);
-	na_cur->tlast = time(NULL);
-
-	na_cur->power = -1;
-	na_cur->channel = -1;
-	na_cur->ack = 0;
-	na_cur->ack_old = 0;
-	na_cur->ackps = 0;
-	na_cur->cts = 0;
-	na_cur->rts_r = 0;
-	na_cur->rts_t = 0;
-
-done:
-	return na_cur;
 }
 
 static void sta_populate_gps(
@@ -1588,16 +1631,16 @@ static void ap_info_free(
     free(ap_cur);
 }
 
-static void remove_ap(
+static void ap_info_remove(
     struct local_options * const options,
     struct AP_info * const ap_cur)
 {
-    TAILQ_REMOVE(&options->ap_list, ap_cur, entry);
-
     if (options->p_selected_ap == ap_cur)
     {
         options->p_selected_ap = NULL;
     }
+
+    TAILQ_REMOVE(&options->ap_list, ap_cur, entry);
 
     ap_info_free(ap_cur, &options->sta_list);
 }
@@ -1610,7 +1653,7 @@ static void ap_list_free(struct local_options * const options)
     {
         struct AP_info * const ap_cur = TAILQ_FIRST(ap_list);
 
-        remove_ap(options, ap_cur);
+        ap_info_remove(options, ap_cur);
     }
 }
 
@@ -1796,7 +1839,7 @@ static void purge_old_aps(
 
 		if (too_old)
 		{
-            remove_ap(options, ap_cur);
+            ap_info_remove(options, ap_cur);
 		}
 	}
 }
@@ -1832,9 +1875,7 @@ static void purge_old_nas(
 
 		if (too_old)
 		{
-			TAILQ_REMOVE(na_list, na_cur, entry);
-
-			na_info_free(na_cur);
+            na_info_remove(na_list, na_cur);
 		}
 	}
 }
@@ -3509,25 +3550,15 @@ write_packet:
 
 				/* Not found in either AP list or ST list, look through NA list
 				 */
-				struct NA_info * na_cur;
+                struct NA_info * const na_cur =
+                    na_info_lookup(&lopt.na_list, &namac);
 
-				/* Update the chained list of unknown stations. */
-				na_cur = na_info_lookup(&lopt.na_list, &namac);
-
-				/* If it's a new mac, add it */
-				if (na_cur == NULL)
-				{
-					na_cur = na_info_new(&namac);
-					if (na_cur == NULL)
-					{
-						return;
-					}
-
-					TAILQ_INSERT_TAIL(&lopt.na_list, na_cur, entry);
+                if (na_cur == NULL)
+                {
+                    return;
                 }
 
-				/* update the last time seen & power*/
-
+                /* update the last time seen & power*/
 				na_cur->tlast = time(NULL);
 				na_cur->power = ri->ri_power;
 				na_cur->channel = ri->ri_channel;
