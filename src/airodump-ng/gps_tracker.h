@@ -20,14 +20,12 @@ struct gps_tracker_context_st
     volatile int * do_exit;
 }; 
 
-void gps_tracker_initialise(
+void gps_tracker_update(gps_tracker_context_st * const gps_context);
+
+bool gps_tracker_start(
     gps_tracker_context_st * const gps_context,
     FILE * fp,
     volatile int * do_exit);
-
-void gps_tracker_update(gps_tracker_context_st * const gps_context);
-
-bool gps_tracker_start(gps_tracker_context_st * const gps_context);
 
 void gps_tracker_stop(gps_tracker_context_st * const gps_context);
 

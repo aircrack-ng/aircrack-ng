@@ -7632,11 +7632,7 @@ int main(int argc, char * argv[])
     /* Start the GPS tracker if requested. */
     if (lopt.gpsd.required)
 	{
-		gps_tracker_initialise(&lopt.gps_context,
-                               lopt.gpsd.fp,
-                               &lopt.do_exit);
-
-		if (!gps_tracker_start(&lopt.gps_context))
+        if (!gps_tracker_start(&lopt.gps_context, lopt.gpsd.fp, &lopt.do_exit))
 		{
 			program_exit_code = EXIT_FAILURE;
 			goto done;

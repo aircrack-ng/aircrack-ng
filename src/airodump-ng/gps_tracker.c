@@ -501,7 +501,7 @@ static void gps_tracker_cleanup(gps_tracker_context_st * const gps_context)
     free(gps_context->batt);
 }
 
-void gps_tracker_initialise(
+static void gps_tracker_initialise(
     gps_tracker_context_st * const gps_context,
     FILE * const fp,
     volatile int * do_exit)
@@ -520,9 +520,14 @@ void gps_tracker_update(gps_tracker_context_st * const gps_context)
     update_battery_string(&gps_context->batt);
 }
 
-bool gps_tracker_start(gps_tracker_context_st * const gps_context)
+bool gps_tracker_start(
+    gps_tracker_context_st * const gps_context,
+    FILE * const fp,
+    volatile int * do_exit)
 {
     bool success;
+
+    gps_tracker_initialise(gps_context, fp, do_exit);
 
     gps_tracker_update(gps_context);
 
