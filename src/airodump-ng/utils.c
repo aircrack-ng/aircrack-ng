@@ -89,3 +89,59 @@ void make_printable(uint8_t * const buf, size_t const buf_size)
         }
     }
 }
+
+static int is_filtered_netmask(
+    mac_address const * const bssid,
+    mac_address const * const f_bssid,
+    mac_address const * const f_netmask)
+{
+    REQUIRE(bssid != NULL);
+
+    mac_address mac1;
+    mac_address mac2;
+
+    for (size_t i = 0; i < sizeof mac1; i++)
+    {
+        /* FIXME - Do (a ^ b) & mask? */
+        mac1.addr[i] = bssid->addr[i] & f_netmask->addr[i];
+        mac2.addr[i] = f_bssid->addr[i] & f_netmask->addr[i];
+    }
+
+    bool const is_filtered = !MAC_ADDRESS_EQUAL(&mac1, &mac2);
+
+    return is_filtered;
+}
+
+bool bssid_is_filtered(
+    mac_address const * const bssid,
+    mac_address const * const f_bssid,
+    mac_address const * const f_netmask)
+{
+    bool is_filtered;
+
+    if (MAC_ADDRESS_IS_EMPTY(f_bssid))
+    {
+        is_filtered = false;
+        goto done;
+    }
+
+    if (!MAC_ADDRESS_IS_EMPTY(f_netmask))
+    {
+        if (is_filtered_netmask(bssid, f_bssid, f_netmask))
+        {
+            is_filtered = true;
+            goto done;
+        }
+    }
+    else if (!MAC_ADDRESS_EQUAL(f_bssid, bssid))
+    {
+        is_filtered = true;
+        goto done;
+    }
+
+    is_filtered = false;
+
+done:
+    return is_filtered;
+}
+
