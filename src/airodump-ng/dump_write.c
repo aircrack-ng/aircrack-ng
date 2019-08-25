@@ -147,6 +147,37 @@ done:
     return ret;
 }
 
+FILE * log_csv_file_open(char const * const filename)
+{
+    bool success;
+    FILE * fp = fopen(filename, "wb+");
+
+    if (fp == NULL)
+    {
+        perror("fopen failed");
+        fprintf(stderr, "Could not create \"%s\".\n", filename);
+
+        success = false;
+        goto done;
+    }
+
+    fprintf(fp,
+            "LocalTime, GPSTime, ESSID, BSSID, Power, "
+            "Security, Latitude, Longitude, Latitude Error, "
+            "Longitude Error, Type\r\n"); 
+
+    success = true;
+
+done:
+    if (!success && fp != NULL)
+    {
+        fclose(fp);
+        fp = NULL;
+    }
+
+    return fp;
+}
+
 int dump_write_airodump_ng_logcsv_add_ap(
     FILE * fp,
     const struct AP_info * ap_cur,

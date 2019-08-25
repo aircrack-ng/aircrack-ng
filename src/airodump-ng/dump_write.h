@@ -67,6 +67,7 @@ void dump_write(
 void dump_close(
     dump_context_st * const dump);
 
+FILE * log_csv_file_open(char const * const filename);
 
 int dump_write_airodump_ng_logcsv_add_ap(
     FILE * fp, 
