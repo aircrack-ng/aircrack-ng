@@ -458,7 +458,7 @@ typedef uint8_t u_int8_t;
 /* Loads and stores. These avoid undefined behavior due to unaligned memory
  * accesses, via memcpy. */
 
-inline static uint16_t load16(uint8_t * b)
+inline static uint16_t load16(uint8_t const * const b)
 {
 	uint16_t x;
 	memcpy(&x, b, 2);

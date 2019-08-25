@@ -345,7 +345,7 @@ int calc_crc_buf(const unsigned char * buf, int len)
 	return (int) (calc_crc(buf, len));
 }
 
-static void * get_da(unsigned char * wh)
+static void const * get_da(unsigned char const * wh)
 {
 	REQUIRE(wh != NULL);
 
@@ -355,7 +355,7 @@ static void * get_da(unsigned char * wh)
 		return (wh + 4 + 6 * 2);
 }
 
-static void * get_sa(unsigned char * wh)
+static void const * get_sa(unsigned char const * wh)
 {
 	REQUIRE(wh != NULL);
 
@@ -388,7 +388,7 @@ int is_dhcp_discover(void * wh, size_t len)
 	return (0);
 }
 
-static inline int is_arp(void * wh, size_t len)
+static inline int is_arp(void const * wh, size_t len)
 {
 	UNUSED_PARAM(wh);
 
@@ -402,7 +402,7 @@ static inline int is_arp(void * wh, size_t len)
 	return (0);
 }
 
-static inline int is_wlccp(void * wh, size_t len)
+static inline int is_wlccp(void const * wh, size_t len)
 {
 	UNUSED_PARAM(wh);
 
@@ -437,7 +437,7 @@ int is_qos_arp_tkip(void * wh, int len)
 	return (0);
 }
 
-static int is_spantree(void * wh)
+static int is_spantree(void const * wh)
 {
 	REQUIRE(wh != NULL);
 
@@ -448,7 +448,7 @@ static int is_spantree(void * wh)
 	return (0);
 }
 
-static int is_cdp_vtp(void * wh)
+static int is_cdp_vtp(void const * wh)
 {
 	REQUIRE(wh != NULL);
 
@@ -463,7 +463,7 @@ static int is_cdp_vtp(void * wh)
  * PTW, but just for getting known clear-text.
  */
 int known_clear(
-	void * clear, int * clen, int * weight, unsigned char * wh, size_t len)
+	void * clear, int * clen, int * weight, unsigned char const * wh, size_t len)
 {
 	REQUIRE(clear != NULL);
 	REQUIRE(clen != NULL);

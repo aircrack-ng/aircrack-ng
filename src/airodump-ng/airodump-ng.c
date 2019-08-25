@@ -1187,8 +1187,8 @@ static void aps_purge_old_packets(
 static int
 list_add_packet(
 	struct pkt_list_head * const pkt_list,
-	int const length,
-	unsigned char * packet)
+    uint8_t const * const packet,
+    size_t const length)
 {
 	struct pkt_buf * new_pkt_buf;
 
@@ -1208,14 +1208,14 @@ list_add_packet(
         return 1;
     }
 
-    new_pkt_buf->packet = malloc((size_t)length);
+    new_pkt_buf->packet = malloc(length);
     if (new_pkt_buf->packet == NULL)
     {
         free(new_pkt_buf);
         return 1;
     }
 
-    memcpy(new_pkt_buf->packet, packet, (size_t)length);
+    memcpy(new_pkt_buf->packet, packet, length);
     new_pkt_buf->length = (uint16_t)length;
 
     gettimeofday(&new_pkt_buf->ctime, NULL);
@@ -1866,12 +1866,109 @@ static void update_packet_capture_files(
     }
 }
 
+static void ap_update(
+    struct local_options * const options,
+    struct AP_info * const ap_cur,
+    unsigned char const * const h80211,
+    size_t const caplen,
+    struct rx_info const * const ri)
+{
+    (void)caplen;
+    /* Get the sequence number. */
+    int const seq = ((h80211[22] >> 4) + (h80211[23] << 4));
+
+    /* update the last time seen */
+    ap_cur->tlast = time(NULL);
+
+    /* only update power if packets comes from
+     * the AP: either type == mgmt and SA == BSSID,
+     * or FromDS == 1 and ToDS == 0 */
+
+    if (((h80211[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_NODS
+         && MAC_ADDRESS_EQUAL((mac_address *)(h80211 + 10), &ap_cur->bssid))
+        || ((h80211[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_FROMDS))
+    {
+        ap_cur->power_index = (ap_cur->power_index + 1) % NB_PWR;
+        ap_cur->power_lvl[ap_cur->power_index] = ri->ri_power;
+
+        // Moving exponential average
+        // ma_new = alpha * new_sample + (1-alpha) * ma_old;
+        ap_cur->avg_power
+            = (int)(0.99f * ri->ri_power + (1.f - 0.99f) * ap_cur->avg_power);
+
+        if (ap_cur->avg_power > ap_cur->best_power)
+        {
+            ap_cur->best_power = ap_cur->avg_power;
+            memcpy(ap_cur->gps_loc_best,
+                   options->gps_context.gps_loc,
+                   sizeof ap_cur->gps_loc_best);
+        }
+
+        /* Every packet in here comes from the AP. */
+
+        if (lopt.gps_context.gps_loc[0] > ap_cur->gps_loc_max[0])
+            ap_cur->gps_loc_max[0] = lopt.gps_context.gps_loc[0];
+        if (lopt.gps_context.gps_loc[1] > ap_cur->gps_loc_max[1])
+            ap_cur->gps_loc_max[1] = lopt.gps_context.gps_loc[1];
+        if (lopt.gps_context.gps_loc[2] > ap_cur->gps_loc_max[2])
+            ap_cur->gps_loc_max[2] = lopt.gps_context.gps_loc[2];
+
+        if (lopt.gps_context.gps_loc[0] < ap_cur->gps_loc_min[0])
+            ap_cur->gps_loc_min[0] = lopt.gps_context.gps_loc[0];
+        if (lopt.gps_context.gps_loc[1] < ap_cur->gps_loc_min[1])
+            ap_cur->gps_loc_min[1] = lopt.gps_context.gps_loc[1];
+        if (lopt.gps_context.gps_loc[2] < ap_cur->gps_loc_min[2])
+            ap_cur->gps_loc_min[2] = lopt.gps_context.gps_loc[2];
+
+        if (ap_cur->fcapt == 0 && ap_cur->fmiss == 0)
+        {
+            gettimeofday(&(ap_cur->ftimef), NULL);
+        }
+        if (ap_cur->last_seq != 0)
+        {
+            ap_cur->fmiss += (seq - ap_cur->last_seq - 1);
+        }
+        ap_cur->last_seq = (unsigned int)seq;
+        ap_cur->fcapt++;
+        gettimeofday(&(ap_cur->ftimel), NULL);
+
+        /* if we are writing to a file and want to make a continuous rolling log save the data here */
+        if (lopt.log_csv.fp != NULL)
+        {
+            /* Write out our rolling log every time we see data from an AP */
+            dump_write_airodump_ng_logcsv_add_ap(lopt.log_csv.fp,
+                                                 ap_cur,
+                                                 ri->ri_power,
+                                                 &lopt.gps_context.gps_time,
+                                                 lopt.gps_context.gps_loc);
+        }
+    }
+
+    switch (h80211[0])
+    {
+        case IEEE80211_FC0_SUBTYPE_BEACON:
+            ap_cur->nb_bcn++;
+            break;
+
+        case IEEE80211_FC0_SUBTYPE_PROBE_RESP:
+            /* reset the WPS state */
+            ap_cur->wps.state = 0xFF;
+            ap_cur->wps.ap_setup_locked = 0;
+            break;
+
+        default:
+            break;
+    }
+
+    ap_cur->nb_pkt++;
+}
+
 // NOTE(jbenden): This is also in ivstools.c
 static void dump_add_packet(
-	unsigned char * h80211,
+	unsigned char const * const h80211,
 	size_t const caplen,
-	struct rx_info * ri,
-	int cardnum)
+	struct rx_info * const ri,
+	int const cardnum)
 {
 	REQUIRE(h80211 != NULL);
 	uint8_t const * const data_end = h80211 + caplen;
@@ -1881,8 +1978,8 @@ static void dump_add_packet(
 	unsigned z;
 	int type, length, numuni = 0;
 	size_t numauth = 0;
-    unsigned char * p; 
-    unsigned char * org_p;
+    unsigned char const * p; 
+    unsigned char const * org_p;
     mac_address bssid;
 	mac_address stmac;
     unsigned char clear[2048] = { 0 };
@@ -1973,90 +2070,7 @@ static void dump_add_packet(
         remove_namac(&lopt.na_list, &bssid);
 	}
 
-	/* update the last time seen */
-	ap_cur->tlast = time(NULL);
-
-	/* only update power if packets comes from
-	 * the AP: either type == mgmt and SA == BSSID,
-	 * or FromDS == 1 and ToDS == 0 */
-
-	if (((h80211[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_NODS
-		 && MAC_ADDRESS_EQUAL((mac_address *)(h80211 + 10), &bssid))
-		|| ((h80211[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_FROMDS))
-	{
-		ap_cur->power_index = (ap_cur->power_index + 1) % NB_PWR;
-		ap_cur->power_lvl[ap_cur->power_index] = ri->ri_power;
-
-		// Moving exponential average
-		// ma_new = alpha * new_sample + (1-alpha) * ma_old;
-		ap_cur->avg_power
-			= (int) (0.99f * ri->ri_power + (1.f - 0.99f) * ap_cur->avg_power);
-
-		if (ap_cur->avg_power > ap_cur->best_power)
-		{
-			ap_cur->best_power = ap_cur->avg_power;
-			memcpy(ap_cur->gps_loc_best,
-				   lopt.gps_context.gps_loc,
-				   sizeof ap_cur->gps_loc_best);
-		}
-
-        /* Every packet in here comes from the AP. */
-
-		if (lopt.gps_context.gps_loc[0] > ap_cur->gps_loc_max[0])
-			ap_cur->gps_loc_max[0] = lopt.gps_context.gps_loc[0];
-		if (lopt.gps_context.gps_loc[1] > ap_cur->gps_loc_max[1])
-			ap_cur->gps_loc_max[1] = lopt.gps_context.gps_loc[1];
-		if (lopt.gps_context.gps_loc[2] > ap_cur->gps_loc_max[2])
-			ap_cur->gps_loc_max[2] = lopt.gps_context.gps_loc[2];
-
-		if (lopt.gps_context.gps_loc[0] < ap_cur->gps_loc_min[0])
-			ap_cur->gps_loc_min[0] = lopt.gps_context.gps_loc[0];
-		if (lopt.gps_context.gps_loc[1] < ap_cur->gps_loc_min[1])
-			ap_cur->gps_loc_min[1] = lopt.gps_context.gps_loc[1];
-		if (lopt.gps_context.gps_loc[2] < ap_cur->gps_loc_min[2])
-			ap_cur->gps_loc_min[2] = lopt.gps_context.gps_loc[2];
-
-        if (ap_cur->fcapt == 0 && ap_cur->fmiss == 0)
-        {
-			gettimeofday(&(ap_cur->ftimef), NULL);
-        }
-        if (ap_cur->last_seq != 0)
-        {
-			ap_cur->fmiss += (seq - ap_cur->last_seq - 1);
-        }
-		ap_cur->last_seq = (unsigned int)seq;
-		ap_cur->fcapt++;
-		gettimeofday(&(ap_cur->ftimel), NULL);
-
-		/* if we are writing to a file and want to make a continuous rolling log save the data here */
-        if (lopt.log_csv.fp != NULL)
-		{
-			/* Write out our rolling log every time we see data from an AP */
-            dump_write_airodump_ng_logcsv_add_ap(lopt.log_csv.fp,
-                                                 ap_cur, 
-                                                 ri->ri_power, 
-                                                 &lopt.gps_context.gps_time, 
-                                                 lopt.gps_context.gps_loc);
-		}
-	}
-
-	switch (h80211[0])
-	{
-        case IEEE80211_FC0_SUBTYPE_BEACON:
-			ap_cur->nb_bcn++;
-			break;
-
-        case IEEE80211_FC0_SUBTYPE_PROBE_RESP:
-			/* reset the WPS state */
-			ap_cur->wps.state = 0xFF;
-			ap_cur->wps.ap_setup_locked = 0;
-			break;
-
-		default:
-			break;
-	}
-
-	ap_cur->nb_pkt++;
+    ap_update(&lopt, ap_cur, h80211, caplen, ri);
 
     /* Locate the station MAC in the 802.11 header. */
 
@@ -2933,7 +2947,7 @@ skip_probe:
 			{
 				if (list_check_decloak(&ap_cur->pkt_list, caplen, h80211) != 0)
 				{
-					list_add_packet(&ap_cur->pkt_list, caplen, h80211);
+                    list_add_packet(&ap_cur->pkt_list, h80211, caplen);
 				}
 				else
 				{

@@ -134,7 +134,7 @@ void calc_mic(struct AP_info * ap,
 			  unsigned char * ptk,
 			  unsigned char * mic);
 int known_clear(
-	void * clear, int * clen, int * weight, unsigned char * wh, size_t len);
+	void * clear, int * clen, int * weight, unsigned char const * wh, size_t len);
 int add_crc32(unsigned char * data, int length);
 int add_crc32_plain(unsigned char * data, int length);
 int is_ipv6(void * wh);

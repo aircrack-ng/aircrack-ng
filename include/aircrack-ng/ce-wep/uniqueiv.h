@@ -47,8 +47,8 @@
 #define BITWISE_MASK(x) (1 << ((x) &7))
 
 unsigned char ** uniqueiv_init(void);
-int uniqueiv_mark(unsigned char ** uiv_root, unsigned char IV[3]);
-int uniqueiv_check(unsigned char ** uiv_root, unsigned char IV[3]);
+int uniqueiv_mark(unsigned char ** uiv_root, unsigned char const IV[3]);
+int uniqueiv_check(unsigned char ** uiv_root, unsigned char const IV[3]);
 void uniqueiv_wipe(unsigned char ** uiv_root);
 
 #define NO_CLOAKING 0
@@ -56,8 +56,8 @@ void uniqueiv_wipe(unsigned char ** uiv_root);
 
 unsigned char * data_init(void);
 int data_check(unsigned char * data_root,
-			   unsigned char IV[3],
-			   unsigned char data[2]);
+			   unsigned char const IV[3],
+			   unsigned char const data[2]);
 void data_wipe(unsigned char * data);
 
 #endif
