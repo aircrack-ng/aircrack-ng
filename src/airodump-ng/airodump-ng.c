@@ -649,20 +649,20 @@ static void handle_input_key(
             snprintf(
                 options->message,
                 sizeof(options->message),
-                "][ Are you sure you want to quit? Press Q again to quit.");
+                "Are you sure you want to quit? Press Q again to quit.");
         }
     }
 
     if (keycode == KEY_o)
     {
         color_on(options);
-        snprintf(options->message, sizeof(options->message), "][ color on");
+        snprintf(options->message, sizeof(options->message), "color on");
     }
 
     if (keycode == KEY_p)
     {
         color_off(options);
-        snprintf(options->message, sizeof(options->message), "][ color off");
+        snprintf(options->message, sizeof(options->message), "color off");
     }
 
     if (keycode == KEY_s)
@@ -670,7 +670,7 @@ static void handle_input_key(
         ap_sort_context_next_sort_method(&options->sort.sort_context);
         snprintf(options->message,
                  sizeof(options->message),
-                 "][ sorting by %s", 
+                 "sorting by %s", 
                  ap_sort_context_description(&options->sort.sort_context));
         options->sort.sort_required = true;
     }
@@ -688,7 +688,7 @@ static void handle_input_key(
 
         snprintf(options->message, 
                  sizeof(options->message), 
-                 "][ %s output", 
+                 "%s output", 
                  message);
     }
 
@@ -700,7 +700,7 @@ static void handle_input_key(
 
         snprintf(options->message,
                  sizeof(options->message),
-                 "][ realtime sorting %s", message);
+                 "realtime sorting %s", message);
     }
 
     if (keycode == KEY_m)
@@ -738,7 +738,7 @@ static void handle_input_key(
 
         snprintf(options->message,
                  sizeof(options->message),
-                 "][ %s sorting order", message);
+                 "%s sorting order", message);
 
         options->sort.sort_required = true;
     }
@@ -760,7 +760,7 @@ static void handle_input_key(
         }
         snprintf(options->message,
                  sizeof(options->message),
-                 "][ %s AP selection", message); 
+                 "%s AP selection", message); 
 
         ap_sort_context_assign_sort_method(&options->sort.sort_context, 
                                            SORT_BY_NOTHING);
@@ -777,7 +777,7 @@ static void handle_input_key(
             options->show_ack = 1;
             snprintf(options->message,
                      sizeof(options->message),
-                     "][ display ap+sta+ack");
+                     "display ap+sta+ack");
         }
         else if (options->show_ap == 1 
                  && options->show_sta == 1
@@ -787,7 +787,7 @@ static void handle_input_key(
             options->show_sta = 0;
             options->show_ack = 0;
             snprintf(
-                options->message, sizeof(options->message), "][ display ap only");
+                options->message, sizeof(options->message), "display ap only");
         }
         else if (options->show_ap == 1 
                  && options->show_sta == 0
@@ -797,7 +797,7 @@ static void handle_input_key(
             options->show_sta = 1;
             options->show_ack = 0;
             snprintf(
-                options->message, sizeof(options->message), "][ display sta only");
+                options->message, sizeof(options->message), "display sta only");
         }
         else if (options->show_ap == 0 
                  && options->show_sta == 1
@@ -807,7 +807,7 @@ static void handle_input_key(
             options->show_sta = 1;
             options->show_ack = 0;
             snprintf(
-                options->message, sizeof(options->message), "][ display ap+sta");
+                options->message, sizeof(options->message), "display ap+sta");
         }
     }
 
@@ -816,7 +816,7 @@ static void handle_input_key(
         reset_selections(options);
         snprintf(options->message,
                  sizeof(options->message),
-                 "][ reset selection to default");
+                 "reset selection to default");
     }
 }
 
@@ -2969,7 +2969,7 @@ skip_probe:
 
 					snprintf(lopt.message,
 							 sizeof(lopt.message),
-							 "][ Decloak: %02X:%02X:%02X:%02X:%02X:%02X ",
+							 "Decloak: %02X:%02X:%02X:%02X:%02X:%02X ",
 							 ap_cur->bssid.addr[0],
 							 ap_cur->bssid.addr[1],
 							 ap_cur->bssid.addr[2],
@@ -3139,7 +3139,7 @@ skip_probe:
 					// If no EAP/EAP was detected, indicate WEP cloaking
 					snprintf(lopt.message,
 							 sizeof(lopt.message),
-							 "][ WEP Cloaking: %02X:%02X:%02X:%02X:%02X:%02X ",
+							 "WEP Cloaking: %02X:%02X:%02X:%02X:%02X:%02X ",
                              ap_cur->bssid.addr[0],
                              ap_cur->bssid.addr[1],
                              ap_cur->bssid.addr[2],
@@ -3207,7 +3207,7 @@ skip_probe:
 							MAC_ADDRESS_COPY(&st_cur->wpa.stmac, &st_cur->stmac);
 							snprintf(lopt.message,
 									 sizeof(lopt.message),
-									 "][ PMKID found: "
+									 "PMKID found: "
 									 "%02X:%02X:%02X:%02X:%02X:%02X ",
                                      ap_cur->bssid.addr[0],
                                      ap_cur->bssid.addr[1],
@@ -3304,7 +3304,7 @@ skip_probe:
                 MAC_ADDRESS_COPY(&st_cur->wpa.stmac, &st_cur->stmac);
 				snprintf(lopt.message,
 						 sizeof(lopt.message),
-						 "][ WPA handshake: %02X:%02X:%02X:%02X:%02X:%02X ",
+						 "WPA handshake: %02X:%02X:%02X:%02X:%02X:%02X ",
                          ap_cur->bssid.addr[0],
                          ap_cur->bssid.addr[1],
                          ap_cur->bssid.addr[2],
@@ -3677,9 +3677,14 @@ static void dump_print(
 	strncat(strbuf, buffer, (sizeof strbuf - strlen(strbuf) - 1));
     buffer[0] = '\0';
 
-	if (strlen(lopt.message) > 0)
+    static char const message_field_end[] = "]";
+    static char const message_field_start[] = "[ ";
+
+    strncat(strbuf, message_field_end, sizeof strbuf - strlen(strbuf) - 1);
+    if (strlen(lopt.message) > 0)
 	{
-		strncat(strbuf, lopt.message, (sizeof strbuf - strlen(strbuf) - 1));
+        strncat(strbuf, message_field_start, sizeof strbuf - strlen(strbuf) - 1);
+		strncat(strbuf, lopt.message, sizeof strbuf - strlen(strbuf) - 1);
 	}
 
 	strbuf[screen_width - 1] = '\0';
@@ -5175,7 +5180,7 @@ static void write_monitor_mode_message(
 {
     snprintf(msg_buffer,
              msg_buffer_size,
-             "][ %s reset to monitor mode",
+             "%s reset to monitor mode",
              interface_name);
 }
 
@@ -5187,7 +5192,7 @@ static void write_fixed_channel_message(
 {
     snprintf(msg_buffer,
              msg_buffer_size,
-             "][ fixed channel %s: %d ",
+             "fixed channel %s: %d ",
              interface_name,
              channel);
 }
@@ -5200,7 +5205,7 @@ static void write_fixed_frequency_message(
 {
     snprintf(msg_buffer,
              msg_buffer_size,
-             "][ fixed frequency %s: %d ",
+             "fixed frequency %s: %d ",
              interface_name,
              frequency);
 }
@@ -6146,7 +6151,7 @@ static void do_quit_request_timeout_check(
 		{
             options->quitting_event_ts = 0;
             options->quitting = 0;
-            snprintf(options->message, sizeof options->message, "]");
+            options->message[0] = '\0';
 		}
 	}
 }
@@ -6254,7 +6259,7 @@ static bool handle_ready_wi_interface(
 
         snprintf(options->message,
                  sizeof(options->message),
-                 "][ interface %s down ",
+                 "interface %s down ",
                  wi_get_ifname(*wi));
 
         *wi = reopen_card(*wi);
@@ -6419,7 +6424,7 @@ static bool read_one_packet_from_file(
 
         snprintf(lopt.message,
                  sizeof(lopt.message),
-                 "][ Finished reading input file %s.",
+                 "Finished reading input file %s.",
                  lopt.s_file);
 
     }
