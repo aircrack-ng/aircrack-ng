@@ -487,55 +487,49 @@ static void sort_aps(
 	/* Can't 'sort' (or something better) be used to sort these
      * entries?
      */
-
 	while (TAILQ_FIRST(ap_list) != NULL)
 	{
 		struct AP_info * ap_cur;
-		struct AP_info * ap_min = NULL;
+		struct AP_info * ap_max = NULL;
 
         /* Only the most recently seen entries are sorted. */
 		TAILQ_FOREACH(ap_cur, ap_list, entry)
 		{
             time_t const seconds_since_last_seen = tt - ap_cur->tlast;
             static long const sorting_age_limit_seconds = 20;
+            bool const too_old_to_sort =
+                seconds_since_last_seen > sorting_age_limit_seconds;
 
-            if (seconds_since_last_seen > sorting_age_limit_seconds)
+            if (too_old_to_sort)
 			{
-				ap_min = ap_cur;
+                ap_max = ap_cur;
+                break;
 			}
 		}
 
-        if (ap_min != NULL)
-        {
-            /* Put old entries at the end of the list. */
-            TAILQ_REMOVE(ap_list, ap_min, entry);
-            TAILQ_INSERT_HEAD(&sorted_list, ap_min, entry);
-        }
-        else
+        if (ap_max == NULL)
 		{
-			ap_min = TAILQ_FIRST(ap_list);
+			ap_max = TAILQ_FIRST(ap_list);
 
-			TAILQ_FOREACH(ap_cur, ap_list, entry)
+            TAILQ_FOREACH(ap_cur, ap_list, entry)
 			{
-				if (ap_min == ap_cur)
-				{
-					/* There's no point in comparing an entry with itself. */
-					continue;
-				}
+                if (ap_max == ap_cur)
+                {
+                    /* There's no point in comparing an entry with itself. */
+                    continue;
+                }
 
-                if (ap_sort_compare(sort_context, ap_cur, ap_min) > 0)
+                if (ap_sort_compare(sort_context, ap_cur, ap_max) > 0)
 				{
-					ap_min = ap_cur;
+					ap_max = ap_cur;
 				}
 			}
-
-            /* Put sorted entries at the tail of the list. dump_print()
-             * works from the tail to the head of the list.
-             */
-            TAILQ_REMOVE(ap_list, ap_min, entry);
-            TAILQ_INSERT_TAIL(&sorted_list, ap_min, entry);
         }
-
+        /* Put sorted entries at the tail of the list. dump_print()
+         * works from the tail to the head of the list.
+         */
+        TAILQ_REMOVE(ap_list, ap_max, entry);
+        TAILQ_INSERT_TAIL(&sorted_list, ap_max, entry); 
 	}
 
 	/* The original list is now empty.
@@ -553,45 +547,46 @@ static void sort_stas(struct sta_list_head * const sta_list)
 	while (TAILQ_FIRST(sta_list) != NULL)
 	{
 		struct ST_info * st_cur;
-		struct ST_info * st_min = NULL;
+		struct ST_info * st_max = NULL;
 
 		/* Don't sort entries older than 60 seconds. */
 		TAILQ_FOREACH(st_cur, sta_list, entry)
 		{
-			if ((tt - st_cur->tlast) > 60)
+            time_t const seconds_since_last_seen = tt - st_cur->tlast;
+            static long const sorting_age_limit_seconds = 60;
+            bool const too_old_to_sort =
+                seconds_since_last_seen > sorting_age_limit_seconds;
+
+            if (too_old_to_sort)
 			{
-				st_min = st_cur;
+				st_max = st_cur;
+                break;
 			}
 		}
 
-        if (st_min != NULL)
-        {
-            /* Put old entries at the end of the list. */
-            TAILQ_REMOVE(sta_list, st_min, entry);
-            TAILQ_INSERT_HEAD(&sorted_list, st_min, entry);
-        }
-		else
+        if (st_max == NULL)
 		{
-			st_min = TAILQ_FIRST(sta_list);
+            st_max = TAILQ_FIRST(sta_list);
 
 			/* STAs are always sorted by power. */
-			TAILQ_FOREACH(st_cur, sta_list, entry)
+            TAILQ_FOREACH(st_cur, sta_list, entry)
 			{
-				if (st_min == st_cur)
+                if (st_max == st_cur)
 				{
 					/* There's no point in comparing an entry with itself. */
 					continue;
 				}
-				if (st_cur->power < st_min->power)
+
+                if (st_cur->power > st_max->power)
 				{
-					st_min = st_cur;
+					st_max = st_cur;
 				}
 			}
-
-            TAILQ_REMOVE(sta_list, st_min, entry);
-            TAILQ_INSERT_TAIL(&sorted_list, st_min, entry);
 		}
-	}
+
+        TAILQ_REMOVE(sta_list, st_max, entry);
+        TAILQ_INSERT_TAIL(&sorted_list, st_max, entry);
+    }
 
 	/* The original list is now empty.
 	 * Concatenate the sorted list to it so that it contains the
@@ -3533,7 +3528,7 @@ static void dump_print(
 	size_t len;
     int numaps = 0; /* Only used when 'berlin' mode is active. */
 
-	if (!lopt.singlechan)
+    if (!lopt.singlechan)
 	{
 		columns_ap -= 4; // no RXQ in scan mode
 	}
