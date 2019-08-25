@@ -213,7 +213,6 @@ static struct local_options
 
 	int asso_client; /* only show associated clients */
 
-	mac_address wpa_bssid; /* the wpa handshake bssid   */
 	char message[512];
 	char decloak;
 
@@ -1668,7 +1667,7 @@ static struct AP_info * ap_info_alloc(mac_address const * const bssid)
 	gettimeofday(&ap_cur->ftimel, NULL);
 	gettimeofday(&ap_cur->ftimer, NULL);
 
-	ap_cur->essid_logged = 0;
+	ap_cur->essid_logged = false;
 	memset(ap_cur->essid, 0, sizeof ap_cur->essid);
     ap_cur->ssid_length = 0;
     ap_cur->timestamp = 0;
@@ -1861,6 +1860,135 @@ static void update_packet_capture_files(
                             packet_length, 
                             ri_power);
     }
+}
+
+static bool ivs_log_data(
+    FILE * const fp,
+    mac_address const * const current_bssid,
+    mac_address * const previous_bssid,
+    uint16_t const data_type,
+    void const * const data, 
+    size_t const data_length)
+{
+    bool success;
+    struct ivs2_pkthdr ivs2;
+
+    memset(&ivs2, '\x00', sizeof ivs2);
+    ivs2.flags = 0;
+
+    ivs2.len = data_length;
+    ivs2.flags |= data_type;
+
+    if (!MAC_ADDRESS_EQUAL(previous_bssid, current_bssid))
+    {
+        ivs2.flags |= IVS2_BSSID;
+        ivs2.len += MAC_ADDRESS_LEN;
+        MAC_ADDRESS_COPY(previous_bssid, current_bssid);
+    }
+
+    if (fwrite(&ivs2, 1, sizeof ivs2, fp) != sizeof ivs2)
+    {
+        perror("fwrite IV header failed");
+        success = false;
+        goto done;
+    }
+
+    if (ivs2.flags & IVS2_BSSID)
+    {
+        if (fwrite(current_bssid, 1, sizeof *current_bssid, fp)
+            != sizeof sizeof *current_bssid)
+        {
+            perror("fwrite BSSID failed");
+            success = false;
+            goto done;
+        }
+    }
+
+    if (fwrite(data, 1, data_length, fp) != data_length)
+    {
+        perror("fwrite IVS2 data failed");
+        success = false;
+        goto done;
+    }
+
+    success = true;
+
+done:
+    return success;
+}
+
+static bool ivs_log_wpa_hdsk(
+    FILE * const fp,
+    mac_address const * const bssid,
+    mac_address * const previous_bssid,
+    void const * const data, 
+    size_t const data_size)
+{
+    bool success;
+
+    if (fp == NULL)
+    {
+        /* Not required. */
+        success = true;
+        goto done;
+    }
+
+    if (!ivs_log_data(fp,
+                      bssid,
+                      previous_bssid,
+                      IVS2_WPA,
+                      data,
+                      data_size))
+    {
+        success = false;
+        goto done;
+    }
+
+    success = true; 
+
+done:
+    return success;
+}
+
+static bool ivs_log_essid(
+    bool * const already_logged,
+    FILE * const fp,
+    mac_address const * const bssid,
+    mac_address * const previous_bssid,
+    void const * const data,
+    size_t const data_size)
+{
+    bool success;
+
+    if (fp == NULL)
+    {
+        /* Not required. */
+        success = true;
+        goto done;
+    }
+
+    if (*already_logged)
+    {
+        success = true;
+        goto done;
+    }
+
+    if (!ivs_log_data(fp,
+                      bssid,
+                      previous_bssid,
+                      IVS2_ESSID,
+                      data,
+                      data_size))
+    {
+        success = false;
+        goto done;
+    }
+
+    *already_logged = true;
+    success = true; 
+
+done:
+    return success;
 }
 
 // NOTE(jbenden): This is also in ivstools.c
@@ -2290,50 +2418,15 @@ skip_probe:
                 memcpy(ap_cur->essid, p + 2, ap_cur->ssid_length);
                 ap_cur->essid[ap_cur->ssid_length] = '\0';
 
-                if (lopt.ivs.fp != NULL && !ap_cur->essid_logged)
-				{
-                    memset(&ivs2, '\x00', sizeof ivs2);
-					ivs2.flags |= IVS2_ESSID;
-					ivs2.len += ap_cur->ssid_length;
-
-                    if (!MAC_ADDRESS_EQUAL(&lopt.ivs.prev_bssid, &ap_cur->bssid))
-					{
-						ivs2.flags |= IVS2_BSSID;
-                        ivs2.len += MAC_ADDRESS_LEN;
-                        MAC_ADDRESS_COPY(&lopt.ivs.prev_bssid, &ap_cur->bssid);
-					}
-
-					/* write header */
-                    if (fwrite(&ivs2, 1, sizeof ivs2, lopt.ivs.fp) != sizeof ivs2)
-					{
-						perror("fwrite(IV header) failed");
-						return;
-					}
-
-					/* write BSSID */
-					if (ivs2.flags & IVS2_BSSID)
-					{
-                        if (fwrite(&ap_cur->bssid, 1, sizeof ap_cur->bssid, lopt.ivs.fp)
-                            != sizeof ap_cur->bssid)
-						{
-							perror("fwrite(IV bssid) failed");
-							return;
-						}
-					}
-
-					/* write essid */
-					if (fwrite(ap_cur->essid,
-							   1,
-                               ap_cur->ssid_length,
-                               lopt.ivs.fp)
-                        != ap_cur->ssid_length)
-					{
-						perror("fwrite(IV essid) failed");
-						return;
-					}
-
-                    ap_cur->essid_logged = 1;
-				}
+                if (!ivs_log_essid(&ap_cur->essid_logged,
+                                   lopt.ivs.fp,
+                                   &ap_cur->bssid,
+                                   &lopt.ivs.prev_bssid,
+                                   ap_cur->essid,
+                                   ap_cur->ssid_length))
+                {
+                    return;
+                }
 
 				if (!verifyssid(ap_cur->essid))
 				{
@@ -2889,50 +2982,15 @@ skip_probe:
                 memcpy(ap_cur->essid, p + 2, ap_cur->ssid_length);
                 ap_cur->essid[ap_cur->ssid_length] = '\0';
 
-                if (lopt.ivs.fp != NULL && !ap_cur->essid_logged)
-				{
-                    memset(&ivs2, '\x00', sizeof ivs2);
-					ivs2.flags |= IVS2_ESSID;
-					ivs2.len += ap_cur->ssid_length;
-
-                    if (!MAC_ADDRESS_EQUAL(&lopt.ivs.prev_bssid, &ap_cur->bssid))
-					{
-						ivs2.flags |= IVS2_BSSID;
-                        ivs2.len += MAC_ADDRESS_LEN;
-                        MAC_ADDRESS_COPY(&lopt.ivs.prev_bssid, &ap_cur->bssid);
-					}
-
-					/* write header */
-                    if (fwrite(&ivs2, 1, sizeof ivs2, lopt.ivs.fp) != sizeof ivs2)
-					{
-						perror("fwrite(IV header) failed");
-						return;
-					}
-
-					/* write BSSID */
-					if (ivs2.flags & IVS2_BSSID)
-					{
-                        if (fwrite(&ap_cur->bssid, 1, sizeof ap_cur->bssid, lopt.ivs.fp)
-                            != sizeof ap_cur->bssid)
-						{
-							perror("fwrite(IV bssid) failed");
-							return;
-						}
-					}
-
-					/* write essid */
-					if (fwrite(ap_cur->essid,
-							   1,
-							   ap_cur->ssid_length,
-                               lopt.ivs.fp)
-						!= ap_cur->ssid_length)
-					{
-						perror("fwrite(IV essid) failed");
-						return;
-					}
-
-                    ap_cur->essid_logged = 1;
-				}
+                if (!ivs_log_essid(&ap_cur->essid_logged,
+                                   lopt.ivs.fp,
+                                   &ap_cur->bssid,
+                                   &lopt.ivs.prev_bssid,
+                                   ap_cur->essid,
+                                   ap_cur->ssid_length))
+                {
+                    return;
+                }
 
                 if (!verifyssid(ap_cur->essid))
                 {
@@ -3272,17 +3330,16 @@ skip_probe:
 							st_cur->wpa.keyver = (uint8_t)(h80211[z + 6] & 7);
 
 							MAC_ADDRESS_COPY(&st_cur->wpa.stmac, &st_cur->stmac);
-							MAC_ADDRESS_COPY(&lopt.wpa_bssid, &ap_cur->bssid);
 							snprintf(lopt.message,
 									 sizeof(lopt.message),
 									 "][ PMKID found: "
 									 "%02X:%02X:%02X:%02X:%02X:%02X ",
-									 lopt.wpa_bssid.addr[0],
-									 lopt.wpa_bssid.addr[1],
-									 lopt.wpa_bssid.addr[2],
-									 lopt.wpa_bssid.addr[3],
-									 lopt.wpa_bssid.addr[4],
-									 lopt.wpa_bssid.addr[5]);
+                                     ap_cur->bssid.addr[0],
+                                     ap_cur->bssid.addr[1],
+                                     ap_cur->bssid.addr[2],
+                                     ap_cur->bssid.addr[3],
+                                     ap_cur->bssid.addr[4],
+                                     ap_cur->bssid.addr[5]);
 
 							goto write_packet;
 						}
@@ -3369,60 +3426,25 @@ skip_probe:
             if (st_cur->wpa.state == 7 
                 && !is_filtered_essid(&lopt.essid_filter, ap_cur->essid))
 			{
-				MAC_ADDRESS_COPY(&st_cur->wpa.stmac, &st_cur->stmac);
-				MAC_ADDRESS_COPY(&lopt.wpa_bssid, &ap_cur->bssid);
+                MAC_ADDRESS_COPY(&st_cur->wpa.stmac, &st_cur->stmac);
 				snprintf(lopt.message,
 						 sizeof(lopt.message),
 						 "][ WPA handshake: %02X:%02X:%02X:%02X:%02X:%02X ",
-						 lopt.wpa_bssid.addr[0],
-						 lopt.wpa_bssid.addr[1],
-						 lopt.wpa_bssid.addr[2],
-						 lopt.wpa_bssid.addr[3],
-						 lopt.wpa_bssid.addr[4],
-						 lopt.wpa_bssid.addr[5]);
+                         ap_cur->bssid.addr[0],
+                         ap_cur->bssid.addr[1],
+                         ap_cur->bssid.addr[2],
+                         ap_cur->bssid.addr[3],
+                         ap_cur->bssid.addr[4],
+                         ap_cur->bssid.addr[5]);
 
-                if (lopt.ivs.fp != NULL)
-				{
-                    memset(&ivs2, '\x00', sizeof ivs2);
-					ivs2.flags = 0;
-
-					ivs2.len = sizeof(struct WPA_hdsk);
-					ivs2.flags |= IVS2_WPA;
-
-                    if (!MAC_ADDRESS_EQUAL(&lopt.ivs.prev_bssid, &ap_cur->bssid))
-					{
-						ivs2.flags |= IVS2_BSSID;
-                        ivs2.len += MAC_ADDRESS_LEN;
-                        MAC_ADDRESS_COPY(&lopt.ivs.prev_bssid, &ap_cur->bssid);
-					}
-
-                    if (fwrite(&ivs2, 1, sizeof ivs2, lopt.ivs.fp) != sizeof ivs2)
-					{
-						perror("fwrite(IV header) failed");
-						return;
-					}
-
-					if (ivs2.flags & IVS2_BSSID)
-					{
-                        if (fwrite(&ap_cur->bssid, 1, sizeof ap_cur->bssid, lopt.ivs.fp)
-                            != sizeof ap_cur->bssid)
-						{
-							perror("fwrite(IV bssid) failed");
-							return;
-						}
-                        ivs2.len -= MAC_ADDRESS_LEN;
-					}
-
-					if (fwrite(&st_cur->wpa,
-							   1,
-                               sizeof st_cur->wpa,
-                               lopt.ivs.fp)
-                        != sizeof st_cur->wpa)
-					{
-						perror("fwrite(IV wpa_hdsk) failed");
-						return;
-					}
-				}
+                if (!ivs_log_wpa_hdsk(lopt.ivs.fp,
+                                     &ap_cur->bssid,
+                                     &lopt.ivs.prev_bssid,
+                                     &st_cur->wpa, 
+                                     sizeof st_cur->wpa))
+                {
+                    return;
+                }
 			}
 		}
 	}
@@ -6795,7 +6817,6 @@ int main(int argc, char * argv[])
 
     MAC_ADDRESS_CLEAR(&lopt.f_bssid);
     MAC_ADDRESS_CLEAR(&lopt.f_netmask);
-    MAC_ADDRESS_CLEAR(&lopt.wpa_bssid);
 
 	/* check the arguments */
 
