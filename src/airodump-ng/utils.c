@@ -172,3 +172,23 @@ char * parse_timestamp(unsigned long long timestamp)
     return s;
 }
 
+bool essid_has_control_chars(
+    uint8_t const * const essid,
+    size_t const essid_length)
+{
+    bool has_control_chars;
+
+    for (size_t i = 0; i < essid_length; i++)
+    {
+        if (essid[i] > '\0' && essid[i] < ' ')
+        {
+            has_control_chars = true;
+            goto done;
+        }
+    }
+
+    has_control_chars = false; 
+
+done:
+    return has_control_chars;
+}

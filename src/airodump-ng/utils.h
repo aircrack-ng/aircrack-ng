@@ -29,4 +29,8 @@ bool bssid_is_filtered(
 
 char * parse_timestamp(unsigned long long timestamp);
 
+bool essid_has_control_chars(
+    uint8_t const * const essid, 
+    size_t const essid_length);
+
 #endif /* __UTILS_H__ */

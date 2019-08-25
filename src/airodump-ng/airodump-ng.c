@@ -2240,18 +2240,17 @@ static void dump_add_packet(
                 uint8_t const * const essid = p + 2;
 				size_t const essid_length = MIN(ESSID_LENGTH, p[1]);
 
-                for (size_t i = 0; i < essid_length; i++)
+                if (essid_has_control_chars(essid, essid_length))
                 {
-                    if (essid[i] > 0 && essid[i] < ' ')
-                    {
-                        goto skip_probe;
-                    }
+                    goto skip_probe;
                 }
 
                 /* Got a valid ASCII probed ESSID. 
                  * Check if it's already in the ring buffer.
                  */
-
+                /* FIXME: This comparison won't work if the ESSID is one that 
+                 * would get modified by make_printable() below. 
+                 */
                 for (size_t i = 0; i < NB_PRB; i++)
                 {
                     if (memcmp(st_cur->probes[i], essid, essid_length) == 0)
