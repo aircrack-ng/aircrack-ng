@@ -1173,15 +1173,20 @@ int check_shared_key(
 		maybe_broken = 1;
 	}
 
-	if (textlen > sizeof(text) - 4) return (1);
+    if (textlen > sizeof(text) - 4)
+    {
+        return (1);
+    }
 
     memcpy(text, shared_key->sharedkey[0] + 24, textlen);
 
 	/* increment sequence number from 2 to 3 */
 	text[2] = (uint8_t)(text[2] + 1);
 
-	for (n = 0; n < textlen; n++)
+    for (n = 0; n < textlen; n++)
+    {
 		crc = crc_tbl[(crc ^ text[n]) & 0xFF] ^ (crc >> 8);
+    }
 
 	crc = ~crc;
 
@@ -1252,7 +1257,9 @@ int check_shared_key(
         return (1);
 
     for (n = 0; n < textlen + 8; n++)
+    {
         fputc((prga[n] & 0xFF), shared_key->f_xor);
+    }
 
     fclose(shared_key->f_xor);
     shared_key->f_xor = NULL;

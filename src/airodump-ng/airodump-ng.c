@@ -3475,7 +3475,7 @@ write_packet:
 
 		/* use general control frame detection, as the structure is always the
 		 * same: mac(s) starting at [4] */
-		if (h80211[0] & 0x04)
+        if ((h80211[0] & IEEE80211_FC0_TYPE_CTL))
 		{
 			p = h80211 + 4;
 			while (p <= h80211 + 16 && (p + sizeof namac) <= data_end)
@@ -3532,18 +3532,24 @@ write_packet:
 				na_cur->power = ri->ri_power;
 				na_cur->channel = ri->ri_channel;
 
-				switch (h80211[0] & 0xF0)
+                switch (h80211[0] & IEEE80211_FC0_SUBTYPE_MASK)
 				{
-					case 0xB0:
-						if (p == h80211 + 4) na_cur->rts_r++;
-						if (p == h80211 + 10) na_cur->rts_t++;
+                    case IEEE80211_FC0_SUBTYPE_RTS:
+                        if (p == h80211 + 4)
+                        {
+                            na_cur->rts_r++;
+                        }
+                        else if (p == h80211 + 10)
+                        {
+                            na_cur->rts_t++;
+                        }
 						break;
 
-					case 0xC0:
+                    case IEEE80211_FC0_SUBTYPE_CTS:
 						na_cur->cts++;
 						break;
 
-					case 0xD0:
+                    case IEEE80211_FC0_SUBTYPE_ACK:
 						na_cur->ack++;
 						break;
 
