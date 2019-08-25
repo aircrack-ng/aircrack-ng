@@ -79,4 +79,13 @@ int wait_proc(pid_t in, pid_t * out)
     return status;
 }
 
-
+void make_printable(uint8_t * const buf, size_t const buf_size)
+{
+    for (size_t i = 0; i < buf_size; i++)
+    {
+        if (buf[i] < (uint8_t)' ')
+        {
+            buf[i] = '.';
+        }
+    }
+}

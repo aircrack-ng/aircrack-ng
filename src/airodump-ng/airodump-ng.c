@@ -1892,7 +1892,8 @@ static void dump_add_packet(
 	int type, length, numuni = 0;
 	size_t numauth = 0;
 	struct ivs2_pkthdr ivs2;
-	unsigned char *p, *org_p, c;
+    unsigned char * p; 
+    unsigned char * org_p;
     mac_address bssid;
 	mac_address stmac;
     mac_address namac;
@@ -2234,21 +2235,13 @@ skip_station:
 
 				st_cur->probe_index = (st_cur->probe_index + 1) % NB_PRB;
                 memset(st_cur->probes[st_cur->probe_index], 0, sizeof st_cur->probes[st_cur->probe_index]);
-				memcpy(
-					st_cur->probes[st_cur->probe_index], p + 2, n); // twice?!
-				st_cur->ssid_length[st_cur->probe_index] = (int) n;
+				memcpy(st_cur->probes[st_cur->probe_index], p + 2, n);
+				st_cur->ssid_length[st_cur->probe_index] = n;
 
                 if (!verifyssid((uint8_t *)st_cur->probes[st_cur->probe_index]))
                 {
-					for (size_t i = 0; i < n; i++)
-                    {
-                        c = p[2 + i];
-                        if (c < (uint8_t)' ')
-                        { 
-                            c = '.';
-                        }
-                        st_cur->probes[st_cur->probe_index][i] = c;
-                    }
+                    make_printable((uint8_t *)st_cur->probes[st_cur->probe_index], 
+                                   st_cur->ssid_length[st_cur->probe_index]);
                 }
 			}
 
@@ -2345,13 +2338,7 @@ skip_probe:
 
 				if (!verifyssid(ap_cur->essid))
 				{
-                    for (size_t i = 0; i < ap_cur->ssid_length; i++)
-					{
-                        if (ap_cur->essid[i] < (uint8_t)' ')
-                        {
-                            ap_cur->essid[i] = '.';
-                        }
-					}
+                    make_printable(ap_cur->essid, ap_cur->ssid_length);
 				}
 			}
 
@@ -2950,13 +2937,7 @@ skip_probe:
 
                 if (!verifyssid(ap_cur->essid))
                 {
-                    for (size_t i = 0; i < ap_cur->ssid_length; i++)
-                    {
-                        if (ap_cur->essid[i] < (uint8_t)' ')
-                        {
-                            ap_cur->essid[i] = '.';
-                        }
-                    }
+                    make_printable(ap_cur->essid, ap_cur->ssid_length);
                 }
 			}
 
