@@ -42,7 +42,7 @@ static int sort_beacon(
     struct AP_info const * const b,
     int const sort_direction)
 {
-    int const result = (a->nb_bcn < b->nb_bcn) && (sort_direction > 0) ? -1 : 1;
+    int const result = (a->nb_bcn < b->nb_bcn) * sort_direction;
 
     return result;
 }
@@ -52,7 +52,7 @@ static int sort_data(
     struct AP_info const * const b,
     int const sort_direction)
 {
-    int const result = (a->nb_data < b->nb_data) && (sort_direction > 0) ? -1 : 1;
+    int const result = (a->nb_data < b->nb_data) * sort_direction;
 
     return result;
 }
