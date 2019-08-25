@@ -1723,6 +1723,9 @@ static struct AP_info * ap_info_new(
 
     if (options->ivs.fp != NULL)
     {
+        /* This sucks up loads of memory, and is only required when 
+         * logging IVs. 
+         */
         ap_cur->uiv_root = uniqueiv_init();
     }
 
@@ -1878,7 +1881,6 @@ static void dump_add_packet(
 	unsigned z;
 	int type, length, numuni = 0;
 	size_t numauth = 0;
-	struct ivs2_pkthdr ivs2;
     unsigned char * p; 
     unsigned char * org_p;
     mac_address bssid;
@@ -2290,8 +2292,8 @@ skip_probe:
                 memcpy(ap_cur->essid, p + 2, ap_cur->ssid_length);
                 ap_cur->essid[ap_cur->ssid_length] = '\0';
 
-                if (!ivs_log_essid(&ap_cur->essid_logged,
-                                   lopt.ivs.fp,
+                if (!ivs_log_essid(lopt.ivs.fp,
+                                   &ap_cur->essid_logged,
                                    &ap_cur->bssid,
                                    &lopt.ivs.prev_bssid,
                                    ap_cur->essid,
@@ -2854,8 +2856,8 @@ skip_probe:
                 memcpy(ap_cur->essid, p + 2, ap_cur->ssid_length);
                 ap_cur->essid[ap_cur->ssid_length] = '\0';
 
-                if (!ivs_log_essid(&ap_cur->essid_logged,
-                                   lopt.ivs.fp,
+                if (!ivs_log_essid(lopt.ivs.fp,
+                                   &ap_cur->essid_logged,
                                    &ap_cur->bssid,
                                    &lopt.ivs.prev_bssid,
                                    ap_cur->essid,
@@ -3023,10 +3025,6 @@ skip_probe:
 
                 if (lopt.ivs.fp != NULL)
 				{
-                    memset(&ivs2, '\x00', sizeof ivs2);
-					ivs2.flags = 0;
-					ivs2.len = 0;
-
 					/* datalen = caplen - (header+iv+ivs) */
 					dlen = caplen - z - 4 - 4; // original data len
 					if (dlen > 2048)
@@ -3035,12 +3033,16 @@ skip_probe:
 					}
 					// get cleartext + len + 4(iv+idx)
 					num_xor = known_clear(clear, &clen, weight, h80211, dlen);
-					if (num_xor == 1)
+
+                    size_t data_size;
+                    uint16_t ivs_type;
+
+                    if (num_xor == 1)
 					{
-						ivs2.flags |= IVS2_XOR;
-						ivs2.len += clen + 4;
+                        data_size = clen;
+                        ivs_type = IVS2_XOR;
 						/* reveal keystream (plain^encrypted) */
-						for (size_t n = 0; n < (size_t)(ivs2.len - 4); n++)
+                        for (size_t n = 0; n < data_size; n++)
 						{
 							clear[n] = (uint8_t)((clear[n] ^ h80211[z + 4 + n])
 												 & 0xFF);
@@ -3052,16 +3054,17 @@ skip_probe:
 						// do it again to get it 2 bytes higher
 						num_xor = known_clear(
 							clear + 2, &clen, weight, h80211, dlen);
-						ivs2.flags |= IVS2_PTW;
-						// len = 4(iv+idx) + 1(num of keystreams) + 1(len per
+                        ivs_type = IVS2_PTW;
+
+                        // len = 4(iv+idx) + 1(num of keystreams) + 1(len per
 						// keystream) + 32*num_xor + 16*sizeof(int)(weight[16])
-						ivs2.len += 4 + 1 + 1 + 32 * num_xor + 16 * sizeof(int);
+                        data_size = 1 + 1 + 32 * num_xor + 16 * sizeof(int); 
 						clear[0] = (uint8_t) num_xor;
 						clear[1] = (uint8_t) clen;
 						/* reveal keystream (plain^encrypted) */
 						for (o = 0; o < num_xor; o++)
 						{
-							for (size_t n = 0; n < (size_t)(ivs2.len - 4); n++)
+                            for (size_t n = 0; n < data_size; n++)
 							{
 								clear[2 + n + o * 32] = (uint8_t)(
 									(clear[2 + n + o * 32] ^ h80211[z + 4 + n])
@@ -3074,43 +3077,16 @@ skip_probe:
 						// clear is now the keystream
 					}
 
-                    if (!MAC_ADDRESS_EQUAL(&lopt.ivs.prev_bssid, &ap_cur->bssid))
-					{
-						ivs2.flags |= IVS2_BSSID;
-                        ivs2.len += MAC_ADDRESS_LEN;
-                        MAC_ADDRESS_COPY(&lopt.ivs.prev_bssid, &ap_cur->bssid);
-					}
-
-                    if (fwrite(&ivs2, 1, sizeof ivs2, lopt.ivs.fp) != sizeof ivs2)
-					{
-						perror("fwrite(IV header) failed");
-						return;
-					}
-
-					if (ivs2.flags & IVS2_BSSID)
-					{
-                        if (fwrite(&ap_cur->bssid, 1, sizeof ap_cur->bssid, lopt.ivs.fp)
-                            != sizeof ap_cur->bssid)
-						{
-							perror("fwrite(IV bssid) failed");
-							return;
-						}
-                        ivs2.len -= sizeof ap_cur->bssid;
-					}
-
-                    if (fwrite(h80211 + z, 1, 4, lopt.ivs.fp) != (size_t)4)
-					{
-						perror("fwrite(IV iv+idx) failed");
-						return;
-					}
-					ivs2.len -= 4;
-
-                    if (fwrite(clear, 1, ivs2.len, lopt.ivs.fp)
-						!= (size_t) ivs2.len)
-					{
-						perror("fwrite(IV keystream) failed");
-						return;
-					}
+                    if (!ivs_log_keystream(lopt.ivs.fp, 
+                                           &ap_cur->bssid, 
+                                           &lopt.ivs.prev_bssid, 
+                                           ivs_type, 
+                                           h80211 + z, 4, 
+                                           clear, 
+                                           data_size))
+                    {
+                        return;
+                    }
 				}
 
 				uniqueiv_mark(ap_cur->uiv_root, &h80211[z]);
@@ -5852,14 +5828,6 @@ static void check_for_user_input(struct local_options * const options)
     }
 }
 
-static void flush_output_files(struct local_options * const options)
-{
-    if (options->ivs.fp != NULL)
-    {
-        fflush(options->ivs.fp);
-    }
-}
-
 
 #define AIRODUMP_NG_CSV_EXT "csv"
 #define KISMET_CSV_EXT "kismet.csv"
@@ -7615,8 +7583,6 @@ int main(int argc, char * argv[])
 			/* update elapsed time */
 			free(lopt.elapsed_time);
 			lopt.elapsed_time = getStringTimeFromSec(difftime(tt2, start_time));
-
-            flush_output_files(&lopt);
 		}
 
         gettimeofday(&current_time_timestamp, NULL);

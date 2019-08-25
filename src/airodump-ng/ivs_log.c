@@ -7,16 +7,17 @@ static bool ivs_log_data(
     mac_address * const previous_bssid,
     uint16_t const data_type,
     void const * const data,
-    size_t const data_length)
+    size_t const data_length,
+    void const * const data2,
+    size_t const data2_length)
 {
     bool success;
     struct ivs2_pkthdr ivs2;
 
     memset(&ivs2, '\x00', sizeof ivs2);
-    ivs2.flags = 0;
 
-    ivs2.len = data_length;
-    ivs2.flags |= data_type;
+    ivs2.len = data_length + data2_length;
+    ivs2.flags = data_type;
 
     if (!MAC_ADDRESS_EQUAL(previous_bssid, current_bssid))
     {
@@ -50,6 +51,59 @@ static bool ivs_log_data(
         goto done;
     }
 
+    if (data2 == NULL || data2_length == 0)
+    {
+        success = true;
+        goto done;
+    }
+
+    if (fwrite(data2, 1, data2_length, fp) != data2_length)
+    {
+        perror("fwrite IVS2 data2 failed");
+        success = false;
+        goto done;
+    }
+
+    fflush(fp);
+
+    success = true;
+
+done:
+    return success;
+}
+
+bool ivs_log_keystream(
+    FILE * const fp,
+    mac_address const * const bssid,
+    mac_address * const previous_bssid,
+    uint16_t const type,
+    void const * const data,
+    size_t const data_size,
+    void const * const data2,
+    size_t const data2_length)
+{
+    bool success;
+
+    if (fp == NULL)
+    {
+        /* Not required. */
+        success = true;
+        goto done;
+    }
+
+    if (!ivs_log_data(fp,
+                      bssid,
+                      previous_bssid,
+                      type,
+                      data,
+                      data_size,
+                      data2,
+                      data2_length))
+    {
+        success = false;
+        goto done;
+    }
+
     success = true;
 
 done:
@@ -77,7 +131,9 @@ bool ivs_log_wpa_hdsk(
                       previous_bssid,
                       IVS2_WPA,
                       data,
-                      data_size))
+                      data_size,
+                      NULL, 
+                      0))
     {
         success = false;
         goto done;
@@ -90,8 +146,8 @@ done:
 }
 
 bool ivs_log_essid(
-    bool * const already_logged,
     FILE * const fp,
+    bool * const already_logged,
     mac_address const * const bssid,
     mac_address * const previous_bssid,
     void const * const data,
@@ -117,7 +173,9 @@ bool ivs_log_essid(
                       previous_bssid,
                       IVS2_ESSID,
                       data,
-                      data_size))
+                      data_size,
+                      NULL, 
+                      0))
     {
         success = false;
         goto done;
