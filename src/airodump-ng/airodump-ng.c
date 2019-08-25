@@ -1870,10 +1870,8 @@ static void ap_update(
     struct local_options * const options,
     struct AP_info * const ap_cur,
     unsigned char const * const h80211,
-    size_t const caplen,
     struct rx_info const * const ri)
 {
-    (void)caplen;
     /* Get the sequence number. */
     int const seq = ((h80211[22] >> 4) + (h80211[23] << 4));
 
@@ -1906,19 +1904,19 @@ static void ap_update(
 
         /* Every packet in here comes from the AP. */
 
-        if (lopt.gps_context.gps_loc[0] > ap_cur->gps_loc_max[0])
-            ap_cur->gps_loc_max[0] = lopt.gps_context.gps_loc[0];
-        if (lopt.gps_context.gps_loc[1] > ap_cur->gps_loc_max[1])
-            ap_cur->gps_loc_max[1] = lopt.gps_context.gps_loc[1];
-        if (lopt.gps_context.gps_loc[2] > ap_cur->gps_loc_max[2])
-            ap_cur->gps_loc_max[2] = lopt.gps_context.gps_loc[2];
+        if (options->gps_context.gps_loc[0] > ap_cur->gps_loc_max[0])
+            ap_cur->gps_loc_max[0] = options->gps_context.gps_loc[0];
+        if (options->gps_context.gps_loc[1] > ap_cur->gps_loc_max[1])
+            ap_cur->gps_loc_max[1] = options->gps_context.gps_loc[1];
+        if (options->gps_context.gps_loc[2] > ap_cur->gps_loc_max[2])
+            ap_cur->gps_loc_max[2] = options->gps_context.gps_loc[2];
 
-        if (lopt.gps_context.gps_loc[0] < ap_cur->gps_loc_min[0])
-            ap_cur->gps_loc_min[0] = lopt.gps_context.gps_loc[0];
-        if (lopt.gps_context.gps_loc[1] < ap_cur->gps_loc_min[1])
-            ap_cur->gps_loc_min[1] = lopt.gps_context.gps_loc[1];
-        if (lopt.gps_context.gps_loc[2] < ap_cur->gps_loc_min[2])
-            ap_cur->gps_loc_min[2] = lopt.gps_context.gps_loc[2];
+        if (options->gps_context.gps_loc[0] < ap_cur->gps_loc_min[0])
+            ap_cur->gps_loc_min[0] = options->gps_context.gps_loc[0];
+        if (options->gps_context.gps_loc[1] < ap_cur->gps_loc_min[1])
+            ap_cur->gps_loc_min[1] = options->gps_context.gps_loc[1];
+        if (options->gps_context.gps_loc[2] < ap_cur->gps_loc_min[2])
+            ap_cur->gps_loc_min[2] = options->gps_context.gps_loc[2];
 
         if (ap_cur->fcapt == 0 && ap_cur->fmiss == 0)
         {
@@ -1933,14 +1931,14 @@ static void ap_update(
         gettimeofday(&(ap_cur->ftimel), NULL);
 
         /* if we are writing to a file and want to make a continuous rolling log save the data here */
-        if (lopt.log_csv.fp != NULL)
+        if (options->log_csv.fp != NULL)
         {
             /* Write out our rolling log every time we see data from an AP */
-            dump_write_airodump_ng_logcsv_add_ap(lopt.log_csv.fp,
+            dump_write_airodump_ng_logcsv_add_ap(options->log_csv.fp,
                                                  ap_cur,
                                                  ri->ri_power,
-                                                 &lopt.gps_context.gps_time,
-                                                 lopt.gps_context.gps_loc);
+                                                 &options->gps_context.gps_time,
+                                                 options->gps_context.gps_loc);
         }
     }
 
@@ -1961,6 +1959,99 @@ static void ap_update(
     }
 
     ap_cur->nb_pkt++;
+}
+
+static void sta_update(
+    struct local_options * const options,
+    struct ST_info * const st_cur,
+    struct AP_info * const ap_cur,
+    unsigned char const * const h80211,
+    struct rx_info const * const ri,
+    int const cardnum)
+{
+    /* Get the sequence number. */
+    int const seq = ((h80211[22] >> 4) + (h80211[23] << 4));
+
+    /* Update the last time seen. */
+    st_cur->tlast = time(NULL);
+
+    if (st_cur->base == NULL || !MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
+    {
+        st_cur->base = ap_cur;
+    }
+
+    // update bitrate to station
+    if ((h80211[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_FROMDS)
+    {
+        st_cur->rate_to = ri->ri_rate;
+    }
+
+    /* only update power if packets comes from the
+     * client: either type == Mgmt and SA != BSSID,
+     * or FromDS == 0 and ToDS == 1 */
+
+    if (((h80211[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_NODS
+         && !MAC_ADDRESS_EQUAL((mac_address *)(h80211 + 10), &ap_cur->bssid))
+        || ((h80211[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_TODS))
+    {
+        st_cur->power = ri->ri_power;
+        if (ri->ri_power > st_cur->best_power)
+        {
+            st_cur->best_power = ri->ri_power;
+            memcpy(ap_cur->gps_loc_best,
+                   options->gps_context.gps_loc,
+                   sizeof(st_cur->gps_loc_best));
+        }
+
+        st_cur->rate_from = ri->ri_rate;
+        if (ri->ri_channel > 0 && ri->ri_channel <= HIGHEST_CHANNEL)
+        {
+            st_cur->channel = ri->ri_channel;
+        }
+        else
+        {
+            st_cur->channel = options->channel[cardnum];
+        }
+
+        if (options->gps_context.gps_loc[0] > st_cur->gps_loc_max[0])
+            st_cur->gps_loc_max[0] = options->gps_context.gps_loc[0];
+        if (options->gps_context.gps_loc[1] > st_cur->gps_loc_max[1])
+            st_cur->gps_loc_max[1] = options->gps_context.gps_loc[1];
+        if (options->gps_context.gps_loc[2] > st_cur->gps_loc_max[2])
+            st_cur->gps_loc_max[2] = options->gps_context.gps_loc[2];
+
+        if (options->gps_context.gps_loc[0] < st_cur->gps_loc_min[0])
+            st_cur->gps_loc_min[0] = options->gps_context.gps_loc[0];
+        if (options->gps_context.gps_loc[1] < st_cur->gps_loc_min[1])
+            st_cur->gps_loc_min[1] = options->gps_context.gps_loc[1];
+        if (options->gps_context.gps_loc[2] < st_cur->gps_loc_min[2])
+            st_cur->gps_loc_min[2] = options->gps_context.gps_loc[2];
+
+        if (st_cur->lastseq != 0)
+        {
+            int const missed = seq - st_cur->lastseq - 1;
+
+            if (missed > 0 && missed < 1000)
+            {
+                st_cur->missed += missed;
+            }
+        }
+        st_cur->lastseq = (unsigned int)seq;
+
+        /* if we are writing to a file and want to make a continuous rolling log save the data here */
+        if (options->log_csv.fp != NULL)
+        {
+            /* Write out our rolling log every time we see data from a client */
+            dump_write_airodump_ng_logcsv_add_client(options->log_csv.fp,
+                                                     ap_cur, 
+                                                     st_cur, 
+                                                     ri->ri_power, 
+                                                     &options->gps_context.gps_time, 
+                                                     options->gps_context.gps_loc);
+        }
+    }
+
+    st_cur->nb_pkt++;
 }
 
 // NOTE(jbenden): This is also in ivstools.c
@@ -2070,7 +2161,7 @@ static void dump_add_packet(
         remove_namac(&lopt.na_list, &bssid);
 	}
 
-    ap_update(&lopt, ap_cur, h80211, caplen, ri);
+    ap_update(&lopt, ap_cur, h80211, ri);
 
     /* Locate the station MAC in the 802.11 header. */
 
@@ -2128,82 +2219,7 @@ static void dump_add_packet(
         remove_namac(&lopt.na_list, &stmac);
 	}
 
-    /* Update the last time seen. */
-    st_cur->tlast = time(NULL);
-
-    if (st_cur->base == NULL || !MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
-    {
-		st_cur->base = ap_cur;
-    }
-
-	// update bitrate to station
-    if ((h80211[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_FROMDS)
-    {
-        st_cur->rate_to = ri->ri_rate;
-    }
-
-	/* only update power if packets comes from the
-	 * client: either type == Mgmt and SA != BSSID,
-	 * or FromDS == 0 and ToDS == 1 */
-
-	if (((h80211[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_NODS
-		 && !MAC_ADDRESS_EQUAL((mac_address *)(h80211 + 10), &bssid))
-		|| ((h80211[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_TODS))
-	{
-		st_cur->power = ri->ri_power;
-		if (ri->ri_power > st_cur->best_power)
-		{
-			st_cur->best_power = ri->ri_power;
-			memcpy(ap_cur->gps_loc_best,
-				   lopt.gps_context.gps_loc,
-				   sizeof(st_cur->gps_loc_best));
-		}
-
-		st_cur->rate_from = ri->ri_rate;
-        if (ri->ri_channel > 0 && ri->ri_channel <= HIGHEST_CHANNEL)
-        {
-			st_cur->channel = ri->ri_channel;
-        }
-        else
-        {
-			st_cur->channel = lopt.channel[cardnum];
-        }
-
-		if (lopt.gps_context.gps_loc[0] > st_cur->gps_loc_max[0])
-			st_cur->gps_loc_max[0] = lopt.gps_context.gps_loc[0];
-		if (lopt.gps_context.gps_loc[1] > st_cur->gps_loc_max[1])
-			st_cur->gps_loc_max[1] = lopt.gps_context.gps_loc[1];
-		if (lopt.gps_context.gps_loc[2] > st_cur->gps_loc_max[2])
-			st_cur->gps_loc_max[2] = lopt.gps_context.gps_loc[2];
-
-		if (lopt.gps_context.gps_loc[0] < st_cur->gps_loc_min[0])
-			st_cur->gps_loc_min[0] = lopt.gps_context.gps_loc[0];
-		if (lopt.gps_context.gps_loc[1] < st_cur->gps_loc_min[1])
-			st_cur->gps_loc_min[1] = lopt.gps_context.gps_loc[1];
-		if (lopt.gps_context.gps_loc[2] < st_cur->gps_loc_min[2])
-			st_cur->gps_loc_min[2] = lopt.gps_context.gps_loc[2];
-
-		if (st_cur->lastseq != 0)
-		{
-			int const missed = seq - st_cur->lastseq - 1;
-
-            if (missed > 0 && missed < 1000)
-			{
-                st_cur->missed += missed;
-			}
-		}
-		st_cur->lastseq = (unsigned int)seq;
-
-		/* if we are writing to a file and want to make a continuous rolling log save the data here */
-        if (lopt.log_csv.fp != NULL)
-		{
-			/* Write out our rolling log every time we see data from a client */
-            dump_write_airodump_ng_logcsv_add_client(lopt.log_csv.fp,
-				ap_cur, st_cur, ri->ri_power, &lopt.gps_context.gps_time, lopt.gps_context.gps_loc);
-		}
-	}
-
-	st_cur->nb_pkt++;
+    sta_update(&lopt, st_cur, ap_cur, h80211, ri, cardnum);
 
 skip_station:
 
