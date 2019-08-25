@@ -1883,7 +1883,6 @@ static void dump_add_packet(
     unsigned char * org_p;
     mac_address bssid;
 	mac_address stmac;
-    mac_address namac;
     unsigned char clear[2048] = { 0 };
     int weight[16] = { 0 };
 	int num_xor = 0;
@@ -1893,7 +1892,6 @@ static void dump_add_packet(
 
 	MAC_ADDRESS_CLEAR(&bssid);
 	MAC_ADDRESS_CLEAR(&stmac);
-	MAC_ADDRESS_CLEAR(&namac);
 
 	/* skip all non probe response frames in active scanning simulation mode */
     bool const is_probe_response = 
@@ -3477,7 +3475,9 @@ write_packet:
 		 * same: mac(s) starting at [4] */
         if ((h80211[0] & IEEE80211_FC0_TYPE_CTL))
 		{
-			p = h80211 + 4;
+            mac_address namac;
+
+            p = h80211 + 4;
 			while (p <= h80211 + 16 && (p + sizeof namac) <= data_end)
 			{
 				MAC_ADDRESS_COPY(&namac, (mac_address *)p);
@@ -3517,7 +3517,8 @@ write_packet:
 					}
 				}
 
-				/* Not found in either AP list or ST list, look through NA list
+                /* Not found in either AP list or ST list. Find or create an 
+                 * entry in the NA list. 
 				 */
                 struct NA_info * const na_cur =
                     na_info_lookup(&lopt.na_list, &namac);
