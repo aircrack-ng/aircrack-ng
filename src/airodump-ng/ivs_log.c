@@ -188,4 +188,51 @@ done:
     return success;
 }
 
+FILE * ivs_log_open(char const * const filename)
+{
+    bool success;
+    FILE * fp = fopen(filename, "wb+");
 
+    if (fp == NULL)
+    {
+        perror("fopen failed");
+        fprintf(stderr, "Could not create \"%s\".\n", filename);
+
+        success = false;
+        goto done;
+    }
+
+    char const ivs2_magic[4] = IVS2_MAGIC;
+
+    if (fwrite(ivs2_magic, 1, sizeof ivs2_magic, fp) != sizeof ivs2_magic)
+    {
+        perror("fwrite(IVs file MAGIC) failed");
+
+        success = false;
+        goto done;
+    }
+
+    struct ivs2_filehdr fivs2;
+
+    memset(&fivs2, 0, sizeof fivs2);
+    fivs2.version = IVS2_VERSION;
+
+    if (fwrite(&fivs2, 1, sizeof(fivs2), fp) != sizeof(fivs2))
+    {
+        perror("fwrite(IVs file header) failed");
+
+        success = false;
+        goto done;
+    }
+
+    success = true;
+
+done:
+    if (!success && fp != NULL)
+    {
+        fclose(fp);
+        fp = NULL;
+    }
+
+    return fp;
+}

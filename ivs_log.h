@@ -32,4 +32,6 @@ bool ivs_log_keystream(
     void const * const data2,
     size_t const data2_length);
 
+FILE * ivs_log_open(char const * const filename);
+
 #endif /* __IVS_LOG_H__ */

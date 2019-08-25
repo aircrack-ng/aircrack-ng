@@ -6006,7 +6006,6 @@ static bool open_output_files(struct local_options * const options)
     }
     else if (options->ivs.required)
     {
-        struct ivs2_filehdr fivs2;
         char const * const filename =
             create_output_filename(
                 ofn,
@@ -6015,33 +6014,9 @@ static bool open_output_files(struct local_options * const options)
                 options->f_index,
                 IVS2_EXTENSION);
 
-        options->ivs.fp = fopen(filename, "wb+");
+        options->ivs.fp = ivs_log_open(filename);
         if (options->ivs.fp == NULL)
         {
-            perror("fopen failed");
-            fprintf(stderr, "Could not create \"%s\".\n", filename);
-
-            success = false;
-            goto done;
-        }
-
-        char const ivs2_magic[4] = IVS2_MAGIC;
-
-        if (fwrite(ivs2_magic, 1, sizeof ivs2_magic, options->ivs.fp) != sizeof ivs2_magic)
-        {
-            perror("fwrite(IVs file MAGIC) failed");
-
-            success = false;
-            goto done;
-        }
-
-        memset(&fivs2, 0, sizeof fivs2);
-        fivs2.version = IVS2_VERSION;
-
-        if (fwrite(&fivs2, 1, sizeof(fivs2), options->ivs.fp) != sizeof(fivs2))
-        {
-            perror("fwrite(IVs file header) failed");
-
             success = false;
             goto done;
         }
