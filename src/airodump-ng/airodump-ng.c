@@ -7651,11 +7651,6 @@ int main(int argc, char * argv[])
     lopt.elapsed_time = strdup("0 s");
     ALLEGE(lopt.elapsed_time != NULL);
 
-    if (lopt.dump[dump_type_wifi_scanner].needed)
-    {
-        lopt.interactive_mode = false;
-    }
-
     if (lopt.interactive_mode == -1)
 	{
         lopt.interactive_mode = !is_background();
