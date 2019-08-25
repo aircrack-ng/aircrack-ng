@@ -2027,11 +2027,14 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 				if (lopt.promiscuous || !lopt.f_essid
 					|| gotESSID((char *) tag, (int) len) == 1)
 				{
-					memset(essid, 0, 256);
+					memset(essid, 0, sizeof essid);
 					memcpy(essid, tag, len);
 
 					/* store probes */
-					if (len > 0 && essid[0] == 0) goto skip_probe;
+					if (len > 0 && essid[0] == '\0')
+					{
+						goto skip_probe;
+					}
 
 					/* got a valid probed ESSID */
 
@@ -2041,11 +2044,15 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 
 					/* check if it's already in the ring buffer */
 					for (i = 0; i < NB_PRB; i++)
+					{
 						if (memcmp(st_cur->probes[i], essid, len) == 0)
+						{
 							goto skip_probe;
+						}
+					}
 
 					st_cur->probe_index = (st_cur->probe_index + 1) % NB_PRB;
-					memset(st_cur->probes[st_cur->probe_index], 0, 256);
+					memset(st_cur->probes[st_cur->probe_index], 0, sizeof st_cur->probes[st_cur->probe_index]);
 					memcpy(st_cur->probes[st_cur->probe_index],
 						   essid,
 						   len); // twice?!

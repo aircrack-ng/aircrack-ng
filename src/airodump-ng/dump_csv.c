@@ -279,14 +279,16 @@ static void dump_write_csv(
         for (i = 0; i < NB_PRB; i++)
         {
             if (st_cur->ssid_length[i] == 0)
+            {
                 continue;
+            }
 
             if (verifyssid((const unsigned char *)st_cur->probes[i]))
             {
                 temp = (char *)calloc(
-                    1, (st_cur->ssid_length[i] + 1) * sizeof(char));
+                    1, (st_cur->ssid_length[i] + 1) * sizeof *temp);
                 ALLEGE(temp != NULL);
-                memcpy(temp, st_cur->probes[i], st_cur->ssid_length[i] + 1u);
+                memcpy(temp, st_cur->probes[i], st_cur->ssid_length[i]);
             }
             else
             {

@@ -211,6 +211,9 @@ struct ST_info
 	int essid_length; /* essid length of last asso */
 	int probe_index; /* probed ESSIDs ring index  */
 
+	/* probes only needs to be ESSID_LENGTH, but airbase-ng needs 
+	 * refactoring first to get rid of magic number sizes etc. 
+	 */
 	char probes[NB_PRB][MAX_IE_ELEMENT_SIZE]; /* probed ESSIDs ring buffer */
 	int ssid_length[NB_PRB]; /* ssid lengths ring buffer  */
 

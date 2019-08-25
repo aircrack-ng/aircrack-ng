@@ -47,7 +47,7 @@ bool verifyssid(uint8_t const * const s)
 		return 0;
 	}
 
-	for (size_t i = 0; (c = s[i++]);)
+	for (size_t i = 0; (c = s[i++]) != '\0';)
 	{
 		if ((c & 0x80) == 0)
 		{ // ascii flag

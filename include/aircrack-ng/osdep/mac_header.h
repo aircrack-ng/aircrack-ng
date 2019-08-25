@@ -79,4 +79,11 @@ static inline int fprintf_mac_address(
         mac->addr[5]);
 }
 
+#define MAC_ADDRESS_IG_BIT 0 /* Individual (unicast) or group (multicast). */
+#define MAC_ADDRESS_LA_BIT 1 /* Locally administered. */
+#define BIT(x) (1 << x)
+
+#define MAC_IS_GROUP_ADDRESS(mac) ((((mac_address *)(mac))->addr[0] & BIT(MAC_ADDRESS_IG_BIT)) != 0)
+#define MAC_IS_LOCALLY_ADMINISTERED(mac) ((((mac_address *)(mac))->addr[0] & BIT(MAC_ADDRESS_LA_BIT)) != 0)
+
 #endif /* __MAC_HEADER_H__ */

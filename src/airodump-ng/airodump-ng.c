@@ -1665,10 +1665,10 @@ static struct AP_info * ap_info_alloc(mac_address const * const bssid)
 	gettimeofday(&ap_cur->ftimel, NULL);
 	gettimeofday(&ap_cur->ftimer, NULL);
 
-	ap_cur->ssid_length = 0;
 	ap_cur->essid_stored = 0;
 	memset(ap_cur->essid, 0, sizeof ap_cur->essid);
-	ap_cur->timestamp = 0;
+    ap_cur->ssid_length = 0;
+    ap_cur->timestamp = 0;
 
 	ap_cur->is_decloak = 0;
 
@@ -1869,9 +1869,8 @@ static void dump_add_packet(
 {
 	REQUIRE(h80211 != NULL);
 	uint8_t const * const data_end = h80211 + caplen;
-	int seq, msd, offset, clen, o;
+	int seq, offset, clen, o;
 	size_t i;
-	size_t n;
 	size_t dlen;
 	unsigned z;
 	int type, length, numuni = 0;
@@ -1895,7 +1894,7 @@ static void dump_add_packet(
 
 	/* skip all non probe response frames in active scanning simulation mode */
     bool const is_probe_response = 
-        h80211[0] == (IEEE80211_FC0_TYPE_MGT | IEEE80211_FC0_SUBTYPE_PROBE_RESP);
+        h80211[0] == IEEE80211_FC0_SUBTYPE_PROBE_RESP;
 
     if (lopt.active_scan_sim > 0 && !is_probe_response)
 	{
@@ -2022,7 +2021,7 @@ static void dump_add_packet(
         {
 			ap_cur->fmiss += (seq - ap_cur->last_seq - 1);
         }
-		ap_cur->last_seq = (uint16_t) seq;
+		ap_cur->last_seq = (unsigned int)seq;
 		ap_cur->fcapt++;
 		gettimeofday(&(ap_cur->ftimel), NULL);
 
@@ -2040,11 +2039,11 @@ static void dump_add_packet(
 
 	switch (h80211[0])
 	{
-        case (IEEE80211_FC0_TYPE_MGT | IEEE80211_FC0_SUBTYPE_BEACON):
+        case IEEE80211_FC0_SUBTYPE_BEACON:
 			ap_cur->nb_bcn++;
 			break;
 
-        case (IEEE80211_FC0_TYPE_MGT | IEEE80211_FC0_SUBTYPE_PROBE_RESP):
+        case IEEE80211_FC0_SUBTYPE_PROBE_RESP:
 			/* reset the WPS state */
 			ap_cur->wps.state = 0xFF;
 			ap_cur->wps.ap_setup_locked = 0;
@@ -2062,7 +2061,7 @@ static void dump_add_packet(
 	{
 		case IEEE80211_FC1_DIR_NODS:
 
-			/* if management, check that SA != BSSID */
+            /* If management, check that SA != BSSID. */
 
 			if (MAC_ADDRESS_EQUAL((mac_address *)(h80211 + 10), &bssid))
 			{
@@ -2074,7 +2073,7 @@ static void dump_add_packet(
 
 		case IEEE80211_FC1_DIR_TODS:
 
-			/* ToDS packet, must come from a client */
+            /* ToDS packet, must come from a client. */
 
 			MAC_ADDRESS_COPY(&stmac, (mac_address *)(h80211 + 10));
 			break;
@@ -2082,8 +2081,7 @@ static void dump_add_packet(
 		case IEEE80211_FC1_DIR_FROMDS:
 
 			/* FromDS packet, reject broadcast MACs */
-
-			if ((h80211[4] % 2) != 0)
+            if (MAC_IS_GROUP_ADDRESS(&h80211[4]))
 			{
 				goto skip_station;
 			}
@@ -2113,17 +2111,19 @@ static void dump_add_packet(
         remove_namac(&lopt.na_list, &stmac);
 	}
 
+    /* Update the last time seen. */
+    st_cur->tlast = time(NULL);
+
     if (st_cur->base == NULL || !MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
     {
 		st_cur->base = ap_cur;
     }
 
 	// update bitrate to station
-	if ((h80211[1] & 3) == 2) st_cur->rate_to = ri->ri_rate;
-
-	/* update the last time seen */
-
-	st_cur->tlast = time(NULL);
+    if ((h80211[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_FROMDS)
+    {
+        st_cur->rate_to = ri->ri_rate;
+    }
 
 	/* only update power if packets comes from the
 	 * client: either type == Mgmt and SA != BSSID,
@@ -2168,13 +2168,14 @@ static void dump_add_packet(
 
 		if (st_cur->lastseq != 0)
 		{
-			msd = seq - st_cur->lastseq - 1;
-			if (msd > 0 && msd < 1000)
+			int const missed = seq - st_cur->lastseq - 1;
+
+            if (missed > 0 && missed < 1000)
 			{
-				st_cur->missed += msd;
+                st_cur->missed += missed;
 			}
 		}
-		st_cur->lastseq = (uint16_t) seq;
+		st_cur->lastseq = (unsigned int)seq;
 
 		/* if we are writing to a file and want to make a continuous rolling log save the data here */
         if (lopt.log_csv.fp != NULL)
@@ -2191,7 +2192,7 @@ skip_station:
 
 	/* packet parsing: Probe Request */
 
-	if (h80211[0] == IEEE80211_FC0_SUBTYPE_PROBE_REQ && st_cur != NULL)
+    if (h80211[0] == IEEE80211_FC0_SUBTYPE_PROBE_REQ && st_cur != NULL)
 	{
 		p = h80211 + 24;
 
@@ -2202,34 +2203,38 @@ skip_station:
 				break;
 			}
 
-			if (p[0] == 0x00 && p[1] > 0 && p[2] != '\0'
+			if (p[0] == 0x00 
+                && p[1] > 0 
+                && p[2] != '\0'
 				&& (p[1] > 1 || p[2] != ' '))
 			{
-				n = MIN(ESSID_LENGTH, p[1]);
+                uint8_t const * const essid = p + 2;
+				size_t const essid_length = MIN(ESSID_LENGTH, p[1]);
 
-                for (i = 0; i < n; i++)
+                for (size_t i = 0; i < essid_length; i++)
                 {
-                    if (p[2 + i] > 0 && p[2 + i] < ' ')
+                    if (essid[i] > 0 && essid[i] < ' ')
                     {
                         goto skip_probe;
                     }
                 }
 
-				/* got a valid ASCII probed ESSID, check if it's
-				   already in the ring buffer */
+                /* Got a valid ASCII probed ESSID. 
+                 * Check if it's already in the ring buffer.
+                 */
 
-                for (i = 0; i < NB_PRB; i++)
+                for (size_t i = 0; i < NB_PRB; i++)
                 {
-                    if (memcmp(st_cur->probes[i], p + 2, n) == 0)
+                    if (memcmp(st_cur->probes[i], essid, essid_length) == 0)
                     {
                         goto skip_probe;
                     }
                 }
 
 				st_cur->probe_index = (st_cur->probe_index + 1) % NB_PRB;
-                memset(st_cur->probes[st_cur->probe_index], 0, sizeof st_cur->probes[st_cur->probe_index]);
-				memcpy(st_cur->probes[st_cur->probe_index], p + 2, n);
-				st_cur->ssid_length[st_cur->probe_index] = n;
+                memcpy(st_cur->probes[st_cur->probe_index], essid, essid_length);
+                st_cur->probes[st_cur->probe_index][essid_length] = '\0';
+                st_cur->ssid_length[st_cur->probe_index] = essid_length;
 
                 if (!verifyssid((uint8_t *)st_cur->probes[st_cur->probe_index]))
                 {
@@ -2246,15 +2251,19 @@ skip_probe:
 
     /* packet parsing: Beacon or Probe Response */
 
-	if (h80211[0] == IEEE80211_FC0_SUBTYPE_BEACON
-		|| h80211[0] == IEEE80211_FC0_SUBTYPE_PROBE_RESP)
+    if (h80211[0] == IEEE80211_FC0_SUBTYPE_BEACON
+        || h80211[0] == IEEE80211_FC0_SUBTYPE_PROBE_RESP)
 	{
 		if (!(ap_cur->security & (STD_OPN | STD_WEP | STD_WPA | STD_WPA2)))
 		{
-			if ((h80211[34] & 0x10) >> 4)
+            if ((h80211[34] & 0x10) >> 4)
+            {
 				ap_cur->security |= STD_WEP | ENC_WEP;
-			else
+            }
+            else
+            {
 				ap_cur->security |= STD_OPN;
+            }
 		}
 
 		ap_cur->preamble = (h80211[34] & 0x20) >> 5;
@@ -2271,18 +2280,14 @@ skip_probe:
 				break;
 			}
 
-			// only update the essid length if the new length is > the old one
-			if (p[0] == 0x00 && (ap_cur->ssid_length < p[1]))
-				ap_cur->ssid_length = p[1];
-
 			if (p[0] == 0x00 && p[1] > 0 && p[2] != '\0'
 				&& (p[1] > 1 || p[2] != ' '))
 			{
 				/* found a non-cloaked ESSID */
                 ap_cur->ssid_length = MIN((sizeof ap_cur->essid - 1), p[1]);
 
-                memset(ap_cur->essid, 0, sizeof ap_cur->essid);
                 memcpy(ap_cur->essid, p + 2, ap_cur->ssid_length);
+                ap_cur->essid[ap_cur->ssid_length] = '\0';
 
                 if (lopt.ivs.fp != NULL && !ap_cur->essid_stored)
 				{
@@ -2877,11 +2882,11 @@ skip_probe:
 			if (p[0] == 0x00 && p[1] > 0 && p[2] != '\0'
 				&& (p[1] > 1 || p[2] != ' '))
 			{
-				/* found a non-cloaked ESSID */
+                /* Found a non-cloaked ESSID. */
                 ap_cur->ssid_length = MIN((sizeof ap_cur->essid - 1), p[1]);
 
-                memset(ap_cur->essid, 0, sizeof ap_cur->essid);
                 memcpy(ap_cur->essid, p + 2, ap_cur->ssid_length);
+                ap_cur->essid[ap_cur->ssid_length] = '\0';
 
                 if (lopt.ivs.fp != NULL && !ap_cur->essid_stored)
 				{
@@ -3097,7 +3102,7 @@ skip_probe:
 						ivs2.flags |= IVS2_XOR;
 						ivs2.len += clen + 4;
 						/* reveal keystream (plain^encrypted) */
-						for (n = 0; n < (size_t)(ivs2.len - 4); n++)
+						for (size_t n = 0; n < (size_t)(ivs2.len - 4); n++)
 						{
 							clear[n] = (uint8_t)((clear[n] ^ h80211[z + 4 + n])
 												 & 0xFF);
@@ -3118,7 +3123,7 @@ skip_probe:
 						/* reveal keystream (plain^encrypted) */
 						for (o = 0; o < num_xor; o++)
 						{
-							for (n = 0; n < (size_t)(ivs2.len - 4); n++)
+							for (size_t n = 0; n < (size_t)(ivs2.len - 4); n++)
 							{
 								clear[2 + n + o * 32] = (uint8_t)(
 									(clear[2 + n + o * 32] ^ h80211[z + 4 + n])
@@ -3353,7 +3358,8 @@ skip_probe:
 				}
 			}
 
-            if (st_cur->wpa.state == 7 && !is_filtered_essid(&lopt.essid_filter, ap_cur->essid))
+            if (st_cur->wpa.state == 7 
+                && !is_filtered_essid(&lopt.essid_filter, ap_cur->essid))
 			{
 				MAC_ADDRESS_COPY(&st_cur->wpa.stmac, &st_cur->stmac);
 				MAC_ADDRESS_COPY(&lopt.wpa_bssid, &ap_cur->bssid);
@@ -3418,7 +3424,7 @@ write_packet:
 	if (ap_cur != NULL)
 	{
         bool const is_a_beacon =
-            h80211[0] == (IEEE80211_FC0_TYPE_MGT | IEEE80211_FC0_SUBTYPE_BEACON);
+            h80211[0] == IEEE80211_FC0_SUBTYPE_BEACON;
 
         if (is_a_beacon && lopt.one_beacon)
 		{
@@ -4210,7 +4216,7 @@ static void dump_print(
 
 				ssize_t essid_len = len;
 
-				if (ap_cur->essid[0] != (uint8_t)'\0')
+				if (ap_cur->essid[0] != '\0')
 				{
 					if (lopt.show_wps)
 						snprintf(strbuf + len,
