@@ -27,5 +27,6 @@ bool bssid_is_filtered(
     mac_address const * const f_bssid,
     mac_address const * const f_netmask);
 
+char * parse_timestamp(unsigned long long timestamp);
 
 #endif /* __UTILS_H__ */

@@ -3444,34 +3444,6 @@ write_packet:
     update_packet_capture_files(&lopt, h80211, caplen, ri->ri_power);
 }
 
-#define TSTP_SEC                                                               \
-	1000000ULL /* It's a 1 MHz clock, so a million ticks per second! */
-#define TSTP_MIN (TSTP_SEC * 60ULL)
-#define TSTP_HOUR (TSTP_MIN * 60ULL)
-#define TSTP_DAY (TSTP_HOUR * 24ULL)
-
-static char * parse_timestamp(unsigned long long timestamp)
-{
-#define TSTP_LEN 15
-	static char s[TSTP_LEN];
-	unsigned long long rem;
-	unsigned char days, hours, mins, secs;
-
-	// Calculate days, hours, mins and secs
-	days = (uint8_t)(timestamp / TSTP_DAY);
-	rem = timestamp % TSTP_DAY;
-	hours = (unsigned char) (rem / TSTP_HOUR);
-	rem %= TSTP_HOUR;
-	mins = (unsigned char) (rem / TSTP_MIN);
-	rem %= TSTP_MIN;
-	secs = (unsigned char) (rem / TSTP_SEC);
-
-	snprintf(s, sizeof s, "%3ud %02u:%02u:%02u", days, hours, mins, secs);
-#undef TSTP_LEN
-
-	return (s);
-}
-
 static bool ap_should_not_be_printed(
     struct local_options const * const options, 
     struct AP_info const * const ap_cur)
