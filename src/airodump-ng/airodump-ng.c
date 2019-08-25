@@ -149,7 +149,7 @@ struct sort_context_st
 {
     int do_sort_always;
     bool sort_required;
-    struct ap_sort_context_st sort_context;
+    ap_sort_context_st * sort_context;
 };
 
 TAILQ_HEAD(na_list_head, NA_info);
@@ -356,11 +356,11 @@ static struct local_options
     int f_index; 
 } lopt;
 
-static void reset_sort_context(struct sort_context_st * const sort_context)
+static void reset_sort_context(struct sort_context_st * const context)
 {
-    ap_sort_context_initialise(&sort_context->sort_context, SORT_BY_POWER);
-
-    sort_context->do_sort_always = 0;
+    ap_sort_context_free(context->sort_context);
+    context->sort_context = ap_sort_context_alloc(SORT_BY_POWER);
+    context->do_sort_always = 0;
 }
 
 static void reset_selections(struct local_options * const options)
@@ -662,11 +662,11 @@ static void handle_input_key(
 
     if (keycode == KEY_s)
     {
-        ap_sort_context_next_sort_method(&options->sort.sort_context);
+        ap_sort_context_next_sort_method(options->sort.sort_context);
         snprintf(options->message,
                  sizeof(options->message),
                  "sorting by %s", 
-                 ap_sort_context_description(&options->sort.sort_context));
+                 ap_sort_context_description(options->sort.sort_context));
         options->sort.sort_required = true;
     }
 
@@ -728,7 +728,7 @@ static void handle_input_key(
     if (keycode == KEY_i)
     {
         bool const is_inverted = 
-            ap_sort_context_invert_direction(&options->sort.sort_context);
+            ap_sort_context_invert_direction(options->sort.sort_context);
         char const * const message = is_inverted ? "inverted" : "normal";
 
         snprintf(options->message,
@@ -757,7 +757,7 @@ static void handle_input_key(
                  sizeof(options->message),
                  "%s AP selection", message); 
 
-        ap_sort_context_assign_sort_method(&options->sort.sort_context, 
+        ap_sort_context_assign_sort_method(options->sort.sort_context, 
                                            SORT_BY_NOTHING);
     }
 
@@ -6225,6 +6225,8 @@ static void airodump_shutdown(
     {
         fclose(options->shared_key.f_xor);
     }
+
+    ap_sort_context_free(options->sort.sort_context);
 }
 
 static bool handle_ready_wi_interface(
@@ -6345,7 +6347,7 @@ static void update_console(struct local_options * const options)
 
     if (sort_context->sort_required || sort_context->do_sort_always)
     {
-        dump_sort(options, &sort_context->sort_context);
+        dump_sort(options, sort_context->sort_context);
         sort_context->sort_required = false;
     }
 

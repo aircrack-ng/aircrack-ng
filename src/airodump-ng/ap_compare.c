@@ -9,12 +9,18 @@ typedef int (* ap_compare_fn)(
     struct AP_info const * const b,
     int const sort_direction);
 
+typedef struct ap_sort_info_st ap_sort_info_st;
 struct ap_sort_info_st
 {
     char const * description;
     ap_compare_fn ap_compare;
 };
 
+struct ap_sort_context_st
+{
+    int sort_direction;
+    ap_sort_info_st const * sort_method;
+}; 
 
 static int sort_bssid(
     struct AP_info const * const a,
@@ -42,7 +48,7 @@ static int sort_beacon(
     struct AP_info const * const b,
     int const sort_direction)
 {
-    int const result = (a->nb_bcn < b->nb_bcn) * sort_direction;
+    int const result = ((a->nb_bcn < b->nb_bcn) ? -1 : 1) * sort_direction;
 
     return result;
 }
@@ -52,7 +58,7 @@ static int sort_data(
     struct AP_info const * const b,
     int const sort_direction)
 {
-    int const result = (a->nb_data < b->nb_data) * sort_direction;
+    int const result = ((a->nb_data < b->nb_data) ? -1 : 1) * sort_direction;
 
     return result;
 }
@@ -135,17 +141,6 @@ static int sort_essid(
     return result;
 }
 
-static int sort_default(
-    struct AP_info const * const a,
-    struct AP_info const * const b,
-    int const sort_direction)
-{
-    (void)sort_direction;
-    int const result = a->avg_power - b->avg_power;
-
-    return result;
-}
-
 static int sort_nothing(
     struct AP_info const * const a,
     struct AP_info const * const b,
@@ -161,11 +156,6 @@ static int sort_nothing(
 
 static ap_sort_info_st const ap_sort_infos[SORT_MAX] =
 {
-    [SORT_DEFAULT] =
-    {
-        .description = "avg pwr",
-        .ap_compare = sort_default
-    },
     [SORT_BY_NOTHING] =
     {
         .description = "first seen",
@@ -264,7 +254,18 @@ static char const * ap_sort_method_description(
 char const * ap_sort_context_description(
     struct ap_sort_context_st const * const context)
 {
-    return ap_sort_method_description(context->sort_method);
+    char const * description;
+
+    if (context == NULL)
+    {
+        description = "null";
+        goto done;
+    }
+
+    description = ap_sort_method_description(context->sort_method);
+
+done:
+    return description;
 }
 
 int ap_sort_compare(
@@ -272,34 +273,96 @@ int ap_sort_compare(
     struct AP_info const * const a,
     struct AP_info const * const b)
 {
-    return context->sort_method->ap_compare(a, b, context->sort_direction);
+    int comparison;
+
+    if (context == NULL)
+    {
+        comparison = 0;
+        goto done;
+    }
+
+    comparison = context->sort_method->ap_compare(a, b, context->sort_direction);
+
+done:
+    return comparison;
 }
 
 void ap_sort_context_next_sort_method(
     struct ap_sort_context_st * const context)
 {
+    if (context == NULL)
+    {
+        goto done;
+    }
+
     context->sort_method = ap_sort_method_assign_next(context->sort_method);
+
+done:
+    return;
 }
 
 void ap_sort_context_assign_sort_method(
     struct ap_sort_context_st * const context,
     ap_sort_type_t const sort_method)
 {
+    if (context == NULL)
+    {
+        goto done;
+    }
+
     context->sort_method = ap_sort_method_assign(sort_method);
+
+done:
+    return;
 }
 
 bool ap_sort_context_invert_direction(
     struct ap_sort_context_st * const context)
 {
+    bool inverted;
+
+    if (context == NULL)
+    {
+        inverted = false;
+        goto done;
+    }
+
     context->sort_direction *= -1;
 
-    return context->sort_direction < 0;
+    inverted = context->sort_direction < 0;
+
+done:
+    return inverted;
 }
 
-void ap_sort_context_initialise(
+void ap_sort_context_free(
+    struct ap_sort_context_st * const context)
+{
+    free(context);
+}
+
+
+
+static void ap_sort_context_initialise(
     struct ap_sort_context_st * const context,
     ap_sort_type_t const sort_method)
 {
     context->sort_method = ap_sort_method_assign(sort_method);
     context->sort_direction = 1;
+}
+
+struct ap_sort_context_st * ap_sort_context_alloc(
+    ap_sort_type_t const sort_method)
+{
+    struct ap_sort_context_st * const context = calloc(1, sizeof *context);
+
+    if (context == NULL)
+    {
+        goto done;
+    }
+
+    ap_sort_context_initialise(context, sort_method);
+
+done:
+    return context;
 }
