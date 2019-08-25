@@ -348,6 +348,8 @@ static struct local_options
     } pcap_output;
 
     int no_filename_index;
+    int no_shared_key; 
+
     /* Possibly appended to filenames of output dump files. value 
      * -1 indicates not to. 
      */
@@ -881,6 +883,7 @@ static const char usage[] =
     "      --ignore-negative-one : Removes the message that says\n"
 	"                              fixed channel <interface>: -1\n"
     "      --no-filename-index   : Don't include an index in the filname\n"
+    "      --no-shared-key       : Don't do shared key checks\n"
 	"      --write-interval\n"
 	"                  <seconds> : Output file(s) write interval in seconds\n"
 	"      --background <enable> : Override background detection.\n"
@@ -3439,9 +3442,10 @@ write_packet:
 		}
 	}
 
-	if (lopt.record_data)
+    if (lopt.record_data && !lopt.no_shared_key)
 	{
-		if (((h80211[0] & 0x0C) == 0x00) && ((h80211[0] & 0xF0) == 0xB0))
+        if ((h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_MGT
+            && (h80211[0] & IEEE80211_FC0_SUBTYPE_MASK) == IEEE80211_FC0_SUBTYPE_AUTH)
 		{
 			/* authentication packet */
             check_shared_key(&lopt.shared_key, h80211, caplen, lopt.dump_prefix, lopt.f_index, true);
@@ -6373,6 +6377,12 @@ static void airodump_shutdown(
     na_info_list_free(&options->na_list);
 
     oui_context_free(options->manufacturer_list);
+
+    /* TODO: Separate out shared key context init/cleanup. */
+    if (options->shared_key.f_xor != NULL)
+    {
+        fclose(options->shared_key.f_xor);
+    }
 }
 
 static bool handle_ready_wi_interface(
@@ -6646,6 +6656,7 @@ int main(int argc, char * argv[])
            {"file-reset-minutes", 1, 0, 'P'},
            {"ignore-negative-one", 0, &lopt.ignore_negative_one, 1},
            {"no-filename-index", 0, &lopt.no_filename_index, 1},
+           {"no-shared-key", 0, &lopt.no_shared_key, 1},
            {"manufacturer", 0, 0, 'M' },
 		   {"uptime", 0, 0, 'U'},
 		   {"write-interval", 1, 0, 'I'},
