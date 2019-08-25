@@ -167,7 +167,6 @@ static struct local_options
 
 	oui_context_st * manufacturer_list;
 
-    mac_address prev_bssid;
     mac_address f_bssid;
     mac_address f_netmask; 
 
@@ -339,6 +338,7 @@ static struct local_options
     {
         bool required;
         FILE * fp;
+        mac_address prev_bssid;
     } ivs;
 
     struct
@@ -1668,7 +1668,7 @@ static struct AP_info * ap_info_alloc(mac_address const * const bssid)
 	gettimeofday(&ap_cur->ftimel, NULL);
 	gettimeofday(&ap_cur->ftimer, NULL);
 
-	ap_cur->essid_stored = 0;
+	ap_cur->essid_logged = 0;
 	memset(ap_cur->essid, 0, sizeof ap_cur->essid);
     ap_cur->ssid_length = 0;
     ap_cur->timestamp = 0;
@@ -2290,17 +2290,17 @@ skip_probe:
                 memcpy(ap_cur->essid, p + 2, ap_cur->ssid_length);
                 ap_cur->essid[ap_cur->ssid_length] = '\0';
 
-                if (lopt.ivs.fp != NULL && !ap_cur->essid_stored)
+                if (lopt.ivs.fp != NULL && !ap_cur->essid_logged)
 				{
                     memset(&ivs2, '\x00', sizeof ivs2);
 					ivs2.flags |= IVS2_ESSID;
 					ivs2.len += ap_cur->ssid_length;
 
-                    if (!MAC_ADDRESS_EQUAL(&lopt.prev_bssid, &ap_cur->bssid))
+                    if (!MAC_ADDRESS_EQUAL(&lopt.ivs.prev_bssid, &ap_cur->bssid))
 					{
 						ivs2.flags |= IVS2_BSSID;
                         ivs2.len += MAC_ADDRESS_LEN;
-                        MAC_ADDRESS_COPY(&lopt.prev_bssid, &ap_cur->bssid);
+                        MAC_ADDRESS_COPY(&lopt.ivs.prev_bssid, &ap_cur->bssid);
 					}
 
 					/* write header */
@@ -2332,7 +2332,7 @@ skip_probe:
 						return;
 					}
 
-					ap_cur->essid_stored = 1;
+                    ap_cur->essid_logged = 1;
 				}
 
 				if (!verifyssid(ap_cur->essid))
@@ -2889,17 +2889,17 @@ skip_probe:
                 memcpy(ap_cur->essid, p + 2, ap_cur->ssid_length);
                 ap_cur->essid[ap_cur->ssid_length] = '\0';
 
-                if (lopt.ivs.fp != NULL && !ap_cur->essid_stored)
+                if (lopt.ivs.fp != NULL && !ap_cur->essid_logged)
 				{
                     memset(&ivs2, '\x00', sizeof ivs2);
 					ivs2.flags |= IVS2_ESSID;
 					ivs2.len += ap_cur->ssid_length;
 
-                    if (!MAC_ADDRESS_EQUAL(&lopt.prev_bssid, &ap_cur->bssid))
+                    if (!MAC_ADDRESS_EQUAL(&lopt.ivs.prev_bssid, &ap_cur->bssid))
 					{
 						ivs2.flags |= IVS2_BSSID;
                         ivs2.len += MAC_ADDRESS_LEN;
-                        MAC_ADDRESS_COPY(&lopt.prev_bssid, &ap_cur->bssid);
+                        MAC_ADDRESS_COPY(&lopt.ivs.prev_bssid, &ap_cur->bssid);
 					}
 
 					/* write header */
@@ -2931,7 +2931,7 @@ skip_probe:
 						return;
 					}
 
-					ap_cur->essid_stored = 1;
+                    ap_cur->essid_logged = 1;
 				}
 
                 if (!verifyssid(ap_cur->essid))
@@ -2942,7 +2942,10 @@ skip_probe:
 
 			p += 2 + p[1];
 		}
-		if (st_cur != NULL) st_cur->wpa.state = 0;
+        if (st_cur != NULL)
+        {
+            st_cur->wpa.state = 0;
+        }
 	}
 
 	/* packet parsing: some data */
@@ -3032,12 +3035,16 @@ skip_probe:
 
 			/* if ethertype == IPv4, find the LAN address */
 
-			if (h80211[z + 6] == 0x08 && h80211[z + 7] == 0x00
-				&& (h80211[1] & 3) == 0x01)
+            if (h80211[z + 6] == 0x08 && h80211[z + 7] == 0x00
+                && (h80211[1] & 3) == 0x01)
+            {
 				memcpy(ap_cur->lanip, &h80211[z + 20], 4);
+            }
 
-			if (h80211[z + 6] == 0x08 && h80211[z + 7] == 0x06)
+            if (h80211[z + 6] == 0x08 && h80211[z + 7] == 0x06)
+            {
 				memcpy(ap_cur->lanip, &h80211[z + 22], 4);
+            }
 		}
 		//        else
 		//            ap_cur->encryption = 2 + ( ( h80211[z + 3] & 0x20 ) >> 5
@@ -3137,11 +3144,11 @@ skip_probe:
 						// clear is now the keystream
 					}
 
-                    if (!MAC_ADDRESS_EQUAL(&lopt.prev_bssid, &ap_cur->bssid))
+                    if (!MAC_ADDRESS_EQUAL(&lopt.ivs.prev_bssid, &ap_cur->bssid))
 					{
 						ivs2.flags |= IVS2_BSSID;
                         ivs2.len += MAC_ADDRESS_LEN;
-                        MAC_ADDRESS_COPY(&lopt.prev_bssid, &ap_cur->bssid);
+                        MAC_ADDRESS_COPY(&lopt.ivs.prev_bssid, &ap_cur->bssid);
 					}
 
                     if (fwrite(&ivs2, 1, sizeof ivs2, lopt.ivs.fp) != sizeof ivs2)
@@ -3382,11 +3389,11 @@ skip_probe:
 					ivs2.len = sizeof(struct WPA_hdsk);
 					ivs2.flags |= IVS2_WPA;
 
-                    if (!MAC_ADDRESS_EQUAL(&lopt.prev_bssid, &ap_cur->bssid))
+                    if (!MAC_ADDRESS_EQUAL(&lopt.ivs.prev_bssid, &ap_cur->bssid))
 					{
 						ivs2.flags |= IVS2_BSSID;
                         ivs2.len += MAC_ADDRESS_LEN;
-                        MAC_ADDRESS_COPY(&lopt.prev_bssid, &ap_cur->bssid);
+                        MAC_ADDRESS_COPY(&lopt.ivs.prev_bssid, &ap_cur->bssid);
 					}
 
                     if (fwrite(&ivs2, 1, sizeof ivs2, lopt.ivs.fp) != sizeof ivs2)
@@ -3422,23 +3429,37 @@ skip_probe:
 
 write_packet:
 
-	if (ap_cur != NULL)
+    if (ap_cur != NULL)
 	{
-        bool const is_a_beacon =
-            h80211[0] == IEEE80211_FC0_SUBTYPE_BEACON;
+        if (lopt.one_beacon)
+        {
+            bool const is_a_beacon =
+                (h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_MGT
+                && (h80211[0] & IEEE80211_FC0_SUBTYPE_MASK) == IEEE80211_FC0_SUBTYPE_BEACON;
 
-        if (is_a_beacon && lopt.one_beacon)
-		{
-			if (!ap_cur->beacon_logged)
-			{
-				ap_cur->beacon_logged = 1;
-			}
-			else
-			{
-				return;
-			}
-		}
-	}
+            if (is_a_beacon)
+            {
+                if (!ap_cur->beacon_logged)
+                {
+                    ap_cur->beacon_logged = 1;
+                }
+                else
+                {
+                    return;
+                }
+            }
+        }
+
+        if (!ap_has_required_security(ap_cur->security, lopt.encryption_filter))
+        {
+            return;
+        }
+
+        if (is_filtered_essid(&lopt.essid_filter, ap_cur->essid))
+        {
+            return;
+        }
+    }
 
     if (lopt.record_data && !lopt.no_shared_key)
 	{
@@ -3446,25 +3467,15 @@ write_packet:
             && (h80211[0] & IEEE80211_FC0_SUBTYPE_MASK) == IEEE80211_FC0_SUBTYPE_AUTH)
 		{
 			/* authentication packet */
-            check_shared_key(&lopt.shared_key, h80211, caplen, lopt.dump_prefix, lopt.f_index, true);
+            check_shared_key(&lopt.shared_key, 
+                             h80211, 
+                             caplen, 
+                             lopt.dump_prefix, 
+                             lopt.f_index, 
+                             true);
 		}
 	}
 
-	if (ap_cur != NULL)
-	{
-        if (!ap_has_required_security(ap_cur->security, lopt.encryption_filter))
-        {
-            return;
-        }
-
-        if (is_filtered_essid(&lopt.essid_filter, ap_cur->essid))
-		{
-			return;
-		}
-	}
-
-	/* this changes the local ap_cur, st_cur and na_cur variables and should be
-	 * the last check before the actual write */
 	if (caplen < 24 && caplen >= 10 && h80211[0] != 0)
 	{
 		/* RTS || CTS || ACK || CF-END || CF-END&CF-ACK*/
@@ -3473,7 +3484,7 @@ write_packet:
 
 		/* use general control frame detection, as the structure is always the
 		 * same: mac(s) starting at [4] */
-        if ((h80211[0] & IEEE80211_FC0_TYPE_CTL))
+        if ((h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_CTL)
 		{
             mac_address namac;
 
@@ -3497,28 +3508,23 @@ write_packet:
 				if (lopt.hide_known)
 				{
 					/* Check AP list. */
-                    ap_cur = ap_info_lookup_existing(&lopt.ap_list, &namac);
-
 					/* If it's an AP, try next mac */
-					if (ap_cur != NULL)
+                    if (ap_info_lookup_existing(&lopt.ap_list, &namac))
 					{
                         p += sizeof namac;
 						continue;
 					}
 
-					/* check STA list */
-                    st_cur = sta_info_lookup_existing(&lopt.sta_list, &namac);
-
 					/* If it's a client, try next mac */
-					if (st_cur != NULL)
+                    if (sta_info_lookup_existing(&lopt.sta_list, &namac))
 					{
                         p += sizeof namac;
 						continue;
 					}
 				}
 
-                /* Not found in either AP list or ST list. Find or create an 
-                 * entry in the NA list. 
+                /* Not found in either AP list or ST list. 
+                 * Find or create an entry in the NA list.
 				 */
                 struct NA_info * const na_cur =
                     na_info_lookup(&lopt.na_list, &namac);

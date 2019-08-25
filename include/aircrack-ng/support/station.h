@@ -159,7 +159,7 @@ struct AP_info
 	PTW_attackstate * ptw_vague;
 
 	int wpa_stored; /* wpa stored in ivs file?   */
-	int essid_stored; /* essid stored in ivs file? */
+	int essid_logged; /* essid written to the ivs file? */
 
 	int rx_quality; /* percent of captured beacons */
 	int fcapt; /* amount of captured frames   */

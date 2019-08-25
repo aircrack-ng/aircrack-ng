@@ -312,7 +312,7 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 
 		ap_cur->ssid_length = 0;
 		ap_cur->wpa_stored = 0;
-		ap_cur->essid_stored = 0;
+		ap_cur->essid_logged = 0;
 
 		TAILQ_INSERT_HEAD(&G.ap_list, ap_cur, entry);
 	}
@@ -412,7 +412,7 @@ skip_station:
 				memset(ap_cur->essid, 0, sizeof ap_cur->essid);
 				memcpy(ap_cur->essid, p + 2, n);
 
-				if (G.f_ivs != NULL && !ap_cur->essid_stored)
+				if (G.f_ivs != NULL && !ap_cur->essid_logged)
 				{
                     memset(&ivs2, '\x00', sizeof ivs2);
 					ivs2.flags |= IVS2_ESSID;
@@ -451,7 +451,7 @@ skip_station:
 						return 1;
 					}
 
-					ap_cur->essid_stored = 1;
+					ap_cur->essid_logged = 1;
 					return ESSID;
 				}
 
@@ -485,7 +485,7 @@ skip_station:
 				memset(ap_cur->essid, 0, 33);
 				memcpy(ap_cur->essid, p + 2, n);
 
-				if (G.f_ivs != NULL && !ap_cur->essid_stored)
+				if (G.f_ivs != NULL && !ap_cur->essid_logged)
 				{
                     memset(&ivs2, '\x00', sizeof(ivs2));
 					ivs2.flags |= IVS2_ESSID;
@@ -524,7 +524,7 @@ skip_station:
 						return EXIT_FAILURE;
 					}
 
-					ap_cur->essid_stored = 1;
+					ap_cur->essid_logged = 1;
 					return ESSID;
 				}
 
