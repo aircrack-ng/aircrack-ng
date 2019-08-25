@@ -8,14 +8,12 @@
 #include <string.h>
 #include <stdio.h>
 
-#define __PACKED __packed
-
 #define MAC_ADDRESS_LEN 6
 
 typedef struct mac_address
 {
     uint8_t addr[MAC_ADDRESS_LEN];
-} __PACKED mac_address;
+} __packed mac_address;
 
 static mac_address const broadcast_mac = 
     { .addr = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff } };

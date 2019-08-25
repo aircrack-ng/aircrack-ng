@@ -1,6 +1,8 @@
 #include "oui.h"
 #include "aircrack-ng/osdep/queue.h"
 #include "aircrack-ng/support/common.h"
+#include "aircrack-ng/osdep/packed.h"
+#include "aircrack-ng/osdep/mac_header.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -12,11 +14,16 @@
 
 #define OUI_ID_SIZE 3
 
+typedef struct oui_id
+{
+    uint8_t addr[OUI_ID_SIZE];
+} __packed oui_id;
+
 struct oui
 {
     TAILQ_ENTRY(oui) entry;
 
-    uint8_t id[OUI_ID_SIZE];
+    oui_id id;
     char * manufacturer;
 };
 
@@ -45,6 +52,27 @@ static char const * const OUI_PATHS[] =
     "/usr/share/wireshark/manuf/oui.txt",
     NULL 
 };
+
+static inline int OUI_ID_COMPARE(
+    oui_id const * const a,
+    oui_id const * const b)
+{
+    return memcmp((void *)a, (void *)b, sizeof *a);
+}
+
+static inline bool OUI_ID_EQUAL(
+    oui_id const * const a,
+    oui_id const * const b)
+{
+    return OUI_ID_COMPARE(a, b) == 0;
+}
+
+static inline void OUI_ID_COPY(
+    oui_id * const dest,
+    oui_id const * const src)
+{
+    *dest = *src;
+}
 
 static FILE * open_oui_file(void)
 {
@@ -156,10 +184,8 @@ done:
 
 static void oui_initialise(
     struct oui * const oui, 
-    char * const manufacturer, 
-    uint8_t const a, 
-    uint8_t const b, 
-    uint8_t const c)
+    char * const manufacturer,
+    oui_id const * const id)
 {
     oui->manufacturer = manufacturer;
 
@@ -168,9 +194,7 @@ static void oui_initialise(
         oui->manufacturer = strdup(unknown_manufacturer);
     }
 
-    oui->id[0] = a;
-    oui->id[1] = b;
-    oui->id[3] = c;
+    OUI_ID_COPY(&oui->id, id);
 }
 
 oui_context_st * load_oui_file(void)
@@ -226,11 +250,13 @@ oui_context_st * load_oui_file(void)
                 goto done;
             }
 
-            oui_initialise(oui, 
-                           get_manufacturer_from_string(buffer), 
-                           a, 
-                           b, 
-                           c);
+            oui_id const id = {
+                .addr[0] = a,
+                .addr[1] = b,
+                .addr[2] = c
+            };
+
+            oui_initialise(oui, get_manufacturer_from_string(buffer), &id);
 
             TAILQ_INSERT_TAIL(&context->list_head, oui, entry);
         }
@@ -261,7 +287,7 @@ done:
 
 static struct oui * oui_lookup(
     struct oui_list_head * const list, 
-    uint8_t const * const id)
+    oui_id const * const id)
 {
     struct oui * oui;
 
@@ -271,9 +297,16 @@ static struct oui * oui_lookup(
      */
     TAILQ_FOREACH(oui, list, entry)
     {
-        bool const found = memcmp(oui->id, id, sizeof oui->id) == 0;
+        /* Clear the locally administered bit as some routers will 
+         * create addresses, setting the locally administerd bit but 
+         * otherwise using a well-defined OUI. 
+         */
+        oui_id fixed_id;
 
-        if (found)
+        OUI_ID_COPY(&fixed_id, id);
+        fixed_id.addr[0] &= ~BIT(MAC_ADDRESS_LA_BIT);
+
+        if (OUI_ID_EQUAL(&oui->id, &fixed_id))
         {
             goto done;
         }
@@ -294,7 +327,8 @@ get_manufacturer_by_oui(
     if (context != NULL && context->have_loaded_list)
     {
         // Search in the list
-        struct oui const * const ptr = oui_lookup(&context->list_head, mac);
+        struct oui const * const ptr = 
+            oui_lookup(&context->list_head, (oui_id *)mac);
 
         if (ptr != NULL)
         {
