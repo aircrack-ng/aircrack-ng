@@ -2063,7 +2063,7 @@ static void dump_add_packet(
 {
 	REQUIRE(h80211 != NULL);
 	uint8_t const * const data_end = h80211 + caplen;
-	int seq, offset, clen, o;
+	int offset, o;
 	size_t i;
 	size_t dlen;
 	unsigned z;
@@ -2072,7 +2072,7 @@ static void dump_add_packet(
     unsigned char const * p; 
     unsigned char const * org_p;
     mac_address bssid;
-	mac_address stmac;
+	mac_address const * stmac = NULL;
     unsigned char clear[2048] = { 0 };
     int weight[16] = { 0 };
 	int num_xor = 0;
@@ -2081,7 +2081,6 @@ static void dump_add_packet(
 	struct ST_info * st_cur = NULL;
 
 	MAC_ADDRESS_CLEAR(&bssid);
-	MAC_ADDRESS_CLEAR(&stmac);
 
 	/* skip all non probe response frames in active scanning simulation mode */
     bool const is_probe_response = 
@@ -2118,9 +2117,6 @@ static void dump_add_packet(
 			return;
 		}
 	}
-
-    /* Get the sequence number. */
-	seq = ((h80211[22] >> 4) + (h80211[23] << 4));
 
     /* Locate the access point's MAC address. */
 
@@ -2171,57 +2167,57 @@ static void dump_add_packet(
 
             /* If management, check that SA != BSSID. */
 
-			if (MAC_ADDRESS_EQUAL((mac_address *)(h80211 + 10), &bssid))
-			{
-				goto skip_station;
-			}
-
-			MAC_ADDRESS_COPY(&stmac, (mac_address *)(h80211 + 10));
+            if (!MAC_ADDRESS_EQUAL((mac_address *)(h80211 + 10), &bssid))
+            {
+                stmac = (mac_address *)(h80211 + 10);
+            }
 			break;
 
 		case IEEE80211_FC1_DIR_TODS:
 
             /* ToDS packet, must come from a client. */
 
-			MAC_ADDRESS_COPY(&stmac, (mac_address *)(h80211 + 10));
+			stmac = (mac_address *)(h80211 + 10);
 			break;
 
 		case IEEE80211_FC1_DIR_FROMDS:
 
 			/* FromDS packet, reject broadcast MACs */
-            if (MAC_IS_GROUP_ADDRESS(&h80211[4]))
+
+            if (!MAC_IS_GROUP_ADDRESS(&h80211[4]))
 			{
-				goto skip_station;
-			}
-			MAC_ADDRESS_COPY(&stmac, (mac_address *)(h80211 + 4));
+                stmac = (mac_address *)(h80211 + 4);
+            }
 			break;
 
-		case IEEE80211_FC1_DIR_DSTODS:
-			goto skip_station;
+        case IEEE80211_FC1_DIR_DSTODS:
+
+            break;
 
 		default:
 			/* Can't happen. All possible cases have been checked. */
 			abort();
 	}
 
-	/* update our chained list of wireless stations */
-    bool is_new;
-
-    st_cur = sta_info_lookup(&lopt, &stmac, &is_new);
-    if (st_cur == NULL)
+    if (stmac != NULL)
     {
-        return;
+        /* update our chained list of wireless stations */
+        bool is_new;
+
+        st_cur = sta_info_lookup(&lopt, stmac, &is_new);
+        if (st_cur == NULL)
+        {
+            return;
+        }
+
+        if (is_new)
+        {
+            /* If mac was listed as unknown, remove it. */
+            remove_namac(&lopt.na_list, stmac);
+        }
+
+        sta_update(&lopt, st_cur, ap_cur, h80211, ri, cardnum);
     }
-
-    if (is_new)
-	{
-        /* If mac was listed as unknown, remove it. */
-        remove_namac(&lopt.na_list, &stmac);
-	}
-
-    sta_update(&lopt, st_cur, ap_cur, h80211, ri, cardnum);
-
-skip_station:
 
 	/* packet parsing: Probe Request */
 
@@ -3055,6 +3051,8 @@ skip_probe:
 
                 if (lopt.ivs.fp != NULL)
 				{
+                    int clen;
+
 					/* datalen = caplen - (header+iv+ivs) */
 					dlen = caplen - z - 4 - 4; // original data len
 					if (dlen > 2048)
@@ -3089,8 +3087,8 @@ skip_probe:
                         // len = 4(iv+idx) + 1(num of keystreams) + 1(len per
 						// keystream) + 32*num_xor + 16*sizeof(int)(weight[16])
                         data_size = 1 + 1 + 32 * num_xor + 16 * sizeof(int); 
-						clear[0] = (uint8_t) num_xor;
-						clear[1] = (uint8_t) clen;
+						clear[0] = (uint8_t)num_xor;
+						clear[1] = (uint8_t)clen;
 						/* reveal keystream (plain^encrypted) */
 						for (o = 0; o < num_xor; o++)
 						{
