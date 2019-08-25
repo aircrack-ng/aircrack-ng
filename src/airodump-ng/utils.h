@@ -33,4 +33,9 @@ bool essid_has_control_chars(
     uint8_t const * const essid, 
     size_t const essid_length);
 
+int moving_exponential_average(
+    int const new_value,
+    int const old_value,
+    float const smoothing_factor);
+
 #endif /* __UTILS_H__ */

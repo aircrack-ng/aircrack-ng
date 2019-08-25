@@ -1889,10 +1889,8 @@ static void ap_update(
         ap_cur->power_index = (ap_cur->power_index + 1) % NB_PWR;
         ap_cur->power_lvl[ap_cur->power_index] = ri->ri_power;
 
-        // Moving exponential average
-        // ma_new = alpha * new_sample + (1-alpha) * ma_old;
-        ap_cur->avg_power
-            = (int)(0.99f * ri->ri_power + (1.f - 0.99f) * ap_cur->avg_power);
+        ap_cur->avg_power = 
+            moving_exponential_average(ri->ri_power, ap_cur->avg_power, 0.99f);
 
         if (ap_cur->avg_power > ap_cur->best_power)
         {

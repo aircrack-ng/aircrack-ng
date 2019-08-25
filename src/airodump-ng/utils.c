@@ -192,3 +192,16 @@ bool essid_has_control_chars(
 done:
     return has_control_chars;
 }
+
+int moving_exponential_average(
+    int const new_value, 
+    int const old_value, 
+    float const smoothing_factor)
+{
+    // Moving exponential average
+    // ma_new = alpha * new_sample + (1-alpha) * ma_old;
+    int smoothed_value =
+        (int)(smoothing_factor * new_value + (1.f - smoothing_factor) * old_value);
+
+    return smoothed_value;
+}
