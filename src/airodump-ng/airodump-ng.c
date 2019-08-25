@@ -1894,7 +1894,10 @@ static void dump_add_packet(
 	MAC_ADDRESS_CLEAR(&namac);
 
 	/* skip all non probe response frames in active scanning simulation mode */
-	if (lopt.active_scan_sim > 0 && h80211[0] != 0x50)
+    bool const is_probe_response = 
+        h80211[0] == (IEEE80211_FC0_TYPE_MGT | IEEE80211_FC0_SUBTYPE_PROBE_RESP);
+
+    if (lopt.active_scan_sim > 0 && !is_probe_response)
 	{
 		return;
 	}
@@ -1905,9 +1908,11 @@ static void dump_add_packet(
 		goto write_packet;
 	}
 
-	/* skip (uninteresting) control frames */
+    /* Skip (uninteresting) control frames. */
+    bool const is_control_frame =
+        (h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_CTL;
 
-	if ((h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_CTL)
+    if (is_control_frame)
 	{
 		goto write_packet;
 	}
@@ -1924,10 +1929,10 @@ static void dump_add_packet(
 		}
 	}
 
-	/* grab the sequence number */
+    /* Get the sequence number. */
 	seq = ((h80211[22] >> 4) + (h80211[23] << 4));
 
-	/* locate the access point's MAC address */
+    /* Locate the access point's MAC address. */
 
 	switch (h80211[1] & IEEE80211_FC1_DIR_MASK)
 	{
@@ -1952,7 +1957,6 @@ static void dump_add_packet(
         return; /* FIXME - single exit. */
     }
 
-	/* update our chained list of access points */
     bool is_new_ap;
 
     ap_cur = ap_info_lookup(&lopt, &bssid, &is_new_ap);
@@ -1963,7 +1967,7 @@ static void dump_add_packet(
 
     if (is_new_ap)
 	{
-        /* If mac was listed as unknown, remove it */
+        /* If mac was listed as unknown, remove it. */
         remove_namac(&lopt.na_list, &bssid);
 	}
 
@@ -1994,7 +1998,7 @@ static void dump_add_packet(
 				   sizeof ap_cur->gps_loc_best);
 		}
 
-		/* every packet in here comes from the AP */
+        /* Every packet in here comes from the AP. */
 
 		if (lopt.gps_context.gps_loc[0] > ap_cur->gps_loc_max[0])
 			ap_cur->gps_loc_max[0] = lopt.gps_context.gps_loc[0];
@@ -2009,12 +2013,15 @@ static void dump_add_packet(
 			ap_cur->gps_loc_min[1] = lopt.gps_context.gps_loc[1];
 		if (lopt.gps_context.gps_loc[2] < ap_cur->gps_loc_min[2])
 			ap_cur->gps_loc_min[2] = lopt.gps_context.gps_loc[2];
-		//        printf("seqnum: %i\n", seq);
 
-		if (ap_cur->fcapt == 0 && ap_cur->fmiss == 0)
+        if (ap_cur->fcapt == 0 && ap_cur->fmiss == 0)
+        {
 			gettimeofday(&(ap_cur->ftimef), NULL);
-		if (ap_cur->last_seq != 0)
+        }
+        if (ap_cur->last_seq != 0)
+        {
 			ap_cur->fmiss += (seq - ap_cur->last_seq - 1);
+        }
 		ap_cur->last_seq = (uint16_t) seq;
 		ap_cur->fcapt++;
 		gettimeofday(&(ap_cur->ftimel), NULL);
@@ -2024,19 +2031,20 @@ static void dump_add_packet(
 		{
 			/* Write out our rolling log every time we see data from an AP */
             dump_write_airodump_ng_logcsv_add_ap(lopt.log_csv.fp,
-				ap_cur, ri->ri_power, &lopt.gps_context.gps_time, lopt.gps_context.gps_loc);
+                                                 ap_cur, 
+                                                 ri->ri_power, 
+                                                 &lopt.gps_context.gps_time, 
+                                                 lopt.gps_context.gps_loc);
 		}
-
-		//         if(ap_cur->fcapt >= QLT_COUNT) update_rx_quality();
 	}
 
 	switch (h80211[0])
 	{
-		case IEEE80211_FC0_SUBTYPE_BEACON:
+        case (IEEE80211_FC0_TYPE_MGT | IEEE80211_FC0_SUBTYPE_BEACON):
 			ap_cur->nb_bcn++;
 			break;
 
-		case IEEE80211_FC0_SUBTYPE_PROBE_RESP:
+        case (IEEE80211_FC0_TYPE_MGT | IEEE80211_FC0_SUBTYPE_PROBE_RESP):
 			/* reset the WPS state */
 			ap_cur->wps.state = 0xFF;
 			ap_cur->wps.ap_setup_locked = 0;
@@ -2048,7 +2056,7 @@ static void dump_add_packet(
 
 	ap_cur->nb_pkt++;
 
-	/* locate the station MAC in the 802.11 header */
+    /* Locate the station MAC in the 802.11 header. */
 
 	switch (h80211[1] & IEEE80211_FC1_DIR_MASK)
 	{
@@ -3222,7 +3230,10 @@ skip_probe:
 
 			z += 2; // skip ethertype
 
-			if (st_cur == NULL) goto write_packet;
+            if (st_cur == NULL)
+            {
+                goto write_packet;
+            }
 
 			/* frame 1: Pairwise == 1, Install == 0, Ack == 1, MIC == 0 */
 
@@ -3406,7 +3417,10 @@ write_packet:
 
 	if (ap_cur != NULL)
 	{
-		if (h80211[0] == 0x80 && lopt.one_beacon)
+        bool const is_a_beacon =
+            h80211[0] == (IEEE80211_FC0_TYPE_MGT | IEEE80211_FC0_SUBTYPE_BEACON);
+
+        if (is_a_beacon && lopt.one_beacon)
 		{
 			if (!ap_cur->beacon_logged)
 			{
@@ -3443,7 +3457,7 @@ write_packet:
 
 	/* this changes the local ap_cur, st_cur and na_cur variables and should be
 	 * the last check before the actual write */
-	if (caplen < 24 && caplen >= 10 && h80211[0])
+	if (caplen < 24 && caplen >= 10 && h80211[0] != 0)
 	{
 		/* RTS || CTS || ACK || CF-END || CF-END&CF-ACK*/
 		//(h80211[0] == 0xB4 || h80211[0] == 0xC4 || h80211[0] == 0xD4 ||
