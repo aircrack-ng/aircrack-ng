@@ -2873,6 +2873,569 @@ done:
     return success;
 }
 
+static bool parse_packet_data(
+    struct local_options * const options,
+    struct AP_info * const ap_cur,
+    struct ST_info * const st_cur,
+    uint8_t const * const h80211,
+    size_t const caplen,
+    struct rx_info * const ri,
+    int const cardnum)
+{
+    bool success;
+
+    if ((h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_DATA)
+    {
+        /* update the channel if we didn't get any beacon */
+
+        if (ap_cur->channel == -1)
+        {
+            if (ri->ri_channel > 0 && ri->ri_channel <= HIGHEST_CHANNEL)
+            {
+                ap_cur->channel = ri->ri_channel;
+            }
+            else
+            {
+                ap_cur->channel = options->channel[cardnum];
+            }
+        }
+
+        /* check the SNAP header to see if data is encrypted */
+
+        unsigned int z = ((h80211[1] & IEEE80211_FC1_DIR_MASK) != IEEE80211_FC1_DIR_DSTODS)
+            ? 24
+            : 30;
+
+        /* Check if 802.11e (QoS) */
+        if ((h80211[0] & 0x80) == 0x80)
+        {
+            z += 2;
+            if (st_cur != NULL)
+            {
+                if ((h80211[1] & 3) == 1) // ToDS
+                    st_cur->qos_to_ds = 1;
+                else
+                    st_cur->qos_fr_ds = 1;
+            }
+        }
+        else
+        {
+            if (st_cur != NULL)
+            {
+                if ((h80211[1] & 3) == 1) // ToDS
+                    st_cur->qos_to_ds = 0;
+                else
+                    st_cur->qos_fr_ds = 0;
+            }
+        }
+
+        if (z == 24)
+        {
+            if (ap_cur->decloak_detect)
+            {
+                if (list_check_decloak(&ap_cur->pkt_list, caplen, h80211) != 0)
+                {
+                    list_add_packet(&ap_cur->pkt_list, h80211, caplen);
+                }
+                else
+                {
+                    ap_cur->is_decloak = 1;
+                    ap_cur->decloak_detect = 0;
+
+                    packet_list_free(&ap_cur->pkt_list);
+
+                    snprintf(options->message,
+                             sizeof(options->message),
+                             "Decloak: %02X:%02X:%02X:%02X:%02X:%02X ",
+                             ap_cur->bssid.addr[0],
+                             ap_cur->bssid.addr[1],
+                             ap_cur->bssid.addr[2],
+                             ap_cur->bssid.addr[3],
+                             ap_cur->bssid.addr[4],
+                             ap_cur->bssid.addr[5]);
+                }
+            }
+        }
+
+        if (z + 26 > caplen)
+        {
+            success = true;
+            goto done;
+        }
+
+        if (h80211[z] == h80211[z + 1] && h80211[z + 2] == 0x03)
+        {
+            //            if( ap_cur->encryption < 0 )
+            //                ap_cur->encryption = 0;
+
+            /* if ethertype == IPv4, find the LAN address */
+
+            if (h80211[z + 6] == 0x08 && h80211[z + 7] == 0x00
+                && (h80211[1] & 3) == 0x01)
+            {
+                memcpy(ap_cur->lanip, &h80211[z + 20], 4);
+            }
+
+            if (h80211[z + 6] == 0x08 && h80211[z + 7] == 0x06)
+            {
+                memcpy(ap_cur->lanip, &h80211[z + 22], 4);
+            }
+        }
+        //        else
+        //            ap_cur->encryption = 2 + ( ( h80211[z + 3] & 0x20 ) >> 5
+        //            );
+
+        if (ap_cur->security == 0 || (ap_cur->security & STD_WEP))
+        {
+            if ((h80211[1] & 0x40) != 0x40)
+            {
+                ap_cur->security |= STD_OPN;
+            }
+            else
+            {
+                if ((h80211[z + 3] & 0x20) == 0x20)
+                {
+                    ap_cur->security |= STD_WPA;
+                }
+                else
+                {
+                    ap_cur->security |= STD_WEP;
+                    if ((h80211[z + 3] & 0xC0) != 0x00)
+                    {
+                        ap_cur->security |= ENC_WEP40;
+                    }
+                    else
+                    {
+                        ap_cur->security &= ~ENC_WEP40;
+                        ap_cur->security |= ENC_WEP;
+                    }
+                }
+            }
+        }
+
+        if (z + 10 > caplen)
+        {
+            success = true;
+            goto done;
+        }
+
+        if (ap_cur->security & STD_WEP)
+        {
+            /* WEP: check if we've already seen this IV */
+
+            if (!uniqueiv_check(ap_cur->uiv_root, &h80211[z]))
+            {
+                /* first time seen IVs */
+
+                if (options->ivs.fp != NULL)
+                {
+                    unsigned char clear[2048] = { 0 };
+                    int weight[16] = { 0 };
+                    int clen;
+
+                    /* datalen = caplen - (header+iv+ivs) */
+                    size_t dlen = caplen - z - 4 - 4; // original data len
+
+                    if (dlen > 2048)
+                    {
+                        dlen = 2048;
+                    }
+
+                    // get cleartext + len + 4(iv+idx)
+                    int num_xor = known_clear(clear, &clen, weight, h80211, dlen);
+
+                    size_t data_size;
+                    uint16_t ivs_type;
+
+                    if (num_xor == 1)
+                    {
+                        data_size = clen;
+                        ivs_type = IVS2_XOR;
+                        /* reveal keystream (plain^encrypted) */
+                        for (size_t n = 0; n < data_size; n++)
+                        {
+                            clear[n] = (uint8_t)((clear[n] ^ h80211[z + 4 + n])
+                                                 & 0xFF);
+                        }
+                        // clear is now the keystream
+                    }
+                    else
+                    {
+                        // do it again to get it 2 bytes higher
+                        num_xor = known_clear(
+                            clear + 2, &clen, weight, h80211, dlen);
+                        ivs_type = IVS2_PTW;
+
+                        // len = 4(iv+idx) + 1(num of keystreams) + 1(len per
+                        // keystream) + 32*num_xor + 16*sizeof(int)(weight[16])
+                        data_size = 1 + 1 + 32 * num_xor + 16 * sizeof(int);
+                        clear[0] = (uint8_t)num_xor;
+                        clear[1] = (uint8_t)clen;
+                        /* reveal keystream (plain^encrypted) */
+                        for (int o = 0; o < num_xor; o++)
+                        {
+                            for (size_t n = 0; n < data_size; n++)
+                            {
+                                clear[2 + n + o * 32] = (uint8_t)(
+                                                                  (clear[2 + n + o * 32] ^ h80211[z + 4 + n])
+                                                                  & 0xFF);
+                            }
+                        }
+                        memcpy(clear + 4 + 1 + 1 + 32 * num_xor,
+                               weight,
+                               16 * sizeof(int));
+                        // clear is now the keystream
+                    }
+
+                    if (!ivs_log_keystream(options->ivs.fp,
+                                           &ap_cur->bssid,
+                                           &options->ivs.prev_bssid,
+                                           ivs_type,
+                                           h80211 + z, 4,
+                                           clear,
+                                           data_size))
+                    {
+                        success = false;
+                        goto done;
+                    }
+                }
+
+                uniqueiv_mark(ap_cur->uiv_root, &h80211[z]);
+
+                ap_cur->nb_data++;
+            }
+
+            // Record all data linked to IV to detect WEP Cloaking
+            if (options->ivs.fp == NULL && options->detect_anomaly)
+            {
+                // Only allocate this when seeing WEP AP
+                if (ap_cur->data_root == NULL)
+                {
+                    ap_cur->data_root = data_init();
+                }
+
+                // Only works with full capture, not IV-only captures
+                if (data_check(ap_cur->data_root, &h80211[z], &h80211[z + 4])
+                    == CLOAKING
+                    && ap_cur->EAP_detected == 0)
+                {
+
+                    // If no EAP/EAP was detected, indicate WEP cloaking
+                    snprintf(options->message,
+                             sizeof(options->message),
+                             "WEP Cloaking: %02X:%02X:%02X:%02X:%02X:%02X ",
+                             ap_cur->bssid.addr[0],
+                             ap_cur->bssid.addr[1],
+                             ap_cur->bssid.addr[2],
+                             ap_cur->bssid.addr[3],
+                             ap_cur->bssid.addr[4],
+                             ap_cur->bssid.addr[5]);
+                }
+            }
+        }
+        else
+        {
+            ap_cur->nb_data++;
+        }
+
+        z = ((h80211[1] & IEEE80211_FC1_DIR_MASK) != IEEE80211_FC1_DIR_DSTODS)
+            ? 24
+            : 30;
+
+        /* Check if 802.11e (QoS) */
+        if ((h80211[0] & 0x80) == 0x80)
+            z += 2;
+
+        if (z + 26 > caplen)
+        {
+            success = true;
+            goto done;
+        }
+
+        z += 6; // skip LLC header
+
+        /* check ethertype == EAPOL */
+        if (h80211[z] == 0x88 && h80211[z + 1] == 0x8E
+            && (h80211[1] & 0x40) != 0x40)
+        {
+            ap_cur->EAP_detected = 1;
+
+            z += 2; // skip ethertype
+
+            if (st_cur == NULL)
+            {
+                success = true;
+                goto done;
+            }
+
+            /* frame 1: Pairwise == 1, Install == 0, Ack == 1, MIC == 0 */
+
+            if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
+                && (h80211[z + 6] & 0x80) != 0
+                && (h80211[z + 5] & 0x01) == 0)
+            {
+                memcpy(st_cur->wpa.anonce, &h80211[z + 17], 32);
+
+                st_cur->wpa.state = 1;
+
+                if (h80211[z + 99] == 0xdd) // RSN
+                {
+                    if (h80211[z + 101] == 0x00 && h80211[z + 102] == 0x0f
+                        && h80211[z + 103] == 0xac) // OUI: IEEE8021
+                    {
+                        if (h80211[z + 104] == 0x04) // OUI SUBTYPE
+                        {
+                            // Got a PMKID value?!
+                            memcpy(st_cur->wpa.pmkid, &h80211[z + 105], 16);
+
+                            /* copy the key descriptor version */
+                            st_cur->wpa.keyver = (uint8_t)(h80211[z + 6] & 7);
+
+                            MAC_ADDRESS_COPY(&st_cur->wpa.stmac, &st_cur->stmac);
+                            snprintf(options->message,
+                                     sizeof(options->message),
+                                     "PMKID found: "
+                                     "%02X:%02X:%02X:%02X:%02X:%02X ",
+                                     ap_cur->bssid.addr[0],
+                                     ap_cur->bssid.addr[1],
+                                     ap_cur->bssid.addr[2],
+                                     ap_cur->bssid.addr[3],
+                                     ap_cur->bssid.addr[4],
+                                     ap_cur->bssid.addr[5]);
+
+                            success = true;
+                            goto done;
+                        }
+                    }
+                }
+            }
+
+            /* frame 2 or 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1 */
+
+            if (z + 17 + 32 > caplen)
+            {
+                success = true;
+
+                goto done;
+            }
+
+            if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
+                && (h80211[z + 6] & 0x80) == 0
+                && (h80211[z + 5] & 0x01) != 0)
+            {
+                if (memcmp(&h80211[z + 17], ZERO, 32) != 0)
+                {
+                    memcpy(st_cur->wpa.snonce, &h80211[z + 17], 32);
+                    st_cur->wpa.state |= 2;
+                }
+
+                if ((st_cur->wpa.state & 4) != 4)
+                {
+                    st_cur->wpa.eapol_size
+                        = (uint32_t)((h80211[z + 2] << 8) + h80211[z + 3] + 4);
+
+                    if (caplen - z < st_cur->wpa.eapol_size
+                        || st_cur->wpa.eapol_size == 0 //-V560
+                        || caplen - z < 81 + 16
+                        || st_cur->wpa.eapol_size > sizeof(st_cur->wpa.eapol))
+                    {
+                        // Ignore the packet trying to crash us.
+                        st_cur->wpa.eapol_size = 0;
+
+                        success = true;
+
+                        goto done;
+                    }
+
+                    memcpy(st_cur->wpa.keymic, &h80211[z + 81], 16);
+                    memcpy(
+                        st_cur->wpa.eapol, &h80211[z], st_cur->wpa.eapol_size);
+                    memset(st_cur->wpa.eapol + 81, 0, 16);
+                    st_cur->wpa.state |= 4;
+                    st_cur->wpa.keyver = (uint8_t)(h80211[z + 6] & 7);
+                }
+            }
+
+            /* frame 3: Pairwise == 1, Install == 1, Ack == 1, MIC == 1 */
+
+            if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) != 0
+                && (h80211[z + 6] & 0x80) != 0
+                && (h80211[z + 5] & 0x01) != 0)
+            {
+                if (memcmp(&h80211[z + 17], ZERO, 32) != 0)
+                {
+                    memcpy(st_cur->wpa.anonce, &h80211[z + 17], 32);
+                    st_cur->wpa.state |= 1;
+                }
+
+                if ((st_cur->wpa.state & 4) != 4)
+                {
+                    st_cur->wpa.eapol_size
+                        = (h80211[z + 2] << 8) + h80211[z + 3] + 4u;
+
+                    if (st_cur->wpa.eapol_size == 0 //-V560
+                        || st_cur->wpa.eapol_size
+                        >= sizeof(st_cur->wpa.eapol) - 16)
+                    {
+                        // Ignore the packet trying to crash us.
+                        st_cur->wpa.eapol_size = 0;
+                        success = true;
+                        goto done;
+                    }
+
+                    memcpy(st_cur->wpa.keymic, &h80211[z + 81], 16);
+                    memcpy(
+                        st_cur->wpa.eapol, &h80211[z], st_cur->wpa.eapol_size);
+                    memset(st_cur->wpa.eapol + 81, 0, 16);
+                    st_cur->wpa.state |= 4;
+                    st_cur->wpa.keyver = (uint8_t)(h80211[z + 6] & 7);
+                }
+            }
+
+            if (st_cur->wpa.state == 7
+                && !is_filtered_essid(&options->essid_filter, ap_cur->essid))
+            {
+                MAC_ADDRESS_COPY(&st_cur->wpa.stmac, &st_cur->stmac);
+                snprintf(options->message,
+                         sizeof(options->message),
+                         "WPA handshake: %02X:%02X:%02X:%02X:%02X:%02X ",
+                         ap_cur->bssid.addr[0],
+                         ap_cur->bssid.addr[1],
+                         ap_cur->bssid.addr[2],
+                         ap_cur->bssid.addr[3],
+                         ap_cur->bssid.addr[4],
+                         ap_cur->bssid.addr[5]);
+
+                if (!ivs_log_wpa_hdsk(options->ivs.fp,
+                                      &ap_cur->bssid,
+                                      &options->ivs.prev_bssid,
+                                      &st_cur->wpa,
+                                      sizeof st_cur->wpa))
+                {
+                    success = false;
+                    goto done;
+                }
+            }
+        }
+    }
+
+    success = true;
+
+done:
+    return success;
+}
+
+static bool parse_control_frame(
+    struct local_options * const options, 
+    uint8_t const * const h80211, 
+    size_t const caplen,
+    struct rx_info * const ri)
+{
+    bool success;
+
+    if (caplen < 24 && caplen >= 10 && h80211[0] != 0)
+    {
+        /* RTS || CTS || ACK || CF-END || CF-END&CF-ACK*/
+        //(h80211[0] == 0xB4 || h80211[0] == 0xC4 || h80211[0] == 0xD4 ||
+        // h80211[0] == 0xE4 || h80211[0] == 0xF4)
+
+        /* use general control frame detection, as the structure is always the
+         * same: mac(s) starting at [4] */
+        if ((h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_CTL)
+        {
+            uint8_t const * const data_end = h80211 + caplen;
+            mac_address namac;
+            uint8_t const * p = h80211 + 4;
+
+            while (p <= h80211 + 16 && (p + sizeof namac) <= data_end)
+            {
+                MAC_ADDRESS_COPY(&namac, (mac_address *)p);
+
+                if (MAC_ADDRESS_IS_EMPTY(&namac))
+                {
+                    p += sizeof namac;
+                    continue;
+                }
+
+                if (MAC_ADDRESS_IS_BROADCAST(&namac))
+                {
+                    p += sizeof namac;
+                    continue;
+                }
+
+                if (options->hide_known)
+                {
+                    /* Check AP list. */
+                    /* If it's an AP, try next mac */
+                    if (ap_info_lookup_existing(&options->ap_list, &namac))
+                    {
+                        p += sizeof namac;
+                        continue;
+                    }
+
+                    /* If it's a client, try next mac */
+                    if (sta_info_lookup_existing(&options->sta_list, &namac))
+                    {
+                        p += sizeof namac;
+                        continue;
+                    }
+                }
+
+                /* Not found in either AP list or ST list. 
+                 * Find or create an entry in the NA list.
+                 */
+                struct NA_info * const na_cur =
+                    na_info_lookup(&options->na_list, &namac);
+
+                if (na_cur == NULL)
+                {
+                    success = false;
+                    goto done;
+                }
+
+                /* update the last time seen & power*/
+                na_cur->tlast = time(NULL);
+                na_cur->power = ri->ri_power;
+                na_cur->channel = ri->ri_channel;
+
+                switch (h80211[0] & IEEE80211_FC0_SUBTYPE_MASK)
+                {
+                    case IEEE80211_FC0_SUBTYPE_RTS:
+                        if (p == h80211 + 4)
+                        {
+                            na_cur->rts_r++;
+                        }
+                        else if (p == h80211 + 10)
+                        {
+                            na_cur->rts_t++;
+                        }
+                        break;
+
+                    case IEEE80211_FC0_SUBTYPE_CTS:
+                        na_cur->cts++;
+                        break;
+
+                    case IEEE80211_FC0_SUBTYPE_ACK:
+                        na_cur->ack++;
+                        break;
+
+                    default:
+                        na_cur->other++;
+                        break;
+                }
+
+                /* grab next mac (for rts frames)*/
+                p += sizeof namac;
+            }
+        }
+    }
+
+    success = true;
+
+done:
+    return success;
+}
+
 // NOTE(jbenden): This is also in ivstools.c
 static void dump_add_packet(
 	unsigned char const * const h80211,
@@ -2881,16 +3444,8 @@ static void dump_add_packet(
 	int const cardnum)
 {
 	REQUIRE(h80211 != NULL);
-	uint8_t const * const data_end = h80211 + caplen;
-	int o;
-	size_t dlen;
-	unsigned z;
-    unsigned char const * p; 
     mac_address const * bssid;
 	mac_address const * stmac;
-    unsigned char clear[2048] = { 0 };
-    int weight[16] = { 0 };
-	int num_xor = 0;
 
 	struct AP_info * ap_cur = NULL;
 	struct ST_info * st_cur = NULL;
@@ -2999,423 +3554,10 @@ static void dump_add_packet(
     }
 
 	/* packet parsing: some data */
-
-	if ((h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_DATA)
-	{
-		/* update the channel if we didn't get any beacon */
-
-		if (ap_cur->channel == -1)
-		{
-            if (ri->ri_channel > 0 && ri->ri_channel <= HIGHEST_CHANNEL)
-            {
-				ap_cur->channel = ri->ri_channel;
-            }
-            else
-            {
-				ap_cur->channel = lopt.channel[cardnum];
-            }
-		}
-
-		/* check the SNAP header to see if data is encrypted */
-
-		z = ((h80211[1] & IEEE80211_FC1_DIR_MASK) != IEEE80211_FC1_DIR_DSTODS)
-				? 24
-				: 30;
-
-		/* Check if 802.11e (QoS) */
-		if ((h80211[0] & 0x80) == 0x80)
-		{
-			z += 2;
-			if (st_cur != NULL)
-			{
-				if ((h80211[1] & 3) == 1) // ToDS
-					st_cur->qos_to_ds = 1;
-				else
-					st_cur->qos_fr_ds = 1;
-			}
-		}
-		else
-		{
-			if (st_cur != NULL)
-			{
-				if ((h80211[1] & 3) == 1) // ToDS
-					st_cur->qos_to_ds = 0;
-				else
-					st_cur->qos_fr_ds = 0;
-			}
-		}
-
-		if (z == 24)
-		{
-			if (ap_cur->decloak_detect)
-			{
-				if (list_check_decloak(&ap_cur->pkt_list, caplen, h80211) != 0)
-				{
-                    list_add_packet(&ap_cur->pkt_list, h80211, caplen);
-				}
-				else
-				{
-					ap_cur->is_decloak = 1;
-					ap_cur->decloak_detect = 0;
-
-					packet_list_free(&ap_cur->pkt_list);
-
-					snprintf(lopt.message,
-							 sizeof(lopt.message),
-							 "Decloak: %02X:%02X:%02X:%02X:%02X:%02X ",
-							 ap_cur->bssid.addr[0],
-							 ap_cur->bssid.addr[1],
-							 ap_cur->bssid.addr[2],
-							 ap_cur->bssid.addr[3],
-							 ap_cur->bssid.addr[4],
-							 ap_cur->bssid.addr[5]);
-				}
-			}
-		}
-
-		if (z + 26 > caplen)
-		{
-			goto write_packet;
-		}
-
-		if (h80211[z] == h80211[z + 1] && h80211[z + 2] == 0x03)
-		{
-			//            if( ap_cur->encryption < 0 )
-			//                ap_cur->encryption = 0;
-
-			/* if ethertype == IPv4, find the LAN address */
-
-            if (h80211[z + 6] == 0x08 && h80211[z + 7] == 0x00
-                && (h80211[1] & 3) == 0x01)
-            {
-				memcpy(ap_cur->lanip, &h80211[z + 20], 4);
-            }
-
-            if (h80211[z + 6] == 0x08 && h80211[z + 7] == 0x06)
-            {
-				memcpy(ap_cur->lanip, &h80211[z + 22], 4);
-            }
-		}
-		//        else
-		//            ap_cur->encryption = 2 + ( ( h80211[z + 3] & 0x20 ) >> 5
-		//            );
-
-		if (ap_cur->security == 0 || (ap_cur->security & STD_WEP))
-		{
-			if ((h80211[1] & 0x40) != 0x40)
-			{
-				ap_cur->security |= STD_OPN;
-			}
-			else
-			{
-				if ((h80211[z + 3] & 0x20) == 0x20)
-				{
-					ap_cur->security |= STD_WPA;
-				}
-				else
-				{
-					ap_cur->security |= STD_WEP;
-					if ((h80211[z + 3] & 0xC0) != 0x00)
-					{
-						ap_cur->security |= ENC_WEP40;
-					}
-					else
-					{
-						ap_cur->security &= ~ENC_WEP40;
-						ap_cur->security |= ENC_WEP;
-					}
-				}
-			}
-		}
-
-		if (z + 10 > caplen)
-		{
-			goto write_packet;
-		}
-
-		if (ap_cur->security & STD_WEP)
-		{
-			/* WEP: check if we've already seen this IV */
-
-			if (!uniqueiv_check(ap_cur->uiv_root, &h80211[z]))
-			{
-				/* first time seen IVs */
-
-                if (lopt.ivs.fp != NULL)
-				{
-                    int clen;
-
-					/* datalen = caplen - (header+iv+ivs) */
-					dlen = caplen - z - 4 - 4; // original data len
-					if (dlen > 2048)
-					{
-						dlen = 2048;
-					}
-					// get cleartext + len + 4(iv+idx)
-					num_xor = known_clear(clear, &clen, weight, h80211, dlen);
-
-                    size_t data_size;
-                    uint16_t ivs_type;
-
-                    if (num_xor == 1)
-					{
-                        data_size = clen;
-                        ivs_type = IVS2_XOR;
-						/* reveal keystream (plain^encrypted) */
-                        for (size_t n = 0; n < data_size; n++)
-						{
-							clear[n] = (uint8_t)((clear[n] ^ h80211[z + 4 + n])
-												 & 0xFF);
-						}
-						// clear is now the keystream
-					}
-					else
-					{
-						// do it again to get it 2 bytes higher
-						num_xor = known_clear(
-							clear + 2, &clen, weight, h80211, dlen);
-                        ivs_type = IVS2_PTW;
-
-                        // len = 4(iv+idx) + 1(num of keystreams) + 1(len per
-						// keystream) + 32*num_xor + 16*sizeof(int)(weight[16])
-                        data_size = 1 + 1 + 32 * num_xor + 16 * sizeof(int); 
-						clear[0] = (uint8_t)num_xor;
-						clear[1] = (uint8_t)clen;
-						/* reveal keystream (plain^encrypted) */
-						for (o = 0; o < num_xor; o++)
-						{
-                            for (size_t n = 0; n < data_size; n++)
-							{
-								clear[2 + n + o * 32] = (uint8_t)(
-									(clear[2 + n + o * 32] ^ h80211[z + 4 + n])
-									& 0xFF);
-							}
-						}
-						memcpy(clear + 4 + 1 + 1 + 32 * num_xor,
-							   weight,
-							   16 * sizeof(int));
-						// clear is now the keystream
-					}
-
-                    if (!ivs_log_keystream(lopt.ivs.fp, 
-                                           &ap_cur->bssid, 
-                                           &lopt.ivs.prev_bssid, 
-                                           ivs_type, 
-                                           h80211 + z, 4, 
-                                           clear, 
-                                           data_size))
-                    {
-                        return;
-                    }
-				}
-
-				uniqueiv_mark(ap_cur->uiv_root, &h80211[z]);
-
-				ap_cur->nb_data++;
-			}
-
-			// Record all data linked to IV to detect WEP Cloaking
-            if (lopt.ivs.fp == NULL && lopt.detect_anomaly)
-			{
-				// Only allocate this when seeing WEP AP
-				if (ap_cur->data_root == NULL)
-				{
-					ap_cur->data_root = data_init();
-				}
-
-				// Only works with full capture, not IV-only captures
-				if (data_check(ap_cur->data_root, &h80211[z], &h80211[z + 4])
-						== CLOAKING
-					&& ap_cur->EAP_detected == 0)
-				{
-
-					// If no EAP/EAP was detected, indicate WEP cloaking
-					snprintf(lopt.message,
-							 sizeof(lopt.message),
-							 "WEP Cloaking: %02X:%02X:%02X:%02X:%02X:%02X ",
-                             ap_cur->bssid.addr[0],
-                             ap_cur->bssid.addr[1],
-                             ap_cur->bssid.addr[2],
-                             ap_cur->bssid.addr[3],
-                             ap_cur->bssid.addr[4],
-                             ap_cur->bssid.addr[5]);
-				}
-			}
-		}
-		else
-		{
-			ap_cur->nb_data++;
-		}
-
-		z = ((h80211[1] & IEEE80211_FC1_DIR_MASK) != IEEE80211_FC1_DIR_DSTODS)
-				? 24
-				: 30;
-
-		/* Check if 802.11e (QoS) */
-		if ((h80211[0] & 0x80) == 0x80) z += 2;
-
-		if (z + 26 > caplen)
-		{
-			goto write_packet;
-		}
-
-		z += 6; // skip LLC header
-
-		/* check ethertype == EAPOL */
-		if (h80211[z] == 0x88 && h80211[z + 1] == 0x8E
-			&& (h80211[1] & 0x40) != 0x40)
-		{
-			ap_cur->EAP_detected = 1;
-
-			z += 2; // skip ethertype
-
-            if (st_cur == NULL)
-            {
-                goto write_packet;
-            }
-
-			/* frame 1: Pairwise == 1, Install == 0, Ack == 1, MIC == 0 */
-
-			if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
-				&& (h80211[z + 6] & 0x80) != 0
-				&& (h80211[z + 5] & 0x01) == 0)
-			{
-				memcpy(st_cur->wpa.anonce, &h80211[z + 17], 32);
-
-				st_cur->wpa.state = 1;
-
-				if (h80211[z + 99] == 0xdd) // RSN
-				{
-					if (h80211[z + 101] == 0x00 && h80211[z + 102] == 0x0f
-						&& h80211[z + 103] == 0xac) // OUI: IEEE8021
-					{
-						if (h80211[z + 104] == 0x04) // OUI SUBTYPE
-						{
-							// Got a PMKID value?!
-							memcpy(st_cur->wpa.pmkid, &h80211[z + 105], 16);
-
-							/* copy the key descriptor version */
-							st_cur->wpa.keyver = (uint8_t)(h80211[z + 6] & 7);
-
-							MAC_ADDRESS_COPY(&st_cur->wpa.stmac, &st_cur->stmac);
-							snprintf(lopt.message,
-									 sizeof(lopt.message),
-									 "PMKID found: "
-									 "%02X:%02X:%02X:%02X:%02X:%02X ",
-                                     ap_cur->bssid.addr[0],
-                                     ap_cur->bssid.addr[1],
-                                     ap_cur->bssid.addr[2],
-                                     ap_cur->bssid.addr[3],
-                                     ap_cur->bssid.addr[4],
-                                     ap_cur->bssid.addr[5]);
-
-							goto write_packet;
-						}
-					}
-				}
-			}
-
-			/* frame 2 or 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1 */
-
-			if (z + 17 + 32 > caplen)
-			{
-				goto write_packet;
-			}
-
-			if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
-				&& (h80211[z + 6] & 0x80) == 0
-				&& (h80211[z + 5] & 0x01) != 0)
-			{
-				if (memcmp(&h80211[z + 17], ZERO, 32) != 0)
-				{
-					memcpy(st_cur->wpa.snonce, &h80211[z + 17], 32);
-					st_cur->wpa.state |= 2;
-				}
-
-				if ((st_cur->wpa.state & 4) != 4)
-				{
-					st_cur->wpa.eapol_size
-						= (uint32_t)((h80211[z + 2] << 8) + h80211[z + 3] + 4);
-
-					if (caplen - z < st_cur->wpa.eapol_size
-						|| st_cur->wpa.eapol_size == 0 //-V560
-						|| caplen - z < 81 + 16
-						|| st_cur->wpa.eapol_size > sizeof(st_cur->wpa.eapol))
-					{
-						// Ignore the packet trying to crash us.
-						st_cur->wpa.eapol_size = 0;
-						goto write_packet;
-					}
-
-					memcpy(st_cur->wpa.keymic, &h80211[z + 81], 16);
-					memcpy(
-						st_cur->wpa.eapol, &h80211[z], st_cur->wpa.eapol_size);
-					memset(st_cur->wpa.eapol + 81, 0, 16);
-					st_cur->wpa.state |= 4;
-					st_cur->wpa.keyver = (uint8_t)(h80211[z + 6] & 7);
-				}
-			}
-
-			/* frame 3: Pairwise == 1, Install == 1, Ack == 1, MIC == 1 */
-
-			if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) != 0
-				&& (h80211[z + 6] & 0x80) != 0
-				&& (h80211[z + 5] & 0x01) != 0)
-			{
-				if (memcmp(&h80211[z + 17], ZERO, 32) != 0)
-				{
-					memcpy(st_cur->wpa.anonce, &h80211[z + 17], 32);
-					st_cur->wpa.state |= 1;
-				}
-
-				if ((st_cur->wpa.state & 4) != 4)
-				{
-					st_cur->wpa.eapol_size
-						= (h80211[z + 2] << 8) + h80211[z + 3] + 4u;
-
-					if (st_cur->wpa.eapol_size == 0 //-V560
-						|| st_cur->wpa.eapol_size
-							   >= sizeof(st_cur->wpa.eapol) - 16)
-					{
-						// Ignore the packet trying to crash us.
-						st_cur->wpa.eapol_size = 0;
-						goto write_packet;
-					}
-
-					memcpy(st_cur->wpa.keymic, &h80211[z + 81], 16);
-					memcpy(
-						st_cur->wpa.eapol, &h80211[z], st_cur->wpa.eapol_size);
-					memset(st_cur->wpa.eapol + 81, 0, 16);
-					st_cur->wpa.state |= 4;
-					st_cur->wpa.keyver = (uint8_t)(h80211[z + 6] & 7);
-				}
-			}
-
-            if (st_cur->wpa.state == 7 
-                && !is_filtered_essid(&lopt.essid_filter, ap_cur->essid))
-			{
-                MAC_ADDRESS_COPY(&st_cur->wpa.stmac, &st_cur->stmac);
-				snprintf(lopt.message,
-						 sizeof(lopt.message),
-						 "WPA handshake: %02X:%02X:%02X:%02X:%02X:%02X ",
-                         ap_cur->bssid.addr[0],
-                         ap_cur->bssid.addr[1],
-                         ap_cur->bssid.addr[2],
-                         ap_cur->bssid.addr[3],
-                         ap_cur->bssid.addr[4],
-                         ap_cur->bssid.addr[5]);
-
-                if (!ivs_log_wpa_hdsk(lopt.ivs.fp,
-                                     &ap_cur->bssid,
-                                     &lopt.ivs.prev_bssid,
-                                     &st_cur->wpa, 
-                                     sizeof st_cur->wpa))
-                {
-                    return;
-                }
-			}
-		}
-	}
+    if (!parse_packet_data(&lopt, ap_cur, st_cur, h80211, caplen, ri, cardnum))
+    {
+        return;
+    }
 
 write_packet:
 
@@ -3466,100 +3608,10 @@ write_packet:
 		}
 	}
 
-	if (caplen < 24 && caplen >= 10 && h80211[0] != 0)
-	{
-		/* RTS || CTS || ACK || CF-END || CF-END&CF-ACK*/
-		//(h80211[0] == 0xB4 || h80211[0] == 0xC4 || h80211[0] == 0xD4 ||
-		// h80211[0] == 0xE4 || h80211[0] == 0xF4)
-
-		/* use general control frame detection, as the structure is always the
-		 * same: mac(s) starting at [4] */
-        if ((h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_CTL)
-		{
-            mac_address namac;
-
-            p = h80211 + 4;
-			while (p <= h80211 + 16 && (p + sizeof namac) <= data_end)
-			{
-				MAC_ADDRESS_COPY(&namac, (mac_address *)p);
-
-                if (MAC_ADDRESS_IS_EMPTY(&namac))
-				{
-                    p += sizeof namac;
-					continue;
-				}
-
-                if (MAC_ADDRESS_IS_BROADCAST(&namac))
-				{
-                    p += sizeof namac;
-					continue;
-				}
-
-				if (lopt.hide_known)
-				{
-					/* Check AP list. */
-					/* If it's an AP, try next mac */
-                    if (ap_info_lookup_existing(&lopt.ap_list, &namac))
-					{
-                        p += sizeof namac;
-						continue;
-					}
-
-					/* If it's a client, try next mac */
-                    if (sta_info_lookup_existing(&lopt.sta_list, &namac))
-					{
-                        p += sizeof namac;
-						continue;
-					}
-				}
-
-                /* Not found in either AP list or ST list. 
-                 * Find or create an entry in the NA list.
-				 */
-                struct NA_info * const na_cur =
-                    na_info_lookup(&lopt.na_list, &namac);
-
-                if (na_cur == NULL)
-                {
-                    return;
-                }
-
-                /* update the last time seen & power*/
-				na_cur->tlast = time(NULL);
-				na_cur->power = ri->ri_power;
-				na_cur->channel = ri->ri_channel;
-
-                switch (h80211[0] & IEEE80211_FC0_SUBTYPE_MASK)
-				{
-                    case IEEE80211_FC0_SUBTYPE_RTS:
-                        if (p == h80211 + 4)
-                        {
-                            na_cur->rts_r++;
-                        }
-                        else if (p == h80211 + 10)
-                        {
-                            na_cur->rts_t++;
-                        }
-						break;
-
-                    case IEEE80211_FC0_SUBTYPE_CTS:
-						na_cur->cts++;
-						break;
-
-                    case IEEE80211_FC0_SUBTYPE_ACK:
-						na_cur->ack++;
-						break;
-
-					default:
-						na_cur->other++;
-						break;
-				}
-
-				/* grab next mac (for rts frames)*/
-                p += sizeof namac;
-			}
-		}
-	}
+    if (!parse_control_frame(&lopt, h80211, caplen, ri))
+    {
+        return;
+    }
 
     update_packet_capture_files(&lopt, h80211, caplen, ri->ri_power);
 }
