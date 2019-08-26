@@ -2685,6 +2685,43 @@ done:
     return success;
 }
 
+static void do_decloak_check(
+    struct local_options * const options, 
+    struct AP_info * const ap_cur, 
+    uint8_t const * const h80211, 
+    size_t caplen)
+{
+    if (!ap_cur->decloak_detect)
+    {
+        goto done;
+    }
+
+    if (list_check_decloak(&ap_cur->pkt_list, caplen, h80211) != 0)
+    {
+        list_add_packet(&ap_cur->pkt_list, h80211, caplen);
+    }
+    else
+    {
+        ap_cur->is_decloak = 1;
+        ap_cur->decloak_detect = 0;
+
+        packet_list_free(&ap_cur->pkt_list);
+
+        snprintf(options->message,
+                 sizeof(options->message),
+                 "Decloak: %02X:%02X:%02X:%02X:%02X:%02X ",
+                 ap_cur->bssid.addr[0],
+                 ap_cur->bssid.addr[1],
+                 ap_cur->bssid.addr[2],
+                 ap_cur->bssid.addr[3],
+                 ap_cur->bssid.addr[4],
+                 ap_cur->bssid.addr[5]);
+    }
+
+done:
+    return;
+}
+
 static bool parse_packet_data(
     struct local_options * const options,
     struct AP_info * const ap_cur,
@@ -2743,30 +2780,7 @@ static bool parse_packet_data(
 
         if (z == 24)
         {
-            if (ap_cur->decloak_detect)
-            {
-                if (list_check_decloak(&ap_cur->pkt_list, caplen, h80211) != 0)
-                {
-                    list_add_packet(&ap_cur->pkt_list, h80211, caplen);
-                }
-                else
-                {
-                    ap_cur->is_decloak = 1;
-                    ap_cur->decloak_detect = 0;
-
-                    packet_list_free(&ap_cur->pkt_list);
-
-                    snprintf(options->message,
-                             sizeof(options->message),
-                             "Decloak: %02X:%02X:%02X:%02X:%02X:%02X ",
-                             ap_cur->bssid.addr[0],
-                             ap_cur->bssid.addr[1],
-                             ap_cur->bssid.addr[2],
-                             ap_cur->bssid.addr[3],
-                             ap_cur->bssid.addr[4],
-                             ap_cur->bssid.addr[5]);
-                }
-            }
+            do_decloak_check(options, ap_cur, h80211, caplen);
         }
 
         if (z + 26 > caplen)
