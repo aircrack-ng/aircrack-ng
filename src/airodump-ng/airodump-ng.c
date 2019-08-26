@@ -6600,7 +6600,6 @@ int main(int argc, char * argv[])
 	struct timeval tv3;
 	struct timeval last_active_scan_timestamp;
 	struct timeval previous_timestamp = {.tv_sec = 0, .tv_usec = 0 };
-	struct tm * lt;
 
 	static const struct option long_options[]
 		= {{"ht20", 0, 0, '2'},
@@ -6643,14 +6642,16 @@ int main(int argc, char * argv[])
 		   {"real-time", 0, 0, 'T'},
 		   {0, 0, 0, 0}};
 
-	console_utf8_enable();
-	ac_crypto_init();
+	console_utf8_enable(); /* FIXME - only required in interactive mode? */
+
+    ac_crypto_init();
 
 	textstyle(TEXT_RESET); //(TEXT_RESET, TEXT_BLACK, TEXT_WHITE);
 
 	/* initialize a bunch of variables */
 
 	rand_init();
+
 	memset(&lopt, 0, sizeof(lopt));
 
 	lopt.chanoption = 0;
@@ -6748,10 +6749,6 @@ int main(int argc, char * argv[])
 
     lopt.message[0] = '\0';
 
-	gettimeofday(&tv0, NULL);
-
-	lt = localtime(&tv0.tv_sec);
-
     for (i = 0; i < MAX_CARDS; i++)
 	{
         lopt.channel[i] = channel_sentinel;
@@ -6762,7 +6759,9 @@ int main(int argc, char * argv[])
     MAC_ADDRESS_CLEAR(&lopt.f_bssid);
     MAC_ADDRESS_CLEAR(&lopt.f_netmask);
 
-	/* check the arguments */
+    gettimeofday(&tv0, NULL);
+
+    /* Check the arguments. */
 
     for (i = 0; long_options[i].name != NULL; i++)
     {
