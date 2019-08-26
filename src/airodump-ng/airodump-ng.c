@@ -661,8 +661,8 @@ static const char usage[] =
 	"      --gpsd                : Use GPSd\n"
 	"      --write      <prefix> : Dump file prefix\n"
 	"      -w                    : same as --write \n"
-    "      --nodecloak           : Disable decloaking\n"
-    "      -D                    : Same as --nodecloak\n"
+    "      --no-decloak          : Disable decloaking\n"
+    "      -D                    : Same as --no-decloak\n"
 	"      --beacons             : Record all beacons in dump file\n"
 	"      --update       <secs> : Display update delay in seconds\n"
 	"      --showack             : Prints ack/cts/rts statistics\n"
@@ -6622,7 +6622,7 @@ int main(int argc, char * argv[])
 		   {"update", 1, 0, 'u'},
 		   {"berlin", 1, 0, 'B'},
 		   {"help", 0, 0, 'H'},
-		   {"nodecloak", 0, 0, 'D'},
+		   {"no-decloak", 0, 0, 'D'},
 		   {"showack", 0, 0, 'A'},
 		   {"detect-anomaly", 0, 0, 'E'},
 		   {"output-format", 1, 0, 'o'},
@@ -6849,7 +6849,7 @@ int main(int argc, char * argv[])
 			case 'K':
 			{
 				char * invalid_str = NULL;
-				long int bg_mode = strtol(optarg, &invalid_str, 10);
+				long int const bg_mode = strtol(optarg, &invalid_str, 10);
 
 				if ((invalid_str && *invalid_str != 0)
 					|| !(bg_mode == 0 || bg_mode == 1))
