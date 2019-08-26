@@ -2550,6 +2550,329 @@ done:
     return success;
 }
 
+static void parse_beacon_or_probe_response_2(
+    struct AP_info * const ap_cur,
+    uint8_t const * const h80211,
+    size_t caplen)
+{
+    if ((h80211[0] == IEEE80211_FC0_SUBTYPE_BEACON
+         || h80211[0] == IEEE80211_FC0_SUBTYPE_PROBE_RESP)
+        && caplen > 38)
+    {
+        uint8_t const * const data_end = h80211 + caplen;
+        uint8_t const * p;
+
+        p = h80211 + 36; // ignore hdr + fixed params
+
+        while (p < data_end)
+        {
+            if (p + 2 + p[1] > data_end)
+            {
+                break;
+            }
+
+            uint8_t const type = p[0];
+            uint8_t const length = p[1];
+
+            // Find WPA and RSN tags
+            if ((type == 0xDD && (length >= 8)
+                 && (memcmp(p + 2, "\x00\x50\xF2\x01\x01\x00", 6) == 0))
+                || (type == 0x30))
+            {
+                ap_cur->security &= ~(STD_WEP | ENC_WEP | STD_WPA);
+
+                uint8_t const * const org_p = p;
+                int offset = 0;
+
+                if (type == 0xDD)
+                {
+                    // WPA defined in vendor specific tag -> WPA1 support
+                    ap_cur->security |= STD_WPA;
+                    offset = 4;
+                }
+
+                // RSN => WPA2
+                if (type == 0x30)
+                {
+                    offset = 0;
+                }
+
+                if (length < (18 + offset))
+                {
+                    p += length + 2;
+                    continue;
+                }
+
+                // Number of pairwise cipher suites
+                if (p + 9 + offset > data_end)
+                {
+                    break;
+                }
+
+                size_t const numuni = p[8 + offset] + (p[9 + offset] << 8);
+
+                // Number of Authentication Key Managament suites
+                if (p + (11 + offset) + 4 * numuni > data_end)
+                {
+                    break;
+                }
+
+                size_t const numauth = p[(10 + offset) + 4 * numuni]
+                    + (p[(11 + offset) + 4 * numuni] << 8);
+
+                p += (10 + offset);
+
+                if (type != 0x30)
+                {
+                    if (p + (4 * numuni) + (2 + 4 * numauth) > data_end)
+                    {
+                        break;
+                    }
+                }
+                else
+                {
+                    if (p + (4 * numuni) + (2 + 4 * numauth) + 2 > data_end)
+                    {
+                        break;
+                    }
+                }
+
+                // Get the list of cipher suites
+                for (size_t i = 0; i < (size_t)numuni; i++)
+                {
+                    switch (p[i * 4 + 3])
+                    {
+                        case 0x01:
+                            ap_cur->security |= ENC_WEP;
+                            break;
+                        case 0x02:
+                            ap_cur->security |= ENC_TKIP;
+                            ap_cur->security &= ~STD_WPA2;
+                            break;
+                        case 0x03:
+                            ap_cur->security |= ENC_WRAP;
+                            break;
+                        case 0x0A:
+                        case 0x04:
+                            ap_cur->security |= ENC_CCMP;
+                            ap_cur->security |= STD_WPA2;
+                            break;
+                        case 0x05:
+                            ap_cur->security |= ENC_WEP104;
+                            break;
+                        case 0x08:
+                        case 0x09:
+                            ap_cur->security |= ENC_GCMP;
+                            ap_cur->security |= STD_WPA2;
+                            break;
+                        case 0x0B:
+                        case 0x0C:
+                            ap_cur->security |= ENC_GMAC;
+                            ap_cur->security |= STD_WPA2;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+
+                p += 2 + 4 * numuni;
+
+                // Get the AKM suites
+                for (size_t i = 0; i < numauth; i++)
+                {
+                    switch (p[i * 4 + 3])
+                    {
+                        case 0x01:
+                            ap_cur->security |= AUTH_MGT;
+                            break;
+                        case 0x02:
+                            ap_cur->security |= AUTH_PSK;
+                            break;
+                        case 0x06:
+                        case 0x0d:
+                            ap_cur->security |= AUTH_CMAC;
+                            break;
+                        case 0x08:
+                            ap_cur->security |= AUTH_SAE;
+                            break;
+                        case 0x12:
+                            ap_cur->security |= AUTH_OWE;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+
+                p = org_p + length + 2;
+            }
+            else if ((type == 0xDD && (length >= 8)
+                      && (memcmp(p + 2, "\x00\x50\xF2\x02\x01\x01", 6) == 0)))
+            {
+                // QoS IE
+                ap_cur->security |= STD_QOS;
+                p += length + 2;
+            }
+            else if ((type == 0xDD && (length >= 4)
+                      && (memcmp(p + 2, "\x00\x50\xF2\x04", 4) == 0)))
+            {
+                // WPS IE
+                uint8_t const * const org_p = p;
+
+                p += 6;
+                int len = length, subtype = 0, sublen = 0;
+                while (len >= 4)
+                {
+                    subtype = (p[0] << 8) + p[1];
+                    sublen = (p[2] << 8) + p[3];
+                    if (sublen > len)
+                        break;
+                    switch (subtype)
+                    {
+                        case 0x104a: // WPS Version
+                            ap_cur->wps.version = p[4];
+                            break;
+                        case 0x1011: // Device Name
+                        case 0x1012: // Device Password ID
+                        case 0x1021: // Manufacturer
+                        case 0x1023: // Model
+                        case 0x1024: // Model Number
+                        case 0x103b: // Response Type
+                        case 0x103c: // RF Bands
+                        case 0x1041: // Selected Registrar
+                        case 0x1042: // Serial Number
+                            break;
+                        case 0x1044: // WPS State
+                            ap_cur->wps.state = p[4];
+                            break;
+                        case 0x1047: // UUID Enrollee
+                        case 0x1049: // Vendor Extension
+                            if (memcmp(&p[4], "\x00\x37\x2A", 3) == 0)
+                            {
+                                unsigned char const * pwfa = &p[7];
+                                int wfa_len = ntohs(load16(&p[2]));
+
+                                while (wfa_len > 0)
+                                {
+                                    if (*pwfa == 0)
+                                    { // Version2
+                                        ap_cur->wps.version = pwfa[2];
+                                        break;
+                                    }
+                                    wfa_len -= pwfa[1] + 2;
+                                    pwfa += pwfa[1] + 2;
+                                }
+                            }
+                            break;
+                        case 0x1054: // Primary Device Type
+                            break;
+                        case 0x1057: // AP Setup Locked
+                            ap_cur->wps.ap_setup_locked = p[4];
+                            break;
+                        case 0x1008: // Config Methods
+                        case 0x1053: // Selected Registrar Config Methods
+                            ap_cur->wps.meth = (p[4] << 8) + p[5];
+                            break;
+                        default: // Unknown type-length-value
+                            break;
+                    }
+                    p += sublen + 4;
+                    len -= sublen + 4;
+                }
+                p = org_p + length + 2;
+            }
+            else
+            {
+                p += length + 2;
+            }
+        }
+    }
+}
+
+static void parse_authentication_response(
+    struct AP_info * const ap_cur, 
+    uint8_t const * const h80211, 
+    size_t const caplen)
+{
+    if (h80211[0] == IEEE80211_FC0_SUBTYPE_AUTH && caplen >= 30)
+    {
+        if (ap_cur->security & STD_WEP)
+        {
+            // successful step 2 or 4 (coming from the AP)
+            if (memcmp(h80211 + 28, "\x00\x00", 2) == 0
+                && (h80211[26] == 0x02 || h80211[26] == 0x04))
+            {
+                ap_cur->security &= ~(AUTH_OPN | AUTH_PSK | AUTH_MGT);
+                if (h80211[24] == 0x00)
+                    ap_cur->security |= AUTH_OPN;
+                if (h80211[24] == 0x01)
+                    ap_cur->security |= AUTH_PSK;
+            }
+        }
+    }
+}
+
+static bool parse_association_request(
+    struct local_options * const options, 
+    struct AP_info * const ap_cur, 
+    struct ST_info * const st_cur, 
+    uint8_t const * const h80211, 
+    size_t const caplen)
+{
+    bool success;
+
+    if (h80211[0] == IEEE80211_FC0_SUBTYPE_ASSOC_REQ && caplen > 28)
+    {
+        uint8_t const * const data_end = h80211 + caplen;
+        uint8_t const * p = h80211 + 28;
+
+        while (p < data_end)
+        {
+            if (p + 2 + p[1] > data_end)
+            {
+                break;
+            }
+
+            if (p[0] == 0x00 && p[1] > 0 && p[2] != '\0'
+                && (p[1] > 1 || p[2] != ' '))
+            {
+                /* Found a non-cloaked ESSID. */
+                ap_cur->ssid_length = MIN((sizeof ap_cur->essid - 1), p[1]);
+
+                memcpy(ap_cur->essid, p + 2, ap_cur->ssid_length);
+                ap_cur->essid[ap_cur->ssid_length] = '\0';
+
+                if (!ivs_log_essid(options->ivs.fp,
+                                   &ap_cur->essid_logged,
+                                   &ap_cur->bssid,
+                                   &options->ivs.prev_bssid,
+                                   ap_cur->essid,
+                                   ap_cur->ssid_length))
+                {
+                    success = false;
+                    goto done;
+                }
+
+                if (!verifyssid(ap_cur->essid))
+                {
+                    make_printable(ap_cur->essid, ap_cur->ssid_length);
+                }
+            }
+
+            p += 2 + p[1];
+        }
+
+        if (st_cur != NULL)
+        {
+            st_cur->wpa.state = 0;
+        }
+    }
+
+    success = true;
+
+done:
+    return success;
+}
+
 // NOTE(jbenden): This is also in ivstools.c
 static void dump_add_packet(
 	unsigned char const * const h80211,
@@ -2559,14 +2882,10 @@ static void dump_add_packet(
 {
 	REQUIRE(h80211 != NULL);
 	uint8_t const * const data_end = h80211 + caplen;
-	int offset, o;
-	size_t i;
+	int o;
 	size_t dlen;
 	unsigned z;
-	int type, length, numuni = 0;
-	size_t numauth = 0;
     unsigned char const * p; 
-    unsigned char const * org_p;
     mac_address const * bssid;
 	mac_address const * stmac;
     unsigned char clear[2048] = { 0 };
@@ -2668,292 +2987,16 @@ static void dump_add_packet(
     }
 
 	/* packet parsing: Beacon & Probe response */
-	/* TODO: Merge this if and the one above */
-	if ((h80211[0] == IEEE80211_FC0_SUBTYPE_BEACON
-		 || h80211[0] == IEEE80211_FC0_SUBTYPE_PROBE_RESP)
-		&& caplen > 38)
-	{
-		p = h80211 + 36; // ignore hdr + fixed params
-
-		while (p < data_end)
-		{
-			if (p + 2 + p[1] > data_end)
-			{
-				break;
-			}
-
-			type = p[0];
-			length = p[1];
-
-			// Find WPA and RSN tags
-			if ((type == 0xDD && (length >= 8)
-				 && (memcmp(p + 2, "\x00\x50\xF2\x01\x01\x00", 6) == 0))
-				|| (type == 0x30))
-			{
-				ap_cur->security &= ~(STD_WEP | ENC_WEP | STD_WPA);
-
-				org_p = p;
-				offset = 0;
-
-				if (type == 0xDD)
-				{
-					// WPA defined in vendor specific tag -> WPA1 support
-					ap_cur->security |= STD_WPA;
-					offset = 4;
-				}
-
-				// RSN => WPA2
-				if (type == 0x30)
-				{
-					offset = 0;
-				}
-
-				if (length < (18 + offset))
-				{
-					p += length + 2;
-					continue;
-				}
-
-				// Number of pairwise cipher suites
-				if (p + 9 + offset > data_end)
-				{
-					break;
-				}
-				numuni = p[8 + offset] + (p[9 + offset] << 8);
-
-				// Number of Authentication Key Managament suites
-				if (p + (11 + offset) + 4 * numuni > data_end)
-				{
-					break;
-				}
-				numauth = p[(10 + offset) + 4 * numuni]
-						  + (p[(11 + offset) + 4 * numuni] << 8);
-
-				p += (10 + offset);
-
-				if (type != 0x30)
-				{
-					if (p + (4 * numuni) + (2 + 4 * numauth) > data_end)
-					{
-						break;
-					}
-				}
-				else
-				{
-					if (p + (4 * numuni) + (2 + 4 * numauth) + 2 > data_end)
-					{
-						break;
-					}
-				}
-
-				// Get the list of cipher suites
-				for (i = 0; i < (size_t) numuni; i++)
-				{
-					switch (p[i * 4 + 3])
-					{
-						case 0x01:
-							ap_cur->security |= ENC_WEP;
-							break;
-						case 0x02:
-							ap_cur->security |= ENC_TKIP;
-							ap_cur->security &= ~STD_WPA2;
-							break;
-						case 0x03:
-							ap_cur->security |= ENC_WRAP;
-							break;
-						case 0x0A:
-						case 0x04:
-							ap_cur->security |= ENC_CCMP;
-							ap_cur->security |= STD_WPA2;
-							break;
-						case 0x05:
-							ap_cur->security |= ENC_WEP104;
-							break;
-						case 0x08:
-						case 0x09:
-							ap_cur->security |= ENC_GCMP;
-							ap_cur->security |= STD_WPA2;
-							break;
-						case 0x0B:
-						case 0x0C:
-							ap_cur->security |= ENC_GMAC;
-							ap_cur->security |= STD_WPA2;
-							break;
-						default:
-							break;
-					}
-				}
-
-				p += 2 + 4 * numuni;
-
-				// Get the AKM suites
-				for (i = 0; i < numauth; i++)
-				{
-					switch (p[i * 4 + 3])
-					{
-						case 0x01:
-							ap_cur->security |= AUTH_MGT;
-							break;
-						case 0x02:
-							ap_cur->security |= AUTH_PSK;
-							break;
-						case 0x06:
-						case 0x0d:
-							ap_cur->security |= AUTH_CMAC;
-							break;
-						case 0x08:
-							ap_cur->security |= AUTH_SAE;
-							break;
-						case 0x12:
-							ap_cur->security |= AUTH_OWE;
-							break;
-						default:
-							break;
-					}
-				}
-
-				p = org_p + length + 2;
-			}
-			else if ((type == 0xDD && (length >= 8)
-					  && (memcmp(p + 2, "\x00\x50\xF2\x02\x01\x01", 6) == 0)))
-			{
-				// QoS IE
-				ap_cur->security |= STD_QOS;
-				p += length + 2;
-			}
-			else if ((type == 0xDD && (length >= 4)
-					  && (memcmp(p + 2, "\x00\x50\xF2\x04", 4) == 0)))
-			{
-				// WPS IE
-				org_p = p;
-				p += 6;
-				int len = length, subtype = 0, sublen = 0;
-				while (len >= 4)
-				{
-					subtype = (p[0] << 8) + p[1];
-					sublen = (p[2] << 8) + p[3];
-					if (sublen > len) break;
-					switch (subtype)
-					{
-						case 0x104a: // WPS Version
-							ap_cur->wps.version = p[4];
-							break;
-						case 0x1011: // Device Name
-						case 0x1012: // Device Password ID
-						case 0x1021: // Manufacturer
-						case 0x1023: // Model
-						case 0x1024: // Model Number
-						case 0x103b: // Response Type
-						case 0x103c: // RF Bands
-						case 0x1041: // Selected Registrar
-						case 0x1042: // Serial Number
-							break;
-						case 0x1044: // WPS State
-							ap_cur->wps.state = p[4];
-							break;
-						case 0x1047: // UUID Enrollee
-						case 0x1049: // Vendor Extension
-							if (memcmp(&p[4], "\x00\x37\x2A", 3) == 0)
-							{
-								unsigned char const * pwfa = &p[7];
-								int wfa_len = ntohs(load16(&p[2]));
-
-                                while (wfa_len > 0)
-								{
-									if (*pwfa == 0)
-									{ // Version2
-										ap_cur->wps.version = pwfa[2];
-										break;
-									}
-									wfa_len -= pwfa[1] + 2;
-									pwfa += pwfa[1] + 2;
-								}
-							}
-							break;
-						case 0x1054: // Primary Device Type
-							break;
-						case 0x1057: // AP Setup Locked
-							ap_cur->wps.ap_setup_locked = p[4];
-							break;
-						case 0x1008: // Config Methods
-						case 0x1053: // Selected Registrar Config Methods
-							ap_cur->wps.meth = (p[4] << 8) + p[5];
-							break;
-						default: // Unknown type-length-value
-							break;
-					}
-					p += sublen + 4;
-					len -= sublen + 4;
-				}
-				p = org_p + length + 2;
-			}
-			else
-				p += length + 2;
-		}
-	}
+    parse_beacon_or_probe_response_2(ap_cur, h80211, caplen);
 
 	/* packet parsing: Authentication Response */
-
-	if (h80211[0] == IEEE80211_FC0_SUBTYPE_AUTH && caplen >= 30)
-	{
-		if (ap_cur->security & STD_WEP)
-		{
-			// successful step 2 or 4 (coming from the AP)
-			if (memcmp(h80211 + 28, "\x00\x00", 2) == 0
-				&& (h80211[26] == 0x02 || h80211[26] == 0x04))
-			{
-				ap_cur->security &= ~(AUTH_OPN | AUTH_PSK | AUTH_MGT);
-				if (h80211[24] == 0x00) ap_cur->security |= AUTH_OPN;
-				if (h80211[24] == 0x01) ap_cur->security |= AUTH_PSK;
-			}
-		}
-	}
+    parse_authentication_response(ap_cur, h80211, caplen);
 
 	/* packet parsing: Association Request */
-
-	if (h80211[0] == IEEE80211_FC0_SUBTYPE_ASSOC_REQ && caplen > 28)
-	{
-		p = h80211 + 28;
-
-		while (p < data_end)
-		{
-			if (p + 2 + p[1] > data_end)
-			{
-				break;
-			}
-
-			if (p[0] == 0x00 && p[1] > 0 && p[2] != '\0'
-				&& (p[1] > 1 || p[2] != ' '))
-			{
-                /* Found a non-cloaked ESSID. */
-                ap_cur->ssid_length = MIN((sizeof ap_cur->essid - 1), p[1]);
-
-                memcpy(ap_cur->essid, p + 2, ap_cur->ssid_length);
-                ap_cur->essid[ap_cur->ssid_length] = '\0';
-
-                if (!ivs_log_essid(lopt.ivs.fp,
-                                   &ap_cur->essid_logged,
-                                   &ap_cur->bssid,
-                                   &lopt.ivs.prev_bssid,
-                                   ap_cur->essid,
-                                   ap_cur->ssid_length))
-                {
-                    return;
-                }
-
-                if (!verifyssid(ap_cur->essid))
-                {
-                    make_printable(ap_cur->essid, ap_cur->ssid_length);
-                }
-			}
-
-			p += 2 + p[1];
-		}
-        if (st_cur != NULL)
-        {
-            st_cur->wpa.state = 0;
-        }
-	}
+    if (!parse_association_request(&lopt, ap_cur, st_cur, h80211, caplen))
+    {
+        return;
+    }
 
 	/* packet parsing: some data */
 
