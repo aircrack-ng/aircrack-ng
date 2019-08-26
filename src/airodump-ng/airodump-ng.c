@@ -107,6 +107,8 @@
 #include "probe_request.h"
 
 #define DEFAULT_CHANNEL_WIDTH_MHZ 20
+#define ONE_HOUR (60 * 60)
+#define ONE_MIN (60)
 
 /* Possibly only required so that this will link. Referenced
  * in communications.c.
@@ -1307,8 +1309,11 @@ static struct ST_info * sta_info_new(
         goto done;
     }
 
-    st_cur->manuf =
-        get_manufacturer_by_oui(options->manufacturer_list, mac->addr);
+    if (options->show_manufacturer)
+    {
+        st_cur->manuf =
+            get_manufacturer_by_oui(options->manufacturer_list, mac->addr);
+    }
 
     sta_populate_gps(st_cur, options->gps_context.gps_loc);
 
@@ -1526,8 +1531,11 @@ static struct AP_info * ap_info_new(
         goto done;
     }
 
-    ap_cur->manuf =
-        get_manufacturer_by_oui(options->manufacturer_list, bssid->addr);
+    if (options->show_manufacturer)
+    {
+        ap_cur->manuf =
+            get_manufacturer_by_oui(options->manufacturer_list, bssid->addr);
+    }
 
     if (options->ivs.fp != NULL)
     {
@@ -4114,8 +4122,10 @@ static void dump_print(
                 if (options->show_manufacturer)
 				{
                     if (options->maxsize_essid_seen <= len - essid_len)
+                    {
                         options->maxsize_essid_seen
-							= (u_int) MAX(len - essid_len, 5);
+                            = (u_int) MAX(len - essid_len, 5);
+                    }
 					else
 					{
 						// pad output
@@ -4124,18 +4134,17 @@ static void dump_print(
 						strbuf[len] = '\0';
 					}
 
-					if (ap_cur->manuf == NULL)
-					{
-						ap_cur->manuf =
-                            get_manufacturer_by_oui(
-                            options->manufacturer_list,
-                                ap_cur->bssid.addr);
-                    }
+                    static char const unknown_manufacturer[] = "Unknown"; 
+
+                    char const * const manufacturer = 
+                        (ap_cur->manuf != NULL) 
+                            ? ap_cur->manuf 
+                            : unknown_manufacturer;
 
 					snprintf(strbuf + len,
 							 sizeof(strbuf) - len - 1,
 							 " %s",
-							 ap_cur->manuf);
+                             manufacturer);
 				}
 			}
 
@@ -6562,6 +6571,115 @@ static void do_generic_update(
         getStringTimeFromSec(difftime(current_time, options->start_time));
 }
 
+static void options_initialise(struct local_options * const options)
+{
+    memset(&lopt, 0, sizeof(lopt));
+
+    options->chanoption = 0;
+    options->freqoption = 0;
+    options->num_cards = 0;
+    options->max_consecutive_failed_interface_reads = 2;
+
+    options->channel_switching_method = channel_switching_method_fifo;
+    options->channels = bg_chans;
+    options->one_beacon = 1;
+    options->singlechan = 0;
+    options->singlefreq = 0;
+    options->dump_prefix = NULL;
+    options->record_data = 0;
+    options->pcap_output.writer = NULL;
+    options->max_node_age = 0;
+
+    options->ivs.required = false;
+    options->ivs.fp = NULL;
+
+    options->gpsd.required = false;
+    options->gpsd.fp = NULL;
+
+    options->shared_key.f_xor = NULL;
+    options->shared_key.sk_len = 0;
+    options->shared_key.sk_len2 = 0;
+    options->shared_key.sk_start = 0;
+    memset(options->shared_key.sharedkey, '\x00', sizeof(options->shared_key.sharedkey));
+    options->check_shared_key = 1;
+
+    options->encryption_filter = 0;
+    options->asso_client = 0;
+
+    options->active_scan_sim = 0;
+    options->update_interval_seconds = 0;
+    options->decloak = 1;
+
+    options->is_berlin = 0;
+    options->maxnumaps = 0;
+    options->berlin = 120;
+    options->show_ap = 1;
+    options->show_sta = 1;
+    options->show_ack = 0;
+    options->hide_known = 0;
+    options->maxsize_essid_seen = 5; // Initial value: length of "ESSID"
+    options->show_manufacturer = 0;
+    options->show_uptime = 0;
+    options->frequency_hop_millisecs = DEFAULT_HOPFREQ;
+    options->s_file = NULL;
+    options->s_iface = NULL;
+    options->pcap_reader_context = NULL;
+    options->detect_anomaly = 0;
+    options->airodump_start_time = NULL;
+    options->manufacturer_list = NULL;
+
+    options->channel_hopper_pipe[0] = -1;
+    options->channel_hopper_pipe[1] = -1;
+
+    options->signal_event_pipe[0] = -1;
+    options->signal_event_pipe[1] = -1;
+
+    options->input_thread_pipe[0] = -1;
+    options->input_thread_pipe[1] = -1;
+
+    options->pcap_output.required = true;
+
+    options->log_csv.fp = NULL;
+    options->log_csv.required = true;
+
+    dump_contexts_initialise(options, true);
+
+    options->file_write_interval = 5; // Write file every 5 seconds by default
+    options->maxsize_wps_seen = 6;
+    options->show_wps = 0;
+    options->interactive_mode = -1;
+    options->sys_name[0] = '\0';
+    options->loc_name[0] = '\0';
+    options->filter_seconds = ONE_HOUR;
+    options->file_reset_seconds = ONE_MIN;
+    options->do_exit = 0;
+    options->min_pkts = 2;
+    options->relative_time = false;
+#ifdef CONFIG_LIBNL
+    options->htval = CHANNEL_NO_HT;
+#endif
+
+    essid_filter_context_initialise(&options->essid_filter);
+
+    TAILQ_INIT(&options->na_list);
+    TAILQ_INIT(&options->ap_list);
+    TAILQ_INIT(&options->sta_list);
+
+    reset_selections(options);
+
+    options->message[0] = '\0';
+
+    for (size_t i = 0; i < MAX_CARDS; i++)
+    {
+        options->channel[i] = channel_sentinel;
+        options->frequency[i] = frequency_sentinel;
+        options->wi_consecutive_failed_reads[i] = 0;
+    }
+
+    MAC_ADDRESS_CLEAR(&options->f_bssid);
+    MAC_ADDRESS_CLEAR(&options->f_netmask);
+}
+
 int main(int argc, char * argv[])
 {
     /* The user thread args must remain in scope as long as the 
@@ -6570,11 +6688,9 @@ int main(int argc, char * argv[])
     struct input_thread_args_st input_thread_args;
     int program_exit_code;
     bool had_error = false;
-#define ONE_HOUR (60 * 60)
-#define ONE_MIN (60)
 	int read_pkts = 0;
 
-	long time_slept;
+	long time_slept = 0;
 	long cycle_time;
 	char * output_format_string;
 
@@ -6641,122 +6757,16 @@ int main(int argc, char * argv[])
 		   {"real-time", 0, 0, 'T'},
 		   {0, 0, 0, 0}};
 
-	console_utf8_enable(); /* FIXME - only required in interactive mode? */
-
     ac_crypto_init();
 
-	textstyle(TEXT_RESET); //(TEXT_RESET, TEXT_BLACK, TEXT_WHITE);
+    console_utf8_enable(); /* FIXME - only required in interactive mode? */
 
-	/* initialize a bunch of variables */
+    /* FIXME - only required in interactive mode? */
+	textstyle(TEXT_RESET); //(TEXT_RESET, TEXT_BLACK, TEXT_WHITE);
 
 	rand_init();
 
-	memset(&lopt, 0, sizeof(lopt));
-
-	lopt.chanoption = 0;
-	lopt.freqoption = 0;
-	lopt.num_cards = 0;
-	time_slept = 0;
-    lopt.max_consecutive_failed_interface_reads = 2;
-
-    lopt.channel_switching_method = channel_switching_method_fifo;
-	lopt.channels = bg_chans;
-	lopt.one_beacon = 1;
-	lopt.singlechan = 0;
-	lopt.singlefreq = 0;
-	lopt.dump_prefix = NULL;
-	lopt.record_data = 0;
-    lopt.pcap_output.writer = NULL;
-    lopt.max_node_age = 0;
-
-    lopt.ivs.required = false;
-    lopt.ivs.fp = NULL;
-
-    lopt.gpsd.required = false;
-    lopt.gpsd.fp = NULL;
-
-    lopt.shared_key.f_xor = NULL;
-    lopt.shared_key.sk_len = 0;
-    lopt.shared_key.sk_len2 = 0;
-    lopt.shared_key.sk_start = 0;
-    memset(lopt.shared_key.sharedkey, '\x00', sizeof(lopt.shared_key.sharedkey));
-    lopt.check_shared_key = 1; 
-
-    lopt.encryption_filter = 0;
-	lopt.asso_client = 0;
-
-	lopt.active_scan_sim = 0;
-	lopt.update_interval_seconds = 0;
-	lopt.decloak = 1;
-
-	lopt.is_berlin = 0;
-	lopt.maxnumaps = 0;
-	lopt.berlin = 120;
-	lopt.show_ap = 1;
-	lopt.show_sta = 1;
-	lopt.show_ack = 0;
-	lopt.hide_known = 0;
-	lopt.maxsize_essid_seen = 5; // Initial value: length of "ESSID"
-	lopt.show_manufacturer = 0;
-	lopt.show_uptime = 0;
-    lopt.frequency_hop_millisecs = DEFAULT_HOPFREQ;
-	lopt.s_file = NULL;
-	lopt.s_iface = NULL;
-	lopt.pcap_reader_context = NULL;
-	lopt.detect_anomaly = 0;
-	lopt.airodump_start_time = NULL;
-    lopt.manufacturer_list = NULL;
-
-    lopt.channel_hopper_pipe[0] = -1;
-    lopt.channel_hopper_pipe[1] = -1;
-
-    lopt.signal_event_pipe[0] = -1;
-    lopt.signal_event_pipe[1] = -1;
-
-    lopt.input_thread_pipe[0] = -1;
-    lopt.input_thread_pipe[1] = -1; 
-
-    lopt.pcap_output.required = true;
-
-    lopt.log_csv.fp = NULL;
-    lopt.log_csv.required = true;
-
-    dump_contexts_initialise(&lopt, true);
-
-	lopt.file_write_interval = 5; // Write file every 5 seconds by default
-	lopt.maxsize_wps_seen = 6;
-	lopt.show_wps = 0;
-    lopt.interactive_mode = -1;
-    lopt.sys_name[0] = '\0';
-    lopt.loc_name[0] = '\0';
-    lopt.filter_seconds = ONE_HOUR;
-    lopt.file_reset_seconds = ONE_MIN;
-    lopt.do_exit = 0;
-	lopt.min_pkts = 2;
-	lopt.relative_time = false;
-#ifdef CONFIG_LIBNL
-	lopt.htval = CHANNEL_NO_HT;
-#endif
-
-    essid_filter_context_initialise(&lopt.essid_filter);
-
-	TAILQ_INIT(&lopt.na_list);
-	TAILQ_INIT(&lopt.ap_list);
-	TAILQ_INIT(&lopt.sta_list);
-
-    reset_selections(&lopt);
-
-    lopt.message[0] = '\0';
-
-    for (size_t i = 0; i < MAX_CARDS; i++)
-	{
-        lopt.channel[i] = channel_sentinel;
-        lopt.frequency[i] = frequency_sentinel;
-        lopt.wi_consecutive_failed_reads[i] = 0;
-	}
-
-    MAC_ADDRESS_CLEAR(&lopt.f_bssid);
-    MAC_ADDRESS_CLEAR(&lopt.f_netmask);
+    options_initialise(&lopt);
 
     gettimeofday(&tv0, NULL);
 

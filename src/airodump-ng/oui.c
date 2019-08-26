@@ -330,58 +330,49 @@ get_manufacturer_by_oui(
         struct oui const * const ptr = 
             oui_lookup(&context->list_head, (oui_id *)mac);
 
-        if (ptr != NULL)
-        {
-            manuf = strdup(ptr->manufacturer);
-        }
-        else
-        {
-            manuf = NULL;
-        }
+        manuf = (ptr != NULL) ? strdup(ptr->manufacturer) : NULL;
 
         goto done;
     }
-    else
+
+    // If the file exists, then query it each time we need to get a
+    // manufacturer.
+    fp = open_oui_file();
+
+    if (fp == NULL)
     {
-        // If the file exist, then query it each time we need to get a
-        // manufacturer.
-        fp = open_oui_file();
+        manuf = NULL;
 
-        if (fp == NULL)
+        goto done;
+    }
+
+    char buffer[BUFSIZ];
+
+    while (fgets(buffer, sizeof(buffer), fp) != NULL)
+    {
+        /* TODO: Remove this duplicated code. 
+         * The same code is in load_oui_file(). 
+         */
+
+        if (strstr(buffer, "(hex)") == NULL)
         {
-            manuf = NULL;
-
-            goto done;
+            continue;
         }
 
-        char buffer[BUFSIZ];
+        unsigned int a;
+        unsigned int b;
+        unsigned int c;
 
-        while (fgets(buffer, sizeof(buffer), fp) != NULL)
+        if (sscanf(buffer, "%2x-%2x-%2x", &a, &b, &c) == 3)
         {
-            /* TODO: Remove this duplicated code. 
-             * The same code is in load_oui_file(). 
-             */
+            uint8_t const id[OUI_ID_SIZE] = {a, b, c};
+            bool const found = memcmp(id, mac, sizeof id) == 0;
 
-            if (strstr(buffer, "(hex)") == NULL)
+            if (found)
             {
-                continue;
-            }
+                manuf = get_manufacturer_from_string(buffer);
 
-            unsigned int a;
-            unsigned int b;
-            unsigned int c;
-
-            if (sscanf(buffer, "%2x-%2x-%2x", &a, &b, &c) == 3)
-            {
-                uint8_t const id[OUI_ID_SIZE] = {a, b, c};
-                bool const found = memcmp(id, mac, sizeof id) == 0;
-
-                if (found)
-                {
-                    manuf = get_manufacturer_from_string(buffer);
-
-                    goto done;
-                }
+                goto done;
             }
         }
     }
