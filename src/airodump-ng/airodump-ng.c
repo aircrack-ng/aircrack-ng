@@ -6577,7 +6577,6 @@ int main(int argc, char * argv[])
 	long time_slept;
 	long cycle_time;
 	char * output_format_string;
-    int i;
 
 	struct wif * wi[MAX_CARDS];
 
@@ -6749,7 +6748,7 @@ int main(int argc, char * argv[])
 
     lopt.message[0] = '\0';
 
-    for (i = 0; i < MAX_CARDS; i++)
+    for (size_t i = 0; i < MAX_CARDS; i++)
 	{
         lopt.channel[i] = channel_sentinel;
         lopt.frequency[i] = frequency_sentinel;
@@ -6763,13 +6762,12 @@ int main(int argc, char * argv[])
 
     /* Check the arguments. */
 
-    for (i = 0; long_options[i].name != NULL; i++)
+    for (num_opts = 0; long_options[num_opts].name != NULL; num_opts++)
     {
 		; /* Do nothing. */
     }
-	num_opts = i;
 
-	for (i = 0; i < argc; i++) // go through all arguments
+	for (size_t i = 0; i < (size_t)argc; i++) // go through all arguments
 	{
 		found = 0;
 		if (strlen(argv[i]) >= 3)
@@ -7001,7 +6999,7 @@ int main(int argc, char * argv[])
 				}
 				freq[0] = freq[1] = 0;
 
-				for (i = 0; i < (int) strlen(optarg); i++)
+				for (size_t i = 0; i < strlen(optarg); i++)
 				{
                     if (optarg[i] == 'a')
                     {
