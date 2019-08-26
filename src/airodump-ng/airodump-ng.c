@@ -2047,6 +2047,509 @@ static void sta_update(
     st_cur->nb_pkt++;
 }
 
+static mac_address const * locate_bssid_in_80211(uint8_t const * const h80211)
+{
+    mac_address const * bssid;
+
+    /* Locate the access point's MAC address. */
+
+    switch (h80211[1] & IEEE80211_FC1_DIR_MASK)
+    {
+        case IEEE80211_FC1_DIR_NODS:
+            bssid = (mac_address *)(h80211 + 16);
+            break; // Adhoc
+        case IEEE80211_FC1_DIR_TODS:
+            bssid = (mac_address *)(h80211 + 4);
+            break; // ToDS
+        case IEEE80211_FC1_DIR_FROMDS:
+            bssid = (mac_address *)(h80211 + 10);
+            break; // FromDS
+        case IEEE80211_FC1_DIR_DSTODS:
+            bssid = (mac_address *)(h80211 + 10);
+            break; // WDS -> Transmitter taken as BSSID
+        default:
+            /* Can't happen. All cases have been checked. */
+            bssid = NULL;
+            abort();
+    }
+
+    return bssid;
+}
+
+static mac_address const * locate_sta_mac_in_80211(
+    uint8_t const * const h80211,
+    mac_address const * const bssid)
+{
+    mac_address const * stmac;
+
+    switch (h80211[1] & IEEE80211_FC1_DIR_MASK)
+    {
+        case IEEE80211_FC1_DIR_NODS:
+
+            /* If management, check that SA != BSSID. */
+
+            if (MAC_ADDRESS_EQUAL((mac_address *)(h80211 + 10), bssid))
+            {
+                stmac = NULL;
+                goto done;
+            }
+            stmac = (mac_address *)(h80211 + 10);
+            break;
+
+        case IEEE80211_FC1_DIR_TODS:
+
+            /* ToDS packet, must come from a client. */
+
+            stmac = (mac_address *)(h80211 + 10);
+            break;
+
+        case IEEE80211_FC1_DIR_FROMDS:
+
+            /* FromDS packet, reject broadcast MACs */
+
+            if (MAC_IS_GROUP_ADDRESS(&h80211[4]))
+            {
+                stmac = NULL;
+                goto done;
+            }
+            stmac = (mac_address *)(h80211 + 4);
+            break;
+
+        case IEEE80211_FC1_DIR_DSTODS:
+
+            stmac = NULL;
+            break;
+
+        default:
+            /* Can't happen. All possible cases have been checked. */
+            stmac = NULL;
+            abort();
+    }
+
+done:
+    return stmac;
+}
+
+static void parse_probe_request(
+    struct ST_info * const st_cur, 
+    uint8_t const * const h80211, 
+    size_t const caplen)
+{
+    if (h80211[0] == IEEE80211_FC0_SUBTYPE_PROBE_REQ && st_cur != NULL)
+    {
+        uint8_t const * const data_end = h80211 + caplen;
+        uint8_t const * p = h80211 + 24;
+
+        while (p < data_end)
+        {
+            if (p + 2 + p[1] > data_end)
+            {
+                goto done;
+            }
+
+            if (p[0] == 0x00
+                && p[1] > 0
+                && p[2] != '\0'
+                && (p[1] > 1 || p[2] != ' '))
+            {
+                uint8_t const * const essid = p + 2;
+                size_t const essid_length = MIN(ESSID_LENGTH, p[1]);
+
+                if (essid_has_control_chars(essid, essid_length))
+                {
+                    goto done;
+                }
+
+                /* Got a valid ASCII probed ESSID. 
+                 * Check if it's already in the ring buffer.
+                 */
+                /* FIXME: This comparison won't work if the ESSID is one that 
+                 * would get modified by make_printable() below. 
+                 */
+                for (size_t i = 0; i < NB_PRB; i++)
+                {
+                    if (memcmp(st_cur->probes[i], essid, essid_length) == 0)
+                    {
+                        goto done;
+                    }
+                }
+
+                st_cur->probe_index = (st_cur->probe_index + 1) % NB_PRB;
+                memcpy(st_cur->probes[st_cur->probe_index], essid, essid_length);
+                st_cur->probes[st_cur->probe_index][essid_length] = '\0';
+                st_cur->ssid_length[st_cur->probe_index] = essid_length;
+
+                if (!verifyssid((uint8_t *)st_cur->probes[st_cur->probe_index]))
+                {
+                    make_printable((uint8_t *)st_cur->probes[st_cur->probe_index],
+                                   st_cur->ssid_length[st_cur->probe_index]);
+                }
+            }
+
+            p += 2 + p[1];
+        }
+    }
+
+done:
+    return;
+}
+
+static bool parse_beacon_or_probe_response(
+    struct local_options * const options, 
+    struct AP_info * const ap_cur, 
+    uint8_t const * const h80211, 
+    size_t caplen)
+{
+    bool success;
+
+    if (h80211[0] == IEEE80211_FC0_SUBTYPE_BEACON
+        || h80211[0] == IEEE80211_FC0_SUBTYPE_PROBE_RESP)
+    {
+        uint8_t const * const data_end = h80211 + caplen;
+        uint8_t const * p;
+
+        if (!(ap_cur->security & (STD_OPN | STD_WEP | STD_WPA | STD_WPA2)))
+        {
+            if ((h80211[34] & 0x10) >> 4)
+            {
+                ap_cur->security |= STD_WEP | ENC_WEP;
+            }
+            else
+            {
+                ap_cur->security |= STD_OPN;
+            }
+        }
+
+        ap_cur->preamble = (h80211[34] & 0x20) >> 5;
+
+        unsigned long long * tstamp = (unsigned long long *)(h80211 + 24);
+        ap_cur->timestamp = letoh64(*tstamp);
+
+        p = h80211 + 36;
+
+        while (p < data_end)
+        {
+            if (p + 2 + p[1] > data_end)
+            {
+                break;
+            }
+
+            if (p[0] == 0x00 && p[1] > 0 && p[2] != '\0'
+                && (p[1] > 1 || p[2] != ' '))
+            {
+                /* found a non-cloaked ESSID */
+                ap_cur->ssid_length = MIN((sizeof ap_cur->essid - 1), p[1]);
+
+                memcpy(ap_cur->essid, p + 2, ap_cur->ssid_length);
+                ap_cur->essid[ap_cur->ssid_length] = '\0';
+
+                if (!ivs_log_essid(options->ivs.fp,
+                                   &ap_cur->essid_logged,
+                                   &ap_cur->bssid,
+                                   &options->ivs.prev_bssid,
+                                   ap_cur->essid,
+                                   ap_cur->ssid_length))
+                {
+                    success = false;
+                    goto done;
+                }
+
+                if (!verifyssid(ap_cur->essid))
+                {
+                    make_printable(ap_cur->essid, ap_cur->ssid_length);
+                }
+            }
+
+            /* get the maximum speed in Mb and the AP's channel */
+
+            if (p[0] == 0x01 || p[0] == 0x32)
+            {
+                if (ap_cur->max_speed < (p[1 + p[1]] & 0x7F) / 2)
+                {
+                    ap_cur->max_speed = (p[1 + p[1]] & 0x7F) / 2;
+                }
+            }
+
+            if (p[0] == 0x03)
+            {
+                ap_cur->channel = p[2];
+            }
+            else if (p[0] == 0x3d)
+            {
+                if (ap_cur->standard[0] == '\0')
+                {
+                    strlcpy(ap_cur->standard, "n", sizeof ap_cur->standard);
+                }
+
+                /* also get the channel from ht information->primary channel */
+                ap_cur->channel = p[2];
+
+                // Get channel width and secondary channel
+                switch (p[3] % 4)
+                {
+                    case 0:
+                        // 20MHz
+                        ap_cur->channel_width = CHANNEL_20MHZ;
+                        break;
+                    case 1:
+                        // Above
+                        ap_cur->n_channel.sec_channel = 1;
+                        switch (ap_cur->channel_width)
+                        {
+                            case CHANNEL_UNKNOWN_WIDTH:
+                            case CHANNEL_3MHZ:
+                            case CHANNEL_5MHZ:
+                            case CHANNEL_10MHZ:
+                            case CHANNEL_20MHZ:
+                            case CHANNEL_22MHZ:
+                            case CHANNEL_30MHZ:
+                            case CHANNEL_20_OR_40MHZ:
+                                ap_cur->channel_width = CHANNEL_40MHZ;
+                                break;
+                            default:
+                                break;
+                        }
+                        break;
+                    case 2:
+                        // Reserved
+                        break;
+                    case 3:
+                        // Below
+                        ap_cur->n_channel.sec_channel = -1;
+                        switch (ap_cur->channel_width)
+                        {
+                            case CHANNEL_UNKNOWN_WIDTH:
+                            case CHANNEL_3MHZ:
+                            case CHANNEL_5MHZ:
+                            case CHANNEL_10MHZ:
+                            case CHANNEL_20MHZ:
+                            case CHANNEL_22MHZ:
+                            case CHANNEL_30MHZ:
+                            case CHANNEL_20_OR_40MHZ:
+                                ap_cur->channel_width = CHANNEL_40MHZ;
+                                break;
+                            default:
+                                break;
+                        }
+                        break;
+                    default:
+                        break;
+                }
+
+                ap_cur->n_channel.any_chan_width = (uint8_t)((p[3] / 4) % 2);
+            }
+
+            // HT capabilities
+            if (p[0] == 0x2d && p[1] > 18)
+            {
+                if (ap_cur->standard[0] == '\0')
+                {
+                    strlcpy(ap_cur->standard, "n", sizeof ap_cur->standard);
+                }
+
+                // Short GI for 20/40MHz
+                ap_cur->n_channel.short_gi_20 = (uint8_t)((p[3] / 32) % 2);
+                ap_cur->n_channel.short_gi_40 = (uint8_t)((p[3] / 64) % 2);
+
+                // Parse MCS rate
+                /*
+                 * XXX: Sometimes TX and RX spatial stream # differ and none of
+                 * the beacon
+                 * have that. If someone happens to have such AP, open an issue
+                 * with it.
+                 * Ref:
+                 * https://www.wireshark.org/lists/wireshark-bugs/201307/msg00098.html
+                 * See IEEE standard 802.11-2012 table 8.126
+                 *
+                 * For now, just figure out the highest MCS rate.
+                 */
+                if (ap_cur->n_channel.mcs_index == -1)
+                {
+                    uint32_t rx_mcs_bitmask;
+
+                    memcpy(&rx_mcs_bitmask, p + 5, sizeof(rx_mcs_bitmask));
+                    while (rx_mcs_bitmask)
+                    {
+                        ++ap_cur->n_channel.mcs_index;
+                        rx_mcs_bitmask /= 2;
+                    }
+                }
+            }
+
+            // VHT Capabilities
+            if (p[0] == 0xbf && p[1] >= 12)
+            {
+                // Standard is AC
+                strlcpy(ap_cur->standard, "ac", sizeof ap_cur->standard);
+
+                ap_cur->ac_channel.split_chan = (uint8_t)((p[3] / 4) % 4);
+
+                ap_cur->ac_channel.short_gi_80 = (uint8_t)((p[3] / 32) % 2);
+                ap_cur->ac_channel.short_gi_160 = (uint8_t)((p[3] / 64) % 2);
+
+                /* XXX - How can this result ever be anything other than 0.
+                 * 0b11000 % 2 == 0 doesn't it?
+                 */
+                ap_cur->ac_channel.mu_mimo = (uint8_t)((p[4] & 0b11000) % 2);
+
+                // A few things indicate Wave 2: MU-MIMO, 80+80 Channels
+                /* FIXME - is use of the || logical operator really what is
+                 * wanted? Why the % 2 at the end if the result of the || is
+                 * only ever 0 or 1?
+                 */
+                ap_cur->ac_channel.wave_2
+                    = (uint8_t)((ap_cur->ac_channel.mu_mimo
+                                 || ap_cur->ac_channel.split_chan)
+                                % 2);
+
+                // Maximum rates (16 bit)
+                uint16_t tx_mcs;
+                memcpy(&tx_mcs, p + 10, sizeof(tx_mcs)); /* XXX - endianness? */
+
+                // Maximum of 8 SS, each uses 2 bits
+                for (uint8_t stream_idx = 0; stream_idx < MAX_AC_MCS_INDEX;
+                     ++stream_idx)
+                {
+                    uint8_t mcs = (uint8_t)(tx_mcs % 4);
+
+                    // Unsupported -> No more spatial stream
+                    if (mcs == 3)
+                    {
+                        break;
+                    }
+                    switch (mcs)
+                    {
+                        case 0:
+                            // support of MCS 0-7
+                            ap_cur->ac_channel.mcs_index[stream_idx] = 7;
+                            break;
+                        case 1:
+                            // support of MCS 0-8
+                            ap_cur->ac_channel.mcs_index[stream_idx] = 8;
+                            break;
+                        case 2:
+                            // support of MCS 0-9
+                            ap_cur->ac_channel.mcs_index[stream_idx] = 9;
+                            break;
+                        default:
+                            break;
+                    }
+
+                    // Next spatial stream
+                    tx_mcs /= 4;
+                }
+            }
+
+            // VHT Operations
+            if (p[0] == 0xc0 && p[1] >= 3)
+            {
+                // Standard is AC
+                strlcpy(ap_cur->standard, "ac", sizeof ap_cur->standard);
+
+                // Channel width
+                switch (p[2])
+                {
+                    case 0:
+                        // 20 or 40MHz
+                        ap_cur->channel_width = CHANNEL_20_OR_40MHZ;
+                        break;
+                    case 1:
+                        ap_cur->channel_width = CHANNEL_80MHZ;
+                        break;
+                    case 2:
+                        ap_cur->channel_width = CHANNEL_160MHZ;
+                        break;
+                    case 3:
+                        // 80+80MHz
+                        ap_cur->channel_width = CHANNEL_80_80MHZ;
+                        ap_cur->ac_channel.split_chan = 1;
+                        break;
+                    default:
+                        break;
+                }
+
+                // 802.11ac channel center segments
+                ap_cur->ac_channel.center_sgmt[0] = p[3];
+                ap_cur->ac_channel.center_sgmt[1] = p[4];
+            }
+
+            // Next
+            p += 2 + p[1];
+        }
+
+        // Now get max rate
+        if (strcmp(ap_cur->standard, "n") == 0 || strcmp(ap_cur->standard, "ac") == 0)
+        {
+            int sgi = 0;
+            int width = 0;
+
+            switch (ap_cur->channel_width)
+            {
+                case CHANNEL_20MHZ:
+                    width = 20;
+                    sgi = ap_cur->n_channel.short_gi_20;
+                    break;
+                case CHANNEL_20_OR_40MHZ:
+                case CHANNEL_40MHZ:
+                    width = 40;
+                    sgi = ap_cur->n_channel.short_gi_40;
+                    break;
+                case CHANNEL_80MHZ:
+                    width = 80;
+                    sgi = ap_cur->ac_channel.short_gi_80;
+                    break;
+                case CHANNEL_80_80MHZ:
+                case CHANNEL_160MHZ:
+                    width = 160;
+                    sgi = ap_cur->ac_channel.short_gi_160;
+                    break;
+                default:
+                    break;
+            }
+
+            if (width != 0)
+            {
+                // In case of ac, get the amount of spatial streams
+                int amount_ss = 1;
+
+                if (strcmp(ap_cur->standard, "n") != 0)
+                {
+                    for (amount_ss = 0;
+                         amount_ss < MAX_AC_MCS_INDEX
+                         && ap_cur->ac_channel.mcs_index[amount_ss] != 0;
+                         ++amount_ss)
+                    {
+                        /* Do nothing. */
+                        ;
+                    }
+                }
+
+                // Get rate
+                float max_rate
+                    = (strcmp(ap_cur->standard, "n") == 0)
+                    ? get_80211n_rate(
+                    width, sgi, ap_cur->n_channel.mcs_index)
+                    : get_80211ac_rate(
+                    width,
+                    sgi,
+                    ap_cur->ac_channel.mcs_index[amount_ss - 1],
+                    amount_ss);
+
+                // If no error, update rate
+                if (max_rate > 0)
+                {
+                    ap_cur->max_speed = (int)max_rate;
+                }
+            }
+        }
+    }
+
+    success = true;
+
+done:
+    return success;
+}
+
 // NOTE(jbenden): This is also in ivstools.c
 static void dump_add_packet(
 	unsigned char const * const h80211,
@@ -2064,16 +2567,14 @@ static void dump_add_packet(
 	size_t numauth = 0;
     unsigned char const * p; 
     unsigned char const * org_p;
-    mac_address bssid;
-	mac_address const * stmac = NULL;
+    mac_address const * bssid;
+	mac_address const * stmac;
     unsigned char clear[2048] = { 0 };
     int weight[16] = { 0 };
 	int num_xor = 0;
 
 	struct AP_info * ap_cur = NULL;
 	struct ST_info * st_cur = NULL;
-
-	MAC_ADDRESS_CLEAR(&bssid);
 
 	/* skip all non probe response frames in active scanning simulation mode */
     bool const is_probe_response = 
@@ -2111,34 +2612,16 @@ static void dump_add_packet(
 		}
 	}
 
-    /* Locate the access point's MAC address. */
+    bssid = locate_bssid_in_80211(h80211);
 
-	switch (h80211[1] & IEEE80211_FC1_DIR_MASK)
-	{
-		case IEEE80211_FC1_DIR_NODS:
-			MAC_ADDRESS_COPY(&bssid, (mac_address *)(h80211 + 16));
-			break; // Adhoc
-		case IEEE80211_FC1_DIR_TODS:
-			MAC_ADDRESS_COPY(&bssid, (mac_address *)(h80211 + 4));
-			break; // ToDS
-		case IEEE80211_FC1_DIR_FROMDS:
-			MAC_ADDRESS_COPY(&bssid, (mac_address *)(h80211 + 10));
-			break; // FromDS
-		case IEEE80211_FC1_DIR_DSTODS:
-			MAC_ADDRESS_COPY(&bssid, (mac_address *)(h80211 + 10));
-			break; // WDS -> Transmitter taken as BSSID
-		default:
-			abort();
-	}
-
-    if (bssid_is_filtered(&bssid, &lopt.f_bssid, &lopt.f_netmask))
+    if (bssid_is_filtered(bssid, &lopt.f_bssid, &lopt.f_netmask))
     {
         return; /* FIXME - single exit. */
     }
 
     bool is_new_ap;
 
-    ap_cur = ap_info_lookup(&lopt, &bssid, &is_new_ap);
+    ap_cur = ap_info_lookup(&lopt, bssid, &is_new_ap);
     if (ap_cur == NULL)
     {
         return;
@@ -2147,54 +2630,17 @@ static void dump_add_packet(
     if (is_new_ap)
 	{
         /* If mac was listed as unknown, remove it. */
-        remove_namac(&lopt.na_list, &bssid);
+        remove_namac(&lopt.na_list, bssid);
 	}
 
     ap_update(&lopt, ap_cur, h80211, ri);
 
     /* Locate the station MAC in the 802.11 header. */
-
-	switch (h80211[1] & IEEE80211_FC1_DIR_MASK)
-	{
-		case IEEE80211_FC1_DIR_NODS:
-
-            /* If management, check that SA != BSSID. */
-
-            if (!MAC_ADDRESS_EQUAL((mac_address *)(h80211 + 10), &bssid))
-            {
-                stmac = (mac_address *)(h80211 + 10);
-            }
-			break;
-
-		case IEEE80211_FC1_DIR_TODS:
-
-            /* ToDS packet, must come from a client. */
-
-			stmac = (mac_address *)(h80211 + 10);
-			break;
-
-		case IEEE80211_FC1_DIR_FROMDS:
-
-			/* FromDS packet, reject broadcast MACs */
-
-            if (!MAC_IS_GROUP_ADDRESS(&h80211[4]))
-			{
-                stmac = (mac_address *)(h80211 + 4);
-            }
-			break;
-
-        case IEEE80211_FC1_DIR_DSTODS:
-
-            break;
-
-		default:
-			/* Can't happen. All possible cases have been checked. */
-			abort();
-	}
+    stmac = locate_sta_mac_in_80211(h80211, bssid);
 
     if (stmac != NULL)
     {
-        /* update our chained list of wireless stations */
+        /* Update the list of wireless stations */
         bool is_new;
 
         st_cur = sta_info_lookup(&lopt, stmac, &is_new);
@@ -2213,402 +2659,13 @@ static void dump_add_packet(
     }
 
 	/* packet parsing: Probe Request */
-
-    if (h80211[0] == IEEE80211_FC0_SUBTYPE_PROBE_REQ && st_cur != NULL)
-	{
-		p = h80211 + 24;
-
-		while (p < data_end)
-		{
-			if (p + 2 + p[1] > data_end)
-			{
-				break;
-			}
-
-			if (p[0] == 0x00 
-                && p[1] > 0 
-                && p[2] != '\0'
-				&& (p[1] > 1 || p[2] != ' '))
-			{
-                uint8_t const * const essid = p + 2;
-				size_t const essid_length = MIN(ESSID_LENGTH, p[1]);
-
-                if (essid_has_control_chars(essid, essid_length))
-                {
-                    goto skip_probe;
-                }
-
-                /* Got a valid ASCII probed ESSID. 
-                 * Check if it's already in the ring buffer.
-                 */
-                /* FIXME: This comparison won't work if the ESSID is one that 
-                 * would get modified by make_printable() below. 
-                 */
-                for (size_t i = 0; i < NB_PRB; i++)
-                {
-                    if (memcmp(st_cur->probes[i], essid, essid_length) == 0)
-                    {
-                        goto skip_probe;
-                    }
-                }
-
-				st_cur->probe_index = (st_cur->probe_index + 1) % NB_PRB;
-                memcpy(st_cur->probes[st_cur->probe_index], essid, essid_length);
-                st_cur->probes[st_cur->probe_index][essid_length] = '\0';
-                st_cur->ssid_length[st_cur->probe_index] = essid_length;
-
-                if (!verifyssid((uint8_t *)st_cur->probes[st_cur->probe_index]))
-                {
-                    make_printable((uint8_t *)st_cur->probes[st_cur->probe_index], 
-                                   st_cur->ssid_length[st_cur->probe_index]);
-                }
-			}
-
-			p += 2 + p[1];
-		}
-	}
-
-skip_probe:
+    parse_probe_request(st_cur, h80211, caplen);
 
     /* packet parsing: Beacon or Probe Response */
-
-    if (h80211[0] == IEEE80211_FC0_SUBTYPE_BEACON
-        || h80211[0] == IEEE80211_FC0_SUBTYPE_PROBE_RESP)
-	{
-		if (!(ap_cur->security & (STD_OPN | STD_WEP | STD_WPA | STD_WPA2)))
-		{
-            if ((h80211[34] & 0x10) >> 4)
-            {
-				ap_cur->security |= STD_WEP | ENC_WEP;
-            }
-            else
-            {
-				ap_cur->security |= STD_OPN;
-            }
-		}
-
-		ap_cur->preamble = (h80211[34] & 0x20) >> 5;
-
-		unsigned long long * tstamp = (unsigned long long *) (h80211 + 24);
-		ap_cur->timestamp = letoh64(*tstamp);
-
-		p = h80211 + 36;
-
-		while (p < data_end)
-		{
-			if (p + 2 + p[1] > data_end)
-			{
-				break;
-			}
-
-			if (p[0] == 0x00 && p[1] > 0 && p[2] != '\0'
-				&& (p[1] > 1 || p[2] != ' '))
-			{
-				/* found a non-cloaked ESSID */
-                ap_cur->ssid_length = MIN((sizeof ap_cur->essid - 1), p[1]);
-
-                memcpy(ap_cur->essid, p + 2, ap_cur->ssid_length);
-                ap_cur->essid[ap_cur->ssid_length] = '\0';
-
-                if (!ivs_log_essid(lopt.ivs.fp,
-                                   &ap_cur->essid_logged,
-                                   &ap_cur->bssid,
-                                   &lopt.ivs.prev_bssid,
-                                   ap_cur->essid,
-                                   ap_cur->ssid_length))
-                {
-                    return;
-                }
-
-				if (!verifyssid(ap_cur->essid))
-				{
-                    make_printable(ap_cur->essid, ap_cur->ssid_length);
-				}
-			}
-
-			/* get the maximum speed in Mb and the AP's channel */
-
-			if (p[0] == 0x01 || p[0] == 0x32)
-			{
-				if (ap_cur->max_speed < (p[1 + p[1]] & 0x7F) / 2)
-				{
-					ap_cur->max_speed = (p[1 + p[1]] & 0x7F) / 2;
-				}
-			}
-
-			if (p[0] == 0x03)
-			{
-				ap_cur->channel = p[2];
-			}
-			else if (p[0] == 0x3d)
-			{
-				if (ap_cur->standard[0] == '\0')
-				{
-					strlcpy(ap_cur->standard, "n", sizeof ap_cur->standard);
-				}
-
-				/* also get the channel from ht information->primary channel */
-				ap_cur->channel = p[2];
-
-				// Get channel width and secondary channel
-				switch (p[3] % 4)
-				{
-					case 0:
-						// 20MHz
-						ap_cur->channel_width = CHANNEL_20MHZ;
-						break;
-					case 1:
-						// Above
-						ap_cur->n_channel.sec_channel = 1;
-						switch (ap_cur->channel_width)
-						{
-							case CHANNEL_UNKNOWN_WIDTH:
-							case CHANNEL_3MHZ:
-							case CHANNEL_5MHZ:
-							case CHANNEL_10MHZ:
-							case CHANNEL_20MHZ:
-							case CHANNEL_22MHZ:
-							case CHANNEL_30MHZ:
-							case CHANNEL_20_OR_40MHZ:
-								ap_cur->channel_width = CHANNEL_40MHZ;
-								break;
-							default:
-								break;
-						}
-						break;
-					case 2:
-						// Reserved
-						break;
-					case 3:
-						// Below
-						ap_cur->n_channel.sec_channel = -1;
-						switch (ap_cur->channel_width)
-						{
-							case CHANNEL_UNKNOWN_WIDTH:
-							case CHANNEL_3MHZ:
-							case CHANNEL_5MHZ:
-							case CHANNEL_10MHZ:
-							case CHANNEL_20MHZ:
-							case CHANNEL_22MHZ:
-							case CHANNEL_30MHZ:
-							case CHANNEL_20_OR_40MHZ:
-								ap_cur->channel_width = CHANNEL_40MHZ;
-								break;
-							default:
-								break;
-						}
-						break;
-					default:
-						break;
-				}
-
-				ap_cur->n_channel.any_chan_width = (uint8_t)((p[3] / 4) % 2);
-			}
-
-			// HT capabilities
-			if (p[0] == 0x2d && p[1] > 18)
-			{
-				if (ap_cur->standard[0] == '\0')
-				{
-					strlcpy(ap_cur->standard, "n", sizeof ap_cur->standard);
-				}
-
-				// Short GI for 20/40MHz
-				ap_cur->n_channel.short_gi_20 = (uint8_t)((p[3] / 32) % 2);
-				ap_cur->n_channel.short_gi_40 = (uint8_t)((p[3] / 64) % 2);
-
-				// Parse MCS rate
-				/*
-				 * XXX: Sometimes TX and RX spatial stream # differ and none of
-				 * the beacon
-				 * have that. If someone happens to have such AP, open an issue
-				 * with it.
-				 * Ref:
-				 * https://www.wireshark.org/lists/wireshark-bugs/201307/msg00098.html
-				 * See IEEE standard 802.11-2012 table 8.126
-				 *
-				 * For now, just figure out the highest MCS rate.
-				 */
-				if (ap_cur->n_channel.mcs_index == -1)
-				{
-					uint32_t rx_mcs_bitmask;
-
-					memcpy(&rx_mcs_bitmask, p + 5, sizeof(rx_mcs_bitmask));
-					while (rx_mcs_bitmask)
-					{
-						++ap_cur->n_channel.mcs_index;
-						rx_mcs_bitmask /= 2;
-					}
-				}
-			}
-
-			// VHT Capabilities
-			if (p[0] == 0xbf && p[1] >= 12)
-			{
-				// Standard is AC
-				strlcpy(ap_cur->standard, "ac", sizeof ap_cur->standard);
-
-				ap_cur->ac_channel.split_chan = (uint8_t)((p[3] / 4) % 4);
-
-				ap_cur->ac_channel.short_gi_80 = (uint8_t)((p[3] / 32) % 2);
-				ap_cur->ac_channel.short_gi_160 = (uint8_t)((p[3] / 64) % 2);
-
-				/* XXX - How can this result ever be anything other than 0.
-				 * 0b11000 % 2 == 0 doesn't it?
-				 */
-				ap_cur->ac_channel.mu_mimo = (uint8_t)((p[4] & 0b11000) % 2);
-
-				// A few things indicate Wave 2: MU-MIMO, 80+80 Channels
-				/* FIXME - is use of the || logical operator really what is
-				 * wanted? Why the % 2 at the end if the result of the || is
-				 * only ever 0 or 1?
-				 */
-				ap_cur->ac_channel.wave_2
-					= (uint8_t)((ap_cur->ac_channel.mu_mimo
-								 || ap_cur->ac_channel.split_chan)
-								% 2);
-
-				// Maximum rates (16 bit)
-				uint16_t tx_mcs;
-				memcpy(&tx_mcs, p + 10, sizeof(tx_mcs)); /* XXX - endianness? */
-
-				// Maximum of 8 SS, each uses 2 bits
-				for (uint8_t stream_idx = 0; stream_idx < MAX_AC_MCS_INDEX;
-					 ++stream_idx)
-				{
-					uint8_t mcs = (uint8_t)(tx_mcs % 4);
-
-					// Unsupported -> No more spatial stream
-					if (mcs == 3)
-					{
-						break;
-					}
-					switch (mcs)
-					{
-						case 0:
-							// support of MCS 0-7
-							ap_cur->ac_channel.mcs_index[stream_idx] = 7;
-							break;
-						case 1:
-							// support of MCS 0-8
-							ap_cur->ac_channel.mcs_index[stream_idx] = 8;
-							break;
-						case 2:
-							// support of MCS 0-9
-							ap_cur->ac_channel.mcs_index[stream_idx] = 9;
-							break;
-						default:
-							break;
-					}
-
-					// Next spatial stream
-					tx_mcs /= 4;
-				}
-			}
-
-			// VHT Operations
-			if (p[0] == 0xc0 && p[1] >= 3)
-			{
-				// Standard is AC
-				strlcpy(ap_cur->standard, "ac", sizeof ap_cur->standard);
-
-				// Channel width
-				switch (p[2])
-				{
-					case 0:
-						// 20 or 40MHz
-						ap_cur->channel_width = CHANNEL_20_OR_40MHZ;
-						break;
-					case 1:
-						ap_cur->channel_width = CHANNEL_80MHZ;
-						break;
-					case 2:
-						ap_cur->channel_width = CHANNEL_160MHZ;
-						break;
-					case 3:
-						// 80+80MHz
-						ap_cur->channel_width = CHANNEL_80_80MHZ;
-						ap_cur->ac_channel.split_chan = 1;
-						break;
-					default:
-						break;
-				}
-
-				// 802.11ac channel center segments
-				ap_cur->ac_channel.center_sgmt[0] = p[3];
-				ap_cur->ac_channel.center_sgmt[1] = p[4];
-			}
-
-			// Next
-			p += 2 + p[1];
-		}
-
-		// Now get max rate
-		if (strcmp(ap_cur->standard, "n") == 0 || strcmp(ap_cur->standard, "ac") == 0)
-		{
-			int sgi = 0;
-			int width = 0;
-
-			switch (ap_cur->channel_width)
-			{
-				case CHANNEL_20MHZ:
-					width = 20;
-					sgi = ap_cur->n_channel.short_gi_20;
-					break;
-				case CHANNEL_20_OR_40MHZ:
-				case CHANNEL_40MHZ:
-					width = 40;
-					sgi = ap_cur->n_channel.short_gi_40;
-					break;
-				case CHANNEL_80MHZ:
-					width = 80;
-					sgi = ap_cur->ac_channel.short_gi_80;
-					break;
-				case CHANNEL_80_80MHZ:
-				case CHANNEL_160MHZ:
-					width = 160;
-					sgi = ap_cur->ac_channel.short_gi_160;
-					break;
-				default:
-					break;
-			}
-
-			if (width != 0)
-			{
-				// In case of ac, get the amount of spatial streams
-				int amount_ss = 1;
-
-				if (strcmp(ap_cur->standard, "n") != 0)
-				{
-					for (amount_ss = 0;
-						 amount_ss < MAX_AC_MCS_INDEX
-						 && ap_cur->ac_channel.mcs_index[amount_ss] != 0;
-						 ++amount_ss)
-					{
-						/* Do nothing. */
-						;
-					}
-				}
-
-				// Get rate
-				float max_rate
-					= (strcmp(ap_cur->standard, "n") == 0)
-						  ? get_80211n_rate(
-								width, sgi, ap_cur->n_channel.mcs_index)
-						  : get_80211ac_rate(
-								width,
-								sgi,
-								ap_cur->ac_channel.mcs_index[amount_ss - 1],
-								amount_ss);
-
-				// If no error, update rate
-				if (max_rate > 0)
-				{
-					ap_cur->max_speed = (int) max_rate;
-				}
-			}
-		}
-	}
+    if (!parse_beacon_or_probe_response(&lopt, ap_cur, h80211, caplen))
+    {
+        return;
+    }
 
 	/* packet parsing: Beacon & Probe response */
 	/* TODO: Merge this if and the one above */
