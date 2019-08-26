@@ -4370,32 +4370,6 @@ sigchld_handler(int signum)
     (void)status;
 }
 
-static void channel_hopper_data_handler(
-    struct local_options * const options,
-    struct channel_hopper_data_st const * const hopper_data)
-{
-    if (hopper_data->card >= ArrayCount(options->frequency))
-    {
-        // invalid received data
-        fprintf(stderr,
-                "Invalid card value received from hopper process, got %zd\n",
-                hopper_data->card);
-        goto done;
-    }
-
-    if (options->freqoption)
-    {
-        options->frequency[hopper_data->card] = hopper_data->u.frequency;
-    }
-    else
-    {
-        options->channel[hopper_data->card] = hopper_data->u.channel;
-    }
-
-done:
-    return;
-}
-
 static void update_window_size(struct winsize * const window_size)
 {
     if (ioctl(0, TIOCGWINSZ, window_size) < 0)
@@ -4406,22 +4380,6 @@ static void update_window_size(struct winsize * const window_size)
         window_size->ws_row = default_windows_rows;
         window_size->ws_col = default_windows_cols;
     }
-}
-
-static void handle_window_changed_event(void)
-{
-    terminal_clear_to_end_of_screen();
-}
-
-static void handle_terminate_event(struct local_options * const options)
-{
-    if (options->interactive_mode > 0)
-	{
-		fprintf(stdout, "Quitting...\n");
-        fflush(stdout);
-	}
-
-    options->do_exit = 1;
 }
 
 typedef enum
@@ -5676,6 +5634,32 @@ done:
     return have_read_data;
 }
 
+static void channel_hopper_data_handler(
+    struct local_options * const options,
+    struct channel_hopper_data_st const * const hopper_data)
+{
+    if (hopper_data->card >= ArrayCount(options->frequency))
+    {
+        // invalid received data
+        fprintf(stderr,
+                "Invalid card value received from hopper process, got %zd\n",
+                hopper_data->card);
+        goto done;
+    }
+
+    if (options->freqoption)
+    {
+        options->frequency[hopper_data->card] = hopper_data->u.frequency;
+    }
+    else
+    {
+        options->channel[hopper_data->card] = hopper_data->u.channel;
+    }
+
+done:
+    return;
+}
+
 static void check_for_channel_hopper_data(struct local_options * const options)
 {
     struct channel_hopper_data_st hopper_data = { 0 };
@@ -5686,6 +5670,22 @@ static void check_for_channel_hopper_data(struct local_options * const options)
     {
         channel_hopper_data_handler(options, &hopper_data);
     }
+}
+
+static void handle_window_changed_event(void)
+{
+    terminal_clear_to_end_of_screen();
+}
+
+static void handle_terminate_event(struct local_options * const options)
+{
+    if (options->interactive_mode > 0)
+    {
+        fprintf(stdout, "Quitting...\n");
+        fflush(stdout);
+    }
+
+    options->do_exit = 1;
 }
 
 static void process_event(
