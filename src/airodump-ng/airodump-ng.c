@@ -5346,7 +5346,7 @@ static void detected_frequencies_initialise(
     detected_frequencies->table_size = max_frequencies;
     // field for frequencies supported
     detected_frequencies->frequencies =
-        calloc(detected_frequencies->table_size, sizeof(int));
+        calloc(detected_frequencies->table_size, sizeof *detected_frequencies->frequencies);
 
     ALLEGE(detected_frequencies->frequencies != NULL);
 }
