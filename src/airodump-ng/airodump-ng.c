@@ -3438,6 +3438,7 @@ done:
 
 // NOTE(jbenden): This is also in ivstools.c
 static void dump_add_packet(
+    struct local_options * const options,
 	unsigned char const * const h80211,
 	size_t const caplen,
 	struct rx_info * const ri,
@@ -3454,7 +3455,7 @@ static void dump_add_packet(
     bool const is_probe_response = 
         h80211[0] == IEEE80211_FC0_SUBTYPE_PROBE_RESP;
 
-    if (lopt.active_scan_sim > 0 && !is_probe_response)
+    if (options->active_scan_sim > 0 && !is_probe_response)
 	{
 		return;
 	}
@@ -3488,14 +3489,14 @@ static void dump_add_packet(
 
     bssid = locate_bssid_in_80211(h80211);
 
-    if (bssid_is_filtered(bssid, &lopt.f_bssid, &lopt.f_netmask))
+    if (bssid_is_filtered(bssid, &options->f_bssid, &options->f_netmask))
     {
         return; /* FIXME - single exit. */
     }
 
     bool is_new_ap;
 
-    ap_cur = ap_info_lookup(&lopt, bssid, &is_new_ap);
+    ap_cur = ap_info_lookup(options, bssid, &is_new_ap);
     if (ap_cur == NULL)
     {
         return;
@@ -3504,10 +3505,10 @@ static void dump_add_packet(
     if (is_new_ap)
 	{
         /* If mac was listed as unknown, remove it. */
-        remove_namac(&lopt.na_list, bssid);
+        remove_namac(&options->na_list, bssid);
 	}
 
-    ap_update(&lopt, ap_cur, h80211, ri);
+    ap_update(options, ap_cur, h80211, ri);
 
     /* Locate the station MAC in the 802.11 header. */
     stmac = locate_sta_mac_in_80211(h80211, bssid);
@@ -3517,7 +3518,7 @@ static void dump_add_packet(
         /* Update the list of wireless stations */
         bool is_new;
 
-        st_cur = sta_info_lookup(&lopt, stmac, &is_new);
+        st_cur = sta_info_lookup(options, stmac, &is_new);
         if (st_cur == NULL)
         {
             return;
@@ -3526,17 +3527,17 @@ static void dump_add_packet(
         if (is_new)
         {
             /* If mac was listed as unknown, remove it. */
-            remove_namac(&lopt.na_list, stmac);
+            remove_namac(&options->na_list, stmac);
         }
 
-        sta_update(&lopt, st_cur, ap_cur, h80211, ri, cardnum);
+        sta_update(options, st_cur, ap_cur, h80211, ri, cardnum);
     }
 
 	/* packet parsing: Probe Request */
     parse_probe_request(st_cur, h80211, caplen);
 
     /* packet parsing: Beacon or Probe Response */
-    if (!parse_beacon_or_probe_response(&lopt, ap_cur, h80211, caplen))
+    if (!parse_beacon_or_probe_response(options, ap_cur, h80211, caplen))
     {
         return;
     }
@@ -3548,13 +3549,13 @@ static void dump_add_packet(
     parse_authentication_response(ap_cur, h80211, caplen);
 
 	/* packet parsing: Association Request */
-    if (!parse_association_request(&lopt, ap_cur, st_cur, h80211, caplen))
+    if (!parse_association_request(options, ap_cur, st_cur, h80211, caplen))
     {
         return;
     }
 
 	/* packet parsing: some data */
-    if (!parse_packet_data(&lopt, ap_cur, st_cur, h80211, caplen, ri, cardnum))
+    if (!parse_packet_data(options, ap_cur, st_cur, h80211, caplen, ri, cardnum))
     {
         return;
     }
@@ -3563,7 +3564,7 @@ write_packet:
 
     if (ap_cur != NULL)
 	{
-        if (lopt.one_beacon)
+        if (options->one_beacon)
         {
             bool const is_a_beacon =
                 (h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_MGT
@@ -3582,38 +3583,38 @@ write_packet:
             }
         }
 
-        if (!ap_has_required_security(ap_cur->security, lopt.encryption_filter))
+        if (!ap_has_required_security(ap_cur->security, options->encryption_filter))
         {
             return;
         }
 
-        if (is_filtered_essid(&lopt.essid_filter, ap_cur->essid))
+        if (is_filtered_essid(&options->essid_filter, ap_cur->essid))
         {
             return;
         }
     }
 
-    if (lopt.record_data && !lopt.no_shared_key)
+    if (options->record_data && !options->no_shared_key)
 	{
         if ((h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_MGT
             && (h80211[0] & IEEE80211_FC0_SUBTYPE_MASK) == IEEE80211_FC0_SUBTYPE_AUTH)
 		{
 			/* authentication packet */
-            check_shared_key(&lopt.shared_key, 
+            check_shared_key(&options->shared_key,
                              h80211, 
                              caplen, 
-                             lopt.dump_prefix, 
-                             lopt.f_index, 
+                             options->dump_prefix,
+                             options->f_index,
                              true);
 		}
 	}
 
-    if (!parse_control_frame(&lopt, h80211, caplen, ri))
+    if (!parse_control_frame(options, h80211, caplen, ri))
     {
         return;
     }
 
-    update_packet_capture_files(&lopt, h80211, caplen, ri->ri_power);
+    update_packet_capture_files(options, h80211, caplen, ri->ri_power);
 }
 
 static bool ap_should_not_be_printed(
@@ -3632,7 +3633,7 @@ static bool ap_should_not_be_printed(
 		goto done;
 	}
 
-    if (!ap_has_required_security(ap_cur->security, lopt.encryption_filter))
+    if (!ap_has_required_security(ap_cur->security, options->encryption_filter))
     {
         should_skip = true;
         goto done;
@@ -3660,6 +3661,7 @@ done:
 	} while (0)
 
 static void dump_print(
+    struct local_options * const options,
     int const screen_height, 
     int const screen_width, 
     int const if_num)
@@ -3680,12 +3682,12 @@ static void dump_print(
 	size_t len;
     int numaps = 0; /* Only used when 'berlin' mode is active. */
 
-    if (!lopt.singlechan)
+    if (!options->singlechan)
 	{
 		columns_ap -= 4; // no RXQ in scan mode
 	}
 
-	if (lopt.show_uptime)
+    if (options->show_uptime)
 	{
 		columns_ap += 15; // show uptime needs more space
 	}
@@ -3700,15 +3702,15 @@ static void dump_print(
 	tt = time(NULL);
 	lt = localtime(&tt);
 
-	if (lopt.is_berlin)
+    if (options->is_berlin)
 	{
-        lopt.maxaps = 0;
+        options->maxaps = 0;
 
-		TAILQ_FOREACH_REVERSE(ap_cur, &lopt.ap_list, ap_list_head, entry)
+        TAILQ_FOREACH_REVERSE(ap_cur, &options->ap_list, ap_list_head, entry)
 		{
-			lopt.maxaps++;
+            options->maxaps++;
 			if (ap_cur->nb_pkt < 2
-                || (time(NULL) - ap_cur->tlast) > lopt.berlin
+                || (time(NULL) - ap_cur->tlast) > options->berlin
 				|| MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
 			{
 				continue;
@@ -3716,9 +3718,9 @@ static void dump_print(
 			numaps++;
 		}
 
-		if (numaps > lopt.maxnumaps)
+        if (numaps > options->maxnumaps)
 		{
-			lopt.maxnumaps = numaps;
+            options->maxnumaps = numaps;
 		}
 	}
 
@@ -3731,45 +3733,45 @@ static void dump_print(
 	textcolor_normal();
 	textcolor_fg(TEXT_WHITE);
 
-	if (lopt.freqoption)
+    if (options->freqoption)
 	{
-		snprintf(strbuf, sizeof(strbuf) - 1, " Freq %4d", lopt.frequency[0]);
+        snprintf(strbuf, sizeof(strbuf) - 1, " Freq %4d", options->frequency[0]);
 		for (i = 1; i < if_num; i++)
 		{
-			snprintf(buffer, sizeof(buffer), ",%4d", lopt.frequency[i]);
+            snprintf(buffer, sizeof(buffer), ",%4d", options->frequency[i]);
 			strncat(strbuf, buffer, sizeof(strbuf) - strlen(strbuf) - 1);
 		}
 	}
 	else /* Must be channel option. */
 	{
-		snprintf(strbuf, sizeof(strbuf) - 1, " CH %2d", lopt.channel[0]);
+        snprintf(strbuf, sizeof(strbuf) - 1, " CH %2d", options->channel[0]);
 		for (i = 1; i < if_num; i++)
 		{
-			snprintf(buffer, sizeof(buffer), ",%2d", lopt.channel[i]);
+            snprintf(buffer, sizeof(buffer), ",%2d", options->channel[i]);
 			strncat(strbuf, buffer, sizeof(strbuf) - strlen(strbuf) - 1);
 		}
 	}
 
     buffer[0] = '\0';
 
-    if (lopt.gpsd.required)
+    if (options->gpsd.required)
 	{
 		// If using GPS then check if we have a valid fix or not and report accordingly
-		if (lopt.gps_context.gps_loc[0] != 0.0f)
+        if (options->gps_context.gps_loc[0] != 0.0f)
 		{
-			struct tm * gtime = &lopt.gps_context.gps_time;
+            struct tm * gtime = &options->gps_context.gps_time;
 
 			snprintf(buffer,
 					 sizeof(buffer) - 1,
 					 " %s[ GPS %3.6f,%3.6f %02d:%02d:%02d ][ Elapsed: %s ][ "
 					 "%04d-%02d-%02d %02d:%02d ",
-					 lopt.gps_context.batt,
-					 lopt.gps_context.gps_loc[0],
-					 lopt.gps_context.gps_loc[1],
+                     options->gps_context.batt,
+                     options->gps_context.gps_loc[0],
+                     options->gps_context.gps_loc[1],
 					 gtime->tm_hour,
 					 gtime->tm_min,
 					 gtime->tm_sec,
-					 lopt.elapsed_time,
+                     options->elapsed_time,
 					 1900 + lt->tm_year,
 					 1 + lt->tm_mon,
 					 lt->tm_mday,
@@ -3782,9 +3784,9 @@ static void dump_print(
 				buffer,
 				sizeof(buffer) - 1,
 				" %s[ GPS %-29s ][ Elapsed: %s ][ %04d-%02d-%02d %02d:%02d ",
-				lopt.gps_context.batt,
+                options->gps_context.batt,
 				" *** No Fix! ***",
-				lopt.elapsed_time,
+                options->elapsed_time,
 				1900 + lt->tm_year,
 				1 + lt->tm_mon,
 				lt->tm_mday,
@@ -3797,7 +3799,7 @@ static void dump_print(
 		snprintf(buffer,
 				 sizeof(buffer) - 1,
 				 "][ Elapsed: %s ][ %04d-%02d-%02d %02d:%02d ",
-				 lopt.elapsed_time,
+                 options->elapsed_time,
 				 1900 + lt->tm_year,
 				 1 + lt->tm_mon,
 				 lt->tm_mday,
@@ -3808,14 +3810,14 @@ static void dump_print(
 	strncat(strbuf, buffer, (sizeof strbuf - strlen(strbuf) - 1));
 
     buffer[0] = '\0';
-    if (lopt.is_berlin)
+    if (options->is_berlin)
 	{
 		snprintf(buffer,
 				 sizeof(buffer) - 1,
 				 " ][%3d/%3d/%4d ",
 				 numaps,
-				 lopt.maxnumaps,
-				 lopt.maxaps);
+                 options->maxnumaps,
+                 options->maxaps);
 	}
 
     /* FIXME - Don't use strncat. */
@@ -3826,10 +3828,10 @@ static void dump_print(
     static char const message_field_start[] = "[ ";
 
     strncat(strbuf, message_field_end, sizeof strbuf - strlen(strbuf) - 1);
-    if (strlen(lopt.message) > 0)
+    if (strlen(options->message) > 0)
 	{
         strncat(strbuf, message_field_start, sizeof strbuf - strlen(strbuf) - 1);
-		strncat(strbuf, lopt.message, sizeof strbuf - strlen(strbuf) - 1);
+        strncat(strbuf, options->message, sizeof strbuf - strlen(strbuf) - 1);
 	}
 
 	strbuf[screen_width - 1] = '\0';
@@ -3847,24 +3849,24 @@ static void dump_print(
     nlines++;
     CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done); 
 
-	if (lopt.show_ap)
+    if (options->show_ap)
 	{
 		strbuf[0] = '\0';
 		strcat(strbuf, " BSSID              PWR ");
 
-		if (lopt.singlechan)
+        if (options->singlechan)
 		{
 			strcat(strbuf, "RXQ ");
 		}
 
 		strcat(strbuf, " Beacons    #Data, #/s  CH   MB   ENC CIPHER  AUTH ");
 
-		if (lopt.show_uptime)
+        if (options->show_uptime)
 		{
 			strcat(strbuf, "        UPTIME ");
 		}
 
-		if (lopt.show_wps)
+        if (options->show_wps)
 		{
             /* FIXME: Clean up all this output. */
 			strcat(strbuf, "WPS   ");
@@ -3873,18 +3875,18 @@ static void dump_print(
 				memset(strbuf + strlen(strbuf),
 					   ' ',
 					   sizeof(strbuf) - strlen(strbuf) - 1);
-				snprintf(strbuf + columns_ap + lopt.maxsize_wps_seen - 5,
+                snprintf(strbuf + columns_ap + options->maxsize_wps_seen - 5,
 						 8,
 						 "%s",
 						 "  ESSID");
-				if (lopt.show_manufacturer)
+                if (options->show_manufacturer)
 				{
-					memset(strbuf + columns_ap + lopt.maxsize_wps_seen + 1,
+                    memset(strbuf + columns_ap + options->maxsize_wps_seen + 1,
 						   ' ',
-						   sizeof(strbuf) - columns_ap - lopt.maxsize_wps_seen
+                           sizeof(strbuf) - columns_ap - options->maxsize_wps_seen
 							   - 1);
-					snprintf(strbuf + columns_ap + lopt.maxsize_wps_seen
-								 + lopt.maxsize_essid_seen
+                    snprintf(strbuf + columns_ap + options->maxsize_wps_seen
+                             + options->maxsize_essid_seen
 								 - 4,
 							 15,
 							 "%s",
@@ -3896,11 +3898,11 @@ static void dump_print(
 		{
 			strcat(strbuf, "ESSID");
 
-			if (lopt.show_manufacturer && (screen_width > (columns_ap - 4)))
+            if (options->show_manufacturer && (screen_width > (columns_ap - 4)))
 			{
 				// write spaces (32).
-				memset(strbuf + columns_ap, ' ', lopt.maxsize_essid_seen - 5);
-				snprintf(strbuf + columns_ap + lopt.maxsize_essid_seen - 7,
+                memset(strbuf + columns_ap, ' ', options->maxsize_essid_seen - 5);
+                snprintf(strbuf + columns_ap + options->maxsize_essid_seen - 7,
 						 15,
 						 "%s",
 						 "  MANUFACTURER");
@@ -3916,25 +3918,25 @@ static void dump_print(
         nlines++;
         CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done); 
 
-		TAILQ_FOREACH_REVERSE(ap_cur, &lopt.ap_list, ap_list_head, entry)
+        TAILQ_FOREACH_REVERSE(ap_cur, &options->ap_list, ap_list_head, entry)
 		{
 			/* skip APs with only one packet, or those older than 2 min.
 			 * always skip if bssid == broadcast*
 			 */
-            if (ap_should_not_be_printed(&lopt, ap_cur))
+            if (ap_should_not_be_printed(options, ap_cur))
 			{
-				if (lopt.p_selected_ap == ap_cur)
+                if (options->p_selected_ap == ap_cur)
 				{ //the selected AP is skipped (will not be printed), we have to go to the next printable AP
 					struct AP_info * ap_tmp;
 
-					if (selection_direction_up == lopt.en_selection_direction)
+                    if (selection_direction_up == options->en_selection_direction)
 					{
 						//UP arrow was last pressed
 						ap_tmp = TAILQ_NEXT(ap_cur, entry);
 						if (ap_tmp != NULL)
 						{
-							while ((NULL != (lopt.p_selected_ap = ap_tmp))
-                                   && ap_should_not_be_printed(&lopt, ap_tmp))
+                            while ((NULL != (options->p_selected_ap = ap_tmp))
+                                   && ap_should_not_be_printed(options, ap_tmp))
 							{
 								ap_tmp = TAILQ_NEXT(ap_tmp, entry);
 							}
@@ -3944,22 +3946,22 @@ static void dump_print(
 							ap_tmp = TAILQ_PREV(ap_cur, ap_list_head, entry);
 							if (ap_tmp != NULL)
 							{
-								while ((NULL != (lopt.p_selected_ap = ap_tmp))
-                                       && ap_should_not_be_printed(&lopt, ap_tmp))
+                                while ((NULL != (options->p_selected_ap = ap_tmp))
+                                       && ap_should_not_be_printed(options, ap_tmp))
 								{
 									ap_tmp = TAILQ_PREV(ap_tmp, ap_list_head, entry);
                                 }
 							}
 						}
 					}
-					else if (selection_direction_down == lopt.en_selection_direction)
+                    else if (selection_direction_down == options->en_selection_direction)
 					{
 						//DOWN arrow was last pressed
 						ap_tmp = TAILQ_PREV(ap_cur, ap_list_head, entry);
 						if (ap_tmp != NULL)
 						{
-							while ((NULL != (lopt.p_selected_ap = ap_tmp))
-                                   && ap_should_not_be_printed(&lopt, ap_tmp))
+                            while ((NULL != (options->p_selected_ap = ap_tmp))
+                                   && ap_should_not_be_printed(options, ap_tmp))
 							{
 								ap_tmp = TAILQ_PREV(ap_tmp, ap_list_head, entry);
 							}
@@ -3969,8 +3971,8 @@ static void dump_print(
 							ap_tmp = TAILQ_NEXT(ap_cur, entry);
 							if (ap_tmp != NULL)
 							{
-								while ((NULL != (lopt.p_selected_ap = ap_tmp))
-                                       && ap_should_not_be_printed(&lopt, ap_tmp))
+                                while ((NULL != (options->p_selected_ap = ap_tmp))
+                                       && ap_should_not_be_printed(options, ap_tmp))
 									ap_tmp = TAILQ_NEXT(ap_tmp, entry);
 							}
 						}
@@ -3995,7 +3997,7 @@ static void dump_print(
 
 			len = strlen(strbuf);
 
-			if (lopt.singlechan)
+            if (options->singlechan)
 			{
 				snprintf(strbuf + len,
 						 sizeof(strbuf) - len,
@@ -4141,7 +4143,7 @@ static void dump_print(
 
 			len = strlen(strbuf);
 
-			if (lopt.show_uptime)
+            if (options->show_uptime)
 			{
 				snprintf(strbuf + len,
 						 sizeof(strbuf) - len,
@@ -4150,9 +4152,9 @@ static void dump_print(
 				len = strlen(strbuf);
 			}
 
-			if (lopt.p_selected_ap != NULL && lopt.p_selected_ap == ap_cur)
+            if (options->p_selected_ap != NULL && options->p_selected_ap == ap_cur)
 			{
-				if (lopt.mark_cur_ap)
+                if (options->mark_cur_ap)
 				{
 					if (ap_cur->marked == 0)
 					{
@@ -4167,10 +4169,10 @@ static void dump_print(
 							ap_cur->marked = 0;
 						}
 					}
-					lopt.mark_cur_ap = 0;
+                    options->mark_cur_ap = 0;
 				}
 				textstyle(TEXT_REVERSE);
-				MAC_ADDRESS_COPY(&lopt.selected_bssid, &ap_cur->bssid);
+                MAC_ADDRESS_COPY(&options->selected_bssid, &ap_cur->bssid);
 			}
 
 			if (ap_cur->marked)
@@ -4182,7 +4184,7 @@ static void dump_print(
 
 			if (screen_width > (columns_ap - 4))
 			{
-				if (lopt.show_wps)
+                if (options->show_wps)
 				{
 					size_t wps_len = len;
 
@@ -4237,15 +4239,15 @@ static void dump_print(
 					}
 					len = strlen(strbuf);
 
-					if (lopt.maxsize_wps_seen <= len - wps_len)
+                    if (options->maxsize_wps_seen <= len - wps_len)
 					{
-						lopt.maxsize_wps_seen = MAX(len - wps_len, 6);
+                        options->maxsize_wps_seen = MAX(len - wps_len, 6);
 					}
 					else
 					{
 						// pad output
 						memset(strbuf + len, ' ', sizeof(strbuf) - len - 1);
-						len += lopt.maxsize_wps_seen - len - wps_len;
+                        len += options->maxsize_wps_seen - len - wps_len;
 						strbuf[len] = '\0';
 					}
 				}
@@ -4254,7 +4256,7 @@ static void dump_print(
 
 				if (ap_cur->essid[0] != '\0')
 				{
-					if (lopt.show_wps)
+                    if (options->show_wps)
 						snprintf(strbuf + len,
 								 sizeof(strbuf) - len - 1,
 								 "  %s",
@@ -4267,7 +4269,7 @@ static void dump_print(
 				}
 				else
 				{
-					if (lopt.show_wps)
+                    if (options->show_wps)
 						snprintf(strbuf + len,
 								 sizeof(strbuf) - len - 1,
 								 "  <length:%3zd>%s",
@@ -4282,16 +4284,16 @@ static void dump_print(
 				}
 				len = strlen(strbuf);
 
-				if (lopt.show_manufacturer)
+                if (options->show_manufacturer)
 				{
-					if (lopt.maxsize_essid_seen <= len - essid_len)
-						lopt.maxsize_essid_seen
+                    if (options->maxsize_essid_seen <= len - essid_len)
+                        options->maxsize_essid_seen
 							= (u_int) MAX(len - essid_len, 5);
 					else
 					{
 						// pad output
 						memset(strbuf + len, ' ', sizeof(strbuf) - len - 1);
-						len += lopt.maxsize_essid_seen - (len - essid_len);
+                        len += options->maxsize_essid_seen - (len - essid_len);
 						strbuf[len] = '\0';
 					}
 
@@ -4299,7 +4301,7 @@ static void dump_print(
 					{
 						ap_cur->manuf =
                             get_manufacturer_by_oui(
-                                lopt.manufacturer_list,
+                            options->manufacturer_list,
                                 ap_cur->bssid.addr);
                     }
 
@@ -4318,7 +4320,7 @@ static void dump_print(
 			strbuf[screen_width - 1] = '\0';
 			console_puts(strbuf);
 
-			if ((lopt.p_selected_ap != NULL && lopt.p_selected_ap == ap_cur)
+            if ((options->p_selected_ap != NULL && options->p_selected_ap == ap_cur)
 				|| ap_cur->marked)
 			{
 				textstyle(TEXT_RESET);
@@ -4333,7 +4335,7 @@ static void dump_print(
         CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
     }
 
-	if (lopt.show_sta)
+    if (options->show_sta)
 	{
 		strcpy(strbuf,
 			   " BSSID              STATION "
@@ -4348,30 +4350,30 @@ static void dump_print(
         nlines++;
         CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done); 
 
-		TAILQ_FOREACH_REVERSE(ap_cur, &lopt.ap_list, ap_list_head, entry)
+        TAILQ_FOREACH_REVERSE(ap_cur, &options->ap_list, ap_list_head, entry)
 		{
 			if (ap_cur->nb_pkt < 2
-				|| (time(NULL) - ap_cur->tlast) > lopt.berlin)
+                || (time(NULL) - ap_cur->tlast) > options->berlin)
 			{
 				continue;
 			}
 
-            if (!ap_has_required_security(ap_cur->security, lopt.encryption_filter))
+            if (!ap_has_required_security(ap_cur->security, options->encryption_filter))
             {
                 continue;
             }
 
 			// Don't filter unassociated clients by ESSID
 			if (!MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid)
-				&& is_filtered_essid(&lopt.essid_filter, ap_cur->essid))
+                && is_filtered_essid(&options->essid_filter, ap_cur->essid))
 			{
 				continue;
 			}
 
             CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
 
-			if (lopt.p_selected_ap != NULL
-				&& MAC_ADDRESS_EQUAL(&lopt.selected_bssid, &ap_cur->bssid))
+            if (options->p_selected_ap != NULL
+                && MAC_ADDRESS_EQUAL(&options->selected_bssid, &ap_cur->bssid))
 			{
 				textstyle(TEXT_REVERSE);
 			}
@@ -4381,16 +4383,16 @@ static void dump_print(
 				textcolor_fg(ap_cur->marked_color);
 			}
 
-			TAILQ_FOREACH_REVERSE(st_cur, &lopt.sta_list, sta_list_head, entry)
+            TAILQ_FOREACH_REVERSE(st_cur, &options->sta_list, sta_list_head, entry)
 			{
 				if (st_cur->base != ap_cur
-					|| (time(NULL) - st_cur->tlast) > lopt.berlin)
+                    || (time(NULL) - st_cur->tlast) > options->berlin)
 				{
 					continue;
 				}
 
 				if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid)
-                    && lopt.asso_client)
+                    && options->asso_client)
 				{
 					continue;
 				}
@@ -4473,8 +4475,8 @@ static void dump_print(
                 putchar('\n');
 			}
 
-			if ((lopt.p_selected_ap != NULL
-				 && MAC_ADDRESS_EQUAL(&lopt.selected_bssid, &ap_cur->bssid))
+            if ((options->p_selected_ap != NULL
+                 && MAC_ADDRESS_EQUAL(&options->selected_bssid, &ap_cur->bssid))
 				|| ap_cur->marked)
 			{
 				textstyle(TEXT_RESET);
@@ -4482,7 +4484,7 @@ static void dump_print(
 		}
 	}
 
-	if (lopt.show_ack)
+    if (options->show_ack)
 	{
 		/* print some information about each unknown station */
 
@@ -4506,7 +4508,7 @@ static void dump_print(
         nlines++;
         CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done); 
 
-		TAILQ_FOREACH(na_cur, &lopt.na_list, entry)
+        TAILQ_FOREACH(na_cur, &options->na_list, entry)
 		{
 			if (time(NULL) - na_cur->tlast > 120)
 			{
@@ -6346,13 +6348,13 @@ static void airodump_shutdown(
 
     pcap_reader_close(options->pcap_reader_context);
 
-    essid_filter_context_cleanup(&lopt.essid_filter);
+    essid_filter_context_cleanup(&options->essid_filter);
 
     close_cards(wi, options->num_cards);
 
-    update_dump_output_files(&lopt);
+    update_dump_output_files(options);
 
-    close_output_files(&lopt);
+    close_output_files(options);
 
     free(options->airodump_start_time);
     options->airodump_start_time = NULL;
@@ -6366,7 +6368,7 @@ static void airodump_shutdown(
 
     sta_list_free(&options->sta_list);
 
-    ap_list_free(&lopt);
+    ap_list_free(options);
 
     na_info_list_free(&options->na_list);
 
@@ -6419,7 +6421,11 @@ static bool handle_ready_wi_interface(
     else
     {
         options->wi_consecutive_failed_reads[interface_index] = 0;
-        dump_add_packet(packet_buffer, packet_length, &ri, interface_index);
+        dump_add_packet(options, 
+                        packet_buffer, 
+                        packet_length, 
+                        &ri, 
+                        interface_index);
     }
 
     success = true;
@@ -6503,7 +6509,8 @@ static void update_console(struct local_options * const options)
         sort_context->sort_required = false;
     }
 
-    dump_print(options->window_size.ws_row, 
+    dump_print(options, 
+               options->window_size.ws_row, 
                options->window_size.ws_col, 
                options->num_cards);
 }
@@ -6556,7 +6563,11 @@ static bool read_one_packet_from_file(
     if (result == pcap_reader_result_ok)
     {
         static size_t const file_dummy_card_number = 0;
-        dump_add_packet(packet_buffer, packet_length, &ri, file_dummy_card_number);
+        dump_add_packet(options, 
+                        packet_buffer, 
+                        packet_length, 
+                        &ri, 
+                        file_dummy_card_number);
 
         read_a_packet = true;
         goto done;
@@ -6566,13 +6577,13 @@ static bool read_one_packet_from_file(
 
     if (result == pcap_reader_result_done)
     {
-        pcap_reader_close(lopt.pcap_reader_context);
-        lopt.pcap_reader_context = NULL;
+        pcap_reader_close(options->pcap_reader_context);
+        options->pcap_reader_context = NULL;
 
-        snprintf(lopt.message,
-                 sizeof(lopt.message),
+        snprintf(options->message,
+                 sizeof(options->message),
                  "Finished reading input file %s.",
-                 lopt.s_file);
+                 options->s_file);
 
     }
 
