@@ -159,6 +159,7 @@ static struct local_options
 {
     int quitting;
     time_t quitting_event_ts;
+    time_t start_time; 
 
     struct ap_list_head ap_list;
     struct AP_info * p_selected_ap; 
@@ -6544,6 +6545,23 @@ done:
     return read_a_packet;
 }
 
+static void do_generic_update(
+    struct local_options * const options,
+    time_t const current_time)
+{
+    options->sort.sort_required = true;
+
+    if (options->gpsd.required)
+    {
+        gps_tracker_update(&options->gps_context);
+    }
+
+    /* update elapsed time */
+    free(options->elapsed_time);
+    options->elapsed_time = 
+        getStringTimeFromSec(difftime(current_time, options->start_time));
+}
+
 int main(int argc, char * argv[])
 {
     /* The user thread args must remain in scope as long as the 
@@ -6573,7 +6591,6 @@ int main(int argc, char * argv[])
 
 	time_t tt1;
 	time_t tt2;
-	time_t start_time;
 
 	uint8_t h80211[4096];
 
@@ -7552,9 +7569,9 @@ int main(int argc, char * argv[])
 		}
 	}
 
-    start_time = time(NULL);
+    lopt.start_time = time(NULL);
 	/* Create start time string for kismet netxml file */
-    lopt.airodump_start_time = time_as_string(start_time);
+    lopt.airodump_start_time = time_as_string(lopt.start_time);
 
 	/* open or create the output files */
     if (lopt.record_data)
@@ -7660,16 +7677,7 @@ int main(int argc, char * argv[])
 		{
 			tt2 = current_time;
 
-            lopt.sort.sort_required = true;
-
-            if (lopt.gpsd.required)
-			{
-				gps_tracker_update(&lopt.gps_context);
-			}
-
-			/* update elapsed time */
-			free(lopt.elapsed_time);
-			lopt.elapsed_time = getStringTimeFromSec(difftime(tt2, start_time));
+            do_generic_update(&lopt, current_time);
 		}
 
         gettimeofday(&current_time_timestamp, NULL);
