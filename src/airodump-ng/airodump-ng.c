@@ -402,6 +402,46 @@ static bool ap_has_required_security(
     return has_required;
 }
 
+static bool ap_should_be_printed(
+    struct local_options const * const options,
+    struct AP_info const * const ap_cur,
+    bool const check_for_broadcast)
+{
+    bool should_print;
+
+    REQUIRE(ap_cur != NULL);
+
+    if (ap_cur->nb_pkt < options->min_pkts
+        || (time(NULL) - ap_cur->tlast) > options->berlin)
+    {
+        should_print = false;
+        goto done;
+    }
+
+    if (check_for_broadcast && MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
+    {
+        should_print = false;
+        goto done;
+    }
+
+    if (!ap_has_required_security(ap_cur->security, options->encryption_filter))
+    {
+        should_print = false;
+        goto done;
+    }
+
+    if (is_filtered_essid(&options->essid_filter, ap_cur->essid))
+    {
+        should_print = false;
+        goto done;
+    }
+
+    should_print = true;
+
+done:
+    return should_print;
+}
+
 static void color_off(struct local_options * const options)
 {
     clear_ap_marking(&options->ap_list);
@@ -421,23 +461,10 @@ static void color_on(struct local_options * const options)
 	{
 		struct ST_info * st_cur;
 
-        if (ap_cur->nb_pkt < options->min_pkts
-            || time(NULL) - ap_cur->tlast > options->berlin)
-		{
-			continue;
-		}
-
-        if (!ap_has_required_security(ap_cur->security, options->encryption_filter))
+        if (!ap_should_be_printed(options, ap_cur, true))
         {
             continue;
         }
-
-		// Don't filter unassociated clients by ESSID
-		if (!MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid)
-			&& is_filtered_essid(&options->essid_filter, ap_cur->essid))
-		{
-			continue;
-		}
 
 		TAILQ_FOREACH_REVERSE(st_cur, &options->sta_list, sta_list_head, entry)
 		{
@@ -3452,40 +3479,6 @@ write_packet:
     update_packet_capture_files(options, h80211, caplen, ri->ri_power);
 }
 
-static bool ap_should_not_be_printed(
-    struct local_options const * const options, 
-    struct AP_info const * const ap_cur)
-{
-	bool should_skip;
-
-	REQUIRE(ap_cur != NULL);
-
-	if (ap_cur->nb_pkt < options->min_pkts
-        || (time(NULL) - ap_cur->tlast) > options->berlin
-		|| MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
-	{
-		should_skip = true;
-		goto done;
-	}
-
-    if (!ap_has_required_security(ap_cur->security, options->encryption_filter))
-    {
-        should_skip = true;
-        goto done;
-    }
-
-	if (is_filtered_essid(&options->essid_filter, ap_cur->essid))
-	{
-		should_skip = true;
-		goto done;
-	}
-
-	should_skip = false;
-
-done:
-	return should_skip;
-}
-
 #define CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, where)              \
 	do                                                                         \
 	{                                                                          \
@@ -3544,7 +3537,8 @@ static void dump_print(
         TAILQ_FOREACH_REVERSE(ap_cur, &options->ap_list, ap_list_head, entry)
 		{
             options->maxaps++;
-			if (ap_cur->nb_pkt < 2
+
+            if (ap_cur->nb_pkt < options->min_pkts
                 || (time(NULL) - ap_cur->tlast) > options->berlin
 				|| MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
 			{
@@ -3755,10 +3749,7 @@ static void dump_print(
 
         TAILQ_FOREACH_REVERSE(ap_cur, &options->ap_list, ap_list_head, entry)
 		{
-			/* skip APs with only one packet, or those older than 2 min.
-			 * always skip if bssid == broadcast*
-			 */
-            if (ap_should_not_be_printed(options, ap_cur))
+            if (!ap_should_be_printed(options, ap_cur, true))
 			{
                 if (options->p_selected_ap == ap_cur)
 				{ //the selected AP is skipped (will not be printed), we have to go to the next printable AP
@@ -3771,7 +3762,7 @@ static void dump_print(
 						if (ap_tmp != NULL)
 						{
                             while ((NULL != (options->p_selected_ap = ap_tmp))
-                                   && ap_should_not_be_printed(options, ap_tmp))
+                                   && !ap_should_be_printed(options, ap_tmp, true))
 							{
 								ap_tmp = TAILQ_NEXT(ap_tmp, entry);
 							}
@@ -3782,7 +3773,7 @@ static void dump_print(
 							if (ap_tmp != NULL)
 							{
                                 while ((NULL != (options->p_selected_ap = ap_tmp))
-                                       && ap_should_not_be_printed(options, ap_tmp))
+                                       && !ap_should_be_printed(options, ap_tmp, true))
 								{
 									ap_tmp = TAILQ_PREV(ap_tmp, ap_list_head, entry);
                                 }
@@ -3796,7 +3787,7 @@ static void dump_print(
 						if (ap_tmp != NULL)
 						{
                             while ((NULL != (options->p_selected_ap = ap_tmp))
-                                   && ap_should_not_be_printed(options, ap_tmp))
+                                   && !ap_should_be_printed(options, ap_tmp, true))
 							{
 								ap_tmp = TAILQ_PREV(ap_tmp, ap_list_head, entry);
 							}
@@ -3807,8 +3798,10 @@ static void dump_print(
 							if (ap_tmp != NULL)
 							{
                                 while ((NULL != (options->p_selected_ap = ap_tmp))
-                                       && ap_should_not_be_printed(options, ap_tmp))
+                                       && !ap_should_be_printed(options, ap_tmp, true))
+                                {
 									ap_tmp = TAILQ_NEXT(ap_tmp, entry);
+                                }
 							}
 						}
 					}
@@ -4188,23 +4181,10 @@ static void dump_print(
 
         TAILQ_FOREACH_REVERSE(ap_cur, &options->ap_list, ap_list_head, entry)
 		{
-			if (ap_cur->nb_pkt < 2
-                || (time(NULL) - ap_cur->tlast) > options->berlin)
-			{
-				continue;
-			}
-
-            if (!ap_has_required_security(ap_cur->security, options->encryption_filter))
+            if (!ap_should_be_printed(options, ap_cur, false))
             {
                 continue;
             }
-
-			// Don't filter unassociated clients by ESSID
-			if (!MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid)
-                && is_filtered_essid(&options->essid_filter, ap_cur->essid))
-			{
-				continue;
-			}
 
             CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
 
