@@ -104,12 +104,6 @@ typedef enum channel_switching_method_t
 #define QLT_TIME 5
 #define QLT_COUNT 25
 
-#define RATES "\x01\x04\x02\x04\x0B\x16\x32\x08\x0C\x12\x18\x24\x30\x48\x60\x6C"
-
-#define PROBE_REQ                                                              \
-	"\x40\x00\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF\xCC\xCC\xCC\xCC\xCC\xCC"         \
-	"\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00"
-
 // milliseconds to store last packets
 #define BUFFER_TIME_MILLISECS 3000
 
