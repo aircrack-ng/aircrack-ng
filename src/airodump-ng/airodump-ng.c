@@ -605,7 +605,7 @@ static void dump_sort(
 }
 
 static void input_thread_handle_input_key(
-    int const key_code, 
+    int const key_code,
     int const update_fd)
 {
     switch (key_code)
@@ -625,194 +625,6 @@ static void input_thread_handle_input_key(
         case KEY_d:
             IGNORE_LTZ(write(update_fd, &key_code, sizeof key_code));
             break;
-    }
-}
-
-static void handle_input_key(
-    struct local_options * const options,
-    int const keycode)
-{
-    if (keycode == KEY_q)
-    {
-        options->quitting_event_ts = time(NULL);
-        options->quitting++;
-        if (options->quitting > 1)
-        {
-            options->do_exit = 1;
-        }
-        else
-        {
-            snprintf(
-                options->message,
-                sizeof(options->message),
-                "Are you sure you want to quit? Press Q again to quit.");
-        }
-    }
-
-    if (keycode == KEY_o)
-    {
-        color_on(options);
-        snprintf(options->message, sizeof(options->message), "color on");
-    }
-
-    if (keycode == KEY_p)
-    {
-        color_off(options);
-        snprintf(options->message, sizeof(options->message), "color off");
-    }
-
-    if (keycode == KEY_s)
-    {
-        ap_sort_context_next_sort_method(options->sort.sort_context);
-        snprintf(options->message,
-                 sizeof(options->message),
-                 "sorting by %s", 
-                 ap_sort_context_description(options->sort.sort_context));
-        options->sort.sort_required = true;
-    }
-
-    if (keycode == KEY_SPACE)
-    {
-        options->console_output.paused = !options->console_output.paused;
-        if (options->console_output.paused)
-        {
-            /* So that the 'paused' indication will get displayed. */
-            options->console_output.required = true;
-        }
-
-        char const * const message = options->console_output.paused ? "paused" : "resumed";
-
-        snprintf(options->message, 
-                 sizeof(options->message), 
-                 "%s output", 
-                 message);
-    }
-
-    if (keycode == KEY_r)
-    {
-        options->sort.do_sort_always = !options->sort.do_sort_always;
-        char const * const message = 
-            options->sort.do_sort_always ? "activated" : "deactivated";
-
-        snprintf(options->message,
-                 sizeof(options->message),
-                 "realtime sorting %s", message);
-    }
-
-    if (keycode == KEY_m)
-    {
-        options->mark_cur_ap = 1;
-    }
-
-    if (keycode == KEY_ARROW_DOWN)
-    {
-        if (options->p_selected_ap != NULL
-            && TAILQ_PREV(options->p_selected_ap, ap_list_head, entry) != NULL)
-        {
-            options->p_selected_ap =
-                TAILQ_PREV(options->p_selected_ap, ap_list_head, entry);
-            options->en_selection_direction = selection_direction_down;
-        }
-    }
-
-    if (keycode == KEY_ARROW_UP)
-    {
-        if (options->p_selected_ap != NULL
-            && TAILQ_NEXT(options->p_selected_ap, entry) != NULL)
-        {
-            options->p_selected_ap =
-                TAILQ_NEXT(options->p_selected_ap, entry);
-            options->en_selection_direction = selection_direction_up;
-        }
-    }
-
-    if (keycode == KEY_i)
-    {
-        bool const is_inverted = 
-            ap_sort_context_invert_direction(options->sort.sort_context);
-        char const * const message = is_inverted ? "inverted" : "normal";
-
-        snprintf(options->message,
-                 sizeof(options->message),
-                 "%s sorting order", message);
-
-        options->sort.sort_required = true;
-    }
-
-    if (keycode == KEY_TAB)
-    {
-        char const * message;
-        if (options->p_selected_ap == NULL)
-        {
-            options->en_selection_direction = selection_direction_down;
-            options->p_selected_ap = TAILQ_LAST(&options->ap_list, ap_list_head);
-            message = "enabled";
-        }
-        else
-        {
-            options->en_selection_direction = selection_direction_no;
-            options->p_selected_ap = NULL;
-            message = "disabled";
-        }
-        snprintf(options->message,
-                 sizeof(options->message),
-                 "%s AP selection", message); 
-
-        ap_sort_context_assign_sort_method(options->sort.sort_context, 
-                                           SORT_BY_NOTHING);
-    }
-
-    if (keycode == KEY_a)
-    {
-        if (options->show_ap == 1 
-            && options->show_sta == 1 
-            && options->show_ack == 0)
-        {
-            options->show_ap = 1;
-            options->show_sta = 1;
-            options->show_ack = 1;
-            snprintf(options->message,
-                     sizeof(options->message),
-                     "display ap+sta+ack");
-        }
-        else if (options->show_ap == 1 
-                 && options->show_sta == 1
-                 && options->show_ack == 1)
-        {
-            options->show_ap = 1;
-            options->show_sta = 0;
-            options->show_ack = 0;
-            snprintf(
-                options->message, sizeof(options->message), "display ap only");
-        }
-        else if (options->show_ap == 1 
-                 && options->show_sta == 0
-                 && options->show_ack == 0)
-        {
-            options->show_ap = 0;
-            options->show_sta = 1;
-            options->show_ack = 0;
-            snprintf(
-                options->message, sizeof(options->message), "display sta only");
-        }
-        else if (options->show_ap == 0 
-                 && options->show_sta == 1
-                 && options->show_ack == 0)
-        {
-            options->show_ap = 1;
-            options->show_sta = 1;
-            options->show_ack = 0;
-            snprintf(
-                options->message, sizeof(options->message), "display ap+sta");
-        }
-    }
-
-    if (keycode == KEY_d)
-    {
-        reset_selections(options);
-        snprintf(options->message,
-                 sizeof(options->message),
-                 "reset selection to default");
     }
 }
 
@@ -1416,6 +1228,31 @@ static void sta_populate_gps(
     memcpy(st_cur->gps_loc_best, gps_coordinates, sizeof(st_cur->gps_loc_best));
 }
 
+static void sta_info_free(struct ST_info * const st_cur)
+{
+    free(st_cur->manuf);
+    free(st_cur);
+}
+
+static void sta_info_remove(
+    struct sta_list_head * const sta_list,
+    struct ST_info * const st_cur)
+{
+    TAILQ_REMOVE(sta_list, st_cur, entry);
+
+    sta_info_free(st_cur);
+}
+
+static void sta_list_free(struct sta_list_head * const sta_list)
+{
+    while (TAILQ_FIRST(sta_list) != NULL)
+    {
+        struct ST_info * const st_cur = TAILQ_FIRST(sta_list);
+
+        sta_info_remove(sta_list, st_cur);
+    }
+}
+
 static struct ST_info * st_info_alloc(mac_address const * const stmac)
 {
     struct ST_info * const st_cur = calloc(1, sizeof *st_cur);
@@ -1518,31 +1355,6 @@ static struct ST_info * sta_info_lookup(
 
 done:
     return st_cur;
-}
-
-static void sta_info_free(struct ST_info * const st_cur)
-{
-	free(st_cur->manuf);
-	free(st_cur);
-}
-
-static void sta_info_remove(
-    struct sta_list_head * const sta_list,
-    struct ST_info * const st_cur)
-{
-    TAILQ_REMOVE(sta_list, st_cur, entry);
-
-    sta_info_free(st_cur);
-}
-
-static void sta_list_free(struct sta_list_head * const sta_list)
-{
-    while (TAILQ_FIRST(sta_list) != NULL)
-    {
-        struct ST_info * const st_cur = TAILQ_FIRST(sta_list);
-
-        sta_info_remove(sta_list, st_cur);
-    }
 }
 
 static void free_stas_with_this_base_ap(
@@ -5904,6 +5716,194 @@ static void check_for_signal_events(struct local_options * const options)
                      sizeof event))
     {
         process_event(options, event);
+    }
+}
+
+static void handle_input_key(
+    struct local_options * const options,
+    int const keycode)
+{
+    if (keycode == KEY_q)
+    {
+        options->quitting_event_ts = time(NULL);
+        options->quitting++;
+        if (options->quitting > 1)
+        {
+            options->do_exit = 1;
+        }
+        else
+        {
+            snprintf(
+                options->message,
+                sizeof(options->message),
+                "Are you sure you want to quit? Press Q again to quit.");
+        }
+    }
+
+    if (keycode == KEY_o)
+    {
+        color_on(options);
+        snprintf(options->message, sizeof(options->message), "color on");
+    }
+
+    if (keycode == KEY_p)
+    {
+        color_off(options);
+        snprintf(options->message, sizeof(options->message), "color off");
+    }
+
+    if (keycode == KEY_s)
+    {
+        ap_sort_context_next_sort_method(options->sort.sort_context);
+        snprintf(options->message,
+                 sizeof(options->message),
+                 "sorting by %s",
+                 ap_sort_context_description(options->sort.sort_context));
+        options->sort.sort_required = true;
+    }
+
+    if (keycode == KEY_SPACE)
+    {
+        options->console_output.paused = !options->console_output.paused;
+        if (options->console_output.paused)
+        {
+            /* So that the 'paused' indication will get displayed. */
+            options->console_output.required = true;
+        }
+
+        char const * const message = options->console_output.paused ? "paused" : "resumed";
+
+        snprintf(options->message,
+                 sizeof(options->message),
+                 "%s output",
+                 message);
+    }
+
+    if (keycode == KEY_r)
+    {
+        options->sort.do_sort_always = !options->sort.do_sort_always;
+        char const * const message =
+            options->sort.do_sort_always ? "activated" : "deactivated";
+
+        snprintf(options->message,
+                 sizeof(options->message),
+                 "realtime sorting %s", message);
+    }
+
+    if (keycode == KEY_m)
+    {
+        options->mark_cur_ap = 1;
+    }
+
+    if (keycode == KEY_ARROW_DOWN)
+    {
+        if (options->p_selected_ap != NULL
+            && TAILQ_PREV(options->p_selected_ap, ap_list_head, entry) != NULL)
+        {
+            options->p_selected_ap =
+                TAILQ_PREV(options->p_selected_ap, ap_list_head, entry);
+            options->en_selection_direction = selection_direction_down;
+        }
+    }
+
+    if (keycode == KEY_ARROW_UP)
+    {
+        if (options->p_selected_ap != NULL
+            && TAILQ_NEXT(options->p_selected_ap, entry) != NULL)
+        {
+            options->p_selected_ap =
+                TAILQ_NEXT(options->p_selected_ap, entry);
+            options->en_selection_direction = selection_direction_up;
+        }
+    }
+
+    if (keycode == KEY_i)
+    {
+        bool const is_inverted =
+            ap_sort_context_invert_direction(options->sort.sort_context);
+        char const * const message = is_inverted ? "inverted" : "normal";
+
+        snprintf(options->message,
+                 sizeof(options->message),
+                 "%s sorting order", message);
+
+        options->sort.sort_required = true;
+    }
+
+    if (keycode == KEY_TAB)
+    {
+        char const * message;
+        if (options->p_selected_ap == NULL)
+        {
+            options->en_selection_direction = selection_direction_down;
+            options->p_selected_ap = TAILQ_LAST(&options->ap_list, ap_list_head);
+            message = "enabled";
+        }
+        else
+        {
+            options->en_selection_direction = selection_direction_no;
+            options->p_selected_ap = NULL;
+            message = "disabled";
+        }
+        snprintf(options->message,
+                 sizeof(options->message),
+                 "%s AP selection", message);
+
+        ap_sort_context_assign_sort_method(options->sort.sort_context,
+                                           SORT_BY_NOTHING);
+    }
+
+    if (keycode == KEY_a)
+    {
+        if (options->show_ap == 1
+            && options->show_sta == 1
+            && options->show_ack == 0)
+        {
+            options->show_ap = 1;
+            options->show_sta = 1;
+            options->show_ack = 1;
+            snprintf(options->message,
+                     sizeof(options->message),
+                     "display ap+sta+ack");
+        }
+        else if (options->show_ap == 1
+                 && options->show_sta == 1
+                 && options->show_ack == 1)
+        {
+            options->show_ap = 1;
+            options->show_sta = 0;
+            options->show_ack = 0;
+            snprintf(
+                options->message, sizeof(options->message), "display ap only");
+        }
+        else if (options->show_ap == 1
+                 && options->show_sta == 0
+                 && options->show_ack == 0)
+        {
+            options->show_ap = 0;
+            options->show_sta = 1;
+            options->show_ack = 0;
+            snprintf(
+                options->message, sizeof(options->message), "display sta only");
+        }
+        else if (options->show_ap == 0
+                 && options->show_sta == 1
+                 && options->show_ack == 0)
+        {
+            options->show_ap = 1;
+            options->show_sta = 1;
+            options->show_ack = 0;
+            snprintf(
+                options->message, sizeof(options->message), "display ap+sta");
+        }
+    }
+
+    if (keycode == KEY_d)
+    {
+        reset_selections(options);
+        snprintf(options->message,
+                 sizeof(options->message),
+                 "reset selection to default");
     }
 }
 
