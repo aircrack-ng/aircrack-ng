@@ -108,7 +108,7 @@ struct AP_info
 {
 	TAILQ_ENTRY(AP_info) entry;
 
-	time_t tinit; 
+	time_t tinit;
     time_t tlast; /* first and last time seen */
 
     time_t time_printed;    /* last time printed */
@@ -186,8 +186,12 @@ struct AP_info
 	/* + one byte to indicate   */
 	/* (in)existence of the IV  */
 
-	int marked;
-	int marked_color;
+	struct
+	{
+		bool marked;
+		int color;
+	} display;
+
 	struct WPS_info wps;
 };
 
@@ -204,7 +208,7 @@ struct ST_info
 
 	char * manuf; /* the client's manufacturer */
 
-	time_t tinit; 
+	time_t tinit;
     time_t tlast; /* first and last time seen  */
     time_t time_printed; /* last time printed */
     unsigned long nb_pkt; /* total number of packets   */
@@ -212,8 +216,8 @@ struct ST_info
 	int essid_length; /* essid length of last asso */
 	int probe_index; /* probed ESSIDs ring index  */
 
-	/* probes only needs to be ESSID_LENGTH, but airbase-ng needs 
-	 * refactoring first to get rid of magic number sizes etc. 
+	/* probes only needs to be ESSID_LENGTH, but airbase-ng needs
+	 * refactoring first to get rid of magic number sizes etc.
 	 */
 	char probes[NB_PRB][MAX_IE_ELEMENT_SIZE]; /* probed ESSIDs ring buffer */
 	int ssid_length[NB_PRB]; /* ssid lengths ring buffer  */
