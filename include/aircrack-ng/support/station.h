@@ -128,9 +128,11 @@ struct AP_info
 	int beacon_logged; /* We need 1 beacon per AP  */
 	int dict_started; /* 1 if dict attack started */
 	size_t ssid_length; /* length of ssid           */
-	float gps_loc_min[5]; /* min gps coordinates      */
-	float gps_loc_max[5]; /* max gps coordinates      */
-	float gps_loc_best[5]; /* best gps coordinates     */
+
+	/* FIXME: Don't use these magic numbers. */
+	float gps_loc_min[8]; /* min gps coordinates      */
+	float gps_loc_max[8]; /* max gps coordinates      */
+	float gps_loc_best[8]; /* best gps coordinates     */
 
 	unsigned long nb_bcn; /* total number of beacons  */
 	unsigned long nb_pkt; /* total number of packets  */
@@ -237,9 +239,11 @@ struct ST_info
 	int qos_fr_ds; /* does it receive 802.11e   */
 	int channel; /* Channel station is seen   */
     int old_channel; /* previously seen channel */
-    float gps_loc_min[5]; /* min gps coordinates      */
-	float gps_loc_max[5]; /* max gps coordinates      */
-	float gps_loc_best[5]; /* best gps coordinates     */
+
+	/* FIXME: Don't use these magic numbers. */
+    float gps_loc_min[8]; /* min gps coordinates      */
+	float gps_loc_max[8]; /* max gps coordinates      */
+	float gps_loc_best[8]; /* best gps coordinates     */
 };
 
 #endif //AIRCRACK_NG_STATION_H

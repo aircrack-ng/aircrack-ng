@@ -62,6 +62,7 @@
 #include "dump_csv.h"
 #include "dump_kismet_csv.h"
 #include "dump_kismet_netxml.h"
+#include "gps.h"
 
 extern struct communication_options opt;
 
@@ -164,7 +165,7 @@ FILE * log_csv_file_open(char const * const filename)
     fprintf(fp,
             "LocalTime, GPSTime, ESSID, BSSID, Power, "
             "Security, Latitude, Longitude, Latitude Error, "
-            "Longitude Error, Type\r\n"); 
+            "Longitude Error, Type\r\n");
 
     success = true;
 
@@ -229,7 +230,7 @@ int dump_write_airodump_ng_logcsv_add_ap(
     }
 	else
 	{
-		if (ap_cur->security & STD_WPA2) 
+		if (ap_cur->security & STD_WPA2)
             fputs(" WPA2 ", fp);
         if (ap_cur->security & STD_WPA)
             fputs(" WPA ", fp);
@@ -244,10 +245,10 @@ int dump_write_airodump_ng_logcsv_add_ap(
 	// Lat, Lon, Lat Error, Lon Error
     fprintf(fp,
 			"%.6f,%.6f,%.3f,%.3f,AP\r\n",
-			gps_loc[0],
-			gps_loc[1],
-			gps_loc[5],
-			gps_loc[6]);
+			gps_loc[gps_latitude],
+			gps_loc[gps_longitude],
+			gps_loc[gps_latitude_error],
+			gps_loc[gps_longitude_error]);
 
 	return (0);
 }
@@ -303,10 +304,10 @@ int dump_write_airodump_ng_logcsv_add_client(
 	// Lat, Lon, Lat Error, Lon Error
     fprintf(fp,
 			"%.6f,%.6f,%.3f,%.3f,",
-			gps_loc[0],
-			gps_loc[1],
-			gps_loc[5],
-			gps_loc[6]);
+			gps_loc[gps_latitude],
+			gps_loc[gps_longitude],
+			gps_loc[gps_latitude_error],
+			gps_loc[gps_longitude_error]);
 
 	// Type
     fprintf(fp, "Client\r\n");
@@ -347,7 +348,7 @@ void dump_close(struct dump_context_st * const dump)
     free(dump);
 
 done:
-    return; 
+    return;
 }
 
 struct dump_context_st * dump_open(
@@ -414,7 +415,7 @@ struct dump_context_st * dump_open(
             goto done;
     }
 
-    success = true; 
+    success = true;
 
 done:
     if (!success)

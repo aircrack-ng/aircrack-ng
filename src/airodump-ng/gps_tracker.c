@@ -165,15 +165,25 @@ json_get_value_for_name(const char * buffer, const char * name, char * value)
     return (ret);
 }
 
+static void gps_locations_initialise(
+    float * const coordinates,
+    size_t num_coordinates)
+{
+    for (size_t i = 0; i < num_coordinates;  i++)
+    {
+        coordinates[i] = 0.0f;
+    }
+}
+
 static void * gps_tracker_thread(void * arg)
 {
     gps_tracker_context_st * const gps_context = arg;
-    /* Pass in as the thread arg? 
-     * The 'result' doesn't appear to be used. 
+    /* Pass in as the thread arg?
+     * The 'result' doesn't appear to be used.
      */
     int gpsd_sock;
-    char line[1537]; 
-    char buffer[1537]; 
+    char line[1537];
+    char buffer[1537];
     char data[1537];
     char * temp;
     struct sockaddr_in gpsd_addr;
@@ -267,7 +277,7 @@ static void * gps_tracker_thread(void * arg)
         * connected to an old-style gpsd. */
 
         // Initialisation of all GPS data to 0
-        memset(gps_context->gps_loc, 0, sizeof(gps_context->gps_loc));
+        gps_locations_initialise(gps_context->gps_location, sizeof(gps_context->gps_location));
 
         /* Inside loop for reading the GPS coordinates/data */
         while (*gps_context->do_exit == 0)
@@ -286,7 +296,7 @@ static void * gps_tracker_thread(void * arg)
 
             if (seconds_since_last_update > gps_context->gps_valid_interval_seconds)
             {
-                memset(gps_context->gps_loc, 0, sizeof(gps_context->gps_loc));
+                gps_locations_initialise(gps_context->gps_location, sizeof(gps_context->gps_location));
             }
 
             // Record ALL GPS data from GPSD
@@ -353,80 +363,80 @@ static void * gps_tracker_thread(void * arg)
                 // Latitude
                 if (json_get_value_for_name(line, "lat", data))
                 {
-                    gps_context->gps_loc[0] = strtof(data, NULL);
+                    gps_context->gps_location[gps_latitude] = strtof(data, NULL);
                     if (errno == EINVAL || errno == ERANGE)
                     {
-                        gps_context->gps_loc[0] = 0.0f;
+                        gps_context->gps_location[gps_latitude] = 0.0f;
                     }
                 }
 
                 // Longitude
                 if (json_get_value_for_name(line, "lon", data))
                 {
-                    gps_context->gps_loc[1] = strtof(data, NULL);
+                    gps_context->gps_location[gps_longitude] = strtof(data, NULL);
                     if (errno == EINVAL || errno == ERANGE)
                     {
-                        gps_context->gps_loc[1] = 0.0f;
+                        gps_context->gps_location[gps_longitude] = 0.0f;
                     }
                 }
 
                 // Longitude Error
                 if (json_get_value_for_name(line, "epx", data))
                 {
-                    gps_context->gps_loc[6] = strtof(data, NULL);
+                    gps_context->gps_location[gps_longitude_error] = strtof(data, NULL);
                     if (errno == EINVAL || errno == ERANGE)
                     {
-                        gps_context->gps_loc[6] = 0.0f;
+                        gps_context->gps_location[gps_longitude_error] = 0.0f;
                     }
                 }
 
                 // Latitude Error
                 if (json_get_value_for_name(line, "epy", data))
                 {
-                    gps_context->gps_loc[5] = strtof(data, NULL);
+                    gps_context->gps_location[gps_latitude_error] = strtof(data, NULL);
                     if (errno == EINVAL || errno == ERANGE)
                     {
-                        gps_context->gps_loc[5] = 00.f;
+                        gps_context->gps_location[gps_latitude_error] = 00.f;
                     }
                 }
 
                 // Vertical Error
                 if (json_get_value_for_name(line, "epv", data))
                 {
-                    gps_context->gps_loc[7] = strtof(data, NULL);
+                    gps_context->gps_location[gps_altitude_error] = strtof(data, NULL);
                     if (errno == EINVAL || errno == ERANGE)
                     {
-                        gps_context->gps_loc[7] = 0.0f;
+                        gps_context->gps_location[gps_altitude_error] = 0.0f;
                     }
                 }
 
                 // Altitude
                 if (json_get_value_for_name(line, "alt", data))
                 {
-                    gps_context->gps_loc[4] = strtof(data, NULL);
+                    gps_context->gps_location[gps_altitude] = strtof(data, NULL);
                     if (errno == EINVAL || errno == ERANGE)
                     {
-                        gps_context->gps_loc[4] = 0.0f;
+                        gps_context->gps_location[gps_altitude] = 0.0f;
                     }
                 }
 
                 // Speed
                 if (json_get_value_for_name(line, "speed", data))
                 {
-                    gps_context->gps_loc[2] = strtof(data, NULL);
+                    gps_context->gps_location[gps_speed] = strtof(data, NULL);
                     if (errno == EINVAL || errno == ERANGE)
                     {
-                        gps_context->gps_loc[2] = 0.0f;
+                        gps_context->gps_location[gps_speed] = 0.0f;
                     }
                 }
 
                 // Heading
                 if (json_get_value_for_name(line, "track", data))
                 {
-                    gps_context->gps_loc[3] = strtof(data, NULL);
+                    gps_context->gps_location[gps_heading] = strtof(data, NULL);
                     if (errno == EINVAL || errno == ERANGE)
                     {
-                        gps_context->gps_loc[3] = 0.0f;
+                        gps_context->gps_location[gps_heading] = 0.0f;
                     }
                 }
             }
@@ -457,26 +467,26 @@ static void * gps_tracker_thread(void * arg)
                 updateTime = time(NULL);
                 ret = sscanf(line + 7,
                              "%f %f",
-                             &gps_context->gps_loc[0],
-                             &gps_context->gps_loc[1]); /* lat lon */
+                             &gps_context->gps_location[gps_latitude],
+                             &gps_context->gps_location[gps_longitude]); /* lat lon */
                 if (ret == EOF)
                     fprintf(stderr, "Failed to parse lat lon.\n");
 
                 if ((temp = strstr(line, "V=")) == NULL)
                     continue;
-                ret = sscanf(temp + 2, "%f", &gps_context->gps_loc[2]); /* speed */
+                ret = sscanf(temp + 2, "%f", &gps_context->gps_location[gps_speed]); /* speed */
                 if (ret == EOF)
                     fprintf(stderr, "Failed to parse speed.\n");
 
                 if ((temp = strstr(line, "T=")) == NULL)
                     continue;
-                ret = sscanf(temp + 2, "%f", &gps_context->gps_loc[3]); /* heading */
+                ret = sscanf(temp + 2, "%f", &gps_context->gps_location[gps_heading]); /* heading */
                 if (ret == EOF)
                     fprintf(stderr, "Failed to parse heading.\n");
 
                 if ((temp = strstr(line, "A=")) == NULL)
                     continue;
-                ret = sscanf(temp + 2, "%f", &gps_context->gps_loc[4]); /* altitude */
+                ret = sscanf(temp + 2, "%f", &gps_context->gps_location[gps_altitude]); /* altitude */
                 if (ret == EOF)
                     fprintf(stderr, "Failed to parse altitude.\n");
             }
@@ -487,7 +497,7 @@ static void * gps_tracker_thread(void * arg)
         // If we are still wanting to read GPS but encountered an error - reset data and try again
         if (*gps_context->do_exit == 0)
         {
-            memset(gps_context->gps_loc, 0, sizeof(gps_context->gps_loc));
+            gps_locations_initialise(gps_context->gps_location, sizeof(gps_context->gps_location));
             sleep(1);
         }
     }
@@ -509,6 +519,8 @@ static void gps_tracker_initialise(
     static const unsigned int default_gps_valid_interval_seconds = 5;
 
     memset(gps_context, 0, sizeof *gps_context);
+
+    gps_locations_initialise(gps_context->gps_location, sizeof(gps_context->gps_location));
 
     gps_context->gps_valid_interval_seconds = default_gps_valid_interval_seconds;
     gps_context->fp = fp;

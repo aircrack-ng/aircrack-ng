@@ -1292,7 +1292,7 @@ static void sta_info_initialise(
             get_manufacturer_by_oui(options->manufacturer_list, mac->addr);
     }
 
-    sta_populate_gps(st_cur, options->gps_context.gps_loc);
+    sta_populate_gps(st_cur, options->gps_context.gps_location);
 }
 
 static struct ST_info * sta_info_new(
@@ -1483,7 +1483,7 @@ static void ap_info_initialise(
     }
 
     ap_cur->decloak_detection = options->decloak_detection;
-    ap_info_populate_gps(ap_cur, options->gps_context.gps_loc);
+    ap_info_populate_gps(ap_cur, options->gps_context.gps_location);
 }
 
 static struct AP_info * ap_info_new(
@@ -1663,25 +1663,27 @@ static void ap_update(
         {
             ap_cur->best_power = ap_cur->avg_power;
             memcpy(ap_cur->gps_loc_best,
-                   options->gps_context.gps_loc,
+                   options->gps_context.gps_location,
                    sizeof ap_cur->gps_loc_best);
         }
 
         /* Every packet in here comes from the AP. */
+        /* FIXME: These seem to be very odd comparisons to make. Is this
+         * actually what is intended?
+         */
+        if (options->gps_context.gps_location[gps_latitude] > ap_cur->gps_loc_max[gps_latitude])
+            ap_cur->gps_loc_max[gps_latitude] = options->gps_context.gps_location[gps_latitude];
+        if (options->gps_context.gps_location[gps_longitude] > ap_cur->gps_loc_max[gps_longitude])
+            ap_cur->gps_loc_max[gps_longitude] = options->gps_context.gps_location[gps_longitude];
+        if (options->gps_context.gps_location[gps_speed] > ap_cur->gps_loc_max[gps_speed])
+            ap_cur->gps_loc_max[gps_speed] = options->gps_context.gps_location[gps_speed];
 
-        if (options->gps_context.gps_loc[0] > ap_cur->gps_loc_max[0])
-            ap_cur->gps_loc_max[0] = options->gps_context.gps_loc[0];
-        if (options->gps_context.gps_loc[1] > ap_cur->gps_loc_max[1])
-            ap_cur->gps_loc_max[1] = options->gps_context.gps_loc[1];
-        if (options->gps_context.gps_loc[2] > ap_cur->gps_loc_max[2])
-            ap_cur->gps_loc_max[2] = options->gps_context.gps_loc[2];
-
-        if (options->gps_context.gps_loc[0] < ap_cur->gps_loc_min[0])
-            ap_cur->gps_loc_min[0] = options->gps_context.gps_loc[0];
-        if (options->gps_context.gps_loc[1] < ap_cur->gps_loc_min[1])
-            ap_cur->gps_loc_min[1] = options->gps_context.gps_loc[1];
-        if (options->gps_context.gps_loc[2] < ap_cur->gps_loc_min[2])
-            ap_cur->gps_loc_min[2] = options->gps_context.gps_loc[2];
+        if (options->gps_context.gps_location[gps_latitude] < ap_cur->gps_loc_min[gps_latitude])
+            ap_cur->gps_loc_min[gps_latitude] = options->gps_context.gps_location[gps_latitude];
+        if (options->gps_context.gps_location[gps_longitude] < ap_cur->gps_loc_min[gps_longitude])
+            ap_cur->gps_loc_min[gps_longitude] = options->gps_context.gps_location[gps_longitude];
+        if (options->gps_context.gps_location[gps_speed] < ap_cur->gps_loc_min[gps_speed])
+            ap_cur->gps_loc_min[gps_speed] = options->gps_context.gps_location[gps_speed];
 
         if (ap_cur->fcapt == 0 && ap_cur->fmiss == 0)
         {
@@ -1699,11 +1701,12 @@ static void ap_update(
         if (options->log_csv.fp != NULL)
         {
             /* Write out our rolling log every time we see data from an AP */
-            dump_write_airodump_ng_logcsv_add_ap(options->log_csv.fp,
-                                                 ap_cur,
-                                                 ri->ri_power,
-                                                 &options->gps_context.gps_time,
-                                                 options->gps_context.gps_loc);
+            dump_write_airodump_ng_logcsv_add_ap(
+                options->log_csv.fp,
+                ap_cur,
+                ri->ri_power,
+                &options->gps_context.gps_time,
+                options->gps_context.gps_location);
         }
     }
 
@@ -1764,7 +1767,7 @@ static void sta_update(
         {
             st_cur->best_power = ri->ri_power;
             memcpy(ap_cur->gps_loc_best,
-                   options->gps_context.gps_loc,
+                   options->gps_context.gps_location,
                    sizeof(st_cur->gps_loc_best));
         }
 
@@ -1778,19 +1781,22 @@ static void sta_update(
             st_cur->channel = options->channel[cardnum];
         }
 
-        if (options->gps_context.gps_loc[0] > st_cur->gps_loc_max[0])
-            st_cur->gps_loc_max[0] = options->gps_context.gps_loc[0];
-        if (options->gps_context.gps_loc[1] > st_cur->gps_loc_max[1])
-            st_cur->gps_loc_max[1] = options->gps_context.gps_loc[1];
-        if (options->gps_context.gps_loc[2] > st_cur->gps_loc_max[2])
-            st_cur->gps_loc_max[2] = options->gps_context.gps_loc[2];
+        /* FIXME: These seem to be very odd comparisons to make. Is this
+         * actually what is intended?
+         */
+        if (options->gps_context.gps_location[gps_latitude] > st_cur->gps_loc_max[gps_latitude])
+            st_cur->gps_loc_max[gps_latitude] = options->gps_context.gps_location[gps_latitude];
+        if (options->gps_context.gps_location[gps_longitude] > st_cur->gps_loc_max[gps_longitude])
+            st_cur->gps_loc_max[gps_longitude] = options->gps_context.gps_location[gps_longitude];
+        if (options->gps_context.gps_location[gps_speed] > st_cur->gps_loc_max[gps_speed])
+            st_cur->gps_loc_max[gps_speed] = options->gps_context.gps_location[gps_speed];
 
-        if (options->gps_context.gps_loc[0] < st_cur->gps_loc_min[0])
-            st_cur->gps_loc_min[0] = options->gps_context.gps_loc[0];
-        if (options->gps_context.gps_loc[1] < st_cur->gps_loc_min[1])
-            st_cur->gps_loc_min[1] = options->gps_context.gps_loc[1];
-        if (options->gps_context.gps_loc[2] < st_cur->gps_loc_min[2])
-            st_cur->gps_loc_min[2] = options->gps_context.gps_loc[2];
+        if (options->gps_context.gps_location[gps_latitude] < st_cur->gps_loc_min[gps_latitude])
+            st_cur->gps_loc_min[gps_latitude] = options->gps_context.gps_location[gps_latitude];
+        if (options->gps_context.gps_location[gps_longitude] < st_cur->gps_loc_min[gps_longitude])
+            st_cur->gps_loc_min[gps_longitude] = options->gps_context.gps_location[gps_longitude];
+        if (options->gps_context.gps_location[gps_speed] < st_cur->gps_loc_min[gps_speed])
+            st_cur->gps_loc_min[gps_speed] = options->gps_context.gps_location[gps_speed];
 
         if (st_cur->lastseq != 0)
         {
@@ -1807,12 +1813,13 @@ static void sta_update(
         if (options->log_csv.fp != NULL)
         {
             /* Write out our rolling log every time we see data from a client */
-            dump_write_airodump_ng_logcsv_add_client(options->log_csv.fp,
-                                                     ap_cur,
-                                                     st_cur,
-                                                     ri->ri_power,
-                                                     &options->gps_context.gps_time,
-                                                     options->gps_context.gps_loc);
+            dump_write_airodump_ng_logcsv_add_client(
+                options->log_csv.fp,
+                ap_cur,
+                st_cur,
+                ri->ri_power,
+                &options->gps_context.gps_time,
+                options->gps_context.gps_location);
         }
     }
 
@@ -3513,7 +3520,7 @@ static void dump_print(
     if (options->gpsd.required)
 	{
 		// If using GPS then check if we have a valid fix or not and report accordingly
-        if (options->gps_context.gps_loc[0] != 0.0f)
+        if (options->gps_context.gps_location[gps_latitude] != 0.0f)
 		{
             struct tm * gtime = &options->gps_context.gps_time;
 
@@ -3522,8 +3529,8 @@ static void dump_print(
 					 " %s[ GPS %3.6f,%3.6f %02d:%02d:%02d ][ Elapsed: %s ][ "
 					 "%04d-%02d-%02d %02d:%02d ",
                      options->gps_context.batt,
-                     options->gps_context.gps_loc[0],
-                     options->gps_context.gps_loc[1],
+                     options->gps_context.gps_location[gps_latitude],
+                     options->gps_context.gps_location[gps_longitude],
 					 gtime->tm_hour,
 					 gtime->tm_min,
 					 gtime->tm_sec,
