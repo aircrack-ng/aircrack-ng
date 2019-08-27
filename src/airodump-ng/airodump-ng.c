@@ -4207,12 +4207,6 @@ static void dump_print(
 					continue;
 				}
 
-				if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid)
-                    && options->asso_client)
-				{
-					continue;
-				}
-
 				nlines++;
                 CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done); 
 
