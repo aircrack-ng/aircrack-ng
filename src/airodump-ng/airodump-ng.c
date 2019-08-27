@@ -116,9 +116,9 @@
  */
 struct devices dev;
 
-/* Note that these channel arrays can't be made const because 
- * the channel hopper process may modify the list. 
- * :( 
+/* Note that these channel arrays can't be made const because
+ * the channel hopper process may modify the list.
+ * :(
  */
 static int abg_chans[] =
 {
@@ -162,10 +162,10 @@ static struct local_options
 {
     int quitting;
     time_t quitting_event_ts;
-    time_t start_time; 
+    time_t start_time;
 
     struct ap_list_head ap_list;
-    struct AP_info * p_selected_ap; 
+    struct AP_info * p_selected_ap;
 
 	struct sta_list_head sta_list;
 
@@ -174,10 +174,10 @@ static struct local_options
 	oui_context_st * manufacturer_list;
 
     mac_address f_bssid;
-    mac_address f_netmask; 
+    mac_address f_netmask;
 
-    struct shared_key_context_st shared_key; 
-    int check_shared_key; 
+    struct shared_key_context_st shared_key;
+    int check_shared_key;
 
     struct essid_filter_context_st essid_filter;
 
@@ -188,7 +188,7 @@ static struct local_options
     int channel[MAX_CARDS]; /* current channel #    */
 	int frequency[MAX_CARDS]; /* current frequency #    */
     size_t wi_consecutive_failed_reads[MAX_CARDS];
-    size_t max_consecutive_failed_interface_reads; 
+    size_t max_consecutive_failed_interface_reads;
 
     pthread_t input_tid;
     int input_thread_pipe[2];
@@ -286,10 +286,10 @@ static struct local_options
     {
         bool paused;
 
-        /* Set after the user pauses output. Used to get the 'pause' message to 
-         * be printed. 
+        /* Set after the user pauses output. Used to get the 'pause' message to
+         * be printed.
          */
-        bool required; 
+        bool required;
     } console_output;
 
 	mac_address selected_bssid; /* bssid that is selected */
@@ -354,8 +354,8 @@ static struct local_options
 
     int no_filename_index;
 
-    /* Possibly appended to filenames of output dump files. value 
-     * -1 indicates not to. 
+    /* Possibly appended to filenames of output dump files. value
+     * -1 indicates not to.
      */
     int filename_index;
 } lopt;
@@ -411,10 +411,10 @@ static void color_on(struct local_options * const options)
 		struct ST_info * st_cur;
         bool const check_broadcast = true;
 
-        if (!ap_should_be_logged(ap_cur, 
-                                 options->berlin, 
-                                 options->encryption_filter, 
-                                 &options->essid_filter, 
+        if (!ap_should_be_logged(ap_cur,
+                                 options->berlin,
+                                 options->encryption_filter,
+                                 &options->essid_filter,
                                  check_broadcast,
                                  options->min_pkts))
         {
@@ -514,7 +514,7 @@ static void sort_aps(
          * works from the tail to the head of the list.
          */
         TAILQ_REMOVE(ap_list, ap_max, entry);
-        TAILQ_INSERT_TAIL(&sorted_list, ap_max, entry); 
+        TAILQ_INSERT_TAIL(&sorted_list, ap_max, entry);
 	}
 
 	/* The original list is now empty.
@@ -802,7 +802,7 @@ static void update_ap_rx_quality(
 }
 
 static void update_sta_rx_quality(
-    struct sta_list_head * const sta_list, 
+    struct sta_list_head * const sta_list,
     struct timeval const * const current_time)
 {
     struct ST_info * st_cur;
@@ -838,8 +838,8 @@ static void update_ap_packets_per_second(
 
     TAILQ_FOREACH(ap_cur, ap_list, entry)
     {
-        time_t const sec = tv->tv_sec - ap_cur->tv.tv_sec; 
-        suseconds_t const usec = tv->tv_usec - ap_cur->tv.tv_usec; 
+        time_t const sec = tv->tv_sec - ap_cur->tv.tv_sec;
+        suseconds_t const usec = tv->tv_usec - ap_cur->tv.tv_usec;
 
 #if defined(__x86_64__) && defined(__CYGWIN__)
         float const pause = (sec * (0.0f + 1000000.0f) + usec) / (0.0f + 1000000.0f);
@@ -859,7 +859,7 @@ static void update_ap_packets_per_second(
 }
 
 static void update_na_packets_per_second(
-    struct na_list_head * const na_list, 
+    struct na_list_head * const na_list,
     struct timeval * const tv)
 {
     struct NA_info * na_cur;
@@ -893,7 +893,7 @@ static void update_data_packets_per_second(struct local_options * const options)
 	gettimeofday(&tv, NULL);
 
     update_ap_packets_per_second(&options->ap_list, &tv);
-    update_na_packets_per_second(&options->na_list, &tv); 
+    update_na_packets_per_second(&options->na_list, &tv);
 }
 
 static void packet_buf_free(struct pkt_buf * const pkt_buf)
@@ -932,9 +932,9 @@ static void ap_purge_old_packets(
 	struct pkt_buf * temp;
 	bool found_old_packet = false;
 
-    /* New packets are always added to the head of the list, so 
-     * once the first packet that is too old is found, there is no 
-     * need to check the age of the others. 
+    /* New packets are always added to the head of the list, so
+     * once the first packet that is too old is found, there is no
+     * need to check the age of the others.
      */
 	TAILQ_FOREACH_SAFE(pkt_buf, &ap_cur->pkt_list, entry, temp)
 	{
@@ -1135,7 +1135,7 @@ done:
 }
 
 static struct NA_info * na_info_new(
-    struct na_list_head * const na_list, 
+    struct na_list_head * const na_list,
     mac_address const * const mac)
 {
     struct NA_info * const na_cur = na_info_alloc(mac);
@@ -1169,7 +1169,7 @@ static struct NA_info * na_info_lookup_existing(
 }
 
 struct NA_info * na_info_lookup(
-    struct na_list_head * const na_list, 
+    struct na_list_head * const na_list,
     mac_address const * const mac)
 {
     struct NA_info * na_cur;
@@ -1187,7 +1187,7 @@ done:
 }
 
 static void remove_namac(
-    struct na_list_head * const na_list, 
+    struct na_list_head * const na_list,
     mac_address const * const mac)
 {
     struct NA_info * const na_cur = na_info_lookup_existing(na_list, mac);
@@ -1270,7 +1270,7 @@ static struct ST_info * st_info_alloc(mac_address const * const stmac)
 
     gettimeofday(&st_cur->ftimer, NULL);
 
-    for (size_t i = 0; i < NB_PRB; i++)
+    for (size_t i = 0; i < ArrayCount(st_cur->probes); i++)
     {
         memset(st_cur->probes[i], 0, sizeof(st_cur->probes[i]));
         st_cur->ssid_length[i] = 0;
@@ -1281,7 +1281,7 @@ done:
 }
 
 static struct ST_info * sta_info_new(
-    struct local_options * const options, 
+    struct local_options * const options,
     mac_address const * const mac)
 {
     struct ST_info * const st_cur = st_info_alloc(mac);
@@ -1503,7 +1503,7 @@ done:
 }
 
 static struct AP_info * ap_info_new(
-    struct local_options * options, 
+    struct local_options * options,
     mac_address const * const bssid)
 {
     struct AP_info * const ap_cur = ap_info_alloc(bssid);
@@ -1521,8 +1521,8 @@ static struct AP_info * ap_info_new(
 
     if (options->ivs.fp != NULL)
     {
-        /* This sucks up loads of memory, and is only required when 
-         * logging IVs. 
+        /* This sucks up loads of memory, and is only required when
+         * logging IVs.
          */
         ap_cur->uiv_root = uniqueiv_init();
     }
@@ -1658,8 +1658,8 @@ static void update_packet_capture_files(
     if (options->pcap_output.writer != NULL)
     {
         packet_writer_write(options->pcap_output.writer,
-                            packet, 
-                            packet_length, 
+                            packet,
+                            packet_length,
                             ri_power);
     }
 }
@@ -1687,7 +1687,7 @@ static void ap_update(
         ap_cur->power_index = (ap_cur->power_index + 1) % NB_PWR;
         ap_cur->power_lvl[ap_cur->power_index] = ri->ri_power;
 
-        ap_cur->avg_power = 
+        ap_cur->avg_power =
             moving_exponential_average(ri->ri_power, ap_cur->avg_power, 0.99f);
 
         if (ap_cur->avg_power > ap_cur->best_power)
@@ -1839,10 +1839,10 @@ static void sta_update(
         {
             /* Write out our rolling log every time we see data from a client */
             dump_write_airodump_ng_logcsv_add_client(options->log_csv.fp,
-                                                     ap_cur, 
-                                                     st_cur, 
-                                                     ri->ri_power, 
-                                                     &options->gps_context.gps_time, 
+                                                     ap_cur,
+                                                     st_cur,
+                                                     ri->ri_power,
+                                                     &options->gps_context.gps_time,
                                                      options->gps_context.gps_loc);
         }
     }
@@ -1934,8 +1934,8 @@ done:
 }
 
 static void parse_probe_request(
-    struct ST_info * const st_cur, 
-    uint8_t const * const h80211, 
+    struct ST_info * const st_cur,
+    uint8_t const * const h80211,
     size_t const caplen)
 {
     if (h80211[0] == IEEE80211_FC0_SUBTYPE_PROBE_REQ && st_cur != NULL)
@@ -1963,13 +1963,13 @@ static void parse_probe_request(
                     goto done;
                 }
 
-                /* Got a valid ASCII probed ESSID. 
+                /* Got a valid ASCII probed ESSID.
                  * Check if it's already in the ring buffer.
                  */
-                /* FIXME: This comparison won't work if the ESSID is one that 
-                 * would get modified by make_printable() below. 
+                /* FIXME: This comparison won't work if the ESSID is one that
+                 * would get modified by make_printable() below.
                  */
-                for (size_t i = 0; i < NB_PRB; i++)
+                for (size_t i = 0; i < ArrayCount(st_cur->probes); i++)
                 {
                     if (memcmp(st_cur->probes[i], essid, essid_length) == 0)
                     {
@@ -1977,7 +1977,8 @@ static void parse_probe_request(
                     }
                 }
 
-                st_cur->probe_index = (st_cur->probe_index + 1) % NB_PRB;
+                st_cur->probe_index =
+                    (st_cur->probe_index + 1) % ArrayCount(st_cur->probes);
                 memcpy(st_cur->probes[st_cur->probe_index], essid, essid_length);
                 st_cur->probes[st_cur->probe_index][essid_length] = '\0';
                 st_cur->ssid_length[st_cur->probe_index] = essid_length;
@@ -1998,9 +1999,9 @@ done:
 }
 
 static bool parse_beacon_or_probe_response(
-    struct local_options * const options, 
-    struct AP_info * const ap_cur, 
-    uint8_t const * const h80211, 
+    struct local_options * const options,
+    struct AP_info * const ap_cur,
+    uint8_t const * const h80211,
     size_t caplen)
 {
     bool success;
@@ -2088,7 +2089,9 @@ static bool parse_beacon_or_probe_response(
                 ap_cur->channel = p[2];
 
                 // Get channel width and secondary channel
-                switch (p[3] % 4)
+                static uint8_t const channel_width_mask = 3;
+
+                switch (p[3] & channel_width_mask)
                 {
                     case 0:
                         // 20MHz
@@ -2139,7 +2142,7 @@ static bool parse_beacon_or_probe_response(
                         break;
                 }
 
-                ap_cur->n_channel.any_chan_width = (uint8_t)((p[3] / 4) % 2);
+                ap_cur->n_channel.any_chan_width = (p[3] >> 2) & 1;
             }
 
             // HT capabilities
@@ -2151,8 +2154,8 @@ static bool parse_beacon_or_probe_response(
                 }
 
                 // Short GI for 20/40MHz
-                ap_cur->n_channel.short_gi_20 = (uint8_t)((p[3] / 32) % 2);
-                ap_cur->n_channel.short_gi_40 = (uint8_t)((p[3] / 64) % 2);
+                ap_cur->n_channel.short_gi_20 = (p[3] >> 5) & 1;
+                ap_cur->n_channel.short_gi_40 = (p[3] >> 6) & 1;
 
                 // Parse MCS rate
                 /*
@@ -2185,35 +2188,38 @@ static bool parse_beacon_or_probe_response(
                 // Standard is AC
                 strlcpy(ap_cur->standard, "ac", sizeof ap_cur->standard);
 
-                ap_cur->ac_channel.split_chan = (uint8_t)((p[3] / 4) % 4);
+                ap_cur->ac_channel.split_chan = (p[3] >> 2) & 3;
 
-                ap_cur->ac_channel.short_gi_80 = (uint8_t)((p[3] / 32) % 2);
-                ap_cur->ac_channel.short_gi_160 = (uint8_t)((p[3] / 64) % 2);
+                ap_cur->ac_channel.short_gi_80 = (p[3] >> 5) & 1;
+                ap_cur->ac_channel.short_gi_160 = (p[3] >> 6) & 1;
 
-                /* XXX - How can this result ever be anything other than 0.
-                 * 0b11000 % 2 == 0 doesn't it?
+                /* FIXME - How can this result ever be anything other than 0.
+                 * 0b11000 & 1 == 0 doesn't it?
                  */
-                ap_cur->ac_channel.mu_mimo = (uint8_t)((p[4] & 0b11000) % 2);
+                ap_cur->ac_channel.mu_mimo = (p[4] & 0b11000) & 1;
 
                 // A few things indicate Wave 2: MU-MIMO, 80+80 Channels
                 /* FIXME - is use of the || logical operator really what is
-                 * wanted? Why the % 2 at the end if the result of the || is
+                 * wanted? Why the & 1 at the end if the result of the || is
                  * only ever 0 or 1?
+                 * I suspect that this should be
+                 * ap_cur->ac_channel.mu_mimo | ap_cur->ac_channel.split_chan,
+                 * so I've changed it.
                  */
                 ap_cur->ac_channel.wave_2
-                    = (uint8_t)((ap_cur->ac_channel.mu_mimo
-                                 || ap_cur->ac_channel.split_chan)
-                                % 2);
+                    = (ap_cur->ac_channel.mu_mimo | ap_cur->ac_channel.split_chan)
+                      & 1;
 
                 // Maximum rates (16 bit)
                 uint16_t tx_mcs;
                 memcpy(&tx_mcs, p + 10, sizeof(tx_mcs)); /* XXX - endianness? */
 
                 // Maximum of 8 SS, each uses 2 bits
-                for (uint8_t stream_idx = 0; stream_idx < MAX_AC_MCS_INDEX;
-                     ++stream_idx)
+                for (size_t stream_idx = 0;
+                      stream_idx < ArrayCount(ap_cur->ac_channel.mcs_index);
+                      ++stream_idx)
                 {
-                    uint8_t mcs = (uint8_t)(tx_mcs % 4);
+                    uint8_t mcs = (tx_mcs & 3);
 
                     // Unsupported -> No more spatial stream
                     if (mcs == 3)
@@ -2592,8 +2598,8 @@ static void parse_beacon_or_probe_response_2(
 }
 
 static void parse_authentication_response(
-    struct AP_info * const ap_cur, 
-    uint8_t const * const h80211, 
+    struct AP_info * const ap_cur,
+    uint8_t const * const h80211,
     size_t const caplen)
 {
     if (h80211[0] == IEEE80211_FC0_SUBTYPE_AUTH && caplen >= 30)
@@ -2615,10 +2621,10 @@ static void parse_authentication_response(
 }
 
 static bool parse_association_request(
-    struct local_options * const options, 
-    struct AP_info * const ap_cur, 
-    struct ST_info * const st_cur, 
-    uint8_t const * const h80211, 
+    struct local_options * const options,
+    struct AP_info * const ap_cur,
+    struct ST_info * const st_cur,
+    uint8_t const * const h80211,
     size_t const caplen)
 {
     bool success;
@@ -2677,9 +2683,9 @@ done:
 }
 
 static void do_decloak_check(
-    struct local_options * const options, 
-    struct AP_info * const ap_cur, 
-    uint8_t const * const h80211, 
+    struct local_options * const options,
+    struct AP_info * const ap_cur,
+    uint8_t const * const h80211,
     size_t caplen)
 {
     if (!ap_cur->decloak_detect)
@@ -3143,8 +3149,8 @@ done:
 }
 
 static bool parse_control_frame(
-    struct local_options * const options, 
-    uint8_t const * const h80211, 
+    struct local_options * const options,
+    uint8_t const * const h80211,
     size_t const caplen,
     struct rx_info * const ri)
 {
@@ -3198,7 +3204,7 @@ static bool parse_control_frame(
                     }
                 }
 
-                /* Not found in either AP list or ST list. 
+                /* Not found in either AP list or ST list.
                  * Find or create an entry in the NA list.
                  */
                 struct NA_info * const na_cur =
@@ -3269,7 +3275,7 @@ static void dump_add_packet(
 	struct ST_info * st_cur = NULL;
 
 	/* skip all non probe response frames in active scanning simulation mode */
-    bool const is_probe_response = 
+    bool const is_probe_response =
         h80211[0] == IEEE80211_FC0_SUBTYPE_PROBE_RESP;
 
     if (options->active_scan_sim > 0 && !is_probe_response)
@@ -3400,8 +3406,8 @@ write_packet:
             }
         }
 
-        if (!ap_has_required_security_and_essid(ap_cur, 
-                                                options->encryption_filter, 
+        if (!ap_has_required_security_and_essid(ap_cur,
+                                                options->encryption_filter,
                                                 &options->essid_filter))
         {
             return;
@@ -3415,8 +3421,8 @@ write_packet:
 		{
 			/* authentication packet */
             check_shared_key(&options->shared_key,
-                             h80211, 
-                             caplen, 
+                             h80211,
+                             caplen,
                              options->dump_prefix,
                              options->filename_index,
                              true);
@@ -3442,14 +3448,14 @@ write_packet:
 
 static void dump_print(
     struct local_options * const options,
-    int const screen_height, 
-    int const screen_width, 
+    int const screen_height,
+    int const screen_width,
     int const if_num)
 {
 	time_t tt;
 	struct tm * lt;
-    int nlines; 
-    int i; 
+    int nlines;
+    int i;
 	char strbuf[512];
 	char buffer[512];
 	char ssid_list[512];
@@ -3628,7 +3634,7 @@ static void dump_print(
     terminal_clear_line_from_cursor_right();
     terminal_move_cursor_down(1);
     nlines++;
-    CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done); 
+    CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
 
     if (options->show_ap)
 	{
@@ -3692,12 +3698,12 @@ static void dump_print(
 		strbuf[screen_width - 1] = '\0';
 		console_puts(strbuf);
         nlines++;
-        CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done); 
+        CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
 
         terminal_clear_line_from_cursor_right();
         terminal_move_cursor_down(1);
         nlines++;
-        CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done); 
+        CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
 
         TAILQ_FOREACH_REVERSE(ap_cur, &options->ap_list, ap_list_head, entry)
 		{
@@ -4114,11 +4120,11 @@ static void dump_print(
 						strbuf[len] = '\0';
 					}
 
-                    static char const unknown_manufacturer[] = "Unknown"; 
+                    static char const unknown_manufacturer[] = "Unknown";
 
-                    char const * const manufacturer = 
-                        (ap_cur->manuf != NULL) 
-                            ? ap_cur->manuf 
+                    char const * const manufacturer =
+                        (ap_cur->manuf != NULL)
+                            ? ap_cur->manuf
                             : unknown_manufacturer;
 
 					snprintf(strbuf + len,
@@ -4159,12 +4165,12 @@ static void dump_print(
 		strbuf[screen_width - 1] = '\0';
 		console_puts(strbuf);
         nlines++;
-        CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done); 
+        CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
 
         terminal_clear_line_from_cursor_right();
         terminal_move_cursor_down(1);
         nlines++;
-        CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done); 
+        CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
 
         TAILQ_FOREACH_REVERSE(ap_cur, &options->ap_list, ap_list_head, entry)
 		{
@@ -4208,7 +4214,7 @@ static void dump_print(
 				}
 
 				nlines++;
-                CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done); 
+                CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
                 printf(" ");
                 if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
                 {
@@ -4218,7 +4224,7 @@ static void dump_print(
                 {
                     fprintf_mac_address(stdout, &ap_cur->bssid);
                 }
-                printf("  "); 
+                printf("  ");
                 fprintf_mac_address(stdout, &st_cur->stmac);
 
 				printf("  %3d ", st_cur->power);
@@ -4235,12 +4241,9 @@ static void dump_print(
 
 				if (screen_width > (columns_sta - 6))
 				{
-                    size_t n;
-                    size_t i;
-
 					memset(ssid_list, 0, sizeof(ssid_list));
 
-					for (i = 0, n = 0; i < NB_PRB; i++)
+					for (size_t i = 0, n = 0; i < ArrayCount(st_cur->probes); i++)
 					{
                         if (st_cur->probes[i][0] == '\0')
                         {
@@ -4289,7 +4292,7 @@ static void dump_print(
         terminal_clear_line_from_cursor_right();
         terminal_move_cursor_down(1);
         nlines++;
-        CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done); 
+        CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
 
 		memcpy(strbuf,
 			   " MAC       "
@@ -4298,13 +4301,13 @@ static void dump_print(
 		strbuf[screen_width - 1] = '\0';
 		console_puts(strbuf);
         nlines++;
-        CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done); 
+        CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
 
 		memset(strbuf, ' ', (size_t) screen_width - 1);
 		strbuf[screen_width - 1] = '\0';
 		console_puts(strbuf);
         nlines++;
-        CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done); 
+        CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
 
         TAILQ_FOREACH(na_cur, &options->na_list, entry)
 		{
@@ -4516,8 +4519,8 @@ static bool is_invalid_channel(int const channel)
     bool is_invalid;
 	int i = 0;
 
-    /* XXX - This seems to be a bit of a complicated way to 
-     * construct this code. 
+    /* XXX - This seems to be a bit of a complicated way to
+     * construct this code.
      */
 	do
 	{
@@ -4559,7 +4562,7 @@ done:
 /* parse a string, for example "1,2,3-7,11" */
 
 static int get_channels(
-    int * * const own_channels, 
+    int * * const own_channels,
     const char * optarg)
 {
     int chan_cur = 0;
@@ -4929,7 +4932,7 @@ static unsigned int set_encryption_filter(char const * const input)
 
     if (input == NULL)
     {
-        encryption_filter = 0; 
+        encryption_filter = 0;
         goto done;
     }
 
@@ -5088,7 +5091,7 @@ static bool check_for_monitor_mode_on_cards(
 
     for (size_t i = 0; i < num_cards; i++)
 	{
-        struct wif * new_wi = 
+        struct wif * new_wi =
             check_for_monitor_mode_on_card(wi[i], msg_buffer, msg_buffer_size);
 
         if (new_wi != wi[i])
@@ -5165,10 +5168,10 @@ static void check_channel_on_cards(
 {
     for (size_t i = 0; i < num_cards; i++)
 	{
-        check_channel_on_card(wi[i], 
-                              current_channels[i], 
-                              msg_buffer, 
-                              msg_buffer_size, 
+        check_channel_on_card(wi[i],
+                              current_channels[i],
+                              msg_buffer,
+                              msg_buffer_size,
                               ignore_negative_one
 #ifdef CONFIG_LIBNL
                               , htval
@@ -5242,9 +5245,9 @@ static bool update_interface_cards(
 {
     bool success;
 
-    if (!check_for_monitor_mode_on_cards(wi, 
-                                         num_cards, 
-                                         msg_buffer, 
+    if (!check_for_monitor_mode_on_cards(wi,
+                                         num_cards,
+                                         msg_buffer,
                                          msg_buffer_size))
     {
         success = false;
@@ -5253,10 +5256,10 @@ static bool update_interface_cards(
 
     if (single_channel)
     {
-        check_channel_on_cards(wi, 
-                               current_channels, 
-                               num_cards, 
-                               msg_buffer, 
+        check_channel_on_cards(wi,
+                               current_channels,
+                               num_cards,
+                               msg_buffer,
                                msg_buffer_size,
                                ignore_negative_one
 #ifdef CONFIG_LIBNL
@@ -5266,10 +5269,10 @@ static bool update_interface_cards(
     }
     if (single_frequency)
     {
-        check_frequency_on_cards(wi, 
-                                 current_frequencies, 
-                                 num_cards, 
-                                 msg_buffer, 
+        check_frequency_on_cards(wi,
+                                 current_frequencies,
+                                 num_cards,
+                                 msg_buffer,
                                  msg_buffer_size);
     }
 
@@ -5356,8 +5359,8 @@ static void detect_frequencies(
 }
 
 static bool array_contains(
-    int const * const array, 
-    size_t const length, 
+    int const * const array,
+    size_t const length,
     int const value)
 {
     bool found;
@@ -5381,10 +5384,10 @@ done:
 static void rearrange_frequencies(int * const own_frequencies)
 {
 	int * freqs;
-    int left; 
+    int left;
     int pos;
 	int last_used = 0;
-    int cur_freq; 
+    int cur_freq;
     int round_done;
     static int const width = DEFAULT_CHANNEL_WIDTH_MHZ;
 
@@ -5405,7 +5408,7 @@ static void rearrange_frequencies(int * const own_frequencies)
             round_done = 1;
         }
 
-		if ((count - left) > 0 
+		if ((count - left) > 0
             && !round_done
 			&& ABS(last_used - cur_freq) < width)
 		{
@@ -5936,20 +5939,20 @@ static bool open_output_files(struct local_options * const options)
 	ofn = malloc(ofn_len);
 	ALLEGE(ofn != NULL);
 
-    /* TODO: Loop over the array rather than checking each index 
-     * specifically. Note that the wifi dump might need to 
-     * generate the output filename differently than the others (no 
-     * index). 
-     * Perhaps include a suffix and filename generator callback, or 
-     * just have a filename type specifier. 
+    /* TODO: Loop over the array rather than checking each index
+     * specifically. Note that the wifi dump might need to
+     * generate the output filename differently than the others (no
+     * index).
+     * Perhaps include a suffix and filename generator callback, or
+     * just have a filename type specifier.
      */
     if (options->dump[dump_type_csv].needed)
 	{
-		char const * const filename = 
+		char const * const filename =
             create_output_filename(
-                ofn, 
-                ofn_len, 
-                options->dump_prefix, 
+                ofn,
+                ofn_len,
+                options->dump_prefix,
                 options->filename_index,
                 AIRODUMP_NG_CSV_EXT);
 
@@ -6135,7 +6138,7 @@ static bool open_output_files(struct local_options * const options)
             success = false;
             goto done;
         }
-        /* Store the filename as it is possibly used to delete the 
+        /* Store the filename as it is possibly used to delete the
          * file at shutdown. There's possibly a better way to do this.
          */
         options->gpsd.filename = strdup(filename);
@@ -6309,7 +6312,7 @@ static void airodump_shutdown(
 }
 
 static bool handle_ready_wi_interface(
-    struct local_options * const options, 
+    struct local_options * const options,
     struct wif * * const wi,
     size_t const interface_index,
     uint8_t * const packet_buffer,
@@ -6346,10 +6349,10 @@ static bool handle_ready_wi_interface(
     else
     {
         options->wi_consecutive_failed_reads[interface_index] = 0;
-        dump_add_packet(options, 
-                        packet_buffer, 
-                        packet_length, 
-                        &ri, 
+        dump_add_packet(options,
+                        packet_buffer,
+                        packet_length,
+                        &ri,
                         interface_index);
     }
 
@@ -6406,10 +6409,10 @@ static int capture_packet_from_cards(
         if (FD_ISSET(wi_fd(wi[i]), &rfds)) // NOLINT(hicpp-signed-bitwise)
         {
             if (!handle_ready_wi_interface(
-                    options, 
-                    &wi[i], 
-                    i, 
-                    packet_buffer, 
+                    options,
+                    &wi[i],
+                    i,
+                    packet_buffer,
                     packet_buffer_size))
             {
                 result = -1;
@@ -6434,9 +6437,9 @@ static void update_console(struct local_options * const options)
         sort_context->sort_required = false;
     }
 
-    dump_print(options, 
-               options->window_size.ws_row, 
-               options->window_size.ws_col, 
+    dump_print(options,
+               options->window_size.ws_row,
+               options->window_size.ws_col,
                options->num_cards);
 }
 
@@ -6458,7 +6461,7 @@ static void do_refresh(struct local_options * const options)
 }
 
 static void dump_contexts_initialise(
-    struct local_options * const options, 
+    struct local_options * const options,
     bool const are_needed)
 {
     for (dump_type_t dump_type = 0; dump_type < dump_type_COUNT; dump_type++)
@@ -6488,10 +6491,10 @@ static bool read_one_packet_from_file(
     if (result == pcap_reader_result_ok)
     {
         static size_t const file_dummy_card_number = 0;
-        dump_add_packet(options, 
-                        packet_buffer, 
-                        packet_length, 
-                        &ri, 
+        dump_add_packet(options,
+                        packet_buffer,
+                        packet_length,
+                        &ri,
                         file_dummy_card_number);
 
         read_a_packet = true;
@@ -6529,7 +6532,7 @@ static void do_generic_update(
 
     /* update elapsed time */
     free(options->elapsed_time);
-    options->elapsed_time = 
+    options->elapsed_time =
         getStringTimeFromSec(difftime(current_time, options->start_time));
 }
 
@@ -6644,8 +6647,8 @@ static void options_initialise(struct local_options * const options)
 
 int main(int argc, char * argv[])
 {
-    /* The user thread args must remain in scope as long as the 
-     * thread is running. 
+    /* The user thread args must remain in scope as long as the
+     * thread is running.
      */
     struct input_thread_args_st input_thread_args;
     int program_exit_code;
@@ -7161,9 +7164,9 @@ int main(int argc, char * argv[])
 
                     int const added =
                         essid_filter_context_add_regex(
-                            &lopt.essid_filter, 
-                            optarg, 
-                            &pcreerror, 
+                            &lopt.essid_filter,
+                            optarg,
+                            &pcreerror,
                             &pcreerroffset);
 
                     if (added < 0)
@@ -7465,8 +7468,8 @@ int main(int argc, char * argv[])
             detect_frequencies(wi[0], &detected_frequencies);
 
             lopt.frequency[0] =
-                getfrequencies(&lopt.own_frequencies, 
-                               &detected_frequencies, 
+                getfrequencies(&lopt.own_frequencies,
+                               &detected_frequencies,
                                lopt.freqstring);
 
             detected_frequencies_cleanup(&detected_frequencies);
@@ -7483,7 +7486,7 @@ int main(int argc, char * argv[])
             if (lopt.frequency[0] == frequency_sentinel)
 			{
                 /* Start a child process to hop between frequencies. */
-                size_t const freq_count = 
+                size_t const freq_count =
                     get_frequency_count(lopt.own_frequencies, false);
 
                 start_frequency_hopper_process(&lopt, wi, freq_count);
@@ -7503,7 +7506,7 @@ int main(int argc, char * argv[])
             if (lopt.channel[0] == channel_sentinel)
 			{
                 /* Start a child process to hop between channels. */
-                size_t const chan_count = 
+                size_t const chan_count =
                     get_channel_count(lopt.channels, false);
 
                 start_channel_hopper_process(&lopt, wi, chan_count);
@@ -7587,8 +7590,8 @@ int main(int argc, char * argv[])
         int const pipe_result = pipe(lopt.input_thread_pipe);
         IGNORE_NZ(pipe_result);
 
-        /* Only start the user input thread if running in interactive 
-         * mode. 
+        /* Only start the user input thread if running in interactive
+         * mode.
          */
         input_thread_args.do_exit = &lopt.do_exit;
         input_thread_args.update_fd = lopt.input_thread_pipe[1];
@@ -7616,8 +7619,8 @@ int main(int argc, char * argv[])
 
         if (lopt.do_exit)
         {
-            /* This flag may have been set by a signal event or user 
-             * input. 
+            /* This flag may have been set by a signal event or user
+             * input.
              */
             continue;
         }
@@ -7700,7 +7703,7 @@ int main(int argc, char * argv[])
 
 		if (lopt.pcap_reader_context != NULL)
 		{
-            struct timeval packet_timestamp; 
+            struct timeval packet_timestamp;
 
             /* Read one packet from a file. */
             if (read_one_packet_from_file(&lopt, h80211, sizeof h80211, &packet_timestamp))
