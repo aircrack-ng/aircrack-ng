@@ -8,6 +8,7 @@
 
 #include "dump_kismet_netxml.h"
 #include "dump_write_private.h"
+#include "ap_filter.h"
 
 static char * sanitize_xml(unsigned char * text, size_t length)
 {
@@ -325,19 +326,16 @@ static void kismet_dump_write_netxml(
     struct AP_info * ap_cur;
     TAILQ_FOREACH(ap_cur, ap_list, entry)
     {
-        if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
-        {
-            continue;
-        }
+        unsigned long const min_packets = 0;
+        bool const check_broadcast = true;
+        int const max_age_seconds = -1; /* no limit. */
 
-        if (ap_cur->security != 0 
-            && f_encrypt != 0
-            && ((ap_cur->security & f_encrypt) == 0))
-        {
-            continue;
-        }
-
-        if (is_filtered_essid(essid_filter, ap_cur->essid))
+        if (!ap_should_be_logged(ap_cur, 
+                                 max_age_seconds, 
+                                 f_encrypt, 
+                                 essid_filter, 
+                                 check_broadcast, 
+                                 min_packets))
         {
             continue;
         }

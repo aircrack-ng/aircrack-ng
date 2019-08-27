@@ -8,6 +8,7 @@
 
 #include "dump_write_wifi_scanner.h"
 #include "dump_write_private.h"
+#include "ap_filter.h"
 
 #define FIELD_SEPARATOR "|"
 
@@ -46,37 +47,32 @@ static bool should_dump_ap(
     struct essid_filter_context_st const * const essid_filter)
 {
     bool should_dump;
+    unsigned long const min_packets = 0; 
+    bool const check_broadcast = true;
+    int const max_age_seconds = -1; /* no limit. */
 
-    if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
+    if (!ap_should_be_logged(ap_cur, 
+                             max_age_seconds, 
+                             f_encrypt, 
+                             essid_filter, 
+                             check_broadcast, 
+                             min_packets))
     {
         should_dump = false;
         goto done;
     }
 
-    if (ap_cur->security != 0
-        && f_encrypt != 0
-        && (ap_cur->security & f_encrypt) == 0)
+    if (ap_cur->old_channel == ap_cur->channel)
     {
-        should_dump = false;
-        goto done;
+        time_t const time_since_last_printed =
+            current_time - ap_cur->time_printed;
+
+        if (time_since_last_printed < filter_seconds)
+        {
+            should_dump = false;
+            goto done;
+        }
     }
-
-    if (is_filtered_essid(essid_filter, ap_cur->essid))
-    {
-        should_dump = false;
-        goto done;
-    }
-
-    time_t const time_since_last_printed =
-        current_time - ap_cur->time_printed;
-
-    if (time_since_last_printed < filter_seconds
-        && ap_cur->old_channel == ap_cur->channel)
-    {
-        should_dump = false;
-        goto done;
-    }
-
 
     should_dump = true;
 

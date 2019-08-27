@@ -39,6 +39,7 @@
 #include <aircrack-ng/adt/avl_tree.h>
 #include <aircrack-ng/support/pcap_local.h>
 #include <aircrack-ng/ptw/aircrack-ptw-lib.h>
+#include <aircrack-ng/third-party/eapol.h>
 
 #include "aircrack-ng/osdep/mac_header.h"
 #include "aircrack-ng/osdep/queue.h"
