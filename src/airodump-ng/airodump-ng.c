@@ -352,12 +352,15 @@ static struct local_options
         struct packet_writer_context_st * writer;
     } pcap_output;
 
-    int no_filename_index;
+    struct
+    {
+        int include_index; /* int as command line parser writes into it. */
+        /* Possibly appended to filenames of output dump files. value
+         * -1 indicates not to.
+         */
+        int index;
+    } filename;
 
-    /* Possibly appended to filenames of output dump files. value
-     * -1 indicates not to.
-     */
-    int filename_index;
 } lopt;
 
 static void reset_sort_context(struct sort_context_st * const context)
@@ -3375,7 +3378,7 @@ write_packet:
                              h80211,
                              caplen,
                              options->dump_prefix,
-                             options->filename_index,
+                             options->filename.index,
                              true);
 		}
 	}
@@ -5875,13 +5878,14 @@ static bool open_output_files(struct local_options * const options)
 	size_t const ADDED_LENGTH = 17; /* FIXME: Work out the required length from
 									 *  the extensions etc
 									 */
-    if (options->no_filename_index)
+    if (!options->filename.include_index)
     {
-        options->filename_index = -1;
+        options->filename.index = -1;
     }
     else
     {
-        options->filename_index = find_first_free_file_index(options->dump_prefix);
+        options->filename.index =
+            find_first_free_file_index(options->dump_prefix);
     }
 
 	/* Create a buffer of the length of the prefix + '-' + 2 numbers + '.'
@@ -5904,7 +5908,7 @@ static bool open_output_files(struct local_options * const options)
                 ofn,
                 ofn_len,
                 options->dump_prefix,
-                options->filename_index,
+                options->filename.index,
                 AIRODUMP_NG_CSV_EXT);
 
         options->dump[dump_type_csv].context =
@@ -5933,7 +5937,7 @@ static bool open_output_files(struct local_options * const options)
                 ofn,
                 ofn_len,
                 options->dump_prefix,
-                options->filename_index,
+                options->filename.index,
                 KISMET_CSV_EXT);
 
         options->dump[dump_type_kismet_csv].context =
@@ -5962,7 +5966,7 @@ static bool open_output_files(struct local_options * const options)
                 ofn,
                 ofn_len,
                 options->dump_prefix,
-                options->filename_index,
+                options->filename.index,
                 KISMET_NETXML_EXT);
 
         options->dump[dump_type_kismet_netxml].context =
@@ -5991,7 +5995,7 @@ static bool open_output_files(struct local_options * const options)
                 ofn,
                 ofn_len,
                 options->dump_prefix,
-                options->filename_index,
+                options->filename.index,
                 WIFI_EXT);
 
         options->dump[dump_type_wifi_scanner].context =
@@ -6020,7 +6024,7 @@ static bool open_output_files(struct local_options * const options)
                 ofn,
                 ofn_len,
                 options->dump_prefix,
-                options->filename_index,
+                options->filename.index,
                 AIRODUMP_NG_CAP_EXT);
 
         options->pcap_output.writer =
@@ -6041,7 +6045,7 @@ static bool open_output_files(struct local_options * const options)
                 ofn,
                 ofn_len,
                 options->dump_prefix,
-                options->filename_index,
+                options->filename.index,
                 IVS2_EXTENSION);
 
         options->ivs.fp = ivs_log_open(filename);
@@ -6059,7 +6063,7 @@ static bool open_output_files(struct local_options * const options)
                 ofn,
                 ofn_len,
                 options->dump_prefix,
-                options->filename_index,
+                options->filename.index,
                 AIRODUMP_NG_LOG_CSV_EXT);
 
         options->log_csv.fp = log_csv_file_open(filename);
@@ -6077,7 +6081,7 @@ static bool open_output_files(struct local_options * const options)
                 ofn,
                 ofn_len,
                 options->dump_prefix,
-                options->filename_index,
+                options->filename.index,
                 AIRODUMP_NG_GPS_EXT);
 
         options->gpsd.fp = fopen(filename, "wb+");
@@ -6519,6 +6523,8 @@ static void options_initialise(struct local_options * const options)
     memset(options->shared_key.sharedkey, '\x00', sizeof(options->shared_key.sharedkey));
     options->check_shared_key = 1;
 
+    options->filename.include_index = 1;
+
     options->encryption_filter = 0;
     options->asso_client = 0;
 
@@ -6662,7 +6668,7 @@ int main(int argc, char * argv[])
            {"max-age", 1, 0, 'v'},
            {"file-reset-minutes", 1, 0, 'P'},
            {"ignore-negative-one", 0, &lopt.ignore_negative_one, 1},
-           {"no-filename-index", 0, &lopt.no_filename_index, 1},
+           {"no-filename-index", 0, &lopt.filename.include_index, 0},
            {"no-shared-key", 0, &lopt.check_shared_key, 0},
            {"manufacturer", 0, 0, 'M' },
 		   {"uptime", 0, 0, 'U'},
