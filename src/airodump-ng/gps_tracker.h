@@ -16,7 +16,7 @@ struct gps_tracker_context_st
     float gps_location[gps_location_COUNT];
     int save_gps; /* keep gps file flag   */
     int gps_valid_interval_seconds; /* how many seconds until we consider the GPS data invalid if we dont get new data */
-    char * batt; /* Battery string (Used with GPS only.) */
+    char const * batt; /* Battery string (Used with GPS only.) */
     struct tm gps_time; /* the timestamp from the gps data */
     FILE * fp;
     volatile int * do_exit;

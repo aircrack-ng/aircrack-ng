@@ -508,7 +508,7 @@ done:
 
 static void gps_tracker_cleanup(gps_tracker_context_st * const gps_context)
 {
-    free(gps_context->batt);
+    free((void *)gps_context->batt);
 }
 
 static void gps_tracker_initialise(
@@ -529,7 +529,8 @@ static void gps_tracker_initialise(
 
 void gps_tracker_update(gps_tracker_context_st * const gps_context)
 {
-    update_battery_string(&gps_context->batt);
+    free((char *)gps_context->batt);
+    gps_context->batt = getBatteryString();
 }
 
 bool gps_tracker_start(

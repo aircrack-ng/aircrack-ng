@@ -3527,15 +3527,19 @@ static void dump_print(
     if (options->gpsd.required)
 	{
 		// If using GPS then check if we have a valid fix or not and report accordingly
+        snprintf(buffer, sizeof buffer, " ][ BAT: %s ]", options->gps_context.batt);
+
+        char * const message_buffer = buffer + strlen(buffer);
+        size_t const space = sizeof buffer - strlen(buffer);
+
         if (options->gps_context.gps_location[gps_latitude] != 0.0f)
 		{
-            struct tm * gtime = &options->gps_context.gps_time;
+            struct tm const * const gtime = &options->gps_context.gps_time;
 
-			snprintf(buffer,
-					 sizeof(buffer) - 1,
-					 " %s[ GPS %3.6f,%3.6f %02d:%02d:%02d ][ Elapsed: %s ][ "
+			snprintf(message_buffer,
+					 space,
+					 "[ GPS %3.6f,%3.6f %02d:%02d:%02d ][ Elapsed: %s ][ "
 					 "%04d-%02d-%02d %02d:%02d ",
-                     options->gps_context.batt,
                      options->gps_context.gps_location[gps_latitude],
                      options->gps_context.gps_location[gps_longitude],
 					 gtime->tm_hour,
@@ -3551,10 +3555,9 @@ static void dump_print(
 		else
 		{
 			snprintf(
-				buffer,
-				sizeof(buffer) - 1,
-				" %s[ GPS %-29s ][ Elapsed: %s ][ %04d-%02d-%02d %02d:%02d ",
-                options->gps_context.batt,
+				message_buffer,
+				space,
+				"[ GPS %-29s ][ Elapsed: %s ][ %04d-%02d-%02d %02d:%02d ",
 				" *** No Fix! ***",
                 options->elapsed_time,
 				1900 + lt->tm_year,
