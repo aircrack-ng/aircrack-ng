@@ -4,6 +4,7 @@
 #include "queue.h"
 
 #include <time.h>
+#include <stddef.h>
 
 TAILQ_HEAD(pkt_list_head, pkt_buf);
 
@@ -13,10 +14,10 @@ struct pkt_buf
     TAILQ_ENTRY(pkt_buf) entry;
 
     unsigned char * packet; /* packet */
-    unsigned short length; /* packet length */
+    size_t length; /* packet length */
 
     struct timeval ctime; /* capture time */
-}; 
+};
 
 #endif /* __PKT_LIST_H__ */
 

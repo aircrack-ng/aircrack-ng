@@ -172,11 +172,11 @@ struct AP_info
 
 	char * key; /* if wep-key found by dict */
 
-	char decloak_detect; /* run decloak detection? */
+	bool decloak_detection;
+	bool detected_decloak;
 
 	struct pkt_list_head pkt_list;
 
-	char is_decloak; /* detected decloak */
 
 	// This feature eats 48Mb per AP
 	int EAP_detected;

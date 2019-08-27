@@ -220,7 +220,7 @@ static struct local_options
 	int asso_client; /* only show associated clients */
 
 	char message[512];
-	char decloak;
+	bool decloak_detection;
 
 	char is_berlin; /* is the switch --berlin set? */
 	int maxnumaps; /* maximum nubers of APs on the list */
@@ -901,8 +901,11 @@ static void update_data_packets_per_second(struct local_options * const options)
 
 static void packet_buf_free(struct pkt_buf * const pkt_buf)
 {
-	free(pkt_buf->packet);
-	free(pkt_buf);
+    if (pkt_buf != NULL)
+    {
+        free(pkt_buf->packet);
+        free(pkt_buf);
+    }
 }
 
 static void packet_buf_remove(
@@ -979,35 +982,32 @@ static void aps_purge_old_packets(
 	}
 }
 
-static int
-list_add_packet(
+static void list_add_packet(
 	struct pkt_list_head * const pkt_list,
     uint8_t const * const packet,
     size_t const length)
 {
-	struct pkt_buf * new_pkt_buf;
+    bool success;
+	struct pkt_buf * new_pkt_buf = NULL;
 
-	if (length <= 0)
+	if (packet == NULL || length == 0)
 	{
-		return 1;
-	}
-
-	if (packet == NULL)
-	{
-		return 1;
+        success = false;
+        goto done;
 	}
 
     new_pkt_buf = calloc(1, sizeof *new_pkt_buf);
     if (new_pkt_buf == NULL)
     {
-        return 1;
+        success = false;
+        goto done;
     }
 
     new_pkt_buf->packet = malloc(length);
     if (new_pkt_buf->packet == NULL)
     {
-        free(new_pkt_buf);
-        return 1;
+        success = false;
+        goto done;
     }
 
     memcpy(new_pkt_buf->packet, packet, length);
@@ -1017,7 +1017,15 @@ list_add_packet(
 
 	TAILQ_INSERT_HEAD(pkt_list, new_pkt_buf, entry);
 
-	return 0;
+    success = true;
+
+done:
+    if (!success)
+    {
+        packet_buf_free(new_pkt_buf);
+    }
+
+    return;
 }
 
 /*
@@ -1026,62 +1034,69 @@ list_add_packet(
  * The reason is that the first two bytes unencrypted are 'aa'
  * so with the same IV it should always be encrypted to the same thing.
  */
-static int
-list_check_decloak(struct pkt_list_head * const pkt_list, int length, const uint8_t * packet)
+static bool list_check_decloak(
+    struct pkt_list_head * const pkt_list,
+    const uint8_t const * const packet,
+    size_t const length)
 {
+    bool is_decloaked;
 	struct pkt_buf * next;
-	int i, correct;
 
-	if (packet == NULL)
+	if (packet == NULL || length == 0)
 	{
-		return 1;
-	}
-
-	if (length <= 0)
-	{
-		return 1;
+        is_decloaked = false;
+        goto done;
 	}
 
 	TAILQ_FOREACH(next, pkt_list, entry)
 	{
 		if ((next->length + 4) == length)
 		{
-			correct = 1;
+			bool correct = true;
+            static size_t const offset = 28; /* TODO: Offset to what? */
+
+            /* FIXME: Should length also be >= 32? */
+
 			// check for 4 bytes added after the end
-			for (i = 28; i < length - 28; i++) // check everything (in the old
-			// packet) after the IV
+			for (size_t i = offset; i < length - offset; i++)
+            // check everything (in the old packet) after the IV
 			// (including crc32 at the end)
 			{
 				if (next->packet[i] != packet[i])
 				{
-					correct = 0;
+					correct = false;
 					break;
 				}
 			}
+
 			if (!correct)
 			{
-				correct = 1;
+				correct = true;
 				// check for 4 bytes added at the beginning
-				for (i = 28; i < length - 28; i++) // check everything (in the
-				// old packet) after the IV
-				// (including crc32 at the
-				// end)
+				for (size_t i = offset; i < length - offset; i++)
+                // check everything (in the old packet) after the IV
+				// (including crc32 at the end)
 				{
 					if (next->packet[i] != packet[4 + i])
 					{
-						correct = 0;
+						correct = false;
 						break;
 					}
 				}
 			}
-			if (correct == 1)
+
+			if (correct)
 			{
-				return 0; // found decloaking!
+                is_decloaked = true;
+                goto done;
 			}
 		}
 	}
 
-	return 1; // didn't find decloak
+    is_decloaked = false;
+
+done:
+	return is_decloaked;
 }
 
 static void na_info_free(struct NA_info * const na_cur)
@@ -1467,7 +1482,7 @@ static void ap_info_initialise(
         ap_cur->uiv_root = uniqueiv_init();
     }
 
-    ap_cur->decloak_detect = options->decloak;
+    ap_cur->decloak_detection = options->decloak_detection;
     ap_info_populate_gps(ap_cur, options->gps_context.gps_loc);
 }
 
@@ -2642,19 +2657,19 @@ static void do_decloak_check(
     uint8_t const * const h80211,
     size_t caplen)
 {
-    if (!ap_cur->decloak_detect)
+    if (!ap_cur->decloak_detection)
     {
         goto done;
     }
 
-    if (list_check_decloak(&ap_cur->pkt_list, caplen, h80211) != 0)
+    if (!list_check_decloak(&ap_cur->pkt_list, h80211, caplen))
     {
         list_add_packet(&ap_cur->pkt_list, h80211, caplen);
     }
     else
     {
-        ap_cur->is_decloak = 1;
-        ap_cur->decloak_detect = 0;
+        ap_cur->detected_decloak = true;
+        ap_cur->decloak_detection = false;
 
         packet_list_free(&ap_cur->pkt_list);
 
@@ -6530,7 +6545,7 @@ static void options_initialise(struct local_options * const options)
 
     options->active_scan_sim = 0;
     options->update_interval_seconds = 0;
-    options->decloak = 1;
+    options->decloak_detection = true;
 
     options->is_berlin = 0;
     options->maxnumaps = 0;
@@ -6841,7 +6856,7 @@ int main(int argc, char * argv[])
 
 			case 'D':
 
-				lopt.decloak = 0;
+				lopt.decloak_detection = false;
 				break;
 
 			case 'M':
