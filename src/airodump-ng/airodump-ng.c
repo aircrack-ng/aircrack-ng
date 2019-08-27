@@ -1105,13 +1105,26 @@ static void na_info_list_free(struct na_list_head * const na_list)
 	}
 }
 
-static struct NA_info * na_info_alloc(mac_address const * const mac)
+static struct NA_info * na_info_alloc(void)
 {
     struct NA_info * na_cur = calloc(1, sizeof *na_cur);
 
     if (na_cur == NULL)
     {
         perror("calloc failed");
+    }
+
+    return na_cur;
+}
+
+static struct NA_info * na_info_new(
+    struct na_list_head * const na_list,
+    mac_address const * const mac)
+{
+    struct NA_info * const na_cur = na_info_alloc();
+
+    if (na_cur == NULL)
+    {
         goto done;
     }
 
@@ -1123,27 +1136,6 @@ static struct NA_info * na_info_alloc(mac_address const * const mac)
 
     na_cur->power = -1;
     na_cur->channel = -1;
-    na_cur->ack = 0;
-    na_cur->ack_old = 0;
-    na_cur->ackps = 0;
-    na_cur->cts = 0;
-    na_cur->rts_r = 0;
-    na_cur->rts_t = 0;
-
-done:
-    return na_cur;
-}
-
-static struct NA_info * na_info_new(
-    struct na_list_head * const na_list,
-    mac_address const * const mac)
-{
-    struct NA_info * const na_cur = na_info_alloc(mac);
-
-    if (na_cur == NULL)
-    {
-        goto done;
-    }
 
     TAILQ_INSERT_TAIL(na_list, na_cur, entry);
 
@@ -1237,46 +1229,15 @@ static void sta_list_free(struct sta_list_head * const sta_list)
     }
 }
 
-static struct ST_info * st_info_alloc(mac_address const * const stmac)
+static struct ST_info * st_info_alloc(void)
 {
     struct ST_info * const st_cur = calloc(1, sizeof *st_cur);
 
     if (st_cur == NULL)
     {
         perror("calloc failed");
-        goto done;
     }
 
-    MAC_ADDRESS_COPY(&st_cur->stmac, stmac);
-
-    st_cur->nb_pkt = 0;
-
-    st_cur->tinit = time(NULL);
-    st_cur->tlast = st_cur->tinit;
-    st_cur->time_printed = 0;
-
-    st_cur->power = -1;
-    st_cur->best_power = -1;
-    st_cur->rate_to = -1;
-    st_cur->rate_from = -1;
-
-    st_cur->probe_index = -1;
-    st_cur->missed = 0;
-    st_cur->lastseq = 0;
-    st_cur->qos_fr_ds = 0;
-    st_cur->qos_to_ds = 0;
-    st_cur->channel = 0;
-    st_cur->old_channel = 0;
-
-    gettimeofday(&st_cur->ftimer, NULL);
-
-    for (size_t i = 0; i < ArrayCount(st_cur->probes); i++)
-    {
-        memset(st_cur->probes[i], 0, sizeof(st_cur->probes[i]));
-        st_cur->ssid_length[i] = 0;
-    }
-
-done:
     return st_cur;
 }
 
@@ -1284,12 +1245,26 @@ static struct ST_info * sta_info_new(
     struct local_options * const options,
     mac_address const * const mac)
 {
-    struct ST_info * const st_cur = st_info_alloc(mac);
+    struct ST_info * const st_cur = st_info_alloc();
 
     if (st_cur == NULL)
     {
         goto done;
     }
+
+    MAC_ADDRESS_COPY(&st_cur->stmac, mac);
+
+    st_cur->tinit = time(NULL);
+    st_cur->tlast = st_cur->tinit;
+
+    st_cur->power = -1;
+    st_cur->best_power = -1;
+    st_cur->rate_to = -1;
+    st_cur->rate_from = -1;
+
+    st_cur->probe_index = -1;
+
+    gettimeofday(&st_cur->ftimer, NULL);
 
     if (options->show_manufacturer)
     {
@@ -1409,109 +1384,61 @@ static void ap_info_populate_gps(
     memcpy(ap_cur->gps_loc_best, gps_coordinates, sizeof(ap_cur->gps_loc_best));
 }
 
-static struct AP_info * ap_info_alloc(mac_address const * const bssid)
+static struct AP_info * ap_info_alloc(void)
 {
 	struct AP_info * const ap_cur = calloc(1, sizeof(*ap_cur));
 
 	if (ap_cur == NULL)
 	{
 		perror("calloc failed");
-		goto done;
 	}
 
-	MAC_ADDRESS_COPY(&ap_cur->bssid, bssid);
-
-	ap_cur->nb_pkt = 0;
-
-	ap_cur->tinit = time(NULL);
-	ap_cur->tlast = ap_cur->tinit;
-	ap_cur->time_printed = 0;
-
-	ap_cur->avg_power = -1;
-	ap_cur->best_power = -1;
-	ap_cur->power_index = -1;
-
-	for (size_t i = 0; i < NB_PWR; i++)
-	{
-		ap_cur->power_lvl[i] = -1;
-	}
-
-	ap_cur->channel = -1;
-	ap_cur->old_channel = -1;
-	ap_cur->max_speed = -1;
-	ap_cur->security = 0;
-
-	ap_cur->ivbuf = NULL;
-	ap_cur->ivbuf_size = 0;
-
-	ap_cur->nb_data = 0;
-	ap_cur->nb_dataps = 0;
-	ap_cur->nb_data_old = 0;
-	gettimeofday(&ap_cur->tv, NULL);
-
-	ap_cur->dict_started = 0;
-
-	ap_cur->key = NULL;
-
-	ap_cur->nb_bcn = 0;
-
-	ap_cur->rx_quality = 0;
-	ap_cur->fcapt = 0;
-	ap_cur->fmiss = 0;
-	ap_cur->last_seq = 0;
-	gettimeofday(&ap_cur->ftimef, NULL);
-	gettimeofday(&ap_cur->ftimel, NULL);
-	gettimeofday(&ap_cur->ftimer, NULL);
-
-	ap_cur->essid_logged = false;
-	memset(ap_cur->essid, 0, sizeof ap_cur->essid);
-    ap_cur->ssid_length = 0;
-    ap_cur->timestamp = 0;
-
-	ap_cur->is_decloak = 0;
-
-	TAILQ_INIT(&ap_cur->pkt_list);
-
-	ap_cur->marked = 0;
-	ap_cur->marked_color = 1;
-
-	ap_cur->data_root = NULL;
-	ap_cur->EAP_detected = 0;
-
-	/* 802.11n and ac */
-	ap_cur->channel_width = CHANNEL_22MHZ; // 20MHz by default
-	memset(ap_cur->standard, 0, sizeof ap_cur->standard);
-
-	ap_cur->n_channel.sec_channel = -1;
-	ap_cur->n_channel.short_gi_20 = 0;
-	ap_cur->n_channel.short_gi_40 = 0;
-	ap_cur->n_channel.any_chan_width = 0;
-	ap_cur->n_channel.mcs_index = -1;
-
-	ap_cur->ac_channel.center_sgmt[0] = 0;
-	ap_cur->ac_channel.center_sgmt[1] = 0;
-	ap_cur->ac_channel.mu_mimo = 0;
-	ap_cur->ac_channel.short_gi_80 = 0;
-	ap_cur->ac_channel.short_gi_160 = 0;
-	ap_cur->ac_channel.split_chan = 0;
-	ap_cur->ac_channel.mhz_160_chan = 0;
-	ap_cur->ac_channel.wave_2 = 0;
-	memset(ap_cur->ac_channel.mcs_index, 0, sizeof ap_cur->ac_channel.mcs_index);
-
-done:
-	return ap_cur;
+    return ap_cur;
 }
 
 static struct AP_info * ap_info_new(
     struct local_options * options,
     mac_address const * const bssid)
 {
-    struct AP_info * const ap_cur = ap_info_alloc(bssid);
+    struct AP_info * const ap_cur = ap_info_alloc();
 
     if (ap_cur == NULL)
     {
         goto done;
     }
+
+    MAC_ADDRESS_COPY(&ap_cur->bssid, bssid);
+
+    ap_cur->tinit = time(NULL);
+    ap_cur->tlast = ap_cur->tinit;
+
+    ap_cur->avg_power = -1;
+    ap_cur->best_power = -1;
+    ap_cur->power_index = -1;
+
+    for (size_t i = 0; i < NB_PWR; i++)
+    {
+        ap_cur->power_lvl[i] = -1;
+    }
+
+    ap_cur->channel = -1;
+    ap_cur->old_channel = -1;
+    ap_cur->max_speed = -1;
+
+    gettimeofday(&ap_cur->tv, NULL);
+    gettimeofday(&ap_cur->ftimef, NULL);
+    gettimeofday(&ap_cur->ftimel, NULL);
+    gettimeofday(&ap_cur->ftimer, NULL);
+
+    TAILQ_INIT(&ap_cur->pkt_list);
+
+    ap_cur->marked_color = 1; /* FIXME: no magic numbers please. */
+
+    /* 802.11n and ac */
+    ap_cur->channel_width = CHANNEL_22MHZ; // 20MHz by default
+
+    ap_cur->n_channel.sec_channel = -1;
+    ap_cur->n_channel.mcs_index = -1;
 
     if (options->show_manufacturer)
     {
