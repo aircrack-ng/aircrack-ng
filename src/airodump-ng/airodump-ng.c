@@ -4209,29 +4209,17 @@ static void dump_print(
 
 				nlines++;
                 CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done); 
-
+                printf(" ");
                 if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
                 {
-					printf(" (not associated) ");
+					printf("(not associated) ");
                 }
                 else
                 {
-					printf(" %02X:%02X:%02X:%02X:%02X:%02X",
-                           ap_cur->bssid.addr[0],
-                           ap_cur->bssid.addr[1],
-                           ap_cur->bssid.addr[2],
-                           ap_cur->bssid.addr[3],
-                           ap_cur->bssid.addr[4],
-                           ap_cur->bssid.addr[5]);
+                    fprintf_mac_address(stdout, &ap_cur->bssid);
                 }
-
-				printf("  %02X:%02X:%02X:%02X:%02X:%02X",
-					   st_cur->stmac.addr[0],
-					   st_cur->stmac.addr[1],
-					   st_cur->stmac.addr[2],
-					   st_cur->stmac.addr[3],
-					   st_cur->stmac.addr[4],
-					   st_cur->stmac.addr[5]);
+                printf("  "); 
+                fprintf_mac_address(stdout, &st_cur->stmac);
 
 				printf("  %3d ", st_cur->power);
 				printf("  %2d", st_cur->rate_to / 1000000);
