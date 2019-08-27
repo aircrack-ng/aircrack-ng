@@ -387,7 +387,7 @@ static void clear_ap_marking(struct ap_list_head * const ap_list)
     TAILQ_FOREACH(ap_cur, ap_list, entry)
     {
         ap_cur->marked = 0;
-        ap_cur->marked_color = 1;
+        ap_cur->marked_color = TEXT_RED;
     }
 }
 
@@ -402,7 +402,7 @@ static void color_off(struct local_options * const options)
 static void color_on(struct local_options * const options)
 {
 	struct AP_info * ap_cur;
-	int color = 1;
+	int color = TEXT_RED;
 
 	color_off(options);
 
@@ -445,7 +445,7 @@ static void color_on(struct local_options * const options)
 				ap_cur->marked = 1;
 				if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
 				{
-					ap_cur->marked_color = 1;
+					ap_cur->marked_color = TEXT_RED;
 				}
 				else
 				{
@@ -455,7 +455,7 @@ static void color_on(struct local_options * const options)
 			}
 			else
 			{
-				ap_cur->marked_color = 1;
+				ap_cur->marked_color = TEXT_RED;
 			}
 		}
 	}
@@ -1117,6 +1117,21 @@ static struct NA_info * na_info_alloc(void)
     return na_cur;
 }
 
+static void na_info_initialise(
+    struct NA_info * const na_cur,
+    mac_address const * const mac)
+{
+    MAC_ADDRESS_COPY(&na_cur->namac, mac);
+
+    gettimeofday(&na_cur->tv, NULL);
+    na_cur->tinit = time(NULL);
+    na_cur->tlast = time(NULL);
+
+    na_cur->power = -1;
+    na_cur->channel = -1;
+
+}
+
 static struct NA_info * na_info_new(
     struct na_list_head * const na_list,
     mac_address const * const mac)
@@ -1128,14 +1143,7 @@ static struct NA_info * na_info_new(
         goto done;
     }
 
-    MAC_ADDRESS_COPY(&na_cur->namac, mac);
-
-    gettimeofday(&na_cur->tv, NULL);
-    na_cur->tinit = time(NULL);
-    na_cur->tlast = time(NULL);
-
-    na_cur->power = -1;
-    na_cur->channel = -1;
+    na_info_initialise(na_cur, mac);
 
     TAILQ_INSERT_TAIL(na_list, na_cur, entry);
 
@@ -1241,17 +1249,11 @@ static struct ST_info * st_info_alloc(void)
     return st_cur;
 }
 
-static struct ST_info * sta_info_new(
-    struct local_options * const options,
-    mac_address const * const mac)
+static void sta_info_initialise(
+    struct ST_info * const st_cur,
+    mac_address const * const mac,
+    struct local_options * const options)
 {
-    struct ST_info * const st_cur = st_info_alloc();
-
-    if (st_cur == NULL)
-    {
-        goto done;
-    }
-
     MAC_ADDRESS_COPY(&st_cur->stmac, mac);
 
     st_cur->tinit = time(NULL);
@@ -1273,6 +1275,20 @@ static struct ST_info * sta_info_new(
     }
 
     sta_populate_gps(st_cur, options->gps_context.gps_loc);
+}
+
+static struct ST_info * sta_info_new(
+    struct local_options * const options,
+    mac_address const * const mac)
+{
+    struct ST_info * const st_cur = st_info_alloc();
+
+    if (st_cur == NULL)
+    {
+        goto done;
+    }
+
+    sta_info_initialise(st_cur, mac, options);
 
     TAILQ_INSERT_TAIL(&options->sta_list, st_cur, entry);
 
@@ -1396,17 +1412,11 @@ static struct AP_info * ap_info_alloc(void)
     return ap_cur;
 }
 
-static struct AP_info * ap_info_new(
-    struct local_options * options,
-    mac_address const * const bssid)
+static void ap_info_initialise(
+    struct AP_info * const ap_cur,
+    mac_address const * const bssid,
+    struct local_options * const options)
 {
-    struct AP_info * const ap_cur = ap_info_alloc();
-
-    if (ap_cur == NULL)
-    {
-        goto done;
-    }
-
     MAC_ADDRESS_COPY(&ap_cur->bssid, bssid);
 
     ap_cur->tinit = time(NULL);
@@ -1416,7 +1426,7 @@ static struct AP_info * ap_info_new(
     ap_cur->best_power = -1;
     ap_cur->power_index = -1;
 
-    for (size_t i = 0; i < NB_PWR; i++)
+    for (size_t i = 0; i < ArrayCount(ap_cur->power_lvl); i++)
     {
         ap_cur->power_lvl[i] = -1;
     }
@@ -1432,7 +1442,7 @@ static struct AP_info * ap_info_new(
 
     TAILQ_INIT(&ap_cur->pkt_list);
 
-    ap_cur->marked_color = 1; /* FIXME: no magic numbers please. */
+    ap_cur->marked_color = TEXT_RED;
 
     /* 802.11n and ac */
     ap_cur->channel_width = CHANNEL_22MHZ; // 20MHz by default
@@ -1456,6 +1466,20 @@ static struct AP_info * ap_info_new(
 
     ap_cur->decloak_detect = options->decloak;
     ap_info_populate_gps(ap_cur, options->gps_context.gps_loc);
+}
+
+static struct AP_info * ap_info_new(
+    struct local_options * const options,
+    mac_address const * const bssid)
+{
+    struct AP_info * const ap_cur = ap_info_alloc();
+
+    if (ap_cur == NULL)
+    {
+        goto done;
+    }
+
+    ap_info_initialise(ap_cur, bssid, options);
 
     TAILQ_INSERT_TAIL(&options->ap_list, ap_cur, entry);
 
@@ -1611,7 +1635,7 @@ static void ap_update(
          && MAC_ADDRESS_EQUAL((mac_address *)(h80211 + 10), &ap_cur->bssid))
         || ((h80211[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_FROMDS))
     {
-        ap_cur->power_index = (ap_cur->power_index + 1) % NB_PWR;
+        ap_cur->power_index = (ap_cur->power_index + 1) % ArrayCount(ap_cur->power_lvl);
         ap_cur->power_lvl[ap_cur->power_index] = ri->ri_power;
 
         ap_cur->avg_power =
@@ -3913,7 +3937,7 @@ static void dump_print(
 						ap_cur->marked_color++;
 						if (ap_cur->marked_color > TEXT_MAX_COLOR)
 						{
-							ap_cur->marked_color = 1;
+							ap_cur->marked_color = TEXT_RED;
 							ap_cur->marked = 0;
 						}
 					}
