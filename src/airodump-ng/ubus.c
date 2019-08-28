@@ -17,6 +17,19 @@ ubus_add_fd(void)
     ubus_add_uloop(ubus_ctx);
 }
 
+static void
+ubus_cancel(struct uloop_timeout * timeout)
+{
+    (void)timeout;
+
+    uloop_end();
+    uloop_timeout_set(timeout, 1);
+}
+
+static struct uloop_timeout uloop_cancel_timer =
+{
+    .cb = ubus_cancel,
+};
 
 static void
 ubus_reconnect_timer(struct uloop_timeout * timeout)
@@ -37,7 +50,10 @@ ubus_reconnect_timer(struct uloop_timeout * timeout)
         return;
     }
 
+    uloop_timeout_set(&uloop_cancel_timer, 1);
+
     DPRINTF("Reconnected to ubus, new id: %08x\n", ubus_ctx->local_id);
+
     connected = true;
     ubus_add_fd();
 }
@@ -57,7 +73,7 @@ ubus_initialise(char const * const path)
     ubus_path = path;
     ubus_ctx = ubus_connect(path);
 
-    if (ubus_ctx == NULL) 
+    if (ubus_ctx == NULL)
     {
         DPRINTF("Failed to connect to ubus on path: %s\n", path);
         goto done;
@@ -68,6 +84,7 @@ ubus_initialise(char const * const path)
     ubus_ctx->connection_lost = ubus_connection_lost;
 
     ubus_add_fd();
+    uloop_timeout_set(&uloop_cancel_timer, 1);
 
 done:
     return ubus_ctx;

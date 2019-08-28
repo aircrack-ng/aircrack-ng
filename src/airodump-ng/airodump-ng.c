@@ -4422,7 +4422,9 @@ static void signal_event_shutdown(int * const signal_event_pipe)
 	}
 }
 
-static void signal_event_initialise(int * const signal_event_pipe)
+static void signal_event_initialise(
+    int * const signal_event_pipe,
+    bool const interactive_mode)
 {
 	int const pipe_result = pipe(signal_event_pipe);
 	IGNORE_NZ(pipe_result);
@@ -4436,6 +4438,11 @@ static void signal_event_initialise(int * const signal_event_pipe)
 	{
 		perror("sigaction(SIGINT)");
 	}
+    if (interactive_mode
+        && sigaction(SIGWINCH, &action, NULL) == -1)
+    {
+        perror("sigaction(SIGWINCH)");
+    }
 	if (sigaction(SIGSEGV, &action, NULL) == -1)
 	{
 		perror("sigaction(SIGSEGV)");
@@ -4443,10 +4450,6 @@ static void signal_event_initialise(int * const signal_event_pipe)
 	if (sigaction(SIGTERM, &action, NULL) == -1)
 	{
 		perror("sigaction(SIGTERM)");
-	}
-	if (sigaction(SIGWINCH, &action, NULL) == -1)
-	{
-		perror("sigaction(SIGWINCH)");
 	}
 
 	/* Using a separate handler for reaping zombies. */
@@ -6661,87 +6664,90 @@ int main(int argc, char * argv[])
     struct input_thread_args_st input_thread_args;
     int program_exit_code;
     bool had_error = false;
-	int read_pkts = 0;
+    int read_pkts = 0;
 
-	long time_slept = 0;
-	long cycle_time;
-	char * output_format_string;
+    long time_slept = 0;
+    long cycle_time;
+    char * output_format_string;
 
-	struct wif * wi[MAX_CARDS];
+    struct wif * wi[MAX_CARDS];
 
-	int found;
-	int freq[2];
-	size_t num_opts = 0;
-	int option = 0;
-	int option_index = 0;
+    int found;
+    int freq[2];
+    size_t num_opts = 0;
+    int option = 0;
+    int option_index = 0;
     int reset_val = 0;
     int output_format_first_time = 1;
 
-	time_t tt1;
-	time_t tt2;
+    time_t tt1;
+    time_t tt2;
 
-	uint8_t h80211[4096];
+    uint8_t h80211[4096];
 
-	struct timeval tv0;
-	struct timeval current_time_timestamp;
-	struct timeval tv2;
-	struct timeval tv3;
-	struct timeval last_active_scan_timestamp;
-	struct timeval previous_timestamp = {.tv_sec = 0, .tv_usec = 0 };
+    struct timeval tv0;
+    struct timeval current_time_timestamp;
+    struct timeval tv2;
+    struct timeval tv3;
+    struct timeval last_active_scan_timestamp;
+    struct timeval previous_timestamp = { .tv_sec = 0, .tv_usec = 0 };
 
-	static const struct option long_options[]
-		= {{"ht20", 0, 0, '2'},
-		   {"ht40-", 0, 0, '3'},
-		   {"ht40+", 0, 0, '5'},
-		   {"band", 1, 0, 'b'},
-		   {"beacon", 0, 0, 'e'},
-		   {"beacons", 0, 0, 'e'},
-		   {"cswitch", 1, 0, 's'},
-		   {"netmask", 1, 0, 'm'},
-		   {"bssid", 1, 0, 'd'},
-		   {"essid", 1, 0, 'N'},
-		   {"essid-regex", 1, 0, 'R'},
-		   {"channel", 1, 0, 'c'},
-		   {"gpsd", 0, 0, 'g'},
-		   {"ivs", 0, 0, 'i'},
-		   {"write", 1, 0, 'w'},
-		   {"encrypt", 1, 0, 't'},
-		   {"update", 1, 0, 'u'},
-		   {"berlin", 1, 0, 'B'},
-		   {"help", 0, 0, 'H'},
-		   {"no-decloak", 0, 0, 'D'},
-		   {"showack", 0, 0, 'A'},
-		   {"detect-anomaly", 0, 0, 'E'},
+    static const struct option long_options[]
+        =
+    {
+        {"ht20", 0, 0, '2'},
+        {"ht40-", 0, 0, '3'},
+        {"ht40+", 0, 0, '5'},
+        {"band", 1, 0, 'b'},
+        {"beacon", 0, 0, 'e'},
+        {"beacons", 0, 0, 'e'},
+        {"cswitch", 1, 0, 's'},
+        {"netmask", 1, 0, 'm'},
+        {"bssid", 1, 0, 'd'},
+        {"essid", 1, 0, 'N'},
+        {"essid-regex", 1, 0, 'R'},
+        {"channel", 1, 0, 'c'},
+        {"gpsd", 0, 0, 'g'},
+        {"ivs", 0, 0, 'i'},
+        {"write", 1, 0, 'w'},
+        {"encrypt", 1, 0, 't'},
+        {"update", 1, 0, 'u'},
+        {"berlin", 1, 0, 'B'},
+        {"help", 0, 0, 'H'},
+        {"no-decloak", 0, 0, 'D'},
+        {"showack", 0, 0, 'A'},
+        {"detect-anomaly", 0, 0, 'E'},
 #if defined(INCLUDE_UBUS)
-           {"ubus", 0, &lopt.do_ubus, 1 },
-           {"ubus-path", 1, 0, 'S' },
+        {"ubus", 0, &lopt.do_ubus, 1 },
+        {"ubus-path", 1, 0, 'S' },
 #endif
-           {"output-format", 1, 0, 'o'},
-           {"sys-name", 1, 0, 'X'},
-           {"loc-name", 1, 0, 'y'},
-           {"filter-seconds", 1, 0, 'F'},
-           {"max-age", 1, 0, 'v'},
-           {"file-reset-minutes", 1, 0, 'P'},
-           {"ignore-negative-one", 0, &lopt.ignore_negative_one, 1},
-           {"no-filename-index", 0, &lopt.filename.include_index, 0},
-           {"no-shared-key", 0, &lopt.check_shared_key, 0},
-           {"manufacturer", 0, 0, 'M' },
-		   {"uptime", 0, 0, 'U'},
-		   {"write-interval", 1, 0, 'I'},
-		   {"wps", 0, 0, 'W'},
-		   {"background", 1, 0, 'K'},
-		   {"min-packets", 1, 0, 'n'},
-		   {"real-time", 0, 0, 'T'},
-		   {0, 0, 0, 0}};
+        {"output-format", 1, 0, 'o'},
+        {"sys-name", 1, 0, 'X'},
+        {"loc-name", 1, 0, 'y'},
+        {"filter-seconds", 1, 0, 'F'},
+        {"max-age", 1, 0, 'v'},
+        {"file-reset-minutes", 1, 0, 'P'},
+        {"ignore-negative-one", 0, &lopt.ignore_negative_one, 1},
+        {"no-filename-index", 0, &lopt.filename.include_index, 0},
+        {"no-shared-key", 0, &lopt.check_shared_key, 0},
+        {"manufacturer", 0, 0, 'M' },
+        {"uptime", 0, 0, 'U'},
+        {"write-interval", 1, 0, 'I'},
+        {"wps", 0, 0, 'W'},
+        {"background", 1, 0, 'K'},
+        {"min-packets", 1, 0, 'n'},
+        {"real-time", 0, 0, 'T'},
+        {0, 0, 0, 0}
+    };
 
     ac_crypto_init();
 
     console_utf8_enable(); /* FIXME - only required in interactive mode? */
 
     /* FIXME - only required in interactive mode? */
-	textstyle(TEXT_RESET); //(TEXT_RESET, TEXT_BLACK, TEXT_WHITE);
+    textstyle(TEXT_RESET); //(TEXT_RESET, TEXT_BLACK, TEXT_WHITE);
 
-	rand_init();
+    rand_init();
 
     options_initialise(&lopt);
 
@@ -6751,78 +6757,79 @@ int main(int argc, char * argv[])
     lopt.do_ubus = false;
     lopt.ubus_path = NULL;
     lopt.ubus_context = NULL;
-#endif 
+#endif
 
     /* Check the arguments. */
 
     for (num_opts = 0; long_options[num_opts].name != NULL; num_opts++)
     {
-		; /* Do nothing. */
+        ; /* Do nothing. */
     }
 
-	for (size_t i = 0; i < (size_t)argc; i++) // go through all arguments
-	{
-		found = 0;
-		if (strlen(argv[i]) >= 3)
-		{
-			if (argv[i][0] == '-' && argv[i][1] != '-')
-			{
-				// we got a single dash followed by at least 2 chars
-				// lets check that against our long options to find errors
-				for (size_t j = 0; j < num_opts; j++)
-				{
-					if (strcmp(argv[i] + 1, long_options[j].name) == 0)
-					{
-						// found long option after single dash
-						found = 1;
-						if (i > 1 && strcmp(argv[i - 1], "-") == 0)
-						{
-							// separated dashes?
-							printf("Notice: You specified \"%s %s\". Did you "
-								   "mean \"%s%s\" instead?\n",
-								   argv[i - 1],
-								   argv[i],
-								   argv[i - 1],
-								   argv[i]);
-						}
-						else
-						{
-							// forgot second dash?
-							printf("Notice: You specified \"%s\". Did you mean "
-								   "\"-%s\" instead?\n",
-								   argv[i],
-								   argv[i]);
-						}
-						break;
-					}
-				}
-				if (found)
-				{
-					sleep(3);
-					break;
-				}
-			}
-		}
-	}
+    for (size_t i = 0; i < (size_t)argc; i++) // go through all arguments
+    {
+        found = 0;
+        if (strlen(argv[i]) >= 3)
+        {
+            if (argv[i][0] == '-' && argv[i][1] != '-')
+            {
+                // we got a single dash followed by at least 2 chars
+                // lets check that against our long options to find errors
+                for (size_t j = 0; j < num_opts; j++)
+                {
+                    if (strcmp(argv[i] + 1, long_options[j].name) == 0)
+                    {
+                        // found long option after single dash
+                        found = 1;
+                        if (i > 1 && strcmp(argv[i - 1], "-") == 0)
+                        {
+                            // separated dashes?
+                            printf("Notice: You specified \"%s %s\". Did you "
+                                   "mean \"%s%s\" instead?\n",
+                                   argv[i - 1],
+                                   argv[i],
+                                   argv[i - 1],
+                                   argv[i]);
+                        }
+                        else
+                        {
+                            // forgot second dash?
+                            printf("Notice: You specified \"%s\". Did you mean "
+                                   "\"-%s\" instead?\n",
+                                   argv[i],
+                                   argv[i]);
+                        }
+                        break;
+                    }
+                }
+                if (found)
+                {
+                    sleep(3);
+                    break;
+                }
+            }
+        }
+    }
 
-	do
-	{
-		option_index = 0;
+    do
+    {
+        option_index = 0;
 
-		option
-			= getopt_long(argc,
-						  argv,
-						  "S:b:c:egiw:s:t:u:m:d:N:R:aHDB:Ahf:r:EC:o:x:MUI:WK:n:T:F:P:v:",
+        option
+            = getopt_long(argc,
+                          argv,
+                          "S:b:c:egiw:s:t:u:m:d:N:R:aHDB:Ahf:r:EC:o:x:MUI:WK:n:T:F:P:v:",
                           long_options,
-						  &option_index);
+                          &option_index);
 
-		if (option < 0) break;
+        if (option < 0)
+            break;
 
-		switch (option)
-		{
-			case 0:
+        switch (option)
+        {
+            case 0:
 
-				break;
+                break;
 
 #if defined(INCLUDE_UBUS)
             case 'S':
@@ -6830,197 +6837,197 @@ int main(int argc, char * argv[])
                 break;
 #endif
 
-			case ':':
+            case ':':
 
-				printf("\"%s --help\" for help.\n", argv[0]);
-				program_exit_code = EXIT_FAILURE;
-				goto done;
+                printf("\"%s --help\" for help.\n", argv[0]);
+                program_exit_code = EXIT_FAILURE;
+                goto done;
 
-			case '?':
+            case '?':
 
-				printf("\"%s --help\" for help.\n", argv[0]);
-				program_exit_code = EXIT_FAILURE;
-				goto done;
+                printf("\"%s --help\" for help.\n", argv[0]);
+                program_exit_code = EXIT_FAILURE;
+                goto done;
 
-			case 'K':
-			{
-				char * invalid_str = NULL;
-				long int const bg_mode = strtol(optarg, &invalid_str, 10);
+            case 'K':
+            {
+                char * invalid_str = NULL;
+                long int const bg_mode = strtol(optarg, &invalid_str, 10);
 
-				if ((invalid_str && *invalid_str != 0)
-					|| !(bg_mode == 0 || bg_mode == 1))
-				{
-					printf("Invalid background mode. Must be '0' or '1'\n");
-					program_exit_code = EXIT_FAILURE;
-					goto done;
-				}
+                if ((invalid_str && *invalid_str != 0)
+                    || !(bg_mode == 0 || bg_mode == 1))
+                {
+                    printf("Invalid background mode. Must be '0' or '1'\n");
+                    program_exit_code = EXIT_FAILURE;
+                    goto done;
+                }
                 lopt.interactive_mode = !bg_mode;
-				break;
-			}
-			case 'I':
+                break;
+            }
+            case 'I':
 
-				if (!is_string_number(optarg))
-				{
-					printf("Error: Write interval is not a number (>0). "
-						   "Aborting.\n");
-    				program_exit_code = EXIT_FAILURE;
-    				goto done;
-    			}
+                if (!is_string_number(optarg))
+                {
+                    printf("Error: Write interval is not a number (>0). "
+                           "Aborting.\n");
+                    program_exit_code = EXIT_FAILURE;
+                    goto done;
+                }
 
-				lopt.file_write_interval = (int) strtol(optarg, NULL, 10);
+                lopt.file_write_interval = (int)strtol(optarg, NULL, 10);
 
-				if (lopt.file_write_interval <= 0)
-				{
-					printf("Error: Write interval must be greater than 0. "
-						   "Aborting.\n");
-					program_exit_code = EXIT_FAILURE;
-					goto done;
-				}
-				break;
+                if (lopt.file_write_interval <= 0)
+                {
+                    printf("Error: Write interval must be greater than 0. "
+                           "Aborting.\n");
+                    program_exit_code = EXIT_FAILURE;
+                    goto done;
+                }
+                break;
 
-			case 'T':
-				lopt.relative_time = true;
-				break;
+            case 'T':
+                lopt.relative_time = true;
+                break;
 
-			case 'E':
-				lopt.detect_anomaly = 1;
-				break;
+            case 'E':
+                lopt.detect_anomaly = 1;
+                break;
 
-			case 'e':
+            case 'e':
 
-				lopt.one_beacon = 0;
-				break;
+                lopt.one_beacon = 0;
+                break;
 
-			case 'a':
+            case 'a':
 
-				lopt.asso_client = 1;
-				break;
+                lopt.asso_client = 1;
+                break;
 
-			case 'A':
+            case 'A':
 
-				lopt.show_ack = 1;
-				break;
+                lopt.show_ack = 1;
+                break;
 
-			case 'h':
+            case 'h':
 
-				lopt.hide_known = 1;
-				break;
+                lopt.hide_known = 1;
+                break;
 
-			case 'D':
+            case 'D':
 
-				lopt.decloak_detection = false;
-				break;
+                lopt.decloak_detection = false;
+                break;
 
-			case 'M':
+            case 'M':
 
-				lopt.show_manufacturer = 1;
-				break;
+                lopt.show_manufacturer = 1;
+                break;
 
-			case 'U':
-				lopt.show_uptime = 1;
-				break;
+            case 'U':
+                lopt.show_uptime = 1;
+                break;
 
-			case 'W':
+            case 'W':
 
-				lopt.show_wps = 1;
-				break;
+                lopt.show_wps = 1;
+                break;
 
-			case 'c':
+            case 'c':
 
-				if (lopt.channel[0] > 0 || lopt.chanoption == 1)
-				{
+                if (lopt.channel[0] > 0 || lopt.chanoption == 1)
+                {
                     if (lopt.chanoption == 1)
                     {
-						printf("Notice: Channel range already given\n");
+                        printf("Notice: Channel range already given\n");
                     }
                     else
                     {
-						printf("Notice: Channel already given (%d)\n",
+                        printf("Notice: Channel already given (%d)\n",
                                lopt.channel[0]);
                     }
-					break;
-				}
+                    break;
+                }
 
-				lopt.channel[0] = get_channels(&lopt.own_channels, optarg);
+                lopt.channel[0] = get_channels(&lopt.own_channels, optarg);
 
-				if (lopt.channel[0] < 0)
-				{
-					airodump_usage();
-					program_exit_code = EXIT_FAILURE;
-					goto done;
-				}
+                if (lopt.channel[0] < 0)
+                {
+                    airodump_usage();
+                    program_exit_code = EXIT_FAILURE;
+                    goto done;
+                }
 
-				lopt.chanoption = 1;
+                lopt.chanoption = 1;
 
-				if (lopt.channel[0] == 0)
-				{
-					lopt.channels = lopt.own_channels;
-				}
+                if (lopt.channel[0] == 0)
+                {
+                    lopt.channels = lopt.own_channels;
+                }
                 else
                 {
                     lopt.channels = bg_chans;
                 }
-				break;
+                break;
 
-			case 'C':
+            case 'C':
 
-				if (lopt.channel[0] > 0 || lopt.chanoption == 1)
-				{
+                if (lopt.channel[0] > 0 || lopt.chanoption == 1)
+                {
                     if (lopt.chanoption == 1)
                     {
-						printf("Notice: Channel range already given\n");
+                        printf("Notice: Channel range already given\n");
                     }
                     else
                     {
-						printf("Notice: Channel already given (%d)\n",
+                        printf("Notice: Channel already given (%d)\n",
                                lopt.channel[0]);
                     }
-					break;
-				}
+                    break;
+                }
 
-				if (lopt.freqoption == 1)
-				{
-					printf("Notice: Frequency range already given\n");
-					break;
-				}
+                if (lopt.freqoption == 1)
+                {
+                    printf("Notice: Frequency range already given\n");
+                    break;
+                }
 
-				lopt.freqstring = optarg;
-				lopt.freqoption = 1;
+                lopt.freqstring = optarg;
+                lopt.freqoption = 1;
 
-				break;
+                break;
 
-			case 'b':
+            case 'b':
 
-				if (lopt.chanoption == 1)
-				{
-					printf("Notice: Channel range already given\n");
-					break;
-				}
-				freq[0] = freq[1] = 0;
+                if (lopt.chanoption == 1)
+                {
+                    printf("Notice: Channel range already given\n");
+                    break;
+                }
+                freq[0] = freq[1] = 0;
 
-				for (size_t i = 0; i < strlen(optarg); i++)
-				{
+                for (size_t i = 0; i < strlen(optarg); i++)
+                {
                     if (optarg[i] == 'a')
                     {
-						freq[1] = 1;
+                        freq[1] = 1;
                     }
                     else if (optarg[i] == 'b' || optarg[i] == 'g')
                     {
-						freq[0] = 1;
+                        freq[0] = 1;
                     }
-					else
-					{
-						printf("Error: invalid band (%c)\n", optarg[i]);
-						printf("\"%s --help\" for help.\n", argv[0]);
+                    else
+                    {
+                        printf("Error: invalid band (%c)\n", optarg[i]);
+                        printf("\"%s --help\" for help.\n", argv[0]);
 
                         program_exit_code = EXIT_FAILURE;
-						goto done;
-					}
-				}
+                        goto done;
+                    }
+                }
 
                 if (freq[1] + freq[0] == 2)
                 {
-					lopt.channels = abg_chans;
+                    lopt.channels = abg_chans;
                 }
                 else if (freq[1] == 1)
                 {
@@ -7031,205 +7038,205 @@ int main(int argc, char * argv[])
                     lopt.channels = bg_chans;
                 }
 
-				break;
+                break;
 
-			case 'i':
+            case 'i':
 
-				// Reset output format if it's the first time the option is
-				// specified
-				if (output_format_first_time)
-				{
-					output_format_first_time = 0;
+                // Reset output format if it's the first time the option is
+                // specified
+                if (output_format_first_time)
+                {
+                    output_format_first_time = 0;
 
                     lopt.pcap_output.required = false;
                     lopt.log_csv.required = false;
 
                     dump_contexts_initialise(&lopt, false);
-				}
+                }
 
                 if (lopt.pcap_output.required)
-				{
-					airodump_usage();
-					fprintf(stderr,
-							"Invalid output format: IVS and PCAP "
-							"format cannot be used together.\n");
+                {
+                    airodump_usage();
+                    fprintf(stderr,
+                            "Invalid output format: IVS and PCAP "
+                            "format cannot be used together.\n");
 
-					program_exit_code = EXIT_FAILURE;
-					goto done;
-				}
+                    program_exit_code = EXIT_FAILURE;
+                    goto done;
+                }
 
-				lopt.ivs.required = true;
-				break;
+                lopt.ivs.required = true;
+                break;
 
-			case 'g':
+            case 'g':
 
                 lopt.gpsd.required = true;
-				break;
+                break;
 
-			case 'w':
+            case 'w':
 
-				if (lopt.dump_prefix != NULL)
-				{
-					printf("Notice: dump prefix already given\n");
-					break;
-				}
-				/* Write prefix */
-				lopt.dump_prefix = optarg;
-				lopt.record_data = 1;
-				break;
+                if (lopt.dump_prefix != NULL)
+                {
+                    printf("Notice: dump prefix already given\n");
+                    break;
+                }
+                /* Write prefix */
+                lopt.dump_prefix = optarg;
+                lopt.record_data = 1;
+                break;
 
-			case 'r':
+            case 'r':
 
-				if (lopt.s_file != NULL)
-				{
-					printf("Packet source already specified.\n");
-					printf("\"%s --help\" for help.\n", argv[0]);
-    				program_exit_code = EXIT_FAILURE;
-    				goto done;
-    			}
-				lopt.s_file = optarg;
-				break;
+                if (lopt.s_file != NULL)
+                {
+                    printf("Packet source already specified.\n");
+                    printf("\"%s --help\" for help.\n", argv[0]);
+                    program_exit_code = EXIT_FAILURE;
+                    goto done;
+                }
+                lopt.s_file = optarg;
+                break;
 
-			case 's':
+            case 's':
 
                 if (strtol(optarg, NULL, 10) >= channel_switching_method_COUNT
                     || errno == EINVAL)
-				{
-					airodump_usage();
-    				program_exit_code = EXIT_FAILURE;
-    				goto done;
-    			}
+                {
+                    airodump_usage();
+                    program_exit_code = EXIT_FAILURE;
+                    goto done;
+                }
                 if (lopt.channel_switching_method != channel_switching_method_fifo)
-				{
-					printf("Notice: switching method already given\n");
-					break;
-				}
+                {
+                    printf("Notice: switching method already given\n");
+                    break;
+                }
                 lopt.channel_switching_method = (int)strtol(optarg, NULL, 10);
-				break;
+                break;
 
-			case 'u':
+            case 'u':
 
-			    lopt.update_interval_seconds = (int)strtol(optarg, NULL, 10);
+                lopt.update_interval_seconds = (int)strtol(optarg, NULL, 10);
 
-				/* If failed to parse or value < 0, use default, 100ms */
-				if (lopt.update_interval_seconds < 0)
-				{
-					lopt.update_interval_seconds = 0;
+                /* If failed to parse or value < 0, use default, 100ms */
+                if (lopt.update_interval_seconds < 0)
+                {
+                    lopt.update_interval_seconds = 0;
                 }
 
-				break;
+                break;
 
-			case 'f':
+            case 'f':
 
                 lopt.frequency_hop_millisecs = (int)strtol(optarg, NULL, 10);
 
-				/* If failed to parse or value <= 0, use default, 100ms */
+                /* If failed to parse or value <= 0, use default, 100ms */
                 if (lopt.frequency_hop_millisecs <= 0)
                 {
                     lopt.frequency_hop_millisecs = DEFAULT_HOPFREQ;
                 }
 
-				break;
+                break;
 
-			case 'B':
+            case 'B':
 
-				lopt.is_berlin = 1;
-				lopt.berlin = (int) strtol(optarg, NULL, 10);
-				if (lopt.berlin <= 0)
-				{
-					lopt.berlin = 120;
-				}
+                lopt.is_berlin = 1;
+                lopt.berlin = (int)strtol(optarg, NULL, 10);
+                if (lopt.berlin <= 0)
+                {
+                    lopt.berlin = 120;
+                }
 
-				break;
+                break;
 
-			case 'm':
+            case 'm':
 
-				if (!MAC_ADDRESS_IS_EMPTY(&lopt.f_netmask))
-				{
-					printf("Notice: netmask already given\n");
-					break;
-				}
-				if (getmac(optarg, 1, (uint8_t *)&lopt.f_netmask) != 0)
-				{
-					printf("Notice: invalid netmask\n");
-					printf("\"%s --help\" for help.\n", argv[0]);
-					program_exit_code = EXIT_FAILURE;
-					goto done;
-				}
-				break;
+                if (!MAC_ADDRESS_IS_EMPTY(&lopt.f_netmask))
+                {
+                    printf("Notice: netmask already given\n");
+                    break;
+                }
+                if (getmac(optarg, 1, (uint8_t *)&lopt.f_netmask) != 0)
+                {
+                    printf("Notice: invalid netmask\n");
+                    printf("\"%s --help\" for help.\n", argv[0]);
+                    program_exit_code = EXIT_FAILURE;
+                    goto done;
+                }
+                break;
 
-			case 'd':
+            case 'd':
 
-				if (!MAC_ADDRESS_IS_EMPTY(&lopt.f_bssid))
-				{
-					printf("Notice: bssid already given\n");
-					break;
-				}
-				if (getmac(optarg, 1, (uint8_t *)&lopt.f_bssid) != 0)
-				{
-					printf("Notice: invalid bssid\n");
-					printf("\"%s --help\" for help.\n", argv[0]);
+                if (!MAC_ADDRESS_IS_EMPTY(&lopt.f_bssid))
+                {
+                    printf("Notice: bssid already given\n");
+                    break;
+                }
+                if (getmac(optarg, 1, (uint8_t *)&lopt.f_bssid) != 0)
+                {
+                    printf("Notice: invalid bssid\n");
+                    printf("\"%s --help\" for help.\n", argv[0]);
 
-					program_exit_code = EXIT_FAILURE;
-					goto done;
-				}
-				break;
+                    program_exit_code = EXIT_FAILURE;
+                    goto done;
+                }
+                break;
 
-			case 'N':
+            case 'N':
                 essid_filter_context_add_essid(&lopt.essid_filter, optarg);
-				break;
+                break;
 
-			case 'R':
+            case 'R':
 
 #ifdef HAVE_PCRE
+            {
+                char const * pcreerror;
+                int pcreerroffset;
+
+                int const added =
+                    essid_filter_context_add_regex(
+                    &lopt.essid_filter,
+                    optarg,
+                    &pcreerror,
+                    &pcreerroffset);
+
+                if (added < 0)
                 {
-                    char const * pcreerror;
-                    int pcreerroffset;
+                    printf("Error: ESSID regular expression already given. "
+                           "Aborting\n");
 
-                    int const added =
-                        essid_filter_context_add_regex(
-                            &lopt.essid_filter,
-                            optarg,
-                            &pcreerror,
-                            &pcreerroffset);
-
-                    if (added < 0)
-                    {
-                        printf("Error: ESSID regular expression already given. "
-                               "Aborting\n");
-
-                        program_exit_code = EXIT_FAILURE;
-                        goto done;
-                    }
-                    else if (added == 0)
-                    {
-                        printf("Error: regular expression compilation failed at "
-                               "offset %d: %s; aborting\n",
-                               pcreerroffset,
-                               pcreerror);
-
-                        program_exit_code = EXIT_FAILURE;
-                        goto done;
-                    }
+                    program_exit_code = EXIT_FAILURE;
+                    goto done;
                 }
+                else if (added == 0)
+                {
+                    printf("Error: regular expression compilation failed at "
+                           "offset %d: %s; aborting\n",
+                           pcreerroffset,
+                           pcreerror);
+
+                    program_exit_code = EXIT_FAILURE;
+                    goto done;
+                }
+            }
 #else
-				printf("Error: Airodump-ng wasn't compiled with pcre support; "
-					   "aborting\n");
+                printf("Error: Airodump-ng wasn't compiled with pcre support; "
+                       "aborting\n");
                 program_exit_code = EXIT_FAILURE;
                 goto done;
 #endif
 
-				break;
+                break;
 
-			case 't':
+            case 't':
 
                 lopt.encryption_filter = set_encryption_filter(optarg);
-				break;
+                break;
 
-			case 'n':
+            case 'n':
 
-				lopt.min_pkts = strtoul(optarg, NULL, 10);
-				break;
+                lopt.min_pkts = strtoul(optarg, NULL, 10);
+                break;
 
             case 'X':
                 strlcpy(lopt.sys_name, optarg, sizeof lopt.sys_name);
@@ -7249,16 +7256,16 @@ int main(int argc, char * argv[])
                 break;
 
             case 'v':
-				lopt.max_node_age = strtoul(optarg, NULL, 10) * ONE_MIN;
+                lopt.max_node_age = strtoul(optarg, NULL, 10) * ONE_MIN;
                 break;
 
             case 'o':
 
-				// Reset output format if it's the first time the option is
-				// specified
-				if (output_format_first_time)
-				{
-					output_format_first_time = 0;
+                // Reset output format if it's the first time the option is
+                // specified
+                if (output_format_first_time)
+                {
+                    output_format_first_time = 0;
 
                     lopt.pcap_output.required = false;
                     lopt.log_csv.required = false;
@@ -7266,101 +7273,101 @@ int main(int argc, char * argv[])
                     dump_contexts_initialise(&lopt, false);
                 }
 
-				// Parse the value
-				output_format_string = strtok(optarg, ",");
-				while (output_format_string != NULL)
-				{
-					if (strlen(output_format_string) > 0)
-					{
-						if (strncasecmp(output_format_string, "csv", 3) == 0
-							|| strncasecmp(output_format_string, "txt", 3) == 0)
-						{
+                // Parse the value
+                output_format_string = strtok(optarg, ",");
+                while (output_format_string != NULL)
+                {
+                    if (strlen(output_format_string) > 0)
+                    {
+                        if (strncasecmp(output_format_string, "csv", 3) == 0
+                            || strncasecmp(output_format_string, "txt", 3) == 0)
+                        {
                             lopt.dump[dump_type_csv].needed = true;
-						}
-						else if (strncasecmp(output_format_string, "pcap", 4)
-									 == 0
-								 || strncasecmp(output_format_string, "cap", 3)
-										== 0)
-						{
+                        }
+                        else if (strncasecmp(output_format_string, "pcap", 4)
+                                 == 0
+                                 || strncasecmp(output_format_string, "cap", 3)
+                                 == 0)
+                        {
                             if (lopt.ivs.required)
-							{
-								airodump_usage();
-								fprintf(stderr,
-										"Invalid output format: IVS "
-										"and PCAP format cannot be "
-										"used together.\n");
-								program_exit_code = EXIT_FAILURE;
-								goto done;
-							}
+                            {
+                                airodump_usage();
+                                fprintf(stderr,
+                                        "Invalid output format: IVS "
+                                        "and PCAP format cannot be "
+                                        "used together.\n");
+                                program_exit_code = EXIT_FAILURE;
+                                goto done;
+                            }
                             lopt.pcap_output.required = true;
-						}
-						else if (strncasecmp(output_format_string, "ivs", 3)
-								 == 0)
-						{
+                        }
+                        else if (strncasecmp(output_format_string, "ivs", 3)
+                                 == 0)
+                        {
                             if (lopt.pcap_output.required)
-							{
-								airodump_usage();
-								fprintf(stderr,
-										"Invalid output format: IVS "
-										"and PCAP format cannot be "
-										"used together.\n");
-								program_exit_code = EXIT_FAILURE;
-								goto done;
-							}
+                            {
+                                airodump_usage();
+                                fprintf(stderr,
+                                        "Invalid output format: IVS "
+                                        "and PCAP format cannot be "
+                                        "used together.\n");
+                                program_exit_code = EXIT_FAILURE;
+                                goto done;
+                            }
                             lopt.ivs.required = true;
-						}
-						else if (strncasecmp(output_format_string, "kismet", 6)
-								 == 0)
-						{
+                        }
+                        else if (strncasecmp(output_format_string, "kismet", 6)
+                                 == 0)
+                        {
                             lopt.dump[dump_type_kismet_csv].needed = true;
-						}
-						else if (strncasecmp(output_format_string, "gps", 3)
-								 == 0)
-						{
+                        }
+                        else if (strncasecmp(output_format_string, "gps", 3)
+                                 == 0)
+                        {
                             lopt.gpsd.required = true;
-						}
-						else if (strncasecmp(output_format_string, "netxml", 6)
-									 == 0
-								 || strncasecmp(
-										output_format_string, "newcore", 7)
-										== 0
-								 || strncasecmp(
-										output_format_string, "kismet-nc", 9)
-										== 0
-								 || strncasecmp(
-										output_format_string, "kismet_nc", 9)
-										== 0
-								 || strncasecmp(output_format_string,
-												"kismet-newcore",
-												14)
-										== 0
-								 || strncasecmp(output_format_string,
-												"kismet_newcore",
-												14)
-										== 0)
-						{
+                        }
+                        else if (strncasecmp(output_format_string, "netxml", 6)
+                                 == 0
+                                 || strncasecmp(
+                                output_format_string, "newcore", 7)
+                                 == 0
+                                 || strncasecmp(
+                                output_format_string, "kismet-nc", 9)
+                                 == 0
+                                 || strncasecmp(
+                                output_format_string, "kismet_nc", 9)
+                                 == 0
+                                 || strncasecmp(output_format_string,
+                                                "kismet-newcore",
+                                                14)
+                                 == 0
+                                 || strncasecmp(output_format_string,
+                                                "kismet_newcore",
+                                                14)
+                                 == 0)
+                        {
                             lopt.dump[dump_type_kismet_netxml].needed = true;
-						}
-						else if (strncasecmp(output_format_string, "logcsv", 6)
-								 == 0)
-						{
+                        }
+                        else if (strncasecmp(output_format_string, "logcsv", 6)
+                                 == 0)
+                        {
                             lopt.log_csv.required = true;
-						}
+                        }
                         else if (strncasecmp(output_format_string, "wifi_scanner", 12) == 0)
                         {
                             lopt.dump[dump_type_wifi_scanner].needed = true;
                         }
                         else if (strncasecmp(output_format_string, "default", 7)
-								 == 0)
-						{
+                                 == 0)
+                        {
                             lopt.pcap_output.required = true;
                             lopt.log_csv.required = true;
 
                             dump_contexts_initialise(&lopt, true);
                         }
-						else if (strncasecmp(output_format_string, "none", 4)
-								 == 0)
-						{
+                        else if (strncasecmp(output_format_string, "none", 4)
+                                 == 0)
+                        {
                             lopt.pcap_output.required = false;
                             lopt.log_csv.required = false;
                             lopt.gpsd.required = false;
@@ -7368,125 +7375,126 @@ int main(int argc, char * argv[])
 
                             dump_contexts_initialise(&lopt, false);
                         }
-						else
-						{
-							// Display an error if it does not match any value
-							fprintf(stderr,
-									"Invalid output format: <%s>\n",
-									output_format_string);
-							program_exit_code = EXIT_FAILURE;
-							goto done;
-						}
-					}
-					output_format_string = strtok(NULL, ",");
-				}
+                        else
+                        {
+                            // Display an error if it does not match any value
+                            fprintf(stderr,
+                                    "Invalid output format: <%s>\n",
+                                    output_format_string);
+                            program_exit_code = EXIT_FAILURE;
+                            goto done;
+                        }
+                    }
+                    output_format_string = strtok(NULL, ",");
+                }
 
-				break;
+                break;
 
-			case 'H':
-				airodump_usage();
-				program_exit_code = EXIT_FAILURE;
-				goto done;
+            case 'H':
+                airodump_usage();
+                program_exit_code = EXIT_FAILURE;
+                goto done;
 
-			case 'x':
+            case 'x':
 
-				lopt.active_scan_sim = (int) strtol(optarg, NULL, 10);
+                lopt.active_scan_sim = (int)strtol(optarg, NULL, 10);
 
                 if (lopt.active_scan_sim < 0)
                 {
                     lopt.active_scan_sim = 0;
                 }
-				break;
+                break;
 
-			case '2':
+            case '2':
 #ifndef CONFIG_LIBNL
-				printf("HT Channel unsupported\n");
+                printf("HT Channel unsupported\n");
 
-				program_exit_code = EXIT_FAILURE;
-				goto done;
+                program_exit_code = EXIT_FAILURE;
+                goto done;
 #else
-				lopt.htval = CHANNEL_HT20;
+                lopt.htval = CHANNEL_HT20;
 #endif
-				break;
-			case '3':
+                break;
+            case '3':
 #ifndef CONFIG_LIBNL
-				printf("HT Channel unsupported\n");
+                printf("HT Channel unsupported\n");
 
-				program_exit_code = EXIT_FAILURE;
-				goto done;
+                program_exit_code = EXIT_FAILURE;
+                goto done;
 #else
-				lopt.htval = CHANNEL_HT40_MINUS;
+                lopt.htval = CHANNEL_HT40_MINUS;
 #endif
-				break;
-			case '5':
+                break;
+            case '5':
 #ifndef CONFIG_LIBNL
-				printf("HT Channel unsupported\n");
+                printf("HT Channel unsupported\n");
 
-				program_exit_code = EXIT_FAILURE;
-				goto done;
+                program_exit_code = EXIT_FAILURE;
+                goto done;
 #else
-				lopt.htval = CHANNEL_HT40_PLUS;
+                lopt.htval = CHANNEL_HT40_PLUS;
 #endif
-				break;
+                break;
 
-			default:
-				airodump_usage();
-				program_exit_code = EXIT_FAILURE;
-				goto done;
-		}
-	} while (1);
+            default:
+                airodump_usage();
+                program_exit_code = EXIT_FAILURE;
+                goto done;
+        }
+    }
+    while (1);
 
-	if ((argc - optind) != 1 && lopt.s_file == NULL)
-	{
-		if (argc == 1)
-		{
-			airodump_usage();
-		}
-		if (argc - optind == 0)
-		{
-			printf("No interface specified.\n");
-		}
-		if (argc > 1)
-		{
-			printf("\"%s --help\" for help.\n", argv[0]);
-		}
+    if ((argc - optind) != 1 && lopt.s_file == NULL)
+    {
+        if (argc == 1)
+        {
+            airodump_usage();
+        }
+        if (argc - optind == 0)
+        {
+            printf("No interface specified.\n");
+        }
+        if (argc > 1)
+        {
+            printf("\"%s --help\" for help.\n", argv[0]);
+        }
 
-		program_exit_code = EXIT_FAILURE;
-		goto done;
-	}
+        program_exit_code = EXIT_FAILURE;
+        goto done;
+    }
 
-	if ((argc - optind) == 1)
-	{
+    if ((argc - optind) == 1)
+    {
         lopt.s_iface = argv[argc - 1];
     }
 
-	if (!MAC_ADDRESS_IS_EMPTY(&lopt.f_netmask)
-		&& MAC_ADDRESS_IS_EMPTY(&lopt.f_bssid))
-	{
-		printf("Notice: specify bssid \"--bssid\" with \"--netmask\"\n");
-		printf("\"%s --help\" for help.\n", argv[0]);
-		program_exit_code = EXIT_FAILURE;
-		goto done;
-	}
-
-	if (lopt.show_wps && lopt.show_manufacturer)
-	{
-		lopt.maxsize_essid_seen += lopt.maxsize_wps_seen;
+    if (!MAC_ADDRESS_IS_EMPTY(&lopt.f_netmask)
+        && MAC_ADDRESS_IS_EMPTY(&lopt.f_bssid))
+    {
+        printf("Notice: specify bssid \"--bssid\" with \"--netmask\"\n");
+        printf("\"%s --help\" for help.\n", argv[0]);
+        program_exit_code = EXIT_FAILURE;
+        goto done;
     }
 
-	if (lopt.s_iface != NULL)
-	{
+    if (lopt.show_wps && lopt.show_manufacturer)
+    {
+        lopt.maxsize_essid_seen += lopt.maxsize_wps_seen;
+    }
+
+    if (lopt.s_iface != NULL)
+    {
         lopt.num_cards = initialise_cards(lopt.s_iface, wi);
 
-		if (lopt.num_cards <= 0 || lopt.num_cards >= MAX_CARDS)
-		{
-			printf("Failed initializing wireless card(s): %s\n", lopt.s_iface);
-			program_exit_code = EXIT_FAILURE;
-			goto done;
-		}
+        if (lopt.num_cards <= 0 || lopt.num_cards >= MAX_CARDS)
+        {
+            printf("Failed initializing wireless card(s): %s\n", lopt.s_iface);
+            program_exit_code = EXIT_FAILURE;
+            goto done;
+        }
 
-		if (lopt.freqoption && lopt.freqstring != NULL) // use frequencies
-		{
+        if (lopt.freqoption && lopt.freqstring != NULL) // use frequencies
+        {
             struct detected_frequencies_st detected_frequencies;
 
             detect_frequencies(wi[0], &detected_frequencies);
@@ -7498,60 +7506,60 @@ int main(int argc, char * argv[])
 
             detected_frequencies_cleanup(&detected_frequencies);
 
-			if (lopt.frequency[0] == invalid_frequency)
-			{
-				printf("No valid frequency given.\n");
-				program_exit_code = EXIT_FAILURE;
-				goto done;
-			}
+            if (lopt.frequency[0] == invalid_frequency)
+            {
+                printf("No valid frequency given.\n");
+                program_exit_code = EXIT_FAILURE;
+                goto done;
+            }
 
             rearrange_frequencies(lopt.own_frequencies);
 
             if (lopt.frequency[0] == frequency_sentinel)
-			{
+            {
                 /* Start a child process to hop between frequencies. */
                 size_t const freq_count =
                     get_frequency_count(lopt.own_frequencies, false);
 
                 start_frequency_hopper_process(&lopt, wi, freq_count);
-			}
-			else
-			{
-				for (size_t i = 0; i < lopt.num_cards; i++)
-				{
-					wi_set_freq(wi[i], lopt.frequency[0]);
-					lopt.frequency[i] = lopt.frequency[0];
-				}
-				lopt.singlefreq = 1;
-			}
-		}
-		else // use channels
-		{
+            }
+            else
+            {
+                for (size_t i = 0; i < lopt.num_cards; i++)
+                {
+                    wi_set_freq(wi[i], lopt.frequency[0]);
+                    lopt.frequency[i] = lopt.frequency[0];
+                }
+                lopt.singlefreq = 1;
+            }
+        }
+        else // use channels
+        {
             if (lopt.channel[0] == channel_sentinel)
-			{
+            {
                 /* Start a child process to hop between channels. */
                 size_t const chan_count =
                     get_channel_count(lopt.channels, false);
 
                 start_channel_hopper_process(&lopt, wi, chan_count);
-			}
-			else
-			{
-				for (size_t i = 0; i < lopt.num_cards; i++)
-				{
+            }
+            else
+            {
+                for (size_t i = 0; i < lopt.num_cards; i++)
+                {
 #ifdef CONFIG_LIBNL
-					wi_set_ht_channel(wi[i], lopt.channel[0], lopt.htval);
+                    wi_set_ht_channel(wi[i], lopt.channel[0], lopt.htval);
 #else
-					wi_set_channel(wi[i], lopt.channel[0]);
+                    wi_set_channel(wi[i], lopt.channel[0]);
 #endif
-					lopt.channel[i] = lopt.channel[0];
-				}
-				lopt.singlechan = 1;
-			}
-		}
-	}
+                    lopt.channel[i] = lopt.channel[0];
+                }
+                lopt.singlechan = 1;
+            }
+        }
+    }
 
-	drop_privileges();
+    drop_privileges();
 
     /* Check if an input file was specified. */
 	if (lopt.s_file != NULL)
@@ -7569,18 +7577,6 @@ int main(int argc, char * argv[])
 	/* Create start time string for kismet netxml file */
     lopt.airodump_start_time = time_as_string(lopt.start_time);
 
-#if defined(INCLUDE_UBUS)
-    if (lopt.do_ubus)
-    {
-        lopt.ubus_context = ubus_initialise(lopt.ubus_path);
-        if (lopt.ubus_context == NULL)
-        {
-            perror("failed to initialise UBUS");
-            program_exit_code = EXIT_FAILURE;
-            goto done;
-        }
-    }
-
 	/* open or create the output files */
     if (lopt.record_data)
     {
@@ -7591,7 +7587,14 @@ int main(int argc, char * argv[])
 		}
     }
 
-	signal_event_initialise(lopt.signal_event_pipe);
+#if defined(INCLUDE_UBUS)
+    if (lopt.do_ubus)
+    {
+        uloop_init();
+    }
+#endif
+
+    signal_event_initialise(lopt.signal_event_pipe, lopt.interactive_mode);
 
 	lopt.manufacturer_list = load_oui_file();
 
@@ -7617,6 +7620,19 @@ int main(int argc, char * argv[])
 	{
         lopt.interactive_mode = !is_background();
 	}
+
+#if defined(INCLUDE_UBUS)
+    if (lopt.do_ubus)
+    {
+        lopt.ubus_context = ubus_initialise(lopt.ubus_path);
+        if (lopt.ubus_context == NULL)
+        {
+            perror("failed to initialise UBUS");
+            program_exit_code = EXIT_FAILURE;
+            goto done;
+        }
+    }
+#endif
 
     if (lopt.interactive_mode > 0)
     {
@@ -7644,6 +7660,13 @@ int main(int argc, char * argv[])
     while (!lopt.do_exit)
 	{
 		time_t current_time;
+
+#if defined(INCLUDE_UBUS)
+        if (lopt.do_ubus)
+        {
+            uloop_run();
+        }
+#endif
 
         if (lopt.interactive_mode > 0)
         {
@@ -7797,9 +7820,14 @@ int main(int argc, char * argv[])
 		}
 	}
 
+#if defined(INCLUDE_UBUS)
+    if (lopt.do_ubus)
+    {
+        ubus_done();
+        uloop_done();
+    }
+#endif
 	airodump_shutdown(&lopt, wi);
-    ubus_done();
-
 
 	program_exit_code = had_error ? EXIT_FAILURE : EXIT_SUCCESS;
 
