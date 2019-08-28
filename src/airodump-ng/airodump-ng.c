@@ -145,6 +145,8 @@ static int a_chans[] =
     144, 149, 151, 153, 155, 157, 159, 161, 165, 169, 173, channel_sentinel
 };
 
+static time_t const maximum_quit_event_interval_seconds = 3;
+
 struct detected_frequencies_st
 {
     size_t count;
@@ -194,7 +196,9 @@ static struct local_options
     size_t max_consecutive_failed_interface_reads;
 
     pthread_t input_tid;
+
     int input_thread_pipe[2];
+
 
     int channel_hopper_pipe[2];
 
@@ -372,6 +376,9 @@ static struct local_options
         char const * path;
         struct ubus_state_st * state;
         struct uloop_timeout refresh;
+        struct uloop_timeout quit_request;
+        struct uloop_fd user_input_fd;
+        struct uloop_fd signal_fd;
     } ubus;
 #endif
 
@@ -5718,16 +5725,54 @@ static void check_for_signal_events(struct local_options * const options)
     }
 }
 
+static void cancel_quit_request(struct local_options * const options)
+{
+    options->quitting = 0;
+    options->message[0] = '\0';
+}
+
+#if INCLUDE_UBUS
+static void ubus_cancel_quit_request(struct uloop_timeout * timeout)
+{
+    struct local_options * const options =
+        container_of(timeout, struct local_options, ubus.quit_request);
+
+    cancel_quit_request(options);
+}
+#endif
+
+static void start_quit_request_cancel_timer(struct local_options * const options)
+{
+#if INCLUDE_UBUS
+    if (options->ubus.do_ubus)
+    {
+        static int const timeout_millisecs =
+            maximum_quit_event_interval_seconds * 1000;
+
+        options->ubus.quit_request.cb = ubus_cancel_quit_request;
+        uloop_timeout_set(&options->ubus.quit_request, timeout_millisecs);
+    }
+    else
+#endif
+    {
+        options->quitting_event_ts = time(NULL);
+    }
+}
+
 static void handle_input_key(
     struct local_options * const options,
     int const keycode)
 {
     if (keycode == KEY_q)
     {
-        options->quitting_event_ts = time(NULL);
         options->quitting++;
         if (options->quitting > 1)
         {
+#if INCLUDE_UBUS
+            /* Not really necessary to cancel the timer. */
+            uloop_timeout_cancel(&options->ubus.quit_request);
+            uloop_end();
+#endif
             options->do_exit = 1;
         }
         else
@@ -5736,6 +5781,7 @@ static void handle_input_key(
                 options->message,
                 sizeof(options->message),
                 "Are you sure you want to quit? Press Q again to quit.");
+            start_quit_request_cancel_timer(options);
         }
     }
 
@@ -6232,13 +6278,14 @@ static void do_quit_request_timeout_check(
     if (options->quitting > 0)
 	{
         time_t const seconds_since_last_quit_event = time(NULL) - options->quitting_event_ts;
-        time_t const maximum_quit_event_interval_seconds = 3;
+        bool const took_too_long =
+            seconds_since_last_quit_event > maximum_quit_event_interval_seconds;
 
-		if (seconds_since_last_quit_event > maximum_quit_event_interval_seconds)
+		if (took_too_long)
 		{
             options->quitting_event_ts = 0;
-            options->quitting = 0;
-            options->message[0] = '\0';
+
+            cancel_quit_request(options);
 		}
 	}
 }
@@ -6668,6 +6715,42 @@ static void ubus_refresh_cb(struct uloop_timeout * timeout)
 
     do_refresh(options);
     uloop_timeout_set(timeout, REFRESH_RATE / 1000);
+}
+
+static void ubus_user_input_fd(struct uloop_fd * fd, unsigned int events)
+{
+    (void)events;
+    struct local_options * const options =
+        container_of(fd, struct local_options, ubus.user_input_fd);
+
+    if (fd->eof || fd->error)
+    {
+        options->do_exit = true;
+        goto done;
+    }
+
+    check_for_user_input(options);
+
+done:
+    return;
+}
+
+static void ubus_signal_fd(struct uloop_fd * fd, unsigned int events)
+{
+    (void)events;
+    struct local_options * const options =
+        container_of(fd, struct local_options, ubus.signal_fd);
+
+    if (fd->eof || fd->error)
+    {
+        options->do_exit = true;
+        goto done;
+    }
+
+    check_for_signal_events(options);
+
+done:
+    return;
 }
 #endif
 
@@ -7674,6 +7757,24 @@ int main(int argc, char * argv[])
         }
     }
 
+#if defined(INCLUDE_UBUS)
+    if (lopt.ubus.do_ubus)
+    {
+        if (lopt.interactive_mode)
+        {
+            memset(&lopt.ubus.user_input_fd, 0, sizeof lopt.ubus.user_input_fd);
+            lopt.ubus.user_input_fd.cb = ubus_user_input_fd;
+            lopt.ubus.user_input_fd.fd = lopt.input_thread_pipe[0];
+            uloop_fd_add(&lopt.ubus.user_input_fd, ULOOP_BLOCKING | ULOOP_READ);
+
+            memset(&lopt.ubus.signal_fd, 0, sizeof lopt.ubus.signal_fd);
+            lopt.ubus.signal_fd.cb = ubus_signal_fd;
+            lopt.ubus.signal_fd.fd = lopt.signal_event_pipe[0];
+            uloop_fd_add(&lopt.ubus.signal_fd, ULOOP_BLOCKING | ULOOP_READ);
+        }
+    }
+#endif
+
     while (!lopt.do_exit)
 	{
 		time_t current_time;
@@ -7681,17 +7782,23 @@ int main(int argc, char * argv[])
 #if defined(INCLUDE_UBUS)
         if (lopt.ubus.do_ubus)
         {
+            /* TODO: This currently returns due to a time in ubus.c.
+             * This should be removed once all handling is done via ubus callbacks.
+             * do_exit should then be removed as well.
+             */
             uloop_run();
         }
+        else
 #endif
-
-        if (lopt.interactive_mode > 0)
         {
-            check_for_user_input(&lopt);
-            do_quit_request_timeout_check(&lopt);
-        }
+            if (lopt.interactive_mode > 0)
+            {
+                check_for_user_input(&lopt);
+                do_quit_request_timeout_check(&lopt);
+            }
 
-        check_for_signal_events(&lopt);
+            check_for_signal_events(&lopt);
+        }
 
         if (lopt.do_exit)
         {
