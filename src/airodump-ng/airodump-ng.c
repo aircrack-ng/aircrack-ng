@@ -1036,7 +1036,7 @@ done:
  */
 static bool list_check_decloak(
     struct pkt_list_head * const pkt_list,
-    const uint8_t const * const packet,
+    uint8_t const * const packet,
     size_t const length)
 {
     bool is_decloaked;
@@ -2175,20 +2175,12 @@ static bool parse_beacon_or_probe_response(
                 ap_cur->ac_channel.mu_mimo = (p[4] & 0b11000) & 1;
 
                 // A few things indicate Wave 2: MU-MIMO, 80+80 Channels
-                /* FIXME - is use of the || logical operator really what is
-                 * wanted? Why the & 1 at the end if the result of the || is
-                 * only ever 0 or 1?
-                 * I suspect that this should be
-                 * ap_cur->ac_channel.mu_mimo | ap_cur->ac_channel.split_chan,
-                 * so I've changed it.
-                 */
                 ap_cur->ac_channel.wave_2
                     = (ap_cur->ac_channel.mu_mimo | ap_cur->ac_channel.split_chan)
                       & 1;
 
                 // Maximum rates (16 bit)
-                uint16_t tx_mcs;
-                memcpy(&tx_mcs, p + 10, sizeof(tx_mcs)); /* XXX - endianness? */
+                uint16_t tx_mcs = (p[10] << 8) + p[11];
 
                 // Maximum of 8 SS, each uses 2 bits
                 for (size_t stream_idx = 0;
@@ -2221,7 +2213,7 @@ static bool parse_beacon_or_probe_response(
                     }
 
                     // Next spatial stream
-                    tx_mcs /= 4;
+                    tx_mcs >>= 2;
                 }
             }
 
@@ -2504,11 +2496,14 @@ static void parse_beacon_or_probe_response_2(
                 uint8_t const * const org_p = p;
 
                 p += 6;
-                int len = length, subtype = 0, sublen = 0;
+
+                int len = length;
+
                 while (len >= 4)
                 {
-                    subtype = (p[0] << 8) + p[1];
-                    sublen = (p[2] << 8) + p[3];
+                    uint16_t const subtype = (p[0] << 8) + p[1];
+                    uint16_t const sublen = (p[2] << 8) + p[3];
+
                     if (sublen > len)
                         break;
                     switch (subtype)
@@ -2534,7 +2529,7 @@ static void parse_beacon_or_probe_response_2(
                             if (memcmp(&p[4], "\x00\x37\x2A", 3) == 0)
                             {
                                 unsigned char const * pwfa = &p[7];
-                                int wfa_len = ntohs(load16(&p[2]));
+                                int32_t wfa_len = sublen;
 
                                 while (wfa_len > 0)
                                 {
