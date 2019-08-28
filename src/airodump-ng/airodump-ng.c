@@ -366,9 +366,13 @@ static struct local_options
 
 
 #if defined(INCLUDE_UBUS)
-    int do_ubus;
-    char const * ubus_path;
-    struct ubus_context * ubus_context;
+    struct
+    {
+        int do_ubus;
+        char const * path;
+        struct ubus_state_st * state;
+        struct uloop_timeout refresh;
+    } ubus;
 #endif
 
 } lopt;
@@ -6656,6 +6660,17 @@ static void options_initialise(struct local_options * const options)
     MAC_ADDRESS_CLEAR(&options->f_netmask);
 }
 
+#if defined(INCLUDE_UBUS)
+static void ubus_refresh_cb(struct uloop_timeout * timeout)
+{
+    struct local_options * const options =
+        container_of(timeout, struct local_options, ubus.refresh);
+
+    do_refresh(options);
+    uloop_timeout_set(timeout, REFRESH_RATE / 1000);
+}
+#endif
+
 int main(int argc, char * argv[])
 {
     /* The user thread args must remain in scope as long as the
@@ -6718,7 +6733,7 @@ int main(int argc, char * argv[])
         {"showack", 0, 0, 'A'},
         {"detect-anomaly", 0, 0, 'E'},
 #if defined(INCLUDE_UBUS)
-        {"ubus", 0, &lopt.do_ubus, 1 },
+        {"ubus", 0, &lopt.ubus.do_ubus, 1 },
         {"ubus-path", 1, 0, 'S' },
 #endif
         {"output-format", 1, 0, 'o'},
@@ -6754,9 +6769,9 @@ int main(int argc, char * argv[])
     gettimeofday(&tv0, NULL);
 
 #if defined(INCLUDE_UBUS)
-    lopt.do_ubus = false;
-    lopt.ubus_path = NULL;
-    lopt.ubus_context = NULL;
+    lopt.ubus.do_ubus = false;
+    lopt.ubus.path = NULL;
+    lopt.ubus.state = NULL;
 #endif
 
     /* Check the arguments. */
@@ -6833,7 +6848,7 @@ int main(int argc, char * argv[])
 
 #if defined(INCLUDE_UBUS)
             case 'S':
-                lopt.ubus_path = optarg;
+                lopt.ubus.path = optarg;
                 break;
 #endif
 
@@ -7588,7 +7603,7 @@ int main(int argc, char * argv[])
     }
 
 #if defined(INCLUDE_UBUS)
-    if (lopt.do_ubus)
+    if (lopt.ubus.do_ubus)
     {
         uloop_init();
     }
@@ -7622,15 +7637,17 @@ int main(int argc, char * argv[])
 	}
 
 #if defined(INCLUDE_UBUS)
-    if (lopt.do_ubus)
+    if (lopt.ubus.do_ubus)
     {
-        lopt.ubus_context = ubus_initialise(lopt.ubus_path);
-        if (lopt.ubus_context == NULL)
+        lopt.ubus.state = ubus_initialise(lopt.ubus.path);
+        if (lopt.ubus.state == NULL)
         {
             perror("failed to initialise UBUS");
             program_exit_code = EXIT_FAILURE;
             goto done;
         }
+        lopt.ubus.refresh.cb = ubus_refresh_cb;
+        uloop_timeout_set(&lopt.ubus.refresh, REFRESH_RATE / 1000);
     }
 #endif
 
@@ -7662,7 +7679,7 @@ int main(int argc, char * argv[])
 		time_t current_time;
 
 #if defined(INCLUDE_UBUS)
-        if (lopt.do_ubus)
+        if (lopt.ubus.do_ubus)
         {
             uloop_run();
         }
@@ -7805,25 +7822,31 @@ int main(int argc, char * argv[])
             continue;
         }
 
-		gettimeofday(&tv2, NULL);
+#if defined(INCLUDE_UBUS)
+        if (!lopt.ubus.do_ubus)
+        {
+            gettimeofday(&tv2, NULL);
 
-        time_slept += 1000000UL * (tv2.tv_sec - current_time_timestamp.tv_sec)
-            + (tv2.tv_usec - current_time_timestamp.tv_usec);
-        bool const refresh_required =
-            time_slept > REFRESH_RATE
-            && time_slept > lopt.update_interval_seconds * 1000000;
+            time_slept += 1000000UL * (tv2.tv_sec - current_time_timestamp.tv_sec)
+                + (tv2.tv_usec - current_time_timestamp.tv_usec);
 
-        if (refresh_required)
-		{
-            time_slept = 0;
-            do_refresh(&lopt);
-		}
+            bool const refresh_required =
+                time_slept > REFRESH_RATE
+                && time_slept > lopt.update_interval_seconds * 1000000;
+
+            if (refresh_required)
+            {
+                time_slept = 0;
+                do_refresh(&lopt);
+            }
+        }
+#endif
 	}
 
 #if defined(INCLUDE_UBUS)
-    if (lopt.do_ubus)
+    if (lopt.ubus.do_ubus)
     {
-        ubus_done();
+        ubus_done(lopt.ubus.state);
         uloop_done();
     }
 #endif

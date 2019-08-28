@@ -49,7 +49,7 @@ enum
     invalid_frequency = -1,
     channel_sentinel = 0,
     frequency_sentinel = 0
-}; 
+};
 
 typedef enum channel_switching_method_t
 {
@@ -61,7 +61,7 @@ typedef enum channel_switching_method_t
 
 /* some constants */
 
-#define REFRESH_RATE 100000 /* default delay in us between updates */
+#define REFRESH_RATE 1000000 /* default delay in us between updates */
 #define DEFAULT_HOPFREQ 250 /* default delay in ms between channel hopping */
 
 #define NB_PRB 10 /* size of probed ESSID ring buffer */
@@ -120,7 +120,7 @@ struct NA_info
 {
 	TAILQ_ENTRY(NA_info) entry;
 
-	time_t tinit; 
+	time_t tinit;
     time_t tlast; /* first and last time seen  */
     mac_address namac; /* the stations MAC address  */
 	int power; /* last signal power         */

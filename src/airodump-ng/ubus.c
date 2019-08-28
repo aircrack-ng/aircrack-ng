@@ -6,13 +6,19 @@
 #include <string.h>
 #include <stdio.h>
 
+struct ubus_state_st
+{
+    struct ubus_context ubus_ctx;
+    char const * ubus_path;
+    bool connected;
+    struct uloop_timeout uloop_cancel_timer;
+    struct uloop_timeout retry;
+};
 
-struct ubus_context * ubus_ctx;
-static const char * ubus_path;
-bool connected;
+struct ubus_state_st ubus_state;
 
 static void
-ubus_add_fd(void)
+ubus_add_fd(struct ubus_context * const ubus_ctx)
 {
     ubus_add_uloop(ubus_ctx);
 }
@@ -26,80 +32,94 @@ ubus_cancel(struct uloop_timeout * timeout)
     uloop_timeout_set(timeout, 1);
 }
 
-static struct uloop_timeout uloop_cancel_timer =
-{
-    .cb = ubus_cancel,
-};
-
 static void
 ubus_reconnect_timer(struct uloop_timeout * timeout)
 {
-    (void)timeout;
-
-    static struct uloop_timeout retry =
-    {
-        .cb = ubus_reconnect_timer,
-    };
+    struct ubus_state_st * const state =
+        container_of(timeout, struct ubus_state_st, retry);
     int const t = 2;
     int const timeout_millisecs = t * 1000;
 
-    if (ubus_reconnect(ubus_ctx, ubus_path) != 0)
+    if (ubus_reconnect(&state->ubus_ctx, state->ubus_path) != 0)
     {
         DPRINTF("Failed to reconnect, trying again in %d seconds\n", t);
-        uloop_timeout_set(&retry, timeout_millisecs);
+
+        timeout->cb = ubus_reconnect_timer;
+        uloop_timeout_set(timeout, timeout_millisecs);
+
         return;
     }
+    uloop_timeout_set(&state->uloop_cancel_timer, 1);
 
-    uloop_timeout_set(&uloop_cancel_timer, 1);
+    DPRINTF("Reconnected to ubus, new id: %08x\n", state->ubus_ctx.local_id);
 
-    DPRINTF("Reconnected to ubus, new id: %08x\n", ubus_ctx->local_id);
-
-    connected = true;
-    ubus_add_fd();
+    state->connected = true;
+    ubus_add_fd(&state->ubus_ctx);
 }
 
 static void
-ubus_connection_lost(struct ubus_context * ctx)
+ubus_connection_lost(struct ubus_context * const ctx)
 {
-    (void)ctx;
-    connected = false;
+    struct ubus_state_st * const state =
+        container_of(ctx, struct ubus_state_st, ubus_ctx);
+
+    state->connected = false;
     DPRINTF("disconnected from ubus\n");
-    ubus_reconnect_timer(NULL);
+    ubus_reconnect_timer(&state->retry);
 }
 
-struct ubus_context *
+struct ubus_state_st *
 ubus_initialise(char const * const path)
 {
-    ubus_path = path;
-    ubus_ctx = ubus_connect(path);
+    struct ubus_state_st * state = &ubus_state;
+    bool success;
 
-    if (ubus_ctx == NULL)
+    state->ubus_path = path;
+
+    if (ubus_connect_ctx(&state->ubus_ctx, path))
     {
         DPRINTF("Failed to connect to ubus on path: %s\n", path);
+        success = false;
         goto done;
     }
 
-    DPRINTF("Connected to ubus, new id: %08x\n", ubus_ctx->local_id);
-    connected = true;
-    ubus_ctx->connection_lost = ubus_connection_lost;
+    DPRINTF("Connected to ubus, new id: %08x\n", state->ubus_ctx.local_id);
+    state->connected = true;
+    state->ubus_ctx.connection_lost = ubus_connection_lost;
 
-    ubus_add_fd();
-    uloop_timeout_set(&uloop_cancel_timer, 1);
+    ubus_add_fd(&state->ubus_ctx);
+
+    state->uloop_cancel_timer.cb = ubus_cancel;
+    uloop_timeout_set(&state->uloop_cancel_timer, 1);
+
+    success = true;
 
 done:
-    return ubus_ctx;
+    if (!success)
+    {
+        state = NULL;
+    }
+
+    return state;
 }
 
 void
-ubus_done(void)
+ubus_done(struct ubus_state_st * const state)
 {
-    if (ubus_ctx != NULL)
+    if (state == NULL)
     {
-        uloop_fd_delete(&ubus_ctx->sock);
-
-        connected = false;
-        ubus_free(ubus_ctx);
-        ubus_ctx = NULL;
+        goto done;
     }
+
+    uloop_timeout_cancel(&state->retry);
+    uloop_timeout_cancel(&state->uloop_cancel_timer);
+
+    uloop_fd_delete(&state->ubus_ctx.sock);
+
+    state->connected = false;
+    ubus_shutdown(&state->ubus_ctx);
+
+done:
+    return;
 }
 

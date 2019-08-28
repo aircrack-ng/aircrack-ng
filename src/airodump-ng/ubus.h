@@ -3,8 +3,10 @@
 
 #include <libubus.h>
 
-struct ubus_context * ubus_initialise(char const * const path);
+struct ubus_state_st;
 
-void ubus_done(void);
+struct ubus_state_st * ubus_initialise(char const * const path);
+
+void ubus_done(struct ubus_state_st * const state);
 
 #endif /* __UBUS_H__ */
