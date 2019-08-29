@@ -398,3 +398,24 @@ done:
     return context;
 }
 
+int pcap_fd(struct pcap_reader_context_st * context)
+{
+    int fd;
+
+    if (context == NULL)
+    {
+        fd = -1;
+        goto done;
+    }
+
+    if (context->fp == NULL)
+    {
+        fd = -1;
+        goto done;
+    }
+
+    fd = fileno(context->fp);
+
+done:
+    return fd;
+}

@@ -271,6 +271,8 @@ static struct local_options
     char * s_file; /* source interface to read from */
     char * s_iface; /* source interface to read from */
 	pcap_reader_context_st * pcap_reader_context;
+    struct timeval packet_timestamp;
+    struct timeval previous_timestamp;
 
     int detect_anomaly; /* Detect WIPS protecting WEP in action */
 
@@ -382,6 +384,7 @@ static struct local_options
         struct uloop_fd user_input_fd;
         struct uloop_fd signal_fd;
         struct uloop_fd channel_hopper_fd;
+        struct uloop_timeout pcap;
         struct uloop_timeout refresh;
         struct uloop_timeout quit_request;
         struct uloop_timeout output_dump;
@@ -6632,8 +6635,7 @@ static void dump_contexts_initialise(
 static bool read_one_packet_from_file(
     struct local_options * const options,
     uint8_t * const packet_buffer,
-    size_t packet_buffer_size,
-    struct timeval * const packet_timestamp)
+    size_t packet_buffer_size)
 {
     bool read_a_packet;
     size_t packet_length;
@@ -6645,7 +6647,7 @@ static bool read_one_packet_from_file(
                   packet_buffer_size,
                   &packet_length,
                   &ri,
-                  packet_timestamp);
+                  &options->packet_timestamp);
 
     if (result == pcap_reader_result_ok)
     {
@@ -6853,6 +6855,20 @@ static void ubus_channel_hopper_fd(struct uloop_fd * fd, unsigned int events)
 done:
     return;
 }
+
+static void ubus_pcap_reader(struct uloop_timeout * timeout)
+{
+    struct local_options * const options =
+        container_of(timeout, struct local_options, ubus.pcap);
+    uint8_t h80211[4096];
+
+    read_one_packet_from_file(options, h80211, sizeof h80211);
+
+    if (options->pcap_reader_context != NULL)
+    {
+        uloop_timeout_set(timeout, 10);
+    }
+}
 #endif
 
 int main(int argc, char * argv[])
@@ -6887,7 +6903,6 @@ int main(int argc, char * argv[])
     struct timeval tv2;
     struct timeval tv3;
     struct timeval last_active_scan_timestamp;
-    struct timeval previous_timestamp = { .tv_sec = 0, .tv_usec = 0 };
 
     static const struct option long_options[]
         =
@@ -7891,6 +7906,15 @@ int main(int argc, char * argv[])
         lopt.ubus.channel_hopper_fd.cb = ubus_channel_hopper_fd;
         lopt.ubus.channel_hopper_fd.fd = lopt.channel_hopper_pipe[0];
         uloop_fd_add(&lopt.ubus.channel_hopper_fd, ULOOP_BLOCKING | ULOOP_READ);
+
+        int const pcap_fd_handle = pcap_fd(lopt.pcap_reader_context);
+        fprintf(stderr, "pcap handle %d\n", pcap_fd_handle);
+        if (pcap_fd_handle >= 0)
+        {
+            memset(&lopt.ubus.pcap, 0, sizeof lopt.ubus.pcap);
+            lopt.ubus.pcap.cb = ubus_pcap_reader;
+            uloop_timeout_set(&lopt.ubus.pcap, 10);
+        }
     }
 #endif
 
@@ -7957,12 +7981,7 @@ int main(int argc, char * argv[])
 
                 do_generic_update(&lopt, current_time);
             }
-        }
 
-#if defined(INCLUDE_UBUS)
-        if (!lopt.ubus.do_ubus)
-#endif
-        {
             gettimeofday(&current_time_timestamp, NULL);
 
             if (lopt.active_scan_sim > 0)
@@ -7993,17 +8012,20 @@ int main(int argc, char * argv[])
 
 		if (lopt.pcap_reader_context != NULL)
 		{
-            struct timeval packet_timestamp;
-
-            /* Read one packet from a file. */
-            if (read_one_packet_from_file(&lopt, h80211, sizeof h80211, &packet_timestamp))
+#if defined(INCLUDE_UBUS)
+            if (!lopt.ubus.do_ubus)
+#endif
             {
-                read_pkts++;
-                if (lopt.relative_time)
+                /* Read one packet from a file. */
+                if (read_one_packet_from_file(&lopt, h80211, sizeof h80211))
                 {
-                    pace_pcap_reader(&previous_timestamp,
-                                     &packet_timestamp,
-                                     read_pkts);
+                    read_pkts++;
+                    if (lopt.relative_time)
+                    {
+                        pace_pcap_reader(&lopt.previous_timestamp,
+                                         &lopt.packet_timestamp,
+                                         read_pkts);
+                    }
                 }
             }
 		}
@@ -8027,7 +8049,12 @@ int main(int argc, char * argv[])
 		}
         else
         {
-			usleep(1);
+#if defined(INCLUDE_UBUS)
+            if (!lopt.ubus.do_ubus)
+#endif
+            {
+                usleep(1);
+            }
         }
 
         if (lopt.do_exit)

@@ -27,4 +27,6 @@ pcap_reader_result_t pcap_read(
     struct rx_info * const ri,
     struct timeval * const packet_timestamp);
 
+int pcap_fd(struct pcap_reader_context_st * context);
+
 #endif /* __PCAP_READER_H__ */
