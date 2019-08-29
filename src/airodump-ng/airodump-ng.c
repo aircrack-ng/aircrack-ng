@@ -394,6 +394,7 @@ static struct local_options
         struct uloop_timeout refresh;
         struct uloop_timeout quit_request;
         struct uloop_timeout output_dump;
+        struct uloop_timeout event_dump;
         struct uloop_timeout generic_refresh;
         struct uloop_timeout active_scan;
         struct uloop_timeout half_second;
@@ -5894,8 +5895,7 @@ static void append_ap_nodes_to_blob(struct ap_list_head * const ap_list, struct 
     blobmsg_close_array(b, cookie);
 }
 
-static void
-ubus_send_nodes_event(struct local_options * const options)
+static void ubus_send_nodes_event(struct local_options * const options)
 {
     struct blob_buf b;
     memset(&b, 0, sizeof b);
@@ -5908,14 +5908,22 @@ ubus_send_nodes_event(struct local_options * const options)
     blob_buf_free(&b); /* Required? */
 }
 
+static void ubus_event_dump(struct uloop_timeout * timeout)
+{
+    struct local_options * const options =
+        container_of(timeout, struct local_options, ubus.event_dump);
+
+    ubus_send_nodes_event(options);
+
+    uloop_timeout_set(timeout, options->filter_seconds * 1000);
+}
+
 static void ubus_generic_refresh(struct uloop_timeout * timeout)
 {
     struct local_options * const options =
         container_of(timeout, struct local_options, ubus.generic_refresh);
 
     do_generic_update(options, time(NULL));
-
-    ubus_send_nodes_event(options);
 
     uloop_timeout_set(timeout, generic_update_interval_seconds * 1000);
 }
@@ -7939,6 +7947,9 @@ int main(int argc, char * argv[])
 
         lopt.ubus.output_dump.cb = ubus_output_dump;
         uloop_timeout_set(&lopt.ubus.output_dump, lopt.file_write_interval * 1000);
+
+        lopt.ubus.event_dump.cb = ubus_event_dump;
+        uloop_timeout_set(&lopt.ubus.event_dump, lopt.filter_seconds * 1000);
 
         lopt.ubus.generic_refresh.cb = ubus_generic_refresh;
         uloop_timeout_set(&lopt.ubus.generic_refresh, generic_update_interval_seconds * 1000);

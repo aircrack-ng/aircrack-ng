@@ -47,15 +47,15 @@ static bool should_dump_ap(
     struct essid_filter_context_st const * const essid_filter)
 {
     bool should_dump;
-    unsigned long const min_packets = 0; 
+    unsigned long const min_packets = 0;
     bool const check_broadcast = true;
     int const max_age_seconds = -1; /* no limit. */
 
-    if (!ap_should_be_logged(ap_cur, 
-                             max_age_seconds, 
-                             f_encrypt, 
-                             essid_filter, 
-                             check_broadcast, 
+    if (!ap_should_be_logged(ap_cur,
+                             max_age_seconds,
+                             f_encrypt,
+                             essid_filter,
+                             check_broadcast,
                              min_packets))
     {
         should_dump = false;
@@ -154,12 +154,12 @@ static void dump_aps(
     /* Access Points */
     TAILQ_FOREACH(ap_cur, ap_list, entry)
     {
-        dump_ap(fp, 
-                ap_cur, 
-                f_encrypt, 
-                filter_seconds, 
-                sys_name, 
-                loc_name, 
+        dump_ap(fp,
+                ap_cur,
+                f_encrypt,
+                filter_seconds,
+                sys_name,
+                loc_name,
                 essid_filter);
     }
 
@@ -249,7 +249,7 @@ static void dump_sta(
 {
     time_t const current_time = time(NULL);
 
-    if (!should_dump_st(st_cur,filter_seconds,current_time))
+    if (!should_dump_st(st_cur, filter_seconds,current_time))
     {
         goto done;
     }
@@ -296,12 +296,12 @@ static void dump_write_wifi_scanner(
         goto done;
 	}
 
-    dump_aps(fp, 
-             ap_list, 
-             f_encrypt, 
-             filter_seconds, 
-             sys_name, 
-             loc_name, 
+    dump_aps(fp,
+             ap_list,
+             f_encrypt,
+             filter_seconds,
+             sys_name,
+             loc_name,
              essid_filter);
 
     dump_stas(fp, sta_list, filter_seconds, sys_name, loc_name);
