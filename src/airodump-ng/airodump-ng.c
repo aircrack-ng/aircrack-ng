@@ -165,6 +165,12 @@ struct sort_context_st
 
 TAILQ_HEAD(na_list_head, NA_info);
 
+struct uloop_fd_wrapper_st
+{
+    struct uloop_fd fd;
+    size_t index;
+};
+
 static struct local_options
 {
     int quitting;
@@ -391,6 +397,7 @@ static struct local_options
         struct uloop_timeout generic_refresh;
         struct uloop_timeout active_scan;
         struct uloop_timeout half_second;
+        struct uloop_fd_wrapper_st interfaces[MAX_CARDS];
     } ubus;
 #endif
 
@@ -699,8 +706,8 @@ static const char usage[] =
 	"      --manufacturer        : Display manufacturer from IEEE OUI list\n"
 	"      --uptime              : Display AP Uptime from Beacon Timestamp\n"
 	"      --wps                 : Display WPS information (if any)\n"
-    "      -S                    : Send UBUS events\n"
-    "      --ubus         <path> : path to UBUS socket\n"
+    "      -S             <path> : path to UBUS socket\n"
+    "      --ubus         <path> : Send UBUS events\n"
 	"      --output-format\n"
 	"                  <formats> : Output format. Possible values:\n"
     "                              pcap, ivs, csv, gps, kismet, netxml, wifi_scanner"
@@ -5009,17 +5016,28 @@ static struct wif * reopen_card(struct wif * const old)
     return new_wi;
 }
 
-static bool reopen_cards(struct wif * * const wi, size_t const num_cards)
+static bool reopen_cards(struct local_options * const options)
 {
+    struct wif * * const wi = options->wi;
+    size_t const num_cards = options->num_cards;
     bool success;
 
     for (size_t i = 0; i < num_cards; i++)
     {
+        if (options->ubus.do_ubus)
+        {
+            uloop_fd_delete(&options->ubus.interfaces[i].fd);
+        }
         wi[i] = reopen_card(wi[i]);
         if (wi[i] == NULL)
         {
             success = false;
             goto done;
+        }
+        if (options->ubus.do_ubus)
+        {
+            options->ubus.interfaces[i].fd.fd = wi_fd(wi[i]);
+            uloop_fd_add(&options->ubus.interfaces[i].fd, ULOOP_BLOCKING | ULOOP_READ);
         }
     }
 
@@ -5520,7 +5538,7 @@ static bool start_frequency_hopper_process(
         * problems.  -sorbo
         */
 
-        if (!reopen_cards(wi, options->num_cards))
+        if (!reopen_cards(options))
         {
             exit(EXIT_FAILURE);
         }
@@ -5560,7 +5578,7 @@ static bool start_channel_hopper_process(
         * problems.  -sorbo
         */
 
-        if (!reopen_cards(wi, options->num_cards))
+        if (!reopen_cards(options))
         {
             exit(EXIT_FAILURE);
         }
@@ -6525,12 +6543,12 @@ done:
 
 static int capture_packet_from_cards(
     struct local_options * const options,
-    struct wif * * wi,
-    size_t num_cards,
     uint8_t * const packet_buffer,
     size_t packet_buffer_size)
 {
     /* Capture one packet from each card. */
+    struct wif * * const wi = options->wi;
+    size_t const num_cards = options->num_cards;
     int result;
     fd_set rfds;
     int max_fd = -1;
@@ -6785,6 +6803,7 @@ static void options_initialise(struct local_options * const options)
         options->channel[i] = channel_sentinel;
         options->frequency[i] = frequency_sentinel;
         options->wi_consecutive_failed_reads[i] = 0;
+        options->ubus.interfaces[i].index = i;
     }
 
     MAC_ADDRESS_CLEAR(&options->f_bssid);
@@ -6867,6 +6886,29 @@ static void ubus_pcap_reader(struct uloop_timeout * timeout)
     if (options->pcap_reader_context != NULL)
     {
         uloop_timeout_set(timeout, 10);
+    }
+}
+
+static void ubus_card_reader(struct uloop_fd * fd, unsigned int events)
+{
+    (void)events;
+    struct uloop_fd_wrapper_st * const wrapper =
+        container_of(fd, struct uloop_fd_wrapper_st, fd);
+    struct local_options * const options =
+        container_of(wrapper, struct local_options, ubus.interfaces[wrapper->index]);
+    uint8_t h80211[4096];
+
+    /* Read a packet from each interface/card. */
+    int result =
+        capture_packet_from_cards(
+            &lopt,
+            h80211,
+            sizeof h80211);
+
+    if (result < 0)
+    {
+        uloop_done();
+        options->do_exit = true;
     }
 }
 #endif
@@ -7915,6 +7957,19 @@ int main(int argc, char * argv[])
             lopt.ubus.pcap.cb = ubus_pcap_reader;
             uloop_timeout_set(&lopt.ubus.pcap, 10);
         }
+        else if (lopt.s_iface != NULL)
+        {
+            for (size_t i = 0;  i < MAX_CARDS; i++)
+            {
+                if (lopt.wi[i] != NULL)
+                {
+                    memset(&lopt.ubus.interfaces[i].fd, 0, sizeof lopt.ubus.interfaces[i].fd);
+                    lopt.ubus.interfaces[i].fd.cb = ubus_card_reader;
+                    lopt.ubus.interfaces[i].fd.fd = wi_fd(lopt.wi[i]);
+                    uloop_fd_add(&lopt.ubus.interfaces[i].fd, ULOOP_BLOCKING | ULOOP_READ);
+                }
+            }
+        }
     }
 #endif
 
@@ -8031,20 +8086,23 @@ int main(int argc, char * argv[])
 		}
 		else if (lopt.s_iface != NULL)
 		{
-            /* Read a packet from each interface/card. */
-            int result =
-                capture_packet_from_cards(
-                    &lopt,
-                    lopt.wi,
-                    lopt.num_cards,
-                    h80211,
-                    sizeof h80211);
-
-            if (result < 0)
+#if defined(INCLUDE_UBUS)
+            if (!lopt.ubus.do_ubus)
+#endif
             {
-                had_error = true;
-                lopt.do_exit = true;
-                continue;
+                /* Read a packet from each interface/card. */
+                int result =
+                    capture_packet_from_cards(
+                        &lopt,
+                        h80211,
+                        sizeof h80211);
+
+                if (result < 0)
+                {
+                    had_error = true;
+                    lopt.do_exit = true;
+                    continue;
+                }
             }
 		}
         else
