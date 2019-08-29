@@ -147,6 +147,7 @@ static int a_chans[] =
 
 static time_t const maximum_quit_event_interval_seconds = 3;
 static time_t const generic_update_interval_seconds = 5;
+static time_t const half_second_interval_milliseconds = 500;
 
 struct detected_frequencies_st
 {
@@ -169,6 +170,8 @@ static struct local_options
     int quitting;
     time_t quitting_event_ts;
     time_t start_time;
+
+    struct wif * wi[MAX_CARDS];
 
     struct ap_list_head ap_list;
     struct AP_info * p_selected_ap;
@@ -376,13 +379,15 @@ static struct local_options
         int do_ubus;
         char const * path;
         struct ubus_state_st * state;
+        struct uloop_fd user_input_fd;
+        struct uloop_fd signal_fd;
+        struct uloop_fd channel_hopper_fd;
         struct uloop_timeout refresh;
         struct uloop_timeout quit_request;
         struct uloop_timeout output_dump;
         struct uloop_timeout generic_refresh;
-        struct uloop_fd user_input_fd;
-        struct uloop_fd signal_fd;
-        struct uloop_fd channel_hopper_fd;
+        struct uloop_timeout active_scan;
+        struct uloop_timeout half_second;
     } ubus;
 #endif
 
@@ -5783,6 +5788,39 @@ static void do_generic_update(
         getStringTimeFromSec(difftime(current_time, options->start_time));
 }
 
+static void do_probe_requests(struct local_options * const options)
+{
+    send_probe_requests(options->wi, options->num_cards);
+}
+
+static void do_half_second_refresh(struct local_options * const options)
+{
+    struct wif * * const wi = options->wi;
+
+    update_rx_quality(options);
+
+    if (options->s_iface != NULL)
+    {
+        if (!update_interface_cards(wi,
+                                    options->num_cards,
+                                    options->singlechan,
+                                    options->channel,
+                                    options->singlefreq,
+                                    options->frequency,
+                                    options->message,
+                                    sizeof options->message,
+                                    options->ignore_negative_one
+#ifdef CONFIG_LIBNL
+                                    , options->htval
+#endif
+                                   ))
+        {
+            uloop_done();
+            lopt.do_exit = true;
+        }
+    }
+}
+
 #if INCLUDE_UBUS
 static void ubus_cancel_quit_request(struct uloop_timeout * timeout)
 {
@@ -5810,6 +5848,26 @@ static void ubus_generic_refresh(struct uloop_timeout * timeout)
     do_generic_update(options, time(NULL));
 
     uloop_timeout_set(timeout, generic_update_interval_seconds * 1000);
+}
+
+static void ubus_active_scan(struct uloop_timeout * timeout)
+{
+    struct local_options * const options =
+        container_of(timeout, struct local_options, ubus.active_scan);
+
+    do_probe_requests(options);
+
+    uloop_timeout_set(timeout, options->active_scan_sim * 1000);
+}
+
+static void ubus_half_second(struct uloop_timeout * timeout)
+{
+    struct local_options * const options =
+        container_of(timeout, struct local_options, ubus.half_second);
+
+    do_half_second_refresh(options);
+
+    uloop_timeout_set(timeout, half_second_interval_milliseconds);
 }
 #endif
 
@@ -6811,8 +6869,6 @@ int main(int argc, char * argv[])
     long cycle_time;
     char * output_format_string;
 
-    struct wif * wi[MAX_CARDS];
-
     int found;
     int freq[2];
     size_t num_opts = 0;
@@ -7625,7 +7681,7 @@ int main(int argc, char * argv[])
 
     if (lopt.s_iface != NULL)
     {
-        lopt.num_cards = initialise_cards(lopt.s_iface, wi);
+        lopt.num_cards = initialise_cards(lopt.s_iface, lopt.wi);
 
         if (lopt.num_cards <= 0 || lopt.num_cards >= MAX_CARDS)
         {
@@ -7638,7 +7694,7 @@ int main(int argc, char * argv[])
         {
             struct detected_frequencies_st detected_frequencies;
 
-            detect_frequencies(wi[0], &detected_frequencies);
+            detect_frequencies(lopt.wi[0], &detected_frequencies);
 
             lopt.frequency[0] =
                 getfrequencies(&lopt.own_frequencies,
@@ -7662,13 +7718,13 @@ int main(int argc, char * argv[])
                 size_t const freq_count =
                     get_frequency_count(lopt.own_frequencies, false);
 
-                start_frequency_hopper_process(&lopt, wi, freq_count);
+                start_frequency_hopper_process(&lopt, lopt.wi, freq_count);
             }
             else
             {
                 for (size_t i = 0; i < lopt.num_cards; i++)
                 {
-                    wi_set_freq(wi[i], lopt.frequency[0]);
+                    wi_set_freq(lopt.wi[i], lopt.frequency[0]);
                     lopt.frequency[i] = lopt.frequency[0];
                 }
                 lopt.singlefreq = 1;
@@ -7682,16 +7738,16 @@ int main(int argc, char * argv[])
                 size_t const chan_count =
                     get_channel_count(lopt.channels, false);
 
-                start_channel_hopper_process(&lopt, wi, chan_count);
+                start_channel_hopper_process(&lopt, lopt.wi, chan_count);
             }
             else
             {
                 for (size_t i = 0; i < lopt.num_cards; i++)
                 {
 #ifdef CONFIG_LIBNL
-                    wi_set_ht_channel(wi[i], lopt.channel[0], lopt.htval);
+                    wi_set_ht_channel(lopt.wi[i], lopt.channel[0], lopt.htval);
 #else
-                    wi_set_channel(wi[i], lopt.channel[0]);
+                    wi_set_channel(lopt.wi[i], lopt.channel[0]);
 #endif
                     lopt.channel[i] = lopt.channel[0];
                 }
@@ -7780,6 +7836,15 @@ int main(int argc, char * argv[])
 
         lopt.ubus.generic_refresh.cb = ubus_generic_refresh;
         uloop_timeout_set(&lopt.ubus.generic_refresh, generic_update_interval_seconds * 1000);
+
+        if (lopt.active_scan_sim > 0)
+        {
+            lopt.ubus.active_scan.cb = ubus_active_scan;
+            uloop_timeout_set(&lopt.ubus.active_scan, lopt.active_scan_sim * 1000);
+        }
+
+        lopt.ubus.half_second.cb = ubus_half_second;
+        uloop_timeout_set(&lopt.ubus.half_second, half_second_interval_milliseconds);
     }
 #endif
 
@@ -7894,54 +7959,37 @@ int main(int argc, char * argv[])
             }
         }
 
-        gettimeofday(&current_time_timestamp, NULL);
-
-		if (lopt.active_scan_sim > 0)
-		{
-            long const cycle_time2 = 1000000UL * (current_time_timestamp.tv_sec - last_active_scan_timestamp.tv_sec)
-                + (current_time_timestamp.tv_usec - last_active_scan_timestamp.tv_usec);
-            bool const probe_requests_required =
-                cycle_time2 > lopt.active_scan_sim * 1000;
-
-            if (probe_requests_required)
-            {
-                gettimeofday(&last_active_scan_timestamp, NULL);
-
-                send_probe_requests(wi, lopt.num_cards);
-            }
-		}
-
-        cycle_time = 1000000UL * (current_time_timestamp.tv_sec - tv3.tv_sec)
-            + (current_time_timestamp.tv_usec - tv3.tv_usec);
-
-        if (cycle_time > 500000)
-		{
-			gettimeofday(&tv3, NULL);
-
-			update_rx_quality(&lopt);
-
-			if (lopt.s_iface != NULL)
-			{
-                if (!update_interface_cards(wi,
-                                            lopt.num_cards,
-                                            lopt.singlechan,
-                                            lopt.channel,
-                                            lopt.singlefreq,
-                                            lopt.frequency,
-                                            lopt.message,
-                                            sizeof lopt.message,
-                                            lopt.ignore_negative_one
-#ifdef CONFIG_LIBNL
-                                            , lopt.htval
+#if defined(INCLUDE_UBUS)
+        if (!lopt.ubus.do_ubus)
 #endif
-                                            ))
+        {
+            gettimeofday(&current_time_timestamp, NULL);
+
+            if (lopt.active_scan_sim > 0)
+            {
+                long const cycle_time2 = 1000000UL * (current_time_timestamp.tv_sec - last_active_scan_timestamp.tv_sec)
+                    + (current_time_timestamp.tv_usec - last_active_scan_timestamp.tv_usec);
+                bool const probe_requests_required =
+                    cycle_time2 > lopt.active_scan_sim * 1000;
+
+                if (probe_requests_required)
                 {
-                    had_error = true;
-                    lopt.do_exit = true;
-                    continue;
+                    gettimeofday(&last_active_scan_timestamp, NULL);
+
+                    do_probe_requests(&lopt);
                 }
-			}
-		}
+            }
+
+            cycle_time = 1000000UL * (current_time_timestamp.tv_sec - tv3.tv_sec)
+                + (current_time_timestamp.tv_usec - tv3.tv_usec);
+
+            if (cycle_time > 500000)
+            {
+                gettimeofday(&tv3, NULL);
+
+                do_half_second_refresh(&lopt);
+            }
+        }
 
 		if (lopt.pcap_reader_context != NULL)
 		{
@@ -7965,7 +8013,7 @@ int main(int argc, char * argv[])
             int result =
                 capture_packet_from_cards(
                     &lopt,
-                    wi,
+                    lopt.wi,
                     lopt.num_cards,
                     h80211,
                     sizeof h80211);
@@ -8016,7 +8064,7 @@ int main(int argc, char * argv[])
         uloop_done();
     }
 #endif
-	airodump_shutdown(&lopt, wi);
+	airodump_shutdown(&lopt, lopt.wi);
 
 	program_exit_code = had_error ? EXIT_FAILURE : EXIT_SUCCESS;
 
