@@ -5868,7 +5868,9 @@ static void ubus_output_dump(struct uloop_timeout * timeout)
     uloop_timeout_set(timeout, options->file_write_interval * 1000);
 }
 
-static void append_ap_nodes_to_blob(struct ap_list_head * const ap_list, struct blob_buf * const b)
+static void append_ap_nodes_to_blob(
+    struct ap_list_head * const ap_list,
+    struct blob_buf * const b)
 {
     void * cookie = blobmsg_open_array(b, "access points");
     struct AP_info * ap_cur;
@@ -5895,6 +5897,47 @@ static void append_ap_nodes_to_blob(struct ap_list_head * const ap_list, struct 
     blobmsg_close_array(b, cookie);
 }
 
+static void append_sta_nodes_to_blob(
+    struct sta_list_head * const sta_list,
+    struct blob_buf * const b)
+{
+    void * cookie = blobmsg_open_array(b, "stations");
+    struct ST_info * st_cur;
+
+    TAILQ_FOREACH(st_cur, sta_list, entry)
+    {
+        void * sta_cookie = blobmsg_open_table(b, NULL);
+        char mac_buffer[MAX_MAC_ADDRESS_STRING_SIZE];
+
+        blobmsg_add_u64(b, "first seen", st_cur->tinit);
+        blobmsg_add_u64(b, "last seen", st_cur->tlast);
+        blobmsg_add_u16(b, "channel", st_cur->channel);
+        blobmsg_add_double(b, "power", st_cur->power);
+
+        struct AP_info const * const ap_cur = st_cur->base;
+
+        if (!MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
+        {
+            blobmsg_add_string(b, "essid", (char *)ap_cur->essid);
+            blobmsg_add_string(b,
+                               "bssid",
+                               mac_address_format(&ap_cur->bssid,
+                                                  mac_buffer,
+                                                  sizeof mac_buffer));
+        }
+
+        blobmsg_add_string(b,
+                           "station MAC",
+                           mac_address_format(&st_cur->stmac,
+                                              mac_buffer,
+                                              sizeof mac_buffer));
+
+        blobmsg_close_table(b, sta_cookie);
+    }
+
+    blobmsg_close_array(b, cookie);
+}
+
 static void ubus_send_nodes_event(struct local_options * const options)
 {
     struct blob_buf b;
@@ -5902,6 +5945,7 @@ static void ubus_send_nodes_event(struct local_options * const options)
 	blob_buf_init(&b, 0);
 
     append_ap_nodes_to_blob(&options->ap_list, &b);
+    append_sta_nodes_to_blob(&options->sta_list, &b);
 
     ubus_state_send_blob_event(options->ubus.state, "wifi_scanner.nodes", &b);
 
