@@ -11,7 +11,6 @@ struct ubus_state_st
     struct ubus_context ubus_ctx;
     char const * ubus_path;
     bool connected;
-    struct uloop_timeout uloop_cancel_timer;
     struct uloop_timeout retry;
 };
 
@@ -21,15 +20,6 @@ static void
 ubus_add_fd(struct ubus_context * const ubus_ctx)
 {
     ubus_add_uloop(ubus_ctx);
-}
-
-static void
-ubus_cancel(struct uloop_timeout * timeout)
-{
-    (void)timeout;
-
-    uloop_end();
-    uloop_timeout_set(timeout, 1);
 }
 
 static void
@@ -49,7 +39,6 @@ ubus_reconnect_timer(struct uloop_timeout * timeout)
 
         return;
     }
-    uloop_timeout_set(&state->uloop_cancel_timer, 1);
 
     DPRINTF("Reconnected to ubus, new id: %08x\n", state->ubus_ctx.local_id);
 
@@ -89,9 +78,6 @@ ubus_initialise(char const * const path)
 
     ubus_add_fd(&state->ubus_ctx);
 
-    state->uloop_cancel_timer.cb = ubus_cancel;
-    uloop_timeout_set(&state->uloop_cancel_timer, 1);
-
     success = true;
 
 done:
@@ -112,7 +98,6 @@ ubus_done(struct ubus_state_st * const state)
     }
 
     uloop_timeout_cancel(&state->retry);
-    uloop_timeout_cancel(&state->uloop_cancel_timer);
 
     uloop_fd_delete(&state->ubus_ctx.sock);
 

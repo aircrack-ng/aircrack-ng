@@ -5722,6 +5722,12 @@ static void handle_terminate_event(struct local_options * const options)
         fflush(stdout);
     }
 
+#if INCLUDE_UBUS
+    if (options->ubus.do_ubus)
+    {
+        uloop_end();
+    }
+#endif
     options->do_exit = 1;
 }
 
@@ -5836,7 +5842,7 @@ static void do_half_second_refresh(struct local_options * const options)
 #endif
                                    ))
         {
-            uloop_done();
+            uloop_end();
             lopt.do_exit = true;
         }
     }
@@ -6907,7 +6913,7 @@ static void ubus_card_reader(struct uloop_fd * fd, unsigned int events)
 
     if (result < 0)
     {
-        uloop_done();
+        uloop_end();
         options->do_exit = true;
     }
 }
@@ -7985,6 +7991,7 @@ int main(int argc, char * argv[])
              * do_exit should then be removed as well.
              */
             uloop_run();
+            lopt.do_exit = true;
         }
         else
 #endif
@@ -7996,20 +8003,15 @@ int main(int argc, char * argv[])
             }
 
             check_for_signal_events(&lopt);
-        }
 
-        if (lopt.do_exit)
-        {
-            /* This flag may have been set by a signal event or user
-             * input.
-             */
-            continue;
-        }
+            if (lopt.do_exit)
+            {
+                /* This flag may have been set by a signal event or user
+                 * input.
+                 */
+                continue;
+            }
 
-#if defined(INCLUDE_UBUS)
-        if (!lopt.ubus.do_ubus)
-#endif
-        {
             check_for_channel_hopper_data(&lopt);
 
             current_time = time(NULL);
@@ -8063,13 +8065,8 @@ int main(int argc, char * argv[])
 
                 do_half_second_refresh(&lopt);
             }
-        }
 
-		if (lopt.pcap_reader_context != NULL)
-		{
-#if defined(INCLUDE_UBUS)
-            if (!lopt.ubus.do_ubus)
-#endif
+            if (lopt.pcap_reader_context != NULL)
             {
                 /* Read one packet from a file. */
                 if (read_one_packet_from_file(&lopt, h80211, sizeof h80211))
@@ -8083,19 +8080,14 @@ int main(int argc, char * argv[])
                     }
                 }
             }
-		}
-		else if (lopt.s_iface != NULL)
-		{
-#if defined(INCLUDE_UBUS)
-            if (!lopt.ubus.do_ubus)
-#endif
+            else if (lopt.s_iface != NULL)
             {
                 /* Read a packet from each interface/card. */
                 int result =
                     capture_packet_from_cards(
-                        &lopt,
-                        h80211,
-                        sizeof h80211);
+                    &lopt,
+                    h80211,
+                    sizeof h80211);
 
                 if (result < 0)
                 {
@@ -8104,26 +8096,17 @@ int main(int argc, char * argv[])
                     continue;
                 }
             }
-		}
-        else
-        {
-#if defined(INCLUDE_UBUS)
-            if (!lopt.ubus.do_ubus)
-#endif
+            else
             {
                 usleep(1);
             }
-        }
 
-        if (lopt.do_exit)
-        {
-            lopt.do_exit = true;
-            continue;
-        }
+            if (lopt.do_exit)
+            {
+                lopt.do_exit = true;
+                continue;
+            }
 
-#if defined(INCLUDE_UBUS)
-        if (!lopt.ubus.do_ubus)
-        {
             gettimeofday(&tv2, NULL);
 
             time_slept += 1000000UL * (tv2.tv_sec - current_time_timestamp.tv_sec)
@@ -8139,14 +8122,12 @@ int main(int argc, char * argv[])
                 do_refresh(&lopt);
             }
         }
-#endif
 	}
 
 #if defined(INCLUDE_UBUS)
     if (lopt.ubus.do_ubus)
     {
         ubus_done(lopt.ubus.state);
-        uloop_done();
     }
 #endif
 	airodump_shutdown(&lopt, lopt.wi);
