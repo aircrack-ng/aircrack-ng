@@ -335,7 +335,7 @@ static struct local_options
     time_t filter_seconds;
     int file_reset_seconds;
 
-    size_t max_node_age;
+    size_t max_node_age_seconds;
 
     bool record_data;
 
@@ -387,18 +387,20 @@ static struct local_options
         int do_ubus;
         char const * path;
         struct ubus_state_st * state;
-        struct uloop_fd user_input_fd;
+
         struct uloop_fd signal_fd;
         struct uloop_fd channel_hopper_fd;
+        struct uloop_fd_wrapper_st interfaces[MAX_CARDS];
+        struct uloop_timeout event_dump;
+
+        struct uloop_fd user_input_fd;
         struct uloop_timeout pcap;
         struct uloop_timeout refresh;
         struct uloop_timeout quit_request;
         struct uloop_timeout output_dump;
-        struct uloop_timeout event_dump;
         struct uloop_timeout generic_refresh;
         struct uloop_timeout active_scan;
         struct uloop_timeout half_second;
-        struct uloop_fd_wrapper_st interfaces[MAX_CARDS];
     } ubus;
 #endif
 
@@ -1596,7 +1598,7 @@ static void purge_old_aps(
 
     TAILQ_FOREACH_SAFE(ap_cur, ap_list, entry, ap_tmp)
 	{
-		bool const too_old = ap_cur->tlast < age_limit;
+		bool const too_old = ap_cur->tlast <= age_limit;
 
 		if (too_old)
 		{
@@ -1614,7 +1616,7 @@ static void purge_old_stas(
 
 	TAILQ_FOREACH_SAFE(st_cur, sta_list, entry, st_tmp)
 	{
-		bool const too_old = st_cur->tlast < age_limit;
+		bool const too_old = st_cur->tlast <= age_limit;
 
 		if (too_old)
 		{
@@ -1632,7 +1634,7 @@ static void purge_old_nas(
 
 	TAILQ_FOREACH_SAFE(na_cur, na_list, entry, na_tmp)
 	{
-		bool const too_old = na_cur->tlast < age_limit;
+		bool const too_old = na_cur->tlast <= age_limit;
 
 		if (too_old)
 		{
@@ -5868,71 +5870,85 @@ static void ubus_output_dump(struct uloop_timeout * timeout)
     uloop_timeout_set(timeout, options->file_write_interval * 1000);
 }
 
+static void append_ap_node_to_blob(
+    struct AP_info const * const ap_cur,
+    struct blob_buf * const b)
+{
+    void * const ap_cookie = blobmsg_open_table(b, NULL);
+    char mac_buffer[MAX_MAC_ADDRESS_STRING_SIZE];
+
+    blobmsg_add_u64(b, "first seen", ap_cur->tinit);
+    blobmsg_add_u64(b, "last seen", ap_cur->tlast);
+    blobmsg_add_u16(b, "channel", ap_cur->channel);
+    blobmsg_add_double(b, "power", ap_cur->avg_power);
+    blobmsg_add_string(b, "essid", (char *)ap_cur->essid);
+    blobmsg_add_string(b,
+                       "bssid",
+                       mac_address_format(&ap_cur->bssid,
+                                          mac_buffer,
+                                          sizeof mac_buffer));
+
+    blobmsg_close_table(b, ap_cookie);
+}
+
 static void append_ap_nodes_to_blob(
     struct ap_list_head * const ap_list,
     struct blob_buf * const b)
 {
-    void * cookie = blobmsg_open_array(b, "access points");
-    struct AP_info * ap_cur;
+    void * const cookie = blobmsg_open_array(b, "access points");
+    struct AP_info const * ap_cur;
 
     TAILQ_FOREACH(ap_cur, ap_list, entry)
     {
-        void * ap_cookie = blobmsg_open_table(b, NULL);
-        char mac_buffer[MAX_MAC_ADDRESS_STRING_SIZE];
+        append_ap_node_to_blob(ap_cur, b);
+    }
 
-        blobmsg_add_u64(b, "first seen", ap_cur->tinit);
-        blobmsg_add_u64(b, "last seen", ap_cur->tlast);
-        blobmsg_add_u16(b, "channel", ap_cur->channel);
-        blobmsg_add_double(b, "power", ap_cur->avg_power);
+    blobmsg_close_array(b, cookie);
+}
+
+static void append_sta_node_to_blob(
+    struct ST_info const * const st_cur,
+    struct blob_buf * const b)
+{
+    void * const sta_cookie = blobmsg_open_table(b, NULL);
+    char mac_buffer[MAX_MAC_ADDRESS_STRING_SIZE];
+
+    blobmsg_add_u64(b, "first seen", st_cur->tinit);
+    blobmsg_add_u64(b, "last seen", st_cur->tlast);
+    blobmsg_add_u16(b, "channel", st_cur->channel);
+    blobmsg_add_double(b, "power", st_cur->power);
+
+    struct AP_info const * const ap_cur = st_cur->base;
+
+    if (!MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
+    {
         blobmsg_add_string(b, "essid", (char *)ap_cur->essid);
         blobmsg_add_string(b,
                            "bssid",
                            mac_address_format(&ap_cur->bssid,
                                               mac_buffer,
                                               sizeof mac_buffer));
-
-        blobmsg_close_table(b, ap_cookie);
     }
 
-    blobmsg_close_array(b, cookie);
+    blobmsg_add_string(b,
+                       "station MAC",
+                       mac_address_format(&st_cur->stmac,
+                                          mac_buffer,
+                                          sizeof mac_buffer));
+
+    blobmsg_close_table(b, sta_cookie);
 }
 
 static void append_sta_nodes_to_blob(
-    struct sta_list_head * const sta_list,
+    struct sta_list_head const * const sta_list,
     struct blob_buf * const b)
 {
-    void * cookie = blobmsg_open_array(b, "stations");
-    struct ST_info * st_cur;
+    void * const cookie = blobmsg_open_array(b, "stations");
+    struct ST_info const * st_cur;
 
     TAILQ_FOREACH(st_cur, sta_list, entry)
     {
-        void * sta_cookie = blobmsg_open_table(b, NULL);
-        char mac_buffer[MAX_MAC_ADDRESS_STRING_SIZE];
-
-        blobmsg_add_u64(b, "first seen", st_cur->tinit);
-        blobmsg_add_u64(b, "last seen", st_cur->tlast);
-        blobmsg_add_u16(b, "channel", st_cur->channel);
-        blobmsg_add_double(b, "power", st_cur->power);
-
-        struct AP_info const * const ap_cur = st_cur->base;
-
-        if (!MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
-        {
-            blobmsg_add_string(b, "essid", (char *)ap_cur->essid);
-            blobmsg_add_string(b,
-                               "bssid",
-                               mac_address_format(&ap_cur->bssid,
-                                                  mac_buffer,
-                                                  sizeof mac_buffer));
-        }
-
-        blobmsg_add_string(b,
-                           "station MAC",
-                           mac_address_format(&st_cur->stmac,
-                                              mac_buffer,
-                                              sizeof mac_buffer));
-
-        blobmsg_close_table(b, sta_cookie);
+        append_sta_node_to_blob(st_cur, b);
     }
 
     blobmsg_close_array(b, cookie);
@@ -5941,6 +5957,7 @@ static void append_sta_nodes_to_blob(
 static void ubus_send_nodes_event(struct local_options * const options)
 {
     struct blob_buf b;
+
     memset(&b, 0, sizeof b);
 	blob_buf_init(&b, 0);
 
@@ -6726,7 +6743,7 @@ static void update_console(struct local_options * const options)
 
 static void do_refresh(struct local_options * const options)
 {
-    purge_old_nodes(options, options->max_node_age);
+    purge_old_nodes(options, options->max_node_age_seconds);
     aps_purge_old_packets(&options->ap_list, BUFFER_TIME_MILLISECS);
 
     update_data_packets_per_second(options);
@@ -6816,7 +6833,7 @@ static void options_initialise(struct local_options * const options)
     options->dump_prefix = NULL;
     options->record_data = 0;
     options->pcap_output.writer = NULL;
-    options->max_node_age = 0;
+    options->max_node_age_seconds = 0;
 
     options->ivs.required = false;
     options->ivs.fp = NULL;
@@ -7611,7 +7628,7 @@ int main(int argc, char * argv[])
                 break;
 
             case 'v':
-                lopt.max_node_age = strtoul(optarg, NULL, 10) * ONE_MIN;
+                lopt.max_node_age_seconds = strtoul(optarg, NULL, 10) * ONE_MIN;
                 break;
 
             case 'o':
