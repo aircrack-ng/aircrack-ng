@@ -61,7 +61,7 @@ typedef enum channel_switching_method_t
 
 /* some constants */
 
-#define REFRESH_RATE 1000000 /* default delay in us between updates */
+#define REFRESH_RATE 200000 /* default delay in us between updates */
 #define DEFAULT_HOPFREQ 250 /* default delay in ms between channel hopping */
 
 #define NB_PRB 10 /* size of probed ESSID ring buffer */

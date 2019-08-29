@@ -146,6 +146,7 @@ static int a_chans[] =
 };
 
 static time_t const maximum_quit_event_interval_seconds = 3;
+static time_t const generic_update_interval_seconds = 5;
 
 struct detected_frequencies_st
 {
@@ -377,8 +378,11 @@ static struct local_options
         struct ubus_state_st * state;
         struct uloop_timeout refresh;
         struct uloop_timeout quit_request;
+        struct uloop_timeout output_dump;
+        struct uloop_timeout generic_refresh;
         struct uloop_fd user_input_fd;
         struct uloop_fd signal_fd;
+        struct uloop_fd channel_hopper_fd;
     } ubus;
 #endif
 
@@ -5731,6 +5735,54 @@ static void cancel_quit_request(struct local_options * const options)
     options->message[0] = '\0';
 }
 
+static void update_dump_output_files(struct local_options * const options)
+{
+    for (dump_type_t dump_type = 0; dump_type < dump_type_COUNT; dump_type++)
+    {
+        dump_context_st * const dump_context = options->dump[dump_type].context;
+
+        if (dump_context != NULL)
+        {
+            dump_write(dump_context,
+                       &options->ap_list,
+                       &options->sta_list,
+                       options->encryption_filter,
+                       &options->essid_filter);
+        }
+    }
+}
+
+static void close_dump_output_files(struct local_options * const options)
+{
+    for (dump_type_t dump_type = 0; dump_type < dump_type_COUNT; dump_type++)
+    {
+        dump_context_st * const dump_context = options->dump[dump_type].context;
+
+        if (dump_context != NULL)
+        {
+            dump_close(dump_context);
+            options->dump[dump_type].context = NULL;
+        }
+    }
+}
+
+static void do_generic_update(
+    struct local_options * const options,
+    time_t const current_time)
+{
+    options->sort.sort_required = true;
+
+    if (options->gpsd.required)
+    {
+        gps_tracker_update(&options->gps_context);
+    }
+
+    /* update elapsed time */
+    free(options->elapsed_time);
+    options->elapsed_time =
+        getStringTimeFromSec(difftime(current_time, options->start_time));
+}
+
 #if INCLUDE_UBUS
 static void ubus_cancel_quit_request(struct uloop_timeout * timeout)
 {
@@ -5738,6 +5790,26 @@ static void ubus_cancel_quit_request(struct uloop_timeout * timeout)
         container_of(timeout, struct local_options, ubus.quit_request);
 
     cancel_quit_request(options);
+}
+
+static void ubus_output_dump(struct uloop_timeout * timeout)
+{
+    struct local_options * const options =
+        container_of(timeout, struct local_options, ubus.output_dump);
+
+    update_dump_output_files(options);
+
+    uloop_timeout_set(timeout, options->file_write_interval * 1000);
+}
+
+static void ubus_generic_refresh(struct uloop_timeout * timeout)
+{
+    struct local_options * const options =
+        container_of(timeout, struct local_options, ubus.generic_refresh);
+
+    do_generic_update(options, time(NULL));
+
+    uloop_timeout_set(timeout, generic_update_interval_seconds * 1000);
 }
 #endif
 
@@ -6210,37 +6282,6 @@ done:
 	return success;
 }
 
-static void update_dump_output_files(struct local_options * const options)
-{
-    for (dump_type_t dump_type = 0; dump_type < dump_type_COUNT; dump_type++)
-    {
-        dump_context_st * const dump_context = options->dump[dump_type].context;
-
-        if (dump_context != NULL)
-        {
-            dump_write(dump_context,
-                       &options->ap_list,
-                       &options->sta_list,
-                       options->encryption_filter,
-                       &options->essid_filter);
-        }
-    }
-}
-
-static void close_dump_output_files(struct local_options * const options)
-{
-    for (dump_type_t dump_type = 0; dump_type < dump_type_COUNT; dump_type++)
-    {
-        dump_context_st * const dump_context = options->dump[dump_type].context;
-
-        if (dump_context != NULL)
-        {
-            dump_close(dump_context);
-            options->dump[dump_type].context = NULL;
-        }
-    }
-}
-
 static void close_output_files(struct local_options * const options)
 {
     close_dump_output_files(options);
@@ -6579,23 +6620,6 @@ done:
     return read_a_packet;
 }
 
-static void do_generic_update(
-    struct local_options * const options,
-    time_t const current_time)
-{
-    options->sort.sort_required = true;
-
-    if (options->gpsd.required)
-    {
-        gps_tracker_update(&options->gps_context);
-    }
-
-    /* update elapsed time */
-    free(options->elapsed_time);
-    options->elapsed_time =
-        getStringTimeFromSec(difftime(current_time, options->start_time));
-}
-
 static void options_initialise(struct local_options * const options)
 {
     memset(&lopt, 0, sizeof(lopt));
@@ -6714,6 +6738,7 @@ static void ubus_refresh_cb(struct uloop_timeout * timeout)
         container_of(timeout, struct local_options, ubus.refresh);
 
     do_refresh(options);
+
     uloop_timeout_set(timeout, REFRESH_RATE / 1000);
 }
 
@@ -6748,6 +6773,24 @@ static void ubus_signal_fd(struct uloop_fd * fd, unsigned int events)
     }
 
     check_for_signal_events(options);
+
+done:
+    return;
+}
+
+static void ubus_channel_hopper_fd(struct uloop_fd * fd, unsigned int events)
+{
+    (void)events;
+    struct local_options * const options =
+        container_of(fd, struct local_options, ubus.channel_hopper_fd);
+
+    if (fd->eof || fd->error)
+    {
+        options->do_exit = true;
+        goto done;
+    }
+
+    check_for_channel_hopper_data(options);
 
 done:
     return;
@@ -7731,6 +7774,12 @@ int main(int argc, char * argv[])
         }
         lopt.ubus.refresh.cb = ubus_refresh_cb;
         uloop_timeout_set(&lopt.ubus.refresh, REFRESH_RATE / 1000);
+
+        lopt.ubus.output_dump.cb = ubus_output_dump;
+        uloop_timeout_set(&lopt.ubus.output_dump, lopt.file_write_interval * 1000);
+
+        lopt.ubus.generic_refresh.cb = ubus_generic_refresh;
+        uloop_timeout_set(&lopt.ubus.generic_refresh, generic_update_interval_seconds * 1000);
     }
 #endif
 
@@ -7766,12 +7815,17 @@ int main(int argc, char * argv[])
             lopt.ubus.user_input_fd.cb = ubus_user_input_fd;
             lopt.ubus.user_input_fd.fd = lopt.input_thread_pipe[0];
             uloop_fd_add(&lopt.ubus.user_input_fd, ULOOP_BLOCKING | ULOOP_READ);
-
-            memset(&lopt.ubus.signal_fd, 0, sizeof lopt.ubus.signal_fd);
-            lopt.ubus.signal_fd.cb = ubus_signal_fd;
-            lopt.ubus.signal_fd.fd = lopt.signal_event_pipe[0];
-            uloop_fd_add(&lopt.ubus.signal_fd, ULOOP_BLOCKING | ULOOP_READ);
         }
+
+        memset(&lopt.ubus.signal_fd, 0, sizeof lopt.ubus.signal_fd);
+        lopt.ubus.signal_fd.cb = ubus_signal_fd;
+        lopt.ubus.signal_fd.fd = lopt.signal_event_pipe[0];
+        uloop_fd_add(&lopt.ubus.signal_fd, ULOOP_BLOCKING | ULOOP_READ);
+
+        memset(&lopt.ubus.channel_hopper_fd, 0, sizeof lopt.ubus.channel_hopper_fd);
+        lopt.ubus.channel_hopper_fd.cb = ubus_channel_hopper_fd;
+        lopt.ubus.channel_hopper_fd.fd = lopt.channel_hopper_pipe[0];
+        uloop_fd_add(&lopt.ubus.channel_hopper_fd, ULOOP_BLOCKING | ULOOP_READ);
     }
 #endif
 
@@ -7808,32 +7862,37 @@ int main(int argc, char * argv[])
             continue;
         }
 
-        check_for_channel_hopper_data(&lopt);
+#if defined(INCLUDE_UBUS)
+        if (!lopt.ubus.do_ubus)
+#endif
+        {
+            check_for_channel_hopper_data(&lopt);
 
-        current_time = time(NULL);
-		time_t const seconds_since_last_output_write = current_time - tt1;
-        bool const need_to_update_dump_outputs =
-            seconds_since_last_output_write >= lopt.file_write_interval;
+            current_time = time(NULL);
+            time_t const seconds_since_last_output_write = current_time - tt1;
+            bool const need_to_update_dump_outputs =
+                seconds_since_last_output_write >= lopt.file_write_interval;
 
-        if (need_to_update_dump_outputs)
-		{
-			/* update the output files */
-			tt1 = current_time;
-            update_dump_output_files(&lopt);
-		}
+            if (need_to_update_dump_outputs)
+            {
+                /* update the output files */
+                tt1 = current_time;
+                update_dump_output_files(&lopt);
+            }
 
-		current_time = time(NULL);
-		time_t const seconds_since_last_generic_update = current_time - tt2;
-        time_t const generic_update_interval_seconds = 5;
-        bool const generic_update_required =
-            seconds_since_last_generic_update > generic_update_interval_seconds;
+            current_time = time(NULL);
+            time_t const seconds_since_last_generic_update = current_time - tt2;
+            time_t const generic_update_interval_seconds = 5;
+            bool const generic_update_required =
+                seconds_since_last_generic_update > generic_update_interval_seconds;
 
-        if (generic_update_required)
-		{
-			tt2 = current_time;
+            if (generic_update_required)
+            {
+                tt2 = current_time;
 
-            do_generic_update(&lopt, current_time);
-		}
+                do_generic_update(&lopt, current_time);
+            }
+        }
 
         gettimeofday(&current_time_timestamp, NULL);
 
