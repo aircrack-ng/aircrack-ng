@@ -108,3 +108,13 @@ done:
     return;
 }
 
+void
+ubus_state_send_blob_event(
+    struct ubus_state_st * const state,
+    char const * const event_name,
+    struct blob_buf * const b)
+{
+    ubus_send_event(&state->ubus_ctx, event_name, b->head);
+}
+
+

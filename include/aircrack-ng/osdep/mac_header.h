@@ -9,24 +9,25 @@
 #include <stdio.h>
 
 #define MAC_ADDRESS_LEN 6
+#define MAX_MAC_ADDRESS_STRING_SIZE (sizeof("00:00:00:00:00:00"))
 
 typedef struct mac_address
 {
     uint8_t addr[MAC_ADDRESS_LEN];
 } __packed mac_address;
 
-static mac_address const broadcast_mac = 
+static mac_address const broadcast_mac =
     { .addr = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff } };
 
 static inline int MAC_ADDRESS_COMPARE(
-    mac_address const * const a, 
+    mac_address const * const a,
     mac_address const * const b)
 {
     return memcmp((void *)a, (void *)b, sizeof *a);
 }
 
 static inline bool MAC_ADDRESS_EQUAL(
-    mac_address const * const a, 
+    mac_address const * const a,
     mac_address const * const b)
 {
     return MAC_ADDRESS_COMPARE(a, b) == 0;
@@ -48,7 +49,7 @@ static inline bool MAC_ADDRESS_IS_BROADCAST(
 
 
 static inline void MAC_ADDRESS_COPY(
-    mac_address * const dest, 
+    mac_address * const dest,
     mac_address const * const src)
 {
     *dest = *src;
@@ -76,6 +77,26 @@ static inline int fprintf_mac_address(
         mac->addr[4],
         mac->addr[5]);
 }
+
+static inline char const * mac_address_format(
+    mac_address const * const mac,
+    char * const buffer,
+    size_t const buffer_size)
+{
+    snprintf(
+        buffer,
+        buffer_size,
+        "%02X:%02X:%02X:%02X:%02X:%02X",
+        mac->addr[0],
+        mac->addr[1],
+        mac->addr[2],
+        mac->addr[3],
+        mac->addr[4],
+        mac->addr[5]);
+
+    return buffer;
+}
+
 
 #define MAC_ADDRESS_IG_BIT 0 /* Individual (unicast) or group (multicast). */
 #define MAC_ADDRESS_LA_BIT 1 /* Locally administered. */

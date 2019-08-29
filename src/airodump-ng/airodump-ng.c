@@ -5867,12 +5867,55 @@ static void ubus_output_dump(struct uloop_timeout * timeout)
     uloop_timeout_set(timeout, options->file_write_interval * 1000);
 }
 
+static void append_ap_nodes_to_blob(struct ap_list_head * const ap_list, struct blob_buf * const b)
+{
+    void * cookie = blobmsg_open_array(b, "access points");
+    struct AP_info * ap_cur;
+
+    TAILQ_FOREACH(ap_cur, ap_list, entry)
+    {
+        void * ap_cookie = blobmsg_open_table(b, NULL);
+        char mac_buffer[MAX_MAC_ADDRESS_STRING_SIZE];
+
+        blobmsg_add_u64(b, "first seen", ap_cur->tinit);
+        blobmsg_add_u64(b, "last seen", ap_cur->tlast);
+        blobmsg_add_u16(b, "channel", ap_cur->channel);
+        blobmsg_add_double(b, "power", ap_cur->avg_power);
+        blobmsg_add_string(b, "essid", (char *)ap_cur->essid);
+        blobmsg_add_string(b,
+                           "bssid",
+                           mac_address_format(&ap_cur->bssid,
+                                              mac_buffer,
+                                              sizeof mac_buffer));
+
+        blobmsg_close_table(b, ap_cookie);
+    }
+
+    blobmsg_close_array(b, cookie);
+}
+
+static void
+ubus_send_nodes_event(struct local_options * const options)
+{
+    struct blob_buf b;
+    memset(&b, 0, sizeof b);
+	blob_buf_init(&b, 0);
+
+    append_ap_nodes_to_blob(&options->ap_list, &b);
+
+    ubus_state_send_blob_event(options->ubus.state, "wifi_scanner.nodes", &b);
+
+    blob_buf_free(&b); /* Required? */
+}
+
 static void ubus_generic_refresh(struct uloop_timeout * timeout)
 {
     struct local_options * const options =
         container_of(timeout, struct local_options, ubus.generic_refresh);
 
     do_generic_update(options, time(NULL));
+
+    ubus_send_nodes_event(options);
 
     uloop_timeout_set(timeout, generic_update_interval_seconds * 1000);
 }
