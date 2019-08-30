@@ -5966,7 +5966,7 @@ static void ubus_send_nodes_event(struct local_options * const options)
 
     ubus_state_send_blob_event(options->ubus.state, "wifi_scanner.nodes", &b);
 
-    blob_buf_free(&b); /* Required? */
+    blob_buf_free(&b);
 }
 
 static void ubus_event_dump(struct uloop_timeout * timeout)
@@ -6926,6 +6926,12 @@ static void options_initialise(struct local_options * const options)
 
     MAC_ADDRESS_CLEAR(&options->f_bssid);
     MAC_ADDRESS_CLEAR(&options->f_netmask);
+
+#if defined(INCLUDE_UBUS)
+    options->ubus.do_ubus = false;
+    options->ubus.path = NULL;
+    options->ubus.state = NULL;
+#endif
 }
 
 #if defined(INCLUDE_UBUS)
@@ -7031,6 +7037,157 @@ static void ubus_card_reader(struct uloop_fd * fd, unsigned int events)
 }
 #endif
 
+static bool main_loop_run(struct local_options * const options)
+{
+    bool had_error = false;
+    time_t tt1 = time(NULL);
+    time_t tt2 = time(NULL);
+    struct timeval current_time_timestamp;
+    struct timeval last_active_scan_timestamp;
+    struct timeval tv3;
+    uint8_t h80211[4096];
+    int read_pkts = 0;
+    long time_slept = 0;
+
+    gettimeofday(&last_active_scan_timestamp, NULL);
+    gettimeofday(&tv3, NULL);
+
+    while (!options->do_exit)
+    {
+        time_t current_time;
+
+        if (options->interactive_mode > 0)
+        {
+            check_for_user_input(options);
+            do_quit_request_timeout_check(options);
+        }
+
+        check_for_signal_events(options);
+
+        if (options->do_exit)
+        {
+            /* This flag may have been set by a signal event or user
+             * input.
+             */
+            continue;
+        }
+
+        check_for_channel_hopper_data(options);
+
+        current_time = time(NULL);
+        time_t const seconds_since_last_output_write = current_time - tt1;
+        bool const need_to_update_dump_outputs =
+            seconds_since_last_output_write >= options->file_write_interval;
+
+        if (need_to_update_dump_outputs)
+        {
+            /* update the output files */
+            tt1 = current_time;
+            update_dump_output_files(options);
+        }
+
+        current_time = time(NULL);
+        time_t const seconds_since_last_generic_update = current_time - tt2;
+        time_t const generic_update_interval_seconds = 5;
+        bool const generic_update_required =
+            seconds_since_last_generic_update > generic_update_interval_seconds;
+
+        if (generic_update_required)
+        {
+            tt2 = current_time;
+
+            do_generic_update(options, current_time);
+        }
+
+        gettimeofday(&current_time_timestamp, NULL);
+
+        if (options->active_scan_sim > 0)
+        {
+            long const cycle_time2 = 1000000UL * (current_time_timestamp.tv_sec - last_active_scan_timestamp.tv_sec)
+                + (current_time_timestamp.tv_usec - last_active_scan_timestamp.tv_usec);
+            bool const probe_requests_required =
+                cycle_time2 > options->active_scan_sim * 1000;
+
+            if (probe_requests_required)
+            {
+                gettimeofday(&last_active_scan_timestamp, NULL);
+
+                do_probe_requests(options);
+            }
+        }
+
+        long const cycle_time = 1000000UL * (current_time_timestamp.tv_sec - tv3.tv_sec)
+            + (current_time_timestamp.tv_usec - tv3.tv_usec);
+
+        if (cycle_time > 500000)
+        {
+            gettimeofday(&tv3, NULL);
+
+            do_half_second_refresh(options);
+        }
+
+        if (options->pcap_reader_context != NULL)
+        {
+            /* Read one packet from a file. */
+            if (read_one_packet_from_file(options, h80211, sizeof h80211))
+            {
+                read_pkts++;
+                if (options->relative_time)
+                {
+                    pace_pcap_reader(&options->previous_timestamp,
+                                     &options->packet_timestamp,
+                                     read_pkts);
+                }
+            }
+        }
+        else if (options->s_iface != NULL)
+        {
+            /* Read a packet from each interface/card. */
+            int result =
+                capture_packet_from_cards(
+                options,
+                h80211,
+                sizeof h80211);
+
+            if (result < 0)
+            {
+                had_error = true;
+                options->do_exit = true;
+                continue;
+            }
+        }
+        else
+        {
+            usleep(1);
+        }
+
+        if (options->do_exit)
+        {
+            options->do_exit = true;
+            continue;
+        }
+
+        struct timeval tv2;
+
+        gettimeofday(&tv2, NULL);
+
+        time_slept += 1000000UL * (tv2.tv_sec - current_time_timestamp.tv_sec)
+            + (tv2.tv_usec - current_time_timestamp.tv_usec);
+
+        bool const refresh_required =
+            time_slept > REFRESH_RATE
+            && time_slept > options->update_interval_seconds * 1000000;
+
+        if (refresh_required)
+        {
+            time_slept = 0;
+            do_refresh(options);
+        }
+    }
+
+    return had_error;
+}
+
 int main(int argc, char * argv[])
 {
     /* The user thread args must remain in scope as long as the
@@ -7039,10 +7196,7 @@ int main(int argc, char * argv[])
     struct input_thread_args_st input_thread_args;
     int program_exit_code;
     bool had_error = false;
-    int read_pkts = 0;
 
-    long time_slept = 0;
-    long cycle_time;
     char * output_format_string;
 
     int found;
@@ -7052,17 +7206,6 @@ int main(int argc, char * argv[])
     int option_index = 0;
     int reset_val = 0;
     int output_format_first_time = 1;
-
-    time_t tt1;
-    time_t tt2;
-
-    uint8_t h80211[4096];
-
-    struct timeval tv0;
-    struct timeval current_time_timestamp;
-    struct timeval tv2;
-    struct timeval tv3;
-    struct timeval last_active_scan_timestamp;
 
     static const struct option long_options[]
         =
@@ -7122,14 +7265,6 @@ int main(int argc, char * argv[])
     rand_init();
 
     options_initialise(&lopt);
-
-    gettimeofday(&tv0, NULL);
-
-#if defined(INCLUDE_UBUS)
-    lopt.ubus.do_ubus = false;
-    lopt.ubus.path = NULL;
-    lopt.ubus.state = NULL;
-#endif
 
     /* Check the arguments. */
 
@@ -7968,8 +8103,6 @@ int main(int argc, char * argv[])
 
     signal_event_initialise(lopt.signal_event_pipe, lopt.interactive_mode);
 
-	lopt.manufacturer_list = load_oui_file();
-
     /* Start the GPS tracker if requested. */
     if (lopt.gpsd.required)
 	{
@@ -7980,11 +8113,6 @@ int main(int argc, char * argv[])
 		}
     }
 
-	tt1 = time(NULL);
-	tt2 = time(NULL);
-	gettimeofday(&tv3, NULL);
-    gettimeofday(&last_active_scan_timestamp, NULL);
-
     lopt.elapsed_time = strdup("0 s");
     ALLEGE(lopt.elapsed_time != NULL);
 
@@ -7992,6 +8120,35 @@ int main(int argc, char * argv[])
 	{
         lopt.interactive_mode = !is_background();
 	}
+
+    if (lopt.interactive_mode > 0)
+    {
+        if (lopt.show_manufacturer)
+        {
+            lopt.manufacturer_list = load_oui_file();
+        }
+        terminal_prepare();
+        lopt.sort.sort_required = true;
+
+        int const pipe_result = pipe(lopt.input_thread_pipe);
+        IGNORE_NZ(pipe_result);
+
+        /* Only start the user input thread if running in interactive
+         * mode.
+         */
+        input_thread_args.do_exit = &lopt.do_exit;
+        input_thread_args.update_fd = lopt.input_thread_pipe[1];
+
+        if (pthread_create(&lopt.input_tid,
+                           NULL,
+                           (void *)input_thread,
+                           &input_thread_args) != 0)
+        {
+            perror("Could not create input thread");
+            program_exit_code = EXIT_FAILURE;
+            goto done;
+        }
+    }
 
 #if defined(INCLUDE_UBUS)
     if (lopt.ubus.do_ubus)
@@ -8023,35 +8180,7 @@ int main(int argc, char * argv[])
 
         lopt.ubus.half_second.cb = ubus_half_second;
         uloop_timeout_set(&lopt.ubus.half_second, half_second_interval_milliseconds);
-    }
-#endif
 
-    if (lopt.interactive_mode > 0)
-    {
-        terminal_prepare();
-        lopt.sort.sort_required = true;
-
-        int const pipe_result = pipe(lopt.input_thread_pipe);
-        IGNORE_NZ(pipe_result);
-
-        /* Only start the user input thread if running in interactive
-         * mode.
-         */
-        input_thread_args.do_exit = &lopt.do_exit;
-        input_thread_args.update_fd = lopt.input_thread_pipe[1];
-
-        if (pthread_create(&lopt.input_tid, NULL, (void *)input_thread, &input_thread_args)
-                   != 0)
-        {
-            perror("Could not create input thread");
-            program_exit_code = EXIT_FAILURE;
-            goto done;
-        }
-    }
-
-#if defined(INCLUDE_UBUS)
-    if (lopt.ubus.do_ubus)
-    {
         if (lopt.interactive_mode)
         {
             memset(&lopt.ubus.user_input_fd, 0, sizeof lopt.ubus.user_input_fd);
@@ -8091,160 +8220,18 @@ int main(int argc, char * argv[])
                 }
             }
         }
-    }
-#endif
 
-    while (!lopt.do_exit)
-	{
-		time_t current_time;
-
-#if defined(INCLUDE_UBUS)
-        if (lopt.ubus.do_ubus)
-        {
-            /* TODO: This currently returns due to a time in ubus.c.
-             * This should be removed once all handling is done via ubus callbacks.
-             * do_exit should then be removed as well.
-             */
-            uloop_run();
-            lopt.do_exit = true;
-        }
-        else
-#endif
-        {
-            if (lopt.interactive_mode > 0)
-            {
-                check_for_user_input(&lopt);
-                do_quit_request_timeout_check(&lopt);
-            }
-
-            check_for_signal_events(&lopt);
-
-            if (lopt.do_exit)
-            {
-                /* This flag may have been set by a signal event or user
-                 * input.
-                 */
-                continue;
-            }
-
-            check_for_channel_hopper_data(&lopt);
-
-            current_time = time(NULL);
-            time_t const seconds_since_last_output_write = current_time - tt1;
-            bool const need_to_update_dump_outputs =
-                seconds_since_last_output_write >= lopt.file_write_interval;
-
-            if (need_to_update_dump_outputs)
-            {
-                /* update the output files */
-                tt1 = current_time;
-                update_dump_output_files(&lopt);
-            }
-
-            current_time = time(NULL);
-            time_t const seconds_since_last_generic_update = current_time - tt2;
-            time_t const generic_update_interval_seconds = 5;
-            bool const generic_update_required =
-                seconds_since_last_generic_update > generic_update_interval_seconds;
-
-            if (generic_update_required)
-            {
-                tt2 = current_time;
-
-                do_generic_update(&lopt, current_time);
-            }
-
-            gettimeofday(&current_time_timestamp, NULL);
-
-            if (lopt.active_scan_sim > 0)
-            {
-                long const cycle_time2 = 1000000UL * (current_time_timestamp.tv_sec - last_active_scan_timestamp.tv_sec)
-                    + (current_time_timestamp.tv_usec - last_active_scan_timestamp.tv_usec);
-                bool const probe_requests_required =
-                    cycle_time2 > lopt.active_scan_sim * 1000;
-
-                if (probe_requests_required)
-                {
-                    gettimeofday(&last_active_scan_timestamp, NULL);
-
-                    do_probe_requests(&lopt);
-                }
-            }
-
-            cycle_time = 1000000UL * (current_time_timestamp.tv_sec - tv3.tv_sec)
-                + (current_time_timestamp.tv_usec - tv3.tv_usec);
-
-            if (cycle_time > 500000)
-            {
-                gettimeofday(&tv3, NULL);
-
-                do_half_second_refresh(&lopt);
-            }
-
-            if (lopt.pcap_reader_context != NULL)
-            {
-                /* Read one packet from a file. */
-                if (read_one_packet_from_file(&lopt, h80211, sizeof h80211))
-                {
-                    read_pkts++;
-                    if (lopt.relative_time)
-                    {
-                        pace_pcap_reader(&lopt.previous_timestamp,
-                                         &lopt.packet_timestamp,
-                                         read_pkts);
-                    }
-                }
-            }
-            else if (lopt.s_iface != NULL)
-            {
-                /* Read a packet from each interface/card. */
-                int result =
-                    capture_packet_from_cards(
-                    &lopt,
-                    h80211,
-                    sizeof h80211);
-
-                if (result < 0)
-                {
-                    had_error = true;
-                    lopt.do_exit = true;
-                    continue;
-                }
-            }
-            else
-            {
-                usleep(1);
-            }
-
-            if (lopt.do_exit)
-            {
-                lopt.do_exit = true;
-                continue;
-            }
-
-            gettimeofday(&tv2, NULL);
-
-            time_slept += 1000000UL * (tv2.tv_sec - current_time_timestamp.tv_sec)
-                + (tv2.tv_usec - current_time_timestamp.tv_usec);
-
-            bool const refresh_required =
-                time_slept > REFRESH_RATE
-                && time_slept > lopt.update_interval_seconds * 1000000;
-
-            if (refresh_required)
-            {
-                time_slept = 0;
-                do_refresh(&lopt);
-            }
-        }
-	}
-
-#if defined(INCLUDE_UBUS)
-    if (lopt.ubus.do_ubus)
-    {
+        uloop_run();
         ubus_done(lopt.ubus.state);
+        uloop_done();
+        lopt.do_exit = true;
     }
+    else
 #endif
+    {
+        had_error = main_loop_run(&lopt);
+    }
+
 	airodump_shutdown(&lopt, lopt.wi);
 
 	program_exit_code = had_error ? EXIT_FAILURE : EXIT_SUCCESS;
