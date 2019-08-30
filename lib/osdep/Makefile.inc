@@ -40,13 +40,13 @@
 SRCS_COMMON = %D%/network.c %D%/file.c
 SRCS        = %D%/osdep.c $(SRCS_COMMON)
 SRCS_APCAP  = %D%/airpcap.c
-SRCS_OBSD   = $(SRCS) %D%/openbsd.c %D%/openbsd_tap.c %D%/common.c
-SRCS_NBSD	= $(SRCS) %D%/netbsd.c %D%/netbsd_tap.c %D%/common.c
-SRCS_FBSD	= $(SRCS) %D%/freebsd.c %D%/freebsd_tap.c %D%/common.c
-SRCS_LINUX	= $(SRCS) %D%/linux.c %D%/linux_tap.c %D%/common.c
-SRCS_DUMMY	= $(SRCS) %D%/dummy.c %D%/dummy_tap.c %D%/common.c
-SRCS_CYGWIN	= $(SRCS) %D%/cygwin.c %D%/cygwin_tap.c %D%/common.c
-SRCS_DARWIN = $(SRCS) %D%/darwin.c %D%/darwin_tap.c %D%/common.c
+SRCS_OBSD   = $(SRCS) %D%/openbsd.c %D%/openbsd_tap.c %D%/channel.c
+SRCS_NBSD	= $(SRCS) %D%/netbsd.c %D%/netbsd_tap.c %D%/channel.c
+SRCS_FBSD	= $(SRCS) %D%/freebsd.c %D%/freebsd_tap.c %D%/channel.c
+SRCS_LINUX	= $(SRCS) %D%/linux.c %D%/linux_tap.c %D%/channel.c
+SRCS_DUMMY	= $(SRCS) %D%/dummy.c %D%/dummy_tap.c %D%/channel.c
+SRCS_CYGWIN	= $(SRCS) %D%/cygwin.c %D%/cygwin_tap.c %D%/channel.c
+SRCS_DARWIN = $(SRCS) %D%/darwin.c %D%/darwin_tap.c %D%/channel.c
 
 if AIRPCAP
 SRCS_CYGWIN    += $(SRCS_APCAP)
@@ -101,7 +101,7 @@ libaircrack_osdep_la_CPPFLAGS = -I$(top_srcdir)/include/aircrack-ng/osdep $(AM_C
 
 EXTRA_DIST +=     %D%/openbsd.c \
                   %D%/darwin.c \
-                  %D%/common.c \
+                  %D%/channel.c \
                   %D%/darwin_tap.c \
                   %D%/cygwin.c \
                   %D%/linux.c \

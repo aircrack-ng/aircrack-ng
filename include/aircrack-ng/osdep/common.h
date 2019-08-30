@@ -47,9 +47,6 @@
 #pragma warning Unknown dynamic link import / export semantics.
 #endif
 
-IMPORT int getFrequencyFromChannel(int channel);
-IMPORT int getChannelFromFrequency(int frequency);
-
 /*
 // For later use, because aircrack-ng doesn't compile with MS compilers
 #if defined(WIN32) || defined(__WIN__)
@@ -57,7 +54,5 @@ IMPORT int getChannelFromFrequency(int frequency);
 #endif
 */
 
-#define HIGHEST_CHANNEL 220
-#define LOWEST_CHANNEL -16
 
 #endif

@@ -1,7 +1,7 @@
 /*
-   *  Copyright (c) 2008-2018, Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+   *  Copyright (c) 2008-2019, Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
    *
-   *  Common OSdep stuff
+   *  Common channel stuff in OSdep
    *
    *  This program is free software; you can redistribute it and/or modify
    *  it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
-#include "common.h"
+#include "channel.h"
 
 /**
  * Return the frequency in Mhz from a channel number
