@@ -5920,15 +5920,12 @@ static void append_sta_node_to_blob(
 
     struct AP_info const * const ap_cur = st_cur->base;
 
-    if (!MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
-    {
-        blobmsg_add_string(b, "essid", (char *)ap_cur->essid);
-        blobmsg_add_string(b,
-                           "bssid",
-                           mac_address_format(&ap_cur->bssid,
-                                              mac_buffer,
-                                              sizeof mac_buffer));
-    }
+    blobmsg_add_string(b, "essid", (char *)ap_cur->essid);
+    blobmsg_add_string(b,
+                       "bssid",
+                       mac_address_format(&ap_cur->bssid,
+                                          mac_buffer,
+                                          sizeof mac_buffer));
 
     blobmsg_add_string(b,
                        "station MAC",
