@@ -38,14 +38,14 @@ static void dump_write_csv(
     TAILQ_FOREACH(ap_cur, ap_list, entry)
     {
         unsigned long const min_packets = 0;
-        bool const check_broadcast = true; 
+        bool const check_broadcast = true;
         int const max_age_seconds = -1; /* no limit. */
 
-        if (!ap_should_be_logged(ap_cur, 
+        if (!ap_should_be_logged(ap_cur,
                                  max_age_seconds,
-                                 f_encrypt, 
-                                 essid_filter, 
-                                 check_broadcast, 
+                                 f_encrypt,
+                                 essid_filter,
+                                 check_broadcast,
                                  min_packets))
         {
             continue;
@@ -234,7 +234,7 @@ static void dump_write_csv(
                 st_cur->stmac.addr[4],
                 st_cur->stmac.addr[5]);
 
-        ltime = localtime(&st_cur->tinit);
+        ltime = localtime(&st_cur->first_seen);
 
         fprintf(fp,
                 "%04d-%02d-%02d %02d:%02d:%02d, ",
@@ -245,7 +245,7 @@ static void dump_write_csv(
                 ltime->tm_min,
                 ltime->tm_sec);
 
-        ltime = localtime(&st_cur->tlast);
+        ltime = localtime(&st_cur->last_seen);
 
         fprintf(fp,
                 "%04d-%02d-%02d %02d:%02d:%02d, ",
@@ -342,7 +342,7 @@ static void csv_dump(
     dump_write_csv(context->fp,
                    ap_list,
                    sta_list,
-                   f_encrypt, 
+                   f_encrypt,
                    essid_filter);
 }
 

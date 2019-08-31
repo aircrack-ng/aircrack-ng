@@ -53,8 +53,8 @@ static void append_sta_node_to_blob(
     char mac_buffer[MAX_MAC_ADDRESS_STRING_SIZE];
     void * const sta_cookie = blobmsg_open_table(b, NULL);
 
-    blobmsg_add_u64(b, first_seen, st_cur->tinit);
-    blobmsg_add_u64(b, last_seen, st_cur->tlast);
+    blobmsg_add_u64(b, first_seen, st_cur->first_seen);
+    blobmsg_add_u64(b, last_seen, st_cur->last_seen);
     blobmsg_add_u16(b, channel, st_cur->channel);
     blobmsg_add_double(b, power, st_cur->power);
 

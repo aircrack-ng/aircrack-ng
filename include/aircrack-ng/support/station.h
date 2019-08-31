@@ -210,8 +210,8 @@ struct ST_info
 
 	char * manuf; /* the client's manufacturer */
 
-	time_t tinit;
-    time_t tlast; /* first and last time seen  */
+	time_t first_seen;
+    time_t last_seen; /* first and last time seen  */
     time_t time_printed; /* last time printed */
     unsigned long nb_pkt; /* total number of packets   */
 	uint8_t essid[ESSID_LENGTH + 1]; /* last associated essid     */

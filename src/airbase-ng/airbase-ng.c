@@ -1507,7 +1507,7 @@ static int store_wpa_handshake(struct ST_info * st_cur)
 }
 
 static struct ST_info * sta_info_lookup(
-	struct sta_list_head * const sta_list, 
+	struct sta_list_head * const sta_list,
 	mac_address const * const mac)
 {
 	struct ST_info * st_cur;
@@ -1641,8 +1641,8 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 
 		MAC_ADDRESS_COPY(&st_cur->stmac, (mac_address *)smac);
 
-		st_cur->tinit = time(NULL);
-		st_cur->tlast = time(NULL);
+		st_cur->first_seen = time(NULL);
+		st_cur->last_seen = time(NULL);
 
 		st_cur->power = -1;
 		st_cur->rate_to = -1;

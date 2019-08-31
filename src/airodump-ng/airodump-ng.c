@@ -106,14 +106,14 @@
 #include "ivs_log.h"
 #include "probe_request.h"
 #include "ap_filter.h"
-
-#define DEFAULT_CHANNEL_WIDTH_MHZ 20
-#define ONE_HOUR (60 * 60)
-#define ONE_MIN (60)
 #if defined(INCLUDE_UBUS)
 #include "ubus.h"
 #include "ubus_event.h"
 #endif
+
+#define DEFAULT_CHANNEL_WIDTH_MHZ 20
+#define ONE_HOUR (60 * 60)
+#define ONE_MIN (60)
 
 /* Possibly only required so that this will link. Referenced
  * in communications.c.
@@ -149,6 +149,7 @@ static int a_chans[] =
 static time_t const maximum_quit_event_interval_seconds = 3;
 static time_t const generic_update_interval_seconds = 5;
 static time_t const half_second_interval_milliseconds = 500;
+static size_t const max_consecutive_read_errors = 2;
 
 struct detected_frequencies_st
 {
@@ -173,6 +174,13 @@ struct uloop_fd_wrapper_st
     size_t index;
 };
 #endif
+
+struct interface_data_st
+{
+    int current_channel;
+    int current_frequency;
+    size_t consecutive_read_errors;
+};
 
 static struct local_options
 {
@@ -203,10 +211,8 @@ static struct local_options
 
     /* TODO: Stick all this card specific state into a structure. */
     size_t num_cards;
-    int channel[MAX_CARDS]; /* current channel #    */
-	int frequency[MAX_CARDS]; /* current frequency #    */
-    size_t wi_consecutive_failed_reads[MAX_CARDS];
-    size_t max_consecutive_failed_interface_reads;
+
+    struct interface_data_st interface_data[MAX_CARDS];
 
     pthread_t input_tid;
 
@@ -473,7 +479,7 @@ static void color_on(struct local_options * const options)
 		TAILQ_FOREACH_REVERSE(st_cur, &options->sta_list, sta_list_head, entry)
 		{
 			if (st_cur->base != ap_cur
-                || (time(NULL) - st_cur->tlast) > options->berlin)
+                || (time(NULL) - st_cur->last_seen) > options->berlin)
 			{
 				continue;
 			}
@@ -586,7 +592,7 @@ static void sort_stas(struct sta_list_head * const sta_list)
 		/* Don't sort entries older than 60 seconds. */
 		TAILQ_FOREACH(st_cur, sta_list, entry)
 		{
-            time_t const seconds_since_last_seen = tt - st_cur->tlast;
+            time_t const seconds_since_last_seen = tt - st_cur->last_seen;
             static long const sorting_age_limit_seconds = 60;
             bool const too_old_to_sort =
                 seconds_since_last_seen > sorting_age_limit_seconds;
@@ -1322,8 +1328,8 @@ static void sta_info_initialise(
 {
     MAC_ADDRESS_COPY(&st_cur->stmac, mac);
 
-    st_cur->tinit = time(NULL);
-    st_cur->tlast = st_cur->tinit;
+    st_cur->first_seen = time(NULL);
+    st_cur->last_seen = st_cur->first_seen;
 
     st_cur->power = -1;
     st_cur->best_power = -1;
@@ -1619,7 +1625,7 @@ static void purge_old_stas(
 
 	TAILQ_FOREACH_SAFE(st_cur, sta_list, entry, st_tmp)
 	{
-		bool const too_old = st_cur->tlast <= age_limit;
+		bool const too_old = st_cur->last_seen <= age_limit;
 
 		if (too_old)
 		{
@@ -1789,7 +1795,7 @@ static void sta_update(
     int const seq = ((h80211[22] >> 4) + (h80211[23] << 4));
 
     /* Update the last time seen. */
-    st_cur->tlast = time(NULL);
+    st_cur->last_seen = time(NULL);
 
     if (st_cur->base == NULL || !MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
     {
@@ -1826,7 +1832,7 @@ static void sta_update(
         }
         else
         {
-            st_cur->channel = options->channel[cardnum];
+            st_cur->channel = options->interface_data[cardnum].current_channel;
         }
 
         /* FIXME: These seem to be very odd comparisons to make. Is this
@@ -2761,7 +2767,8 @@ static bool parse_packet_data(
             }
             else
             {
-                ap_cur->channel = options->channel[cardnum];
+                ap_cur->channel =
+                    options->interface_data[cardnum].current_channel;
             }
         }
 
@@ -3548,19 +3555,33 @@ static void dump_print(
 
     if (options->freqoption)
 	{
-        snprintf(strbuf, sizeof(strbuf) - 1, " Freq %4d", options->frequency[0]);
+        snprintf(strbuf,
+                 sizeof(strbuf),
+                 " Freq %4d",
+                 options->interface_data[0].current_frequency);
+
 		for (i = 1; i < if_num; i++)
 		{
-            snprintf(buffer, sizeof(buffer), ",%4d", options->frequency[i]);
+            snprintf(buffer, sizeof(buffer), ",%4d",
+                     options->interface_data[i].current_frequency);
+
 			strncat(strbuf, buffer, sizeof(strbuf) - strlen(strbuf) - 1);
 		}
 	}
 	else /* Must be channel option. */
 	{
-        snprintf(strbuf, sizeof(strbuf) - 1, " CH %2d", options->channel[0]);
+        snprintf(strbuf,
+                 sizeof(strbuf),
+                 " CH %2d",
+                 options->interface_data[0].current_channel);
+
 		for (i = 1; i < if_num; i++)
 		{
-            snprintf(buffer, sizeof(buffer), ",%2d", options->channel[i]);
+            snprintf(buffer,
+                     sizeof(buffer),
+                     ",%2d",
+                     options->interface_data[i].current_channel);
+
 			strncat(strbuf, buffer, sizeof(strbuf) - strlen(strbuf) - 1);
 		}
 	}
@@ -4237,7 +4258,7 @@ static void dump_print(
             TAILQ_FOREACH_REVERSE(st_cur, &options->sta_list, sta_list_head, entry)
 			{
 				if (st_cur->base != ap_cur
-                    || (time(NULL) - st_cur->tlast) > options->berlin)
+                    || (time(NULL) - st_cur->last_seen) > options->berlin)
 				{
 					continue;
 				}
@@ -5015,13 +5036,12 @@ static bool reopen_card(
     )
 {
     bool success;
-    struct wif * const old = options->wi[interface_index];
 	char ifnam[MAX_IFACE_NAME];
 
     /* The interface name needs to be saved because closing the
      * card frees all resources associated with the wi.
      */
-    strlcpy(ifnam, wi_get_ifname(old), sizeof ifnam);
+    strlcpy(ifnam, wi_get_ifname(options->wi[interface_index]), sizeof ifnam);
 
 #if defined(INCLUDE_UBUS)
     if (options->ubus.do_ubus)
@@ -5033,7 +5053,7 @@ static bool reopen_card(
     /* TODO: It might have been nice is there was a wi_reopen() call
      * to deal with the closing, opening and interface name handling.
      */
-    wi_close(old);
+    wi_close(options->wi[interface_index]);
     options->wi[interface_index] = wi_open(ifnam);
 
     if (options->wi[interface_index] == NULL)
@@ -5046,6 +5066,7 @@ static bool reopen_card(
 #if defined(INCLUDE_UBUS)
     options->ubus.interfaces[interface_index].fd.fd =
         wi_fd(options->wi[interface_index]);
+
     if (options->ubus.do_ubus && add_uloop_fd)
     {
         uloop_fd_add(&options->ubus.interfaces[interface_index].fd,
@@ -5229,26 +5250,17 @@ done:
 }
 
 static void check_channel_on_cards(
-    struct wif * * const wi,
-    int const * const current_channels,
-    size_t const num_cards,
-    char * const msg_buffer,
-    size_t const msg_buffer_size,
-    int const ignore_negative_one
-#ifdef CONFIG_LIBNL
-    , unsigned int htval
-#endif
-    )
+    struct local_options * const options)
 {
-    for (size_t i = 0; i < num_cards; i++)
+    for (size_t i = 0; i < options->num_cards; i++)
 	{
-        check_channel_on_card(wi[i],
-                              current_channels[i],
-                              msg_buffer,
-                              msg_buffer_size,
-                              ignore_negative_one
+        check_channel_on_card(options->wi[i],
+                              options->interface_data[i].current_channel,
+                              options->message,
+                              sizeof options->message,
+                              options->ignore_negative_one
 #ifdef CONFIG_LIBNL
-                              , htval
+                              , options->htval
 #endif
                              );
 	}
@@ -5290,18 +5302,14 @@ done:
 }
 
 static void check_frequency_on_cards(
-    struct wif * * const wi,
-    int const * const current_frequencies,
-    size_t const num_cards,
-    char * const msg_buffer,
-    size_t const msg_buffer_size)
+    struct local_options * const options)
 {
-    for (size_t i = 0; i < num_cards; i++)
+    for (size_t i = 0; i < options->num_cards; i++)
 	{
-        check_frequency_on_card(wi[i],
-                                current_frequencies[i],
-                                msg_buffer,
-                                msg_buffer_size);
+        check_frequency_on_card(options->wi[i],
+                                options->interface_data[i].current_frequency,
+                                options->message,
+                                sizeof options->message);
 	}
 }
 
@@ -5317,25 +5325,12 @@ static bool update_interface_cards(struct local_options * const options)
 
     if (options->singlechan)
     {
-        check_channel_on_cards(options->wi,
-                               options->channel,
-                               options->num_cards,
-                               options->message,
-                               sizeof options->message,
-                               options->ignore_negative_one
-#ifdef CONFIG_LIBNL
-                               , options->htval
-#endif
-                               );
+        check_channel_on_cards(options);
     }
 
     if (options->singlefreq)
     {
-        check_frequency_on_cards(options->wi,
-                                 options->frequency,
-                                 options->num_cards,
-                                 options->message,
-                                 sizeof options->message);
+        check_frequency_on_cards(options);
     }
 
     success = true;
@@ -5564,13 +5559,21 @@ static bool start_frequency_hopper_process(
 
         drop_privileges();
 
+        int current_frequencies[MAX_CARDS];
+
+        for (size_t i = 0; i < options->num_cards; i++)
+        {
+            current_frequencies[i] =
+                options->interface_data[i].current_frequency;
+        }
+
         frequency_hopper(options->channel_hopper_pipe[1],
                          wi,
                          options->num_cards,
                          frequency_count,
                          options->channel_switching_method,
                          options->own_frequencies,
-                         options->frequency,
+                         current_frequencies,
                          options->frequency_hop_millisecs,
                          main_pid);
 
@@ -5604,13 +5607,20 @@ static bool start_channel_hopper_process(
 
         drop_privileges();
 
+        int current_channels[MAX_CARDS];
+
+        for (size_t i = 0; i < options->num_cards; i++)
+        {
+            current_channels[i] = options->interface_data[i].current_channel;
+        }
+
         channel_hopper(options->channel_hopper_pipe[1],
                        wi,
                        options->num_cards,
                        channel_count,
                        options->channel_switching_method,
                        options->channels,
-                       options->channel,
+                       current_channels,
                        options->active_scan_sim > 0,
                        options->frequency_hop_millisecs,
                        main_pid
@@ -5694,7 +5704,7 @@ static void channel_hopper_data_handler(
     struct local_options * const options,
     struct channel_hopper_data_st const * const hopper_data)
 {
-    if (hopper_data->card >= ArrayCount(options->frequency))
+    if (hopper_data->card >= ArrayCount(options->interface_data))
     {
         // invalid received data
         fprintf(stderr,
@@ -5705,11 +5715,13 @@ static void channel_hopper_data_handler(
 
     if (options->freqoption)
     {
-        options->frequency[hopper_data->card] = hopper_data->u.frequency;
+        options->interface_data[hopper_data->card].current_frequency =
+            hopper_data->u.frequency;
     }
-    else
+    else /* Must be channel hopping. */
     {
-        options->channel[hopper_data->card] = hopper_data->u.channel;
+        options->interface_data[hopper_data->card].current_channel =
+            hopper_data->u.channel;
     }
 
 done:
@@ -5836,7 +5848,10 @@ static void do_generic_update(
 
 static void do_probe_requests(struct local_options * const options)
 {
-    send_probe_requests(options->wi, options->num_cards);
+    for (size_t i = 0; i < options->num_cards; i++)
+    {
+        send_probe_request(options->wi[i]);
+    }
 }
 
 static void do_half_second_refresh(struct local_options * const options)
@@ -5845,7 +5860,7 @@ static void do_half_second_refresh(struct local_options * const options)
 
     if (options->s_iface != NULL)
     {
-        if (!update_interface_cards(options)
+        if (!update_interface_cards(options))
         {
 #if defined(INCLUDE_UBUS)
             if (options->ubus.do_ubus)
@@ -6469,8 +6484,7 @@ static void pace_pcap_reader(
 }
 
 static void airodump_shutdown(
-    struct local_options * const options,
-    struct wif * * const wi)
+    struct local_options * const options)
 {
 	/* TODO: Restore signal handlers. */
     signal_event_shutdown(options->signal_event_pipe);
@@ -6487,7 +6501,7 @@ static void airodump_shutdown(
 
     essid_filter_context_cleanup(&options->essid_filter);
 
-    close_cards(wi, options->num_cards);
+    close_cards(options->wi, options->num_cards);
 
     update_dump_output_files(options);
 
@@ -6535,10 +6549,10 @@ static bool handle_ready_wi_interface(
 
     if (packet_length == -1)
     {
-        options->wi_consecutive_failed_reads[interface_index]++;
+        options->interface_data[interface_index].consecutive_read_errors++;
         bool const too_many_failures =
-            options->wi_consecutive_failed_reads[interface_index]
-            >= options->max_consecutive_failed_interface_reads;
+            options->interface_data[interface_index].consecutive_read_errors
+            >= max_consecutive_read_errors;
 
         if (too_many_failures)
         {
@@ -6563,7 +6577,7 @@ static bool handle_ready_wi_interface(
     }
     else
     {
-        options->wi_consecutive_failed_reads[interface_index] = 0;
+        options->interface_data[interface_index].consecutive_read_errors = 0;
         dump_add_packet(options,
                         packet_buffer,
                         packet_length,
@@ -6741,7 +6755,6 @@ static void options_initialise(struct local_options * const options)
     options->chanoption = 0;
     options->freqoption = 0;
     options->num_cards = 0;
-    options->max_consecutive_failed_interface_reads = 2;
 
     options->channel_switching_method = channel_switching_method_fifo;
     options->channels = bg_chans;
@@ -6836,9 +6849,13 @@ static void options_initialise(struct local_options * const options)
 
     for (size_t i = 0; i < MAX_CARDS; i++)
     {
-        options->channel[i] = channel_sentinel;
-        options->frequency[i] = frequency_sentinel;
-        options->wi_consecutive_failed_reads[i] = 0;
+        struct interface_data_st * const interface_data =
+            &options->interface_data[i];
+
+        interface_data->current_channel = channel_sentinel;
+        interface_data->current_frequency = frequency_sentinel;
+        interface_data->consecutive_read_errors = 0;
+
 #if defined(INCLUDE_UBUS)
         options->ubus.interfaces[i].index = i;
 #endif
@@ -7361,7 +7378,8 @@ int main(int argc, char * argv[])
 
             case 'c':
 
-                if (lopt.channel[0] > 0 || lopt.chanoption == 1)
+                if (lopt.interface_data[0].current_channel > 0
+                    || lopt.chanoption == 1)
                 {
                     if (lopt.chanoption == 1)
                     {
@@ -7370,14 +7388,15 @@ int main(int argc, char * argv[])
                     else
                     {
                         printf("Notice: Channel already given (%d)\n",
-                               lopt.channel[0]);
+                               lopt.interface_data[0].current_channel);
                     }
                     break;
                 }
 
-                lopt.channel[0] = get_channels(&lopt.own_channels, optarg);
+                lopt.interface_data[0].current_channel =
+                    get_channels(&lopt.own_channels, optarg);
 
-                if (lopt.channel[0] < 0)
+                if (lopt.interface_data[0].current_channel < 0)
                 {
                     airodump_usage();
                     program_exit_code = EXIT_FAILURE;
@@ -7386,7 +7405,7 @@ int main(int argc, char * argv[])
 
                 lopt.chanoption = 1;
 
-                if (lopt.channel[0] == 0)
+                if (lopt.interface_data[0].current_channel == channel_sentinel)
                 {
                     lopt.channels = lopt.own_channels;
                 }
@@ -7398,7 +7417,8 @@ int main(int argc, char * argv[])
 
             case 'C':
 
-                if (lopt.channel[0] > 0 || lopt.chanoption == 1)
+                if (lopt.interface_data[0].current_channel > 0
+                    || lopt.chanoption == 1)
                 {
                     if (lopt.chanoption == 1)
                     {
@@ -7407,7 +7427,7 @@ int main(int argc, char * argv[])
                     else
                     {
                         printf("Notice: Channel already given (%d)\n",
-                               lopt.channel[0]);
+                               lopt.interface_data[0].current_channel);
                     }
                     break;
                 }
@@ -7926,14 +7946,14 @@ int main(int argc, char * argv[])
 
             detect_frequencies(lopt.wi[0], &detected_frequencies);
 
-            lopt.frequency[0] =
+            lopt.interface_data[0].current_frequency =
                 getfrequencies(&lopt.own_frequencies,
                                &detected_frequencies,
                                lopt.freqstring);
 
             detected_frequencies_cleanup(&detected_frequencies);
 
-            if (lopt.frequency[0] == invalid_frequency)
+            if (lopt.interface_data[0].current_frequency == invalid_frequency)
             {
                 printf("No valid frequency given.\n");
                 program_exit_code = EXIT_FAILURE;
@@ -7942,7 +7962,7 @@ int main(int argc, char * argv[])
 
             rearrange_frequencies(lopt.own_frequencies);
 
-            if (lopt.frequency[0] == frequency_sentinel)
+            if (lopt.interface_data[0].current_frequency == frequency_sentinel)
             {
                 /* Start a child process to hop between frequencies. */
                 size_t const freq_count =
@@ -7954,15 +7974,20 @@ int main(int argc, char * argv[])
             {
                 for (size_t i = 0; i < lopt.num_cards; i++)
                 {
-                    wi_set_freq(lopt.wi[i], lopt.frequency[0]);
-                    lopt.frequency[i] = lopt.frequency[0];
+                    if (i > 0)
+                    {
+                        lopt.interface_data[i].current_frequency =
+                            lopt.interface_data[0].current_frequency;
+                    }
+
+                    wi_set_freq(lopt.wi[i], lopt.interface_data[i].current_frequency);
                 }
                 lopt.singlefreq = 1;
             }
         }
         else // use channels
         {
-            if (lopt.channel[0] == channel_sentinel)
+            if (lopt.interface_data[0].current_channel == channel_sentinel)
             {
                 /* Start a child process to hop between channels. */
                 size_t const chan_count =
@@ -7974,12 +7999,19 @@ int main(int argc, char * argv[])
             {
                 for (size_t i = 0; i < lopt.num_cards; i++)
                 {
+                    if (i > 0)
+                    {
+                        lopt.interface_data[i].current_channel =
+                            lopt.interface_data[0].current_channel;
+                    }
 #ifdef CONFIG_LIBNL
-                    wi_set_ht_channel(lopt.wi[i], lopt.channel[0], lopt.htval);
+                    wi_set_ht_channel(lopt.wi[i],
+                                      lopt.interface_data[i].current_channel,
+                                      lopt.htval);
 #else
-                    wi_set_channel(lopt.wi[i], lopt.channel[0]);
+                    wi_set_channel(lopt.wi[i],
+                                   lopt.interface_data[i].current_channel);
 #endif
-                    lopt.channel[i] = lopt.channel[0];
                 }
                 lopt.singlechan = 1;
             }
@@ -8152,7 +8184,7 @@ int main(int argc, char * argv[])
         had_error = main_loop_run(&lopt);
     }
 
-	airodump_shutdown(&lopt, lopt.wi);
+	airodump_shutdown(&lopt);
 
 	program_exit_code = had_error ? EXIT_FAILURE : EXIT_SUCCESS;
 

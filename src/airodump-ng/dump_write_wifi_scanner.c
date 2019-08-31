@@ -214,9 +214,9 @@ static void dump_sta_data(
 
     fprintf(fp, "%s" FIELD_SEPARATOR "%s" FIELD_SEPARATOR, sys_name, loc_name);
 
-    fprintf(fp, "%ld" FIELD_SEPARATOR, st_cur->tinit);
+    fprintf(fp, "%ld" FIELD_SEPARATOR, st_cur->first_seen);
 
-    fprintf(fp, "%ld" FIELD_SEPARATOR, st_cur->tlast);
+    fprintf(fp, "%ld" FIELD_SEPARATOR, st_cur->last_seen);
 
     fprintf_mac_address(fp, &st_cur->stmac);
     fprintf(fp, FIELD_SEPARATOR);

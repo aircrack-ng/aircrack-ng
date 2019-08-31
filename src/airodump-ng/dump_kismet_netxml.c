@@ -12,7 +12,7 @@
 
 static char * sanitize_xml(unsigned char * text, size_t length)
 {
-    size_t len; 
+    size_t len;
     size_t current_text_len;
     char * newtext = NULL;
 
@@ -107,10 +107,10 @@ static int dump_write_kismet_netxml_client_info(
     is_unassociated = (client->base == NULL
                        || MAC_ADDRESS_IS_BROADCAST(&client->base->bssid));
 
-    strncpy(first_time, ctime(&client->tinit), TIME_STR_LENGTH - 1);
+    strncpy(first_time, ctime(&client->first_seen), TIME_STR_LENGTH - 1);
     first_time[strlen(first_time) - 1] = 0; // remove new line
 
-    strncpy(last_time, ctime(&client->tlast), TIME_STR_LENGTH - 1);
+    strncpy(last_time, ctime(&client->last_seen), TIME_STR_LENGTH - 1);
     last_time[strlen(last_time) - 1] = 0; // remove new line
 
     fprintf(fp,
@@ -129,7 +129,7 @@ static int dump_write_kismet_netxml_client_info(
     /* Manufacturer, if set using standard oui list */
     if (client->manuf != NULL)
     {
-        manuf = 
+        manuf =
             sanitize_xml((unsigned char *)client->manuf, strlen(client->manuf));
     }
     else
@@ -191,7 +191,7 @@ static int dump_write_kismet_netxml_client_info(
     fprintf(fp, "\t\t\t<channel>%d</channel>\n", client->channel);
 
     /* Rate: inaccurate because it's the latest rate seen */
-    client_max_rate = (client->rate_from > client->rate_to) 
+    client_max_rate = (client->rate_from > client->rate_to)
         ? client->rate_from
         : client->rate_to;
     fprintf(fp,
@@ -330,11 +330,11 @@ static void kismet_dump_write_netxml(
         bool const check_broadcast = true;
         int const max_age_seconds = -1; /* no limit. */
 
-        if (!ap_should_be_logged(ap_cur, 
-                                 max_age_seconds, 
-                                 f_encrypt, 
-                                 essid_filter, 
-                                 check_broadcast, 
+        if (!ap_should_be_logged(ap_cur,
+                                 max_age_seconds,
+                                 f_encrypt,
+                                 essid_filter,
+                                 check_broadcast,
                                  min_packets))
         {
             continue;
@@ -598,10 +598,10 @@ static void kismet_dump_write_netxml(
             ++network_number; // Network Number
 
             /* Write new network information */
-            strncpy(first_time, ctime(&st_cur->tinit), TIME_STR_LENGTH - 1);
+            strncpy(first_time, ctime(&st_cur->first_seen), TIME_STR_LENGTH - 1);
             first_time[strlen(first_time) - 1] = 0; // remove new line
 
-            strncpy(last_time, ctime(&st_cur->tlast), TIME_STR_LENGTH - 1);
+            strncpy(last_time, ctime(&st_cur->last_seen), TIME_STR_LENGTH - 1);
             last_time[strlen(last_time) - 1] = 0; // remove new line
 
             fprintf(fp,
@@ -620,7 +620,7 @@ static void kismet_dump_write_netxml(
             /* Manufacturer, if set using standard oui list */
             if (st_cur->manuf != NULL)
             {
-                manuf = 
+                manuf =
                     sanitize_xml((unsigned char *)st_cur->manuf, strlen(st_cur->manuf));
             }
             else
@@ -761,8 +761,8 @@ static void kismet_dump_write_netxml(
 
     /* Sometimes there can be crap at the end of the file, so truncating is a
        good idea.
-       XXX: Is this really correct? I hope fileno() won't have any 
-       side effect 
+       XXX: Is this really correct? I hope fileno() won't have any
+       side effect
        */
     int const file_no = fileno(fp);
     fpos = ftell(fp);
@@ -882,7 +882,7 @@ bool kismet_netxml_dump_open(
 {
     bool success;
     struct kismet_netxml_dump_context_st * const context =
-        kismet_netxml_dump_context_open(filename, 
+        kismet_netxml_dump_context_open(filename,
                                         airodump_start_time,
                                         use_gpsd);
 

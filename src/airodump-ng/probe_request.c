@@ -64,15 +64,4 @@ int send_probe_request(struct wif * const wi)
     return 0;
 }
 
-void send_probe_requests(struct wif * * const wi, size_t num_cards)
-{
-    REQUIRE(wi != NULL);
-    REQUIRE(num_cards > 0);
-
-    for (size_t i = 0; i < num_cards; i++)
-    {
-        send_probe_request(wi[i]);
-    }
-}
-
 
