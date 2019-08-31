@@ -89,9 +89,9 @@ dnl
 saved_cflags="$CFLAGS"
 CFLAGS="$UBUS_INCLUDES $CFLAGS"
 AC_CHECK_HEADERS([libubus.h], [
-	UBUS_SUPPORT=yes
+	HAVE_UBUS=yes
 ], [
-	UBUS_SUPPORT=no
+	HAVE_UBUS=no
 ])
 CFLAGS="$saved_cflags"
 
@@ -99,7 +99,7 @@ CFLAGS="$saved_cflags"
 dnl
 dnl Locate the library
 dnl
-AS_IF([test "$UBUS_SUPPORT" = yes], [
+AS_IF([test "$UBUS_SUPPORT" = yes -a "$HAVE_UBUS" = yes], [
 	AC_SEARCH_LIBS([ubus_connect], [ubus], [
 		UBUS_LIBS=-lubus
 		AC_SUBST(UBUS_LIBS)
@@ -112,4 +112,5 @@ AS_IF([test "$UBUS_SUPPORT" = yes], [
 ])
 
 AM_CONDITIONAL([UBUS_SUPPORT], [test "$UBUS_SUPPORT" = yes])
+AM_CONDITIONAL([HAVE_UBUS], [test "$HAVE_UBUS" = yes])
 ])

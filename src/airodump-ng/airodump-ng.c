@@ -166,11 +166,13 @@ struct sort_context_st
 
 TAILQ_HEAD(na_list_head, NA_info);
 
+#if defined(INCLUDE_UBUS)
 struct uloop_fd_wrapper_st
 {
     struct uloop_fd fd;
     size_t index;
 };
+#endif
 
 static struct local_options
 {
@@ -4996,9 +4998,16 @@ done:
     return encryption_filter;
 }
 
-static struct wif * reopen_card(struct wif * const old)
+static bool reopen_card(
+    struct local_options * const options,
+    size_t interface_index
+#if defined(INCLUDE_UBUS)
+    , bool const add_uloop_fd
+#endif
+    )
 {
-    struct wif * new_wi;
+    bool success;
+    struct wif * const old = options->wi[interface_index];
 	char ifnam[MAX_IFACE_NAME];
 
     /* The interface name needs to be saved because closing the
@@ -5006,42 +5015,60 @@ static struct wif * reopen_card(struct wif * const old)
      */
     strlcpy(ifnam, wi_get_ifname(old), sizeof ifnam);
 
+#if defined(INCLUDE_UBUS)
+    if (options->ubus.do_ubus)
+    {
+        uloop_fd_delete(&options->ubus.interfaces[interface_index].fd);
+    }
+#endif
+
     /* TODO: It might have been nice is there was a wi_reopen() call
      * to deal with the closing, opening and interface name handling.
      */
     wi_close(old);
-    new_wi = wi_open(ifnam);
+    options->wi[interface_index] = wi_open(ifnam);
 
-    if (new_wi == NULL)
+    if (options->wi[interface_index] == NULL)
     {
         printf("Can't reopen %s\n", ifnam);
+        success = false;
+        goto done;
     }
 
-    return new_wi;
+#if defined(INCLUDE_UBUS)
+    options->ubus.interfaces[interface_index].fd.fd =
+        wi_fd(options->wi[interface_index]);
+    if (options->ubus.do_ubus && add_uloop_fd)
+    {
+        uloop_fd_add(&options->ubus.interfaces[interface_index].fd,
+                     ULOOP_BLOCKING | ULOOP_READ);
+    }
+#endif
+
+    success = true;
+
+done:
+    return success;
 }
 
+/* Only called by the channel hopper process. This doesn't use UBUS, so should
+ * just delete the uloop FD.
+ */
 static bool reopen_cards(struct local_options * const options)
 {
-    struct wif * * const wi = options->wi;
     size_t const num_cards = options->num_cards;
     bool success;
 
     for (size_t i = 0; i < num_cards; i++)
     {
-        if (options->ubus.do_ubus)
-        {
-            uloop_fd_delete(&options->ubus.interfaces[i].fd);
-        }
-        wi[i] = reopen_card(wi[i]);
-        if (wi[i] == NULL)
+        if (!reopen_card(options, i
+#if defined(INCLUDE_UBUS)
+                         , false
+#endif
+                         ))
         {
             success = false;
             goto done;
-        }
-        if (options->ubus.do_ubus)
-        {
-            options->ubus.interfaces[i].fd.fd = wi_fd(wi[i]);
-            uloop_fd_add(&options->ubus.interfaces[i].fd, ULOOP_BLOCKING | ULOOP_READ);
         }
     }
 
@@ -5099,53 +5126,48 @@ static void write_fixed_frequency_message(
              frequency);
 }
 
-static struct wif * check_for_monitor_mode_on_card(
-    struct wif * const wi,
-    char * const msg_buffer,
-    size_t const msg_buffer_size)
+static bool check_for_monitor_mode_on_card(
+    struct local_options * const options,
+    size_t const interface_index)
 {
+    bool success;
+    struct wif * const wi = options->wi[interface_index];
     int const monitor = wi_get_monitor(wi);
-    struct wif * new_wi;
 
     if (monitor == 0)
     {
-        new_wi = wi;
+        success = true;
         goto done;
     }
 
     // reopen in monitor mode
-    new_wi = reopen_card(wi);
+    success = reopen_card(options, interface_index
+#if defined(INCLUDE_UBUS)
+                          , true
+#endif
+                          );
 
     write_monitor_mode_message(
-        msg_buffer,
-        msg_buffer_size,
-        wi_get_ifname(wi));
+        options->message,
+        sizeof(options->message),
+        wi_get_ifname(options->wi[interface_index]));
 
 done:
-    return new_wi;
+    return success;
 }
 
 static bool check_for_monitor_mode_on_cards(
-    struct wif * * const wi,
-    size_t const num_cards,
-    char * const msg_buffer,
-    size_t const msg_buffer_size)
+    struct local_options * const options)
 {
     bool success;
 
-    for (size_t i = 0; i < num_cards; i++)
+    for (size_t i = 0; i < options->num_cards; i++)
 	{
-        struct wif * new_wi =
-            check_for_monitor_mode_on_card(wi[i], msg_buffer, msg_buffer_size);
-
-        if (new_wi != wi[i])
+        if (!check_for_monitor_mode_on_card(options, i))
         {
-            wi[i] = new_wi;
-            if (wi[i] == NULL)
-            {
-                success = false;
-                goto done;
-            }
+            success = false;
+
+            goto done;
         }
 	}
 
@@ -5276,8 +5298,7 @@ static void check_frequency_on_cards(
 }
 
 static bool update_interface_cards(
-    struct wif * * const wi,
-    size_t const num_cards,
+    struct local_options * const options,
     bool const single_channel,
     int const * const current_channels,
     bool const single_frequency,
@@ -5292,10 +5313,7 @@ static bool update_interface_cards(
 {
     bool success;
 
-    if (!check_for_monitor_mode_on_cards(wi,
-                                         num_cards,
-                                         msg_buffer,
-                                         msg_buffer_size))
+    if (!check_for_monitor_mode_on_cards(options))
     {
         success = false;
         goto done;
@@ -5303,9 +5321,9 @@ static bool update_interface_cards(
 
     if (single_channel)
     {
-        check_channel_on_cards(wi,
+        check_channel_on_cards(options->wi,
                                current_channels,
-                               num_cards,
+                               options->num_cards,
                                msg_buffer,
                                msg_buffer_size,
                                ignore_negative_one
@@ -5314,11 +5332,12 @@ static bool update_interface_cards(
 #endif
                                );
     }
+
     if (single_frequency)
     {
-        check_frequency_on_cards(wi,
+        check_frequency_on_cards(options->wi,
                                  current_frequencies,
-                                 num_cards,
+                                 options->num_cards,
                                  msg_buffer,
                                  msg_buffer_size);
     }
@@ -5726,7 +5745,7 @@ static void handle_terminate_event(struct local_options * const options)
         fflush(stdout);
     }
 
-#if INCLUDE_UBUS
+#if defined(INCLUDE_UBUS)
     if (options->ubus.do_ubus)
     {
         uloop_end();
@@ -5826,14 +5845,11 @@ static void do_probe_requests(struct local_options * const options)
 
 static void do_half_second_refresh(struct local_options * const options)
 {
-    struct wif * * const wi = options->wi;
-
     update_rx_quality(options);
 
     if (options->s_iface != NULL)
     {
-        if (!update_interface_cards(wi,
-                                    options->num_cards,
+        if (!update_interface_cards(options,
                                     options->singlechan,
                                     options->channel,
                                     options->singlefreq,
@@ -5846,13 +5862,18 @@ static void do_half_second_refresh(struct local_options * const options)
 #endif
                                    ))
         {
-            uloop_end();
+#if defined(INCLUDE_UBUS)
+            if (options->ubus.do_ubus)
+            {
+                uloop_end();
+            }
+#endif
             lopt.do_exit = true;
         }
     }
 }
 
-#if INCLUDE_UBUS
+#if defined(INCLUDE_UBUS)
 
 static void ubus_cancel_quit_request(struct uloop_timeout * timeout)
 {
@@ -5917,7 +5938,7 @@ static void ubus_half_second(struct uloop_timeout * timeout)
 
 static void start_quit_request_cancel_timer(struct local_options * const options)
 {
-#if INCLUDE_UBUS
+#if defined(INCLUDE_UBUS)
     if (options->ubus.do_ubus)
     {
         static int const timeout_millisecs =
@@ -5942,10 +5963,11 @@ static void handle_input_key(
         options->quitting++;
         if (options->quitting > 1)
         {
-#if INCLUDE_UBUS
-            /* Not really necessary to cancel the timer. */
-            uloop_timeout_cancel(&options->ubus.quit_request);
-            uloop_end();
+#if defined(INCLUDE_UBUS)
+            if (options->ubus.do_ubus)
+            {
+                uloop_end();
+            }
 #endif
             options->do_exit = 1;
         }
@@ -6529,8 +6551,11 @@ static bool handle_ready_wi_interface(
     if (packet_length == -1)
     {
         options->wi_consecutive_failed_reads[interface_index]++;
-        if (options->wi_consecutive_failed_reads[interface_index]
-            >= options->max_consecutive_failed_interface_reads)
+        bool const too_many_failures =
+            options->wi_consecutive_failed_reads[interface_index]
+            >= options->max_consecutive_failed_interface_reads;
+
+        if (too_many_failures)
         {
             success = false;
             goto done;
@@ -6541,8 +6566,11 @@ static bool handle_ready_wi_interface(
                  "interface %s down ",
                  wi_get_ifname(*wi));
 
-        *wi = reopen_card(*wi);
-        if (*wi == NULL)
+        if (!reopen_card(options, interface_index
+#if defined(INCLUDE_UBUS)
+                         , true
+#endif
+                         ))
         {
             success = false;
             goto done;
@@ -6826,7 +6854,9 @@ static void options_initialise(struct local_options * const options)
         options->channel[i] = channel_sentinel;
         options->frequency[i] = frequency_sentinel;
         options->wi_consecutive_failed_reads[i] = 0;
+#if defined(INCLUDE_UBUS)
         options->ubus.interfaces[i].index = i;
+#endif
     }
 
     MAC_ADDRESS_CLEAR(&options->f_bssid);
@@ -6993,7 +7023,6 @@ static bool main_loop_run(struct local_options * const options)
 
         current_time = time(NULL);
         time_t const seconds_since_last_generic_update = current_time - tt2;
-        time_t const generic_update_interval_seconds = 5;
         bool const generic_update_required =
             seconds_since_last_generic_update > generic_update_interval_seconds;
 
@@ -7008,7 +7037,8 @@ static bool main_loop_run(struct local_options * const options)
 
         if (options->active_scan_sim > 0)
         {
-            long const cycle_time2 = 1000000UL * (current_time_timestamp.tv_sec - last_active_scan_timestamp.tv_sec)
+            long const cycle_time2 =
+                1000000UL * (current_time_timestamp.tv_sec - last_active_scan_timestamp.tv_sec)
                 + (current_time_timestamp.tv_usec - last_active_scan_timestamp.tv_usec);
             bool const probe_requests_required =
                 cycle_time2 > options->active_scan_sim * 1000;
@@ -7024,7 +7054,7 @@ static bool main_loop_run(struct local_options * const options)
         long const cycle_time = 1000000UL * (current_time_timestamp.tv_sec - tv3.tv_sec)
             + (current_time_timestamp.tv_usec - tv3.tv_usec);
 
-        if (cycle_time > 500000)
+        if (cycle_time > half_second_interval_milliseconds * 1000)
         {
             gettimeofday(&tv3, NULL);
 
