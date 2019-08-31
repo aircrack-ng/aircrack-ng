@@ -4474,15 +4474,18 @@ static void signal_event_initialise(
 	{
 		perror("sigaction(SIGINT)");
 	}
+
     if (interactive_mode
         && sigaction(SIGWINCH, &action, NULL) == -1)
     {
         perror("sigaction(SIGWINCH)");
     }
+
 	if (sigaction(SIGSEGV, &action, NULL) == -1)
 	{
 		perror("sigaction(SIGSEGV)");
 	}
+
 	if (sigaction(SIGTERM, &action, NULL) == -1)
 	{
 		perror("sigaction(SIGTERM)");
@@ -4737,9 +4740,14 @@ static int getfrequencies(
     struct detected_frequencies_st * const detected_frequencies,
     const char * optarg)
 {
-	unsigned int i = 0, freq_cur = 0, freq_first = 0, freq_last = 0,
-				 freq_max = 10000, freq_remain = 0;
-	char *optfreq = NULL, *optc;
+    unsigned int i = 0;
+    unsigned int freq_cur = 0;
+    unsigned int freq_first = 0;
+    unsigned int freq_last = 0;
+    unsigned int freq_max = 10000;
+    unsigned int freq_remain = 0;
+    char * optfreq = NULL;
+    char * optc;
 	char * token = NULL;
 	int * tmp_frequencies;
 
@@ -5297,19 +5305,7 @@ static void check_frequency_on_cards(
 	}
 }
 
-static bool update_interface_cards(
-    struct local_options * const options,
-    bool const single_channel,
-    int const * const current_channels,
-    bool const single_frequency,
-    int const * const current_frequencies,
-    char * const msg_buffer,
-    size_t const msg_buffer_size,
-    int const ignore_negative_one
-#ifdef CONFIG_LIBNL
-    , unsigned int htval
-#endif
-    )
+static bool update_interface_cards(struct local_options * const options)
 {
     bool success;
 
@@ -5319,27 +5315,27 @@ static bool update_interface_cards(
         goto done;
     }
 
-    if (single_channel)
+    if (options->singlechan)
     {
         check_channel_on_cards(options->wi,
-                               current_channels,
+                               options->channel,
                                options->num_cards,
-                               msg_buffer,
-                               msg_buffer_size,
-                               ignore_negative_one
+                               options->message,
+                               sizeof options->message,
+                               options->ignore_negative_one
 #ifdef CONFIG_LIBNL
-                               , htval
+                               , options->htval
 #endif
                                );
     }
 
-    if (single_frequency)
+    if (options->singlefreq)
     {
         check_frequency_on_cards(options->wi,
-                                 current_frequencies,
+                                 options->frequency,
                                  options->num_cards,
-                                 msg_buffer,
-                                 msg_buffer_size);
+                                 options->message,
+                                 sizeof options->message);
     }
 
     success = true;
@@ -5849,18 +5845,7 @@ static void do_half_second_refresh(struct local_options * const options)
 
     if (options->s_iface != NULL)
     {
-        if (!update_interface_cards(options,
-                                    options->singlechan,
-                                    options->channel,
-                                    options->singlefreq,
-                                    options->frequency,
-                                    options->message,
-                                    sizeof options->message,
-                                    options->ignore_negative_one
-#ifdef CONFIG_LIBNL
-                                    , options->htval
-#endif
-                                   ))
+        if (!update_interface_cards(options)
         {
 #if defined(INCLUDE_UBUS)
             if (options->ubus.do_ubus)
@@ -6751,7 +6736,7 @@ done:
 
 static void options_initialise(struct local_options * const options)
 {
-    memset(&lopt, 0, sizeof(lopt));
+    memset(options, 0, sizeof *options);
 
     options->chanoption = 0;
     options->freqoption = 0;
@@ -6778,7 +6763,7 @@ static void options_initialise(struct local_options * const options)
     options->shared_key.sk_len = 0;
     options->shared_key.sk_len2 = 0;
     options->shared_key.sk_start = 0;
-    memset(options->shared_key.sharedkey, 0, sizeof(options->shared_key.sharedkey));
+    memset(options->shared_key.sharedkey, 0, sizeof options->shared_key.sharedkey);
     options->check_shared_key = 1;
 
     options->filename.include_index = 1;
