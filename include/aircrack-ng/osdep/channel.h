@@ -24,26 +24,6 @@
 #include <stdint.h>
 #include "common.h"
 
-#define HIGHEST_CHANNEL 220
-#define LOWEST_CHANNEL -16
-
-#define CHANNEL_NO_HT 0
-#define CHANNEL_HT20 20
-#define CHANNEL_HT40_PLUS 39
-#define CHANNEL_HT40_MINUS 41
-
-IMPORT int getFrequencyFromChannel(int channel);
-IMPORT int getChannelFromFrequency(int frequency);
-
-IMPORT int getBandFromChannel(int channel);
-IMPORT int getBandFromFreq(int freq);
-
-IMPORT int are_channel_params_valid(const struct osdep_channel * oc);
-IMPORT void init_channel(struct osdep_channel * oc);
-
-IMPORT int are_freq_params_valid(const struct osdep_freq * of);
-IMPORT void init_freq(struct osdep_freq * of);
-
 struct osdep_channel {
 	int channel;
 	int addl_channel;
@@ -68,6 +48,28 @@ struct osdep_freq {
 	uint16_t width;
 	uint8_t ht;	
 };
+
+
+#define HIGHEST_CHANNEL 220
+#define LOWEST_CHANNEL -16
+
+#define CHANNEL_NO_HT 0
+#define CHANNEL_HT20 20
+#define CHANNEL_HT40_PLUS 39
+#define CHANNEL_HT40_MINUS 41
+
+IMPORT int getFrequencyFromChannel(int channel);
+IMPORT int getChannelFromFrequency(int frequency);
+
+IMPORT int getBandFromChannel(int channel);
+IMPORT int getBandFromFreq(int freq);
+
+IMPORT int are_channel_params_valid(const struct osdep_channel * oc);
+IMPORT void init_channel(struct osdep_channel * oc);
+
+IMPORT int are_freq_params_valid(const struct osdep_freq * of);
+IMPORT void init_freq(struct osdep_freq * of);
+
 
 #define OSDEP_BAND_UNKNOWN 0
 #define OSDEP_BAND_900MHZ 900

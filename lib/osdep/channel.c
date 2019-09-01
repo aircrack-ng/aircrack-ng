@@ -137,17 +137,15 @@ EXPORT int are_channel_params_valid(const struct osdep_channel * oc)
 	if (!oc) return -1;
 
 	// Only handle 2.4/5GHz for now
-	if !(oc->band == OSDEP_BAND_2400MHZ || 
-		 oc->band == OSDEP_BAND_4900MHZ ||
-		 oc->band == OSDEP_BAND_5GHZ) {
-		
+	if (!(oc->band == OSDEP_BAND_2400MHZ || 
+		  oc->band == OSDEP_BAND_4900MHZ ||
+		  oc->band == OSDEP_BAND_5GHZ)) {
 		return 0;
 	}
 
 	// And only 20/40MHz
-	if !(oc->width == OSDEP_CHANNEL_20MHZ ||
-		 oc->width == OSDEP_CHANNEL_40MHZ) {
-		
+	if (!(oc->width == OSDEP_CHANNEL_20MHZ ||
+		  oc->width == OSDEP_CHANNEL_40MHZ)) {
 		return 0;
 	}
 
@@ -163,7 +161,7 @@ EXPORT int are_channel_params_valid(const struct osdep_channel * oc)
 
 	// NO_HT can only be used with 20MHz
 	if (oc->ht == OSDEP_NO_HT && oc->width != OSDEP_CHANNEL_20MHZ) {
-		return 0
+		return 0;
 	}
 
 	// 0 or lower, invalid channel
@@ -189,13 +187,13 @@ EXPORT int are_channel_params_valid(const struct osdep_channel * oc)
 		// In HT40-/HT40+, the secondary channel is 4 channels below/above
 		//  which means some combinations aren't available
 		if (oc->ht == OSDEP_HT_MINUS) {
-			return (channel > 4);
+			return (oc->channel > 4);
 		} else { // oc->ht == OSDEP_HT_PLUS
 			// Highest possible channel is 9, because there are 13 channels
 			//  available but channel 14 isn't available, it was only there for
 			// 802.11b. However, in the US, the last HT40+ is 7, because highest
 			// channel is 11
-			return channel < 10;
+			return oc->channel < 10;
 		}
 	}
 
@@ -233,9 +231,8 @@ EXPORT int are_freq_params_valid(const struct osdep_freq * of)
 	if (!of) return -1;
 
 	// And only 20/40MHz
-	if !(of->width == OSDEP_CHANNEL_20MHZ ||
-		 of->width == OSDEP_CHANNEL_40MHZ) {
-		
+	if (!(of->width == OSDEP_CHANNEL_20MHZ ||
+		  of->width == OSDEP_CHANNEL_40MHZ)) {
 		return 0;
 	}
 
@@ -251,7 +248,7 @@ EXPORT int are_freq_params_valid(const struct osdep_freq * of)
 
 	// NO_HT can only be used with 20MHz
 	if (of->ht == OSDEP_NO_HT && of->width != OSDEP_CHANNEL_20MHZ) {
-		return 0
+		return 0;
 	}
 
 	return 1;
@@ -264,6 +261,6 @@ EXPORT void init_freq(struct osdep_freq * of)
 	memset(of, 0, sizeof(struct osdep_freq));
 
 	// Default frequency of 2437MHz (channel 6)
-	of->frequency = 2437;
+	of->freq_mhz = 2437;
 	of->width = OSDEP_CHANNEL_20MHZ;
 }
