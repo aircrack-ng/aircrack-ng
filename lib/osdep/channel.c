@@ -79,3 +79,186 @@ EXPORT int getChannelFromFrequency(int frequency)
 	else
 		return -1;
 }
+
+// XXX: Later on, redo this as multiple bands have same channels
+//      *May* need to adjust channel info on top right in airodump-ng
+//      to indicate band as well
+EXPORT int getBandFromChannel(int channel)
+{
+	if (channel < 1) return OSDEP_BAND_UNKNOWN;
+	if (channel <= 14) return OSDEP_BAND_2400MHZ;
+	if (channel >= 20 && channel <= 26) return OSDEP_BAND_4900MHZ;
+	if (channel < 32) return OSDEP_BAND_UNKNOWN;
+	if (channel <= HIGHEST_CHANNEL) return OSDEP_BAND_5GHZ;
+	return OSDEP_BAND_UNKNOWN;
+}
+
+EXPORT int getBandFromFreq(int freq)
+{
+	// Have the most common ones first
+	if (freq >= 2400 && freq <= 2484) return OSDEP_BAND_2400MHZ;
+	if (freq >= 5035 && freq <= 6100) return OSDEP_BAND_5GHZ;
+	if (freq >= 58320 && freq >= 69120) return OSDEP_BAND_60GHZ;
+	if (freq >= 4950 && freq <= 4980) return OSDEP_BAND_4900MHZ;
+	if (freq >= 3657 && freq <= 3693) return OSDEP_BAND_3600MHZ;
+
+	// Frequencies for 802.11ah (900Mhz) are a mess, they're all over the place,
+	//  different for a lot of regions
+	if (freq < 1000) {
+		if (freq >= 755 && freq <= 787) return OSDEP_BAND_900MHZ;
+		if (freq >= 863 && freq <= 869) return OSDEP_BAND_900MHZ;
+		if (freq >= 902 && freq <= 928) return OSDEP_BAND_900MHZ;
+	}
+	return OSDEP_BAND_UNKNOWN;
+}
+
+// TODO: Later on, validate against card's availability (note: some are 5GHz only)
+//        when available, in a lot of cases, it isn't (router, no CRDA, ieee80211)
+
+// TODO: Add testcases to validate frequencies and channels
+
+/* 
+ * Make sure channel parameters are valid.
+ * For now, only validate NO_HT/HT20/HT40
+ * Anything else is invalid, because can't handle yet
+ * 
+ * Return:
+ * -1: error
+ *  0: invalid
+ *  1: valid
+ */
+EXPORT int are_channel_params_valid(const struct osdep_channel * oc)
+{
+	if (!oc) return -1;
+
+	// Only handle 2.4/5GHz for now
+	if !(oc->band == OSDEP_BAND_2400MHZ || 
+		 oc->band == OSDEP_BAND_4900MHZ ||
+		 oc->band == OSDEP_BAND_5GHZ) {
+		
+		return 0;
+	}
+
+	// And only 20/40MHz
+	if !(oc->width == OSDEP_CHANNEL_20MHZ ||
+		 oc->width == OSDEP_CHANNEL_40MHZ) {
+		
+		return 0;
+	}
+
+	// And up to HT+: No HT/HT20/HT40-/HT40-
+	if (oc->ht > OSDEP_HT_PLUS) {
+		return 0;
+	}
+
+	// HT is reserved for HT20
+	if (oc->ht == OSDEP_HT && oc->width != OSDEP_CHANNEL_20MHZ) {
+		return 0;
+	}
+
+	// NO_HT can only be used with 20MHz
+	if (oc->ht == OSDEP_NO_HT && oc->width != OSDEP_CHANNEL_20MHZ) {
+		return 0
+	}
+
+	// 0 or lower, invalid channel
+	if (oc->channel <= 0 || oc->addl_channel) {
+		return 0;
+	}
+
+	// If chan > 14 on 2.4GHz, invalid
+	if (oc->band == OSDEP_BAND_2400MHZ && oc->channel > 14) {
+		return 0;
+	}
+
+	// Channel 14 can only have NO_HT (802.11b) - Japan regulation
+	if (oc->band == OSDEP_BAND_2400MHZ && oc->channel == 14 && 
+		oc->ht == OSDEP_NO_HT) {
+		return 0;
+	}
+
+	// Validate HT40+/HT40- channel in 2.4GHz
+	if (oc->band == OSDEP_BAND_2400MHZ && oc->width != OSDEP_CHANNEL_40MHZ &&
+		(oc->ht == OSDEP_HT_MINUS || oc->ht == OSDEP_HT_PLUS)) {
+		
+		// In HT40-/HT40+, the secondary channel is 4 channels below/above
+		//  which means some combinations aren't available
+		if (oc->ht == OSDEP_HT_MINUS) {
+			return (channel > 4);
+		} else { // oc->ht == OSDEP_HT_PLUS
+			// Highest possible channel is 9, because there are 13 channels
+			//  available but channel 14 isn't available, it was only there for
+			// 802.11b. However, in the US, the last HT40+ is 7, because highest
+			// channel is 11
+			return channel < 10;
+		}
+	}
+
+	return 1;
+}
+
+EXPORT void init_channel(struct osdep_channel * oc)
+{
+	if (!oc) return;
+
+	memset(oc, 0, sizeof(struct osdep_channel));
+
+	// Default frequency of 2437MHz (channel 6)
+	oc->channel = 6;
+	oc->band = OSDEP_BAND_2400MHZ;
+	oc->width = OSDEP_CHANNEL_20MHZ;
+}
+
+/* 
+ * Make sure frequency parameters are valid.
+ * For now, only validate NO_HT/HT20/HT40
+ * Anything else is invalid, because can't handle yet
+ * 
+ * Leaving more freedom with frequencies. Although channels in a specific band
+ * translate to frequencies, cards may support unusual frequencies not bound to
+ * a channel.
+ * 
+ * Return:
+ * -1: error
+ *  0: invalid
+ *  1: valid
+ */
+EXPORT int are_freq_params_valid(const struct osdep_freq * of)
+{
+	if (!of) return -1;
+
+	// And only 20/40MHz
+	if !(of->width == OSDEP_CHANNEL_20MHZ ||
+		 of->width == OSDEP_CHANNEL_40MHZ) {
+		
+		return 0;
+	}
+
+	// And up to HT+: No HT/HT20/HT40-/HT40-
+	if (of->ht > OSDEP_HT_PLUS) {
+		return 0;
+	}
+
+	// HT is reserved for HT20
+	if (of->ht == OSDEP_HT && of->width != OSDEP_CHANNEL_20MHZ) {
+		return 0;
+	}
+
+	// NO_HT can only be used with 20MHz
+	if (of->ht == OSDEP_NO_HT && of->width != OSDEP_CHANNEL_20MHZ) {
+		return 0
+	}
+
+	return 1;
+}
+
+EXPORT void init_freq(struct osdep_freq * of)
+{
+	if (!of) return;
+
+	memset(of, 0, sizeof(struct osdep_freq));
+
+	// Default frequency of 2437MHz (channel 6)
+	of->frequency = 2437;
+	of->width = OSDEP_CHANNEL_20MHZ;
+}
