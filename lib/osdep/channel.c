@@ -29,6 +29,9 @@
 #include <stdlib.h>
 #include "channel.h"
 
+// Wikipedia seem to contradict itself. It mentions channels 20 to 26 for
+// Public safety (4.9GHz) but in the 5GHz section, these channels are numbered
+// differently (see 188, partially and 189/192/196)
 /**
  * Return the frequency in Mhz from a channel number
  */
@@ -37,9 +40,10 @@ EXPORT int getFrequencyFromChannel(int channel)
 	static int frequencies[] = {
 		-1, // No channel 0
 		2412, 2417, 2422, 2427, 2432, 2437, 2442, 2447, 2452, 2457, 2462, 2467,
-		2472, 2484, -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
-		-1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
-		-1, // Nothing from channel 15 to 34 (exclusive)
+		2472, 2484, -1,   -1,   -1,   -1,   -1,   4950, 4955, 4960, 4965, 4970,
+		// Nothing from channel 15 to 31 (inclusive)
+		// Except the 4.9GHz, public safety, 20-26
+		4975, 4980, -1,     -1,   -1,   -1,   -1, 5160, 5165,
 		5170, 5175, 5180, 5185, 5190, 5195, 5200, 5205, 5210, 5215, 5220, 5225,
 		5230, 5235, 5240, 5245, 5250, 5255, 5260, 5265, 5270, 5275, 5280, 5285,
 		5290, 5295, 5300, 5305, 5310, 5315, 5320, 5325, 5330, 5335, 5340, 5345,
@@ -73,7 +77,8 @@ EXPORT int getChannelFromFrequency(int frequency)
 		return (frequency - 2407) / 5;
 	else if (frequency == 2484)
 		return 14;
-
+	else if (frequency >= 4950 && frequency <= 4980)
+		return (frequency - 4850) / 5;
 	else if (frequency >= 4920 && frequency <= 6100)
 		return (frequency - 5000) / 5;
 	else
