@@ -14,8 +14,6 @@ struct ubus_state_st
     struct uloop_timeout retry;
 };
 
-struct ubus_state_st ubus_state;
-
 static void
 ubus_add_fd(struct ubus_context * const ubus_ctx)
 {
@@ -60,8 +58,14 @@ ubus_connection_lost(struct ubus_context * const ctx)
 struct ubus_state_st *
 ubus_initialise(char const * const path)
 {
-    struct ubus_state_st * state = &ubus_state;
     bool success;
+    struct ubus_state_st * state = calloc(1, sizeof *state);
+
+    if (state == NULL)
+    {
+        success = false;
+        goto done;
+    }
 
     state->ubus_path = path;
 
@@ -83,6 +87,7 @@ ubus_initialise(char const * const path)
 done:
     if (!success)
     {
+        free(state);
         state = NULL;
     }
 
@@ -103,6 +108,8 @@ ubus_done(struct ubus_state_st * const state)
 
     state->connected = false;
     ubus_shutdown(&state->ubus_ctx);
+
+    free(state);
 
 done:
     return;
