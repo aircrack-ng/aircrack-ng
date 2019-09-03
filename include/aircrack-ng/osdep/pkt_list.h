@@ -3,7 +3,7 @@
 
 #include "queue.h"
 
-#include <time.h>
+#include <sys/time.h>
 #include <stddef.h>
 
 TAILQ_HEAD(pkt_list_head, pkt_buf);
