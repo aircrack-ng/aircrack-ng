@@ -41,6 +41,9 @@ Time before removing the AP/client from the screen when no more packets are rece
 .I -c <channel>[,<channel>[,...]], --channel <channel>[,<channel>[,...]]
 Indicate the channel(s) to listen to. By default airodump-ng hops on all 2.4GHz channels.
 .TP
+.I -C <freq>[,<freq>[,...]]
+Indicates the frequencies to listen to. By default airodump-ng hops on all 2.4GHz channels.
+.TP
 .I -b <abg>, --band <abg>
 Indicate the band on which airodump-ng should hop. It can be a combination of \(aqa\(aq, \(aqb\(aq and \(aqg\(aq letters (\(aqb\(aq and \(aqg\(aq uses 2.4GHz and \(aqa\(aq uses 5GHz). Incompatible with --channel option.
 .TP
