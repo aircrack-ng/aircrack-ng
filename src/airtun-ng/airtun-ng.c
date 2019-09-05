@@ -213,11 +213,11 @@ static void swap_ra_ta(unsigned char * h80211)
 {
 	REQUIRE(h80211 != NULL);
 
-	unsigned char mbuf[6];
+    mac_address temp;
 
-	memcpy(mbuf, h80211 + 4, 6);
-	memcpy(h80211 + 4, h80211 + 10, 6);
-	memcpy(h80211 + 10, mbuf, 6);
+    MAC_ADDRESS_COPY(&temp, (mac_address *)(h80211 + 4));
+    MAC_ADDRESS_COPY((mac_address *)(h80211 + 4), (mac_address *)(h80211 + 10));
+    MAC_ADDRESS_COPY((mac_address *)(h80211 + 10), &temp);
 }
 
 static int is_filtered_netmask(mac_address const * const bssid)

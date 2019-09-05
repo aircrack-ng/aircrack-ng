@@ -1,5 +1,7 @@
 #include "ap_filter.h"
 
+#include <time.h>
+
 static bool ap_has_required_security(
     unsigned int ap_security,
     unsigned int required_security)
