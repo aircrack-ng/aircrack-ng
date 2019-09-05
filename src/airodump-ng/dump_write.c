@@ -49,6 +49,7 @@
 #include <pcre.h>
 #endif
 
+#include "aircrack-ng/osdep/osdep.h"
 #include "aircrack-ng/defs.h"
 #include "airodump-ng.h"
 #include "aircrack-ng/support/communications.h"

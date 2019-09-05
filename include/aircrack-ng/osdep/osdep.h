@@ -34,6 +34,8 @@
 #ifndef __AIRCRACK_NG_OSEDEP_H__
 #define __AIRCRACK_NG_OSEDEP_H__
 
+#include <arpa/inet.h>
+
 #include <netinet/in.h>
 #include <stdint.h>
 #include <time.h>

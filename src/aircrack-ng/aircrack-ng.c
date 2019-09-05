@@ -67,6 +67,7 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "aircrack-ng/osdep/osdep.h"
 #include "aircrack-ng/defs.h"
 #include "aircrack-ng/ce-wpa/crypto_engine.h"
 #include "aircrack-ng/crypto/sha1-sse2.h"
@@ -90,7 +91,6 @@
 #include "aircrack-ng/ce-wep/uniqueiv.h"
 #include "aircrack-ng/version.h"
 #include "wkp-frame.h"
-#include "aircrack-ng/osdep/osdep.h"
 #include "aircrack-ng/third-party/ieee80211.h"
 #include "aircrack-ng/third-party/ethernet.h"
 
@@ -6441,8 +6441,8 @@ int main(int argc, char * argv[])
 	progname = getVersion(
 		"Aircrack-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 
-	if ((cracking_session && cracking_session->is_loaded && 
-		cracking_session->argc - optind < 1) || (!cracking_session && 
+	if ((cracking_session && cracking_session->is_loaded &&
+		cracking_session->argc - optind < 1) || (!cracking_session &&
 		!_pmkid_16800 && argc - optind < 1))
 	{
 		if (nbarg == 1)
