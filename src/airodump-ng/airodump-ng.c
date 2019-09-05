@@ -778,7 +778,7 @@ static const char usage[] =
 	"      --wps                 : Display WPS information (if any)\n"
 	"      --output-format\n"
 	"                  <formats> : Output format. Possible values:\n"
-	"                              pcap, ivs, csv, gps, kismet, netxml, "
+	"                              pcap, ivs, csv, gps, json, kismet, netxml, "
 	"logcsv\n"
 	"      --ignore-negative-one : Removes the message that says\n"
 	"                              fixed channel <interface>: -1\n"
@@ -5883,6 +5883,7 @@ int main(int argc, char * argv[])
 	opt.f_cap = NULL;
 	opt.f_ivs = NULL;
 	opt.f_txt = NULL;
+	opt.f_json = NULL;
 	opt.f_kis = NULL;
 	opt.f_kis_xml = NULL;
 	opt.f_gps = NULL;
@@ -5921,6 +5922,7 @@ int main(int argc, char * argv[])
 
 	opt.output_format_pcap = 1;
 	opt.output_format_csv = 1;
+	opt.output_format_json = 1;
 	opt.output_format_kismet_csv = 1;
 	opt.output_format_kismet_netxml = 1;
 	opt.output_format_log_csv = 1;
@@ -6232,6 +6234,7 @@ int main(int argc, char * argv[])
 
 					opt.output_format_pcap = 0;
 					opt.output_format_csv = 0;
+					opt.output_format_json = 0;          
 					opt.output_format_kismet_csv = 0;
 					opt.output_format_kismet_netxml = 0;
 					opt.output_format_log_csv = 0;
@@ -6408,6 +6411,7 @@ int main(int argc, char * argv[])
 
 					opt.output_format_pcap = 0;
 					opt.output_format_csv = 0;
+					opt.output_format_json = 0;
 					opt.output_format_kismet_csv = 0;
 					opt.output_format_kismet_netxml = 0;
 					opt.output_format_log_csv = 0;
@@ -6454,6 +6458,11 @@ int main(int argc, char * argv[])
 							}
 							ivs_only = 1;
 						}
+						else if (strncasecmp(output_format_string, "json", 4)
+								 == 0)
+						{
+							opt.output_format_json = 1;
+						}            
 						else if (strncasecmp(output_format_string, "kismet", 6)
 								 == 0)
 						{
@@ -6496,6 +6505,7 @@ int main(int argc, char * argv[])
 						{
 							opt.output_format_pcap = 1;
 							opt.output_format_csv = 1;
+							opt.output_format_json = 1;              
 							opt.output_format_kismet_csv = 1;
 							opt.output_format_kismet_netxml = 1;
 						}
@@ -6504,6 +6514,7 @@ int main(int argc, char * argv[])
 						{
 							opt.output_format_pcap = 0;
 							opt.output_format_csv = 0;
+							opt.output_format_json = 0;              
 							opt.output_format_kismet_csv = 0;
 							opt.output_format_kismet_netxml = 0;
 							opt.output_format_log_csv = 0;
@@ -6893,6 +6904,8 @@ int main(int argc, char * argv[])
 			tt1 = time(NULL);
 			if (opt.output_format_csv)
 				dump_write_csv(lopt.ap_1st, lopt.st_1st, lopt.f_encrypt);
+			if (opt.output_format_json)
+				dump_write_json(lopt.ap_1st, lopt.st_1st, lopt.f_encrypt);      
 			if (opt.output_format_kismet_csv)
 				dump_write_kismet_csv(lopt.ap_1st, lopt.st_1st, lopt.f_encrypt);
 			if (opt.output_format_kismet_netxml)
@@ -7337,6 +7350,8 @@ int main(int argc, char * argv[])
 	{
 		if (opt.output_format_csv)
 			dump_write_csv(lopt.ap_1st, lopt.st_1st, lopt.f_encrypt);
+		if (opt.output_format_json)
+			dump_write_json(lopt.ap_1st, lopt.st_1st, lopt.f_encrypt);    
 		if (opt.output_format_kismet_csv)
 			dump_write_kismet_csv(lopt.ap_1st, lopt.st_1st, lopt.f_encrypt);
 		if (opt.output_format_kismet_netxml)
@@ -7346,6 +7361,7 @@ int main(int argc, char * argv[])
 									 lopt.airodump_start_time);
 
 		if (opt.output_format_csv && opt.f_txt != NULL) fclose(opt.f_txt);
+		if (opt.output_format_json && opt.f_json != NULL) fclose(opt.f_json);
 		if (opt.output_format_kismet_csv && opt.f_kis != NULL)
 			fclose(opt.f_kis);
 		if (opt.output_format_kismet_netxml && opt.f_kis_xml != NULL)

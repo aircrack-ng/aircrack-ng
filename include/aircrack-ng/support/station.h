@@ -40,7 +40,7 @@
 #ifndef AIRCRACK_NG_STATION_H
 #define AIRCRACK_NG_STATION_H
 
-#define NB_PRB 10 /* size of probed ESSID ring buffer */
+#define NB_PRB 1000 /* size of probed ESSID ring buffer */
 
 #define NB_PWR 5 /* size of signal power ring buffer */
 
