@@ -1,6 +1,3 @@
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 
 #include "ap_compare.h"
 
@@ -20,7 +17,7 @@ struct ap_sort_context_st
 {
     int sort_direction;
     ap_sort_info_st const * sort_method;
-}; 
+};
 
 static int sort_bssid(
     struct AP_info const * const a,

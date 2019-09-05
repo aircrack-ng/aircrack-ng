@@ -1,6 +1,3 @@
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 
 #include "aircrack-ng/defs.h"
 #include "airodump-ng.h"
@@ -45,15 +42,15 @@ static void kismet_dump_write_csv(
 
     TAILQ_FOREACH(ap_cur, ap_list, entry)
     {
-        unsigned long const min_packets = 2; 
+        unsigned long const min_packets = 2;
         bool const check_broadcast = true;
         int const max_age_seconds = -1; /* no limit. */
 
-        if (!ap_should_be_logged(ap_cur, 
-                                 max_age_seconds, 
-                                 f_encrypt, 
-                                 essid_filter, 
-                                 check_broadcast, 
+        if (!ap_should_be_logged(ap_cur,
+                                 max_age_seconds,
+                                 f_encrypt,
+                                 essid_filter,
+                                 check_broadcast,
                                  min_packets))
         {
             continue;

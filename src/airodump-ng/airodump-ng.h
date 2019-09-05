@@ -37,6 +37,10 @@
 #include <sys/termios.h>
 #endif
 
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
 #include "aircrack-ng/defs.h"
 #include "aircrack-ng/third-party/eapol.h"
 #include "aircrack-ng/support/pcap_local.h"

@@ -56,8 +56,6 @@
 #include <linux/genetlink.h>
 #endif // CONFIG_LIBNL
 
-#include "radiotap/radiotap.h"
-#include "radiotap/radiotap_iter.h"
 /* radiotap-parser defines types like u8 that
 		 * ieee80211_radiotap.h needs
 		 *
@@ -67,6 +65,8 @@
 		 * - since linux does not include it in userspace headers
 		 */
 #include "osdep.h"
+#include "radiotap/radiotap.h"
+#include "radiotap/radiotap_iter.h"
 #include "aircrack-ng/support/pcap_local.h"
 #include "crctable_osdep.h"
 #include "common.h"

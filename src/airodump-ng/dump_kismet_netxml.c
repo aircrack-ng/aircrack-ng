@@ -1,6 +1,3 @@
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 
 #include "aircrack-ng/defs.h"
 #include "airodump-ng.h"
