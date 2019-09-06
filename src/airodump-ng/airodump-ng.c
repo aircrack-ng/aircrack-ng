@@ -317,9 +317,6 @@ static struct local_options
 	u_int maxsize_wps_seen;
 	int show_wps;
 
-    char sys_name[256];  /* system name value for wifi scanner custom format */
-    char loc_name[256];  /* location name value for wifi scanner custom format */
-
 #ifdef CONFIG_LIBNL
 	unsigned int htval;
 #endif
@@ -328,9 +325,6 @@ static struct local_options
 	unsigned long min_pkts;
 
 	bool relative_time; /* read PCAP file in psuedo-real-time */
-
-    time_t filter_seconds;
-    int file_reset_seconds;
 
     size_t max_node_age_seconds;
 
@@ -6050,10 +6044,6 @@ static bool open_output_files(struct local_options * const options)
         options->dump[dump_type_csv].context =
 			dump_open(dump_type_csv,
                       filename,
-					  options->sys_name,
-					  options->loc_name,
-					  options->filter_seconds,
-                      options->file_reset_seconds,
                       options->airodump_start_time,
                       options->gpsd.required);
 
@@ -6079,10 +6069,6 @@ static bool open_output_files(struct local_options * const options)
         options->dump[dump_type_kismet_csv].context =
 			dump_open(dump_type_kismet_csv,
                       filename,
-                      options->sys_name,
-                      options->loc_name,
-                      options->filter_seconds,
-                      options->file_reset_seconds,
                       options->airodump_start_time,
                       options->gpsd.required);
 
@@ -6108,43 +6094,10 @@ static bool open_output_files(struct local_options * const options)
         options->dump[dump_type_kismet_netxml].context =
 			dump_open(dump_type_kismet_netxml,
                       filename,
-                      options->sys_name,
-                      options->loc_name,
-                      options->filter_seconds,
-                      options->file_reset_seconds,
                       options->airodump_start_time,
                       options->gpsd.required);
 
         if (options->dump[dump_type_kismet_netxml].context == NULL)
-		{
-            fprintf(stderr, "Could not create \"%s\".\n", filename);
-
-			success = false;
-			goto done;
-		}
-	}
-
-    if (options->dump[dump_type_wifi_scanner].needed)
-	{
-        char const * const filename =
-            create_output_filename(
-                ofn,
-                ofn_len,
-                options->dump_prefix,
-                options->filename.index,
-                WIFI_EXT);
-
-        options->dump[dump_type_wifi_scanner].context =
-			dump_open(dump_type_wifi_scanner,
-                      filename,
-                      options->sys_name,
-                      options->loc_name,
-                      options->filter_seconds,
-                      options->file_reset_seconds,
-                      options->airodump_start_time,
-                      options->gpsd.required);
-
-        if (options->dump[dump_type_wifi_scanner].context == NULL)
 		{
             fprintf(stderr, "Could not create \"%s\".\n", filename);
 
@@ -6659,10 +6612,6 @@ static void options_initialise(struct local_options * const options)
     options->maxsize_wps_seen = 6;
     options->show_wps = 0;
     options->interactive_mode = -1;
-    options->sys_name[0] = '\0';
-    options->loc_name[0] = '\0';
-    options->filter_seconds = ONE_HOUR;
-    options->file_reset_seconds = ONE_MIN;
     options->do_exit = 0;
     options->min_pkts = 2;
     options->relative_time = false;
@@ -6861,7 +6810,6 @@ int main(int argc, char * argv[])
     size_t num_opts = 0;
     int option = 0;
     int option_index = 0;
-    int reset_val = 0;
     int output_format_first_time = 1;
 
     static const struct option long_options[]
@@ -7395,23 +7343,6 @@ int main(int argc, char * argv[])
                 lopt.min_pkts = strtoul(optarg, NULL, 10);
                 break;
 
-            case 'X':
-                strlcpy(lopt.sys_name, optarg, sizeof lopt.sys_name);
-                break;
-
-            case 'y':
-                strlcpy(lopt.loc_name, optarg, sizeof lopt.loc_name);
-                break;
-
-            case 'F':
-                lopt.filter_seconds = strtoul(optarg, NULL, 10);
-                break;
-
-            case 'P':
-                reset_val = strtoul(optarg, NULL, 10);
-                lopt.file_reset_seconds = reset_val * ONE_MIN;
-                break;
-
             case 'v':
                 lopt.max_node_age_seconds = strtoul(optarg, NULL, 10) * ONE_MIN;
                 break;
@@ -7509,10 +7440,6 @@ int main(int argc, char * argv[])
                                  == 0)
                         {
                             lopt.log_csv.required = true;
-                        }
-                        else if (strncasecmp(output_format_string, "wifi_scanner", 12) == 0)
-                        {
-                            lopt.dump[dump_type_wifi_scanner].needed = true;
                         }
                         else if (strncasecmp(output_format_string, "default", 7)
                                  == 0)

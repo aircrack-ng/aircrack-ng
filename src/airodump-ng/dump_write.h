@@ -39,7 +39,6 @@
 typedef enum dump_type_t
 {
     dump_type_csv,
-    dump_type_wifi_scanner,
     dump_type_kismet_csv,
     dump_type_kismet_netxml,
     dump_type_COUNT /* Keep the one at the end. */
@@ -50,10 +49,6 @@ typedef struct dump_context_st dump_context_st;
 struct dump_context_st * dump_open(
     dump_type_t const dump_type,
     char const * const filename,
-    char const * const sys_name,
-    char const * const location_name,
-    time_t const filter_seconds,
-    int const file_reset_seconds,
     char const * const airodump_start_time,
     bool const use_gpsd);
 
@@ -62,7 +57,7 @@ void dump_write(
     struct ap_list_head * const ap_list,
     struct sta_list_head * const sta_list,
     unsigned int const f_encrypt,
-    struct essid_filter_context_st const * const essid_filter); 
+    struct essid_filter_context_st const * const essid_filter);
 
 void dump_close(
     dump_context_st * const dump);
@@ -70,14 +65,14 @@ void dump_close(
 FILE * log_csv_file_open(char const * const filename);
 
 int dump_write_airodump_ng_logcsv_add_ap(
-    FILE * fp, 
+    FILE * fp,
     const struct AP_info * ap_cur,
     const int32_t ri_power,
     struct tm * tm_gpstime,
     float const * const gps_loc);
 
 int dump_write_airodump_ng_logcsv_add_client(
-    FILE * fp, 
+    FILE * fp,
     const struct AP_info * ap_cur,
     const struct ST_info * st_cur,
     const int32_t ri_power,

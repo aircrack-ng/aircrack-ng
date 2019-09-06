@@ -55,7 +55,6 @@
 #include "aircrack-ng/support/communications.h"
 #include "dump_write.h"
 #include "dump_write_private.h"
-#include "dump_write_wifi_scanner.h"
 #include "dump_csv.h"
 #include "dump_kismet_csv.h"
 #include "dump_kismet_netxml.h"
@@ -351,10 +350,6 @@ done:
 struct dump_context_st * dump_open(
     dump_type_t const  dump_type,
     char const * const filename,
-    char const * const sys_name,
-    char const * const location_name,
-    time_t const filter_seconds,
-    int const file_reset_seconds,
     char const * const airodump_start_time,
     bool const use_gpsd)
 {
@@ -369,18 +364,6 @@ struct dump_context_st * dump_open(
 
     switch (dump_type)
     {
-        case dump_type_wifi_scanner:
-            if (!wifi_scanner_dump_open(dump,
-                                        filename,
-                                        sys_name,
-                                        location_name,
-                                        filter_seconds,
-                                        file_reset_seconds))
-            {
-                success = false;
-                goto done;
-            }
-            break;
         case dump_type_csv:
             if (!csv_dump_open(dump,
                                filename))
