@@ -718,8 +718,10 @@ static const char usage[] =
 	"      --manufacturer        : Display manufacturer from IEEE OUI list\n"
 	"      --uptime              : Display AP Uptime from Beacon Timestamp\n"
 	"      --wps                 : Display WPS information (if any)\n"
+#if defined(INCLUDE_UBUS)
     "      -S             <path> : path to UBUS socket\n"
     "      --ubus         <path> : Send UBUS events\n"
+#endif
 	"      --output-format\n"
 	"                  <formats> : Output format. Possible values:\n"
     "                              pcap, ivs, csv, gps, kismet, netxml, wifi_scanner"
@@ -5080,9 +5082,7 @@ done:
     return success;
 }
 
-/* Only called by the channel hopper process. This doesn't use UBUS, so should
- * just delete the uloop FD.
- */
+/* Only called by the channel hopper process. */
 static bool reopen_cards(struct local_options * const options)
 {
     size_t const num_cards = options->num_cards;
