@@ -106,10 +106,6 @@
 #include "ivs_log.h"
 #include "probe_request.h"
 #include "ap_filter.h"
-#if defined(INCLUDE_UBUS)
-#include "ubus.h"
-#include "ubus_event.h"
-#endif
 
 #define DEFAULT_CHANNEL_WIDTH_MHZ 20
 #define ONE_HOUR (60 * 60)
@@ -166,14 +162,6 @@ struct sort_context_st
 };
 
 TAILQ_HEAD(na_list_head, NA_info);
-
-#if defined(INCLUDE_UBUS)
-struct uloop_fd_wrapper_st
-{
-    struct uloop_fd fd;
-    size_t index;
-};
-#endif
 
 struct interface_data_st
 {
@@ -389,29 +377,6 @@ static struct local_options
         int index;
     } filename;
 
-
-#if defined(INCLUDE_UBUS)
-    struct
-    {
-        int do_ubus;
-        char const * path;
-        struct ubus_state_st * state;
-
-        struct uloop_fd signal_fd;
-        struct uloop_fd channel_hopper_fd;
-        struct uloop_fd_wrapper_st interfaces[MAX_CARDS];
-        struct uloop_timeout event_dump;
-
-        struct uloop_fd user_input_fd;
-        struct uloop_timeout pcap;
-        struct uloop_timeout refresh;
-        struct uloop_timeout quit_request;
-        struct uloop_timeout output_dump;
-        struct uloop_timeout generic_refresh;
-        struct uloop_timeout active_scan;
-        struct uloop_timeout half_second;
-    } ubus;
-#endif
 
 } lopt;
 
@@ -718,10 +683,6 @@ static const char usage[] =
 	"      --manufacturer        : Display manufacturer from IEEE OUI list\n"
 	"      --uptime              : Display AP Uptime from Beacon Timestamp\n"
 	"      --wps                 : Display WPS information (if any)\n"
-#if defined(INCLUDE_UBUS)
-    "      -S             <path> : path to UBUS socket\n"
-    "      --ubus         <path> : Send UBUS events\n"
-#endif
 	"      --output-format\n"
 	"                  <formats> : Output format. Possible values:\n"
     "                              pcap, ivs, csv, gps, kismet, netxml, wifi_scanner"
@@ -5031,11 +4992,7 @@ done:
 
 static bool reopen_card(
     struct local_options * const options,
-    size_t interface_index
-#if defined(INCLUDE_UBUS)
-    , bool const add_uloop_fd
-#endif
-    )
+    size_t interface_index)
 {
     bool success;
 	char ifnam[MAX_IFACE_NAME];
@@ -5044,13 +5001,6 @@ static bool reopen_card(
      * card frees all resources associated with the wi.
      */
     strlcpy(ifnam, wi_get_ifname(options->wi[interface_index]), sizeof ifnam);
-
-#if defined(INCLUDE_UBUS)
-    if (options->ubus.do_ubus)
-    {
-        uloop_fd_delete(&options->ubus.interfaces[interface_index].fd);
-    }
-#endif
 
     /* TODO: It might have been nice is there was a wi_reopen() call
      * to deal with the closing, opening and interface name handling.
@@ -5064,17 +5014,6 @@ static bool reopen_card(
         success = false;
         goto done;
     }
-
-#if defined(INCLUDE_UBUS)
-    options->ubus.interfaces[interface_index].fd.fd =
-        wi_fd(options->wi[interface_index]);
-
-    if (options->ubus.do_ubus && add_uloop_fd)
-    {
-        uloop_fd_add(&options->ubus.interfaces[interface_index].fd,
-                     ULOOP_BLOCKING | ULOOP_READ);
-    }
-#endif
 
     success = true;
 
@@ -5090,11 +5029,7 @@ static bool reopen_cards(struct local_options * const options)
 
     for (size_t i = 0; i < num_cards; i++)
     {
-        if (!reopen_card(options, i
-#if defined(INCLUDE_UBUS)
-                         , false
-#endif
-                         ))
+        if (!reopen_card(options, i))
         {
             success = false;
             goto done;
@@ -5170,11 +5105,7 @@ static bool check_for_monitor_mode_on_card(
     }
 
     // reopen in monitor mode
-    success = reopen_card(options, interface_index
-#if defined(INCLUDE_UBUS)
-                          , true
-#endif
-                          );
+    success = reopen_card(options, interface_index);
 
     write_monitor_mode_message(
         options->message,
@@ -5753,12 +5684,6 @@ static void handle_terminate_event(struct local_options * const options)
         fflush(stdout);
     }
 
-#if defined(INCLUDE_UBUS)
-    if (options->ubus.do_ubus)
-    {
-        uloop_end();
-    }
-#endif
     options->do_exit = 1;
 }
 
@@ -5862,96 +5787,14 @@ static void do_half_second_refresh(struct local_options * const options)
     {
         if (!update_interface_cards(options))
         {
-#if defined(INCLUDE_UBUS)
-            if (options->ubus.do_ubus)
-            {
-                uloop_end();
-            }
-#endif
             lopt.do_exit = true;
         }
     }
 }
 
-#if defined(INCLUDE_UBUS)
-
-static void ubus_cancel_quit_request(struct uloop_timeout * timeout)
-{
-    struct local_options * const options =
-        container_of(timeout, struct local_options, ubus.quit_request);
-
-    cancel_quit_request(options);
-}
-
-static void ubus_output_dump(struct uloop_timeout * timeout)
-{
-    struct local_options * const options =
-        container_of(timeout, struct local_options, ubus.output_dump);
-
-    update_dump_output_files(options);
-
-    uloop_timeout_set(timeout, options->file_write_interval * 1000);
-}
-
-static void ubus_event_dump(struct uloop_timeout * timeout)
-{
-    struct local_options * const options =
-        container_of(timeout, struct local_options, ubus.event_dump);
-
-    ubus_send_nodes_event(options->ubus.state,
-                          &options->ap_list,
-                          &options->sta_list);
-
-    uloop_timeout_set(timeout, options->filter_seconds * 1000);
-}
-
-static void ubus_generic_refresh(struct uloop_timeout * timeout)
-{
-    struct local_options * const options =
-        container_of(timeout, struct local_options, ubus.generic_refresh);
-
-    do_generic_update(options, time(NULL));
-
-    uloop_timeout_set(timeout, generic_update_interval_seconds * 1000);
-}
-
-static void ubus_active_scan(struct uloop_timeout * timeout)
-{
-    struct local_options * const options =
-        container_of(timeout, struct local_options, ubus.active_scan);
-
-    do_probe_requests(options);
-
-    uloop_timeout_set(timeout, options->active_scan_sim * 1000);
-}
-
-static void ubus_half_second(struct uloop_timeout * timeout)
-{
-    struct local_options * const options =
-        container_of(timeout, struct local_options, ubus.half_second);
-
-    do_half_second_refresh(options);
-
-    uloop_timeout_set(timeout, half_second_interval_milliseconds);
-}
-#endif
-
 static void start_quit_request_cancel_timer(struct local_options * const options)
 {
-#if defined(INCLUDE_UBUS)
-    if (options->ubus.do_ubus)
-    {
-        static int const timeout_millisecs =
-            maximum_quit_event_interval_seconds * 1000;
-
-        options->ubus.quit_request.cb = ubus_cancel_quit_request;
-        uloop_timeout_set(&options->ubus.quit_request, timeout_millisecs);
-    }
-    else
-#endif
-    {
-        options->quitting_event_ts = time(NULL);
-    }
+    options->quitting_event_ts = time(NULL);
 }
 
 static void handle_input_key(
@@ -5963,12 +5806,6 @@ static void handle_input_key(
         options->quitting++;
         if (options->quitting > 1)
         {
-#if defined(INCLUDE_UBUS)
-            if (options->ubus.do_ubus)
-            {
-                uloop_end();
-            }
-#endif
             options->do_exit = 1;
         }
         else
@@ -6565,11 +6402,7 @@ static bool handle_ready_wi_interface(
                  "interface %s down ",
                  wi_get_ifname(*wi));
 
-        if (!reopen_card(options, interface_index
-#if defined(INCLUDE_UBUS)
-                         , true
-#endif
-                         ))
+        if (!reopen_card(options, interface_index))
         {
             success = false;
             goto done;
@@ -6855,124 +6688,11 @@ static void options_initialise(struct local_options * const options)
         interface_data->current_channel = channel_sentinel;
         interface_data->current_frequency = frequency_sentinel;
         interface_data->consecutive_read_errors = 0;
-
-#if defined(INCLUDE_UBUS)
-        options->ubus.interfaces[i].index = i;
-#endif
     }
 
     MAC_ADDRESS_CLEAR(&options->f_bssid);
     MAC_ADDRESS_CLEAR(&options->f_netmask);
-
-#if defined(INCLUDE_UBUS)
-    options->ubus.do_ubus = false;
-    options->ubus.path = NULL;
-    options->ubus.state = NULL;
-#endif
 }
-
-#if defined(INCLUDE_UBUS)
-static void ubus_refresh_cb(struct uloop_timeout * timeout)
-{
-    struct local_options * const options =
-        container_of(timeout, struct local_options, ubus.refresh);
-
-    do_refresh(options);
-
-    uloop_timeout_set(timeout, REFRESH_RATE / 1000);
-}
-
-static void ubus_user_input_fd(struct uloop_fd * fd, unsigned int events)
-{
-    (void)events;
-    struct local_options * const options =
-        container_of(fd, struct local_options, ubus.user_input_fd);
-
-    if (fd->eof || fd->error)
-    {
-        options->do_exit = true;
-        goto done;
-    }
-
-    check_for_user_input(options);
-
-done:
-    return;
-}
-
-static void ubus_signal_fd(struct uloop_fd * fd, unsigned int events)
-{
-    (void)events;
-    struct local_options * const options =
-        container_of(fd, struct local_options, ubus.signal_fd);
-
-    if (fd->eof || fd->error)
-    {
-        options->do_exit = true;
-        goto done;
-    }
-
-    check_for_signal_events(options);
-
-done:
-    return;
-}
-
-static void ubus_channel_hopper_fd(struct uloop_fd * fd, unsigned int events)
-{
-    (void)events;
-    struct local_options * const options =
-        container_of(fd, struct local_options, ubus.channel_hopper_fd);
-
-    if (fd->eof || fd->error)
-    {
-        options->do_exit = true;
-        goto done;
-    }
-
-    check_for_channel_hopper_data(options);
-
-done:
-    return;
-}
-
-static void ubus_pcap_reader(struct uloop_timeout * timeout)
-{
-    struct local_options * const options =
-        container_of(timeout, struct local_options, ubus.pcap);
-    uint8_t h80211[4096];
-
-    read_one_packet_from_file(options, h80211, sizeof h80211);
-
-    if (options->pcap_reader_context != NULL)
-    {
-        uloop_timeout_set(timeout, 10);
-    }
-}
-
-static void ubus_card_reader(struct uloop_fd * fd, unsigned int events)
-{
-    (void)events;
-    struct uloop_fd_wrapper_st * const wrapper =
-        container_of(fd, struct uloop_fd_wrapper_st, fd);
-    struct local_options * const options =
-        container_of(wrapper, struct local_options, ubus.interfaces[wrapper->index]);
-    uint8_t h80211[4096];
-
-    /* Read a packet from each interface/card. */
-    int result =
-        capture_packet_from_cards(
-            &lopt,
-            h80211,
-            sizeof h80211);
-
-    if (result < 0)
-    {
-        uloop_end();
-        options->do_exit = true;
-    }
-}
-#endif
 
 static bool main_loop_run(struct local_options * const options)
 {
@@ -7169,10 +6889,6 @@ int main(int argc, char * argv[])
         {"no-decloak", 0, 0, 'D'},
         {"showack", 0, 0, 'A'},
         {"detect-anomaly", 0, 0, 'E'},
-#if defined(INCLUDE_UBUS)
-        {"ubus", 0, &lopt.ubus.do_ubus, 1 },
-        {"ubus-path", 1, 0, 'S' },
-#endif
         {"output-format", 1, 0, 'o'},
         {"sys-name", 1, 0, 'X'},
         {"loc-name", 1, 0, 'y'},
@@ -7274,12 +6990,6 @@ int main(int argc, char * argv[])
             case 0:
 
                 break;
-
-#if defined(INCLUDE_UBUS)
-            case 'S':
-                lopt.ubus.path = optarg;
-                break;
-#endif
 
             case ':':
 
@@ -8046,13 +7756,6 @@ int main(int argc, char * argv[])
 		}
     }
 
-#if defined(INCLUDE_UBUS)
-    if (lopt.ubus.do_ubus)
-    {
-        uloop_init();
-    }
-#endif
-
     signal_event_initialise(lopt.signal_event_pipe, lopt.interactive_mode);
 
     /* Start the GPS tracker if requested. */
@@ -8102,87 +7805,7 @@ int main(int argc, char * argv[])
         }
     }
 
-#if defined(INCLUDE_UBUS)
-    if (lopt.ubus.do_ubus)
-    {
-        lopt.ubus.state = ubus_initialise(lopt.ubus.path);
-        if (lopt.ubus.state == NULL)
-        {
-            perror("failed to initialise UBUS");
-            program_exit_code = EXIT_FAILURE;
-            goto done;
-        }
-        lopt.ubus.refresh.cb = ubus_refresh_cb;
-        uloop_timeout_set(&lopt.ubus.refresh, REFRESH_RATE / 1000);
-
-        lopt.ubus.output_dump.cb = ubus_output_dump;
-        uloop_timeout_set(&lopt.ubus.output_dump, lopt.file_write_interval * 1000);
-
-        lopt.ubus.event_dump.cb = ubus_event_dump;
-        uloop_timeout_set(&lopt.ubus.event_dump, lopt.filter_seconds * 1000);
-
-        lopt.ubus.generic_refresh.cb = ubus_generic_refresh;
-        uloop_timeout_set(&lopt.ubus.generic_refresh, generic_update_interval_seconds * 1000);
-
-        if (lopt.active_scan_sim > 0)
-        {
-            lopt.ubus.active_scan.cb = ubus_active_scan;
-            uloop_timeout_set(&lopt.ubus.active_scan, lopt.active_scan_sim * 1000);
-        }
-
-        lopt.ubus.half_second.cb = ubus_half_second;
-        uloop_timeout_set(&lopt.ubus.half_second, half_second_interval_milliseconds);
-
-        if (lopt.interactive_mode)
-        {
-            memset(&lopt.ubus.user_input_fd, 0, sizeof lopt.ubus.user_input_fd);
-            lopt.ubus.user_input_fd.cb = ubus_user_input_fd;
-            lopt.ubus.user_input_fd.fd = lopt.input_thread_pipe[0];
-            uloop_fd_add(&lopt.ubus.user_input_fd, ULOOP_BLOCKING | ULOOP_READ);
-        }
-
-        memset(&lopt.ubus.signal_fd, 0, sizeof lopt.ubus.signal_fd);
-        lopt.ubus.signal_fd.cb = ubus_signal_fd;
-        lopt.ubus.signal_fd.fd = lopt.signal_event_pipe[0];
-        uloop_fd_add(&lopt.ubus.signal_fd, ULOOP_BLOCKING | ULOOP_READ);
-
-        memset(&lopt.ubus.channel_hopper_fd, 0, sizeof lopt.ubus.channel_hopper_fd);
-        lopt.ubus.channel_hopper_fd.cb = ubus_channel_hopper_fd;
-        lopt.ubus.channel_hopper_fd.fd = lopt.channel_hopper_pipe[0];
-        uloop_fd_add(&lopt.ubus.channel_hopper_fd, ULOOP_BLOCKING | ULOOP_READ);
-
-        int const pcap_fd_handle = pcap_fd(lopt.pcap_reader_context);
-        fprintf(stderr, "pcap handle %d\n", pcap_fd_handle);
-        if (pcap_fd_handle >= 0)
-        {
-            memset(&lopt.ubus.pcap, 0, sizeof lopt.ubus.pcap);
-            lopt.ubus.pcap.cb = ubus_pcap_reader;
-            uloop_timeout_set(&lopt.ubus.pcap, 10);
-        }
-        else if (lopt.s_iface != NULL)
-        {
-            for (size_t i = 0;  i < MAX_CARDS; i++)
-            {
-                if (lopt.wi[i] != NULL)
-                {
-                    memset(&lopt.ubus.interfaces[i].fd, 0, sizeof lopt.ubus.interfaces[i].fd);
-                    lopt.ubus.interfaces[i].fd.cb = ubus_card_reader;
-                    lopt.ubus.interfaces[i].fd.fd = wi_fd(lopt.wi[i]);
-                    uloop_fd_add(&lopt.ubus.interfaces[i].fd, ULOOP_BLOCKING | ULOOP_READ);
-                }
-            }
-        }
-
-        uloop_run();
-        ubus_done(lopt.ubus.state);
-        uloop_done();
-        lopt.do_exit = true;
-    }
-    else
-#endif
-    {
-        had_error = main_loop_run(&lopt);
-    }
+    had_error = main_loop_run(&lopt);
 
 	airodump_shutdown(&lopt);
 
