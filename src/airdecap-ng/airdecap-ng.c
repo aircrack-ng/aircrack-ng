@@ -77,6 +77,9 @@ static const char usage[] =
 	"      -k <pmk>   : WPA Pairwise Master Key in hex\n"
 	"\n"
 	"      --help     : Displays this usage screen\n"
+	"\n"
+	"  If your capture contains any WDS packet, you must specify the -b\n"
+	"  option (otherwise only packets destined to the AP will be decrypted)\n"
 	"\n";
 
 static struct decap_stats
@@ -109,6 +112,7 @@ static struct options
 
 static unsigned char buffer[65536];
 static unsigned char buffer2[65536];
+static bool wds = false;
 
 /* this routine handles to 802.11 to Ethernet translation */
 
@@ -777,8 +781,25 @@ int main(int argc, char * argv[])
 				memcpy(bssid, h80211 + 10, sizeof(bssid));
 				break; // FromDS
 			case 3:
-				memcpy(bssid, h80211 + 10, sizeof(bssid));
-				break; // WDS -> Transmitter taken as BSSID
+				wds = true;
+				if (memcmp(opt.bssid, ZERO, 6))
+				{
+					/* BSSID has been specified */
+					if (memcmp(opt.bssid, h80211 + 4, 6))
+						if (memcmp(opt.bssid, h80211 + 10, 6))
+							/* BSSID doesn't match either RA nor TA */
+							continue;
+						else
+							/* BSSID is equal to TA */
+							memcpy(bssid, h80211 + 10, sizeof(bssid));
+					else
+						/* BSSID is equal to RA */
+						memcpy(bssid, h80211 + 4, sizeof(bssid));
+				}
+				else
+					/* BSSID has not been specified, set BSSID from TA*/
+					memcpy(bssid, h80211 + 10, sizeof(bssid));
+				break; // WDS
 		}
 
 		if (memcmp(opt.bssid, ZERO, 6) != 0)
@@ -795,8 +816,17 @@ int main(int argc, char * argv[])
 				memcpy(stmac, h80211 + 4, sizeof(stmac));
 				break;
 			case 3:
-				memcpy(stmac, h80211 + 10, sizeof(stmac));
-				break;
+				if (memcmp(opt.bssid, ZERO, 6))
+				{
+					/* BSSID has been specified */
+					if (memcmp(bssid, h80211 + 4, 6))
+						/* BSSID is not RA, STA must be RA */
+						memcpy(stmac, h80211 + 4, sizeof(stmac));
+				}
+				else
+					/* BSSID is RA or not specified, set STA from TA */
+					memcpy(stmac, h80211 + 10, sizeof(stmac));
+				break; // WDS
 			default:
 				continue;
 		}
@@ -1096,6 +1126,8 @@ int main(int argc, char * argv[])
 		   stats.nb_unwpa,
 		   stats.nb_failed_tkip,
 		   stats.nb_failed_ccmp);
+	if ( !memcmp(opt.bssid, ZERO, 6)  && wds )
+		printf("Warning: WDS packets detected, but no BSSID specified\n");
 
 	return (EXIT_SUCCESS);
 }
