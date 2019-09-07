@@ -251,4 +251,28 @@ EXTRA_DIST +=	%D%/wpaclean/wpaclean.c \
 							%D%/aircrack-ng/session.c \
 							%D%/aircrack-ng/session.h \
 							%D%/airodump-ng/dump_write.h \
-							%D%/airodump-ng/dump_write.c
+							%D%/airodump-ng/dump_write_private.h \
+							%D%/airodump-ng/dump_csv.h \
+							%D%/airodump-ng/dump_kismet_csv.h \
+							%D%/airodump-ng/dump_kismet_netxml.h \
+							%D%/airodump-ng/dump_write.c \
+							%D%/airodump-ng/ap_filter.h \
+							%D%/airodump-ng/essid_filter.h \
+							%D%/airodump-ng/probe_request.h \
+							%D%/airodump-ng/ivs_log.h \
+							%D%/airodump-ng/terminal.h \
+							%D%/airodump-ng/utils.h \
+							%D%/airodump-ng/ap_list.h \
+							%D%/airodump-ng/strlcpy.h \
+							%D%/airodump-ng/pcap_reader.h \
+							%D%/airodump-ng/oui.h \
+							%D%/airodump-ng/get_string_time_from_seconds.h \
+							%D%/airodump-ng/gps_tracker.h \
+							%D%/airodump-ng/gps.h \
+							%D%/airodump-ng/ap_compare.h \
+							%D%/airodump-ng/channel_hopper.h \
+							%D%/airodump-ng/packet_writer.h \
+							%D%/airodump-ng/packet_writer_private.h \
+							%D%/airodump-ng/packet_writer_pcap.h \
+							%D%/airodump-ng/battery.h
+

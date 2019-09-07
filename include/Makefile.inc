@@ -70,6 +70,10 @@ nobase_aircrack_HEADERS = 	%D%/aircrack-ng/adt/avl_tree.h \
                             %D%/aircrack-ng/osdep/common.h \
                             %D%/aircrack-ng/osdep/network.h \
                             %D%/aircrack-ng/osdep/osdep.h \
+                            %D%/aircrack-ng/osdep/mac_header.h \
+                            %D%/aircrack-ng/osdep/queue.h \
+                            %D%/aircrack-ng/osdep/pkt_list.h \
+                            %D%/aircrack-ng/osdep/sta_list.h \
                             %D%/aircrack-ng/osdep/packed.h \
                             %D%/aircrack-ng/ptw/aircrack-ptw-lib.h \
                             %D%/aircrack-ng/support/common.h \
