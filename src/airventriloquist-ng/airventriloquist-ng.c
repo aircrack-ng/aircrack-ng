@@ -881,8 +881,7 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 			// frame 1 of 4: Pairwise == 1, Install == 0, Ack == 1, MIC == 0,
 			// Secure == 0 */
 			if (1 == p_rhdr->key_type && 0 == p_rhdr->key_install
-				&& 1 == p_rhdr->key_ack
-				&& 0 == p_rhdr->key_mic)
+				&& 1 == p_rhdr->key_ack && 0 == p_rhdr->key_mic)
 			{
 				/* set authenticator nonce */
 				memcpy(lopt.st_cur->anonce, p_rhdr->wpa_nonce, 32);
@@ -895,8 +894,7 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 			/* frame 4 of 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1,
 			 * Secure == 1 */
 			if (1 == p_rhdr->key_type && 0 == p_rhdr->key_install
-				&& 0 == p_rhdr->key_ack
-				&& 1 == p_rhdr->key_mic)
+				&& 0 == p_rhdr->key_ack && 1 == p_rhdr->key_mic)
 			{
 				if (memcmp(p_rhdr->wpa_nonce, ZERO, 32) != 0)
 				{
@@ -938,8 +936,7 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 			/* frame 3 of 4: Pairwise == 1, Install == 1, Ack == 1, MIC == 1,
 			 * Secure == 1 */
 			if (1 == p_rhdr->key_type && 1 == p_rhdr->key_install
-				&& 1 == p_rhdr->key_ack
-				&& 1 == p_rhdr->key_mic)
+				&& 1 == p_rhdr->key_ack && 1 == p_rhdr->key_mic)
 			{
 				if (memcmp(p_rhdr->wpa_nonce, ZERO, 32) != 0)
 				{
@@ -1733,9 +1730,9 @@ static int do_active_injection(void)
 			   NULL,
 			   0,
 			   0,
-			   (uint8_t *)&opt.f_bssid,
+			   (uint8_t *) &opt.f_bssid,
 			   opt.r_bssid,
-			   (uint8_t *)opt.r_essid,
+			   (uint8_t *) opt.r_essid,
 			   opt.ignore_negative_one,
 			   0 /* nodetect */)
 		!= 0)

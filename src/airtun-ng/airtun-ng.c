@@ -213,11 +213,12 @@ static void swap_ra_ta(unsigned char * h80211)
 {
 	REQUIRE(h80211 != NULL);
 
-    mac_address temp;
+	mac_address temp;
 
-    MAC_ADDRESS_COPY(&temp, (mac_address *)(h80211 + 4));
-    MAC_ADDRESS_COPY((mac_address *)(h80211 + 4), (mac_address *)(h80211 + 10));
-    MAC_ADDRESS_COPY((mac_address *)(h80211 + 10), &temp);
+	MAC_ADDRESS_COPY(&temp, (mac_address *) (h80211 + 4));
+	MAC_ADDRESS_COPY((mac_address *) (h80211 + 4),
+					 (mac_address *) (h80211 + 10));
+	MAC_ADDRESS_COPY((mac_address *) (h80211 + 10), &temp);
 }
 
 static int is_filtered_netmask(mac_address const * const bssid)
@@ -723,8 +724,7 @@ static int packet_recv(unsigned char * packet, size_t length)
 			/* frame 1: Pairwise == 1, Install == 0, Ack == 1, MIC == 0 */
 
 			if ((packet[z + 6] & 0x08) != 0 && (packet[z + 6] & 0x40) == 0
-				&& (packet[z + 6] & 0x80) != 0
-				&& (packet[z + 5] & 0x01) == 0)
+				&& (packet[z + 6] & 0x80) != 0 && (packet[z + 5] & 0x01) == 0)
 			{
 				/* set authenticator nonce */
 
@@ -734,8 +734,7 @@ static int packet_recv(unsigned char * packet, size_t length)
 			/* frame 2 or 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1 */
 
 			if ((packet[z + 6] & 0x08) != 0 && (packet[z + 6] & 0x40) == 0
-				&& (packet[z + 6] & 0x80) == 0
-				&& (packet[z + 5] & 0x01) != 0)
+				&& (packet[z + 6] & 0x80) == 0 && (packet[z + 5] & 0x01) != 0)
 			{
 				if (memcmp(&packet[z + 17], ZERO, 32) != 0)
 				{
@@ -768,8 +767,7 @@ static int packet_recv(unsigned char * packet, size_t length)
 			/* frame 3: Pairwise == 1, Install == 1, Ack == 1, MIC == 1 */
 
 			if ((packet[z + 6] & 0x08) != 0 && (packet[z + 6] & 0x40) != 0
-				&& (packet[z + 6] & 0x80) != 0
-				&& (packet[z + 5] & 0x01) != 0)
+				&& (packet[z + 6] & 0x80) != 0 && (packet[z + 5] & 0x01) != 0)
 			{
 				if (memcmp(&packet[z + 17], ZERO, 32) != 0)
 				{
@@ -1128,7 +1126,7 @@ int main(int argc, char * argv[])
 					printf("\"%s --help\" for help.\n", argv[0]);
 					break;
 				}
-				if (getmac(optarg, 1, (uint8_t *)&opt.f_netmask) != 0)
+				if (getmac(optarg, 1, (uint8_t *) &opt.f_netmask) != 0)
 				{
 					printf("Notice: invalid netmask\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
@@ -1142,7 +1140,7 @@ int main(int argc, char * argv[])
 					printf("\"%s --help\" for help.\n", argv[0]);
 					break;
 				}
-				if (getmac(optarg, 1, (uint8_t *)&opt.f_bssid) != 0)
+				if (getmac(optarg, 1, (uint8_t *) &opt.f_bssid) != 0)
 				{
 					printf("Notice: invalid bssid\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
@@ -1242,7 +1240,7 @@ int main(int argc, char * argv[])
 
 	dev.fd_rtc = -1;
 
-/* open the RTC device if necessary */
+	/* open the RTC device if necessary */
 
 #if defined(__i386__)
 #if defined(linux)
@@ -1523,14 +1521,15 @@ int main(int argc, char * argv[])
 					}
 					if (!MAC_ADDRESS_IS_EMPTY(&opt.f_netmask))
 					{
-						if (is_filtered_netmask((mac_address *)bssid))
+						if (is_filtered_netmask((mac_address *) bssid))
 						{
 							continue;
 						}
 					}
 					else
 					{
-						if (!MAC_ADDRESS_EQUAL(&opt.f_bssid, (mac_address *)bssid))
+						if (!MAC_ADDRESS_EQUAL(&opt.f_bssid,
+											   (mac_address *) bssid))
 						{
 							continue;
 						}

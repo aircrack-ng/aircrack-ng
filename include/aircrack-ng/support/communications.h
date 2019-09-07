@@ -311,8 +311,7 @@ static inline int send_packet(struct wif * wi,
 	uint8_t * pkt = (uint8_t *) buf;
 
 	if ((option & kRewriteSequenceNumber) != 0 && (count > 24)
-		&& (pkt[1] & 0x04) == 0
-		&& (pkt[22] & 0x0F) == 0)
+		&& (pkt[1] & 0x04) == 0 && (pkt[22] & 0x0F) == 0)
 	{
 		pkt[22] = (uint8_t)((nb_pkt_sent & 0x0000000F) << 4);
 		pkt[23] = (uint8_t)((nb_pkt_sent & 0x00000FF0) >> 4);
@@ -364,13 +363,12 @@ int filter_packet(unsigned char * h80211, int caplen);
 int dump_initialize(char * prefix);
 int dump_initialize_multi_format(char * prefix);
 
-int check_shared_key(
-    struct shared_key_context_st * shared_key,
-	const uint8_t * h80211, 
-	size_t caplen, 
-	char const * const prefix, 
-	int const f_index,
-    bool const quiet);
+int check_shared_key(struct shared_key_context_st * shared_key,
+					 const uint8_t * h80211,
+					 size_t caplen,
+					 char const * const prefix,
+					 int const f_index,
+					 bool const quiet);
 
 int encrypt_data(uint8_t * data, size_t length);
 
@@ -385,6 +383,5 @@ int read_prga(unsigned char ** dest, char * file);
 int set_bitrate(struct wif * wi, int rate);
 
 int find_first_free_file_index(char const * const prefix);
-
 
 #endif //AIRCRACK_NG_COMMUNICATIONS_H

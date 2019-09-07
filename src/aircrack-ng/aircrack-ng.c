@@ -115,9 +115,7 @@ static char * db = NULL; ///-V707
 static volatile int wpa_cracked = 0;
 static int _pmkid_16800 = 0;
 static uint8_t _pmkid_16800_str[H16800_PMKID_LEN + H16800_BSSID_LEN
-								+ H16800_STMAC_LEN
-								+ MAX_PASSPHRASE_LENGTH
-								+ 3];
+								+ H16800_STMAC_LEN + MAX_PASSPHRASE_LENGTH + 3];
 static int _speed_test;
 static long _speed_test_length = 15;
 static struct timeval t_begin; /* time at start of attack      */
@@ -1381,7 +1379,7 @@ static int packet_reader__update_ap_info(struct AP_info * ap_cur,
 		}
 		memset(st_cur, 0, sizeof(struct ST_info));
 
-		MAC_ADDRESS_COPY(&st_cur->stmac, (mac_address *)stmac);
+		MAC_ADDRESS_COPY(&st_cur->stmac, (mac_address *) stmac);
 		c_avl_insert(ap_cur->stations, &st_cur->stmac, st_cur);
 	}
 
@@ -1559,8 +1557,7 @@ skip_station:
 	/* frame 1: Pairwise == 1, Install == 0, Ack == 1, MIC == 0 */
 
 	if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
-		&& (h80211[z + 6] & 0x80) != 0
-		&& (h80211[z + 5] & 0x01) == 0)
+		&& (h80211[z + 6] & 0x80) != 0 && (h80211[z + 5] & 0x01) == 0)
 	{
 		memcpy(st_cur->wpa.anonce, &h80211[z + 17], sizeof(st_cur->wpa.anonce));
 
@@ -1591,8 +1588,7 @@ skip_station:
 	/* frame 2 or 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1 */
 
 	if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
-		&& (h80211[z + 6] & 0x80) == 0
-		&& (h80211[z + 5] & 0x01) != 0
+		&& (h80211[z + 6] & 0x80) == 0 && (h80211[z + 5] & 0x01) != 0
 		&& st_cur->wpa.replay == replay_counter)
 	{
 		if (memcmp(&h80211[z + 17], ZERO, sizeof(st_cur->wpa.snonce)) != 0)
@@ -1658,8 +1654,7 @@ skip_station:
 	/* frame 3: Pairwise == 1, Install == 1, Ack == 1, MIC == 1 */
 
 	if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) != 0
-		&& (h80211[z + 6] & 0x80) != 0
-		&& (h80211[z + 5] & 0x01) != 0
+		&& (h80211[z + 6] & 0x80) != 0 && (h80211[z + 5] & 0x01) != 0
 		&& st_cur->wpa.replay == replay_counter)
 	{
 		st_cur->wpa.found |= 1 << 3;
@@ -1710,7 +1705,7 @@ skip_station:
 		|| (st_cur->wpa.state > 0 && st_cur->wpa.pmkid[0] != 0x00))
 	{
 		/* got one valid handshake */
-		MAC_ADDRESS_COPY(&st_cur->wpa.stmac, (mac_address *)stmac);
+		MAC_ADDRESS_COPY(&st_cur->wpa.stmac, (mac_address *) stmac);
 		memcpy(&ap_cur->wpa, &st_cur->wpa, sizeof(struct WPA_hdsk));
 	}
 
@@ -1853,7 +1848,7 @@ static int packet_reader_process_packet(packet_reader_t * me,
 		}
 
 		memset((*ap_cur), 0, sizeof(struct AP_info));
-		MAC_ADDRESS_COPY(&(*ap_cur)->bssid, (mac_address *)bssid);
+		MAC_ADDRESS_COPY(&(*ap_cur)->bssid, (mac_address *) bssid);
 
 		(*ap_cur)->crypt = -1;
 
@@ -3949,8 +3944,8 @@ static int crack_wpa_thread(void * arg)
 #endif
 
 	dso_ac_crypto_engine_calc_pke(&engine,
-								  (uint8_t *)&ap->bssid,
-								  (uint8_t *)&ap->wpa.stmac,
+								  (uint8_t *) &ap->bssid,
+								  (uint8_t *) &ap->wpa.stmac,
 								  ap->wpa.anonce,
 								  ap->wpa.snonce,
 								  threadid);
@@ -3975,8 +3970,7 @@ static int crack_wpa_thread(void * arg)
 
 				// Do we see our HAZARD value?
 				if (our_key[0] == 0xff && our_key[1] == 0xff
-					&& our_key[2] == 0xff
-					&& our_key[3] == 0xff)
+					&& our_key[2] == 0xff && our_key[3] == 0xff)
 				{
 					done = true; // Yes!
 					break; // Exit for loop; process remaining.
@@ -4064,7 +4058,7 @@ static int crack_wpa_pmkid_thread(void * arg)
 	dso_ac_crypto_engine_thread_init(&engine, threadid);
 
 	dso_ac_crypto_engine_set_pmkid_salt(
-		&engine, (uint8_t *)&ap->bssid, (uint8_t *)&ap->wpa.stmac, threadid);
+		&engine, (uint8_t *) &ap->bssid, (uint8_t *) &ap->wpa.stmac, threadid);
 
 #ifdef XDEBUG
 	printf("Thread # %d starting...\n", threadid);
@@ -4086,8 +4080,7 @@ static int crack_wpa_pmkid_thread(void * arg)
 
 				// Do we see our HAZARD value?
 				if (our_key[0] == 0xff && our_key[1] == 0xff
-					&& our_key[2] == 0xff
-					&& our_key[3] == 0xff)
+					&& our_key[2] == 0xff && our_key[3] == 0xff)
 				{
 					done = true; // Yes!
 					break; // Exit for loop; process remaining.
@@ -4439,16 +4432,16 @@ static int do_make_wkp(struct AP_info * ap_cur)
 	memcpy(&frametmp[0x4c0], ap_cur->essid, sizeof(ap_cur->essid));
 
 	// BSSID
-	MAC_ADDRESS_COPY((mac_address *)&frametmp[0x514], &ap_cur->bssid);
+	MAC_ADDRESS_COPY((mac_address *) &frametmp[0x514], &ap_cur->bssid);
 
 	// Station Mac
-	MAC_ADDRESS_COPY((mac_address *)&frametmp[0x51a], &ap_cur->wpa.stmac);
+	MAC_ADDRESS_COPY((mac_address *) &frametmp[0x51a], &ap_cur->wpa.stmac);
 
 	// ESSID
 	memcpy(&frametmp[0x520], ap_cur->essid, sizeof(ap_cur->essid));
 
 	// ESSID length
-	frametmp[0x540] = (uint8_t)ustrlen(ap_cur->essid);
+	frametmp[0x540] = (uint8_t) ustrlen(ap_cur->essid);
 
 	// WPA Key version
 	frametmp[0x544] = ap_cur->wpa.keyver;
@@ -4500,8 +4493,8 @@ static hccap_t ap_to_hccap(struct AP_info * ap)
 	ap->crypt = 3;
 
 	memcpy(&hccap.essid, &ap->essid, sizeof(ap->essid));
-	MAC_ADDRESS_COPY((mac_address *)hccap.mac1, &ap->bssid);
-	MAC_ADDRESS_COPY((mac_address *)hccap.mac2, &ap->wpa.stmac);
+	MAC_ADDRESS_COPY((mac_address *) hccap.mac1, &ap->bssid);
+	MAC_ADDRESS_COPY((mac_address *) hccap.mac2, &ap->wpa.stmac);
 	memcpy(&hccap.nonce1, &ap->wpa.snonce, sizeof(ap->wpa.snonce));
 	memcpy(&hccap.nonce2, &ap->wpa.anonce, sizeof(ap->wpa.anonce));
 	memcpy(&hccap.eapol, &ap->wpa.eapol, sizeof(ap->wpa.eapol));
@@ -4593,8 +4586,8 @@ struct AP_info * hccapx_to_ap(struct hccapx * hx)
 	memcpy(&ap->essid, //-V512
 		   &hx->essid,
 		   MIN(sizeof(hx->essid), sizeof(ap->essid)));
-	MAC_ADDRESS_COPY(&ap->bssid, (mac_address *)hx->mac_ap);
-	MAC_ADDRESS_COPY(&ap->wpa.stmac, (mac_address *)hx->mac_sta);
+	MAC_ADDRESS_COPY(&ap->bssid, (mac_address *) hx->mac_ap);
+	MAC_ADDRESS_COPY(&ap->wpa.stmac, (mac_address *) hx->mac_sta);
 	memcpy(&ap->wpa.snonce, &hx->nonce_sta, sizeof(hx->nonce_sta));
 	memcpy(&ap->wpa.anonce, &hx->nonce_ap, sizeof(hx->nonce_ap));
 	memcpy(&ap->wpa.eapol, &hx->eapol, sizeof(hx->eapol));
@@ -4667,8 +4660,8 @@ static hccapx_t ap_to_hccapx(struct AP_info * ap)
 	memcpy(&hx.essid_len, &ssid_len, sizeof(ssid_len));
 
 	memcpy(&hx.essid, &ap->essid, sizeof(hx.essid)); //-V512
-	MAC_ADDRESS_COPY((mac_address *)hx.mac_ap, &ap->bssid);
-	MAC_ADDRESS_COPY((mac_address *)hx.mac_sta, &ap->wpa.stmac);
+	MAC_ADDRESS_COPY((mac_address *) hx.mac_ap, &ap->bssid);
+	MAC_ADDRESS_COPY((mac_address *) hx.mac_sta, &ap->wpa.stmac);
 	memcpy(&hx.keyver, &ap->wpa.keyver, sizeof(ap->wpa.keyver));
 	memcpy(&hx.keymic, &ap->wpa.keymic, sizeof(ap->wpa.keymic));
 	memcpy(&hx.nonce_sta, &ap->wpa.snonce, sizeof(ap->wpa.snonce));
@@ -5835,8 +5828,9 @@ int main(int argc, char * argv[])
 	}
 
 	// Check if we are restoring from a session
-	if (nbarg == 3 && (strcmp(argv[1], "--restore-session") == 0
-					   || strcmp(argv[1], "-R") == 0))
+	if (nbarg == 3
+		&& (strcmp(argv[1], "--restore-session") == 0
+			|| strcmp(argv[1], "-R") == 0))
 	{
 		cracking_session = ac_session_load(argv[2]);
 		if (cracking_session == NULL)
@@ -5917,8 +5911,7 @@ int main(int argc, char * argv[])
 				break;
 			case 'R':
 				// Restore and continue session
-				fprintf(stderr,
-						"This option must be used alone!\n");
+				fprintf(stderr, "This option must be used alone!\n");
 				return (EXIT_FAILURE);
 
 			case 'W':
@@ -6155,8 +6148,7 @@ int main(int argc, char * argv[])
 
 				opt.keylen = (int) strtol(optarg, NULL, 10);
 				if (opt.keylen != 64 && opt.keylen != 128 && opt.keylen != 152
-					&& opt.keylen != 256
-					&& opt.keylen != 512)
+					&& opt.keylen != 256 && opt.keylen != 512)
 				{
 					printf("Invalid WEP key length. [64,128,152,256,512]\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
@@ -6420,8 +6412,8 @@ int main(int argc, char * argv[])
 		ap_cur->target = 1;
 		ap_cur->wpa.state = 7;
 		ap_cur->wpa.keyver = (uint8_t)(opt.amode & 0xFF);
-		strcpy((char *)ap_cur->essid, "sorbo");
-		strcpy((char *)&ap_cur->bssid, "deadb");
+		strcpy((char *) ap_cur->essid, "sorbo");
+		strcpy((char *) &ap_cur->bssid, "deadb");
 		c_avl_insert(targets, &ap_cur->bssid, ap_cur);
 
 		goto __start;
@@ -6441,9 +6433,9 @@ int main(int argc, char * argv[])
 	progname = getVersion(
 		"Aircrack-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 
-	if ((cracking_session && cracking_session->is_loaded &&
-		cracking_session->argc - optind < 1) || (!cracking_session &&
-		!_pmkid_16800 && argc - optind < 1))
+	if ((cracking_session && cracking_session->is_loaded
+		 && cracking_session->argc - optind < 1)
+		|| (!cracking_session && !_pmkid_16800 && argc - optind < 1))
 	{
 		if (nbarg == 1)
 		{
@@ -6528,24 +6520,19 @@ int main(int argc, char * argv[])
 						 sizeof(ap_cur->wpa.pmkid));
 		hexStringToArray((char *) _pmkid_16800_str + H16800_PMKID_LEN + 1,
 						 H16800_BSSID_LEN,
-						 (unsigned char *)&ap_cur->bssid,
+						 (unsigned char *) &ap_cur->bssid,
 						 sizeof(ap_cur->bssid));
 		hexStringToArray((char *) _pmkid_16800_str + H16800_PMKID_LEN + 1
-							 + H16800_BSSID_LEN
-							 + 1,
+							 + H16800_BSSID_LEN + 1,
 						 H16800_STMAC_LEN,
-						 (uint8_t *)&ap_cur->wpa.stmac,
+						 (uint8_t *) &ap_cur->wpa.stmac,
 						 sizeof(ap_cur->wpa.stmac));
-		hexStringToArray(
-			(char *) _pmkid_16800_str + H16800_PMKID_LEN + 1 + H16800_BSSID_LEN
-				+ 1
-				+ H16800_STMAC_LEN
-				+ 1,
-			(int) remaining - H16800_PMKID_LEN + 1 + H16800_BSSID_LEN + 1
-				+ H16800_STMAC_LEN
-				+ 1,
-			ap_cur->essid,
-			sizeof(ap_cur->essid));
+		hexStringToArray((char *) _pmkid_16800_str + H16800_PMKID_LEN + 1
+							 + H16800_BSSID_LEN + 1 + H16800_STMAC_LEN + 1,
+						 (int) remaining - H16800_PMKID_LEN + 1
+							 + H16800_BSSID_LEN + 1 + H16800_STMAC_LEN + 1,
+						 ap_cur->essid,
+						 sizeof(ap_cur->essid));
 
 		c_avl_insert(targets, &ap_cur->bssid, ap_cur);
 
@@ -6626,7 +6613,7 @@ int main(int argc, char * argv[])
 			}
 
 			// Set BSSID
-			MAC_ADDRESS_COPY((mac_address *)opt.bssid, &ap_cur->bssid);
+			MAC_ADDRESS_COPY((mac_address *) opt.bssid, &ap_cur->bssid);
 			opt.bssid_set = 1;
 
 			// Set wordlist
@@ -6765,12 +6752,13 @@ int main(int argc, char * argv[])
 			// Release memory of all APs we don't care about currently.
 			ap_avl_release_unused(ap_cur);
 
-			MAC_ADDRESS_COPY((mac_address *)opt.bssid, &ap_cur->bssid);
+			MAC_ADDRESS_COPY((mac_address *) opt.bssid, &ap_cur->bssid);
 
 			// Copy BSSID to the cracking session
 			if (cracking_session && opt.dict != NULL)
 			{
-				MAC_ADDRESS_COPY((mac_address *)cracking_session->bssid, &ap_cur->bssid);
+				MAC_ADDRESS_COPY((mac_address *) cracking_session->bssid,
+								 &ap_cur->bssid);
 			}
 
 			/* Disable PTW if dictionary used in WEP */
@@ -6861,7 +6849,7 @@ int main(int argc, char * argv[])
 	{
 		if (memcmp(opt.maddr, BROADCAST, ETHER_ADDR_LEN) == 0
 			|| (opt.bssid_set
-				&& MAC_ADDRESS_EQUAL((mac_address *)opt.bssid, &ap_cur->bssid))
+				&& MAC_ADDRESS_EQUAL((mac_address *) opt.bssid, &ap_cur->bssid))
 			|| (opt.essid_set
 				&& !memcmp(opt.essid, ap_cur->essid, ESSID_LENGTH)))
 		{

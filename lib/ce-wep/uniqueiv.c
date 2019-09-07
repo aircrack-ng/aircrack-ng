@@ -53,12 +53,12 @@ static size_t const root_bucket_size = 256;
 static size_t const level_1_bucket_size = 256;
 static size_t const level_2_bucket_size = 32;
 
-unsigned char * * uniqueiv_init(void)
+unsigned char ** uniqueiv_init(void)
 {
 	/* allocate root bucket (level 0) as vector of pointers */
 
-	unsigned char * * const uiv_root
-        = calloc(root_bucket_size, sizeof(unsigned char *));
+	unsigned char ** const uiv_root
+		= calloc(root_bucket_size, sizeof(unsigned char *));
 
 	return uiv_root;
 }
@@ -70,10 +70,10 @@ int uniqueiv_mark(unsigned char ** uiv_root, unsigned char const IV[3])
 	unsigned char ** uiv_lvl1;
 	unsigned char * uiv_lvl2;
 
-    if (uiv_root == NULL)
-    {
-        return 0;
-    }
+	if (uiv_root == NULL)
+	{
+		return 0;
+	}
 
 	/* select bucket from level 1 */
 
@@ -85,12 +85,12 @@ int uniqueiv_mark(unsigned char ** uiv_root, unsigned char const IV[3])
 	{
 		/* allocate level 2 bucket being a vector of bits */
 
-        uiv_lvl1 = calloc(level_1_bucket_size, sizeof(unsigned char *));
+		uiv_lvl1 = calloc(level_1_bucket_size, sizeof(unsigned char *));
 
-        if (uiv_lvl1 == NULL)
-        {
-            return 1;
-        }
+		if (uiv_lvl1 == NULL)
+		{
+			return 1;
+		}
 
 		/* link to parent bucket */
 
@@ -107,12 +107,12 @@ int uniqueiv_mark(unsigned char ** uiv_root, unsigned char const IV[3])
 	{
 		/* allocate level 2 bucket as a vector of pointers */
 
-        uiv_lvl2 = calloc(level_2_bucket_size, sizeof(unsigned char));
+		uiv_lvl2 = calloc(level_2_bucket_size, sizeof(unsigned char));
 
-        if (uiv_lvl2 == NULL)
-        {
-            return 1;
-        }
+		if (uiv_lvl2 == NULL)
+		{
+			return 1;
+		}
 
 		/* link to parent bucket */
 
@@ -130,14 +130,14 @@ int uniqueiv_mark(unsigned char ** uiv_root, unsigned char const IV[3])
 
 int uniqueiv_check(unsigned char ** uiv_root, unsigned char const IV[3])
 {
-	unsigned char * * uiv_lvl1;
+	unsigned char ** uiv_lvl1;
 	unsigned char * uiv_lvl2;
 
 	if (uiv_root == NULL) return (IV_NOTHERE);
 
 	/* select bucket from level 1 */
 
-	uiv_lvl1 = (unsigned char * *) uiv_root[IV[2]];
+	uiv_lvl1 = (unsigned char **) uiv_root[IV[2]];
 
 	/* stop here if not even allocated */
 
@@ -171,17 +171,17 @@ void uniqueiv_wipe(unsigned char ** uiv_root)
 
 	/* recursively wipe out allocated buckets */
 
-    for (i = 0; i < root_bucket_size; ++i)
+	for (i = 0; i < root_bucket_size; ++i)
 	{
 		uiv_lvl1 = (unsigned char **) uiv_root[i];
 
 		if (uiv_lvl1 != NULL)
 		{
-            for (j = 0; j < level_1_bucket_size; ++j)
+			for (j = 0; j < level_1_bucket_size; ++j)
 			{
 				uiv_lvl2 = (unsigned char *) uiv_lvl1[j];
 
-                free(uiv_lvl2);
+				free(uiv_lvl2);
 			}
 
 			free(uiv_lvl1);
@@ -251,7 +251,4 @@ int data_check(unsigned char * data_root,
 	return (cloaking);
 }
 
-void data_wipe(unsigned char * data)
-{
-	free(data);
-}
+void data_wipe(unsigned char * data) { free(data); }

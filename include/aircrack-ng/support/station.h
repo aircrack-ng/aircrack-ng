@@ -109,12 +109,12 @@ struct AP_info
 	TAILQ_ENTRY(AP_info) entry;
 
 	time_t tinit;
-    time_t tlast; /* first and last time seen */
+	time_t tlast; /* first and last time seen */
 
-    time_t time_printed;    /* last time printed */
-    int channel; /* AP radio channel         */
-    int old_channel; /* previously seen channel */
-    enum channel_width_enum channel_width; /* Channel width            */
+	time_t time_printed; /* last time printed */
+	int channel; /* AP radio channel         */
+	int old_channel; /* previously seen channel */
+	enum channel_width_enum channel_width; /* Channel width            */
 	char standard[3]; /* 802.11 standard: n or ac */
 	struct n_channel_info n_channel; /* 802.11n channel info     */
 	struct ac_channel_info ac_channel; /* 802.11ac channel info    */
@@ -179,7 +179,6 @@ struct AP_info
 
 	struct pkt_list_head pkt_list;
 
-
 	// This feature eats 48Mb per AP
 	int EAP_detected;
 	uint8_t * data_root; /* first 2 bytes of data if */
@@ -211,9 +210,9 @@ struct ST_info
 	char * manuf; /* the client's manufacturer */
 
 	time_t first_seen;
-    time_t last_seen; /* first and last time seen  */
-    time_t time_printed; /* last time printed */
-    unsigned long nb_pkt; /* total number of packets   */
+	time_t last_seen; /* first and last time seen  */
+	time_t time_printed; /* last time printed */
+	unsigned long nb_pkt; /* total number of packets   */
 	uint8_t essid[ESSID_LENGTH + 1]; /* last associated essid     */
 	int essid_length; /* essid length of last asso */
 	int probe_index; /* probed ESSIDs ring index  */
@@ -238,10 +237,10 @@ struct ST_info
 	int qos_to_ds; /* does it use 802.11e to ds */
 	int qos_fr_ds; /* does it receive 802.11e   */
 	int channel; /* Channel station is seen   */
-    int old_channel; /* previously seen channel */
+	int old_channel; /* previously seen channel */
 
 	/* FIXME: Don't use these magic numbers. */
-    float gps_loc_min[8]; /* min gps coordinates      */
+	float gps_loc_min[8]; /* min gps coordinates      */
 	float gps_loc_max[8]; /* max gps coordinates      */
 	float gps_loc_best[8]; /* best gps coordinates     */
 };

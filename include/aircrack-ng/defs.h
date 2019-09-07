@@ -172,13 +172,14 @@
 	} while (0)
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-static inline size_t ustrlen(const uint8_t * s1)
-{
-	return strlen((const char *) s1);
-}
+	static inline size_t ustrlen(const uint8_t * s1)
+	{
+		return strlen((const char *) s1);
+	}
 
 #define destroy(var, fn)                                                       \
 	({                                                                         \

@@ -6,10 +6,11 @@
 #include <stdint.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-bool verifyssid(uint8_t const * const s);
+	bool verifyssid(uint8_t const * const s);
 
 #ifdef __cplusplus
 };

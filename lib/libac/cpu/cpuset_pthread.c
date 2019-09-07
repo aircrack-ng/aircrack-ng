@@ -84,6 +84,6 @@ void ac_cpuset_bind_thread_at(ac_cpuset_t * cpuset, pthread_t tid, size_t idx)
 	CPU_SET(idx, &set);
 	pthread_setaffinity_np(tid, sizeof(cpu_set_t), &set);
 #else
-    (void)tid;
+	(void) tid;
 #endif
 }

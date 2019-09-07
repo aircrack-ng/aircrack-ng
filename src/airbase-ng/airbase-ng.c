@@ -78,7 +78,6 @@
 #include "aircrack-ng/support/common.h"
 #include "aircrack-ng/osdep/sta_list.h"
 
-
 #define EXT_IN 0x01
 #define EXT_OUT 0x02
 
@@ -1506,9 +1505,8 @@ static int store_wpa_handshake(struct ST_info * st_cur)
 	return (0);
 }
 
-static struct ST_info * sta_info_lookup(
-	struct sta_list_head * const sta_list,
-	mac_address const * const mac)
+static struct ST_info * sta_info_lookup(struct sta_list_head * const sta_list,
+										mac_address const * const mac)
 {
 	struct ST_info * st_cur;
 
@@ -1627,7 +1625,7 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 	}
 
 	/* check list of clients */
-	st_cur = sta_info_lookup(&lopt.sta_list, (mac_address *)smac);
+	st_cur = sta_info_lookup(&lopt.sta_list, (mac_address *) smac);
 	/* if it's a new client, add it */
 
 	if (st_cur == NULL)
@@ -1639,7 +1637,7 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 			return (1);
 		}
 
-		MAC_ADDRESS_COPY(&st_cur->stmac, (mac_address *)smac);
+		MAC_ADDRESS_COPY(&st_cur->stmac, (mac_address *) smac);
 
 		st_cur->first_seen = time(NULL);
 		st_cur->last_seen = time(NULL);
@@ -1941,8 +1939,7 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 				/* check the extended IV flag */
 				/* WEP and we got the key */
 				if ((packet[z + 3] & 0x20) == 0 && opt.crypt == CRYPT_WEP
-					&& !lopt.caffelatte
-					&& !lopt.cf_attack)
+					&& !lopt.caffelatte && !lopt.cf_attack)
 				{
 					memcpy(K, packet + z, 3);
 					memcpy(K + 3, opt.wepkey, opt.weplen);
@@ -2052,7 +2049,9 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 					}
 
 					st_cur->probe_index = (st_cur->probe_index + 1) % NB_PRB;
-					memset(st_cur->probes[st_cur->probe_index], 0, sizeof st_cur->probes[st_cur->probe_index]);
+					memset(st_cur->probes[st_cur->probe_index],
+						   0,
+						   sizeof st_cur->probes[st_cur->probe_index]);
 					memcpy(st_cur->probes[st_cur->probe_index],
 						   essid,
 						   len); // twice?!
@@ -2405,7 +2404,12 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 						length += bytes2use;
 					}
 					my_send_packet(packet, length);
-					check_shared_key(&opt.shared_key, packet, length, opt.prefix, opt.f_index, opt.quiet);
+					check_shared_key(&opt.shared_key,
+									 packet,
+									 length,
+									 opt.prefix,
+									 opt.f_index,
+									 opt.quiet);
 
 					return (0);
 				}
@@ -2413,7 +2417,12 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 				// second response
 				if ((packet[1] & 0x40) == 0x40)
 				{
-					check_shared_key(&opt.shared_key, packet, length, opt.prefix, opt.f_index, opt.quiet);
+					check_shared_key(&opt.shared_key,
+									 packet,
+									 length,
+									 opt.prefix,
+									 opt.f_index,
+									 opt.quiet);
 					packet[1] = 0x00; // not encrypted
 					memcpy(packet + 4, smac, 6);
 					memcpy(packet + 10, dmac, 6);
@@ -2427,7 +2436,12 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 
 					length = z + 6;
 					my_send_packet(packet, length);
-					check_shared_key(&opt.shared_key, packet, length, opt.prefix, opt.f_index, opt.quiet);
+					check_shared_key(&opt.shared_key,
+									 packet,
+									 length,
+									 opt.prefix,
+									 opt.f_index,
+									 opt.quiet);
 					if (!opt.quiet) PCT;
 					printf("SKA from %02X:%02X:%02X:%02X:%02X:%02X\n",
 						   smac[0],
@@ -3752,7 +3766,7 @@ int main(int argc, char * argv[])
 
 	dev.fd_rtc = -1;
 
-/* open the RTC device if necessary */
+	/* open the RTC device if necessary */
 
 #if defined(__i386__)
 #if defined(linux)

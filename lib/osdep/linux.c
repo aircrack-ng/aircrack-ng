@@ -82,7 +82,8 @@ static int chan;
 extern unsigned int if_nametoindex(const char * __ifname);
 extern char * if_indextoname(unsigned int __ifindex, char * __ifname);
 
-typedef enum {
+typedef enum
+{
 	DT_NULL = 0,
 	DT_WLANNG,
 	DT_HOSTAP,
@@ -1987,8 +1988,7 @@ static int do_linux_open(struct wif * wi, char * iface)
 	/* enable injection on ralink */
 
 	if (strcmp(iface, "ra0") == 0 || strcmp(iface, "ra1") == 0
-		|| strcmp(iface, "rausb0") == 0
-		|| strcmp(iface, "rausb1") == 0)
+		|| strcmp(iface, "rausb0") == 0 || strcmp(iface, "rausb1") == 0)
 	{
 		memset(strbuf, 0, sizeof(strbuf));
 		snprintf(strbuf,

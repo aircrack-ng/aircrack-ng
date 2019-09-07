@@ -446,12 +446,12 @@ int filter_packet(unsigned char * h80211, int caplen)
 	}
 
 	if (!MAC_ADDRESS_IS_EMPTY(&opt.f_bssid)
-		&& !MAC_ADDRESS_EQUAL((mac_address *)(h80211 + mi_b), &opt.f_bssid))
+		&& !MAC_ADDRESS_EQUAL((mac_address *) (h80211 + mi_b), &opt.f_bssid))
 	{
 		return 1;
 	}
 
-	if (MAC_ADDRESS_EQUAL(&opt.f_bssid, (mac_address *)opt.f_smac))
+	if (MAC_ADDRESS_EQUAL(&opt.f_bssid, (mac_address *) opt.f_smac))
 	{
 		if (memcmp(opt.f_smac, NULL_MAC, ETHER_ADDR_LEN) != 0)
 		{
@@ -468,7 +468,7 @@ int filter_packet(unsigned char * h80211, int caplen)
 				return (1);
 	}
 
-	if (MAC_ADDRESS_EQUAL(&opt.f_bssid, (mac_address *)opt.f_dmac))
+	if (MAC_ADDRESS_EQUAL(&opt.f_bssid, (mac_address *) opt.f_dmac))
 	{
 		if (memcmp(opt.f_dmac, NULL_MAC, ETHER_ADDR_LEN) != 0)
 			if (memcmp(h80211 + mi_d, opt.f_dmac, ETHER_ADDR_LEN - 1) != 0)
@@ -831,8 +831,8 @@ int capture_ask_packet(int * caplen, int just_grab)
 
 		printf("Saving chosen packet in %s\n", strbuf);
 
-        f_cap_out = fopen(strbuf, "wb+");
-        if (f_cap_out == NULL)
+		f_cap_out = fopen(strbuf, "wb+");
+		if (f_cap_out == NULL)
 		{
 			perror("fopen failed");
 			return (EXIT_FAILURE);
@@ -885,59 +885,58 @@ int capture_ask_packet(int * caplen, int just_grab)
 #define AIRODUMP_NG_LOG_CSV_EXT "log.csv"
 
 static const char * const f_ext[] = {AIRODUMP_NG_CSV_EXT,
-							   AIRODUMP_NG_GPS_EXT,
-							   AIRODUMP_NG_CAP_EXT,
-							   IVS2_EXTENSION,
-							   KISMET_CSV_EXT,
-							   KISMET_NETXML_EXT,
-							   AIRODUMP_NG_LOG_CSV_EXT,
-                               WIFI_EXT};
+									 AIRODUMP_NG_GPS_EXT,
+									 AIRODUMP_NG_CAP_EXT,
+									 IVS2_EXTENSION,
+									 KISMET_CSV_EXT,
+									 KISMET_NETXML_EXT,
+									 AIRODUMP_NG_LOG_CSV_EXT,
+									 WIFI_EXT};
 
 int find_first_free_file_index(char const * const prefix)
 {
-    size_t i;
-    int f_index = 1;
-    char * ofn = NULL;
-    size_t ofn_len;
-    size_t const ADDED_LENGTH = 17; /* FIXME: Work out the required length from 
+	size_t i;
+	int f_index = 1;
+	char * ofn = NULL;
+	size_t ofn_len;
+	size_t const ADDED_LENGTH = 17; /* FIXME: Work out the required length from 
                                      *  the extensions etc
                                      */
 
-    /* Create a buffer of the length of the prefix + '-' + 2 numbers + '.'
+	/* Create a buffer of the length of the prefix + '-' + 2 numbers + '.'
        + longest extension ("kismet.netxml") + terminating 0. */
-    ofn_len = strlen(prefix)+ ADDED_LENGTH + 1;
-    ofn = malloc(ofn_len);
-    ALLEGE(ofn != NULL); 
+	ofn_len = strlen(prefix) + ADDED_LENGTH + 1;
+	ofn = malloc(ofn_len);
+	ALLEGE(ofn != NULL);
 
-
-    /* Make sure no file with the same name & all possible file extensions. 
+	/* Make sure no file with the same name & all possible file extensions. 
      * If there is an existing file, bump the index value and try 
      * again until an index is found where there are no existing 
      * files with any of the specified extensions. 
      */
-    do
-    {
-        for (i = 0; i < ArrayCount(f_ext); i++)
-        {
-            snprintf(ofn, ofn_len, "%s-%02d.%s", prefix, f_index, f_ext[i]);
+	do
+	{
+		for (i = 0; i < ArrayCount(f_ext); i++)
+		{
+			snprintf(ofn, ofn_len, "%s-%02d.%s", prefix, f_index, f_ext[i]);
 
-            FILE * const f = fopen(ofn, "rb+");
-            if (f != NULL)
-            {
-                fclose(f);
-                f_index++;
-                break;
-            }
-        }
-    }
-    /* If we did all extensions then no files with that name or 
+			FILE * const f = fopen(ofn, "rb+");
+			if (f != NULL)
+			{
+				fclose(f);
+				f_index++;
+				break;
+			}
+		}
+	}
+	/* If we did all extensions then no files with that name or 
      * extension exist so we can use that number 
      */
-    while (i < ArrayCount(f_ext)); 
+	while (i < ArrayCount(f_ext));
 
-    free(ofn);
+	free(ofn);
 
-    return f_index;
+	return f_index;
 }
 
 /* setup the output files */
@@ -946,31 +945,29 @@ int dump_initialize_multi_format(char * prefix)
 	REQUIRE(prefix != NULL);
 	REQUIRE(strlen(prefix) > 0);
 
-    char * ofn;
-    size_t ofn_len;
-    size_t const ADDED_LENGTH = 17; /* FIXME: Work out the required length from 
+	char * ofn;
+	size_t ofn_len;
+	size_t const ADDED_LENGTH = 17; /* FIXME: Work out the required length from 
                                      *  the extensions etc
                                      */
 
-
-    /* FIXME: This function has had much code removed from it 
+	/* FIXME: This function has had much code removed from it 
      * because it has unwanted side-effects when called by 
      * airodump-ng. Other apps still want to make use of it though, 
      * and it currently won't work for them. 
      */
 
-
-    /* Create a buffer of the length of the prefix + '-' + 2 numbers + '.'
+	/* Create a buffer of the length of the prefix + '-' + 2 numbers + '.'
        + longest extension ("kismet.netxml") + terminating 0. */
-    ofn_len = strlen(prefix)+ ADDED_LENGTH + 1;
-    ofn = malloc(ofn_len);
-    ALLEGE(ofn != NULL); 
+	ofn_len = strlen(prefix) + ADDED_LENGTH + 1;
+	ofn = malloc(ofn_len);
+	ALLEGE(ofn != NULL);
 
 	/* If you only want to see what happening, send all data to /dev/null */
 
-    opt.f_index = find_first_free_file_index(prefix);
-    opt.prefix = strdup(prefix);
-    ALLEGE(opt.prefix != NULL); 
+	opt.f_index = find_first_free_file_index(prefix);
+	opt.prefix = strdup(prefix);
+	ALLEGE(opt.prefix != NULL);
 
 	/* create the output packet capture file */
 	if (opt.output_format_pcap)
@@ -985,8 +982,8 @@ int dump_initialize_multi_format(char * prefix)
 				 opt.f_index,
 				 AIRODUMP_NG_CAP_EXT);
 
-        opt.f_cap = fopen(ofn, "wb+");
-        if (opt.f_cap == NULL)
+		opt.f_cap = fopen(ofn, "wb+");
+		if (opt.f_cap == NULL)
 		{
 			perror("fopen failed");
 			fprintf(stderr, "Could not create \"%s\".\n", ofn);
@@ -1034,13 +1031,12 @@ int dump_initialize(char * prefix)
 	return dump_initialize_multi_format(prefix);
 }
 
-int check_shared_key(
-    struct shared_key_context_st * const shared_key,
-    const uint8_t * const h80211, 
-    size_t const caplen,
-    char const * const prefix,
-    int const f_index, 
-    bool const quiet)
+int check_shared_key(struct shared_key_context_st * const shared_key,
+					 const uint8_t * const h80211,
+					 size_t const caplen,
+					 char const * const prefix,
+					 int const f_index,
+					 bool const quiet)
 {
 	int m_bmac = 16;
 	int m_smac = 10;
@@ -1053,18 +1049,17 @@ int check_shared_key(
 	uint8_t prga[4096 + 4];
 	unsigned int long crc = 0xFFFFFFFF;
 
-	if (!(h80211 != NULL 
-          && caplen > 0
+	if (!(h80211 != NULL && caplen > 0
 		  && caplen < (int) sizeof(shared_key->sharedkey[0])))
 	{
 		return (1);
 	}
 
-    if (time(NULL) - shared_key->sk_start > 5)
+	if (time(NULL) - shared_key->sk_start > 5)
 	{
 		/* timeout(5sec) - remove all packets, restart timer */
-        memset(shared_key->sharedkey, '\x00', sizeof(shared_key->sharedkey));
-        shared_key->sk_start = time(NULL);
+		memset(shared_key->sharedkey, '\x00', sizeof(shared_key->sharedkey));
+		shared_key->sk_start = time(NULL);
 	}
 
 	/* is auth packet */
@@ -1077,13 +1072,13 @@ int check_shared_key(
 			if ((h80211[26] + (h80211[27] << 8)) == 2)
 			{
 				/* sequence == 2 */
-                memcpy(shared_key->sharedkey[0], h80211, caplen);
-                shared_key->sk_len = caplen - 24;
+				memcpy(shared_key->sharedkey[0], h80211, caplen);
+				shared_key->sk_len = caplen - 24;
 			}
 			if ((h80211[26] + (h80211[27] << 8)) == 4)
 			{
 				/* sequence == 4 */
-                memcpy(shared_key->sharedkey[2], h80211, caplen);
+				memcpy(shared_key->sharedkey[2], h80211, caplen);
 			}
 		}
 		else
@@ -1092,57 +1087,59 @@ int check_shared_key(
 	else
 	{
 		/* encrypted */
-        memcpy(shared_key->sharedkey[1], h80211, caplen);
-        shared_key->sk_len2 = caplen - 24 - 4;
+		memcpy(shared_key->sharedkey[1], h80211, caplen);
+		shared_key->sk_len2 = caplen - 24 - 4;
 	}
 
 	/* check if the 3 packets form a proper authentication */
 
-    if ((memcmp(shared_key->sharedkey[0] + m_bmac, NULL_MAC, ETHER_ADDR_LEN) == 0)
-        || (memcmp(shared_key->sharedkey[1] + m_bmac, NULL_MAC, ETHER_ADDR_LEN) == 0)
-        || (memcmp(shared_key->sharedkey[2] + m_bmac, NULL_MAC, ETHER_ADDR_LEN)
+	if ((memcmp(shared_key->sharedkey[0] + m_bmac, NULL_MAC, ETHER_ADDR_LEN)
+		 == 0)
+		|| (memcmp(shared_key->sharedkey[1] + m_bmac, NULL_MAC, ETHER_ADDR_LEN)
+			== 0)
+		|| (memcmp(shared_key->sharedkey[2] + m_bmac, NULL_MAC, ETHER_ADDR_LEN)
 			== 0)) /* some bssids == zero */
 	{
 		return (1);
 	}
 
-    if ((memcmp(shared_key->sharedkey[0] + m_bmac,
-                shared_key->sharedkey[1] + m_bmac,
+	if ((memcmp(shared_key->sharedkey[0] + m_bmac,
+				shared_key->sharedkey[1] + m_bmac,
 				ETHER_ADDR_LEN)
 		 != 0)
-        || (memcmp(shared_key->sharedkey[0] + m_bmac,
-                   shared_key->sharedkey[2] + m_bmac,
+		|| (memcmp(shared_key->sharedkey[0] + m_bmac,
+				   shared_key->sharedkey[2] + m_bmac,
 				   ETHER_ADDR_LEN)
 			!= 0)) /* all bssids aren't equal */
 	{
 		return (1);
 	}
 
-    if ((memcmp(shared_key->sharedkey[0] + m_smac,
-                shared_key->sharedkey[2] + m_smac,
+	if ((memcmp(shared_key->sharedkey[0] + m_smac,
+				shared_key->sharedkey[2] + m_smac,
 				ETHER_ADDR_LEN)
 		 != 0)
-        || (memcmp(shared_key->sharedkey[0] + m_smac,
-                   shared_key->sharedkey[1] + m_dmac,
+		|| (memcmp(shared_key->sharedkey[0] + m_smac,
+				   shared_key->sharedkey[1] + m_dmac,
 				   ETHER_ADDR_LEN)
 			!= 0)) /* SA in 2&4 != DA in 3 */
 	{
 		return (1);
 	}
 
-    if ((memcmp(shared_key->sharedkey[0] + m_dmac,
-                shared_key->sharedkey[2] + m_dmac,
+	if ((memcmp(shared_key->sharedkey[0] + m_dmac,
+				shared_key->sharedkey[2] + m_dmac,
 				ETHER_ADDR_LEN)
 		 != 0)
-        || (memcmp(shared_key->sharedkey[0] + m_dmac,
-                   shared_key->sharedkey[1] + m_smac,
+		|| (memcmp(shared_key->sharedkey[0] + m_dmac,
+				   shared_key->sharedkey[1] + m_smac,
 				   ETHER_ADDR_LEN)
 			!= 0)) /* DA in 2&4 != SA in 3 */
 	{
 		return (1);
 	}
 
-    textlen = shared_key->sk_len;
+	textlen = shared_key->sk_len;
 
 	maybe_broken = 0;
 
@@ -1153,40 +1150,40 @@ int check_shared_key(
 	   order to make sure we don't overwrite a good .xor file with
 	   a potentially broken one; but on the other hand if none exist
 	   already, we do want it being written. */
-    if (textlen + 4 != shared_key->sk_len2)
+	if (textlen + 4 != shared_key->sk_len2)
 	{
-        if (!quiet)
+		if (!quiet)
 		{
 			PCT;
 			printf("Broken SKA: %02X:%02X:%02X:%02X:%02X:%02X (expected: %zu, "
 				   "got %zu bytes)\n",
-                   *(shared_key->sharedkey[0] + m_dmac),
-                   *(shared_key->sharedkey[0] + m_dmac + 1),
-                   *(shared_key->sharedkey[0] + m_dmac + 2),
-                   *(shared_key->sharedkey[0] + m_dmac + 3),
-                   *(shared_key->sharedkey[0] + m_dmac + 4),
-                   *(shared_key->sharedkey[0] + m_dmac + 5),
+				   *(shared_key->sharedkey[0] + m_dmac),
+				   *(shared_key->sharedkey[0] + m_dmac + 1),
+				   *(shared_key->sharedkey[0] + m_dmac + 2),
+				   *(shared_key->sharedkey[0] + m_dmac + 3),
+				   *(shared_key->sharedkey[0] + m_dmac + 4),
+				   *(shared_key->sharedkey[0] + m_dmac + 5),
 				   textlen + 4,
-                   shared_key->sk_len2);
+				   shared_key->sk_len2);
 		}
 
 		maybe_broken = 1;
 	}
 
-    if (textlen > sizeof(text) - 4)
-    {
-        return (1);
-    }
+	if (textlen > sizeof(text) - 4)
+	{
+		return (1);
+	}
 
-    memcpy(text, shared_key->sharedkey[0] + 24, textlen);
+	memcpy(text, shared_key->sharedkey[0] + 24, textlen);
 
 	/* increment sequence number from 2 to 3 */
 	text[2] = (uint8_t)(text[2] + 1);
 
-    for (n = 0; n < textlen; n++)
-    {
+	for (n = 0; n < textlen; n++)
+	{
 		crc = crc_tbl[(crc ^ text[n]) & 0xFF] ^ (crc >> 8);
-    }
+	}
 
 	crc = ~crc;
 
@@ -1199,85 +1196,85 @@ int check_shared_key(
 	/* cleartext XOR cipher */
 	for (n = 0u; n < (textlen + 4u); n++)
 	{
-        prga[4 + n] = (uint8_t)((text[n] ^ shared_key->sharedkey[1][28 + n]) & 0xFF);
+		prga[4 + n]
+			= (uint8_t)((text[n] ^ shared_key->sharedkey[1][28 + n]) & 0xFF);
 	}
 
 	/* write IV+index */
-    prga[0] = (uint8_t)(shared_key->sharedkey[1][24] & 0xFF);
-    prga[1] = (uint8_t)(shared_key->sharedkey[1][25] & 0xFF);
-    prga[2] = (uint8_t)(shared_key->sharedkey[1][26] & 0xFF);
-    prga[3] = (uint8_t)(shared_key->sharedkey[1][27] & 0xFF);
+	prga[0] = (uint8_t)(shared_key->sharedkey[1][24] & 0xFF);
+	prga[1] = (uint8_t)(shared_key->sharedkey[1][25] & 0xFF);
+	prga[2] = (uint8_t)(shared_key->sharedkey[1][26] & 0xFF);
+	prga[3] = (uint8_t)(shared_key->sharedkey[1][27] & 0xFF);
 
-    if (shared_key->f_xor != NULL)
+	if (shared_key->f_xor != NULL)
 	{
-        fclose(shared_key->f_xor);
-        shared_key->f_xor = NULL;
+		fclose(shared_key->f_xor);
+		shared_key->f_xor = NULL;
 	}
 
-    if (f_index < 0)
-    {
-        snprintf(ofn,
-                 sizeof(ofn) - 1,
-                 "%s-%02X-%02X-%02X-%02X-%02X-%02X.%s",
-                 prefix,
-                 *(shared_key->sharedkey[0] + m_bmac),
-                 *(shared_key->sharedkey[0] + m_bmac + 1),
-                 *(shared_key->sharedkey[0] + m_bmac + 2),
-                 *(shared_key->sharedkey[0] + m_bmac + 3),
-                 *(shared_key->sharedkey[0] + m_bmac + 4),
-                 *(shared_key->sharedkey[0] + m_bmac + 5),
-                 "xor");
-    }
-    else
-    {
-        snprintf(ofn,
-                 sizeof(ofn) - 1,
-                 "%s-%02d-%02X-%02X-%02X-%02X-%02X-%02X.%s",
-                 prefix,
-                 f_index,
-                 *(shared_key->sharedkey[0] + m_bmac),
-                 *(shared_key->sharedkey[0] + m_bmac + 1),
-                 *(shared_key->sharedkey[0] + m_bmac + 2),
-                 *(shared_key->sharedkey[0] + m_bmac + 3),
-                 *(shared_key->sharedkey[0] + m_bmac + 4),
-                 *(shared_key->sharedkey[0] + m_bmac + 5),
-                 "xor");
-    }
+	if (f_index < 0)
+	{
+		snprintf(ofn,
+				 sizeof(ofn) - 1,
+				 "%s-%02X-%02X-%02X-%02X-%02X-%02X.%s",
+				 prefix,
+				 *(shared_key->sharedkey[0] + m_bmac),
+				 *(shared_key->sharedkey[0] + m_bmac + 1),
+				 *(shared_key->sharedkey[0] + m_bmac + 2),
+				 *(shared_key->sharedkey[0] + m_bmac + 3),
+				 *(shared_key->sharedkey[0] + m_bmac + 4),
+				 *(shared_key->sharedkey[0] + m_bmac + 5),
+				 "xor");
+	}
+	else
+	{
+		snprintf(ofn,
+				 sizeof(ofn) - 1,
+				 "%s-%02d-%02X-%02X-%02X-%02X-%02X-%02X.%s",
+				 prefix,
+				 f_index,
+				 *(shared_key->sharedkey[0] + m_bmac),
+				 *(shared_key->sharedkey[0] + m_bmac + 1),
+				 *(shared_key->sharedkey[0] + m_bmac + 2),
+				 *(shared_key->sharedkey[0] + m_bmac + 3),
+				 *(shared_key->sharedkey[0] + m_bmac + 4),
+				 *(shared_key->sharedkey[0] + m_bmac + 5),
+				 "xor");
+	}
 
-    if (maybe_broken && (shared_key->f_xor = fopen(ofn, "r")))
+	if (maybe_broken && (shared_key->f_xor = fopen(ofn, "r")))
 	{
 		/* do not overwrite existing .xor file with maybe broken one */
-        fclose(shared_key->f_xor);
-        shared_key->f_xor = NULL;
+		fclose(shared_key->f_xor);
+		shared_key->f_xor = NULL;
 		return (1);
 	}
 
-    shared_key->f_xor = fopen(ofn, "w");
-    if (shared_key->f_xor == NULL)
-        return (1);
+	shared_key->f_xor = fopen(ofn, "w");
+	if (shared_key->f_xor == NULL) return (1);
 
-    for (n = 0; n < textlen + 8; n++)
-    {
-        fputc((prga[n] & 0xFF), shared_key->f_xor);
-    }
+	for (n = 0; n < textlen + 8; n++)
+	{
+		fputc((prga[n] & 0xFF), shared_key->f_xor);
+	}
 
-    fclose(shared_key->f_xor);
-    shared_key->f_xor = NULL;
+	fclose(shared_key->f_xor);
+	shared_key->f_xor = NULL;
 
-    if (!quiet)
+	if (!quiet)
 	{
 		PCT;
 		printf("Got %zu bytes keystream: %02X:%02X:%02X:%02X:%02X:%02X\n",
 			   textlen + 4,
-               *(shared_key->sharedkey[0] + m_dmac),
-               *(shared_key->sharedkey[0] + m_dmac + 1),
-               *(shared_key->sharedkey[0] + m_dmac + 2),
-               *(shared_key->sharedkey[0] + m_dmac + 3),
-               *(shared_key->sharedkey[0] + m_dmac + 4),
-               *(shared_key->sharedkey[0] + m_dmac + 5));
+			   *(shared_key->sharedkey[0] + m_dmac),
+			   *(shared_key->sharedkey[0] + m_dmac + 1),
+			   *(shared_key->sharedkey[0] + m_dmac + 2),
+			   *(shared_key->sharedkey[0] + m_dmac + 3),
+			   *(shared_key->sharedkey[0] + m_dmac + 4),
+			   *(shared_key->sharedkey[0] + m_dmac + 5));
 	}
 
-    memset(shared_key->sharedkey, '\x00', sizeof(shared_key->sharedkey));
+	memset(shared_key->sharedkey, '\x00', sizeof(shared_key->sharedkey));
 
 	return (0);
 }

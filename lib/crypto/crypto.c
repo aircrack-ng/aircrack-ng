@@ -209,13 +209,13 @@ void calc_mic(struct AP_info * ap,
 
 	if (MAC_ADDRESS_COMPARE(&ap->wpa.stmac, &ap->bssid) < 0)
 	{
-		MAC_ADDRESS_COPY((mac_address *)(pke + 23), &ap->wpa.stmac);
-		MAC_ADDRESS_COPY((mac_address *)(pke + 29), &ap->bssid);
+		MAC_ADDRESS_COPY((mac_address *) (pke + 23), &ap->wpa.stmac);
+		MAC_ADDRESS_COPY((mac_address *) (pke + 29), &ap->bssid);
 	}
 	else
 	{
-		MAC_ADDRESS_COPY((mac_address *)(pke + 23), &ap->bssid);
-		MAC_ADDRESS_COPY((mac_address *)(pke + 29), &ap->wpa.stmac);
+		MAC_ADDRESS_COPY((mac_address *) (pke + 23), &ap->bssid);
+		MAC_ADDRESS_COPY((mac_address *) (pke + 29), &ap->wpa.stmac);
 	}
 
 	if (memcmp(ap->wpa.snonce, ap->wpa.anonce, 32) < 0)
@@ -462,8 +462,11 @@ static int is_cdp_vtp(void const * wh)
 /* weight is used for guesswork in PTW.  Can be null if known_clear is not for
  * PTW, but just for getting known clear-text.
  */
-int known_clear(
-	void * clear, int * clen, int * weight, unsigned char const * wh, size_t len)
+int known_clear(void * clear,
+				int * clen,
+				int * weight,
+				unsigned char const * wh,
+				size_t len)
 {
 	REQUIRE(clear != NULL);
 	REQUIRE(clen != NULL);

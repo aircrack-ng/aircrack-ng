@@ -54,8 +54,13 @@ void textcolor(int attr, int fg, int bg)
 	char command[64];
 
 	/* Command is the control command to the terminal */
-	snprintf(
-		command, sizeof(command), "%c[%d;%d;%dm", escape_char, attr, fg + 30, bg + 40);
+	snprintf(command,
+			 sizeof(command),
+			 "%c[%d;%d;%dm",
+			 escape_char,
+			 attr,
+			 fg + 30,
+			 bg + 40);
 	fprintf(channel, "%s", command);
 	fflush(channel);
 }
@@ -128,7 +133,8 @@ void move(int which, int n)
 	static const char movement[] = {'A', 'B', 'C', 'D'};
 
 	assert(which >= 0 && which < 4);
-	snprintf(command, sizeof(command), "%c[%d%c", escape_char, n, movement[which]);
+	snprintf(
+		command, sizeof(command), "%c[%d%c", escape_char, n, movement[which]);
 	fprintf(channel, "%s", command);
 	fflush(channel);
 }
@@ -191,10 +197,10 @@ int mygetch(void)
 	tcsetattr(STDIN_FILENO, TCSANOW, &newt);
 
 	char c;
-    if (read(STDIN_FILENO, &c, sizeof(char)) > 0)
-    {
-        ch = (int) c;
-    }
+	if (read(STDIN_FILENO, &c, sizeof(char)) > 0)
+	{
+		ch = (int) c;
+	}
 
 	tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
 

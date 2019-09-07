@@ -64,13 +64,13 @@
 #include "aircrack-ng/support/station.h"
 
 /* bunch of global stuff */
-TAILQ_HEAD(ap_list_head, AP_info); 
+TAILQ_HEAD(ap_list_head, AP_info);
 
 static struct globals
 {
 	struct ap_list_head ap_list;
 
-	struct sta_list_head sta_list; 
+	struct sta_list_head sta_list;
 
 	unsigned char prev_bssid[6];
 	FILE * f_ivs; /* output ivs file      */
@@ -206,9 +206,8 @@ static int merge(int argc, char * argv[])
 	return (EXIT_SUCCESS);
 }
 
-static struct ST_info * sta_info_lookup(
-	struct sta_list_head * const sta_list,
-	mac_address const * const mac)
+static struct ST_info * sta_info_lookup(struct sta_list_head * const sta_list,
+										mac_address const * const mac)
 {
 	struct ST_info * st_cur;
 
@@ -223,9 +222,8 @@ static struct ST_info * sta_info_lookup(
 	return st_cur;
 }
 
-static struct AP_info * ap_info_lookup(
-	struct ap_list_head * ap_list,
-	mac_address const * const mac)
+static struct AP_info * ap_info_lookup(struct ap_list_head * ap_list,
+									   mac_address const * const mac)
 {
 	struct AP_info * ap_cur;
 
@@ -258,7 +256,7 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 	int weight[16];
 	int num_xor, o;
 
-	struct ST_info * st_cur = NULL; 
+	struct ST_info * st_cur = NULL;
 
 	/* skip packets smaller than a 802.11 header */
 
@@ -293,20 +291,20 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 	/* update our chained list of access points */
 	struct AP_info * ap_cur;
 
-	ap_cur = ap_info_lookup(&G.ap_list,(mac_address *)bssid);
+	ap_cur = ap_info_lookup(&G.ap_list, (mac_address *) bssid);
 
-    /* If it's a new access point, add it */
+	/* If it's a new access point, add it */
 
-    if (ap_cur == NULL)
+	if (ap_cur == NULL)
 	{
-        ap_cur = calloc(1, sizeof *ap_cur);
+		ap_cur = calloc(1, sizeof *ap_cur);
 		if (ap_cur == NULL)
 		{
 			perror("malloc failed");
 			return (FAILURE);
 		}
 
-		MAC_ADDRESS_COPY(&ap_cur->bssid, (mac_address *)bssid);
+		MAC_ADDRESS_COPY(&ap_cur->bssid, (mac_address *) bssid);
 
 		ap_cur->uiv_root = uniqueiv_init();
 
@@ -361,9 +359,9 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 
 	/* update our chained list of wireless stations */
 
-    st_cur = sta_info_lookup(&G.sta_list,(mac_address *)stmac);
+	st_cur = sta_info_lookup(&G.sta_list, (mac_address *) stmac);
 
-    /* If it's a new client, add it */
+	/* If it's a new client, add it */
 
 	if (st_cur == NULL)
 	{
@@ -374,15 +372,15 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 			return (EXIT_FAILURE);
 		}
 
-		MAC_ADDRESS_COPY(&st_cur->stmac, (mac_address *)stmac);
+		MAC_ADDRESS_COPY(&st_cur->stmac, (mac_address *) stmac);
 
 		TAILQ_INSERT_TAIL(&G.sta_list, st_cur, entry);
-    }
+	}
 
-    if (st_cur->base == NULL || !MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
-    {
-        st_cur->base = ap_cur;
-    }
+	if (st_cur->base == NULL || !MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
+	{
+		st_cur->base = ap_cur;
+	}
 
 skip_station:
 
@@ -414,20 +412,21 @@ skip_station:
 
 				if (G.f_ivs != NULL && !ap_cur->essid_logged)
 				{
-                    memset(&ivs2, '\x00', sizeof ivs2);
+					memset(&ivs2, '\x00', sizeof ivs2);
 					ivs2.flags |= IVS2_ESSID;
 					ivs2.len += ap_cur->ssid_length;
 
-					if (!MAC_ADDRESS_EQUAL((mac_address *)G.prev_bssid, &ap_cur->bssid))
+					if (!MAC_ADDRESS_EQUAL((mac_address *) G.prev_bssid,
+										   &ap_cur->bssid))
 					{
 						ivs2.flags |= IVS2_BSSID;
 						ivs2.len += 6;
-						MAC_ADDRESS_COPY((mac_address *)G.prev_bssid, &ap_cur->bssid);
+						MAC_ADDRESS_COPY((mac_address *) G.prev_bssid,
+										 &ap_cur->bssid);
 					}
 
 					/* write header */
-                    if (fwrite(&ivs2, 1, sizeof(ivs2), G.f_ivs)
-                        != sizeof(ivs2))
+					if (fwrite(&ivs2, 1, sizeof(ivs2), G.f_ivs) != sizeof(ivs2))
 					{
 						perror("fwrite(IV header) failed");
 						return (EXIT_FAILURE);
@@ -436,7 +435,11 @@ skip_station:
 					/* write BSSID */
 					if (ivs2.flags & IVS2_BSSID)
 					{
-                        if (fwrite(&ap_cur->bssid, 1, sizeof ap_cur->bssid, G.f_ivs) != sizeof ap_cur->bssid)
+						if (fwrite(&ap_cur->bssid,
+								   1,
+								   sizeof ap_cur->bssid,
+								   G.f_ivs)
+							!= sizeof ap_cur->bssid)
 						{
 							perror("fwrite(IV bssid) failed");
 							return EXIT_FAILURE;
@@ -487,20 +490,22 @@ skip_station:
 
 				if (G.f_ivs != NULL && !ap_cur->essid_logged)
 				{
-                    memset(&ivs2, '\x00', sizeof(ivs2));
+					memset(&ivs2, '\x00', sizeof(ivs2));
 					ivs2.flags |= IVS2_ESSID;
 					ivs2.len += ap_cur->ssid_length;
 
-					if (!MAC_ADDRESS_EQUAL((mac_address *)G.prev_bssid, &ap_cur->bssid))
+					if (!MAC_ADDRESS_EQUAL((mac_address *) G.prev_bssid,
+										   &ap_cur->bssid))
 					{
 						ivs2.flags |= IVS2_BSSID;
-                        ivs2.len += MAC_ADDRESS_LEN;
-						MAC_ADDRESS_COPY((mac_address *)G.prev_bssid, &ap_cur->bssid);
+						ivs2.len += MAC_ADDRESS_LEN;
+						MAC_ADDRESS_COPY((mac_address *) G.prev_bssid,
+										 &ap_cur->bssid);
 					}
 
 					/* write header */
-                    if (fwrite(&ivs2, 1, sizeof(ivs2), G.f_ivs)
-                        != (size_t)sizeof(ivs2))
+					if (fwrite(&ivs2, 1, sizeof(ivs2), G.f_ivs)
+						!= (size_t) sizeof(ivs2))
 					{
 						perror("fwrite(IV header) failed");
 						return EXIT_FAILURE;
@@ -509,7 +514,11 @@ skip_station:
 					/* write BSSID */
 					if (ivs2.flags & IVS2_BSSID)
 					{
-                        if (fwrite(&ap_cur->bssid, 1, sizeof ap_cur->bssid, G.f_ivs) != sizeof ap_cur->bssid)
+						if (fwrite(&ap_cur->bssid,
+								   1,
+								   sizeof ap_cur->bssid,
+								   G.f_ivs)
+							!= sizeof ap_cur->bssid)
 						{
 							perror("fwrite(IV bssid) failed");
 							return EXIT_FAILURE;
@@ -608,15 +617,16 @@ skip_station:
 						// clear is now the keystream
 					}
 
-					if (!MAC_ADDRESS_EQUAL((mac_address *)G.prev_bssid, &ap_cur->bssid))
+					if (!MAC_ADDRESS_EQUAL((mac_address *) G.prev_bssid,
+										   &ap_cur->bssid))
 					{
 						ivs2.flags |= IVS2_BSSID;
 						ivs2.len += 6;
-						MAC_ADDRESS_COPY((mac_address *)G.prev_bssid, &ap_cur->bssid);
+						MAC_ADDRESS_COPY((mac_address *) G.prev_bssid,
+										 &ap_cur->bssid);
 					}
 
-                    if (fwrite(&ivs2, 1, sizeof(ivs2), G.f_ivs)
-                        != sizeof(ivs2))
+					if (fwrite(&ivs2, 1, sizeof(ivs2), G.f_ivs) != sizeof(ivs2))
 					{
 						perror("fwrite(IV header) failed");
 						return EXIT_FAILURE;
@@ -624,12 +634,16 @@ skip_station:
 
 					if (ivs2.flags & IVS2_BSSID)
 					{
-                        if (fwrite(&ap_cur->bssid, 1, sizeof ap_cur->bssid, G.f_ivs) != sizeof ap_cur->bssid)
+						if (fwrite(&ap_cur->bssid,
+								   1,
+								   sizeof ap_cur->bssid,
+								   G.f_ivs)
+							!= sizeof ap_cur->bssid)
 						{
 							perror("fwrite(IV bssid) failed");
 							return EXIT_FAILURE;
 						}
-                        ivs2.len -= MAC_ADDRESS_LEN;
+						ivs2.len -= MAC_ADDRESS_LEN;
 					}
 
 					if (fwrite(h80211 + z, 1, 4, G.f_ivs) != (size_t) 4)
@@ -671,8 +685,7 @@ skip_station:
 			/* frame 1: Pairwise == 1, Install == 0, Ack == 1, MIC == 0 */
 
 			if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
-				&& (h80211[z + 6] & 0x80) != 0
-				&& (h80211[z + 5] & 0x01) == 0)
+				&& (h80211[z + 6] & 0x80) != 0 && (h80211[z + 5] & 0x01) == 0)
 			{
 				memcpy(st_cur->wpa.anonce, &h80211[z + 17], 32);
 				st_cur->wpa.state = 1;
@@ -683,8 +696,7 @@ skip_station:
 			if (z + 17 + 32 > caplen) return (FAILURE);
 
 			if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
-				&& (h80211[z + 6] & 0x80) == 0
-				&& (h80211[z + 5] & 0x01) != 0)
+				&& (h80211[z + 6] & 0x80) == 0 && (h80211[z + 5] & 0x01) != 0)
 			{
 				if (memcmp(&h80211[z + 17], ZERO, 32) != 0)
 				{
@@ -696,8 +708,7 @@ skip_station:
 			/* frame 3: Pairwise == 1, Install == 1, Ack == 1, MIC == 1 */
 
 			if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) != 0
-				&& (h80211[z + 6] & 0x80) != 0
-				&& (h80211[z + 5] & 0x01) != 0)
+				&& (h80211[z + 6] & 0x80) != 0 && (h80211[z + 5] & 0x01) != 0)
 			{
 				st_cur->wpa.eapol_size
 					= (h80211[z + 2] << 8) + h80211[z + 3] + 4u;
@@ -733,16 +744,17 @@ skip_station:
 						ivs2.len = sizeof(struct WPA_hdsk);
 						ivs2.flags |= IVS2_WPA;
 
-						if (!MAC_ADDRESS_EQUAL((mac_address *)G.prev_bssid, &ap_cur->bssid))
+						if (!MAC_ADDRESS_EQUAL((mac_address *) G.prev_bssid,
+											   &ap_cur->bssid))
 						{
 							ivs2.flags |= IVS2_BSSID;
 							ivs2.len += MAC_ADDRESS_LEN;
-							MAC_ADDRESS_COPY((mac_address *)G.prev_bssid, &ap_cur->bssid);
+							MAC_ADDRESS_COPY((mac_address *) G.prev_bssid,
+											 &ap_cur->bssid);
 						}
 
-						if (fwrite(
-                                   &ivs2, 1, sizeof(ivs2), G.f_ivs)
-                            != sizeof(ivs2))
+						if (fwrite(&ivs2, 1, sizeof(ivs2), G.f_ivs)
+							!= sizeof(ivs2))
 						{
 							perror("fwrite(IV header) failed");
 							return (EXIT_FAILURE);
@@ -750,20 +762,21 @@ skip_station:
 
 						if (ivs2.flags & IVS2_BSSID)
 						{
-                            if (fwrite(&ap_cur->bssid, 1, sizeof ap_cur->bssid, G.f_ivs)
-                                != sizeof ap_cur->bssid)
+							if (fwrite(&ap_cur->bssid,
+									   1,
+									   sizeof ap_cur->bssid,
+									   G.f_ivs)
+								!= sizeof ap_cur->bssid)
 							{
 								perror("fwrite(IV bssid) failed");
 								return (EXIT_FAILURE);
 							}
-                            ivs2.len -= sizeof ap_cur->bssid;
+							ivs2.len -= sizeof ap_cur->bssid;
 						}
 
-						if (fwrite(&st_cur->wpa,
-								   1,
-                                   sizeof(st_cur->wpa),
-								   G.f_ivs)
-                            != sizeof(st_cur->wpa))
+						if (fwrite(
+								&st_cur->wpa, 1, sizeof(st_cur->wpa), G.f_ivs)
+							!= sizeof(st_cur->wpa))
 						{
 							perror("fwrite(IV wpa_hdsk) failed");
 							return (EXIT_FAILURE);
@@ -794,7 +807,7 @@ int main(int argc, char * argv[])
 	struct ivs2_filehdr fivs2;
 
 	TAILQ_INIT(&G.ap_list);
-	TAILQ_INIT(&G.sta_list); 
+	TAILQ_INIT(&G.sta_list);
 
 	if (argc < 4)
 	{

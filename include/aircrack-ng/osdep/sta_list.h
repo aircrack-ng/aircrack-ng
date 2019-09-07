@@ -4,7 +4,6 @@
 #include "queue.h"
 #include "aircrack-ng/support/station.h"
 
-TAILQ_HEAD(sta_list_head, ST_info); 
+TAILQ_HEAD(sta_list_head, ST_info);
 
 #endif /* __STA_LIST_H__ */
-
