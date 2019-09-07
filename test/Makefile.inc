@@ -78,6 +78,7 @@ TESTS += %D%/test-hex_string_to_array.sh \
 		 %D%/test-airdecap-ng-0002.sh \
 		 %D%/test-airdecap-ng-0003.sh \
 		 %D%/test-airdecap-ng-0004.sh \
+		 %D%/test-airdecap-ng-0005.sh \
 		 %D%/test-wpaclean-0001.sh \
 		 %D%/test-wpaclean-0002.sh \
 		 %D%/test-alltools.sh
@@ -133,6 +134,7 @@ EXTRA_DIST += %D%/test-hex_string_to_array.sh \
 			  %D%/test-airdecap-ng-0002.sh \
 			  %D%/test-airdecap-ng-0003.sh \
 			  %D%/test-airdecap-ng-0004.sh \
+			  %D%/test-airdecap-ng-0005.sh \
 			  %D%/test-wpaclean-0001.sh \
 			  %D%/test-wpaclean-0002.sh \
 			  %D%/test-alltools.sh \
