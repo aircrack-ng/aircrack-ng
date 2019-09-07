@@ -1,7 +1,12 @@
 #!/bin/sh
 
+MD5_BIN="md5sum"
 TMP_DEC=$(mktemp -u)
 TMP_MD5=$(mktemp -u)
+
+if type "md5" > /dev/null 2>/dev/null ; then
+	MD5_BIN="md5"
+fi
 
 "${abs_builddir}/../airdecap-ng${EXEEXT}" \
 	"${abs_srcdir}/capture_wds-01.cap" \
@@ -11,7 +16,7 @@ TMP_MD5=$(mktemp -u)
 	-o ${TMP_DEC} | \
 		cut -b 40- | \
 		 tr -d ' ' | \
-		md5sum | \
+		${MD5_BIN} | \
 		cut -b 1-32 > ${TMP_MD5}
 
 if [ "$(cat ${TMP_MD5})" != '45a93bc091a3929a7d63f86ddbb81401' ]; then
@@ -21,7 +26,7 @@ if [ "$(cat ${TMP_MD5})" != '45a93bc091a3929a7d63f86ddbb81401' ]; then
 fi
 
 rm ${TMP_MD5}
-if [ "$(md5sum ${TMP_DEC} | cut -b 1-32)" != '340b5bc23bec76e88f6a2df0cd2eeb33' ]; then
+if [ "$(${MD5_BIN} ${TMP_DEC} | cut -b 1-32)" != '340b5bc23bec76e88f6a2df0cd2eeb33' ]; then
 	echo "Unexpected decrypted file"
 	rm ${TMP_DEC}
 	exit 1
