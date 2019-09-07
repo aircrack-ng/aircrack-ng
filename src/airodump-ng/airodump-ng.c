@@ -2076,7 +2076,7 @@ static bool parse_beacon_or_probe_response(struct local_options * const options,
 			{
 				if (ap_cur->standard[0] == '\0')
 				{
-					strlcpy(ap_cur->standard, "n", sizeof ap_cur->standard);
+					my_strlcpy(ap_cur->standard, "n", sizeof ap_cur->standard);
 				}
 
 				/* also get the channel from ht information->primary channel */
@@ -2144,7 +2144,7 @@ static bool parse_beacon_or_probe_response(struct local_options * const options,
 			{
 				if (ap_cur->standard[0] == '\0')
 				{
-					strlcpy(ap_cur->standard, "n", sizeof ap_cur->standard);
+					my_strlcpy(ap_cur->standard, "n", sizeof ap_cur->standard);
 				}
 
 				// Short GI for 20/40MHz
@@ -2180,7 +2180,7 @@ static bool parse_beacon_or_probe_response(struct local_options * const options,
 			if (p[0] == 0xbf && p[1] >= 12)
 			{
 				// Standard is AC
-				strlcpy(ap_cur->standard, "ac", sizeof ap_cur->standard);
+				my_strlcpy(ap_cur->standard, "ac", sizeof ap_cur->standard);
 
 				ap_cur->ac_channel.split_chan = (p[3] >> 2) & 3;
 
@@ -2239,7 +2239,7 @@ static bool parse_beacon_or_probe_response(struct local_options * const options,
 			if (p[0] == 0xc0 && p[1] >= 3)
 			{
 				// Standard is AC
-				strlcpy(ap_cur->standard, "ac", sizeof ap_cur->standard);
+				my_strlcpy(ap_cur->standard, "ac", sizeof ap_cur->standard);
 
 				// Channel width
 				switch (p[2])
@@ -4991,7 +4991,8 @@ static bool reopen_card(struct local_options * const options,
 	/* The interface name needs to be saved because closing the
      * card frees all resources associated with the wi.
      */
-	strlcpy(ifnam, wi_get_ifname(options->wi[interface_index]), sizeof ifnam);
+	my_strlcpy(
+		ifnam, wi_get_ifname(options->wi[interface_index]), sizeof ifnam);
 
 	/* TODO: It might have been nice is there was a wi_reopen() call
      * to deal with the closing, opening and interface name handling.
@@ -5631,7 +5632,9 @@ done:
 
 static void check_for_channel_hopper_data(struct local_options * const options)
 {
-	struct channel_hopper_data_st hopper_data = {0};
+	struct channel_hopper_data_st hopper_data;
+
+	memset(&hopper_data, 0, sizeof hopper_data);
 
 	while (pipe_read(
 		options->channel_hopper_pipe[0], &hopper_data, sizeof hopper_data))
