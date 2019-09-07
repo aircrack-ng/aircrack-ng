@@ -6,14 +6,14 @@
 
 struct packet_writer_context_st
 {
-    void * priv;
+	void * priv;
 
-    void (*write)(void * const priv,
-                  uint8_t const * const packet,
-                  size_t const packet_length,
-                  int32_t const ri_power);
+	void (*write)(void * const priv,
+				  uint8_t const * const packet,
+				  size_t const packet_length,
+				  int32_t const ri_power);
 
-    void (*close)(void * const priv);
-}; 
+	void (*close)(void * const priv);
+};
 
 #endif /* __PACKET_WRITER_PRIVATE__H__ */

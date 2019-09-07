@@ -45,18 +45,18 @@
 
 enum
 {
-    invalid_channel = -1,
-    invalid_frequency = -1,
-    channel_sentinel = 0,
-    frequency_sentinel = 0
+	invalid_channel = -1,
+	invalid_frequency = -1,
+	channel_sentinel = 0,
+	frequency_sentinel = 0
 };
 
 typedef enum channel_switching_method_t
 {
-    channel_switching_method_fifo,
-    channel_switching_method_round_robin,
-    channel_switching_method_hop_on_last,
-    channel_switching_method_COUNT
+	channel_switching_method_fifo,
+	channel_switching_method_round_robin,
+	channel_switching_method_hop_on_last,
+	channel_switching_method_COUNT
 } channel_switching_method_t;
 
 /* some constants */
@@ -86,8 +86,7 @@ typedef enum channel_switching_method_t
 
 #define ENC_FIELD                                                              \
 	(ENC_WEP | ENC_TKIP | ENC_WRAP | ENC_CCMP | ENC_WEP40 | ENC_WEP104         \
-	 | ENC_GCMP                                                                \
-	 | ENC_GMAC)
+	 | ENC_GCMP | ENC_GMAC)
 
 #define AUTH_OPN 0x0200u
 #define AUTH_PSK 0x0400u
@@ -121,8 +120,8 @@ struct NA_info
 	TAILQ_ENTRY(NA_info) entry;
 
 	time_t tinit;
-    time_t tlast; /* first and last time seen  */
-    mac_address namac; /* the stations MAC address  */
+	time_t tlast; /* first and last time seen  */
+	mac_address namac; /* the stations MAC address  */
 	int power; /* last signal power         */
 	int channel; /* captured on channel       */
 	int ack; /* number of ACK frames      */
@@ -135,13 +134,11 @@ struct NA_info
 	struct timeval tv; /* time for ack per second   */
 };
 
-size_t get_channel_count(
-    int const * const channels,
-    bool const count_valid_channels_only);
+size_t get_channel_count(int const * const channels,
+						 bool const count_valid_channels_only);
 
-size_t get_frequency_count(
-    int const * const frequencies,
-    bool const count_valid_frequencies_only);
+size_t get_frequency_count(int const * const frequencies,
+						   bool const count_valid_frequencies_only);
 
 int send_probe_request(struct wif * const wi);
 

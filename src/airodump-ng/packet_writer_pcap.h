@@ -5,8 +5,7 @@
 
 #include <stdbool.h>
 
-bool pcap_packet_writer_open(
-    packet_writer_context_st * const context,
-    char const * const filename);
+bool pcap_packet_writer_open(packet_writer_context_st * const context,
+							 char const * const filename);
 
 #endif /* __PACKET_WRITER_PCAP_H__ */

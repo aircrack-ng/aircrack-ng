@@ -9,24 +9,21 @@
 
 char const * getBatteryString(void)
 {
-    int batt_time;
-    char const * batt_string;
+	int batt_time;
+	char const * batt_string;
 
-    batt_time = get_battery_state();
+	batt_time = get_battery_state();
 
-    if (batt_time <= 60)
-    {
-        batt_string = strdup("");
-    }
-    else
-    {
-        batt_string = getStringTimeFromSec((double)batt_time);
-    }
+	if (batt_time <= 60)
+	{
+		batt_string = strdup("");
+	}
+	else
+	{
+		batt_string = getStringTimeFromSec((double) batt_time);
+	}
 
-    ALLEGE(batt_string != NULL);
+	ALLEGE(batt_string != NULL);
 
-    return batt_string;
+	return batt_string;
 }
-
-
-

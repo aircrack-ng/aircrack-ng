@@ -15,42 +15,37 @@
  */
 struct channel_hopper_data_st
 {
-    size_t card;
-    union
-    {
-        int frequency;
-        int channel;
-    } u;
-}; 
+	size_t card;
+	union {
+		int frequency;
+		int channel;
+	} u;
+};
 
-void
-channel_hopper(
-    int const data_write_fd,
-    struct wif * * const wi,
-    size_t const if_num,
-    int const chan_count,
-    channel_switching_method_t const channel_switching_method,
-    int * const possible_channels,
-    int * const current_channels,
-    bool const do_active_probing,
-    int const hop_frequency_millisecs,
-    pid_t const parent
+void channel_hopper(int const data_write_fd,
+					struct wif ** const wi,
+					size_t const if_num,
+					int const chan_count,
+					channel_switching_method_t const channel_switching_method,
+					int * const possible_channels,
+					int * const current_channels,
+					bool const do_active_probing,
+					int const hop_frequency_millisecs,
+					pid_t const parent
 #ifdef CONFIG_LIBNL
-    , unsigned int const htval
+					,
+					unsigned int const htval
 #endif
-    );
+);
 
-void
-frequency_hopper(
-    int const data_write_fd,
-    struct wif * * const wi,
-    size_t const if_num,
-    int const chan_count,
-    channel_switching_method_t const channel_switching_method,
-    int * const possible_frequencies,
-    int * const current_frequencies,
-    int const hop_frequency_millisecs,
-    pid_t const parent);
+void frequency_hopper(int const data_write_fd,
+					  struct wif ** const wi,
+					  size_t const if_num,
+					  int const chan_count,
+					  channel_switching_method_t const channel_switching_method,
+					  int * const possible_frequencies,
+					  int * const current_frequencies,
+					  int const hop_frequency_millisecs,
+					  pid_t const parent);
 
 #endif /* __CHANNEL_HOPPER_H__ */
-

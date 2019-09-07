@@ -120,27 +120,46 @@ struct devices dev;
  * the channel hopper process may modify the list.
  * :(
  */
-static int abg_chans[] =
-{
-    1,   7,   13,  2,   8,   3,   14,  9,   4,   10,  5,   11,  6,
-	12,  36,  38,  40,  42,  44,  46,  48,  50,  52,  54,  56,  58,
-	60,  62,  64,  100, 102, 104, 106, 108, 110, 112, 114, 116, 118,
-	120, 122, 124, 126, 128, 132, 134, 136, 138, 140, 142, 144, 149,
-    151, 153, 155, 157, 159, 161, 165, 169, 173, channel_sentinel
-};
+static int abg_chans[] = {1,   7,
+						  13,  2,
+						  8,   3,
+						  14,  9,
+						  4,   10,
+						  5,   11,
+						  6,   12,
+						  36,  38,
+						  40,  42,
+						  44,  46,
+						  48,  50,
+						  52,  54,
+						  56,  58,
+						  60,  62,
+						  64,  100,
+						  102, 104,
+						  106, 108,
+						  110, 112,
+						  114, 116,
+						  118, 120,
+						  122, 124,
+						  126, 128,
+						  132, 134,
+						  136, 138,
+						  140, 142,
+						  144, 149,
+						  151, 153,
+						  155, 157,
+						  159, 161,
+						  165, 169,
+						  173, channel_sentinel};
 
-static int bg_chans[] =
-{
-    1, 7, 13, 2, 8, 3, 14, 9, 4, 10, 5, 11, 6, 12, channel_sentinel
-};
+static int bg_chans[]
+	= {1, 7, 13, 2, 8, 3, 14, 9, 4, 10, 5, 11, 6, 12, channel_sentinel};
 
-static int a_chans[] =
-{
-    36,  38,  40,  42,  44,  46,  48,  50,  52,  54,  56,  58,
-	60,  62,  64,  100, 102, 104, 106, 108, 110, 112, 114, 116,
-	118, 120, 122, 124, 126, 128, 132, 134, 136, 138, 140, 142,
-    144, 149, 151, 153, 155, 157, 159, 161, 165, 169, 173, channel_sentinel
-};
+static int a_chans[]
+	= {36,  38,  40,  42,  44,  46,  48,  50,  52,  54,  56,  58,
+	   60,  62,  64,  100, 102, 104, 106, 108, 110, 112, 114, 116,
+	   118, 120, 122, 124, 126, 128, 132, 134, 136, 138, 140, 142,
+	   144, 149, 151, 153, 155, 157, 159, 161, 165, 169, 173, channel_sentinel};
 
 static time_t const maximum_quit_event_interval_seconds = 3;
 static time_t const generic_update_interval_seconds = 5;
@@ -149,37 +168,37 @@ static size_t const max_consecutive_read_errors = 2;
 
 struct detected_frequencies_st
 {
-    size_t count;
-    size_t table_size;
-    int * frequencies;
+	size_t count;
+	size_t table_size;
+	int * frequencies;
 };
 
 struct sort_context_st
 {
-    int always_sort;
-    bool sort_required;
-    ap_sort_context_st * sort_context;
+	int always_sort;
+	bool sort_required;
+	ap_sort_context_st * sort_context;
 };
 
 TAILQ_HEAD(na_list_head, NA_info);
 
 struct interface_data_st
 {
-    int current_channel;
-    int current_frequency;
-    size_t consecutive_read_errors;
+	int current_channel;
+	int current_frequency;
+	size_t consecutive_read_errors;
 };
 
 static struct local_options
 {
-    int quitting;
-    time_t quitting_event_ts;
-    time_t start_time;
+	int quitting;
+	time_t quitting_event_ts;
+	time_t start_time;
 
-    struct wif * wi[MAX_CARDS];
+	struct wif * wi[MAX_CARDS];
 
-    struct ap_list_head ap_list;
-    struct AP_info * p_selected_ap;
+	struct ap_list_head ap_list;
+	struct AP_info * p_selected_ap;
 
 	struct sta_list_head sta_list;
 
@@ -187,29 +206,28 @@ static struct local_options
 
 	oui_context_st * manufacturer_list;
 
-    mac_address f_bssid;
-    mac_address f_netmask;
+	mac_address f_bssid;
+	mac_address f_netmask;
 
-    struct shared_key_context_st shared_key;
-    int check_shared_key;
+	struct shared_key_context_st shared_key;
+	int check_shared_key;
 
-    struct essid_filter_context_st essid_filter;
+	struct essid_filter_context_st essid_filter;
 
 	char * dump_prefix;
 
-    /* TODO: Stick all this card specific state into a structure. */
-    size_t num_cards;
+	/* TODO: Stick all this card specific state into a structure. */
+	size_t num_cards;
 
-    struct interface_data_st interface_data[MAX_CARDS];
+	struct interface_data_st interface_data[MAX_CARDS];
 
-    pthread_t input_tid;
+	pthread_t input_tid;
 
-    int input_thread_pipe[2];
+	int input_thread_pipe[2];
 
+	int channel_hopper_pipe[2];
 
-    int channel_hopper_pipe[2];
-
-    int signal_event_pipe[2];
+	int signal_event_pipe[2];
 
 	gps_tracker_context_st gps_context;
 
@@ -217,7 +235,7 @@ static struct local_options
 
 	int singlechan; /* channel hopping set 1*/
 	int singlefreq; /* frequency hopping: 1 */
-    channel_switching_method_t channel_switching_method;
+	channel_switching_method_t channel_switching_method;
 	unsigned int encryption_filter;
 	int update_interval_seconds;
 
@@ -241,7 +259,7 @@ static struct local_options
 	int maxaps; /* number of all APs found */
 	int berlin; /* number of seconds it takes in berlin to fill the whole screen
 				   with APs*/
-    /*
+	/*
 	 * The name for this option may look quite strange, here is the story behind
 	 * it:
 	 * During the CCC2007, 10 august 2007, we (hirte, Mister_X) went to visit
@@ -262,7 +280,7 @@ static struct local_options
 	 * eating an ice.
 	 */
 
-    int ignore_negative_one;
+	int ignore_negative_one;
 
 	int show_ap;
 	int show_sta;
@@ -271,13 +289,13 @@ static struct local_options
 
 	int frequency_hop_millisecs;
 
-    char * s_file; /* source interface to read from */
-    char * s_iface; /* source interface to read from */
+	char * s_file; /* source interface to read from */
+	char * s_iface; /* source interface to read from */
 	pcap_reader_context_st * pcap_reader_context;
-    struct timeval packet_timestamp;
-    struct timeval previous_timestamp;
+	struct timeval packet_timestamp;
+	struct timeval previous_timestamp;
 
-    int detect_anomaly; /* Detect WIPS protecting WEP in action */
+	int detect_anomaly; /* Detect WIPS protecting WEP in action */
 
 	char * freqstring;
 	int freqoption;
@@ -287,7 +305,7 @@ static struct local_options
 	/* Airodump-ng start time: for kismet netxml file */
 	char * airodump_start_time;
 
-    struct sort_context_st sort;
+	struct sort_context_st sort;
 
 	enum
 	{
@@ -298,15 +316,15 @@ static struct local_options
 
 	int mark_cur_ap;
 
-    struct
-    {
-        bool paused;
+	struct
+	{
+		bool paused;
 
-        /* Set after the user pauses output. Used to get the 'pause' message to
+		/* Set after the user pauses output. Used to get the 'pause' message to
          * be printed.
          */
-        bool required;
-    } console_output;
+		bool required;
+	} console_output;
 
 	mac_address selected_bssid; /* bssid that is selected */
 
@@ -326,88 +344,87 @@ static struct local_options
 
 	bool relative_time; /* read PCAP file in psuedo-real-time */
 
-    size_t max_node_age_seconds;
+	size_t max_node_age_seconds;
 
-    bool record_data;
+	bool record_data;
 
-    struct
-    {
-        bool needed;
-        struct dump_context_st * context;
-    } dump[dump_type_COUNT];
+	struct
+	{
+		bool needed;
+		struct dump_context_st * context;
+	} dump[dump_type_COUNT];
 
-    struct
-    {
-        bool required;
-        FILE * fp;
-    } log_csv;
+	struct
+	{
+		bool required;
+		FILE * fp;
+	} log_csv;
 
-    struct
-    {
-        bool required;
-        FILE * fp;
-        char * filename;
-    } gpsd;
+	struct
+	{
+		bool required;
+		FILE * fp;
+		char * filename;
+	} gpsd;
 
-    struct
-    {
-        bool required;
-        FILE * fp;
-        mac_address prev_bssid;
-    } ivs;
+	struct
+	{
+		bool required;
+		FILE * fp;
+		mac_address prev_bssid;
+	} ivs;
 
-    struct
-    {
-        bool required;
-        struct packet_writer_context_st * writer;
-    } pcap_output;
+	struct
+	{
+		bool required;
+		struct packet_writer_context_st * writer;
+	} pcap_output;
 
-    struct
-    {
-        int include_index; /* int as command line parser writes into it. */
-        /* Possibly appended to filenames of output dump files. value
+	struct
+	{
+		int include_index; /* int as command line parser writes into it. */
+		/* Possibly appended to filenames of output dump files. value
          * -1 indicates not to.
          */
-        int index;
-    } filename;
-
+		int index;
+	} filename;
 
 } lopt;
 
 static void reset_sort_context(struct sort_context_st * const context)
 {
-    ap_sort_context_free(context->sort_context);
-    context->sort_context = ap_sort_context_alloc(SORT_BY_POWER);
-    context->always_sort = 0;
+	ap_sort_context_free(context->sort_context);
+	context->sort_context = ap_sort_context_alloc(SORT_BY_POWER);
+	context->always_sort = 0;
 }
 
 static void reset_selections(struct local_options * const options)
 {
 	options->relative_time = false;
-    options->p_selected_ap = NULL;
-    options->en_selection_direction = selection_direction_no;
-    options->mark_cur_ap = 0;
-    options->console_output.paused = false;
+	options->p_selected_ap = NULL;
+	options->en_selection_direction = selection_direction_no;
+	options->mark_cur_ap = 0;
+	options->console_output.paused = false;
 
-    reset_sort_context(&options->sort);
+	reset_sort_context(&options->sort);
 
-    MAC_ADDRESS_CLEAR(&options->selected_bssid);
+	MAC_ADDRESS_CLEAR(&options->selected_bssid);
 }
 
 static void clear_ap_marking(struct ap_list_head * const ap_list)
 {
-    struct AP_info * ap_cur;
+	struct AP_info * ap_cur;
 
-    TAILQ_FOREACH(ap_cur, ap_list, entry)
-    {
-        ap_cur->display.marked = false;
-        ap_cur->display.color = TEXT_RED;
-    }
+	TAILQ_FOREACH(ap_cur, ap_list, entry)
+	{
+		ap_cur->display.marked = false;
+		ap_cur->display.color = TEXT_RED;
+	}
 }
 
 static void color_off(struct local_options * const options)
 {
-    clear_ap_marking(&options->ap_list);
+	clear_ap_marking(&options->ap_list);
 
 	textcolor_normal();
 	textcolor_fg(TEXT_WHITE);
@@ -420,31 +437,31 @@ static void color_on(struct local_options * const options)
 
 	color_off(options);
 
-    TAILQ_FOREACH_REVERSE(ap_cur, &options->ap_list, ap_list_head, entry)
+	TAILQ_FOREACH_REVERSE(ap_cur, &options->ap_list, ap_list_head, entry)
 	{
 		struct ST_info * st_cur;
-        bool const check_broadcast = true;
+		bool const check_broadcast = true;
 
-        if (!ap_should_be_logged(ap_cur,
-                                 options->berlin,
-                                 options->encryption_filter,
-                                 &options->essid_filter,
-                                 check_broadcast,
-                                 options->min_pkts))
-        {
-            continue;
-        }
+		if (!ap_should_be_logged(ap_cur,
+								 options->berlin,
+								 options->encryption_filter,
+								 &options->essid_filter,
+								 check_broadcast,
+								 options->min_pkts))
+		{
+			continue;
+		}
 
 		TAILQ_FOREACH_REVERSE(st_cur, &options->sta_list, sta_list_head, entry)
 		{
 			if (st_cur->base != ap_cur
-                || (time(NULL) - st_cur->last_seen) > options->berlin)
+				|| (time(NULL) - st_cur->last_seen) > options->berlin)
 			{
 				continue;
 			}
 
 			if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid)
-                && options->asso_client)
+				&& options->asso_client)
 			{
 				continue;
 			}
@@ -464,7 +481,7 @@ static void color_on(struct local_options * const options)
 				else
 				{
 					ap_cur->display.color = color;
-                    color++;
+					color++;
 				}
 			}
 			else
@@ -475,9 +492,8 @@ static void color_on(struct local_options * const options)
 	}
 }
 
-static void sort_aps(
-    struct ap_list_head * const ap_list,
-    struct ap_sort_context_st const * const sort_context)
+static void sort_aps(struct ap_list_head * const ap_list,
+					 struct ap_sort_context_st const * const sort_context)
 {
 	time_t const tt = time(NULL);
 	struct ap_list_head sorted_list = TAILQ_HEAD_INITIALIZER(sorted_list);
@@ -491,44 +507,44 @@ static void sort_aps(
 		struct AP_info * ap_cur;
 		struct AP_info * ap_max = NULL;
 
-        /* Only the most recently seen entries are sorted. */
+		/* Only the most recently seen entries are sorted. */
 		TAILQ_FOREACH(ap_cur, ap_list, entry)
 		{
-            time_t const seconds_since_last_seen = tt - ap_cur->tlast;
-            static long const sorting_age_limit_seconds = 20;
-            bool const too_old_to_sort =
-                seconds_since_last_seen > sorting_age_limit_seconds;
+			time_t const seconds_since_last_seen = tt - ap_cur->tlast;
+			static long const sorting_age_limit_seconds = 20;
+			bool const too_old_to_sort
+				= seconds_since_last_seen > sorting_age_limit_seconds;
 
-            if (too_old_to_sort)
+			if (too_old_to_sort)
 			{
-                ap_max = ap_cur;
-                break;
+				ap_max = ap_cur;
+				break;
 			}
 		}
 
-        if (ap_max == NULL)
+		if (ap_max == NULL)
 		{
 			ap_max = TAILQ_FIRST(ap_list);
 
-            TAILQ_FOREACH(ap_cur, ap_list, entry)
+			TAILQ_FOREACH(ap_cur, ap_list, entry)
 			{
-                if (ap_max == ap_cur)
-                {
-                    /* There's no point in comparing an entry with itself. */
-                    continue;
-                }
+				if (ap_max == ap_cur)
+				{
+					/* There's no point in comparing an entry with itself. */
+					continue;
+				}
 
-                if (ap_sort_compare(sort_context, ap_cur, ap_max) > 0)
+				if (ap_sort_compare(sort_context, ap_cur, ap_max) > 0)
 				{
 					ap_max = ap_cur;
 				}
 			}
-        }
-        /* Put sorted entries at the tail of the list. dump_print()
+		}
+		/* Put sorted entries at the tail of the list. dump_print()
          * works from the tail to the head of the list.
          */
-        TAILQ_REMOVE(ap_list, ap_max, entry);
-        TAILQ_INSERT_TAIL(&sorted_list, ap_max, entry);
+		TAILQ_REMOVE(ap_list, ap_max, entry);
+		TAILQ_INSERT_TAIL(&sorted_list, ap_max, entry);
 	}
 
 	/* The original list is now empty.
@@ -551,41 +567,41 @@ static void sort_stas(struct sta_list_head * const sta_list)
 		/* Don't sort entries older than 60 seconds. */
 		TAILQ_FOREACH(st_cur, sta_list, entry)
 		{
-            time_t const seconds_since_last_seen = tt - st_cur->last_seen;
-            static long const sorting_age_limit_seconds = 60;
-            bool const too_old_to_sort =
-                seconds_since_last_seen > sorting_age_limit_seconds;
+			time_t const seconds_since_last_seen = tt - st_cur->last_seen;
+			static long const sorting_age_limit_seconds = 60;
+			bool const too_old_to_sort
+				= seconds_since_last_seen > sorting_age_limit_seconds;
 
-            if (too_old_to_sort)
+			if (too_old_to_sort)
 			{
 				st_max = st_cur;
-                break;
+				break;
 			}
 		}
 
-        if (st_max == NULL)
+		if (st_max == NULL)
 		{
-            st_max = TAILQ_FIRST(sta_list);
+			st_max = TAILQ_FIRST(sta_list);
 
 			/* STAs are always sorted by power. */
-            TAILQ_FOREACH(st_cur, sta_list, entry)
+			TAILQ_FOREACH(st_cur, sta_list, entry)
 			{
-                if (st_max == st_cur)
+				if (st_max == st_cur)
 				{
 					/* There's no point in comparing an entry with itself. */
 					continue;
 				}
 
-                if (st_cur->power > st_max->power)
+				if (st_cur->power > st_max->power)
 				{
 					st_max = st_cur;
 				}
 			}
 		}
 
-        TAILQ_REMOVE(sta_list, st_max, entry);
-        TAILQ_INSERT_TAIL(&sorted_list, st_max, entry);
-    }
+		TAILQ_REMOVE(sta_list, st_max, entry);
+		TAILQ_INSERT_TAIL(&sorted_list, st_max, entry);
+	}
 
 	/* The original list is now empty.
 	 * Concatenate the sorted list to it so that it contains the
@@ -594,55 +610,53 @@ static void sort_stas(struct sta_list_head * const sta_list)
 	TAILQ_CONCAT(sta_list, &sorted_list, entry);
 }
 
-static void dump_sort(
-    struct local_options * const options,
-    struct ap_sort_context_st const * const sort_context)
+static void dump_sort(struct local_options * const options,
+					  struct ap_sort_context_st const * const sort_context)
 {
-    sort_aps(&options->ap_list, sort_context);
-    sort_stas(&options->sta_list);
+	sort_aps(&options->ap_list, sort_context);
+	sort_stas(&options->sta_list);
 }
 
-static void input_thread_handle_input_key(
-    int const key_code,
-    int const update_fd)
+static void input_thread_handle_input_key(int const key_code,
+										  int const update_fd)
 {
-    switch (key_code)
-    {
-        case KEY_q:
-        case KEY_o:
-        case KEY_p:
-        case KEY_s:
-        case KEY_SPACE:
-        case KEY_r:
-        case KEY_m:
-        case KEY_ARROW_DOWN:
-        case KEY_ARROW_UP:
-        case KEY_i:
-        case KEY_TAB:
-        case KEY_a:
-        case KEY_d:
-            IGNORE_LTZ(write(update_fd, &key_code, sizeof key_code));
-            break;
-    }
+	switch (key_code)
+	{
+		case KEY_q:
+		case KEY_o:
+		case KEY_p:
+		case KEY_s:
+		case KEY_SPACE:
+		case KEY_r:
+		case KEY_m:
+		case KEY_ARROW_DOWN:
+		case KEY_ARROW_UP:
+		case KEY_i:
+		case KEY_TAB:
+		case KEY_a:
+		case KEY_d:
+			IGNORE_LTZ(write(update_fd, &key_code, sizeof key_code));
+			break;
+	}
 }
 
 struct input_thread_args_st
 {
-    volatile int * do_exit;
-    int update_fd;
+	volatile int * do_exit;
+	int update_fd;
 };
 
 static void input_thread(void * arg)
 {
-    struct input_thread_args_st * const input_args = arg;
-    volatile int * do_exit = input_args->do_exit;
-    int const update_fd = input_args->update_fd;
+	struct input_thread_args_st * const input_args = arg;
+	volatile int * do_exit = input_args->do_exit;
+	int const update_fd = input_args->update_fd;
 
-    while (!(*do_exit))
+	while (!(*do_exit))
 	{
-        int const keycode = mygetch();
+		int const keycode = mygetch();
 
-        input_thread_handle_input_key(keycode, update_fd);
+		input_thread_handle_input_key(keycode, update_fd);
 	}
 }
 
@@ -659,8 +673,8 @@ static const char usage[] =
 	"      --gpsd                : Use GPSd\n"
 	"      --write      <prefix> : Dump file prefix\n"
 	"      -w                    : same as --write \n"
-    "      --no-decloak          : Disable decloaking\n"
-    "      -D                    : Same as --no-decloak\n"
+	"      --no-decloak          : Disable decloaking\n"
+	"      -D                    : Same as --no-decloak\n"
 	"      --beacons             : Record all beacons in dump file\n"
 	"      --update       <secs> : Display update delay in seconds\n"
 	"      --showack             : Prints ack/cts/rts statistics\n"
@@ -679,17 +693,18 @@ static const char usage[] =
 	"      --wps                 : Display WPS information (if any)\n"
 	"      --output-format\n"
 	"                  <formats> : Output format. Possible values:\n"
-    "                              pcap, ivs, csv, gps, kismet, netxml, wifi_scanner"
-    ", logcsv\n"
-    "      --sys-name            : Unique System Name\n"
-    "      --loc-name            : Unique Location Name\n"
-    "      --filter-seconds      : Filter time (seconds)\n"
-    "      --file-reset-minutes  : File reset time (minutes)\n"
-    "      -v          <minutes> : Maximum age of cached entries\n"
-    "      --ignore-negative-one : Removes the message that says\n"
+	"                              pcap, ivs, csv, gps, kismet, netxml, "
+	"wifi_scanner"
+	", logcsv\n"
+	"      --sys-name            : Unique System Name\n"
+	"      --loc-name            : Unique Location Name\n"
+	"      --filter-seconds      : Filter time (seconds)\n"
+	"      --file-reset-minutes  : File reset time (minutes)\n"
+	"      -v          <minutes> : Maximum age of cached entries\n"
+	"      --ignore-negative-one : Removes the message that says\n"
 	"                              fixed channel <interface>: -1\n"
-    "      --no-filename-index   : Don't include an index in the filname\n"
-    "      --no-shared-key       : Don't do shared key checks\n"
+	"      --no-filename-index   : Don't include an index in the filname\n"
+	"      --no-shared-key       : Don't do shared key checks\n"
 	"      --write-interval\n"
 	"                  <seconds> : Output file(s) write interval in seconds\n"
 	"      --background <enable> : Override background detection.\n"
@@ -732,200 +747,203 @@ static void airodump_usage(void)
 	free(l_usage);
 }
 
-static void update_ap_rx_quality(
-    struct ap_list_head * const ap_list,
-    struct timeval const * const current_time)
+static void update_ap_rx_quality(struct ap_list_head * const ap_list,
+								 struct timeval const * const current_time)
 {
-    /* access points */
-    struct AP_info * ap_cur;
+	/* access points */
+	struct AP_info * ap_cur;
 
-    TAILQ_FOREACH(ap_cur, ap_list, entry)
-    {
-        unsigned long const time_diff = 1000000UL * (current_time->tv_sec - ap_cur->ftimer.tv_sec)
-            + (current_time->tv_usec - ap_cur->ftimer.tv_usec);
+	TAILQ_FOREACH(ap_cur, ap_list, entry)
+	{
+		unsigned long const time_diff
+			= 1000000UL * (current_time->tv_sec - ap_cur->ftimer.tv_sec)
+			  + (current_time->tv_usec - ap_cur->ftimer.tv_usec);
 
-        /* update every `QLT_TIME`seconds if the rate is low, or every 500ms
+		/* update every `QLT_TIME`seconds if the rate is low, or every 500ms
          * otherwise */
-        if ((ap_cur->fcapt >= QLT_COUNT && time_diff > 500000)
-            || time_diff > (QLT_TIME * 1000000))
-        {
-            /* at least one frame captured */
-            if (ap_cur->fcapt > 1)
-            {
-                unsigned long const capt_time
-                    = (1000000UL * (ap_cur->ftimel.tv_sec
-                                    - ap_cur->ftimef.tv_sec) // time between
-                       // first and last
-                       // captured frame
-                       + (ap_cur->ftimel.tv_usec - ap_cur->ftimef.tv_usec));
+		if ((ap_cur->fcapt >= QLT_COUNT && time_diff > 500000)
+			|| time_diff > (QLT_TIME * 1000000))
+		{
+			/* at least one frame captured */
+			if (ap_cur->fcapt > 1)
+			{
+				unsigned long const capt_time
+					= (1000000UL
+						   * (ap_cur->ftimel.tv_sec
+							  - ap_cur->ftimef.tv_sec) // time between
+					   // first and last
+					   // captured frame
+					   + (ap_cur->ftimel.tv_usec - ap_cur->ftimef.tv_usec));
 
-                unsigned long const miss_time
-                    = (1000000UL * (ap_cur->ftimef.tv_sec
-                                    - ap_cur->ftimer.tv_sec) // time between
-                       // timer reset and
-                       // first frame
-                       + (ap_cur->ftimef.tv_usec - ap_cur->ftimer.tv_usec))
-                    + (1000000UL * (current_time->tv_sec
-                                    - ap_cur->ftimel.tv_sec) // time between
-                       // last frame and
-                       // this moment
-                       + (current_time->tv_usec - ap_cur->ftimel.tv_usec));
+				unsigned long const miss_time
+					= (1000000UL
+						   * (ap_cur->ftimef.tv_sec
+							  - ap_cur->ftimer.tv_sec) // time between
+					   // timer reset and
+					   // first frame
+					   + (ap_cur->ftimef.tv_usec - ap_cur->ftimer.tv_usec))
+					  + (1000000UL
+							 * (current_time->tv_sec
+								- ap_cur->ftimel.tv_sec) // time between
+						 // last frame and
+						 // this moment
+						 + (current_time->tv_usec - ap_cur->ftimel.tv_usec));
 
-                // number of frames missed at the time where no frames were
-                // captured; extrapolated by assuming a constant framerate
-                if (capt_time > 0 && miss_time > 200000)
-                {
-                    int const missed_frames =
-                        (int)(((float)miss_time / (float)capt_time)
-                              * ((float)ap_cur->fcapt
-                                 + (float)ap_cur->fmiss));
-                    ap_cur->fmiss += missed_frames;
-                }
+				// number of frames missed at the time where no frames were
+				// captured; extrapolated by assuming a constant framerate
+				if (capt_time > 0 && miss_time > 200000)
+				{
+					int const missed_frames
+						= (int) (((float) miss_time / (float) capt_time)
+								 * ((float) ap_cur->fcapt
+									+ (float) ap_cur->fmiss));
+					ap_cur->fmiss += missed_frames;
+				}
 
-                ap_cur->rx_quality
-                    = (int)(((float)ap_cur->fcapt
-                             / ((float)ap_cur->fcapt + (float)ap_cur->fmiss))
-                            *
+				ap_cur->rx_quality
+					= (int) (((float) ap_cur->fcapt
+							  / ((float) ap_cur->fcapt + (float) ap_cur->fmiss))
+							 *
 #if defined(__x86_64__) && defined(__CYGWIN__)
-                            (0.0f + 100.0f));
+							 (0.0f + 100.0f));
 #else
-                            100.0f);
+							 100.0f);
 #endif
-            }
-            else
-            {
-                ap_cur->rx_quality = 0; /* no packets -> zero quality */
-            }
+			}
+			else
+			{
+				ap_cur->rx_quality = 0; /* no packets -> zero quality */
+			}
 
-            /* normalize, in case the seq numbers are not iterating */
-            if (ap_cur->rx_quality > 100)
-            {
-                ap_cur->rx_quality = 100;
-            }
-            if (ap_cur->rx_quality < 0)
-            {
-                ap_cur->rx_quality = 0;
-            }
+			/* normalize, in case the seq numbers are not iterating */
+			if (ap_cur->rx_quality > 100)
+			{
+				ap_cur->rx_quality = 100;
+			}
+			if (ap_cur->rx_quality < 0)
+			{
+				ap_cur->rx_quality = 0;
+			}
 
-            /* reset variables */
-            ap_cur->fcapt = 0;
-            ap_cur->fmiss = 0;
-            gettimeofday(&ap_cur->ftimer, NULL);
-        }
-    }
+			/* reset variables */
+			ap_cur->fcapt = 0;
+			ap_cur->fmiss = 0;
+			gettimeofday(&ap_cur->ftimer, NULL);
+		}
+	}
 }
 
-static void update_sta_rx_quality(
-    struct sta_list_head * const sta_list,
-    struct timeval const * const current_time)
+static void update_sta_rx_quality(struct sta_list_head * const sta_list,
+								  struct timeval const * const current_time)
 {
-    struct ST_info * st_cur;
+	struct ST_info * st_cur;
 
-    TAILQ_FOREACH(st_cur, sta_list, entry)
-    {
-        unsigned long const time_diff = 1000000UL * (current_time->tv_sec - st_cur->ftimer.tv_sec)
-            + (current_time->tv_usec - st_cur->ftimer.tv_usec);
+	TAILQ_FOREACH(st_cur, sta_list, entry)
+	{
+		unsigned long const time_diff
+			= 1000000UL * (current_time->tv_sec - st_cur->ftimer.tv_sec)
+			  + (current_time->tv_usec - st_cur->ftimer.tv_usec);
 
-        if (time_diff > 10000000)
-        {
-            st_cur->missed = 0;
-            gettimeofday(&st_cur->ftimer, NULL);
-        }
-    }
+		if (time_diff > 10000000)
+		{
+			st_cur->missed = 0;
+			gettimeofday(&st_cur->ftimer, NULL);
+		}
+	}
 }
 
 static void update_rx_quality(struct local_options * const options)
 {
-    struct timeval current_time;
+	struct timeval current_time;
 
-    gettimeofday(&current_time, NULL);
+	gettimeofday(&current_time, NULL);
 
-    update_ap_rx_quality(&options->ap_list, &current_time);
-    update_sta_rx_quality(&options->sta_list, &current_time);
+	update_ap_rx_quality(&options->ap_list, &current_time);
+	update_sta_rx_quality(&options->sta_list, &current_time);
 }
 
-static void update_ap_packets_per_second(
-    struct ap_list_head * const ap_list,
-    struct timeval const * const tv)
+static void update_ap_packets_per_second(struct ap_list_head * const ap_list,
+										 struct timeval const * const tv)
 {
-    struct AP_info * ap_cur;
+	struct AP_info * ap_cur;
 
-    TAILQ_FOREACH(ap_cur, ap_list, entry)
-    {
-        time_t const sec = tv->tv_sec - ap_cur->tv.tv_sec;
-        suseconds_t const usec = tv->tv_usec - ap_cur->tv.tv_usec;
+	TAILQ_FOREACH(ap_cur, ap_list, entry)
+	{
+		time_t const sec = tv->tv_sec - ap_cur->tv.tv_sec;
+		suseconds_t const usec = tv->tv_usec - ap_cur->tv.tv_usec;
 
 #if defined(__x86_64__) && defined(__CYGWIN__)
-        float const pause = (sec * (0.0f + 1000000.0f) + usec) / (0.0f + 1000000.0f);
+		float const pause
+			= (sec * (0.0f + 1000000.0f) + usec) / (0.0f + 1000000.0f);
 #else
-        float const pause = (sec * 1000000.0f + usec) / 1000000.0f;
+		float const pause = (sec * 1000000.0f + usec) / 1000000.0f;
 #endif
-        if (pause > 2.0f)
-        {
-            unsigned long const diff = ap_cur->nb_data - ap_cur->nb_data_old;
-            int const ps = (int)(((float)diff) / pause);
+		if (pause > 2.0f)
+		{
+			unsigned long const diff = ap_cur->nb_data - ap_cur->nb_data_old;
+			int const ps = (int) (((float) diff) / pause);
 
-            ap_cur->nb_dataps = ps;
-            ap_cur->nb_data_old = ap_cur->nb_data;
-            gettimeofday(&ap_cur->tv, NULL);
-        }
-    }
+			ap_cur->nb_dataps = ps;
+			ap_cur->nb_data_old = ap_cur->nb_data;
+			gettimeofday(&ap_cur->tv, NULL);
+		}
+	}
 }
 
-static void update_na_packets_per_second(
-    struct na_list_head * const na_list,
-    struct timeval * const tv)
+static void update_na_packets_per_second(struct na_list_head * const na_list,
+										 struct timeval * const tv)
 {
-    struct NA_info * na_cur;
+	struct NA_info * na_cur;
 
-    TAILQ_FOREACH(na_cur, na_list, entry)
-    {
-        time_t const sec = tv->tv_sec - na_cur->tv.tv_sec;
-        suseconds_t const usec = tv->tv_usec - na_cur->tv.tv_usec;
+	TAILQ_FOREACH(na_cur, na_list, entry)
+	{
+		time_t const sec = tv->tv_sec - na_cur->tv.tv_sec;
+		suseconds_t const usec = tv->tv_usec - na_cur->tv.tv_usec;
 
 #if defined(__x86_64__) && defined(__CYGWIN__)
-        float const pause = (sec * (0.0f + 1000000.0f) + usec) / (0.0f + 1000000.0f);
+		float const pause
+			= (sec * (0.0f + 1000000.0f) + usec) / (0.0f + 1000000.0f);
 #else
-        float const pause = (sec * 1000000.0f + usec) / 1000000.0f;
+		float const pause = (sec * 1000000.0f + usec) / 1000000.0f;
 #endif
-        if (pause > 2.0f)
-        {
-            unsigned long const diff = (unsigned long)(na_cur->ack - na_cur->ack_old);
-            int const ps = (int)(((float)diff) / pause);
+		if (pause > 2.0f)
+		{
+			unsigned long const diff
+				= (unsigned long) (na_cur->ack - na_cur->ack_old);
+			int const ps = (int) (((float) diff) / pause);
 
-            na_cur->ackps = ps;
-            na_cur->ack_old = na_cur->ack;
-            gettimeofday(&(na_cur->tv), NULL);
-        }
-    }
+			na_cur->ackps = ps;
+			na_cur->ack_old = na_cur->ack;
+			gettimeofday(&(na_cur->tv), NULL);
+		}
+	}
 }
 
 static void update_data_packets_per_second(struct local_options * const options)
 {
-    struct timeval tv;
+	struct timeval tv;
 
 	gettimeofday(&tv, NULL);
 
-    update_ap_packets_per_second(&options->ap_list, &tv);
-    update_na_packets_per_second(&options->na_list, &tv);
+	update_ap_packets_per_second(&options->ap_list, &tv);
+	update_na_packets_per_second(&options->na_list, &tv);
 }
 
 static void packet_buf_free(struct pkt_buf * const pkt_buf)
 {
-    if (pkt_buf != NULL)
-    {
-        free(pkt_buf->packet);
-        free(pkt_buf);
-    }
+	if (pkt_buf != NULL)
+	{
+		free(pkt_buf->packet);
+		free(pkt_buf);
+	}
 }
 
-static void packet_buf_remove(
-    struct pkt_list_head * const pkt_list,
-    struct pkt_buf * const pkt_buf)
+static void packet_buf_remove(struct pkt_list_head * const pkt_list,
+							  struct pkt_buf * const pkt_buf)
 {
-    TAILQ_REMOVE(pkt_list, pkt_buf, entry);
+	TAILQ_REMOVE(pkt_list, pkt_buf, entry);
 
-    packet_buf_free(pkt_buf);
+	packet_buf_free(pkt_buf);
 }
 
 static int packet_list_free(struct pkt_list_head * const pkt_list)
@@ -934,22 +952,21 @@ static int packet_list_free(struct pkt_list_head * const pkt_list)
 	{
 		struct pkt_buf * const pkt_buf = TAILQ_FIRST(pkt_list);
 
-        packet_buf_remove(pkt_list, pkt_buf);
+		packet_buf_remove(pkt_list, pkt_buf);
 	}
 
 	return 0;
 }
 
-static void ap_purge_old_packets(
-	struct AP_info * const ap_cur,
-	struct timeval const * const current_time,
-	unsigned long const age_limit_millisecs)
+static void ap_purge_old_packets(struct AP_info * const ap_cur,
+								 struct timeval const * const current_time,
+								 unsigned long const age_limit_millisecs)
 {
 	struct pkt_buf * pkt_buf;
 	struct pkt_buf * temp;
 	bool found_old_packet = false;
 
-    /* New packets are always added to the head of the list, so
+	/* New packets are always added to the head of the list, so
      * once the first packet that is too old is found, there is no
      * need to check the age of the others.
      */
@@ -957,11 +974,12 @@ static void ap_purge_old_packets(
 	{
 		if (!found_old_packet)
 		{
-			unsigned long const time_diff =
-			(((current_time->tv_sec - (pkt_buf->ctime.tv_sec)) * 1000000UL)
-				 + (current_time->tv_usec - (pkt_buf->ctime.tv_usec)))
-				/ 1000;
-            bool const too_old = time_diff > age_limit_millisecs;
+			unsigned long const time_diff
+				= (((current_time->tv_sec - (pkt_buf->ctime.tv_sec))
+					* 1000000UL)
+				   + (current_time->tv_usec - (pkt_buf->ctime.tv_usec)))
+				  / 1000;
+			bool const too_old = time_diff > age_limit_millisecs;
 
 			if (too_old)
 			{
@@ -971,15 +989,13 @@ static void ap_purge_old_packets(
 
 		if (found_old_packet)
 		{
-            packet_buf_remove(&ap_cur->pkt_list, pkt_buf);
+			packet_buf_remove(&ap_cur->pkt_list, pkt_buf);
 		}
 	}
-
 }
 
-static void aps_purge_old_packets(
-	struct ap_list_head * const ap_list,
-	unsigned long const age_limit_millisecs)
+static void aps_purge_old_packets(struct ap_list_head * const ap_list,
+								  unsigned long const age_limit_millisecs)
 {
 	struct timeval current_time;
 
@@ -993,50 +1009,49 @@ static void aps_purge_old_packets(
 	}
 }
 
-static void list_add_packet(
-	struct pkt_list_head * const pkt_list,
-    uint8_t const * const packet,
-    size_t const length)
+static void list_add_packet(struct pkt_list_head * const pkt_list,
+							uint8_t const * const packet,
+							size_t const length)
 {
-    bool success;
+	bool success;
 	struct pkt_buf * new_pkt_buf = NULL;
 
 	if (packet == NULL || length == 0)
 	{
-        success = false;
-        goto done;
+		success = false;
+		goto done;
 	}
 
-    new_pkt_buf = calloc(1, sizeof *new_pkt_buf);
-    if (new_pkt_buf == NULL)
-    {
-        success = false;
-        goto done;
-    }
+	new_pkt_buf = calloc(1, sizeof *new_pkt_buf);
+	if (new_pkt_buf == NULL)
+	{
+		success = false;
+		goto done;
+	}
 
-    new_pkt_buf->packet = malloc(length);
-    if (new_pkt_buf->packet == NULL)
-    {
-        success = false;
-        goto done;
-    }
+	new_pkt_buf->packet = malloc(length);
+	if (new_pkt_buf->packet == NULL)
+	{
+		success = false;
+		goto done;
+	}
 
-    memcpy(new_pkt_buf->packet, packet, length);
-    new_pkt_buf->length = (uint16_t)length;
+	memcpy(new_pkt_buf->packet, packet, length);
+	new_pkt_buf->length = (uint16_t) length;
 
-    gettimeofday(&new_pkt_buf->ctime, NULL);
+	gettimeofday(&new_pkt_buf->ctime, NULL);
 
 	TAILQ_INSERT_HEAD(pkt_list, new_pkt_buf, entry);
 
-    success = true;
+	success = true;
 
 done:
-    if (!success)
-    {
-        packet_buf_free(new_pkt_buf);
-    }
+	if (!success)
+	{
+		packet_buf_free(new_pkt_buf);
+	}
 
-    return;
+	return;
 }
 
 /*
@@ -1045,18 +1060,17 @@ done:
  * The reason is that the first two bytes unencrypted are 'aa'
  * so with the same IV it should always be encrypted to the same thing.
  */
-static bool list_check_decloak(
-    struct pkt_list_head * const pkt_list,
-    uint8_t const * const packet,
-    size_t const length)
+static bool list_check_decloak(struct pkt_list_head * const pkt_list,
+							   uint8_t const * const packet,
+							   size_t const length)
 {
-    bool is_decloaked;
+	bool is_decloaked;
 	struct pkt_buf * next;
 
 	if (packet == NULL || length == 0)
 	{
-        is_decloaked = false;
-        goto done;
+		is_decloaked = false;
+		goto done;
 	}
 
 	TAILQ_FOREACH(next, pkt_list, entry)
@@ -1064,13 +1078,13 @@ static bool list_check_decloak(
 		if ((next->length + 4) == length)
 		{
 			bool correct = true;
-            static size_t const offset = 28; /* TODO: Offset to what? */
+			static size_t const offset = 28; /* TODO: Offset to what? */
 
-            /* FIXME: Should length also be >= 32? */
+			/* FIXME: Should length also be >= 32? */
 
 			// check for 4 bytes added after the end
 			for (size_t i = offset; i < length - offset; i++)
-            // check everything (in the old packet) after the IV
+			// check everything (in the old packet) after the IV
 			// (including crc32 at the end)
 			{
 				if (next->packet[i] != packet[i])
@@ -1085,7 +1099,7 @@ static bool list_check_decloak(
 				correct = true;
 				// check for 4 bytes added at the beginning
 				for (size_t i = offset; i < length - offset; i++)
-                // check everything (in the old packet) after the IV
+				// check everything (in the old packet) after the IV
 				// (including crc32 at the end)
 				{
 					if (next->packet[i] != packet[4 + i])
@@ -1098,91 +1112,84 @@ static bool list_check_decloak(
 
 			if (correct)
 			{
-                is_decloaked = true;
-                goto done;
+				is_decloaked = true;
+				goto done;
 			}
 		}
 	}
 
-    is_decloaked = false;
+	is_decloaked = false;
 
 done:
 	return is_decloaked;
 }
 
-static void na_info_free(struct NA_info * const na_cur)
-{
-    free(na_cur);
-}
+static void na_info_free(struct NA_info * const na_cur) { free(na_cur); }
 
-static void na_info_remove(
-    struct na_list_head * const na_list,
-    struct NA_info * const na_cur)
+static void na_info_remove(struct na_list_head * const na_list,
+						   struct NA_info * const na_cur)
 {
-    TAILQ_REMOVE(na_list, na_cur, entry);
+	TAILQ_REMOVE(na_list, na_cur, entry);
 
-    na_info_free(na_cur);
+	na_info_free(na_cur);
 }
 
 static void na_info_list_free(struct na_list_head * const na_list)
 {
-    while (TAILQ_FIRST(na_list) != NULL)
+	while (TAILQ_FIRST(na_list) != NULL)
 	{
-        struct NA_info * const na_cur = TAILQ_FIRST(na_list);
+		struct NA_info * const na_cur = TAILQ_FIRST(na_list);
 
-        na_info_remove(na_list, na_cur);
+		na_info_remove(na_list, na_cur);
 	}
 }
 
 static struct NA_info * na_info_alloc(void)
 {
-    struct NA_info * na_cur = calloc(1, sizeof *na_cur);
+	struct NA_info * na_cur = calloc(1, sizeof *na_cur);
 
-    if (na_cur == NULL)
-    {
-        perror("calloc failed");
-    }
+	if (na_cur == NULL)
+	{
+		perror("calloc failed");
+	}
 
-    return na_cur;
+	return na_cur;
 }
 
-static void na_info_initialise(
-    struct NA_info * const na_cur,
-    mac_address const * const mac)
+static void na_info_initialise(struct NA_info * const na_cur,
+							   mac_address const * const mac)
 {
-    MAC_ADDRESS_COPY(&na_cur->namac, mac);
+	MAC_ADDRESS_COPY(&na_cur->namac, mac);
 
-    gettimeofday(&na_cur->tv, NULL);
-    na_cur->tinit = time(NULL);
-    na_cur->tlast = time(NULL);
+	gettimeofday(&na_cur->tv, NULL);
+	na_cur->tinit = time(NULL);
+	na_cur->tlast = time(NULL);
 
-    na_cur->power = -1;
-    na_cur->channel = -1;
-
+	na_cur->power = -1;
+	na_cur->channel = -1;
 }
 
-static struct NA_info * na_info_new(
-    struct na_list_head * const na_list,
-    mac_address const * const mac)
+static struct NA_info * na_info_new(struct na_list_head * const na_list,
+									mac_address const * const mac)
 {
-    struct NA_info * const na_cur = na_info_alloc();
+	struct NA_info * const na_cur = na_info_alloc();
 
-    if (na_cur == NULL)
-    {
-        goto done;
-    }
+	if (na_cur == NULL)
+	{
+		goto done;
+	}
 
-    na_info_initialise(na_cur, mac);
+	na_info_initialise(na_cur, mac);
 
-    TAILQ_INSERT_TAIL(na_list, na_cur, entry);
+	TAILQ_INSERT_TAIL(na_list, na_cur, entry);
 
 done:
-    return na_cur;
+	return na_cur;
 }
 
-static struct NA_info * na_info_lookup_existing(
-	struct na_list_head * const list,
-	mac_address const * const mac)
+static struct NA_info *
+na_info_lookup_existing(struct na_list_head * const list,
+						mac_address const * const mac)
 {
 	struct NA_info * na_cur;
 
@@ -1197,137 +1204,131 @@ static struct NA_info * na_info_lookup_existing(
 	return na_cur;
 }
 
-struct NA_info * na_info_lookup(
-    struct na_list_head * const na_list,
-    mac_address const * const mac)
+struct NA_info * na_info_lookup(struct na_list_head * const na_list,
+								mac_address const * const mac)
 {
-    struct NA_info * na_cur;
+	struct NA_info * na_cur;
 
-    na_cur = na_info_lookup_existing(na_list, mac);
-    if (na_cur != NULL)
-    {
-        goto done;
-    }
+	na_cur = na_info_lookup_existing(na_list, mac);
+	if (na_cur != NULL)
+	{
+		goto done;
+	}
 
-    na_cur = na_info_new(na_list, mac);
+	na_cur = na_info_new(na_list, mac);
 
 done:
-    return na_cur;
+	return na_cur;
 }
 
-static void remove_namac(
-    struct na_list_head * const na_list,
-    mac_address const * const mac)
+static void remove_namac(struct na_list_head * const na_list,
+						 mac_address const * const mac)
 {
-    struct NA_info * const na_cur = na_info_lookup_existing(na_list, mac);
+	struct NA_info * const na_cur = na_info_lookup_existing(na_list, mac);
 
 	if (na_cur == NULL)
 	{
 		goto done;
 	}
 
-    na_info_remove(na_list, na_cur);
+	na_info_remove(na_list, na_cur);
 
 done:
 	return;
 }
 
-static void sta_populate_gps(
-    struct ST_info * const st_cur,
-    float const * const gps_coordinates)
+static void sta_populate_gps(struct ST_info * const st_cur,
+							 float const * const gps_coordinates)
 {
-    memcpy(st_cur->gps_loc_min, gps_coordinates, sizeof(st_cur->gps_loc_min));
-    memcpy(st_cur->gps_loc_max, gps_coordinates, sizeof(st_cur->gps_loc_max));
-    memcpy(st_cur->gps_loc_best, gps_coordinates, sizeof(st_cur->gps_loc_best));
+	memcpy(st_cur->gps_loc_min, gps_coordinates, sizeof(st_cur->gps_loc_min));
+	memcpy(st_cur->gps_loc_max, gps_coordinates, sizeof(st_cur->gps_loc_max));
+	memcpy(st_cur->gps_loc_best, gps_coordinates, sizeof(st_cur->gps_loc_best));
 }
 
 static void sta_info_free(struct ST_info * const st_cur)
 {
-    free(st_cur->manuf);
-    free(st_cur);
+	free(st_cur->manuf);
+	free(st_cur);
 }
 
-static void sta_info_remove(
-    struct sta_list_head * const sta_list,
-    struct ST_info * const st_cur)
+static void sta_info_remove(struct sta_list_head * const sta_list,
+							struct ST_info * const st_cur)
 {
-    TAILQ_REMOVE(sta_list, st_cur, entry);
+	TAILQ_REMOVE(sta_list, st_cur, entry);
 
-    sta_info_free(st_cur);
+	sta_info_free(st_cur);
 }
 
 static void sta_list_free(struct sta_list_head * const sta_list)
 {
-    while (TAILQ_FIRST(sta_list) != NULL)
-    {
-        struct ST_info * const st_cur = TAILQ_FIRST(sta_list);
+	while (TAILQ_FIRST(sta_list) != NULL)
+	{
+		struct ST_info * const st_cur = TAILQ_FIRST(sta_list);
 
-        sta_info_remove(sta_list, st_cur);
-    }
+		sta_info_remove(sta_list, st_cur);
+	}
 }
 
 static struct ST_info * st_info_alloc(void)
 {
-    struct ST_info * const st_cur = calloc(1, sizeof *st_cur);
+	struct ST_info * const st_cur = calloc(1, sizeof *st_cur);
 
-    if (st_cur == NULL)
-    {
-        perror("calloc failed");
-    }
+	if (st_cur == NULL)
+	{
+		perror("calloc failed");
+	}
 
-    return st_cur;
+	return st_cur;
 }
 
-static void sta_info_initialise(
-    struct ST_info * const st_cur,
-    mac_address const * const mac,
-    struct local_options * const options)
+static void sta_info_initialise(struct ST_info * const st_cur,
+								mac_address const * const mac,
+								struct local_options * const options)
 {
-    MAC_ADDRESS_COPY(&st_cur->stmac, mac);
+	MAC_ADDRESS_COPY(&st_cur->stmac, mac);
 
-    st_cur->first_seen = time(NULL);
-    st_cur->last_seen = st_cur->first_seen;
+	st_cur->first_seen = time(NULL);
+	st_cur->last_seen = st_cur->first_seen;
 
-    st_cur->power = -1;
-    st_cur->best_power = -1;
-    st_cur->rate_to = -1;
-    st_cur->rate_from = -1;
+	st_cur->power = -1;
+	st_cur->best_power = -1;
+	st_cur->rate_to = -1;
+	st_cur->rate_from = -1;
 
-    st_cur->probe_index = -1;
+	st_cur->probe_index = -1;
 
-    gettimeofday(&st_cur->ftimer, NULL);
+	gettimeofday(&st_cur->ftimer, NULL);
 
-    if (options->show_manufacturer)
-    {
-        st_cur->manuf =
-            get_manufacturer_by_oui(options->manufacturer_list, mac->addr);
-    }
+	if (options->show_manufacturer)
+	{
+		st_cur->manuf
+			= get_manufacturer_by_oui(options->manufacturer_list, mac->addr);
+	}
 
-    sta_populate_gps(st_cur, options->gps_context.gps_location);
+	sta_populate_gps(st_cur, options->gps_context.gps_location);
 }
 
-static struct ST_info * sta_info_new(
-    struct local_options * const options,
-    mac_address const * const mac)
+static struct ST_info * sta_info_new(struct local_options * const options,
+									 mac_address const * const mac)
 {
-    struct ST_info * const st_cur = st_info_alloc();
+	struct ST_info * const st_cur = st_info_alloc();
 
-    if (st_cur == NULL)
-    {
-        goto done;
-    }
+	if (st_cur == NULL)
+	{
+		goto done;
+	}
 
-    sta_info_initialise(st_cur, mac, options);
+	sta_info_initialise(st_cur, mac, options);
 
-    TAILQ_INSERT_TAIL(&options->sta_list, st_cur, entry);
+	TAILQ_INSERT_TAIL(&options->sta_list, st_cur, entry);
 
 done:
-    return st_cur;
+	return st_cur;
 }
 
-static struct ST_info * sta_info_lookup_existing(
-	struct sta_list_head * const sta_list,
-	mac_address const * const mac)
+static struct ST_info *
+sta_info_lookup_existing(struct sta_list_head * const sta_list,
+						 mac_address const * const mac)
 {
 	struct ST_info * st_cur;
 
@@ -1342,31 +1343,29 @@ static struct ST_info * sta_info_lookup_existing(
 	return st_cur;
 }
 
-static struct ST_info * sta_info_lookup(
-    struct local_options * const options,
-    mac_address const * const mac,
-    bool * const is_new)
+static struct ST_info * sta_info_lookup(struct local_options * const options,
+										mac_address const * const mac,
+										bool * const is_new)
 {
-    struct ST_info * st_cur;
+	struct ST_info * st_cur;
 
-    st_cur = sta_info_lookup_existing(&options->sta_list, mac);
-    if (st_cur != NULL)
-    {
-        *is_new = false;
+	st_cur = sta_info_lookup_existing(&options->sta_list, mac);
+	if (st_cur != NULL)
+	{
+		*is_new = false;
 
-        goto done;
-    }
+		goto done;
+	}
 
-    *is_new = true;
-    st_cur = sta_info_new(options, mac);
+	*is_new = true;
+	st_cur = sta_info_new(options, mac);
 
 done:
-    return st_cur;
+	return st_cur;
 }
 
-static void free_stas_with_this_base_ap(
-	struct sta_list_head * const sta_list,
-	struct AP_info * ap_cur)
+static void free_stas_with_this_base_ap(struct sta_list_head * const sta_list,
+										struct AP_info * ap_cur)
 {
 	struct ST_info * st_cur;
 	struct ST_info * st_tmp;
@@ -1375,14 +1374,13 @@ static void free_stas_with_this_base_ap(
 	{
 		if (st_cur->base == ap_cur)
 		{
-            sta_info_remove(sta_list, st_cur);
+			sta_info_remove(sta_list, st_cur);
 		}
 	}
 }
 
-static void ap_info_free(
-    struct AP_info * const ap_cur,
-    struct sta_list_head * const sta_list)
+static void ap_info_free(struct AP_info * const ap_cur,
+						 struct sta_list_head * const sta_list)
 {
 	free_stas_with_this_base_ap(sta_list, ap_cur);
 
@@ -1391,42 +1389,40 @@ static void ap_info_free(
 	data_wipe(ap_cur->data_root);
 	free(ap_cur->manuf);
 
-    free(ap_cur);
+	free(ap_cur);
 }
 
-static void ap_info_remove(
-    struct local_options * const options,
-    struct AP_info * const ap_cur)
+static void ap_info_remove(struct local_options * const options,
+						   struct AP_info * const ap_cur)
 {
-    if (options->p_selected_ap == ap_cur)
-    {
-        options->p_selected_ap = NULL;
-    }
+	if (options->p_selected_ap == ap_cur)
+	{
+		options->p_selected_ap = NULL;
+	}
 
-    TAILQ_REMOVE(&options->ap_list, ap_cur, entry);
+	TAILQ_REMOVE(&options->ap_list, ap_cur, entry);
 
-    ap_info_free(ap_cur, &options->sta_list);
+	ap_info_free(ap_cur, &options->sta_list);
 }
 
 static void ap_list_free(struct local_options * const options)
 {
-    struct ap_list_head * const ap_list = &options->ap_list;
+	struct ap_list_head * const ap_list = &options->ap_list;
 
-    while (TAILQ_FIRST(ap_list) != NULL)
-    {
-        struct AP_info * const ap_cur = TAILQ_FIRST(ap_list);
+	while (TAILQ_FIRST(ap_list) != NULL)
+	{
+		struct AP_info * const ap_cur = TAILQ_FIRST(ap_list);
 
-        ap_info_remove(options, ap_cur);
-    }
+		ap_info_remove(options, ap_cur);
+	}
 }
 
-static void ap_info_populate_gps(
-    struct AP_info * const ap_cur,
-    float const * const gps_coordinates)
+static void ap_info_populate_gps(struct AP_info * const ap_cur,
+								 float const * const gps_coordinates)
 {
-    memcpy(ap_cur->gps_loc_min, gps_coordinates, sizeof(ap_cur->gps_loc_min));
-    memcpy(ap_cur->gps_loc_max, gps_coordinates, sizeof(ap_cur->gps_loc_max));
-    memcpy(ap_cur->gps_loc_best, gps_coordinates, sizeof(ap_cur->gps_loc_best));
+	memcpy(ap_cur->gps_loc_min, gps_coordinates, sizeof(ap_cur->gps_loc_min));
+	memcpy(ap_cur->gps_loc_max, gps_coordinates, sizeof(ap_cur->gps_loc_max));
+	memcpy(ap_cur->gps_loc_best, gps_coordinates, sizeof(ap_cur->gps_loc_best));
 }
 
 static struct AP_info * ap_info_alloc(void)
@@ -1438,144 +1434,138 @@ static struct AP_info * ap_info_alloc(void)
 		perror("calloc failed");
 	}
 
-    return ap_cur;
+	return ap_cur;
 }
 
-static void ap_info_initialise(
-    struct AP_info * const ap_cur,
-    mac_address const * const bssid,
-    struct local_options * const options)
+static void ap_info_initialise(struct AP_info * const ap_cur,
+							   mac_address const * const bssid,
+							   struct local_options * const options)
 {
-    MAC_ADDRESS_COPY(&ap_cur->bssid, bssid);
+	MAC_ADDRESS_COPY(&ap_cur->bssid, bssid);
 
-    ap_cur->tinit = time(NULL);
-    ap_cur->tlast = ap_cur->tinit;
+	ap_cur->tinit = time(NULL);
+	ap_cur->tlast = ap_cur->tinit;
 
-    ap_cur->avg_power = -1;
-    ap_cur->best_power = -1;
-    ap_cur->power_index = -1;
+	ap_cur->avg_power = -1;
+	ap_cur->best_power = -1;
+	ap_cur->power_index = -1;
 
-    for (size_t i = 0; i < ArrayCount(ap_cur->power_lvl); i++)
-    {
-        ap_cur->power_lvl[i] = -1;
-    }
+	for (size_t i = 0; i < ArrayCount(ap_cur->power_lvl); i++)
+	{
+		ap_cur->power_lvl[i] = -1;
+	}
 
-    ap_cur->channel = -1;
-    ap_cur->old_channel = -1;
-    ap_cur->max_speed = -1;
+	ap_cur->channel = -1;
+	ap_cur->old_channel = -1;
+	ap_cur->max_speed = -1;
 
-    gettimeofday(&ap_cur->tv, NULL);
-    gettimeofday(&ap_cur->ftimef, NULL);
-    gettimeofday(&ap_cur->ftimel, NULL);
-    gettimeofday(&ap_cur->ftimer, NULL);
+	gettimeofday(&ap_cur->tv, NULL);
+	gettimeofday(&ap_cur->ftimef, NULL);
+	gettimeofday(&ap_cur->ftimel, NULL);
+	gettimeofday(&ap_cur->ftimer, NULL);
 
-    TAILQ_INIT(&ap_cur->pkt_list);
+	TAILQ_INIT(&ap_cur->pkt_list);
 
-    ap_cur->display.color = TEXT_RED;
+	ap_cur->display.color = TEXT_RED;
 
-    /* 802.11n and ac */
-    ap_cur->channel_width = CHANNEL_22MHZ; // 20MHz by default
+	/* 802.11n and ac */
+	ap_cur->channel_width = CHANNEL_22MHZ; // 20MHz by default
 
-    ap_cur->n_channel.sec_channel = -1;
-    ap_cur->n_channel.mcs_index = -1;
+	ap_cur->n_channel.sec_channel = -1;
+	ap_cur->n_channel.mcs_index = -1;
 
-    if (options->show_manufacturer)
-    {
-        ap_cur->manuf =
-            get_manufacturer_by_oui(options->manufacturer_list, bssid->addr);
-    }
+	if (options->show_manufacturer)
+	{
+		ap_cur->manuf
+			= get_manufacturer_by_oui(options->manufacturer_list, bssid->addr);
+	}
 
-    if (options->ivs.fp != NULL)
-    {
-        /* This sucks up loads of memory, and is only required when
+	if (options->ivs.fp != NULL)
+	{
+		/* This sucks up loads of memory, and is only required when
          * logging IVs.
          */
-        ap_cur->uiv_root = uniqueiv_init();
-    }
+		ap_cur->uiv_root = uniqueiv_init();
+	}
 
-    ap_cur->decloak_detection = options->decloak_detection;
-    ap_info_populate_gps(ap_cur, options->gps_context.gps_location);
+	ap_cur->decloak_detection = options->decloak_detection;
+	ap_info_populate_gps(ap_cur, options->gps_context.gps_location);
 }
 
-static struct AP_info * ap_info_new(
-    struct local_options * const options,
-    mac_address const * const bssid)
+static struct AP_info * ap_info_new(struct local_options * const options,
+									mac_address const * const bssid)
 {
-    struct AP_info * const ap_cur = ap_info_alloc();
+	struct AP_info * const ap_cur = ap_info_alloc();
 
-    if (ap_cur == NULL)
-    {
-        goto done;
-    }
+	if (ap_cur == NULL)
+	{
+		goto done;
+	}
 
-    ap_info_initialise(ap_cur, bssid, options);
+	ap_info_initialise(ap_cur, bssid, options);
 
-    TAILQ_INSERT_TAIL(&options->ap_list, ap_cur, entry);
+	TAILQ_INSERT_TAIL(&options->ap_list, ap_cur, entry);
 
 done:
-    return ap_cur;
+	return ap_cur;
 }
 
-static struct AP_info * ap_info_lookup_existing(
-    struct ap_list_head * ap_list,
-    mac_address const * const mac)
+static struct AP_info * ap_info_lookup_existing(struct ap_list_head * ap_list,
+												mac_address const * const mac)
 {
-    struct AP_info * ap_cur;
+	struct AP_info * ap_cur;
 
-    TAILQ_FOREACH(ap_cur, ap_list, entry)
-    {
-        if (MAC_ADDRESS_EQUAL(&ap_cur->bssid, mac))
-        {
-            break;
-        }
-    }
+	TAILQ_FOREACH(ap_cur, ap_list, entry)
+	{
+		if (MAC_ADDRESS_EQUAL(&ap_cur->bssid, mac))
+		{
+			break;
+		}
+	}
 
-    return ap_cur;
+	return ap_cur;
 }
 
-static struct AP_info * ap_info_lookup(
-    struct local_options * const options,
-    mac_address const * const bssid,
-    bool * const is_new)
+static struct AP_info * ap_info_lookup(struct local_options * const options,
+									   mac_address const * const bssid,
+									   bool * const is_new)
 {
-    struct AP_info * ap_cur;
+	struct AP_info * ap_cur;
 
-    ap_cur = ap_info_lookup_existing(&options->ap_list, bssid);
-    if (ap_cur != NULL)
-    {
-        *is_new = false;
-        goto done;
-    }
+	ap_cur = ap_info_lookup_existing(&options->ap_list, bssid);
+	if (ap_cur != NULL)
+	{
+		*is_new = false;
+		goto done;
+	}
 
-    *is_new = true;
-    ap_cur = ap_info_new(options, bssid);
+	*is_new = true;
+	ap_cur = ap_info_new(options, bssid);
 
 done:
-    return ap_cur;
+	return ap_cur;
 }
 
-static void purge_old_aps(
-    struct local_options * const options,
-	time_t const age_limit)
+static void purge_old_aps(struct local_options * const options,
+						  time_t const age_limit)
 {
-    struct ap_list_head * const ap_list = &options->ap_list;
-    struct AP_info * ap_cur;
+	struct ap_list_head * const ap_list = &options->ap_list;
+	struct AP_info * ap_cur;
 	struct AP_info * ap_tmp;
 
-    TAILQ_FOREACH_SAFE(ap_cur, ap_list, entry, ap_tmp)
+	TAILQ_FOREACH_SAFE(ap_cur, ap_list, entry, ap_tmp)
 	{
 		bool const too_old = ap_cur->tlast <= age_limit;
 
 		if (too_old)
 		{
-            ap_info_remove(options, ap_cur);
+			ap_info_remove(options, ap_cur);
 		}
 	}
 }
 
-static void purge_old_stas(
-	struct sta_list_head * const sta_list,
-	time_t const age_limit)
+static void purge_old_stas(struct sta_list_head * const sta_list,
+						   time_t const age_limit)
 {
 	struct ST_info * st_cur;
 	struct ST_info * st_tmp;
@@ -1586,14 +1576,13 @@ static void purge_old_stas(
 
 		if (too_old)
 		{
-            sta_info_remove(sta_list, st_cur);
+			sta_info_remove(sta_list, st_cur);
 		}
 	}
 }
 
-static void purge_old_nas(
-	struct na_list_head * const na_list,
-	time_t const age_limit)
+static void purge_old_nas(struct na_list_head * const na_list,
+						  time_t const age_limit)
 {
 	struct NA_info * na_cur;
 	struct NA_info * na_tmp;
@@ -1604,22 +1593,21 @@ static void purge_old_nas(
 
 		if (too_old)
 		{
-            na_info_remove(na_list, na_cur);
+			na_info_remove(na_list, na_cur);
 		}
 	}
 }
 
-static void purge_old_nodes(
-    struct local_options * const options,
-    size_t const max_age_seconds)
+static void purge_old_nodes(struct local_options * const options,
+							size_t const max_age_seconds)
 {
-    if (max_age_seconds == 0) /* No limit. */
+	if (max_age_seconds == 0) /* No limit. */
 	{
 		goto done;
 	}
 
 	time_t const current_time = time(NULL);
-    time_t const age_limit = current_time - max_age_seconds;
+	time_t const age_limit = current_time - max_age_seconds;
 
 	purge_old_nas(&options->na_list, age_limit);
 	purge_old_stas(&options->sta_list, age_limit);
@@ -1629,523 +1617,542 @@ done:
 	return;
 }
 
-static void update_packet_capture_files(
-    struct local_options * const options,
-    uint8_t const * const packet,
-    size_t const packet_length,
-    int32_t const ri_power)
+static void update_packet_capture_files(struct local_options * const options,
+										uint8_t const * const packet,
+										size_t const packet_length,
+										int32_t const ri_power)
 {
-    if (options->pcap_output.writer != NULL)
-    {
-        packet_writer_write(options->pcap_output.writer,
-                            packet,
-                            packet_length,
-                            ri_power);
-    }
+	if (options->pcap_output.writer != NULL)
+	{
+		packet_writer_write(
+			options->pcap_output.writer, packet, packet_length, ri_power);
+	}
 }
 
-static void ap_update(
-    struct local_options * const options,
-    struct AP_info * const ap_cur,
-    unsigned char const * const h80211,
-    struct rx_info const * const ri)
+static void ap_update(struct local_options * const options,
+					  struct AP_info * const ap_cur,
+					  unsigned char const * const h80211,
+					  struct rx_info const * const ri)
 {
-    /* Get the sequence number. */
-    int const seq = ((h80211[22] >> 4) + (h80211[23] << 4));
+	/* Get the sequence number. */
+	int const seq = ((h80211[22] >> 4) + (h80211[23] << 4));
 
-    /* update the last time seen */
-    ap_cur->tlast = time(NULL);
+	/* update the last time seen */
+	ap_cur->tlast = time(NULL);
 
-    /* only update power if packets comes from
+	/* only update power if packets comes from
      * the AP: either type == mgmt and SA == BSSID,
      * or FromDS == 1 and ToDS == 0 */
 
-    if (((h80211[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_NODS
-         && MAC_ADDRESS_EQUAL((mac_address *)(h80211 + 10), &ap_cur->bssid))
-        || ((h80211[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_FROMDS))
-    {
-        ap_cur->power_index = (ap_cur->power_index + 1) % ArrayCount(ap_cur->power_lvl);
-        ap_cur->power_lvl[ap_cur->power_index] = ri->ri_power;
+	if (((h80211[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_NODS
+		 && MAC_ADDRESS_EQUAL((mac_address *) (h80211 + 10), &ap_cur->bssid))
+		|| ((h80211[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_FROMDS))
+	{
+		ap_cur->power_index
+			= (ap_cur->power_index + 1) % ArrayCount(ap_cur->power_lvl);
+		ap_cur->power_lvl[ap_cur->power_index] = ri->ri_power;
 
-        ap_cur->avg_power =
-            moving_exponential_average(ri->ri_power, ap_cur->avg_power, 0.99f);
+		ap_cur->avg_power = moving_exponential_average(
+			ri->ri_power, ap_cur->avg_power, 0.99f);
 
-        if (ap_cur->avg_power > ap_cur->best_power)
-        {
-            ap_cur->best_power = ap_cur->avg_power;
-            memcpy(ap_cur->gps_loc_best,
-                   options->gps_context.gps_location,
-                   sizeof ap_cur->gps_loc_best);
-        }
+		if (ap_cur->avg_power > ap_cur->best_power)
+		{
+			ap_cur->best_power = ap_cur->avg_power;
+			memcpy(ap_cur->gps_loc_best,
+				   options->gps_context.gps_location,
+				   sizeof ap_cur->gps_loc_best);
+		}
 
-        /* Every packet in here comes from the AP. */
-        /* FIXME: These seem to be very odd comparisons to make. Is this
+		/* Every packet in here comes from the AP. */
+		/* FIXME: These seem to be very odd comparisons to make. Is this
          * actually what is intended?
          */
-        if (options->gps_context.gps_location[gps_latitude] > ap_cur->gps_loc_max[gps_latitude])
-            ap_cur->gps_loc_max[gps_latitude] = options->gps_context.gps_location[gps_latitude];
-        if (options->gps_context.gps_location[gps_longitude] > ap_cur->gps_loc_max[gps_longitude])
-            ap_cur->gps_loc_max[gps_longitude] = options->gps_context.gps_location[gps_longitude];
-        if (options->gps_context.gps_location[gps_speed] > ap_cur->gps_loc_max[gps_speed])
-            ap_cur->gps_loc_max[gps_speed] = options->gps_context.gps_location[gps_speed];
+		if (options->gps_context.gps_location[gps_latitude]
+			> ap_cur->gps_loc_max[gps_latitude])
+			ap_cur->gps_loc_max[gps_latitude]
+				= options->gps_context.gps_location[gps_latitude];
+		if (options->gps_context.gps_location[gps_longitude]
+			> ap_cur->gps_loc_max[gps_longitude])
+			ap_cur->gps_loc_max[gps_longitude]
+				= options->gps_context.gps_location[gps_longitude];
+		if (options->gps_context.gps_location[gps_speed]
+			> ap_cur->gps_loc_max[gps_speed])
+			ap_cur->gps_loc_max[gps_speed]
+				= options->gps_context.gps_location[gps_speed];
 
-        if (options->gps_context.gps_location[gps_latitude] < ap_cur->gps_loc_min[gps_latitude])
-            ap_cur->gps_loc_min[gps_latitude] = options->gps_context.gps_location[gps_latitude];
-        if (options->gps_context.gps_location[gps_longitude] < ap_cur->gps_loc_min[gps_longitude])
-            ap_cur->gps_loc_min[gps_longitude] = options->gps_context.gps_location[gps_longitude];
-        if (options->gps_context.gps_location[gps_speed] < ap_cur->gps_loc_min[gps_speed])
-            ap_cur->gps_loc_min[gps_speed] = options->gps_context.gps_location[gps_speed];
+		if (options->gps_context.gps_location[gps_latitude]
+			< ap_cur->gps_loc_min[gps_latitude])
+			ap_cur->gps_loc_min[gps_latitude]
+				= options->gps_context.gps_location[gps_latitude];
+		if (options->gps_context.gps_location[gps_longitude]
+			< ap_cur->gps_loc_min[gps_longitude])
+			ap_cur->gps_loc_min[gps_longitude]
+				= options->gps_context.gps_location[gps_longitude];
+		if (options->gps_context.gps_location[gps_speed]
+			< ap_cur->gps_loc_min[gps_speed])
+			ap_cur->gps_loc_min[gps_speed]
+				= options->gps_context.gps_location[gps_speed];
 
-        if (ap_cur->fcapt == 0 && ap_cur->fmiss == 0)
-        {
-            gettimeofday(&(ap_cur->ftimef), NULL);
-        }
-        if (ap_cur->last_seq != 0)
-        {
-            ap_cur->fmiss += (seq - ap_cur->last_seq - 1);
-        }
-        ap_cur->last_seq = (unsigned int)seq;
-        ap_cur->fcapt++;
-        gettimeofday(&(ap_cur->ftimel), NULL);
+		if (ap_cur->fcapt == 0 && ap_cur->fmiss == 0)
+		{
+			gettimeofday(&(ap_cur->ftimef), NULL);
+		}
+		if (ap_cur->last_seq != 0)
+		{
+			ap_cur->fmiss += (seq - ap_cur->last_seq - 1);
+		}
+		ap_cur->last_seq = (unsigned int) seq;
+		ap_cur->fcapt++;
+		gettimeofday(&(ap_cur->ftimel), NULL);
 
-        /* if we are writing to a file and want to make a continuous rolling log save the data here */
-        if (options->log_csv.fp != NULL)
-        {
-            /* Write out our rolling log every time we see data from an AP */
-            dump_write_airodump_ng_logcsv_add_ap(
-                options->log_csv.fp,
-                ap_cur,
-                ri->ri_power,
-                &options->gps_context.gps_time,
-                options->gps_context.gps_location);
-        }
-    }
+		/* if we are writing to a file and want to make a continuous rolling log save the data here */
+		if (options->log_csv.fp != NULL)
+		{
+			/* Write out our rolling log every time we see data from an AP */
+			dump_write_airodump_ng_logcsv_add_ap(
+				options->log_csv.fp,
+				ap_cur,
+				ri->ri_power,
+				&options->gps_context.gps_time,
+				options->gps_context.gps_location);
+		}
+	}
 
-    switch (h80211[0])
-    {
-        case IEEE80211_FC0_SUBTYPE_BEACON:
-            ap_cur->nb_bcn++;
-            break;
+	switch (h80211[0])
+	{
+		case IEEE80211_FC0_SUBTYPE_BEACON:
+			ap_cur->nb_bcn++;
+			break;
 
-        case IEEE80211_FC0_SUBTYPE_PROBE_RESP:
-            /* reset the WPS state */
-            ap_cur->wps.state = 0xFF;
-            ap_cur->wps.ap_setup_locked = 0;
-            break;
+		case IEEE80211_FC0_SUBTYPE_PROBE_RESP:
+			/* reset the WPS state */
+			ap_cur->wps.state = 0xFF;
+			ap_cur->wps.ap_setup_locked = 0;
+			break;
 
-        default:
-            break;
-    }
+		default:
+			break;
+	}
 
-    ap_cur->nb_pkt++;
+	ap_cur->nb_pkt++;
 }
 
-static void sta_update(
-    struct local_options * const options,
-    struct ST_info * const st_cur,
-    struct AP_info * const ap_cur,
-    unsigned char const * const h80211,
-    struct rx_info const * const ri,
-    int const cardnum)
+static void sta_update(struct local_options * const options,
+					   struct ST_info * const st_cur,
+					   struct AP_info * const ap_cur,
+					   unsigned char const * const h80211,
+					   struct rx_info const * const ri,
+					   int const cardnum)
 {
-    /* Get the sequence number. */
-    int const seq = ((h80211[22] >> 4) + (h80211[23] << 4));
+	/* Get the sequence number. */
+	int const seq = ((h80211[22] >> 4) + (h80211[23] << 4));
 
-    /* Update the last time seen. */
-    st_cur->last_seen = time(NULL);
+	/* Update the last time seen. */
+	st_cur->last_seen = time(NULL);
 
-    if (st_cur->base == NULL || !MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
-    {
-        st_cur->base = ap_cur;
-    }
+	if (st_cur->base == NULL || !MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
+	{
+		st_cur->base = ap_cur;
+	}
 
-    // update bitrate to station
-    if ((h80211[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_FROMDS)
-    {
-        st_cur->rate_to = ri->ri_rate;
-    }
+	// update bitrate to station
+	if ((h80211[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_FROMDS)
+	{
+		st_cur->rate_to = ri->ri_rate;
+	}
 
-    /* only update power if packets comes from the
+	/* only update power if packets comes from the
      * client: either type == Mgmt and SA != BSSID,
      * or FromDS == 0 and ToDS == 1 */
 
-    if (((h80211[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_NODS
-         && !MAC_ADDRESS_EQUAL((mac_address *)(h80211 + 10), &ap_cur->bssid))
-        || ((h80211[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_TODS))
-    {
-        st_cur->power = ri->ri_power;
-        if (ri->ri_power > st_cur->best_power)
-        {
-            st_cur->best_power = ri->ri_power;
-            memcpy(ap_cur->gps_loc_best,
-                   options->gps_context.gps_location,
-                   sizeof(st_cur->gps_loc_best));
-        }
+	if (((h80211[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_NODS
+		 && !MAC_ADDRESS_EQUAL((mac_address *) (h80211 + 10), &ap_cur->bssid))
+		|| ((h80211[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_TODS))
+	{
+		st_cur->power = ri->ri_power;
+		if (ri->ri_power > st_cur->best_power)
+		{
+			st_cur->best_power = ri->ri_power;
+			memcpy(ap_cur->gps_loc_best,
+				   options->gps_context.gps_location,
+				   sizeof(st_cur->gps_loc_best));
+		}
 
-        st_cur->rate_from = ri->ri_rate;
-        if (ri->ri_channel > 0 && ri->ri_channel <= HIGHEST_CHANNEL)
-        {
-            st_cur->channel = ri->ri_channel;
-        }
-        else
-        {
-            st_cur->channel = options->interface_data[cardnum].current_channel;
-        }
+		st_cur->rate_from = ri->ri_rate;
+		if (ri->ri_channel > 0 && ri->ri_channel <= HIGHEST_CHANNEL)
+		{
+			st_cur->channel = ri->ri_channel;
+		}
+		else
+		{
+			st_cur->channel = options->interface_data[cardnum].current_channel;
+		}
 
-        /* FIXME: These seem to be very odd comparisons to make. Is this
+		/* FIXME: These seem to be very odd comparisons to make. Is this
          * actually what is intended?
          */
-        if (options->gps_context.gps_location[gps_latitude] > st_cur->gps_loc_max[gps_latitude])
-            st_cur->gps_loc_max[gps_latitude] = options->gps_context.gps_location[gps_latitude];
-        if (options->gps_context.gps_location[gps_longitude] > st_cur->gps_loc_max[gps_longitude])
-            st_cur->gps_loc_max[gps_longitude] = options->gps_context.gps_location[gps_longitude];
-        if (options->gps_context.gps_location[gps_speed] > st_cur->gps_loc_max[gps_speed])
-            st_cur->gps_loc_max[gps_speed] = options->gps_context.gps_location[gps_speed];
+		if (options->gps_context.gps_location[gps_latitude]
+			> st_cur->gps_loc_max[gps_latitude])
+			st_cur->gps_loc_max[gps_latitude]
+				= options->gps_context.gps_location[gps_latitude];
+		if (options->gps_context.gps_location[gps_longitude]
+			> st_cur->gps_loc_max[gps_longitude])
+			st_cur->gps_loc_max[gps_longitude]
+				= options->gps_context.gps_location[gps_longitude];
+		if (options->gps_context.gps_location[gps_speed]
+			> st_cur->gps_loc_max[gps_speed])
+			st_cur->gps_loc_max[gps_speed]
+				= options->gps_context.gps_location[gps_speed];
 
-        if (options->gps_context.gps_location[gps_latitude] < st_cur->gps_loc_min[gps_latitude])
-            st_cur->gps_loc_min[gps_latitude] = options->gps_context.gps_location[gps_latitude];
-        if (options->gps_context.gps_location[gps_longitude] < st_cur->gps_loc_min[gps_longitude])
-            st_cur->gps_loc_min[gps_longitude] = options->gps_context.gps_location[gps_longitude];
-        if (options->gps_context.gps_location[gps_speed] < st_cur->gps_loc_min[gps_speed])
-            st_cur->gps_loc_min[gps_speed] = options->gps_context.gps_location[gps_speed];
+		if (options->gps_context.gps_location[gps_latitude]
+			< st_cur->gps_loc_min[gps_latitude])
+			st_cur->gps_loc_min[gps_latitude]
+				= options->gps_context.gps_location[gps_latitude];
+		if (options->gps_context.gps_location[gps_longitude]
+			< st_cur->gps_loc_min[gps_longitude])
+			st_cur->gps_loc_min[gps_longitude]
+				= options->gps_context.gps_location[gps_longitude];
+		if (options->gps_context.gps_location[gps_speed]
+			< st_cur->gps_loc_min[gps_speed])
+			st_cur->gps_loc_min[gps_speed]
+				= options->gps_context.gps_location[gps_speed];
 
-        if (st_cur->lastseq != 0)
-        {
-            int const missed = seq - st_cur->lastseq - 1;
+		if (st_cur->lastseq != 0)
+		{
+			int const missed = seq - st_cur->lastseq - 1;
 
-            if (missed > 0 && missed < 1000)
-            {
-                st_cur->missed += missed;
-            }
-        }
-        st_cur->lastseq = (unsigned int)seq;
+			if (missed > 0 && missed < 1000)
+			{
+				st_cur->missed += missed;
+			}
+		}
+		st_cur->lastseq = (unsigned int) seq;
 
-        /* if we are writing to a file and want to make a continuous rolling log save the data here */
-        if (options->log_csv.fp != NULL)
-        {
-            /* Write out our rolling log every time we see data from a client */
-            dump_write_airodump_ng_logcsv_add_client(
-                options->log_csv.fp,
-                ap_cur,
-                st_cur,
-                ri->ri_power,
-                &options->gps_context.gps_time,
-                options->gps_context.gps_location);
-        }
-    }
+		/* if we are writing to a file and want to make a continuous rolling log save the data here */
+		if (options->log_csv.fp != NULL)
+		{
+			/* Write out our rolling log every time we see data from a client */
+			dump_write_airodump_ng_logcsv_add_client(
+				options->log_csv.fp,
+				ap_cur,
+				st_cur,
+				ri->ri_power,
+				&options->gps_context.gps_time,
+				options->gps_context.gps_location);
+		}
+	}
 
-    st_cur->nb_pkt++;
+	st_cur->nb_pkt++;
 }
 
 static mac_address const * locate_bssid_in_80211(uint8_t const * const h80211)
 {
-    mac_address const * bssid;
+	mac_address const * bssid;
 
-    /* Locate the access point's MAC address. */
+	/* Locate the access point's MAC address. */
 
-    switch (h80211[1] & IEEE80211_FC1_DIR_MASK)
-    {
-        case IEEE80211_FC1_DIR_NODS:
-            bssid = (mac_address *)(h80211 + 16);
-            break; // Adhoc
-        case IEEE80211_FC1_DIR_TODS:
-            bssid = (mac_address *)(h80211 + 4);
-            break; // ToDS
-        case IEEE80211_FC1_DIR_FROMDS:
-            bssid = (mac_address *)(h80211 + 10);
-            break; // FromDS
-        case IEEE80211_FC1_DIR_DSTODS:
-            bssid = (mac_address *)(h80211 + 10);
-            break; // WDS -> Transmitter taken as BSSID
-        default:
-            /* Can't happen. All cases have been checked. */
-            bssid = NULL;
-            abort();
-    }
+	switch (h80211[1] & IEEE80211_FC1_DIR_MASK)
+	{
+		case IEEE80211_FC1_DIR_NODS:
+			bssid = (mac_address *) (h80211 + 16);
+			break; // Adhoc
+		case IEEE80211_FC1_DIR_TODS:
+			bssid = (mac_address *) (h80211 + 4);
+			break; // ToDS
+		case IEEE80211_FC1_DIR_FROMDS:
+			bssid = (mac_address *) (h80211 + 10);
+			break; // FromDS
+		case IEEE80211_FC1_DIR_DSTODS:
+			bssid = (mac_address *) (h80211 + 10);
+			break; // WDS -> Transmitter taken as BSSID
+		default:
+			/* Can't happen. All cases have been checked. */
+			bssid = NULL;
+			abort();
+	}
 
-    return bssid;
+	return bssid;
 }
 
-static mac_address const * locate_sta_mac_in_80211(
-    uint8_t const * const h80211,
-    mac_address const * const bssid)
+static mac_address const *
+locate_sta_mac_in_80211(uint8_t const * const h80211,
+						mac_address const * const bssid)
 {
-    mac_address const * stmac;
+	mac_address const * stmac;
 
-    switch (h80211[1] & IEEE80211_FC1_DIR_MASK)
-    {
-        case IEEE80211_FC1_DIR_NODS:
+	switch (h80211[1] & IEEE80211_FC1_DIR_MASK)
+	{
+		case IEEE80211_FC1_DIR_NODS:
 
-            /* If management, check that SA != BSSID. */
+			/* If management, check that SA != BSSID. */
 
-            if (MAC_ADDRESS_EQUAL((mac_address *)(h80211 + 10), bssid))
-            {
-                stmac = NULL;
-                goto done;
-            }
-            stmac = (mac_address *)(h80211 + 10);
-            break;
+			if (MAC_ADDRESS_EQUAL((mac_address *) (h80211 + 10), bssid))
+			{
+				stmac = NULL;
+				goto done;
+			}
+			stmac = (mac_address *) (h80211 + 10);
+			break;
 
-        case IEEE80211_FC1_DIR_TODS:
+		case IEEE80211_FC1_DIR_TODS:
 
-            /* ToDS packet, must come from a client. */
+			/* ToDS packet, must come from a client. */
 
-            stmac = (mac_address *)(h80211 + 10);
-            break;
+			stmac = (mac_address *) (h80211 + 10);
+			break;
 
-        case IEEE80211_FC1_DIR_FROMDS:
+		case IEEE80211_FC1_DIR_FROMDS:
 
-            /* FromDS packet, reject broadcast MACs */
+			/* FromDS packet, reject broadcast MACs */
 
-            if (MAC_IS_GROUP_ADDRESS(&h80211[4]))
-            {
-                stmac = NULL;
-                goto done;
-            }
-            stmac = (mac_address *)(h80211 + 4);
-            break;
+			if (MAC_IS_GROUP_ADDRESS(&h80211[4]))
+			{
+				stmac = NULL;
+				goto done;
+			}
+			stmac = (mac_address *) (h80211 + 4);
+			break;
 
-        case IEEE80211_FC1_DIR_DSTODS:
+		case IEEE80211_FC1_DIR_DSTODS:
 
-            stmac = NULL;
-            break;
+			stmac = NULL;
+			break;
 
-        default:
-            /* Can't happen. All possible cases have been checked. */
-            stmac = NULL;
-            abort();
-    }
+		default:
+			/* Can't happen. All possible cases have been checked. */
+			stmac = NULL;
+			abort();
+	}
 
 done:
-    return stmac;
+	return stmac;
 }
 
-static void parse_probe_request(
-    struct ST_info * const st_cur,
-    uint8_t const * const h80211,
-    size_t const caplen)
+static void parse_probe_request(struct ST_info * const st_cur,
+								uint8_t const * const h80211,
+								size_t const caplen)
 {
-    if (h80211[0] == IEEE80211_FC0_SUBTYPE_PROBE_REQ && st_cur != NULL)
-    {
-        uint8_t const * const data_end = h80211 + caplen;
-        uint8_t const * p = h80211 + 24;
+	if (h80211[0] == IEEE80211_FC0_SUBTYPE_PROBE_REQ && st_cur != NULL)
+	{
+		uint8_t const * const data_end = h80211 + caplen;
+		uint8_t const * p = h80211 + 24;
 
-        while (p < data_end)
-        {
-            if (p + 2 + p[1] > data_end)
-            {
-                goto done;
-            }
+		while (p < data_end)
+		{
+			if (p + 2 + p[1] > data_end)
+			{
+				goto done;
+			}
 
-            if (p[0] == 0x00
-                && p[1] > 0
-                && p[2] != '\0'
-                && (p[1] > 1 || p[2] != ' '))
-            {
-                uint8_t const * const essid = p + 2;
-                size_t const essid_length = MIN(ESSID_LENGTH, p[1]);
+			if (p[0] == 0x00 && p[1] > 0 && p[2] != '\0'
+				&& (p[1] > 1 || p[2] != ' '))
+			{
+				uint8_t const * const essid = p + 2;
+				size_t const essid_length = MIN(ESSID_LENGTH, p[1]);
 
-                if (essid_has_control_chars(essid, essid_length))
-                {
-                    goto done;
-                }
+				if (essid_has_control_chars(essid, essid_length))
+				{
+					goto done;
+				}
 
-                /* Got a valid ASCII probed ESSID.
+				/* Got a valid ASCII probed ESSID.
                  * Check if it's already in the ring buffer.
                  */
-                /* FIXME: This comparison won't work if the ESSID is one that
+				/* FIXME: This comparison won't work if the ESSID is one that
                  * would get modified by make_printable() below.
                  */
-                for (size_t i = 0; i < ArrayCount(st_cur->probes); i++)
-                {
-                    if (memcmp(st_cur->probes[i], essid, essid_length) == 0)
-                    {
-                        goto done;
-                    }
-                }
+				for (size_t i = 0; i < ArrayCount(st_cur->probes); i++)
+				{
+					if (memcmp(st_cur->probes[i], essid, essid_length) == 0)
+					{
+						goto done;
+					}
+				}
 
-                st_cur->probe_index =
-                    (st_cur->probe_index + 1) % ArrayCount(st_cur->probes);
-                memcpy(st_cur->probes[st_cur->probe_index], essid, essid_length);
-                st_cur->probes[st_cur->probe_index][essid_length] = '\0';
-                st_cur->ssid_length[st_cur->probe_index] = essid_length;
+				st_cur->probe_index
+					= (st_cur->probe_index + 1) % ArrayCount(st_cur->probes);
+				memcpy(
+					st_cur->probes[st_cur->probe_index], essid, essid_length);
+				st_cur->probes[st_cur->probe_index][essid_length] = '\0';
+				st_cur->ssid_length[st_cur->probe_index] = essid_length;
 
-                if (!verifyssid((uint8_t *)st_cur->probes[st_cur->probe_index]))
-                {
-                    make_printable((uint8_t *)st_cur->probes[st_cur->probe_index],
-                                   st_cur->ssid_length[st_cur->probe_index]);
-                }
-            }
+				if (!verifyssid(
+						(uint8_t *) st_cur->probes[st_cur->probe_index]))
+				{
+					make_printable(
+						(uint8_t *) st_cur->probes[st_cur->probe_index],
+						st_cur->ssid_length[st_cur->probe_index]);
+				}
+			}
 
-            p += 2 + p[1];
-        }
-    }
+			p += 2 + p[1];
+		}
+	}
 
 done:
-    return;
+	return;
 }
 
-static bool parse_beacon_or_probe_response(
-    struct local_options * const options,
-    struct AP_info * const ap_cur,
-    uint8_t const * const h80211,
-    size_t caplen)
+static bool parse_beacon_or_probe_response(struct local_options * const options,
+										   struct AP_info * const ap_cur,
+										   uint8_t const * const h80211,
+										   size_t caplen)
 {
-    bool success;
+	bool success;
 
-    if (h80211[0] == IEEE80211_FC0_SUBTYPE_BEACON
-        || h80211[0] == IEEE80211_FC0_SUBTYPE_PROBE_RESP)
-    {
-        uint8_t const * const data_end = h80211 + caplen;
-        uint8_t const * p;
+	if (h80211[0] == IEEE80211_FC0_SUBTYPE_BEACON
+		|| h80211[0] == IEEE80211_FC0_SUBTYPE_PROBE_RESP)
+	{
+		uint8_t const * const data_end = h80211 + caplen;
+		uint8_t const * p;
 
-        if (!(ap_cur->security & (STD_OPN | STD_WEP | STD_WPA | STD_WPA2)))
-        {
-            if ((h80211[34] & 0x10) >> 4)
-            {
-                ap_cur->security |= STD_WEP | ENC_WEP;
-            }
-            else
-            {
-                ap_cur->security |= STD_OPN;
-            }
-        }
+		if (!(ap_cur->security & (STD_OPN | STD_WEP | STD_WPA | STD_WPA2)))
+		{
+			if ((h80211[34] & 0x10) >> 4)
+			{
+				ap_cur->security |= STD_WEP | ENC_WEP;
+			}
+			else
+			{
+				ap_cur->security |= STD_OPN;
+			}
+		}
 
-        ap_cur->preamble = (h80211[34] & 0x20) >> 5;
+		ap_cur->preamble = (h80211[34] & 0x20) >> 5;
 
-        unsigned long long * tstamp = (unsigned long long *)(h80211 + 24);
-        ap_cur->timestamp = letoh64(*tstamp);
+		unsigned long long * tstamp = (unsigned long long *) (h80211 + 24);
+		ap_cur->timestamp = letoh64(*tstamp);
 
-        p = h80211 + 36;
+		p = h80211 + 36;
 
-        while (p < data_end)
-        {
-            if (p + 2 + p[1] > data_end)
-            {
-                break;
-            }
+		while (p < data_end)
+		{
+			if (p + 2 + p[1] > data_end)
+			{
+				break;
+			}
 
-            if (p[0] == 0x00 && p[1] > 0 && p[2] != '\0'
-                && (p[1] > 1 || p[2] != ' '))
-            {
-                /* found a non-cloaked ESSID */
-                ap_cur->ssid_length = MIN((sizeof ap_cur->essid - 1), p[1]);
+			if (p[0] == 0x00 && p[1] > 0 && p[2] != '\0'
+				&& (p[1] > 1 || p[2] != ' '))
+			{
+				/* found a non-cloaked ESSID */
+				ap_cur->ssid_length = MIN((sizeof ap_cur->essid - 1), p[1]);
 
-                memcpy(ap_cur->essid, p + 2, ap_cur->ssid_length);
-                ap_cur->essid[ap_cur->ssid_length] = '\0';
+				memcpy(ap_cur->essid, p + 2, ap_cur->ssid_length);
+				ap_cur->essid[ap_cur->ssid_length] = '\0';
 
-                if (!ivs_log_essid(options->ivs.fp,
-                                   &ap_cur->essid_logged,
-                                   &ap_cur->bssid,
-                                   &options->ivs.prev_bssid,
-                                   ap_cur->essid,
-                                   ap_cur->ssid_length))
-                {
-                    success = false;
-                    goto done;
-                }
+				if (!ivs_log_essid(options->ivs.fp,
+								   &ap_cur->essid_logged,
+								   &ap_cur->bssid,
+								   &options->ivs.prev_bssid,
+								   ap_cur->essid,
+								   ap_cur->ssid_length))
+				{
+					success = false;
+					goto done;
+				}
 
-                if (!verifyssid(ap_cur->essid))
-                {
-                    make_printable(ap_cur->essid, ap_cur->ssid_length);
-                }
-            }
+				if (!verifyssid(ap_cur->essid))
+				{
+					make_printable(ap_cur->essid, ap_cur->ssid_length);
+				}
+			}
 
-            /* get the maximum speed in Mb and the AP's channel */
+			/* get the maximum speed in Mb and the AP's channel */
 
-            if (p[0] == 0x01 || p[0] == 0x32)
-            {
-                if (ap_cur->max_speed < (p[1 + p[1]] & 0x7F) / 2)
-                {
-                    ap_cur->max_speed = (p[1 + p[1]] & 0x7F) / 2;
-                }
-            }
+			if (p[0] == 0x01 || p[0] == 0x32)
+			{
+				if (ap_cur->max_speed < (p[1 + p[1]] & 0x7F) / 2)
+				{
+					ap_cur->max_speed = (p[1 + p[1]] & 0x7F) / 2;
+				}
+			}
 
-            if (p[0] == 0x03)
-            {
-                ap_cur->channel = p[2];
-            }
-            else if (p[0] == 0x3d)
-            {
-                if (ap_cur->standard[0] == '\0')
-                {
-                    strlcpy(ap_cur->standard, "n", sizeof ap_cur->standard);
-                }
+			if (p[0] == 0x03)
+			{
+				ap_cur->channel = p[2];
+			}
+			else if (p[0] == 0x3d)
+			{
+				if (ap_cur->standard[0] == '\0')
+				{
+					strlcpy(ap_cur->standard, "n", sizeof ap_cur->standard);
+				}
 
-                /* also get the channel from ht information->primary channel */
-                ap_cur->channel = p[2];
+				/* also get the channel from ht information->primary channel */
+				ap_cur->channel = p[2];
 
-                // Get channel width and secondary channel
-                static uint8_t const channel_width_mask = 3;
+				// Get channel width and secondary channel
+				static uint8_t const channel_width_mask = 3;
 
-                switch (p[3] & channel_width_mask)
-                {
-                    case 0:
-                        // 20MHz
-                        ap_cur->channel_width = CHANNEL_20MHZ;
-                        break;
-                    case 1:
-                        // Above
-                        ap_cur->n_channel.sec_channel = 1;
-                        switch (ap_cur->channel_width)
-                        {
-                            case CHANNEL_UNKNOWN_WIDTH:
-                            case CHANNEL_3MHZ:
-                            case CHANNEL_5MHZ:
-                            case CHANNEL_10MHZ:
-                            case CHANNEL_20MHZ:
-                            case CHANNEL_22MHZ:
-                            case CHANNEL_30MHZ:
-                            case CHANNEL_20_OR_40MHZ:
-                                ap_cur->channel_width = CHANNEL_40MHZ;
-                                break;
-                            default:
-                                break;
-                        }
-                        break;
-                    case 2:
-                        // Reserved
-                        break;
-                    case 3:
-                        // Below
-                        ap_cur->n_channel.sec_channel = -1;
-                        switch (ap_cur->channel_width)
-                        {
-                            case CHANNEL_UNKNOWN_WIDTH:
-                            case CHANNEL_3MHZ:
-                            case CHANNEL_5MHZ:
-                            case CHANNEL_10MHZ:
-                            case CHANNEL_20MHZ:
-                            case CHANNEL_22MHZ:
-                            case CHANNEL_30MHZ:
-                            case CHANNEL_20_OR_40MHZ:
-                                ap_cur->channel_width = CHANNEL_40MHZ;
-                                break;
-                            default:
-                                break;
-                        }
-                        break;
-                    default:
-                        break;
-                }
+				switch (p[3] & channel_width_mask)
+				{
+					case 0:
+						// 20MHz
+						ap_cur->channel_width = CHANNEL_20MHZ;
+						break;
+					case 1:
+						// Above
+						ap_cur->n_channel.sec_channel = 1;
+						switch (ap_cur->channel_width)
+						{
+							case CHANNEL_UNKNOWN_WIDTH:
+							case CHANNEL_3MHZ:
+							case CHANNEL_5MHZ:
+							case CHANNEL_10MHZ:
+							case CHANNEL_20MHZ:
+							case CHANNEL_22MHZ:
+							case CHANNEL_30MHZ:
+							case CHANNEL_20_OR_40MHZ:
+								ap_cur->channel_width = CHANNEL_40MHZ;
+								break;
+							default:
+								break;
+						}
+						break;
+					case 2:
+						// Reserved
+						break;
+					case 3:
+						// Below
+						ap_cur->n_channel.sec_channel = -1;
+						switch (ap_cur->channel_width)
+						{
+							case CHANNEL_UNKNOWN_WIDTH:
+							case CHANNEL_3MHZ:
+							case CHANNEL_5MHZ:
+							case CHANNEL_10MHZ:
+							case CHANNEL_20MHZ:
+							case CHANNEL_22MHZ:
+							case CHANNEL_30MHZ:
+							case CHANNEL_20_OR_40MHZ:
+								ap_cur->channel_width = CHANNEL_40MHZ;
+								break;
+							default:
+								break;
+						}
+						break;
+					default:
+						break;
+				}
 
-                ap_cur->n_channel.any_chan_width = (p[3] >> 2) & 1;
-            }
+				ap_cur->n_channel.any_chan_width = (p[3] >> 2) & 1;
+			}
 
-            // HT capabilities
-            if (p[0] == 0x2d && p[1] > 18)
-            {
-                if (ap_cur->standard[0] == '\0')
-                {
-                    strlcpy(ap_cur->standard, "n", sizeof ap_cur->standard);
-                }
+			// HT capabilities
+			if (p[0] == 0x2d && p[1] > 18)
+			{
+				if (ap_cur->standard[0] == '\0')
+				{
+					strlcpy(ap_cur->standard, "n", sizeof ap_cur->standard);
+				}
 
-                // Short GI for 20/40MHz
-                ap_cur->n_channel.short_gi_20 = (p[3] >> 5) & 1;
-                ap_cur->n_channel.short_gi_40 = (p[3] >> 6) & 1;
+				// Short GI for 20/40MHz
+				ap_cur->n_channel.short_gi_20 = (p[3] >> 5) & 1;
+				ap_cur->n_channel.short_gi_40 = (p[3] >> 6) & 1;
 
-                // Parse MCS rate
-                /*
+				// Parse MCS rate
+				/*
                  * XXX: Sometimes TX and RX spatial stream # differ and none of
                  * the beacon
                  * have that. If someone happens to have such AP, open an issue
@@ -2156,1119 +2163,1106 @@ static bool parse_beacon_or_probe_response(
                  *
                  * For now, just figure out the highest MCS rate.
                  */
-                if (ap_cur->n_channel.mcs_index == -1)
-                {
-                    uint32_t rx_mcs_bitmask;
+				if (ap_cur->n_channel.mcs_index == -1)
+				{
+					uint32_t rx_mcs_bitmask;
 
-                    memcpy(&rx_mcs_bitmask, p + 5, sizeof(rx_mcs_bitmask));
-                    while (rx_mcs_bitmask)
-                    {
-                        ++ap_cur->n_channel.mcs_index;
-                        rx_mcs_bitmask /= 2;
-                    }
-                }
-            }
+					memcpy(&rx_mcs_bitmask, p + 5, sizeof(rx_mcs_bitmask));
+					while (rx_mcs_bitmask)
+					{
+						++ap_cur->n_channel.mcs_index;
+						rx_mcs_bitmask /= 2;
+					}
+				}
+			}
 
-            // VHT Capabilities
-            if (p[0] == 0xbf && p[1] >= 12)
-            {
-                // Standard is AC
-                strlcpy(ap_cur->standard, "ac", sizeof ap_cur->standard);
+			// VHT Capabilities
+			if (p[0] == 0xbf && p[1] >= 12)
+			{
+				// Standard is AC
+				strlcpy(ap_cur->standard, "ac", sizeof ap_cur->standard);
 
-                ap_cur->ac_channel.split_chan = (p[3] >> 2) & 3;
+				ap_cur->ac_channel.split_chan = (p[3] >> 2) & 3;
 
-                ap_cur->ac_channel.short_gi_80 = (p[3] >> 5) & 1;
-                ap_cur->ac_channel.short_gi_160 = (p[3] >> 6) & 1;
+				ap_cur->ac_channel.short_gi_80 = (p[3] >> 5) & 1;
+				ap_cur->ac_channel.short_gi_160 = (p[3] >> 6) & 1;
 
-                /* FIXME - How can this result ever be anything other than 0.
+				/* FIXME - How can this result ever be anything other than 0.
                  * 0b11000 & 1 == 0 doesn't it?
                  */
-                ap_cur->ac_channel.mu_mimo = (p[4] & 0b11000) & 1;
+				ap_cur->ac_channel.mu_mimo = (p[4] & 0b11000) & 1;
 
-                // A few things indicate Wave 2: MU-MIMO, 80+80 Channels
-                ap_cur->ac_channel.wave_2
-                    = (ap_cur->ac_channel.mu_mimo | ap_cur->ac_channel.split_chan)
-                      & 1;
+				// A few things indicate Wave 2: MU-MIMO, 80+80 Channels
+				ap_cur->ac_channel.wave_2 = (ap_cur->ac_channel.mu_mimo
+											 | ap_cur->ac_channel.split_chan)
+											& 1;
 
-                // Maximum rates (16 bit)
-                uint16_t tx_mcs = (p[10] << 8) + p[11];
+				// Maximum rates (16 bit)
+				uint16_t tx_mcs = (p[10] << 8) + p[11];
 
-                // Maximum of 8 SS, each uses 2 bits
-                for (size_t stream_idx = 0;
-                      stream_idx < ArrayCount(ap_cur->ac_channel.mcs_index);
-                      ++stream_idx)
-                {
-                    uint8_t mcs = (tx_mcs & 3);
+				// Maximum of 8 SS, each uses 2 bits
+				for (size_t stream_idx = 0;
+					 stream_idx < ArrayCount(ap_cur->ac_channel.mcs_index);
+					 ++stream_idx)
+				{
+					uint8_t mcs = (tx_mcs & 3);
 
-                    // Unsupported -> No more spatial stream
-                    if (mcs == 3)
-                    {
-                        break;
-                    }
-                    switch (mcs)
-                    {
-                        case 0:
-                            // support of MCS 0-7
-                            ap_cur->ac_channel.mcs_index[stream_idx] = 7;
-                            break;
-                        case 1:
-                            // support of MCS 0-8
-                            ap_cur->ac_channel.mcs_index[stream_idx] = 8;
-                            break;
-                        case 2:
-                            // support of MCS 0-9
-                            ap_cur->ac_channel.mcs_index[stream_idx] = 9;
-                            break;
-                        default:
-                            break;
-                    }
+					// Unsupported -> No more spatial stream
+					if (mcs == 3)
+					{
+						break;
+					}
+					switch (mcs)
+					{
+						case 0:
+							// support of MCS 0-7
+							ap_cur->ac_channel.mcs_index[stream_idx] = 7;
+							break;
+						case 1:
+							// support of MCS 0-8
+							ap_cur->ac_channel.mcs_index[stream_idx] = 8;
+							break;
+						case 2:
+							// support of MCS 0-9
+							ap_cur->ac_channel.mcs_index[stream_idx] = 9;
+							break;
+						default:
+							break;
+					}
 
-                    // Next spatial stream
-                    tx_mcs >>= 2;
-                }
-            }
+					// Next spatial stream
+					tx_mcs >>= 2;
+				}
+			}
 
-            // VHT Operations
-            if (p[0] == 0xc0 && p[1] >= 3)
-            {
-                // Standard is AC
-                strlcpy(ap_cur->standard, "ac", sizeof ap_cur->standard);
+			// VHT Operations
+			if (p[0] == 0xc0 && p[1] >= 3)
+			{
+				// Standard is AC
+				strlcpy(ap_cur->standard, "ac", sizeof ap_cur->standard);
 
-                // Channel width
-                switch (p[2])
-                {
-                    case 0:
-                        // 20 or 40MHz
-                        ap_cur->channel_width = CHANNEL_20_OR_40MHZ;
-                        break;
-                    case 1:
-                        ap_cur->channel_width = CHANNEL_80MHZ;
-                        break;
-                    case 2:
-                        ap_cur->channel_width = CHANNEL_160MHZ;
-                        break;
-                    case 3:
-                        // 80+80MHz
-                        ap_cur->channel_width = CHANNEL_80_80MHZ;
-                        ap_cur->ac_channel.split_chan = 1;
-                        break;
-                    default:
-                        break;
-                }
+				// Channel width
+				switch (p[2])
+				{
+					case 0:
+						// 20 or 40MHz
+						ap_cur->channel_width = CHANNEL_20_OR_40MHZ;
+						break;
+					case 1:
+						ap_cur->channel_width = CHANNEL_80MHZ;
+						break;
+					case 2:
+						ap_cur->channel_width = CHANNEL_160MHZ;
+						break;
+					case 3:
+						// 80+80MHz
+						ap_cur->channel_width = CHANNEL_80_80MHZ;
+						ap_cur->ac_channel.split_chan = 1;
+						break;
+					default:
+						break;
+				}
 
-                // 802.11ac channel center segments
-                ap_cur->ac_channel.center_sgmt[0] = p[3];
-                ap_cur->ac_channel.center_sgmt[1] = p[4];
-            }
+				// 802.11ac channel center segments
+				ap_cur->ac_channel.center_sgmt[0] = p[3];
+				ap_cur->ac_channel.center_sgmt[1] = p[4];
+			}
 
-            // Next
-            p += 2 + p[1];
-        }
+			// Next
+			p += 2 + p[1];
+		}
 
-        // Now get max rate
-        if (strcmp(ap_cur->standard, "n") == 0 || strcmp(ap_cur->standard, "ac") == 0)
-        {
-            int sgi = 0;
-            int width = 0;
+		// Now get max rate
+		if (strcmp(ap_cur->standard, "n") == 0
+			|| strcmp(ap_cur->standard, "ac") == 0)
+		{
+			int sgi = 0;
+			int width = 0;
 
-            switch (ap_cur->channel_width)
-            {
-                case CHANNEL_20MHZ:
-                    width = 20;
-                    sgi = ap_cur->n_channel.short_gi_20;
-                    break;
-                case CHANNEL_20_OR_40MHZ:
-                case CHANNEL_40MHZ:
-                    width = 40;
-                    sgi = ap_cur->n_channel.short_gi_40;
-                    break;
-                case CHANNEL_80MHZ:
-                    width = 80;
-                    sgi = ap_cur->ac_channel.short_gi_80;
-                    break;
-                case CHANNEL_80_80MHZ:
-                case CHANNEL_160MHZ:
-                    width = 160;
-                    sgi = ap_cur->ac_channel.short_gi_160;
-                    break;
-                default:
-                    break;
-            }
+			switch (ap_cur->channel_width)
+			{
+				case CHANNEL_20MHZ:
+					width = 20;
+					sgi = ap_cur->n_channel.short_gi_20;
+					break;
+				case CHANNEL_20_OR_40MHZ:
+				case CHANNEL_40MHZ:
+					width = 40;
+					sgi = ap_cur->n_channel.short_gi_40;
+					break;
+				case CHANNEL_80MHZ:
+					width = 80;
+					sgi = ap_cur->ac_channel.short_gi_80;
+					break;
+				case CHANNEL_80_80MHZ:
+				case CHANNEL_160MHZ:
+					width = 160;
+					sgi = ap_cur->ac_channel.short_gi_160;
+					break;
+				default:
+					break;
+			}
 
-            if (width != 0)
-            {
-                // In case of ac, get the amount of spatial streams
-                int amount_ss = 1;
+			if (width != 0)
+			{
+				// In case of ac, get the amount of spatial streams
+				int amount_ss = 1;
 
-                if (strcmp(ap_cur->standard, "n") != 0)
-                {
-                    for (amount_ss = 0;
-                         amount_ss < MAX_AC_MCS_INDEX
-                         && ap_cur->ac_channel.mcs_index[amount_ss] != 0;
-                         ++amount_ss)
-                    {
-                        /* Do nothing. */
-                        ;
-                    }
-                }
+				if (strcmp(ap_cur->standard, "n") != 0)
+				{
+					for (amount_ss = 0;
+						 amount_ss < MAX_AC_MCS_INDEX
+						 && ap_cur->ac_channel.mcs_index[amount_ss] != 0;
+						 ++amount_ss)
+					{
+						/* Do nothing. */
+						;
+					}
+				}
 
-                // Get rate
-                float max_rate
-                    = (strcmp(ap_cur->standard, "n") == 0)
-                    ? get_80211n_rate(
-                    width, sgi, ap_cur->n_channel.mcs_index)
-                    : get_80211ac_rate(
-                    width,
-                    sgi,
-                    ap_cur->ac_channel.mcs_index[amount_ss - 1],
-                    amount_ss);
+				// Get rate
+				float max_rate
+					= (strcmp(ap_cur->standard, "n") == 0)
+						  ? get_80211n_rate(
+								width, sgi, ap_cur->n_channel.mcs_index)
+						  : get_80211ac_rate(
+								width,
+								sgi,
+								ap_cur->ac_channel.mcs_index[amount_ss - 1],
+								amount_ss);
 
-                // If no error, update rate
-                if (max_rate > 0)
-                {
-                    ap_cur->max_speed = (int)max_rate;
-                }
-            }
-        }
-    }
+				// If no error, update rate
+				if (max_rate > 0)
+				{
+					ap_cur->max_speed = (int) max_rate;
+				}
+			}
+		}
+	}
 
-    success = true;
-
-done:
-    return success;
-}
-
-static void parse_beacon_or_probe_response_2(
-    struct AP_info * const ap_cur,
-    uint8_t const * const h80211,
-    size_t caplen)
-{
-    if ((h80211[0] == IEEE80211_FC0_SUBTYPE_BEACON
-         || h80211[0] == IEEE80211_FC0_SUBTYPE_PROBE_RESP)
-        && caplen > 38)
-    {
-        uint8_t const * const data_end = h80211 + caplen;
-        uint8_t const * p;
-
-        p = h80211 + 36; // ignore hdr + fixed params
-
-        while (p < data_end)
-        {
-            if (p + 2 + p[1] > data_end)
-            {
-                break;
-            }
-
-            uint8_t const type = p[0];
-            uint8_t const length = p[1];
-
-            // Find WPA and RSN tags
-            if ((type == 0xDD && (length >= 8)
-                 && (memcmp(p + 2, "\x00\x50\xF2\x01\x01\x00", 6) == 0))
-                || (type == 0x30))
-            {
-                ap_cur->security &= ~(STD_WEP | ENC_WEP | STD_WPA);
-
-                uint8_t const * const org_p = p;
-                int offset = 0;
-
-                if (type == 0xDD)
-                {
-                    // WPA defined in vendor specific tag -> WPA1 support
-                    ap_cur->security |= STD_WPA;
-                    offset = 4;
-                }
-
-                // RSN => WPA2
-                if (type == 0x30)
-                {
-                    offset = 0;
-                }
-
-                if (length < (18 + offset))
-                {
-                    p += length + 2;
-                    continue;
-                }
-
-                // Number of pairwise cipher suites
-                if (p + 9 + offset > data_end)
-                {
-                    break;
-                }
-
-                size_t const numuni = p[8 + offset] + (p[9 + offset] << 8);
-
-                // Number of Authentication Key Managament suites
-                if (p + (11 + offset) + 4 * numuni > data_end)
-                {
-                    break;
-                }
-
-                size_t const numauth = p[(10 + offset) + 4 * numuni]
-                    + (p[(11 + offset) + 4 * numuni] << 8);
-
-                p += (10 + offset);
-
-                if (type != 0x30)
-                {
-                    if (p + (4 * numuni) + (2 + 4 * numauth) > data_end)
-                    {
-                        break;
-                    }
-                }
-                else
-                {
-                    if (p + (4 * numuni) + (2 + 4 * numauth) + 2 > data_end)
-                    {
-                        break;
-                    }
-                }
-
-                // Get the list of cipher suites
-                for (size_t i = 0; i < (size_t)numuni; i++)
-                {
-                    switch (p[i * 4 + 3])
-                    {
-                        case 0x01:
-                            ap_cur->security |= ENC_WEP;
-                            break;
-                        case 0x02:
-                            ap_cur->security |= ENC_TKIP;
-                            ap_cur->security &= ~STD_WPA2;
-                            break;
-                        case 0x03:
-                            ap_cur->security |= ENC_WRAP;
-                            break;
-                        case 0x0A:
-                        case 0x04:
-                            ap_cur->security |= ENC_CCMP;
-                            ap_cur->security |= STD_WPA2;
-                            break;
-                        case 0x05:
-                            ap_cur->security |= ENC_WEP104;
-                            break;
-                        case 0x08:
-                        case 0x09:
-                            ap_cur->security |= ENC_GCMP;
-                            ap_cur->security |= STD_WPA2;
-                            break;
-                        case 0x0B:
-                        case 0x0C:
-                            ap_cur->security |= ENC_GMAC;
-                            ap_cur->security |= STD_WPA2;
-                            break;
-                        default:
-                            break;
-                    }
-                }
-
-                p += 2 + 4 * numuni;
-
-                // Get the AKM suites
-                for (size_t i = 0; i < numauth; i++)
-                {
-                    switch (p[i * 4 + 3])
-                    {
-                        case 0x01:
-                            ap_cur->security |= AUTH_MGT;
-                            break;
-                        case 0x02:
-                            ap_cur->security |= AUTH_PSK;
-                            break;
-                        case 0x06:
-                        case 0x0d:
-                            ap_cur->security |= AUTH_CMAC;
-                            break;
-                        case 0x08:
-                            ap_cur->security |= AUTH_SAE;
-                            break;
-                        case 0x12:
-                            ap_cur->security |= AUTH_OWE;
-                            break;
-                        default:
-                            break;
-                    }
-                }
-
-                p = org_p + length + 2;
-            }
-            else if ((type == 0xDD && (length >= 8)
-                      && (memcmp(p + 2, "\x00\x50\xF2\x02\x01\x01", 6) == 0)))
-            {
-                // QoS IE
-                ap_cur->security |= STD_QOS;
-                p += length + 2;
-            }
-            else if ((type == 0xDD && (length >= 4)
-                      && (memcmp(p + 2, "\x00\x50\xF2\x04", 4) == 0)))
-            {
-                // WPS IE
-                uint8_t const * const org_p = p;
-
-                p += 6;
-
-                int len = length;
-
-                while (len >= 4)
-                {
-                    uint16_t const subtype = (p[0] << 8) + p[1];
-                    uint16_t const sublen = (p[2] << 8) + p[3];
-
-                    if (sublen > len)
-                        break;
-                    switch (subtype)
-                    {
-                        case 0x104a: // WPS Version
-                            ap_cur->wps.version = p[4];
-                            break;
-                        case 0x1011: // Device Name
-                        case 0x1012: // Device Password ID
-                        case 0x1021: // Manufacturer
-                        case 0x1023: // Model
-                        case 0x1024: // Model Number
-                        case 0x103b: // Response Type
-                        case 0x103c: // RF Bands
-                        case 0x1041: // Selected Registrar
-                        case 0x1042: // Serial Number
-                            break;
-                        case 0x1044: // WPS State
-                            ap_cur->wps.state = p[4];
-                            break;
-                        case 0x1047: // UUID Enrollee
-                        case 0x1049: // Vendor Extension
-                            if (memcmp(&p[4], "\x00\x37\x2A", 3) == 0)
-                            {
-                                unsigned char const * pwfa = &p[7];
-                                int32_t wfa_len = sublen;
-
-                                while (wfa_len > 0)
-                                {
-                                    if (*pwfa == 0)
-                                    { // Version2
-                                        ap_cur->wps.version = pwfa[2];
-                                        break;
-                                    }
-                                    wfa_len -= pwfa[1] + 2;
-                                    pwfa += pwfa[1] + 2;
-                                }
-                            }
-                            break;
-                        case 0x1054: // Primary Device Type
-                            break;
-                        case 0x1057: // AP Setup Locked
-                            ap_cur->wps.ap_setup_locked = p[4];
-                            break;
-                        case 0x1008: // Config Methods
-                        case 0x1053: // Selected Registrar Config Methods
-                            ap_cur->wps.meth = (p[4] << 8) + p[5];
-                            break;
-                        default: // Unknown type-length-value
-                            break;
-                    }
-                    p += sublen + 4;
-                    len -= sublen + 4;
-                }
-                p = org_p + length + 2;
-            }
-            else
-            {
-                p += length + 2;
-            }
-        }
-    }
-}
-
-static void parse_authentication_response(
-    struct AP_info * const ap_cur,
-    uint8_t const * const h80211,
-    size_t const caplen)
-{
-    if (h80211[0] == IEEE80211_FC0_SUBTYPE_AUTH && caplen >= 30)
-    {
-        if (ap_cur->security & STD_WEP)
-        {
-            // successful step 2 or 4 (coming from the AP)
-            if (memcmp(h80211 + 28, "\x00\x00", 2) == 0
-                && (h80211[26] == 0x02 || h80211[26] == 0x04))
-            {
-                ap_cur->security &= ~(AUTH_OPN | AUTH_PSK | AUTH_MGT);
-                if (h80211[24] == 0x00)
-                    ap_cur->security |= AUTH_OPN;
-                if (h80211[24] == 0x01)
-                    ap_cur->security |= AUTH_PSK;
-            }
-        }
-    }
-}
-
-static bool parse_association_request(
-    struct local_options * const options,
-    struct AP_info * const ap_cur,
-    struct ST_info * const st_cur,
-    uint8_t const * const h80211,
-    size_t const caplen)
-{
-    bool success;
-
-    if (h80211[0] == IEEE80211_FC0_SUBTYPE_ASSOC_REQ && caplen > 28)
-    {
-        uint8_t const * const data_end = h80211 + caplen;
-        uint8_t const * p = h80211 + 28;
-
-        while (p < data_end)
-        {
-            if (p + 2 + p[1] > data_end)
-            {
-                break;
-            }
-
-            if (p[0] == 0x00 && p[1] > 0 && p[2] != '\0'
-                && (p[1] > 1 || p[2] != ' '))
-            {
-                /* Found a non-cloaked ESSID. */
-                ap_cur->ssid_length = MIN((sizeof ap_cur->essid - 1), p[1]);
-
-                memcpy(ap_cur->essid, p + 2, ap_cur->ssid_length);
-                ap_cur->essid[ap_cur->ssid_length] = '\0';
-
-                if (!ivs_log_essid(options->ivs.fp,
-                                   &ap_cur->essid_logged,
-                                   &ap_cur->bssid,
-                                   &options->ivs.prev_bssid,
-                                   ap_cur->essid,
-                                   ap_cur->ssid_length))
-                {
-                    success = false;
-                    goto done;
-                }
-
-                if (!verifyssid(ap_cur->essid))
-                {
-                    make_printable(ap_cur->essid, ap_cur->ssid_length);
-                }
-            }
-
-            p += 2 + p[1];
-        }
-
-        if (st_cur != NULL)
-        {
-            st_cur->wpa.state = 0;
-        }
-    }
-
-    success = true;
+	success = true;
 
 done:
-    return success;
+	return success;
 }
 
-static void do_decloak_check(
-    struct local_options * const options,
-    struct AP_info * const ap_cur,
-    uint8_t const * const h80211,
-    size_t caplen)
+static void parse_beacon_or_probe_response_2(struct AP_info * const ap_cur,
+											 uint8_t const * const h80211,
+											 size_t caplen)
 {
-    if (!ap_cur->decloak_detection)
-    {
-        goto done;
-    }
+	if ((h80211[0] == IEEE80211_FC0_SUBTYPE_BEACON
+		 || h80211[0] == IEEE80211_FC0_SUBTYPE_PROBE_RESP)
+		&& caplen > 38)
+	{
+		uint8_t const * const data_end = h80211 + caplen;
+		uint8_t const * p;
 
-    if (!list_check_decloak(&ap_cur->pkt_list, h80211, caplen))
-    {
-        list_add_packet(&ap_cur->pkt_list, h80211, caplen);
-    }
-    else
-    {
-        ap_cur->detected_decloak = true;
-        ap_cur->decloak_detection = false;
+		p = h80211 + 36; // ignore hdr + fixed params
 
-        packet_list_free(&ap_cur->pkt_list);
+		while (p < data_end)
+		{
+			if (p + 2 + p[1] > data_end)
+			{
+				break;
+			}
 
-        snprintf(options->message,
-                 sizeof(options->message),
-                 "Decloak: %02X:%02X:%02X:%02X:%02X:%02X ",
-                 ap_cur->bssid.addr[0],
-                 ap_cur->bssid.addr[1],
-                 ap_cur->bssid.addr[2],
-                 ap_cur->bssid.addr[3],
-                 ap_cur->bssid.addr[4],
-                 ap_cur->bssid.addr[5]);
-    }
+			uint8_t const type = p[0];
+			uint8_t const length = p[1];
+
+			// Find WPA and RSN tags
+			if ((type == 0xDD && (length >= 8)
+				 && (memcmp(p + 2, "\x00\x50\xF2\x01\x01\x00", 6) == 0))
+				|| (type == 0x30))
+			{
+				ap_cur->security &= ~(STD_WEP | ENC_WEP | STD_WPA);
+
+				uint8_t const * const org_p = p;
+				int offset = 0;
+
+				if (type == 0xDD)
+				{
+					// WPA defined in vendor specific tag -> WPA1 support
+					ap_cur->security |= STD_WPA;
+					offset = 4;
+				}
+
+				// RSN => WPA2
+				if (type == 0x30)
+				{
+					offset = 0;
+				}
+
+				if (length < (18 + offset))
+				{
+					p += length + 2;
+					continue;
+				}
+
+				// Number of pairwise cipher suites
+				if (p + 9 + offset > data_end)
+				{
+					break;
+				}
+
+				size_t const numuni = p[8 + offset] + (p[9 + offset] << 8);
+
+				// Number of Authentication Key Managament suites
+				if (p + (11 + offset) + 4 * numuni > data_end)
+				{
+					break;
+				}
+
+				size_t const numauth = p[(10 + offset) + 4 * numuni]
+									   + (p[(11 + offset) + 4 * numuni] << 8);
+
+				p += (10 + offset);
+
+				if (type != 0x30)
+				{
+					if (p + (4 * numuni) + (2 + 4 * numauth) > data_end)
+					{
+						break;
+					}
+				}
+				else
+				{
+					if (p + (4 * numuni) + (2 + 4 * numauth) + 2 > data_end)
+					{
+						break;
+					}
+				}
+
+				// Get the list of cipher suites
+				for (size_t i = 0; i < (size_t) numuni; i++)
+				{
+					switch (p[i * 4 + 3])
+					{
+						case 0x01:
+							ap_cur->security |= ENC_WEP;
+							break;
+						case 0x02:
+							ap_cur->security |= ENC_TKIP;
+							ap_cur->security &= ~STD_WPA2;
+							break;
+						case 0x03:
+							ap_cur->security |= ENC_WRAP;
+							break;
+						case 0x0A:
+						case 0x04:
+							ap_cur->security |= ENC_CCMP;
+							ap_cur->security |= STD_WPA2;
+							break;
+						case 0x05:
+							ap_cur->security |= ENC_WEP104;
+							break;
+						case 0x08:
+						case 0x09:
+							ap_cur->security |= ENC_GCMP;
+							ap_cur->security |= STD_WPA2;
+							break;
+						case 0x0B:
+						case 0x0C:
+							ap_cur->security |= ENC_GMAC;
+							ap_cur->security |= STD_WPA2;
+							break;
+						default:
+							break;
+					}
+				}
+
+				p += 2 + 4 * numuni;
+
+				// Get the AKM suites
+				for (size_t i = 0; i < numauth; i++)
+				{
+					switch (p[i * 4 + 3])
+					{
+						case 0x01:
+							ap_cur->security |= AUTH_MGT;
+							break;
+						case 0x02:
+							ap_cur->security |= AUTH_PSK;
+							break;
+						case 0x06:
+						case 0x0d:
+							ap_cur->security |= AUTH_CMAC;
+							break;
+						case 0x08:
+							ap_cur->security |= AUTH_SAE;
+							break;
+						case 0x12:
+							ap_cur->security |= AUTH_OWE;
+							break;
+						default:
+							break;
+					}
+				}
+
+				p = org_p + length + 2;
+			}
+			else if ((type == 0xDD && (length >= 8)
+					  && (memcmp(p + 2, "\x00\x50\xF2\x02\x01\x01", 6) == 0)))
+			{
+				// QoS IE
+				ap_cur->security |= STD_QOS;
+				p += length + 2;
+			}
+			else if ((type == 0xDD && (length >= 4)
+					  && (memcmp(p + 2, "\x00\x50\xF2\x04", 4) == 0)))
+			{
+				// WPS IE
+				uint8_t const * const org_p = p;
+
+				p += 6;
+
+				int len = length;
+
+				while (len >= 4)
+				{
+					uint16_t const subtype = (p[0] << 8) + p[1];
+					uint16_t const sublen = (p[2] << 8) + p[3];
+
+					if (sublen > len) break;
+					switch (subtype)
+					{
+						case 0x104a: // WPS Version
+							ap_cur->wps.version = p[4];
+							break;
+						case 0x1011: // Device Name
+						case 0x1012: // Device Password ID
+						case 0x1021: // Manufacturer
+						case 0x1023: // Model
+						case 0x1024: // Model Number
+						case 0x103b: // Response Type
+						case 0x103c: // RF Bands
+						case 0x1041: // Selected Registrar
+						case 0x1042: // Serial Number
+							break;
+						case 0x1044: // WPS State
+							ap_cur->wps.state = p[4];
+							break;
+						case 0x1047: // UUID Enrollee
+						case 0x1049: // Vendor Extension
+							if (memcmp(&p[4], "\x00\x37\x2A", 3) == 0)
+							{
+								unsigned char const * pwfa = &p[7];
+								int32_t wfa_len = sublen;
+
+								while (wfa_len > 0)
+								{
+									if (*pwfa == 0)
+									{ // Version2
+										ap_cur->wps.version = pwfa[2];
+										break;
+									}
+									wfa_len -= pwfa[1] + 2;
+									pwfa += pwfa[1] + 2;
+								}
+							}
+							break;
+						case 0x1054: // Primary Device Type
+							break;
+						case 0x1057: // AP Setup Locked
+							ap_cur->wps.ap_setup_locked = p[4];
+							break;
+						case 0x1008: // Config Methods
+						case 0x1053: // Selected Registrar Config Methods
+							ap_cur->wps.meth = (p[4] << 8) + p[5];
+							break;
+						default: // Unknown type-length-value
+							break;
+					}
+					p += sublen + 4;
+					len -= sublen + 4;
+				}
+				p = org_p + length + 2;
+			}
+			else
+			{
+				p += length + 2;
+			}
+		}
+	}
+}
+
+static void parse_authentication_response(struct AP_info * const ap_cur,
+										  uint8_t const * const h80211,
+										  size_t const caplen)
+{
+	if (h80211[0] == IEEE80211_FC0_SUBTYPE_AUTH && caplen >= 30)
+	{
+		if (ap_cur->security & STD_WEP)
+		{
+			// successful step 2 or 4 (coming from the AP)
+			if (memcmp(h80211 + 28, "\x00\x00", 2) == 0
+				&& (h80211[26] == 0x02 || h80211[26] == 0x04))
+			{
+				ap_cur->security &= ~(AUTH_OPN | AUTH_PSK | AUTH_MGT);
+				if (h80211[24] == 0x00) ap_cur->security |= AUTH_OPN;
+				if (h80211[24] == 0x01) ap_cur->security |= AUTH_PSK;
+			}
+		}
+	}
+}
+
+static bool parse_association_request(struct local_options * const options,
+									  struct AP_info * const ap_cur,
+									  struct ST_info * const st_cur,
+									  uint8_t const * const h80211,
+									  size_t const caplen)
+{
+	bool success;
+
+	if (h80211[0] == IEEE80211_FC0_SUBTYPE_ASSOC_REQ && caplen > 28)
+	{
+		uint8_t const * const data_end = h80211 + caplen;
+		uint8_t const * p = h80211 + 28;
+
+		while (p < data_end)
+		{
+			if (p + 2 + p[1] > data_end)
+			{
+				break;
+			}
+
+			if (p[0] == 0x00 && p[1] > 0 && p[2] != '\0'
+				&& (p[1] > 1 || p[2] != ' '))
+			{
+				/* Found a non-cloaked ESSID. */
+				ap_cur->ssid_length = MIN((sizeof ap_cur->essid - 1), p[1]);
+
+				memcpy(ap_cur->essid, p + 2, ap_cur->ssid_length);
+				ap_cur->essid[ap_cur->ssid_length] = '\0';
+
+				if (!ivs_log_essid(options->ivs.fp,
+								   &ap_cur->essid_logged,
+								   &ap_cur->bssid,
+								   &options->ivs.prev_bssid,
+								   ap_cur->essid,
+								   ap_cur->ssid_length))
+				{
+					success = false;
+					goto done;
+				}
+
+				if (!verifyssid(ap_cur->essid))
+				{
+					make_printable(ap_cur->essid, ap_cur->ssid_length);
+				}
+			}
+
+			p += 2 + p[1];
+		}
+
+		if (st_cur != NULL)
+		{
+			st_cur->wpa.state = 0;
+		}
+	}
+
+	success = true;
 
 done:
-    return;
+	return success;
 }
 
-static bool parse_packet_data(
-    struct local_options * const options,
-    struct AP_info * const ap_cur,
-    struct ST_info * const st_cur,
-    uint8_t const * const h80211,
-    size_t const caplen,
-    struct rx_info * const ri,
-    int const cardnum)
+static void do_decloak_check(struct local_options * const options,
+							 struct AP_info * const ap_cur,
+							 uint8_t const * const h80211,
+							 size_t caplen)
 {
-    bool success;
+	if (!ap_cur->decloak_detection)
+	{
+		goto done;
+	}
 
-    if ((h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_DATA)
-    {
-        /* update the channel if we didn't get any beacon */
+	if (!list_check_decloak(&ap_cur->pkt_list, h80211, caplen))
+	{
+		list_add_packet(&ap_cur->pkt_list, h80211, caplen);
+	}
+	else
+	{
+		ap_cur->detected_decloak = true;
+		ap_cur->decloak_detection = false;
 
-        if (ap_cur->channel == -1)
-        {
-            if (ri->ri_channel > 0 && ri->ri_channel <= HIGHEST_CHANNEL)
-            {
-                ap_cur->channel = ri->ri_channel;
-            }
-            else
-            {
-                ap_cur->channel =
-                    options->interface_data[cardnum].current_channel;
-            }
-        }
+		packet_list_free(&ap_cur->pkt_list);
 
-        /* check the SNAP header to see if data is encrypted */
-
-        unsigned int z = ((h80211[1] & IEEE80211_FC1_DIR_MASK) != IEEE80211_FC1_DIR_DSTODS)
-            ? 24
-            : 30;
-
-        /* Check if 802.11e (QoS) */
-        if ((h80211[0] & 0x80) == 0x80)
-        {
-            z += 2;
-            if (st_cur != NULL)
-            {
-                if ((h80211[1] & 3) == 1) // ToDS
-                    st_cur->qos_to_ds = 1;
-                else
-                    st_cur->qos_fr_ds = 1;
-            }
-        }
-        else
-        {
-            if (st_cur != NULL)
-            {
-                if ((h80211[1] & 3) == 1) // ToDS
-                    st_cur->qos_to_ds = 0;
-                else
-                    st_cur->qos_fr_ds = 0;
-            }
-        }
-
-        if (z == 24)
-        {
-            do_decloak_check(options, ap_cur, h80211, caplen);
-        }
-
-        if (z + 26 > caplen)
-        {
-            success = true;
-            goto done;
-        }
-
-        if (h80211[z] == h80211[z + 1] && h80211[z + 2] == 0x03)
-        {
-            //            if( ap_cur->encryption < 0 )
-            //                ap_cur->encryption = 0;
-
-            /* if ethertype == IPv4, find the LAN address */
-
-            if (h80211[z + 6] == 0x08 && h80211[z + 7] == 0x00
-                && (h80211[1] & 3) == 0x01)
-            {
-                memcpy(ap_cur->lanip, &h80211[z + 20], 4);
-            }
-
-            if (h80211[z + 6] == 0x08 && h80211[z + 7] == 0x06)
-            {
-                memcpy(ap_cur->lanip, &h80211[z + 22], 4);
-            }
-        }
-        //        else
-        //            ap_cur->encryption = 2 + ( ( h80211[z + 3] & 0x20 ) >> 5
-        //            );
-
-        if (ap_cur->security == 0 || (ap_cur->security & STD_WEP))
-        {
-            if ((h80211[1] & 0x40) != 0x40)
-            {
-                ap_cur->security |= STD_OPN;
-            }
-            else
-            {
-                if ((h80211[z + 3] & 0x20) == 0x20)
-                {
-                    ap_cur->security |= STD_WPA;
-                }
-                else
-                {
-                    ap_cur->security |= STD_WEP;
-                    if ((h80211[z + 3] & 0xC0) != 0x00)
-                    {
-                        ap_cur->security |= ENC_WEP40;
-                    }
-                    else
-                    {
-                        ap_cur->security &= ~ENC_WEP40;
-                        ap_cur->security |= ENC_WEP;
-                    }
-                }
-            }
-        }
-
-        if (z + 10 > caplen)
-        {
-            success = true;
-            goto done;
-        }
-
-        if (ap_cur->security & STD_WEP)
-        {
-            /* WEP: check if we've already seen this IV */
-
-            if (!uniqueiv_check(ap_cur->uiv_root, &h80211[z]))
-            {
-                /* first time seen IVs */
-
-                if (options->ivs.fp != NULL)
-                {
-                    unsigned char clear[2048] = { 0 };
-                    int weight[16] = { 0 };
-                    int clen;
-
-                    /* datalen = caplen - (header+iv+ivs) */
-                    size_t dlen = caplen - z - 4 - 4; // original data len
-
-                    if (dlen > 2048)
-                    {
-                        dlen = 2048;
-                    }
-
-                    // get cleartext + len + 4(iv+idx)
-                    int num_xor = known_clear(clear, &clen, weight, h80211, dlen);
-
-                    size_t data_size;
-                    uint16_t ivs_type;
-
-                    if (num_xor == 1)
-                    {
-                        data_size = clen;
-                        ivs_type = IVS2_XOR;
-                        /* reveal keystream (plain^encrypted) */
-                        for (size_t n = 0; n < data_size; n++)
-                        {
-                            clear[n] = (uint8_t)((clear[n] ^ h80211[z + 4 + n])
-                                                 & 0xFF);
-                        }
-                        // clear is now the keystream
-                    }
-                    else
-                    {
-                        // do it again to get it 2 bytes higher
-                        num_xor = known_clear(
-                            clear + 2, &clen, weight, h80211, dlen);
-                        ivs_type = IVS2_PTW;
-
-                        // len = 4(iv+idx) + 1(num of keystreams) + 1(len per
-                        // keystream) + 32*num_xor + 16*sizeof(int)(weight[16])
-                        data_size = 1 + 1 + 32 * num_xor + 16 * sizeof(int);
-                        clear[0] = (uint8_t)num_xor;
-                        clear[1] = (uint8_t)clen;
-                        /* reveal keystream (plain^encrypted) */
-                        for (int o = 0; o < num_xor; o++)
-                        {
-                            for (size_t n = 0; n < data_size; n++)
-                            {
-                                clear[2 + n + o * 32] = (uint8_t)(
-                                                                  (clear[2 + n + o * 32] ^ h80211[z + 4 + n])
-                                                                  & 0xFF);
-                            }
-                        }
-                        memcpy(clear + 4 + 1 + 1 + 32 * num_xor,
-                               weight,
-                               16 * sizeof(int));
-                        // clear is now the keystream
-                    }
-
-                    if (!ivs_log_keystream(options->ivs.fp,
-                                           &ap_cur->bssid,
-                                           &options->ivs.prev_bssid,
-                                           ivs_type,
-                                           h80211 + z, 4,
-                                           clear,
-                                           data_size))
-                    {
-                        success = false;
-                        goto done;
-                    }
-                }
-
-                uniqueiv_mark(ap_cur->uiv_root, &h80211[z]);
-
-                ap_cur->nb_data++;
-            }
-
-            // Record all data linked to IV to detect WEP Cloaking
-            if (options->ivs.fp == NULL && options->detect_anomaly)
-            {
-                // Only allocate this when seeing WEP AP
-                if (ap_cur->data_root == NULL)
-                {
-                    ap_cur->data_root = data_init();
-                }
-
-                // Only works with full capture, not IV-only captures
-                if (data_check(ap_cur->data_root, &h80211[z], &h80211[z + 4])
-                    == CLOAKING
-                    && ap_cur->EAP_detected == 0)
-                {
-
-                    // If no EAP/EAP was detected, indicate WEP cloaking
-                    snprintf(options->message,
-                             sizeof(options->message),
-                             "WEP Cloaking: %02X:%02X:%02X:%02X:%02X:%02X ",
-                             ap_cur->bssid.addr[0],
-                             ap_cur->bssid.addr[1],
-                             ap_cur->bssid.addr[2],
-                             ap_cur->bssid.addr[3],
-                             ap_cur->bssid.addr[4],
-                             ap_cur->bssid.addr[5]);
-                }
-            }
-        }
-        else
-        {
-            ap_cur->nb_data++;
-        }
-
-        z = ((h80211[1] & IEEE80211_FC1_DIR_MASK) != IEEE80211_FC1_DIR_DSTODS)
-            ? 24
-            : 30;
-
-        /* Check if 802.11e (QoS) */
-        if ((h80211[0] & 0x80) == 0x80)
-        {
-            z += 2;
-        }
-
-        if (z + 26 > caplen)
-        {
-            success = true;
-            goto done;
-        }
-
-        z += 6; // skip LLC header
-
-        /* check ethertype == EAPOL */
-        if (h80211[z] == 0x88
-            && h80211[z + 1] == 0x8E
-            && (h80211[1] & 0x40) != 0x40)
-        {
-            ap_cur->EAP_detected = 1;
-
-            z += 2; // skip ethertype
-
-            if (st_cur == NULL)
-            {
-                success = true;
-                goto done;
-            }
-
-            /* frame 1: Pairwise == 1, Install == 0, Ack == 1, MIC == 0 */
-
-            if ((h80211[z + 6] & 0x08) != 0
-                && (h80211[z + 6] & 0x40) == 0
-                && (h80211[z + 6] & 0x80) != 0
-                && (h80211[z + 5] & 0x01) == 0)
-            {
-                memcpy(st_cur->wpa.anonce, &h80211[z + 17], 32);
-
-                st_cur->wpa.state = 1;
-
-                if (h80211[z + 99] == 0xdd) // RSN
-                {
-                    if (h80211[z + 101] == 0x00
-                        && h80211[z + 102] == 0x0f
-                        && h80211[z + 103] == 0xac) // OUI: IEEE8021
-                    {
-                        if (h80211[z + 104] == 0x04) // OUI SUBTYPE
-                        {
-                            // Got a PMKID value?!
-                            memcpy(st_cur->wpa.pmkid, &h80211[z + 105], 16);
-
-                            /* copy the key descriptor version */
-                            st_cur->wpa.keyver = (uint8_t)(h80211[z + 6] & 7);
-
-                            MAC_ADDRESS_COPY(&st_cur->wpa.stmac, &st_cur->stmac);
-                            snprintf(options->message,
-                                     sizeof(options->message),
-                                     "PMKID found: "
-                                     "%02X:%02X:%02X:%02X:%02X:%02X ",
-                                     ap_cur->bssid.addr[0],
-                                     ap_cur->bssid.addr[1],
-                                     ap_cur->bssid.addr[2],
-                                     ap_cur->bssid.addr[3],
-                                     ap_cur->bssid.addr[4],
-                                     ap_cur->bssid.addr[5]);
-
-                            success = true;
-                            goto done;
-                        }
-                    }
-                }
-            }
-
-            /* frame 2 or 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1 */
-
-            if (z + 17 + 32 > caplen)
-            {
-                success = true;
-
-                goto done;
-            }
-
-            if ((h80211[z + 6] & 0x08) != 0
-                && (h80211[z + 6] & 0x40) == 0
-                && (h80211[z + 6] & 0x80) == 0
-                && (h80211[z + 5] & 0x01) != 0)
-            {
-                if (memcmp(&h80211[z + 17], ZERO, 32) != 0)
-                {
-                    memcpy(st_cur->wpa.snonce, &h80211[z + 17], 32);
-                    st_cur->wpa.state |= 2;
-                }
-
-                if ((st_cur->wpa.state & 4) != 4)
-                {
-                    st_cur->wpa.eapol_size
-                        = (uint32_t)((h80211[z + 2] << 8) + h80211[z + 3] + 4);
-
-                    if (caplen - z < st_cur->wpa.eapol_size
-                        || st_cur->wpa.eapol_size == 0 //-V560
-                        || caplen - z < 81 + 16
-                        || st_cur->wpa.eapol_size > sizeof(st_cur->wpa.eapol))
-                    {
-                        // Ignore the packet trying to crash us.
-                        st_cur->wpa.eapol_size = 0;
-
-                        success = true;
-
-                        goto done;
-                    }
-
-                    memcpy(st_cur->wpa.keymic, &h80211[z + 81], 16);
-                    memcpy(
-                        st_cur->wpa.eapol, &h80211[z], st_cur->wpa.eapol_size);
-                    memset(st_cur->wpa.eapol + 81, 0, 16);
-                    st_cur->wpa.state |= 4;
-                    st_cur->wpa.keyver = (uint8_t)(h80211[z + 6] & 7);
-                }
-            }
-
-            /* frame 3: Pairwise == 1, Install == 1, Ack == 1, MIC == 1 */
-
-            if ((h80211[z + 6] & 0x08) != 0
-                && (h80211[z + 6] & 0x40) != 0
-                && (h80211[z + 6] & 0x80) != 0
-                && (h80211[z + 5] & 0x01) != 0)
-            {
-                if (memcmp(&h80211[z + 17], ZERO, 32) != 0)
-                {
-                    memcpy(st_cur->wpa.anonce, &h80211[z + 17], 32);
-                    st_cur->wpa.state |= 1;
-                }
-
-                if ((st_cur->wpa.state & 4) != 4)
-                {
-                    st_cur->wpa.eapol_size
-                        = (h80211[z + 2] << 8) + h80211[z + 3] + 4u;
-
-                    if (st_cur->wpa.eapol_size == 0 //-V560
-                        || st_cur->wpa.eapol_size
-                        >= sizeof(st_cur->wpa.eapol) - 16)
-                    {
-                        // Ignore the packet trying to crash us.
-                        st_cur->wpa.eapol_size = 0;
-                        success = true;
-                        goto done;
-                    }
-
-                    memcpy(st_cur->wpa.keymic, &h80211[z + 81], 16);
-                    memcpy(
-                        st_cur->wpa.eapol, &h80211[z], st_cur->wpa.eapol_size);
-                    memset(st_cur->wpa.eapol + 81, 0, 16);
-                    st_cur->wpa.state |= 4;
-                    st_cur->wpa.keyver = (uint8_t)(h80211[z + 6] & 7);
-                }
-            }
-
-            if (st_cur->wpa.state == 7
-                && !is_filtered_essid(&options->essid_filter, ap_cur->essid))
-            {
-                MAC_ADDRESS_COPY(&st_cur->wpa.stmac, &st_cur->stmac);
-                snprintf(options->message,
-                         sizeof(options->message),
-                         "WPA handshake: %02X:%02X:%02X:%02X:%02X:%02X ",
-                         ap_cur->bssid.addr[0],
-                         ap_cur->bssid.addr[1],
-                         ap_cur->bssid.addr[2],
-                         ap_cur->bssid.addr[3],
-                         ap_cur->bssid.addr[4],
-                         ap_cur->bssid.addr[5]);
-
-                if (!ivs_log_wpa_hdsk(options->ivs.fp,
-                                      &ap_cur->bssid,
-                                      &options->ivs.prev_bssid,
-                                      &st_cur->wpa,
-                                      sizeof st_cur->wpa))
-                {
-                    success = false;
-                    goto done;
-                }
-            }
-        }
-    }
-
-    success = true;
+		snprintf(options->message,
+				 sizeof(options->message),
+				 "Decloak: %02X:%02X:%02X:%02X:%02X:%02X ",
+				 ap_cur->bssid.addr[0],
+				 ap_cur->bssid.addr[1],
+				 ap_cur->bssid.addr[2],
+				 ap_cur->bssid.addr[3],
+				 ap_cur->bssid.addr[4],
+				 ap_cur->bssid.addr[5]);
+	}
 
 done:
-    return success;
+	return;
 }
 
-static bool parse_control_frame(
-    struct local_options * const options,
-    uint8_t const * const h80211,
-    size_t const caplen,
-    struct rx_info * const ri)
+static bool parse_packet_data(struct local_options * const options,
+							  struct AP_info * const ap_cur,
+							  struct ST_info * const st_cur,
+							  uint8_t const * const h80211,
+							  size_t const caplen,
+							  struct rx_info * const ri,
+							  int const cardnum)
 {
-    bool success;
+	bool success;
 
-    if (caplen < 24 && caplen >= 10 && h80211[0] != 0)
-    {
-        /* RTS || CTS || ACK || CF-END || CF-END&CF-ACK*/
-        //(h80211[0] == 0xB4 || h80211[0] == 0xC4 || h80211[0] == 0xD4 ||
-        // h80211[0] == 0xE4 || h80211[0] == 0xF4)
+	if ((h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_DATA)
+	{
+		/* update the channel if we didn't get any beacon */
 
-        /* use general control frame detection, as the structure is always the
+		if (ap_cur->channel == -1)
+		{
+			if (ri->ri_channel > 0 && ri->ri_channel <= HIGHEST_CHANNEL)
+			{
+				ap_cur->channel = ri->ri_channel;
+			}
+			else
+			{
+				ap_cur->channel
+					= options->interface_data[cardnum].current_channel;
+			}
+		}
+
+		/* check the SNAP header to see if data is encrypted */
+
+		unsigned int z
+			= ((h80211[1] & IEEE80211_FC1_DIR_MASK) != IEEE80211_FC1_DIR_DSTODS)
+				  ? 24
+				  : 30;
+
+		/* Check if 802.11e (QoS) */
+		if ((h80211[0] & 0x80) == 0x80)
+		{
+			z += 2;
+			if (st_cur != NULL)
+			{
+				if ((h80211[1] & 3) == 1) // ToDS
+					st_cur->qos_to_ds = 1;
+				else
+					st_cur->qos_fr_ds = 1;
+			}
+		}
+		else
+		{
+			if (st_cur != NULL)
+			{
+				if ((h80211[1] & 3) == 1) // ToDS
+					st_cur->qos_to_ds = 0;
+				else
+					st_cur->qos_fr_ds = 0;
+			}
+		}
+
+		if (z == 24)
+		{
+			do_decloak_check(options, ap_cur, h80211, caplen);
+		}
+
+		if (z + 26 > caplen)
+		{
+			success = true;
+			goto done;
+		}
+
+		if (h80211[z] == h80211[z + 1] && h80211[z + 2] == 0x03)
+		{
+			//            if( ap_cur->encryption < 0 )
+			//                ap_cur->encryption = 0;
+
+			/* if ethertype == IPv4, find the LAN address */
+
+			if (h80211[z + 6] == 0x08 && h80211[z + 7] == 0x00
+				&& (h80211[1] & 3) == 0x01)
+			{
+				memcpy(ap_cur->lanip, &h80211[z + 20], 4);
+			}
+
+			if (h80211[z + 6] == 0x08 && h80211[z + 7] == 0x06)
+			{
+				memcpy(ap_cur->lanip, &h80211[z + 22], 4);
+			}
+		}
+		//        else
+		//            ap_cur->encryption = 2 + ( ( h80211[z + 3] & 0x20 ) >> 5
+		//            );
+
+		if (ap_cur->security == 0 || (ap_cur->security & STD_WEP))
+		{
+			if ((h80211[1] & 0x40) != 0x40)
+			{
+				ap_cur->security |= STD_OPN;
+			}
+			else
+			{
+				if ((h80211[z + 3] & 0x20) == 0x20)
+				{
+					ap_cur->security |= STD_WPA;
+				}
+				else
+				{
+					ap_cur->security |= STD_WEP;
+					if ((h80211[z + 3] & 0xC0) != 0x00)
+					{
+						ap_cur->security |= ENC_WEP40;
+					}
+					else
+					{
+						ap_cur->security &= ~ENC_WEP40;
+						ap_cur->security |= ENC_WEP;
+					}
+				}
+			}
+		}
+
+		if (z + 10 > caplen)
+		{
+			success = true;
+			goto done;
+		}
+
+		if (ap_cur->security & STD_WEP)
+		{
+			/* WEP: check if we've already seen this IV */
+
+			if (!uniqueiv_check(ap_cur->uiv_root, &h80211[z]))
+			{
+				/* first time seen IVs */
+
+				if (options->ivs.fp != NULL)
+				{
+					unsigned char clear[2048] = {0};
+					int weight[16] = {0};
+					int clen;
+
+					/* datalen = caplen - (header+iv+ivs) */
+					size_t dlen = caplen - z - 4 - 4; // original data len
+
+					if (dlen > 2048)
+					{
+						dlen = 2048;
+					}
+
+					// get cleartext + len + 4(iv+idx)
+					int num_xor
+						= known_clear(clear, &clen, weight, h80211, dlen);
+
+					size_t data_size;
+					uint16_t ivs_type;
+
+					if (num_xor == 1)
+					{
+						data_size = clen;
+						ivs_type = IVS2_XOR;
+						/* reveal keystream (plain^encrypted) */
+						for (size_t n = 0; n < data_size; n++)
+						{
+							clear[n] = (uint8_t)((clear[n] ^ h80211[z + 4 + n])
+												 & 0xFF);
+						}
+						// clear is now the keystream
+					}
+					else
+					{
+						// do it again to get it 2 bytes higher
+						num_xor = known_clear(
+							clear + 2, &clen, weight, h80211, dlen);
+						ivs_type = IVS2_PTW;
+
+						// len = 4(iv+idx) + 1(num of keystreams) + 1(len per
+						// keystream) + 32*num_xor + 16*sizeof(int)(weight[16])
+						data_size = 1 + 1 + 32 * num_xor + 16 * sizeof(int);
+						clear[0] = (uint8_t) num_xor;
+						clear[1] = (uint8_t) clen;
+						/* reveal keystream (plain^encrypted) */
+						for (int o = 0; o < num_xor; o++)
+						{
+							for (size_t n = 0; n < data_size; n++)
+							{
+								clear[2 + n + o * 32] = (uint8_t)(
+									(clear[2 + n + o * 32] ^ h80211[z + 4 + n])
+									& 0xFF);
+							}
+						}
+						memcpy(clear + 4 + 1 + 1 + 32 * num_xor,
+							   weight,
+							   16 * sizeof(int));
+						// clear is now the keystream
+					}
+
+					if (!ivs_log_keystream(options->ivs.fp,
+										   &ap_cur->bssid,
+										   &options->ivs.prev_bssid,
+										   ivs_type,
+										   h80211 + z,
+										   4,
+										   clear,
+										   data_size))
+					{
+						success = false;
+						goto done;
+					}
+				}
+
+				uniqueiv_mark(ap_cur->uiv_root, &h80211[z]);
+
+				ap_cur->nb_data++;
+			}
+
+			// Record all data linked to IV to detect WEP Cloaking
+			if (options->ivs.fp == NULL && options->detect_anomaly)
+			{
+				// Only allocate this when seeing WEP AP
+				if (ap_cur->data_root == NULL)
+				{
+					ap_cur->data_root = data_init();
+				}
+
+				// Only works with full capture, not IV-only captures
+				if (data_check(ap_cur->data_root, &h80211[z], &h80211[z + 4])
+						== CLOAKING
+					&& ap_cur->EAP_detected == 0)
+				{
+
+					// If no EAP/EAP was detected, indicate WEP cloaking
+					snprintf(options->message,
+							 sizeof(options->message),
+							 "WEP Cloaking: %02X:%02X:%02X:%02X:%02X:%02X ",
+							 ap_cur->bssid.addr[0],
+							 ap_cur->bssid.addr[1],
+							 ap_cur->bssid.addr[2],
+							 ap_cur->bssid.addr[3],
+							 ap_cur->bssid.addr[4],
+							 ap_cur->bssid.addr[5]);
+				}
+			}
+		}
+		else
+		{
+			ap_cur->nb_data++;
+		}
+
+		z = ((h80211[1] & IEEE80211_FC1_DIR_MASK) != IEEE80211_FC1_DIR_DSTODS)
+				? 24
+				: 30;
+
+		/* Check if 802.11e (QoS) */
+		if ((h80211[0] & 0x80) == 0x80)
+		{
+			z += 2;
+		}
+
+		if (z + 26 > caplen)
+		{
+			success = true;
+			goto done;
+		}
+
+		z += 6; // skip LLC header
+
+		/* check ethertype == EAPOL */
+		if (h80211[z] == 0x88 && h80211[z + 1] == 0x8E
+			&& (h80211[1] & 0x40) != 0x40)
+		{
+			ap_cur->EAP_detected = 1;
+
+			z += 2; // skip ethertype
+
+			if (st_cur == NULL)
+			{
+				success = true;
+				goto done;
+			}
+
+			/* frame 1: Pairwise == 1, Install == 0, Ack == 1, MIC == 0 */
+
+			if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
+				&& (h80211[z + 6] & 0x80) != 0 && (h80211[z + 5] & 0x01) == 0)
+			{
+				memcpy(st_cur->wpa.anonce, &h80211[z + 17], 32);
+
+				st_cur->wpa.state = 1;
+
+				if (h80211[z + 99] == 0xdd) // RSN
+				{
+					if (h80211[z + 101] == 0x00 && h80211[z + 102] == 0x0f
+						&& h80211[z + 103] == 0xac) // OUI: IEEE8021
+					{
+						if (h80211[z + 104] == 0x04) // OUI SUBTYPE
+						{
+							// Got a PMKID value?!
+							memcpy(st_cur->wpa.pmkid, &h80211[z + 105], 16);
+
+							/* copy the key descriptor version */
+							st_cur->wpa.keyver = (uint8_t)(h80211[z + 6] & 7);
+
+							MAC_ADDRESS_COPY(&st_cur->wpa.stmac,
+											 &st_cur->stmac);
+							snprintf(options->message,
+									 sizeof(options->message),
+									 "PMKID found: "
+									 "%02X:%02X:%02X:%02X:%02X:%02X ",
+									 ap_cur->bssid.addr[0],
+									 ap_cur->bssid.addr[1],
+									 ap_cur->bssid.addr[2],
+									 ap_cur->bssid.addr[3],
+									 ap_cur->bssid.addr[4],
+									 ap_cur->bssid.addr[5]);
+
+							success = true;
+							goto done;
+						}
+					}
+				}
+			}
+
+			/* frame 2 or 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1 */
+
+			if (z + 17 + 32 > caplen)
+			{
+				success = true;
+
+				goto done;
+			}
+
+			if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
+				&& (h80211[z + 6] & 0x80) == 0 && (h80211[z + 5] & 0x01) != 0)
+			{
+				if (memcmp(&h80211[z + 17], ZERO, 32) != 0)
+				{
+					memcpy(st_cur->wpa.snonce, &h80211[z + 17], 32);
+					st_cur->wpa.state |= 2;
+				}
+
+				if ((st_cur->wpa.state & 4) != 4)
+				{
+					st_cur->wpa.eapol_size
+						= (uint32_t)((h80211[z + 2] << 8) + h80211[z + 3] + 4);
+
+					if (caplen - z < st_cur->wpa.eapol_size
+						|| st_cur->wpa.eapol_size == 0 //-V560
+						|| caplen - z < 81 + 16
+						|| st_cur->wpa.eapol_size > sizeof(st_cur->wpa.eapol))
+					{
+						// Ignore the packet trying to crash us.
+						st_cur->wpa.eapol_size = 0;
+
+						success = true;
+
+						goto done;
+					}
+
+					memcpy(st_cur->wpa.keymic, &h80211[z + 81], 16);
+					memcpy(
+						st_cur->wpa.eapol, &h80211[z], st_cur->wpa.eapol_size);
+					memset(st_cur->wpa.eapol + 81, 0, 16);
+					st_cur->wpa.state |= 4;
+					st_cur->wpa.keyver = (uint8_t)(h80211[z + 6] & 7);
+				}
+			}
+
+			/* frame 3: Pairwise == 1, Install == 1, Ack == 1, MIC == 1 */
+
+			if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) != 0
+				&& (h80211[z + 6] & 0x80) != 0 && (h80211[z + 5] & 0x01) != 0)
+			{
+				if (memcmp(&h80211[z + 17], ZERO, 32) != 0)
+				{
+					memcpy(st_cur->wpa.anonce, &h80211[z + 17], 32);
+					st_cur->wpa.state |= 1;
+				}
+
+				if ((st_cur->wpa.state & 4) != 4)
+				{
+					st_cur->wpa.eapol_size
+						= (h80211[z + 2] << 8) + h80211[z + 3] + 4u;
+
+					if (st_cur->wpa.eapol_size == 0 //-V560
+						|| st_cur->wpa.eapol_size
+							   >= sizeof(st_cur->wpa.eapol) - 16)
+					{
+						// Ignore the packet trying to crash us.
+						st_cur->wpa.eapol_size = 0;
+						success = true;
+						goto done;
+					}
+
+					memcpy(st_cur->wpa.keymic, &h80211[z + 81], 16);
+					memcpy(
+						st_cur->wpa.eapol, &h80211[z], st_cur->wpa.eapol_size);
+					memset(st_cur->wpa.eapol + 81, 0, 16);
+					st_cur->wpa.state |= 4;
+					st_cur->wpa.keyver = (uint8_t)(h80211[z + 6] & 7);
+				}
+			}
+
+			if (st_cur->wpa.state == 7
+				&& !is_filtered_essid(&options->essid_filter, ap_cur->essid))
+			{
+				MAC_ADDRESS_COPY(&st_cur->wpa.stmac, &st_cur->stmac);
+				snprintf(options->message,
+						 sizeof(options->message),
+						 "WPA handshake: %02X:%02X:%02X:%02X:%02X:%02X ",
+						 ap_cur->bssid.addr[0],
+						 ap_cur->bssid.addr[1],
+						 ap_cur->bssid.addr[2],
+						 ap_cur->bssid.addr[3],
+						 ap_cur->bssid.addr[4],
+						 ap_cur->bssid.addr[5]);
+
+				if (!ivs_log_wpa_hdsk(options->ivs.fp,
+									  &ap_cur->bssid,
+									  &options->ivs.prev_bssid,
+									  &st_cur->wpa,
+									  sizeof st_cur->wpa))
+				{
+					success = false;
+					goto done;
+				}
+			}
+		}
+	}
+
+	success = true;
+
+done:
+	return success;
+}
+
+static bool parse_control_frame(struct local_options * const options,
+								uint8_t const * const h80211,
+								size_t const caplen,
+								struct rx_info * const ri)
+{
+	bool success;
+
+	if (caplen < 24 && caplen >= 10 && h80211[0] != 0)
+	{
+		/* RTS || CTS || ACK || CF-END || CF-END&CF-ACK*/
+		//(h80211[0] == 0xB4 || h80211[0] == 0xC4 || h80211[0] == 0xD4 ||
+		// h80211[0] == 0xE4 || h80211[0] == 0xF4)
+
+		/* use general control frame detection, as the structure is always the
          * same: mac(s) starting at [4] */
-        if ((h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_CTL)
-        {
-            uint8_t const * const data_end = h80211 + caplen;
-            mac_address namac;
-            uint8_t const * p = h80211 + 4;
+		if ((h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_CTL)
+		{
+			uint8_t const * const data_end = h80211 + caplen;
+			mac_address namac;
+			uint8_t const * p = h80211 + 4;
 
-            while (p <= h80211 + 16 && (p + sizeof namac) <= data_end)
-            {
-                MAC_ADDRESS_COPY(&namac, (mac_address *)p);
+			while (p <= h80211 + 16 && (p + sizeof namac) <= data_end)
+			{
+				MAC_ADDRESS_COPY(&namac, (mac_address *) p);
 
-                if (MAC_ADDRESS_IS_EMPTY(&namac))
-                {
-                    p += sizeof namac;
-                    continue;
-                }
+				if (MAC_ADDRESS_IS_EMPTY(&namac))
+				{
+					p += sizeof namac;
+					continue;
+				}
 
-                if (MAC_ADDRESS_IS_BROADCAST(&namac))
-                {
-                    p += sizeof namac;
-                    continue;
-                }
+				if (MAC_ADDRESS_IS_BROADCAST(&namac))
+				{
+					p += sizeof namac;
+					continue;
+				}
 
-                if (options->hide_known)
-                {
-                    /* Check AP list. */
-                    /* If it's an AP, try next mac */
-                    if (ap_info_lookup_existing(&options->ap_list, &namac))
-                    {
-                        p += sizeof namac;
-                        continue;
-                    }
+				if (options->hide_known)
+				{
+					/* Check AP list. */
+					/* If it's an AP, try next mac */
+					if (ap_info_lookup_existing(&options->ap_list, &namac))
+					{
+						p += sizeof namac;
+						continue;
+					}
 
-                    /* If it's a client, try next mac */
-                    if (sta_info_lookup_existing(&options->sta_list, &namac))
-                    {
-                        p += sizeof namac;
-                        continue;
-                    }
-                }
+					/* If it's a client, try next mac */
+					if (sta_info_lookup_existing(&options->sta_list, &namac))
+					{
+						p += sizeof namac;
+						continue;
+					}
+				}
 
-                /* Not found in either AP list or ST list.
+				/* Not found in either AP list or ST list.
                  * Find or create an entry in the NA list.
                  */
-                struct NA_info * const na_cur =
-                    na_info_lookup(&options->na_list, &namac);
+				struct NA_info * const na_cur
+					= na_info_lookup(&options->na_list, &namac);
 
-                if (na_cur == NULL)
-                {
-                    success = false;
-                    goto done;
-                }
+				if (na_cur == NULL)
+				{
+					success = false;
+					goto done;
+				}
 
-                /* update the last time seen & power*/
-                na_cur->tlast = time(NULL);
-                na_cur->power = ri->ri_power;
-                na_cur->channel = ri->ri_channel;
+				/* update the last time seen & power*/
+				na_cur->tlast = time(NULL);
+				na_cur->power = ri->ri_power;
+				na_cur->channel = ri->ri_channel;
 
-                switch (h80211[0] & IEEE80211_FC0_SUBTYPE_MASK)
-                {
-                    case IEEE80211_FC0_SUBTYPE_RTS:
-                        if (p == h80211 + 4)
-                        {
-                            na_cur->rts_r++;
-                        }
-                        else if (p == h80211 + 10)
-                        {
-                            na_cur->rts_t++;
-                        }
-                        break;
+				switch (h80211[0] & IEEE80211_FC0_SUBTYPE_MASK)
+				{
+					case IEEE80211_FC0_SUBTYPE_RTS:
+						if (p == h80211 + 4)
+						{
+							na_cur->rts_r++;
+						}
+						else if (p == h80211 + 10)
+						{
+							na_cur->rts_t++;
+						}
+						break;
 
-                    case IEEE80211_FC0_SUBTYPE_CTS:
-                        na_cur->cts++;
-                        break;
+					case IEEE80211_FC0_SUBTYPE_CTS:
+						na_cur->cts++;
+						break;
 
-                    case IEEE80211_FC0_SUBTYPE_ACK:
-                        na_cur->ack++;
-                        break;
+					case IEEE80211_FC0_SUBTYPE_ACK:
+						na_cur->ack++;
+						break;
 
-                    default:
-                        na_cur->other++;
-                        break;
-                }
+					default:
+						na_cur->other++;
+						break;
+				}
 
-                /* grab next mac (for rts frames)*/
-                p += sizeof namac;
-            }
-        }
-    }
+				/* grab next mac (for rts frames)*/
+				p += sizeof namac;
+			}
+		}
+	}
 
-    success = true;
+	success = true;
 
 done:
-    return success;
+	return success;
 }
 
 // NOTE(jbenden): This is also in ivstools.c
-static void dump_add_packet(
-    struct local_options * const options,
-	unsigned char const * const h80211,
-	size_t const caplen,
-	struct rx_info * const ri,
-	int const cardnum)
+static void dump_add_packet(struct local_options * const options,
+							unsigned char const * const h80211,
+							size_t const caplen,
+							struct rx_info * const ri,
+							int const cardnum)
 {
 	REQUIRE(h80211 != NULL);
-    mac_address const * bssid;
+	mac_address const * bssid;
 	mac_address const * stmac;
 
 	struct AP_info * ap_cur = NULL;
 	struct ST_info * st_cur = NULL;
 
 	/* skip all non probe response frames in active scanning simulation mode */
-    bool const is_probe_response =
-        h80211[0] == IEEE80211_FC0_SUBTYPE_PROBE_RESP;
+	bool const is_probe_response
+		= h80211[0] == IEEE80211_FC0_SUBTYPE_PROBE_RESP;
 
-    if (options->active_scan_sim > 0 && !is_probe_response)
+	if (options->active_scan_sim > 0 && !is_probe_response)
 	{
 		return;
 	}
@@ -3279,11 +3273,11 @@ static void dump_add_packet(
 		goto write_packet;
 	}
 
-    /* Skip (uninteresting) control frames. */
-    bool const is_control_frame =
-        (h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_CTL;
+	/* Skip (uninteresting) control frames. */
+	bool const is_control_frame
+		= (h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_CTL;
 
-    if (is_control_frame)
+	if (is_control_frame)
 	{
 		goto write_packet;
 	}
@@ -3292,139 +3286,141 @@ static void dump_add_packet(
 
 	if (caplen > 28)
 	{
-		static const unsigned char llcnull[] = { 0, 0, 0, 0 };
+		static const unsigned char llcnull[] = {0, 0, 0, 0};
 
-        if (memcmp(h80211 + 24, llcnull, sizeof llcnull) == 0)
+		if (memcmp(h80211 + 24, llcnull, sizeof llcnull) == 0)
 		{
 			return;
 		}
 	}
 
-    bssid = locate_bssid_in_80211(h80211);
+	bssid = locate_bssid_in_80211(h80211);
 
-    if (bssid_is_filtered(bssid, &options->f_bssid, &options->f_netmask))
-    {
-        return; /* FIXME - single exit. */
-    }
-
-    bool is_new_ap;
-
-    ap_cur = ap_info_lookup(options, bssid, &is_new_ap);
-    if (ap_cur == NULL)
-    {
-        return;
-    }
-
-    if (is_new_ap)
+	if (bssid_is_filtered(bssid, &options->f_bssid, &options->f_netmask))
 	{
-        /* If mac was listed as unknown, remove it. */
-        remove_namac(&options->na_list, bssid);
+		return; /* FIXME - single exit. */
 	}
 
-    ap_update(options, ap_cur, h80211, ri);
+	bool is_new_ap;
 
-    /* Locate the station MAC in the 802.11 header. */
-    stmac = locate_sta_mac_in_80211(h80211, bssid);
+	ap_cur = ap_info_lookup(options, bssid, &is_new_ap);
+	if (ap_cur == NULL)
+	{
+		return;
+	}
 
-    if (stmac != NULL)
-    {
-        /* Update the list of wireless stations */
-        bool is_new;
+	if (is_new_ap)
+	{
+		/* If mac was listed as unknown, remove it. */
+		remove_namac(&options->na_list, bssid);
+	}
 
-        st_cur = sta_info_lookup(options, stmac, &is_new);
-        if (st_cur == NULL)
-        {
-            return;
-        }
+	ap_update(options, ap_cur, h80211, ri);
 
-        if (is_new)
-        {
-            /* If mac was listed as unknown, remove it. */
-            remove_namac(&options->na_list, stmac);
-        }
+	/* Locate the station MAC in the 802.11 header. */
+	stmac = locate_sta_mac_in_80211(h80211, bssid);
 
-        sta_update(options, st_cur, ap_cur, h80211, ri, cardnum);
-    }
+	if (stmac != NULL)
+	{
+		/* Update the list of wireless stations */
+		bool is_new;
+
+		st_cur = sta_info_lookup(options, stmac, &is_new);
+		if (st_cur == NULL)
+		{
+			return;
+		}
+
+		if (is_new)
+		{
+			/* If mac was listed as unknown, remove it. */
+			remove_namac(&options->na_list, stmac);
+		}
+
+		sta_update(options, st_cur, ap_cur, h80211, ri, cardnum);
+	}
 
 	/* packet parsing: Probe Request */
-    parse_probe_request(st_cur, h80211, caplen);
+	parse_probe_request(st_cur, h80211, caplen);
 
-    /* packet parsing: Beacon or Probe Response */
-    if (!parse_beacon_or_probe_response(options, ap_cur, h80211, caplen))
-    {
-        return;
-    }
+	/* packet parsing: Beacon or Probe Response */
+	if (!parse_beacon_or_probe_response(options, ap_cur, h80211, caplen))
+	{
+		return;
+	}
 
 	/* packet parsing: Beacon & Probe response */
-    parse_beacon_or_probe_response_2(ap_cur, h80211, caplen);
+	parse_beacon_or_probe_response_2(ap_cur, h80211, caplen);
 
 	/* packet parsing: Authentication Response */
-    parse_authentication_response(ap_cur, h80211, caplen);
+	parse_authentication_response(ap_cur, h80211, caplen);
 
 	/* packet parsing: Association Request */
-    if (!parse_association_request(options, ap_cur, st_cur, h80211, caplen))
-    {
-        return;
-    }
+	if (!parse_association_request(options, ap_cur, st_cur, h80211, caplen))
+	{
+		return;
+	}
 
 	/* packet parsing: some data */
-    if (!parse_packet_data(options, ap_cur, st_cur, h80211, caplen, ri, cardnum))
-    {
-        return;
-    }
+	if (!parse_packet_data(
+			options, ap_cur, st_cur, h80211, caplen, ri, cardnum))
+	{
+		return;
+	}
 
 write_packet:
 
-    if (ap_cur != NULL)
+	if (ap_cur != NULL)
 	{
-        if (options->one_beacon)
-        {
-            bool const is_a_beacon =
-                (h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_MGT
-                && (h80211[0] & IEEE80211_FC0_SUBTYPE_MASK) == IEEE80211_FC0_SUBTYPE_BEACON;
-
-            if (is_a_beacon)
-            {
-                if (!ap_cur->beacon_logged)
-                {
-                    ap_cur->beacon_logged = 1;
-                }
-                else
-                {
-                    return;
-                }
-            }
-        }
-
-        if (!ap_has_required_security_and_essid(ap_cur,
-                                                options->encryption_filter,
-                                                &options->essid_filter))
-        {
-            return;
-        }
-    }
-
-    if (options->record_data && options->check_shared_key)
-	{
-        if ((h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_MGT
-            && (h80211[0] & IEEE80211_FC0_SUBTYPE_MASK) == IEEE80211_FC0_SUBTYPE_AUTH)
+		if (options->one_beacon)
 		{
-			/* authentication packet */
-            check_shared_key(&options->shared_key,
-                             h80211,
-                             caplen,
-                             options->dump_prefix,
-                             options->filename.index,
-                             true);
+			bool const is_a_beacon = (h80211[0] & IEEE80211_FC0_TYPE_MASK)
+										 == IEEE80211_FC0_TYPE_MGT
+									 && (h80211[0] & IEEE80211_FC0_SUBTYPE_MASK)
+											== IEEE80211_FC0_SUBTYPE_BEACON;
+
+			if (is_a_beacon)
+			{
+				if (!ap_cur->beacon_logged)
+				{
+					ap_cur->beacon_logged = 1;
+				}
+				else
+				{
+					return;
+				}
+			}
+		}
+
+		if (!ap_has_required_security_and_essid(
+				ap_cur, options->encryption_filter, &options->essid_filter))
+		{
+			return;
 		}
 	}
 
-    if (!parse_control_frame(options, h80211, caplen, ri))
-    {
-        return;
-    }
+	if (options->record_data && options->check_shared_key)
+	{
+		if ((h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_MGT
+			&& (h80211[0] & IEEE80211_FC0_SUBTYPE_MASK)
+				   == IEEE80211_FC0_SUBTYPE_AUTH)
+		{
+			/* authentication packet */
+			check_shared_key(&options->shared_key,
+							 h80211,
+							 caplen,
+							 options->dump_prefix,
+							 options->filename.index,
+							 true);
+		}
+	}
 
-    update_packet_capture_files(options, h80211, caplen, ri->ri_power);
+	if (!parse_control_frame(options, h80211, caplen, ri))
+	{
+		return;
+	}
+
+	update_packet_capture_files(options, h80211, caplen, ri->ri_power);
 }
 
 #define CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, where)              \
@@ -3432,20 +3428,19 @@ write_packet:
 	{                                                                          \
 		if (nlines >= (screen_height - 1))                                     \
 		{                                                                      \
-            goto where;                                                        \
+			goto where;                                                        \
 		}                                                                      \
 	} while (0)
 
-static void dump_print(
-    struct local_options * const options,
-    int const screen_height,
-    int const screen_width,
-    int const if_num)
+static void dump_print(struct local_options * const options,
+					   int const screen_height,
+					   int const screen_width,
+					   int const if_num)
 {
 	time_t tt;
 	struct tm * lt;
-    int nlines;
-    int i;
+	int nlines;
+	int i;
 	char strbuf[512];
 	char buffer[512];
 	char ssid_list[512];
@@ -3456,38 +3451,38 @@ static void dump_print(
 	int columns_sta = 74;
 	int columns_na = 68;
 	size_t len;
-    int numaps = 0; /* Only used when 'berlin' mode is active. */
+	int numaps = 0; /* Only used when 'berlin' mode is active. */
 
-    if (!options->singlechan)
+	if (!options->singlechan)
 	{
 		columns_ap -= 4; // no RXQ in scan mode
 	}
 
-    if (options->show_uptime)
+	if (options->show_uptime)
 	{
 		columns_ap += 15; // show uptime needs more space
 	}
 
 	nlines = 2;
 
-    if (nlines >= screen_height)
-    {
-        return;
-    }
+	if (nlines >= screen_height)
+	{
+		return;
+	}
 
 	tt = time(NULL);
 	lt = localtime(&tt);
 
-    if (options->is_berlin)
+	if (options->is_berlin)
 	{
-        options->maxaps = 0;
+		options->maxaps = 0;
 
-        TAILQ_FOREACH_REVERSE(ap_cur, &options->ap_list, ap_list_head, entry)
+		TAILQ_FOREACH_REVERSE(ap_cur, &options->ap_list, ap_list_head, entry)
 		{
-            options->maxaps++;
+			options->maxaps++;
 
-            if (ap_cur->nb_pkt < options->min_pkts
-                || (time(NULL) - ap_cur->tlast) > options->berlin
+			if (ap_cur->nb_pkt < options->min_pkts
+				|| (time(NULL) - ap_cur->tlast) > options->berlin
 				|| MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
 			{
 				continue;
@@ -3495,9 +3490,9 @@ static void dump_print(
 			numaps++;
 		}
 
-        if (numaps > options->maxnumaps)
+		if (numaps > options->maxnumaps)
 		{
-            options->maxnumaps = numaps;
+			options->maxnumaps = numaps;
 		}
 	}
 
@@ -3506,67 +3501,70 @@ static void dump_print(
 	 *  and current time
 	 */
 
-    terminal_move_cursor_to(1, 2);
+	terminal_move_cursor_to(1, 2);
 	textcolor_normal();
 	textcolor_fg(TEXT_WHITE);
 
-    if (options->freqoption)
+	if (options->freqoption)
 	{
-        snprintf(strbuf,
-                 sizeof(strbuf),
-                 " Freq %4d",
-                 options->interface_data[0].current_frequency);
+		snprintf(strbuf,
+				 sizeof(strbuf),
+				 " Freq %4d",
+				 options->interface_data[0].current_frequency);
 
 		for (i = 1; i < if_num; i++)
 		{
-            snprintf(buffer, sizeof(buffer), ",%4d",
-                     options->interface_data[i].current_frequency);
+			snprintf(buffer,
+					 sizeof(buffer),
+					 ",%4d",
+					 options->interface_data[i].current_frequency);
 
 			strncat(strbuf, buffer, sizeof(strbuf) - strlen(strbuf) - 1);
 		}
 	}
 	else /* Must be channel option. */
 	{
-        snprintf(strbuf,
-                 sizeof(strbuf),
-                 " CH %2d",
-                 options->interface_data[0].current_channel);
+		snprintf(strbuf,
+				 sizeof(strbuf),
+				 " CH %2d",
+				 options->interface_data[0].current_channel);
 
 		for (i = 1; i < if_num; i++)
 		{
-            snprintf(buffer,
-                     sizeof(buffer),
-                     ",%2d",
-                     options->interface_data[i].current_channel);
+			snprintf(buffer,
+					 sizeof(buffer),
+					 ",%2d",
+					 options->interface_data[i].current_channel);
 
 			strncat(strbuf, buffer, sizeof(strbuf) - strlen(strbuf) - 1);
 		}
 	}
 
-    buffer[0] = '\0';
+	buffer[0] = '\0';
 
-    if (options->gpsd.required)
+	if (options->gpsd.required)
 	{
 		// If using GPS then check if we have a valid fix or not and report accordingly
-        snprintf(buffer, sizeof buffer, " ][ BAT: %s ]", options->gps_context.batt);
+		snprintf(
+			buffer, sizeof buffer, " ][ BAT: %s ]", options->gps_context.batt);
 
-        char * const message_buffer = buffer + strlen(buffer);
-        size_t const space = sizeof buffer - strlen(buffer);
+		char * const message_buffer = buffer + strlen(buffer);
+		size_t const space = sizeof buffer - strlen(buffer);
 
-        if (options->gps_context.gps_location[gps_latitude] != 0.0f)
+		if (options->gps_context.gps_location[gps_latitude] != 0.0f)
 		{
-            struct tm const * const gtime = &options->gps_context.gps_time;
+			struct tm const * const gtime = &options->gps_context.gps_time;
 
 			snprintf(message_buffer,
 					 space,
 					 "[ GPS %3.6f,%3.6f %02d:%02d:%02d ][ Elapsed: %s ][ "
 					 "%04d-%02d-%02d %02d:%02d ",
-                     options->gps_context.gps_location[gps_latitude],
-                     options->gps_context.gps_location[gps_longitude],
+					 options->gps_context.gps_location[gps_latitude],
+					 options->gps_context.gps_location[gps_longitude],
 					 gtime->tm_hour,
 					 gtime->tm_min,
 					 gtime->tm_sec,
-                     options->elapsed_time,
+					 options->elapsed_time,
 					 1900 + lt->tm_year,
 					 1 + lt->tm_mon,
 					 lt->tm_mday,
@@ -3575,17 +3573,16 @@ static void dump_print(
 		}
 		else
 		{
-			snprintf(
-				message_buffer,
-				space,
-				"[ GPS %-29s ][ Elapsed: %s ][ %04d-%02d-%02d %02d:%02d ",
-				" *** No Fix! ***",
-                options->elapsed_time,
-				1900 + lt->tm_year,
-				1 + lt->tm_mon,
-				lt->tm_mday,
-				lt->tm_hour,
-				lt->tm_min);
+			snprintf(message_buffer,
+					 space,
+					 "[ GPS %-29s ][ Elapsed: %s ][ %04d-%02d-%02d %02d:%02d ",
+					 " *** No Fix! ***",
+					 options->elapsed_time,
+					 1900 + lt->tm_year,
+					 1 + lt->tm_mon,
+					 lt->tm_mday,
+					 lt->tm_hour,
+					 lt->tm_min);
 		}
 	}
 	else
@@ -3593,7 +3590,7 @@ static void dump_print(
 		snprintf(buffer,
 				 sizeof(buffer) - 1,
 				 "][ Elapsed: %s ][ %04d-%02d-%02d %02d:%02d ",
-                 options->elapsed_time,
+				 options->elapsed_time,
 				 1900 + lt->tm_year,
 				 1 + lt->tm_mon,
 				 lt->tm_mday,
@@ -3603,85 +3600,85 @@ static void dump_print(
 
 	strncat(strbuf, buffer, (sizeof strbuf - strlen(strbuf) - 1));
 
-    buffer[0] = '\0';
-    if (options->is_berlin)
+	buffer[0] = '\0';
+	if (options->is_berlin)
 	{
 		snprintf(buffer,
 				 sizeof(buffer) - 1,
 				 " ][%3d/%3d/%4d ",
 				 numaps,
-                 options->maxnumaps,
-                 options->maxaps);
+				 options->maxnumaps,
+				 options->maxaps);
 	}
 
-    /* FIXME - Don't use strncat. */
+	/* FIXME - Don't use strncat. */
 	strncat(strbuf, buffer, (sizeof strbuf - strlen(strbuf) - 1));
-    buffer[0] = '\0';
+	buffer[0] = '\0';
 
-    static char const message_field_end[] = "]";
-    static char const message_field_start[] = "[ ";
+	static char const message_field_end[] = "]";
+	static char const message_field_start[] = "[ ";
 
-    strncat(strbuf, message_field_end, sizeof strbuf - strlen(strbuf) - 1);
-    if (strlen(options->message) > 0)
+	strncat(strbuf, message_field_end, sizeof strbuf - strlen(strbuf) - 1);
+	if (strlen(options->message) > 0)
 	{
-        strncat(strbuf, message_field_start, sizeof strbuf - strlen(strbuf) - 1);
-        strncat(strbuf, options->message, sizeof strbuf - strlen(strbuf) - 1);
+		strncat(
+			strbuf, message_field_start, sizeof strbuf - strlen(strbuf) - 1);
+		strncat(strbuf, options->message, sizeof strbuf - strlen(strbuf) - 1);
 	}
 
 	strbuf[screen_width - 1] = '\0';
 
 	ALLEGE(strchr(strbuf, '\n') == NULL);
 
-    console_puts(strbuf);
-    nlines++;
-    CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
+	console_puts(strbuf);
+	nlines++;
+	CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
 
 	/* print some information about each detected AP */
 
-    terminal_clear_line_from_cursor_right();
-    terminal_move_cursor_down(1);
-    nlines++;
-    CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
+	terminal_clear_line_from_cursor_right();
+	terminal_move_cursor_down(1);
+	nlines++;
+	CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
 
-    if (options->show_ap)
+	if (options->show_ap)
 	{
 		strbuf[0] = '\0';
 		strcat(strbuf, " BSSID              PWR ");
 
-        if (options->singlechan)
+		if (options->singlechan)
 		{
 			strcat(strbuf, "RXQ ");
 		}
 
 		strcat(strbuf, " Beacons    #Data, #/s  CH   MB   ENC CIPHER  AUTH ");
 
-        if (options->show_uptime)
+		if (options->show_uptime)
 		{
 			strcat(strbuf, "        UPTIME ");
 		}
 
-        if (options->show_wps)
+		if (options->show_wps)
 		{
-            /* FIXME: Clean up all this output. */
+			/* FIXME: Clean up all this output. */
 			strcat(strbuf, "WPS   ");
 			if (screen_width > (columns_ap - 4))
 			{
 				memset(strbuf + strlen(strbuf),
 					   ' ',
 					   sizeof(strbuf) - strlen(strbuf) - 1);
-                snprintf(strbuf + columns_ap + options->maxsize_wps_seen - 5,
+				snprintf(strbuf + columns_ap + options->maxsize_wps_seen - 5,
 						 8,
 						 "%s",
 						 "  ESSID");
-                if (options->show_manufacturer)
+				if (options->show_manufacturer)
 				{
-                    memset(strbuf + columns_ap + options->maxsize_wps_seen + 1,
+					memset(strbuf + columns_ap + options->maxsize_wps_seen + 1,
 						   ' ',
-                           sizeof(strbuf) - columns_ap - options->maxsize_wps_seen
-							   - 1);
-                    snprintf(strbuf + columns_ap + options->maxsize_wps_seen
-                             + options->maxsize_essid_seen
-								 - 4,
+						   sizeof(strbuf) - columns_ap
+							   - options->maxsize_wps_seen - 1);
+					snprintf(strbuf + columns_ap + options->maxsize_wps_seen
+								 + options->maxsize_essid_seen - 4,
 							 15,
 							 "%s",
 							 "MANUFACTURER");
@@ -3692,11 +3689,12 @@ static void dump_print(
 		{
 			strcat(strbuf, "ESSID");
 
-            if (options->show_manufacturer && (screen_width > (columns_ap - 4)))
+			if (options->show_manufacturer && (screen_width > (columns_ap - 4)))
 			{
 				// write spaces (32).
-                memset(strbuf + columns_ap, ' ', options->maxsize_essid_seen - 5);
-                snprintf(strbuf + columns_ap + options->maxsize_essid_seen - 7,
+				memset(
+					strbuf + columns_ap, ' ', options->maxsize_essid_seen - 5);
+				snprintf(strbuf + columns_ap + options->maxsize_essid_seen - 7,
 						 15,
 						 "%s",
 						 "  MANUFACTURER");
@@ -3704,104 +3702,116 @@ static void dump_print(
 		}
 		strbuf[screen_width - 1] = '\0';
 		console_puts(strbuf);
-        nlines++;
-        CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
+		nlines++;
+		CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
 
-        terminal_clear_line_from_cursor_right();
-        terminal_move_cursor_down(1);
-        nlines++;
-        CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
+		terminal_clear_line_from_cursor_right();
+		terminal_move_cursor_down(1);
+		nlines++;
+		CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
 
-        TAILQ_FOREACH_REVERSE(ap_cur, &options->ap_list, ap_list_head, entry)
+		TAILQ_FOREACH_REVERSE(ap_cur, &options->ap_list, ap_list_head, entry)
 		{
-            bool const check_broadcast = true;
+			bool const check_broadcast = true;
 
-            if (!ap_should_be_logged(ap_cur,
-                                     options->berlin,
-                                     options->encryption_filter,
-                                     &options->essid_filter,
-                                     check_broadcast,
-                                     options->min_pkts))
+			if (!ap_should_be_logged(ap_cur,
+									 options->berlin,
+									 options->encryption_filter,
+									 &options->essid_filter,
+									 check_broadcast,
+									 options->min_pkts))
 			{
-                if (options->p_selected_ap == ap_cur)
+				if (options->p_selected_ap == ap_cur)
 				{ //the selected AP is skipped (will not be printed), we have to go to the next printable AP
 					struct AP_info * ap_tmp;
 
-                    if (selection_direction_up == options->en_selection_direction)
+					if (selection_direction_up
+						== options->en_selection_direction)
 					{
 						//UP arrow was last pressed
 						ap_tmp = TAILQ_NEXT(ap_cur, entry);
 						if (ap_tmp != NULL)
 						{
-                            bool const check_broadcast = true;
+							bool const check_broadcast = true;
 
-                            while ((NULL != (options->p_selected_ap = ap_tmp))
-                                   && !ap_should_be_logged(ap_tmp,
-                                                           options->berlin,
-                                                           options->encryption_filter,
-                                                           &options->essid_filter,
-                                                           check_broadcast,
-                                                           options->min_pkts))
+							while ((NULL != (options->p_selected_ap = ap_tmp))
+								   && !ap_should_be_logged(
+										  ap_tmp,
+										  options->berlin,
+										  options->encryption_filter,
+										  &options->essid_filter,
+										  check_broadcast,
+										  options->min_pkts))
 							{
 								ap_tmp = TAILQ_NEXT(ap_tmp, entry);
 							}
 						}
-						if (ap_tmp == NULL) //we have reached the first element in the list, so go in another direction
+						if (ap_tmp
+							== NULL) //we have reached the first element in the list, so go in another direction
 						{ //upon we have an AP that is not skipped
 							ap_tmp = TAILQ_PREV(ap_cur, ap_list_head, entry);
 							if (ap_tmp != NULL)
 							{
-                                bool const check_broadcast = true;
+								bool const check_broadcast = true;
 
-                                while ((NULL != (options->p_selected_ap = ap_tmp))
-                                       && !ap_should_be_logged(ap_tmp,
-                                                               options->berlin,
-                                                               options->encryption_filter,
-                                                               &options->essid_filter,
-                                                               check_broadcast,
-                                                               options->min_pkts))
+								while (
+									(NULL != (options->p_selected_ap = ap_tmp))
+									&& !ap_should_be_logged(
+										   ap_tmp,
+										   options->berlin,
+										   options->encryption_filter,
+										   &options->essid_filter,
+										   check_broadcast,
+										   options->min_pkts))
 								{
-									ap_tmp = TAILQ_PREV(ap_tmp, ap_list_head, entry);
-                                }
+									ap_tmp = TAILQ_PREV(
+										ap_tmp, ap_list_head, entry);
+								}
 							}
 						}
 					}
-                    else if (selection_direction_down == options->en_selection_direction)
+					else if (selection_direction_down
+							 == options->en_selection_direction)
 					{
 						//DOWN arrow was last pressed
 						ap_tmp = TAILQ_PREV(ap_cur, ap_list_head, entry);
 						if (ap_tmp != NULL)
 						{
-                            bool const check_broadcast = true;
+							bool const check_broadcast = true;
 
-                            while ((NULL != (options->p_selected_ap = ap_tmp))
-                                   && !ap_should_be_logged(ap_tmp,
-                                                           options->berlin,
-                                                           options->encryption_filter,
-                                                           &options->essid_filter,
-                                                           check_broadcast,
-                                                           options->min_pkts))
+							while ((NULL != (options->p_selected_ap = ap_tmp))
+								   && !ap_should_be_logged(
+										  ap_tmp,
+										  options->berlin,
+										  options->encryption_filter,
+										  &options->essid_filter,
+										  check_broadcast,
+										  options->min_pkts))
 							{
-								ap_tmp = TAILQ_PREV(ap_tmp, ap_list_head, entry);
+								ap_tmp
+									= TAILQ_PREV(ap_tmp, ap_list_head, entry);
 							}
 						}
-						if (ap_tmp == NULL) //we have reached the last element in the list, so go in another direction
+						if (ap_tmp
+							== NULL) //we have reached the last element in the list, so go in another direction
 						{ //upon we have an AP that is not skipped
 							ap_tmp = TAILQ_NEXT(ap_cur, entry);
 							if (ap_tmp != NULL)
 							{
-                                bool const check_broadcast = true;
+								bool const check_broadcast = true;
 
-                                while ((NULL != (options->p_selected_ap = ap_tmp))
-                                       && !ap_should_be_logged(ap_tmp,
-                                                               options->berlin,
-                                                               options->encryption_filter,
-                                                               &options->essid_filter,
-                                                               check_broadcast,
-                                                               options->min_pkts))
-                                {
+								while (
+									(NULL != (options->p_selected_ap = ap_tmp))
+									&& !ap_should_be_logged(
+										   ap_tmp,
+										   options->berlin,
+										   options->encryption_filter,
+										   &options->essid_filter,
+										   check_broadcast,
+										   options->min_pkts))
+								{
 									ap_tmp = TAILQ_NEXT(ap_tmp, entry);
-                                }
+								}
 							}
 						}
 					}
@@ -3811,21 +3821,21 @@ static void dump_print(
 			}
 
 			nlines++;
-            CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
+			CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
 
 			snprintf(strbuf,
 					 sizeof(strbuf),
 					 " %02X:%02X:%02X:%02X:%02X:%02X",
 					 ap_cur->bssid.addr[0],
-                     ap_cur->bssid.addr[1],
-                     ap_cur->bssid.addr[2],
-                     ap_cur->bssid.addr[3],
-                     ap_cur->bssid.addr[4],
-                     ap_cur->bssid.addr[5]);
+					 ap_cur->bssid.addr[1],
+					 ap_cur->bssid.addr[2],
+					 ap_cur->bssid.addr[3],
+					 ap_cur->bssid.addr[4],
+					 ap_cur->bssid.addr[5]);
 
 			len = strlen(strbuf);
 
-            if (options->singlechan)
+			if (options->singlechan)
 			{
 				snprintf(strbuf + len,
 						 sizeof(strbuf) - len,
@@ -3872,46 +3882,46 @@ static void dump_print(
 
 			len = strlen(strbuf);
 
-            if ((ap_cur->security & STD_FIELD) == 0)
-            {
+			if ((ap_cur->security & STD_FIELD) == 0)
+			{
 				snprintf(strbuf + len, sizeof(strbuf) - len, "    ");
-            }
+			}
 			else
 			{
 				if (ap_cur->security & STD_WPA2)
 				{
-                    if (ap_cur->security & AUTH_SAE
-                        || ap_cur->security & AUTH_OWE)
-                    {
+					if (ap_cur->security & AUTH_SAE
+						|| ap_cur->security & AUTH_OWE)
+					{
 						snprintf(strbuf + len, sizeof(strbuf) - len, "WPA3");
-                    }
-                    else
-                    {
+					}
+					else
+					{
 						snprintf(strbuf + len, sizeof(strbuf) - len, "WPA2");
-                    }
+					}
 				}
-                else if (ap_cur->security & STD_WPA)
-                {
+				else if (ap_cur->security & STD_WPA)
+				{
 					snprintf(strbuf + len, sizeof(strbuf) - len, "WPA ");
-                }
-                else if (ap_cur->security & STD_WEP)
-                {
+				}
+				else if (ap_cur->security & STD_WEP)
+				{
 					snprintf(strbuf + len, sizeof(strbuf) - len, "WEP ");
-                }
-                else if (ap_cur->security & STD_OPN)
-                {
+				}
+				else if (ap_cur->security & STD_OPN)
+				{
 					snprintf(strbuf + len, sizeof(strbuf) - len, "OPN ");
-                }
+				}
 			}
 
 			strncat(strbuf, " ", sizeof(strbuf) - strlen(strbuf) - 1);
 
 			len = strlen(strbuf);
 
-            if ((ap_cur->security & ENC_FIELD) == 0)
-            {
+			if ((ap_cur->security & ENC_FIELD) == 0)
+			{
 				snprintf(strbuf + len, sizeof(strbuf) - len, "       ");
-            }
+			}
 			else
 			{
 				if (ap_cur->security & ENC_CCMP)
@@ -3930,48 +3940,48 @@ static void dump_print(
 
 			len = strlen(strbuf);
 
-            if ((ap_cur->security & AUTH_FIELD) == 0)
-            {
+			if ((ap_cur->security & AUTH_FIELD) == 0)
+			{
 				snprintf(strbuf + len, sizeof(strbuf) - len, "    ");
-            }
+			}
 			else
 			{
-                if (ap_cur->security & AUTH_SAE)
-                {
+				if (ap_cur->security & AUTH_SAE)
+				{
 					snprintf(strbuf + len, sizeof(strbuf) - len, "SAE ");
-                }
-                else if (ap_cur->security & AUTH_MGT)
-                {
+				}
+				else if (ap_cur->security & AUTH_MGT)
+				{
 					snprintf(strbuf + len, sizeof(strbuf) - len, "MGT ");
-                }
-                else if (ap_cur->security & AUTH_CMAC)
-                {
+				}
+				else if (ap_cur->security & AUTH_CMAC)
+				{
 					snprintf(strbuf + len, sizeof(strbuf) - len, "CMAC");
-                }
+				}
 				else if (ap_cur->security & AUTH_PSK)
 				{
-                    if (ap_cur->security & STD_WEP)
-                    {
+					if (ap_cur->security & STD_WEP)
+					{
 						snprintf(strbuf + len, sizeof(strbuf) - len, "SKA ");
-                    }
-                    else
-                    {
+					}
+					else
+					{
 						snprintf(strbuf + len, sizeof(strbuf) - len, "PSK ");
-                    }
+					}
 				}
-                else if (ap_cur->security & AUTH_OWE)
-                {
+				else if (ap_cur->security & AUTH_OWE)
+				{
 					snprintf(strbuf + len, sizeof(strbuf) - len, "OWE ");
-                }
-                else if (ap_cur->security & AUTH_OPN)
-                {
+				}
+				else if (ap_cur->security & AUTH_OPN)
+				{
 					snprintf(strbuf + len, sizeof(strbuf) - len, "OPN ");
-                }
+				}
 			}
 
 			len = strlen(strbuf);
 
-            if (options->show_uptime)
+			if (options->show_uptime)
 			{
 				snprintf(strbuf + len,
 						 sizeof(strbuf) - len,
@@ -3980,9 +3990,10 @@ static void dump_print(
 				len = strlen(strbuf);
 			}
 
-            if (options->p_selected_ap != NULL && options->p_selected_ap == ap_cur)
+			if (options->p_selected_ap != NULL
+				&& options->p_selected_ap == ap_cur)
 			{
-                if (options->mark_cur_ap)
+				if (options->mark_cur_ap)
 				{
 					if (!ap_cur->display.marked)
 					{
@@ -3997,10 +4008,10 @@ static void dump_print(
 							ap_cur->display.marked = false;
 						}
 					}
-                    options->mark_cur_ap = 0;
+					options->mark_cur_ap = 0;
 				}
 				textstyle(TEXT_REVERSE);
-                MAC_ADDRESS_COPY(&options->selected_bssid, &ap_cur->bssid);
+				MAC_ADDRESS_COPY(&options->selected_bssid, &ap_cur->bssid);
 			}
 
 			if (ap_cur->display.marked)
@@ -4012,7 +4023,7 @@ static void dump_print(
 
 			if (screen_width > (columns_ap - 4))
 			{
-                if (options->show_wps)
+				if (options->show_wps)
 				{
 					size_t wps_len = len;
 
@@ -4067,15 +4078,15 @@ static void dump_print(
 					}
 					len = strlen(strbuf);
 
-                    if (options->maxsize_wps_seen <= len - wps_len)
+					if (options->maxsize_wps_seen <= len - wps_len)
 					{
-                        options->maxsize_wps_seen = MAX(len - wps_len, 6);
+						options->maxsize_wps_seen = MAX(len - wps_len, 6);
 					}
 					else
 					{
 						// pad output
 						memset(strbuf + len, ' ', sizeof(strbuf) - len - 1);
-                        len += options->maxsize_wps_seen - len - wps_len;
+						len += options->maxsize_wps_seen - len - wps_len;
 						strbuf[len] = '\0';
 					}
 				}
@@ -4084,7 +4095,7 @@ static void dump_print(
 
 				if (ap_cur->essid[0] != '\0')
 				{
-                    if (options->show_wps)
+					if (options->show_wps)
 						snprintf(strbuf + len,
 								 sizeof(strbuf) - len - 1,
 								 "  %s",
@@ -4097,7 +4108,7 @@ static void dump_print(
 				}
 				else
 				{
-                    if (options->show_wps)
+					if (options->show_wps)
 						snprintf(strbuf + len,
 								 sizeof(strbuf) - len - 1,
 								 "  <length:%3zd>%s",
@@ -4112,32 +4123,31 @@ static void dump_print(
 				}
 				len = strlen(strbuf);
 
-                if (options->show_manufacturer)
+				if (options->show_manufacturer)
 				{
-                    if (options->maxsize_essid_seen <= len - essid_len)
-                    {
-                        options->maxsize_essid_seen
-                            = (u_int) MAX(len - essid_len, 5);
-                    }
+					if (options->maxsize_essid_seen <= len - essid_len)
+					{
+						options->maxsize_essid_seen
+							= (u_int) MAX(len - essid_len, 5);
+					}
 					else
 					{
 						// pad output
 						memset(strbuf + len, ' ', sizeof(strbuf) - len - 1);
-                        len += options->maxsize_essid_seen - (len - essid_len);
+						len += options->maxsize_essid_seen - (len - essid_len);
 						strbuf[len] = '\0';
 					}
 
-                    static char const unknown_manufacturer[] = "Unknown";
+					static char const unknown_manufacturer[] = "Unknown";
 
-                    char const * const manufacturer =
-                        (ap_cur->manuf != NULL)
-                            ? ap_cur->manuf
-                            : unknown_manufacturer;
+					char const * const manufacturer
+						= (ap_cur->manuf != NULL) ? ap_cur->manuf
+												  : unknown_manufacturer;
 
 					snprintf(strbuf + len,
 							 sizeof(strbuf) - len - 1,
 							 " %s",
-                             manufacturer);
+							 manufacturer);
 				}
 			}
 
@@ -4149,7 +4159,8 @@ static void dump_print(
 			strbuf[screen_width - 1] = '\0';
 			console_puts(strbuf);
 
-            if ((options->p_selected_ap != NULL && options->p_selected_ap == ap_cur)
+			if ((options->p_selected_ap != NULL
+				 && options->p_selected_ap == ap_cur)
 				|| ap_cur->display.marked)
 			{
 				textstyle(TEXT_RESET);
@@ -4158,51 +4169,51 @@ static void dump_print(
 
 		/* print some information about each detected station */
 
-        terminal_clear_line_from_cursor_right();
-        terminal_move_cursor_down(1);
-        nlines++;
-        CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
-    }
+		terminal_clear_line_from_cursor_right();
+		terminal_move_cursor_down(1);
+		nlines++;
+		CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
+	}
 
-    if (options->show_sta)
+	if (options->show_sta)
 	{
 		strcpy(strbuf,
 			   " BSSID              STATION "
 			   "           PWR   Rate    Lost    Frames  Notes  Probes");
 		strbuf[screen_width - 1] = '\0';
 		console_puts(strbuf);
-        nlines++;
-        CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
+		nlines++;
+		CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
 
-        terminal_clear_line_from_cursor_right();
-        terminal_move_cursor_down(1);
-        nlines++;
-        CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
+		terminal_clear_line_from_cursor_right();
+		terminal_move_cursor_down(1);
+		nlines++;
+		CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
 
-        TAILQ_FOREACH_REVERSE(ap_cur, &options->ap_list, ap_list_head, entry)
+		TAILQ_FOREACH_REVERSE(ap_cur, &options->ap_list, ap_list_head, entry)
 		{
-            bool const check_broadcast = false;
+			bool const check_broadcast = false;
 
-            if (!ap_should_be_logged(ap_cur,
-                                     options->berlin,
-                                     options->encryption_filter,
-                                     &options->essid_filter,
-                                     check_broadcast,
-                                     options->min_pkts))
-            {
-                continue;
-            }
+			if (!ap_should_be_logged(ap_cur,
+									 options->berlin,
+									 options->encryption_filter,
+									 &options->essid_filter,
+									 check_broadcast,
+									 options->min_pkts))
+			{
+				continue;
+			}
 
-            if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid)
-                && options->asso_client)
-            {
-                continue;
-            }
+			if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid)
+				&& options->asso_client)
+			{
+				continue;
+			}
 
-            CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
+			CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
 
-            if (options->p_selected_ap != NULL
-                && MAC_ADDRESS_EQUAL(&options->selected_bssid, &ap_cur->bssid))
+			if (options->p_selected_ap != NULL
+				&& MAC_ADDRESS_EQUAL(&options->selected_bssid, &ap_cur->bssid))
 			{
 				textstyle(TEXT_REVERSE);
 			}
@@ -4212,27 +4223,28 @@ static void dump_print(
 				textcolor_fg(ap_cur->display.color);
 			}
 
-            TAILQ_FOREACH_REVERSE(st_cur, &options->sta_list, sta_list_head, entry)
+			TAILQ_FOREACH_REVERSE(
+				st_cur, &options->sta_list, sta_list_head, entry)
 			{
 				if (st_cur->base != ap_cur
-                    || (time(NULL) - st_cur->last_seen) > options->berlin)
+					|| (time(NULL) - st_cur->last_seen) > options->berlin)
 				{
 					continue;
 				}
 
 				nlines++;
-                CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
-                printf(" ");
-                if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
-                {
+				CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
+				printf(" ");
+				if (MAC_ADDRESS_IS_BROADCAST(&ap_cur->bssid))
+				{
 					printf("(not associated) ");
-                }
-                else
-                {
-                    fprintf_mac_address(stdout, &ap_cur->bssid);
-                }
-                printf("  ");
-                fprintf_mac_address(stdout, &st_cur->stmac);
+				}
+				else
+				{
+					fprintf_mac_address(stdout, &ap_cur->bssid);
+				}
+				printf("  ");
+				fprintf_mac_address(stdout, &st_cur->stmac);
 
 				printf("  %3d ", st_cur->power);
 				printf("  %2d", st_cur->rate_to / 1000000);
@@ -4250,12 +4262,13 @@ static void dump_print(
 				{
 					memset(ssid_list, 0, sizeof(ssid_list));
 
-					for (size_t i = 0, n = 0; i < ArrayCount(st_cur->probes); i++)
+					for (size_t i = 0, n = 0; i < ArrayCount(st_cur->probes);
+						 i++)
 					{
-                        if (st_cur->probes[i][0] == '\0')
-                        {
-                            continue;
-                        }
+						if (st_cur->probes[i][0] == '\0')
+						{
+							continue;
+						}
 
 						snprintf(ssid_list + n,
 								 sizeof(ssid_list) - n - 1,
@@ -4265,10 +4278,10 @@ static void dump_print(
 
 						n += (1 + strlen(st_cur->probes[i]));
 
-                        if (n >= sizeof(ssid_list))
-                        {
-                            break;
-                        }
+						if (n >= sizeof(ssid_list))
+						{
+							break;
+						}
 					}
 
 					snprintf(strbuf, sizeof(strbuf) - 1, "%-256s", ssid_list)
@@ -4279,12 +4292,12 @@ static void dump_print(
 					printf(" %s", strbuf);
 				}
 
-                terminal_clear_line_from_cursor_right();
-                putchar('\n');
+				terminal_clear_line_from_cursor_right();
+				putchar('\n');
 			}
 
-            if ((options->p_selected_ap != NULL
-                 && MAC_ADDRESS_EQUAL(&options->selected_bssid, &ap_cur->bssid))
+			if ((options->p_selected_ap != NULL
+				 && MAC_ADDRESS_EQUAL(&options->selected_bssid, &ap_cur->bssid))
 				|| ap_cur->display.marked)
 			{
 				textstyle(TEXT_RESET);
@@ -4292,14 +4305,14 @@ static void dump_print(
 		}
 	}
 
-    if (options->show_ack)
+	if (options->show_ack)
 	{
 		/* print some information about each unknown station */
 
-        terminal_clear_line_from_cursor_right();
-        terminal_move_cursor_down(1);
-        nlines++;
-        CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
+		terminal_clear_line_from_cursor_right();
+		terminal_move_cursor_down(1);
+		nlines++;
+		CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
 
 		memcpy(strbuf,
 			   " MAC       "
@@ -4307,16 +4320,16 @@ static void dump_print(
 			   (size_t) columns_na);
 		strbuf[screen_width - 1] = '\0';
 		console_puts(strbuf);
-        nlines++;
-        CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
+		nlines++;
+		CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
 
 		memset(strbuf, ' ', (size_t) screen_width - 1);
 		strbuf[screen_width - 1] = '\0';
 		console_puts(strbuf);
-        nlines++;
-        CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
+		nlines++;
+		CHECK_END_OF_SCREEN_OR_GOTO(nlines, screen_height, done);
 
-        TAILQ_FOREACH(na_cur, &options->na_list, entry)
+		TAILQ_FOREACH(na_cur, &options->na_list, entry)
 		{
 			if (time(NULL) - na_cur->tlast > 120)
 			{
@@ -4347,73 +4360,72 @@ static void dump_print(
 			printf(" %6d", na_cur->rts_t);
 			printf(" %6d", na_cur->other);
 
-            terminal_clear_line_from_cursor_right();
-            putchar('\n');
+			terminal_clear_line_from_cursor_right();
+			putchar('\n');
 		}
 	}
 
 done:
-    terminal_clear_to_end_of_screen();
+	terminal_clear_to_end_of_screen();
 }
 
-static void
-sigchld_handler(int signum)
+static void sigchld_handler(int signum)
 {
-    (void)signum;
-    /* Reap zombie processes. */
-    pid_t pid;
-    int const status = wait_proc(-1, &pid);
-    (void)status;
+	(void) signum;
+	/* Reap zombie processes. */
+	pid_t pid;
+	int const status = wait_proc(-1, &pid);
+	(void) status;
 }
 
 static void update_window_size(struct winsize * const window_size)
 {
-    if (ioctl(0, TIOCGWINSZ, window_size) < 0)
-    {
-        static unsigned short int const default_windows_rows = 25;
-        static unsigned short int const default_windows_cols = 80;
+	if (ioctl(0, TIOCGWINSZ, window_size) < 0)
+	{
+		static unsigned short int const default_windows_rows = 25;
+		static unsigned short int const default_windows_cols = 80;
 
-        window_size->ws_row = default_windows_rows;
-        window_size->ws_col = default_windows_cols;
-    }
+		window_size->ws_row = default_windows_rows;
+		window_size->ws_col = default_windows_cols;
+	}
 }
 
 typedef enum
 {
-    signal_event_window_changed,
-    signal_event_terminate
+	signal_event_window_changed,
+	signal_event_terminate
 } signal_event_t;
 
 static void send_event(int const fd, int const event)
 {
-    if (fd != -1)
-    {
-        IGNORE_LTZ(write(fd, &event, sizeof event));
-    }
+	if (fd != -1)
+	{
+		IGNORE_LTZ(write(fd, &event, sizeof event));
+	}
 }
 
 static void sighandler(int signum)
 {
-    int const pipe_fd = lopt.signal_event_pipe[1];
+	int const pipe_fd = lopt.signal_event_pipe[1];
 
 	if (signum == SIGINT || signum == SIGTERM)
 	{
-        send_event(pipe_fd, signal_event_terminate);
-    }
-    else if (signum == SIGWINCH)
-    {
-        send_event(pipe_fd, signal_event_window_changed);
-    }
-    else if (signum == SIGSEGV)
+		send_event(pipe_fd, signal_event_terminate);
+	}
+	else if (signum == SIGWINCH)
+	{
+		send_event(pipe_fd, signal_event_window_changed);
+	}
+	else if (signum == SIGSEGV)
 	{
 		fprintf(stderr,
 				"Caught signal 11 (SIGSEGV). Please"
 				" contact the author!\n\n");
 		fflush(stdout);
 
-        terminal_restore();
+		terminal_restore();
 
-        exit(1);
+		exit(1);
 	}
 }
 
@@ -4436,9 +4448,8 @@ static void signal_event_shutdown(int * const signal_event_pipe)
 	}
 }
 
-static void signal_event_initialise(
-    int * const signal_event_pipe,
-    bool const interactive_mode)
+static void signal_event_initialise(int * const signal_event_pipe,
+									bool const interactive_mode)
 {
 	int const pipe_result = pipe(signal_event_pipe);
 	IGNORE_NZ(pipe_result);
@@ -4453,11 +4464,10 @@ static void signal_event_initialise(
 		perror("sigaction(SIGINT)");
 	}
 
-    if (interactive_mode
-        && sigaction(SIGWINCH, &action, NULL) == -1)
-    {
-        perror("sigaction(SIGWINCH)");
-    }
+	if (interactive_mode && sigaction(SIGWINCH, &action, NULL) == -1)
+	{
+		perror("sigaction(SIGWINCH)");
+	}
 
 	if (sigaction(SIGSEGV, &action, NULL) == -1)
 	{
@@ -4479,125 +4489,117 @@ static void signal_event_initialise(
 	}
 }
 
-size_t get_channel_count(
-	int const * const channels,
-	bool const count_valid_channels_only)
+size_t get_channel_count(int const * const channels,
+						 bool const count_valid_channels_only)
 {
 	size_t total_channel_count = 0;
-    size_t valid_channel_count = 0;
+	size_t valid_channel_count = 0;
 
-    while (channels[total_channel_count] != channel_sentinel)
+	while (channels[total_channel_count] != channel_sentinel)
 	{
 		total_channel_count++;
-        if (channels[total_channel_count] != invalid_channel)
+		if (channels[total_channel_count] != invalid_channel)
 		{
 			valid_channel_count++;
 		}
 	}
 
-	int const channel_count =
-		count_valid_channels_only
-			? valid_channel_count
-			: total_channel_count;
+	int const channel_count
+		= count_valid_channels_only ? valid_channel_count : total_channel_count;
 
 	return channel_count;
 }
 
-size_t get_frequency_count(
-    int const * const frequencies,
-    bool const count_valid_frequencies_only)
+size_t get_frequency_count(int const * const frequencies,
+						   bool const count_valid_frequencies_only)
 {
-    size_t total_frequency_count = 0;
-    size_t valid_frequency_count = 0;
+	size_t total_frequency_count = 0;
+	size_t valid_frequency_count = 0;
 
-    while (frequencies[total_frequency_count] != frequency_sentinel)
+	while (frequencies[total_frequency_count] != frequency_sentinel)
 	{
-        total_frequency_count++;
-        if (frequencies[total_frequency_count] != invalid_frequency)
+		total_frequency_count++;
+		if (frequencies[total_frequency_count] != invalid_frequency)
 		{
-            valid_frequency_count++;
-        }
+			valid_frequency_count++;
+		}
 	}
 
-	int const frequency_count =
-        count_valid_frequencies_only
-            ? valid_frequency_count
-            : total_frequency_count;
+	int const frequency_count = count_valid_frequencies_only
+									? valid_frequency_count
+									: total_frequency_count;
 
-    return frequency_count;
+	return frequency_count;
 }
 
 static bool is_invalid_channel(int const channel)
 {
-    bool is_invalid;
+	bool is_invalid;
 	int i = 0;
 
-    /* XXX - This seems to be a bit of a complicated way to
+	/* XXX - This seems to be a bit of a complicated way to
      * construct this code.
      */
 	do
 	{
-        if (channel == abg_chans[i] && channel != channel_sentinel)
-        {
-            is_invalid = false;
-            goto done;
-        }
-    }
-    while (abg_chans[++i] != channel_sentinel);
+		if (channel == abg_chans[i] && channel != channel_sentinel)
+		{
+			is_invalid = false;
+			goto done;
+		}
+	} while (abg_chans[++i] != channel_sentinel);
 
-    is_invalid = true;
+	is_invalid = true;
 
 done:
-    return is_invalid;
+	return is_invalid;
 }
 
 static bool is_invalid_frequency(
-    struct detected_frequencies_st const * const detected_frequencies,
-    int const freq)
+	struct detected_frequencies_st const * const detected_frequencies,
+	int const freq)
 {
-    bool is_invalid;
+	bool is_invalid;
 
-    for (size_t i = 0; i < detected_frequencies->count; i++)
-    {
-        if (freq == detected_frequencies->frequencies[i])
-        {
-            is_invalid = false;
-            goto done;
-        }
-    }
+	for (size_t i = 0; i < detected_frequencies->count; i++)
+	{
+		if (freq == detected_frequencies->frequencies[i])
+		{
+			is_invalid = false;
+			goto done;
+		}
+	}
 
-    is_invalid = true;
+	is_invalid = true;
 
 done:
-    return is_invalid;
+	return is_invalid;
 }
 
 /* parse a string, for example "1,2,3-7,11" */
 
-static int get_channels(
-    int * * const own_channels,
-    const char * optarg)
+static int get_channels(int ** const own_channels, const char * optarg)
 {
-    int chan_cur = 0;
-    int chan_first = 0;
-    int chan_last = 0;
-    static size_t const chan_max = 128;
-    size_t chan_remain = chan_max;
-    char * optchan = NULL;
-    char * optc;
+	int chan_cur = 0;
+	int chan_first = 0;
+	int chan_last = 0;
+	static size_t const chan_max = 128;
+	size_t chan_remain = chan_max;
+	char * optchan = NULL;
+	char * optc;
 	char * token = NULL;
 	int * tmp_channels;
 
 	if (optarg == NULL)
 	{
-        return -1;
-    }
+		return -1;
+	}
 
 	// create a writable string
 	optc = optchan = strdup(optarg);
 	ALLEGE(optc != NULL);
 
-    tmp_channels = calloc(chan_max + 1, sizeof *tmp_channels);
+	tmp_channels = calloc(chan_max + 1, sizeof *tmp_channels);
 	ALLEGE(tmp_channels != NULL);
 
 	// split string in tokens, separated by ','
@@ -4682,58 +4684,57 @@ static int get_channels(
 		}
 	}
 
-    size_t const num_channels = chan_max - chan_remain;
+	size_t const num_channels = chan_max - chan_remain;
 
-    *own_channels
-        = malloc((num_channels + 1) * sizeof *own_channels);
-    ALLEGE(*own_channels != NULL);
+	*own_channels = malloc((num_channels + 1) * sizeof *own_channels);
+	ALLEGE(*own_channels != NULL);
 
-    for (size_t i = 0; i < num_channels; i++) //-V658
-    {
-        (*own_channels)[i] = tmp_channels[i];
-    }
+	for (size_t i = 0; i < num_channels; i++) //-V658
+	{
+		(*own_channels)[i] = tmp_channels[i];
+	}
 
-    (*own_channels)[num_channels] = channel_sentinel;
+	(*own_channels)[num_channels] = channel_sentinel;
 
 	free(tmp_channels);
 	free(optc);
 
-    if (num_channels == 1)
+	if (num_channels == 1)
 	{
-        return (*own_channels)[0];
-    }
+		return (*own_channels)[0];
+	}
 
-    if (num_channels == 0)
+	if (num_channels == 0)
 	{
-        return -1;
-    }
+		return -1;
+	}
 
 	return 0;
 }
 
 /* parse a string, for example "1,2,3-7,11" */
 
-static int getfrequencies(
-    int * * const own_frequencies,
-    struct detected_frequencies_st * const detected_frequencies,
-    const char * optarg)
+static int
+getfrequencies(int ** const own_frequencies,
+			   struct detected_frequencies_st * const detected_frequencies,
+			   const char * optarg)
 {
-    unsigned int i = 0;
-    unsigned int freq_cur = 0;
-    unsigned int freq_first = 0;
-    unsigned int freq_last = 0;
-    unsigned int freq_max = 10000;
-    unsigned int freq_remain = 0;
-    char * optfreq = NULL;
-    char * optc;
+	unsigned int i = 0;
+	unsigned int freq_cur = 0;
+	unsigned int freq_first = 0;
+	unsigned int freq_last = 0;
+	unsigned int freq_max = 10000;
+	unsigned int freq_remain = 0;
+	char * optfreq = NULL;
+	char * optc;
 	char * token = NULL;
 	int * tmp_frequencies;
 
 	// got a NULL pointer?
 	if (optarg == NULL)
 	{
-        return -1;
-    }
+		return -1;
+	}
 
 	freq_remain = freq_max;
 
@@ -4741,7 +4742,7 @@ static int getfrequencies(
 	optc = optfreq = strdup(optarg);
 	ALLEGE(optc != NULL);
 
-    tmp_frequencies = calloc(freq_max + 1, sizeof(int));
+	tmp_frequencies = calloc(freq_max + 1, sizeof(int));
 	ALLEGE(tmp_frequencies != NULL);
 
 	// split string in tokens, separated by ','
@@ -4774,8 +4775,8 @@ static int getfrequencies(
 					}
 					for (i = freq_first; i <= freq_last; i++)
 					{
-                        if (!is_invalid_frequency(detected_frequencies, i)
-                            && freq_remain > 0)
+						if (!is_invalid_frequency(detected_frequencies, i)
+							&& freq_remain > 0)
 						{
 							tmp_frequencies[freq_max - freq_remain] = i;
 							freq_remain--;
@@ -4811,8 +4812,8 @@ static int getfrequencies(
 
 			if (sscanf(token, "%u", &freq_cur) != EOF)
 			{
-                if (!is_invalid_frequency(detected_frequencies, freq_cur)
-                    && freq_remain > 0)
+				if (!is_invalid_frequency(detected_frequencies, freq_cur)
+					&& freq_remain > 0)
 				{
 					tmp_frequencies[freq_max - freq_remain] = freq_cur;
 					freq_remain--;
@@ -4825,8 +4826,8 @@ static int getfrequencies(
 					freq_last = 9999;
 					for (i = freq_first; i <= freq_last; i++)
 					{
-                        if (!is_invalid_frequency(detected_frequencies, i)
-                            && freq_remain > 0)
+						if (!is_invalid_frequency(detected_frequencies, i)
+							&& freq_remain > 0)
 						{
 							tmp_frequencies[freq_max - freq_remain] = i;
 							freq_remain--;
@@ -4843,39 +4844,38 @@ static int getfrequencies(
 		}
 	}
 
-    *own_frequencies
-        = malloc((freq_max - freq_remain + 1) * sizeof *own_frequencies);
-    ALLEGE(*own_frequencies != NULL);
+	*own_frequencies
+		= malloc((freq_max - freq_remain + 1) * sizeof *own_frequencies);
+	ALLEGE(*own_frequencies != NULL);
 
 	if (freq_max > 0 && freq_max >= freq_remain) //-V560
 	{
 		for (i = 0; i < (freq_max - freq_remain); i++) //-V658
 		{
-            (*own_frequencies)[i] = tmp_frequencies[i];
+			(*own_frequencies)[i] = tmp_frequencies[i];
 		}
 	}
 
-    (*own_frequencies)[i] = frequency_sentinel;
+	(*own_frequencies)[i] = frequency_sentinel;
 
 	free(tmp_frequencies);
 	free(optc);
 	if (i == 1)
 	{
-        return (*own_frequencies)[0]; // exactly 1 frequency given
-    }
+		return (*own_frequencies)[0]; // exactly 1 frequency given
+	}
 
 	if (i == 0)
 	{
-        return -1; // error occurred
-    }
+		return -1; // error occurred
+	}
 
 	return 0; // frequency hopping
 }
 
-static bool name_already_specified(
-	char const * const interface_name,
-	char const * const * const iface,
-	size_t if_count)
+static bool name_already_specified(char const * const interface_name,
+								   char const * const * const iface,
+								   size_t if_count)
 {
 	bool already_specified;
 
@@ -4894,9 +4894,7 @@ done:
 	return already_specified;
 }
 
-static int initialise_cards(
-	const char * cardstr,
-	struct wif * * wi)
+static int initialise_cards(const char * cardstr, struct wif ** wi)
 {
 	char * buffer;
 	char * buf = NULL;
@@ -4946,439 +4944,425 @@ done:
 
 static unsigned int set_encryption_filter(char const * const input)
 {
-    unsigned int encryption_filter = 0;
+	unsigned int encryption_filter = 0;
 
-    if (input == NULL)
-    {
-        encryption_filter = 0;
-        goto done;
-    }
+	if (input == NULL)
+	{
+		encryption_filter = 0;
+		goto done;
+	}
 
-    if (strcasecmp(input, "opn") == 0)
-    {
-        encryption_filter |= STD_OPN;
-    }
+	if (strcasecmp(input, "opn") == 0)
+	{
+		encryption_filter |= STD_OPN;
+	}
 
-    if (strcasecmp(input, "wep") == 0)
-    {
-        encryption_filter |= STD_WEP;
-    }
+	if (strcasecmp(input, "wep") == 0)
+	{
+		encryption_filter |= STD_WEP;
+	}
 
 	if (strcasecmp(input, "wpa") == 0)
 	{
-        encryption_filter |= STD_WPA;
-        encryption_filter |= STD_WPA2;
+		encryption_filter |= STD_WPA;
+		encryption_filter |= STD_WPA2;
 	}
 
-    if (strcasecmp(input, "wpa1") == 0)
-    {
-        encryption_filter |= STD_WPA;
-    }
+	if (strcasecmp(input, "wpa1") == 0)
+	{
+		encryption_filter |= STD_WPA;
+	}
 
-    if (strcasecmp(input, "wpa2") == 0)
-    {
-        encryption_filter |= STD_WPA2;
-    }
+	if (strcasecmp(input, "wpa2") == 0)
+	{
+		encryption_filter |= STD_WPA2;
+	}
 
 done:
-    return encryption_filter;
+	return encryption_filter;
 }
 
-static bool reopen_card(
-    struct local_options * const options,
-    size_t interface_index)
+static bool reopen_card(struct local_options * const options,
+						size_t interface_index)
 {
-    bool success;
+	bool success;
 	char ifnam[MAX_IFACE_NAME];
 
-    /* The interface name needs to be saved because closing the
+	/* The interface name needs to be saved because closing the
      * card frees all resources associated with the wi.
      */
-    strlcpy(ifnam, wi_get_ifname(options->wi[interface_index]), sizeof ifnam);
+	strlcpy(ifnam, wi_get_ifname(options->wi[interface_index]), sizeof ifnam);
 
-    /* TODO: It might have been nice is there was a wi_reopen() call
+	/* TODO: It might have been nice is there was a wi_reopen() call
      * to deal with the closing, opening and interface name handling.
      */
-    wi_close(options->wi[interface_index]);
-    options->wi[interface_index] = wi_open(ifnam);
+	wi_close(options->wi[interface_index]);
+	options->wi[interface_index] = wi_open(ifnam);
 
-    if (options->wi[interface_index] == NULL)
-    {
-        printf("Can't reopen %s\n", ifnam);
-        success = false;
-        goto done;
-    }
-
-    success = true;
-
-done:
-    return success;
-}
-
-/* Only called by the channel hopper process. */
-static bool reopen_cards(struct local_options * const options)
-{
-    size_t const num_cards = options->num_cards;
-    bool success;
-
-    for (size_t i = 0; i < num_cards; i++)
-    {
-        if (!reopen_card(options, i))
-        {
-            success = false;
-            goto done;
-        }
-    }
-
-    success = true;
-
-done:
-    return success;
-}
-
-static void close_cards(struct wif * * const wi, size_t const num_cards)
-{
-	for (size_t i = 0; i < num_cards; i++)
+	if (options->wi[interface_index] == NULL)
 	{
-        if (wi[i] != NULL) /* May be NULL due to a reopen failure. */
-        {
-            wi_close(wi[i]);
-        }
-	}
-}
-
-static void write_monitor_mode_message(
-    char * const msg_buffer,
-    size_t const msg_buffer_size,
-    char const * const interface_name)
-{
-    snprintf(msg_buffer,
-             msg_buffer_size,
-             "%s reset to monitor mode",
-             interface_name);
-}
-
-static void write_fixed_channel_message(
-    char * const msg_buffer,
-    size_t const msg_buffer_size,
-    char const * const interface_name,
-    int const channel)
-{
-    snprintf(msg_buffer,
-             msg_buffer_size,
-             "fixed channel %s: %d ",
-             interface_name,
-             channel);
-}
-
-static void write_fixed_frequency_message(
-    char * const msg_buffer,
-    size_t const msg_buffer_size,
-    char const * const interface_name,
-    int const frequency)
-{
-    snprintf(msg_buffer,
-             msg_buffer_size,
-             "fixed frequency %s: %d ",
-             interface_name,
-             frequency);
-}
-
-static bool check_for_monitor_mode_on_card(
-    struct local_options * const options,
-    size_t const interface_index)
-{
-    bool success;
-    struct wif * const wi = options->wi[interface_index];
-    int const monitor = wi_get_monitor(wi);
-
-    if (monitor == 0)
-    {
-        success = true;
-        goto done;
-    }
-
-    // reopen in monitor mode
-    success = reopen_card(options, interface_index);
-
-    write_monitor_mode_message(
-        options->message,
-        sizeof(options->message),
-        wi_get_ifname(options->wi[interface_index]));
-
-done:
-    return success;
-}
-
-static bool check_for_monitor_mode_on_cards(
-    struct local_options * const options)
-{
-    bool success;
-
-    for (size_t i = 0; i < options->num_cards; i++)
-	{
-        if (!check_for_monitor_mode_on_card(options, i))
-        {
-            success = false;
-
-            goto done;
-        }
+		printf("Can't reopen %s\n", ifnam);
+		success = false;
+		goto done;
 	}
 
-    success = true;
+	success = true;
 
 done:
 	return success;
 }
 
-static bool check_channel_on_card(
-    struct wif * const wi,
-    int const desired_channel,
-    char * const msg_buffer,
-    size_t const msg_buffer_size,
-    int const ignore_negative_one
-#ifdef CONFIG_LIBNL
-    , unsigned int htval
-#endif
-    )
+/* Only called by the channel hopper process. */
+static bool reopen_cards(struct local_options * const options)
 {
-    bool changed_channel;
-    int const current_channel = wi_get_channel(wi);
+	size_t const num_cards = options->num_cards;
+	bool success;
 
-    if (ignore_negative_one && current_channel == invalid_channel)
-    {
-        changed_channel = false;
-        goto done;
-    }
+	for (size_t i = 0; i < num_cards; i++)
+	{
+		if (!reopen_card(options, i))
+		{
+			success = false;
+			goto done;
+		}
+	}
 
-    if (desired_channel == current_channel)
-    {
-        changed_channel = false;
-        goto done;
-    }
-
-#ifdef CONFIG_LIBNL
-    wi_set_ht_channel(wi, desired_channel, htval);
-#else
-    wi_set_channel(wi, desired_channel);
-#endif
-
-    write_fixed_channel_message(msg_buffer,
-                                msg_buffer_size,
-                                wi_get_ifname(wi),
-                                current_channel);
-
-    changed_channel = true;
+	success = true;
 
 done:
-    return changed_channel;
+	return success;
 }
 
-static void check_channel_on_cards(
-    struct local_options * const options)
+static void close_cards(struct wif ** const wi, size_t const num_cards)
 {
-    for (size_t i = 0; i < options->num_cards; i++)
+	for (size_t i = 0; i < num_cards; i++)
 	{
-        check_channel_on_card(options->wi[i],
-                              options->interface_data[i].current_channel,
-                              options->message,
-                              sizeof options->message,
-                              options->ignore_negative_one
-#ifdef CONFIG_LIBNL
-                              , options->htval
-#endif
-                             );
+		if (wi[i] != NULL) /* May be NULL due to a reopen failure. */
+		{
+			wi_close(wi[i]);
+		}
 	}
 }
 
-static bool check_frequency_on_card(
-    struct wif * const wi,
-    int const desired_frequency,
-    char * const msg_buffer,
-    size_t const msg_buffer_size)
+static void write_monitor_mode_message(char * const msg_buffer,
+									   size_t const msg_buffer_size,
+									   char const * const interface_name)
 {
-    bool changed_frequency;
-    int const current_frequency = wi_get_freq(wi);
-
-    /* FIXME: replace 0 with invalid_frequency if only ever -1. */
-    if (current_frequency < 0)
-    {
-        changed_frequency = false;
-        goto done;
-    }
-
-    if (desired_frequency == current_frequency)
-    {
-        changed_frequency = false;
-        goto done;
-    }
-
-    wi_set_freq(wi, desired_frequency);
-
-    write_fixed_frequency_message(msg_buffer,
-                                  msg_buffer_size,
-                                  wi_get_ifname(wi),
-                                  current_frequency);
-
-    changed_frequency = true;
-
-done:
-    return changed_frequency;
+	snprintf(msg_buffer,
+			 msg_buffer_size,
+			 "%s reset to monitor mode",
+			 interface_name);
 }
 
-static void check_frequency_on_cards(
-    struct local_options * const options)
+static void write_fixed_channel_message(char * const msg_buffer,
+										size_t const msg_buffer_size,
+										char const * const interface_name,
+										int const channel)
 {
-    for (size_t i = 0; i < options->num_cards; i++)
+	snprintf(msg_buffer,
+			 msg_buffer_size,
+			 "fixed channel %s: %d ",
+			 interface_name,
+			 channel);
+}
+
+static void write_fixed_frequency_message(char * const msg_buffer,
+										  size_t const msg_buffer_size,
+										  char const * const interface_name,
+										  int const frequency)
+{
+	snprintf(msg_buffer,
+			 msg_buffer_size,
+			 "fixed frequency %s: %d ",
+			 interface_name,
+			 frequency);
+}
+
+static bool check_for_monitor_mode_on_card(struct local_options * const options,
+										   size_t const interface_index)
+{
+	bool success;
+	struct wif * const wi = options->wi[interface_index];
+	int const monitor = wi_get_monitor(wi);
+
+	if (monitor == 0)
 	{
-        check_frequency_on_card(options->wi[i],
-                                options->interface_data[i].current_frequency,
-                                options->message,
-                                sizeof options->message);
+		success = true;
+		goto done;
+	}
+
+	// reopen in monitor mode
+	success = reopen_card(options, interface_index);
+
+	write_monitor_mode_message(options->message,
+							   sizeof(options->message),
+							   wi_get_ifname(options->wi[interface_index]));
+
+done:
+	return success;
+}
+
+static bool
+check_for_monitor_mode_on_cards(struct local_options * const options)
+{
+	bool success;
+
+	for (size_t i = 0; i < options->num_cards; i++)
+	{
+		if (!check_for_monitor_mode_on_card(options, i))
+		{
+			success = false;
+
+			goto done;
+		}
+	}
+
+	success = true;
+
+done:
+	return success;
+}
+
+static bool check_channel_on_card(struct wif * const wi,
+								  int const desired_channel,
+								  char * const msg_buffer,
+								  size_t const msg_buffer_size,
+								  int const ignore_negative_one
+#ifdef CONFIG_LIBNL
+								  ,
+								  unsigned int htval
+#endif
+)
+{
+	bool changed_channel;
+	int const current_channel = wi_get_channel(wi);
+
+	if (ignore_negative_one && current_channel == invalid_channel)
+	{
+		changed_channel = false;
+		goto done;
+	}
+
+	if (desired_channel == current_channel)
+	{
+		changed_channel = false;
+		goto done;
+	}
+
+#ifdef CONFIG_LIBNL
+	wi_set_ht_channel(wi, desired_channel, htval);
+#else
+	wi_set_channel(wi, desired_channel);
+#endif
+
+	write_fixed_channel_message(
+		msg_buffer, msg_buffer_size, wi_get_ifname(wi), current_channel);
+
+	changed_channel = true;
+
+done:
+	return changed_channel;
+}
+
+static void check_channel_on_cards(struct local_options * const options)
+{
+	for (size_t i = 0; i < options->num_cards; i++)
+	{
+		check_channel_on_card(options->wi[i],
+							  options->interface_data[i].current_channel,
+							  options->message,
+							  sizeof options->message,
+							  options->ignore_negative_one
+#ifdef CONFIG_LIBNL
+							  ,
+							  options->htval
+#endif
+		);
+	}
+}
+
+static bool check_frequency_on_card(struct wif * const wi,
+									int const desired_frequency,
+									char * const msg_buffer,
+									size_t const msg_buffer_size)
+{
+	bool changed_frequency;
+	int const current_frequency = wi_get_freq(wi);
+
+	/* FIXME: replace 0 with invalid_frequency if only ever -1. */
+	if (current_frequency < 0)
+	{
+		changed_frequency = false;
+		goto done;
+	}
+
+	if (desired_frequency == current_frequency)
+	{
+		changed_frequency = false;
+		goto done;
+	}
+
+	wi_set_freq(wi, desired_frequency);
+
+	write_fixed_frequency_message(
+		msg_buffer, msg_buffer_size, wi_get_ifname(wi), current_frequency);
+
+	changed_frequency = true;
+
+done:
+	return changed_frequency;
+}
+
+static void check_frequency_on_cards(struct local_options * const options)
+{
+	for (size_t i = 0; i < options->num_cards; i++)
+	{
+		check_frequency_on_card(options->wi[i],
+								options->interface_data[i].current_frequency,
+								options->message,
+								sizeof options->message);
 	}
 }
 
 static bool update_interface_cards(struct local_options * const options)
 {
-    bool success;
+	bool success;
 
-    if (!check_for_monitor_mode_on_cards(options))
-    {
-        success = false;
-        goto done;
-    }
+	if (!check_for_monitor_mode_on_cards(options))
+	{
+		success = false;
+		goto done;
+	}
 
-    if (options->singlechan)
-    {
-        check_channel_on_cards(options);
-    }
+	if (options->singlechan)
+	{
+		check_channel_on_cards(options);
+	}
 
-    if (options->singlefreq)
-    {
-        check_frequency_on_cards(options);
-    }
+	if (options->singlefreq)
+	{
+		check_frequency_on_cards(options);
+	}
 
-    success = true;
+	success = true;
 
 done:
-    return success;
+	return success;
 }
 
 static void detect_frequency_range(
-    struct wif * wi,
-    struct detected_frequencies_st * const detected_frequencies,
-    int const start_freq,
-    int const end_freq)
+	struct wif * wi,
+	struct detected_frequencies_st * const detected_frequencies,
+	int const start_freq,
+	int const end_freq)
 {
-    for (int freq = start_freq;
-          detected_frequencies->count < detected_frequencies->table_size
-          && freq <= end_freq;
-          freq += 5)
-    {
-        if (wi_set_freq(wi, freq) == 0)
-        {
-            detected_frequencies->frequencies[detected_frequencies->count] = freq;
-            detected_frequencies->count++;
-        }
+	for (int freq = start_freq;
+		 detected_frequencies->count < detected_frequencies->table_size
+		 && freq <= end_freq;
+		 freq += 5)
+	{
+		if (wi_set_freq(wi, freq) == 0)
+		{
+			detected_frequencies->frequencies[detected_frequencies->count]
+				= freq;
+			detected_frequencies->count++;
+		}
 
-        static int const channel_13_freq = 2482;
+		static int const channel_13_freq = 2482;
 
-        if (freq == channel_13_freq)
-        {
-            static int const channel_14_freq = 2484;
+		if (freq == channel_13_freq)
+		{
+			static int const channel_14_freq = 2484;
 
-            // special case for chan 14, as its 12MHz away from 13, not 5MHz
-            if (wi_set_freq(wi, channel_14_freq) == 0)
-            {
-                detected_frequencies->frequencies[detected_frequencies->count] =
-                    channel_14_freq;
-                detected_frequencies->count++;
-            }
-        }
-    }
+			// special case for chan 14, as its 12MHz away from 13, not 5MHz
+			if (wi_set_freq(wi, channel_14_freq) == 0)
+			{
+				detected_frequencies->frequencies[detected_frequencies->count]
+					= channel_14_freq;
+				detected_frequencies->count++;
+			}
+		}
+	}
 }
 
 static void detected_frequencies_initialise(
-    struct detected_frequencies_st * const detected_frequencies,
-    size_t const max_frequencies)
+	struct detected_frequencies_st * const detected_frequencies,
+	size_t const max_frequencies)
 {
-    detected_frequencies->count = 0;
-    detected_frequencies->table_size = max_frequencies;
-    // field for frequencies supported
-    detected_frequencies->frequencies =
-        calloc(detected_frequencies->table_size,
-               sizeof *detected_frequencies->frequencies);
+	detected_frequencies->count = 0;
+	detected_frequencies->table_size = max_frequencies;
+	// field for frequencies supported
+	detected_frequencies->frequencies
+		= calloc(detected_frequencies->table_size,
+				 sizeof *detected_frequencies->frequencies);
 
-    ALLEGE(detected_frequencies->frequencies != NULL);
+	ALLEGE(detected_frequencies->frequencies != NULL);
 }
 
 static void detected_frequencies_cleanup(
-    struct detected_frequencies_st * const detected_frequencies)
+	struct detected_frequencies_st * const detected_frequencies)
 {
-    free(detected_frequencies->frequencies);
-    detected_frequencies->frequencies = NULL;
+	free(detected_frequencies->frequencies);
+	detected_frequencies->frequencies = NULL;
 }
 
-
-static void detect_frequencies(
-    struct wif * wi,
-    struct detected_frequencies_st * const detected_frequencies)
+static void
+detect_frequencies(struct wif * wi,
+				   struct detected_frequencies_st * const detected_frequencies)
 {
 	REQUIRE(wi != NULL);
 
-    // should be enough to keep all available channels
-    static size_t const max_freq_num = 2048;
+	// should be enough to keep all available channels
+	static size_t const max_freq_num = 2048;
 
 	printf("Checking available frequencies; this could take few seconds.\n");
 
-    detected_frequencies_initialise(detected_frequencies, max_freq_num);
+	detected_frequencies_initialise(detected_frequencies, max_freq_num);
 
-    int start_freq = 2192;
-    int end_freq = 2732;
-    detect_frequency_range(wi, detected_frequencies, start_freq, end_freq);
+	int start_freq = 2192;
+	int end_freq = 2732;
+	detect_frequency_range(wi, detected_frequencies, start_freq, end_freq);
 
-    // again for 5GHz channels
-    start_freq = 4800;
-    end_freq = 6000;
-    detect_frequency_range(wi, detected_frequencies, start_freq, end_freq);
+	// again for 5GHz channels
+	start_freq = 4800;
+	end_freq = 6000;
+	detect_frequency_range(wi, detected_frequencies, start_freq, end_freq);
 
-    printf("Done. Found %zu frequencies\n", detected_frequencies->count);
+	printf("Done. Found %zu frequencies\n", detected_frequencies->count);
 }
 
-static bool array_contains(
-    int const * const array,
-    size_t const length,
-    int const value)
+static bool
+array_contains(int const * const array, size_t const length, int const value)
 {
-    bool found;
+	bool found;
 	REQUIRE(array != NULL);
 
-    for (size_t i = 0; i < length; i++)
-    {
-        if (array[i] == value)
-        {
-            found = true;
-            goto done;
-        }
-    }
+	for (size_t i = 0; i < length; i++)
+	{
+		if (array[i] == value)
+		{
+			found = true;
+			goto done;
+		}
+	}
 
-    found = false;
+	found = false;
 
 done:
-    return found;
+	return found;
 }
 
 static void rearrange_frequencies(int * const own_frequencies)
 {
 	int * freqs;
-    int left;
-    int pos;
+	int left;
+	int pos;
 	int last_used = 0;
-    int cur_freq;
-    int round_done;
-    static int const width = DEFAULT_CHANNEL_WIDTH_MHZ;
+	int cur_freq;
+	int round_done;
+	static int const width = DEFAULT_CHANNEL_WIDTH_MHZ;
 
-    size_t const count = get_frequency_count(own_frequencies, false);
+	size_t const count = get_frequency_count(own_frequencies, false);
 	left = count;
 	pos = 0;
 
@@ -5390,19 +5374,18 @@ static void rearrange_frequencies(int * const own_frequencies)
 	{
 		cur_freq = own_frequencies[pos % count];
 
-        if (cur_freq == last_used)
-        {
-            round_done = 1;
-        }
+		if (cur_freq == last_used)
+		{
+			round_done = 1;
+		}
 
-		if ((count - left) > 0
-            && !round_done
+		if ((count - left) > 0 && !round_done
 			&& ABS(last_used - cur_freq) < width)
 		{
-            /* Do nothing. */
-            /* FIXME: fix that conditional to be opposite in sense. */
+			/* Do nothing. */
+			/* FIXME: fix that conditional to be opposite in sense. */
 		}
-        else if (!array_contains(freqs, count, cur_freq))
+		else if (!array_contains(freqs, count, cur_freq))
 		{
 			freqs[count - left] = cur_freq;
 			last_used = cur_freq;
@@ -5427,570 +5410,552 @@ static void drop_privileges(void)
 
 static bool start_child_process(int * const pipe_handles)
 {
-    int result; /* -1: error, 0: child process, > 0: parent_process */
-    int const pipe_result = pipe(pipe_handles);
+	int result; /* -1: error, 0: child process, > 0: parent_process */
+	int const pipe_result = pipe(pipe_handles);
 
-    IGNORE_NZ(pipe_result);
+	IGNORE_NZ(pipe_result);
 
-    result = fork();
+	result = fork();
 
-    if (result == -1)
-    {
-        goto done;
-    }
+	if (result == -1)
+	{
+		goto done;
+	}
 
-    if (result == 0)
-    {
-        /* This is the child process. */
+	if (result == 0)
+	{
+		/* This is the child process. */
 
-        /* Close the read end of the communications pipe as the child
+		/* Close the read end of the communications pipe as the child
          * only writes data for the parent to read.
          */
-        close(pipe_handles[0]);
-    }
-    else
-    {
-        /* This is the parent process. */
-        /* Close the write end of the communications pipe as the parent
+		close(pipe_handles[0]);
+	}
+	else
+	{
+		/* This is the parent process. */
+		/* Close the write end of the communications pipe as the parent
          * only reads data written by the child.
          */
-        close(pipe_handles[1]);
-    }
+		close(pipe_handles[1]);
+	}
 
 done:
 
-    return result;
+	return result;
 }
 
-static bool start_frequency_hopper_process(
-    struct local_options * const options,
-    struct wif * * const wi,
-    int const frequency_count)
+static bool start_frequency_hopper_process(struct local_options * const options,
+										   struct wif ** const wi,
+										   int const frequency_count)
 {
-    pid_t const main_pid = getpid();
-    int const result = start_child_process(options->channel_hopper_pipe);
+	pid_t const main_pid = getpid();
+	int const result = start_child_process(options->channel_hopper_pipe);
 
-    if (result == 0)
-    {
-        /* reopen cards. This way parent & child don't share resources for
+	if (result == 0)
+	{
+		/* reopen cards. This way parent & child don't share resources for
         * accessing the card (e.g. file descriptors) which may cause
         * problems.  -sorbo
         */
 
-        if (!reopen_cards(options))
-        {
-            exit(EXIT_FAILURE);
-        }
+		if (!reopen_cards(options))
+		{
+			exit(EXIT_FAILURE);
+		}
 
-        drop_privileges();
+		drop_privileges();
 
-        int current_frequencies[MAX_CARDS];
+		int current_frequencies[MAX_CARDS];
 
-        for (size_t i = 0; i < options->num_cards; i++)
-        {
-            current_frequencies[i] =
-                options->interface_data[i].current_frequency;
-        }
+		for (size_t i = 0; i < options->num_cards; i++)
+		{
+			current_frequencies[i]
+				= options->interface_data[i].current_frequency;
+		}
 
-        frequency_hopper(options->channel_hopper_pipe[1],
-                         wi,
-                         options->num_cards,
-                         frequency_count,
-                         options->channel_switching_method,
-                         options->own_frequencies,
-                         current_frequencies,
-                         options->frequency_hop_millisecs,
-                         main_pid);
+		frequency_hopper(options->channel_hopper_pipe[1],
+						 wi,
+						 options->num_cards,
+						 frequency_count,
+						 options->channel_switching_method,
+						 options->own_frequencies,
+						 current_frequencies,
+						 options->frequency_hop_millisecs,
+						 main_pid);
 
-        exit(EXIT_FAILURE);
-    }
+		exit(EXIT_FAILURE);
+	}
 
-    bool const child_started = result > 0;
+	bool const child_started = result > 0;
 
-    return child_started;
+	return child_started;
 }
 
-static bool start_channel_hopper_process(
-    struct local_options * const options,
-    struct wif * * const wi,
-    int const channel_count)
+static bool start_channel_hopper_process(struct local_options * const options,
+										 struct wif ** const wi,
+										 int const channel_count)
 {
-    pid_t const main_pid = getpid();
-    int const result = start_child_process(options->channel_hopper_pipe);
+	pid_t const main_pid = getpid();
+	int const result = start_child_process(options->channel_hopper_pipe);
 
-    if (result == 0)
-    {
-        /* reopen cards. This way parent & child don't share resources for
+	if (result == 0)
+	{
+		/* reopen cards. This way parent & child don't share resources for
         * accessing the card (e.g. file descriptors) which may cause
         * problems.  -sorbo
         */
 
-        if (!reopen_cards(options))
-        {
-            exit(EXIT_FAILURE);
-        }
+		if (!reopen_cards(options))
+		{
+			exit(EXIT_FAILURE);
+		}
 
-        drop_privileges();
+		drop_privileges();
 
-        int current_channels[MAX_CARDS];
+		int current_channels[MAX_CARDS];
 
-        for (size_t i = 0; i < options->num_cards; i++)
-        {
-            current_channels[i] = options->interface_data[i].current_channel;
-        }
+		for (size_t i = 0; i < options->num_cards; i++)
+		{
+			current_channels[i] = options->interface_data[i].current_channel;
+		}
 
-        channel_hopper(options->channel_hopper_pipe[1],
-                       wi,
-                       options->num_cards,
-                       channel_count,
-                       options->channel_switching_method,
-                       options->channels,
-                       current_channels,
-                       options->active_scan_sim > 0,
-                       options->frequency_hop_millisecs,
-                       main_pid
+		channel_hopper(options->channel_hopper_pipe[1],
+					   wi,
+					   options->num_cards,
+					   channel_count,
+					   options->channel_switching_method,
+					   options->channels,
+					   current_channels,
+					   options->active_scan_sim > 0,
+					   options->frequency_hop_millisecs,
+					   main_pid
 #ifdef CONFIG_LIBNL
-                       , options->htval
+					   ,
+					   options->htval
 #endif
-                      );
+		);
 
-        exit(EXIT_FAILURE);
-    }
+		exit(EXIT_FAILURE);
+	}
 
-    bool const child_started = result > 0;
+	bool const child_started = result > 0;
 
-    return child_started;
+	return child_started;
 }
 
 static bool pipe_has_data_ready(int const fd)
 {
-    bool have_data_ready;
-    fd_set rfds;
+	bool have_data_ready;
+	fd_set rfds;
 
-    if (fd == -1)
-    {
-        have_data_ready = false;
-        goto done;
-    }
+	if (fd == -1)
+	{
+		have_data_ready = false;
+		goto done;
+	}
 
-    int pipe_ready;
-    do
-    {
-        struct timeval tv =
-        {
-            .tv_sec = 0,
-            .tv_usec = 0
-        };
-        FD_ZERO(&rfds);
-        FD_SET(fd, &rfds); // NOLINT(hicpp-signed-bitwise)
-        pipe_ready = select(fd + 1, &rfds, NULL, NULL, &tv);
-    }
-    while (pipe_ready < 0 && errno == EINTR);
+	int pipe_ready;
+	do
+	{
+		struct timeval tv = {.tv_sec = 0, .tv_usec = 0};
+		FD_ZERO(&rfds);
+		FD_SET(fd, &rfds); // NOLINT(hicpp-signed-bitwise)
+		pipe_ready = select(fd + 1, &rfds, NULL, NULL, &tv);
+	} while (pipe_ready < 0 && errno == EINTR);
 
-    if (pipe_ready <= 0 || !FD_ISSET(fd, &rfds))
-    {
-        have_data_ready = false;
-        goto done;
-    }
+	if (pipe_ready <= 0 || !FD_ISSET(fd, &rfds))
+	{
+		have_data_ready = false;
+		goto done;
+	}
 
-    have_data_ready = true;
+	have_data_ready = true;
 
 done:
-    return have_data_ready;
+	return have_data_ready;
 }
 
 static bool pipe_read(int const fd, void * const data, size_t const data_size)
 {
-    /* data_size is the expected number of bytes to read. */
-    bool have_read_data;
+	/* data_size is the expected number of bytes to read. */
+	bool have_read_data;
 
-    if (!pipe_has_data_ready(fd))
-    {
-        have_read_data = false;
-        goto done;
-    }
+	if (!pipe_has_data_ready(fd))
+	{
+		have_read_data = false;
+		goto done;
+	}
 
-    int read_result;
-    do
-    {
-        read_result = read(fd, data, data_size);
-    }
-    while (read_result < 0 && errno == EINTR);
+	int read_result;
+	do
+	{
+		read_result = read(fd, data, data_size);
+	} while (read_result < 0 && errno == EINTR);
 
-    size_t const bytes_read = (size_t)read_result;
+	size_t const bytes_read = (size_t) read_result;
 
-    have_read_data = bytes_read == data_size;
+	have_read_data = bytes_read == data_size;
 
 done:
-    return have_read_data;
+	return have_read_data;
 }
 
 static void channel_hopper_data_handler(
-    struct local_options * const options,
-    struct channel_hopper_data_st const * const hopper_data)
+	struct local_options * const options,
+	struct channel_hopper_data_st const * const hopper_data)
 {
-    if (hopper_data->card >= ArrayCount(options->interface_data))
-    {
-        // invalid received data
-        fprintf(stderr,
-                "Invalid card value received from hopper process, got %zd\n",
-                hopper_data->card);
-        goto done;
-    }
+	if (hopper_data->card >= ArrayCount(options->interface_data))
+	{
+		// invalid received data
+		fprintf(stderr,
+				"Invalid card value received from hopper process, got %zd\n",
+				hopper_data->card);
+		goto done;
+	}
 
-    if (options->freqoption)
-    {
-        options->interface_data[hopper_data->card].current_frequency =
-            hopper_data->u.frequency;
-    }
-    else /* Must be channel hopping. */
-    {
-        options->interface_data[hopper_data->card].current_channel =
-            hopper_data->u.channel;
-    }
+	if (options->freqoption)
+	{
+		options->interface_data[hopper_data->card].current_frequency
+			= hopper_data->u.frequency;
+	}
+	else /* Must be channel hopping. */
+	{
+		options->interface_data[hopper_data->card].current_channel
+			= hopper_data->u.channel;
+	}
 
 done:
-    return;
+	return;
 }
 
 static void check_for_channel_hopper_data(struct local_options * const options)
 {
-    struct channel_hopper_data_st hopper_data = { 0 };
+	struct channel_hopper_data_st hopper_data = {0};
 
-    while (pipe_read(options->channel_hopper_pipe[0],
-                     &hopper_data,
-                     sizeof hopper_data))
-    {
-        channel_hopper_data_handler(options, &hopper_data);
-    }
+	while (pipe_read(
+		options->channel_hopper_pipe[0], &hopper_data, sizeof hopper_data))
+	{
+		channel_hopper_data_handler(options, &hopper_data);
+	}
 }
 
 static void handle_window_changed_event(void)
 {
-    terminal_clear_to_end_of_screen();
+	terminal_clear_to_end_of_screen();
 }
 
 static void handle_terminate_event(struct local_options * const options)
 {
-    if (options->interactive_mode > 0)
-    {
-        fprintf(stdout, "Quitting...\n");
-        fflush(stdout);
-    }
+	if (options->interactive_mode > 0)
+	{
+		fprintf(stdout, "Quitting...\n");
+		fflush(stdout);
+	}
 
-    options->do_exit = 1;
+	options->do_exit = 1;
 }
 
-static void process_event(
-    struct local_options * const options,
-    signal_event_t const event)
+static void process_event(struct local_options * const options,
+						  signal_event_t const event)
 {
-    switch (event)
-    {
-        case signal_event_window_changed:
-            handle_window_changed_event();
-            break;
-        case signal_event_terminate:
-            handle_terminate_event(options);
-            break;
-        default:
-            /* Unknown event. */
-            break;
-    }
+	switch (event)
+	{
+		case signal_event_window_changed:
+			handle_window_changed_event();
+			break;
+		case signal_event_terminate:
+			handle_terminate_event(options);
+			break;
+		default:
+			/* Unknown event. */
+			break;
+	}
 }
 
 static void check_for_signal_events(struct local_options * const options)
 {
-    int event = 0;
+	int event = 0;
 
-    while (pipe_read(options->signal_event_pipe[0],
-                     &event,
-                     sizeof event))
-    {
-        process_event(options, event);
-    }
+	while (pipe_read(options->signal_event_pipe[0], &event, sizeof event))
+	{
+		process_event(options, event);
+	}
 }
 
 static void cancel_quit_request(struct local_options * const options)
 {
-    options->quitting = 0;
-    options->message[0] = '\0';
+	options->quitting = 0;
+	options->message[0] = '\0';
 }
 
 static void update_dump_output_files(struct local_options * const options)
 {
-    for (dump_type_t dump_type = 0; dump_type < dump_type_COUNT; dump_type++)
-    {
-        dump_context_st * const dump_context = options->dump[dump_type].context;
+	for (dump_type_t dump_type = 0; dump_type < dump_type_COUNT; dump_type++)
+	{
+		dump_context_st * const dump_context = options->dump[dump_type].context;
 
-        if (dump_context != NULL)
-        {
-            dump_write(dump_context,
-                       &options->ap_list,
-                       &options->sta_list,
-                       options->encryption_filter,
-                       &options->essid_filter);
-        }
-    }
+		if (dump_context != NULL)
+		{
+			dump_write(dump_context,
+					   &options->ap_list,
+					   &options->sta_list,
+					   options->encryption_filter,
+					   &options->essid_filter);
+		}
+	}
 }
 
 static void close_dump_output_files(struct local_options * const options)
 {
-    for (dump_type_t dump_type = 0; dump_type < dump_type_COUNT; dump_type++)
-    {
-        dump_context_st * const dump_context = options->dump[dump_type].context;
+	for (dump_type_t dump_type = 0; dump_type < dump_type_COUNT; dump_type++)
+	{
+		dump_context_st * const dump_context = options->dump[dump_type].context;
 
-        if (dump_context != NULL)
-        {
-            dump_close(dump_context);
-            options->dump[dump_type].context = NULL;
-        }
-    }
+		if (dump_context != NULL)
+		{
+			dump_close(dump_context);
+			options->dump[dump_type].context = NULL;
+		}
+	}
 }
 
-static void do_generic_update(
-    struct local_options * const options,
-    time_t const current_time)
+static void do_generic_update(struct local_options * const options,
+							  time_t const current_time)
 {
-    options->sort.sort_required = true;
+	options->sort.sort_required = true;
 
-    if (options->gpsd.required)
-    {
-        gps_tracker_update(&options->gps_context);
-    }
+	if (options->gpsd.required)
+	{
+		gps_tracker_update(&options->gps_context);
+	}
 
-    /* update elapsed time */
-    free(options->elapsed_time);
-    options->elapsed_time =
-        getStringTimeFromSec(difftime(current_time, options->start_time));
+	/* update elapsed time */
+	free(options->elapsed_time);
+	options->elapsed_time
+		= getStringTimeFromSec(difftime(current_time, options->start_time));
 }
 
 static void do_probe_requests(struct local_options * const options)
 {
-    for (size_t i = 0; i < options->num_cards; i++)
-    {
-        send_probe_request(options->wi[i]);
-    }
+	for (size_t i = 0; i < options->num_cards; i++)
+	{
+		send_probe_request(options->wi[i]);
+	}
 }
 
 static void do_half_second_refresh(struct local_options * const options)
 {
-    update_rx_quality(options);
+	update_rx_quality(options);
 
-    if (options->s_iface != NULL)
-    {
-        if (!update_interface_cards(options))
-        {
-            lopt.do_exit = true;
-        }
-    }
+	if (options->s_iface != NULL)
+	{
+		if (!update_interface_cards(options))
+		{
+			lopt.do_exit = true;
+		}
+	}
 }
 
-static void start_quit_request_cancel_timer(struct local_options * const options)
+static void
+start_quit_request_cancel_timer(struct local_options * const options)
 {
-    options->quitting_event_ts = time(NULL);
+	options->quitting_event_ts = time(NULL);
 }
 
-static void handle_input_key(
-    struct local_options * const options,
-    int const keycode)
+static void handle_input_key(struct local_options * const options,
+							 int const keycode)
 {
-    if (keycode == KEY_q)
-    {
-        options->quitting++;
-        if (options->quitting > 1)
-        {
-            options->do_exit = 1;
-        }
-        else
-        {
-            snprintf(
-                options->message,
-                sizeof(options->message),
-                "Are you sure you want to quit? Press Q again to quit.");
-            start_quit_request_cancel_timer(options);
-        }
-    }
+	if (keycode == KEY_q)
+	{
+		options->quitting++;
+		if (options->quitting > 1)
+		{
+			options->do_exit = 1;
+		}
+		else
+		{
+			snprintf(options->message,
+					 sizeof(options->message),
+					 "Are you sure you want to quit? Press Q again to quit.");
+			start_quit_request_cancel_timer(options);
+		}
+	}
 
-    if (keycode == KEY_o)
-    {
-        color_on(options);
-        snprintf(options->message, sizeof(options->message), "color on");
-    }
+	if (keycode == KEY_o)
+	{
+		color_on(options);
+		snprintf(options->message, sizeof(options->message), "color on");
+	}
 
-    if (keycode == KEY_p)
-    {
-        color_off(options);
-        snprintf(options->message, sizeof(options->message), "color off");
-    }
+	if (keycode == KEY_p)
+	{
+		color_off(options);
+		snprintf(options->message, sizeof(options->message), "color off");
+	}
 
-    if (keycode == KEY_s)
-    {
-        ap_sort_context_next_sort_method(options->sort.sort_context);
-        snprintf(options->message,
-                 sizeof(options->message),
-                 "sorting by %s",
-                 ap_sort_context_description(options->sort.sort_context));
-        options->sort.sort_required = true;
-    }
+	if (keycode == KEY_s)
+	{
+		ap_sort_context_next_sort_method(options->sort.sort_context);
+		snprintf(options->message,
+				 sizeof(options->message),
+				 "sorting by %s",
+				 ap_sort_context_description(options->sort.sort_context));
+		options->sort.sort_required = true;
+	}
 
-    if (keycode == KEY_SPACE)
-    {
-        options->console_output.paused = !options->console_output.paused;
-        if (options->console_output.paused)
-        {
-            /* So that the 'paused' indication will get displayed. */
-            options->console_output.required = true;
-        }
+	if (keycode == KEY_SPACE)
+	{
+		options->console_output.paused = !options->console_output.paused;
+		if (options->console_output.paused)
+		{
+			/* So that the 'paused' indication will get displayed. */
+			options->console_output.required = true;
+		}
 
-        char const * const message = options->console_output.paused ? "paused" : "resumed";
+		char const * const message
+			= options->console_output.paused ? "paused" : "resumed";
 
-        snprintf(options->message,
-                 sizeof(options->message),
-                 "%s output",
-                 message);
-    }
+		snprintf(
+			options->message, sizeof(options->message), "%s output", message);
+	}
 
-    if (keycode == KEY_r)
-    {
-        options->sort.always_sort = !options->sort.always_sort;
-        char const * const message =
-            options->sort.always_sort ? "activated" : "deactivated";
+	if (keycode == KEY_r)
+	{
+		options->sort.always_sort = !options->sort.always_sort;
+		char const * const message
+			= options->sort.always_sort ? "activated" : "deactivated";
 
-        snprintf(options->message,
-                 sizeof(options->message),
-                 "realtime sorting %s", message);
-    }
+		snprintf(options->message,
+				 sizeof(options->message),
+				 "realtime sorting %s",
+				 message);
+	}
 
-    if (keycode == KEY_m)
-    {
-        options->mark_cur_ap = 1;
-    }
+	if (keycode == KEY_m)
+	{
+		options->mark_cur_ap = 1;
+	}
 
-    if (keycode == KEY_ARROW_DOWN)
-    {
-        if (options->p_selected_ap != NULL
-            && TAILQ_PREV(options->p_selected_ap, ap_list_head, entry) != NULL)
-        {
-            options->p_selected_ap =
-                TAILQ_PREV(options->p_selected_ap, ap_list_head, entry);
-            options->en_selection_direction = selection_direction_down;
-        }
-    }
+	if (keycode == KEY_ARROW_DOWN)
+	{
+		if (options->p_selected_ap != NULL
+			&& TAILQ_PREV(options->p_selected_ap, ap_list_head, entry) != NULL)
+		{
+			options->p_selected_ap
+				= TAILQ_PREV(options->p_selected_ap, ap_list_head, entry);
+			options->en_selection_direction = selection_direction_down;
+		}
+	}
 
-    if (keycode == KEY_ARROW_UP)
-    {
-        if (options->p_selected_ap != NULL
-            && TAILQ_NEXT(options->p_selected_ap, entry) != NULL)
-        {
-            options->p_selected_ap =
-                TAILQ_NEXT(options->p_selected_ap, entry);
-            options->en_selection_direction = selection_direction_up;
-        }
-    }
+	if (keycode == KEY_ARROW_UP)
+	{
+		if (options->p_selected_ap != NULL
+			&& TAILQ_NEXT(options->p_selected_ap, entry) != NULL)
+		{
+			options->p_selected_ap = TAILQ_NEXT(options->p_selected_ap, entry);
+			options->en_selection_direction = selection_direction_up;
+		}
+	}
 
-    if (keycode == KEY_i)
-    {
-        bool const is_inverted =
-            ap_sort_context_invert_direction(options->sort.sort_context);
-        char const * const message = is_inverted ? "inverted" : "normal";
+	if (keycode == KEY_i)
+	{
+		bool const is_inverted
+			= ap_sort_context_invert_direction(options->sort.sort_context);
+		char const * const message = is_inverted ? "inverted" : "normal";
 
-        snprintf(options->message,
-                 sizeof(options->message),
-                 "%s sorting order", message);
+		snprintf(options->message,
+				 sizeof(options->message),
+				 "%s sorting order",
+				 message);
 
-        options->sort.sort_required = true;
-    }
+		options->sort.sort_required = true;
+	}
 
-    if (keycode == KEY_TAB)
-    {
-        char const * message;
-        if (options->p_selected_ap == NULL)
-        {
-            options->en_selection_direction = selection_direction_down;
-            options->p_selected_ap = TAILQ_LAST(&options->ap_list, ap_list_head);
-            message = "enabled";
-        }
-        else
-        {
-            options->en_selection_direction = selection_direction_no;
-            options->p_selected_ap = NULL;
-            message = "disabled";
-        }
-        snprintf(options->message,
-                 sizeof(options->message),
-                 "%s AP selection", message);
+	if (keycode == KEY_TAB)
+	{
+		char const * message;
+		if (options->p_selected_ap == NULL)
+		{
+			options->en_selection_direction = selection_direction_down;
+			options->p_selected_ap
+				= TAILQ_LAST(&options->ap_list, ap_list_head);
+			message = "enabled";
+		}
+		else
+		{
+			options->en_selection_direction = selection_direction_no;
+			options->p_selected_ap = NULL;
+			message = "disabled";
+		}
+		snprintf(options->message,
+				 sizeof(options->message),
+				 "%s AP selection",
+				 message);
 
-        ap_sort_context_assign_sort_method(options->sort.sort_context,
-                                           SORT_BY_NOTHING);
-    }
+		ap_sort_context_assign_sort_method(options->sort.sort_context,
+										   SORT_BY_NOTHING);
+	}
 
-    if (keycode == KEY_a)
-    {
-        if (options->show_ap == 1
-            && options->show_sta == 1
-            && options->show_ack == 0)
-        {
-            options->show_ap = 1;
-            options->show_sta = 1;
-            options->show_ack = 1;
-            snprintf(options->message,
-                     sizeof(options->message),
-                     "display ap+sta+ack");
-        }
-        else if (options->show_ap == 1
-                 && options->show_sta == 1
-                 && options->show_ack == 1)
-        {
-            options->show_ap = 1;
-            options->show_sta = 0;
-            options->show_ack = 0;
-            snprintf(
-                options->message, sizeof(options->message), "display ap only");
-        }
-        else if (options->show_ap == 1
-                 && options->show_sta == 0
-                 && options->show_ack == 0)
-        {
-            options->show_ap = 0;
-            options->show_sta = 1;
-            options->show_ack = 0;
-            snprintf(
-                options->message, sizeof(options->message), "display sta only");
-        }
-        else if (options->show_ap == 0
-                 && options->show_sta == 1
-                 && options->show_ack == 0)
-        {
-            options->show_ap = 1;
-            options->show_sta = 1;
-            options->show_ack = 0;
-            snprintf(
-                options->message, sizeof(options->message), "display ap+sta");
-        }
-    }
+	if (keycode == KEY_a)
+	{
+		if (options->show_ap == 1 && options->show_sta == 1
+			&& options->show_ack == 0)
+		{
+			options->show_ap = 1;
+			options->show_sta = 1;
+			options->show_ack = 1;
+			snprintf(options->message,
+					 sizeof(options->message),
+					 "display ap+sta+ack");
+		}
+		else if (options->show_ap == 1 && options->show_sta == 1
+				 && options->show_ack == 1)
+		{
+			options->show_ap = 1;
+			options->show_sta = 0;
+			options->show_ack = 0;
+			snprintf(
+				options->message, sizeof(options->message), "display ap only");
+		}
+		else if (options->show_ap == 1 && options->show_sta == 0
+				 && options->show_ack == 0)
+		{
+			options->show_ap = 0;
+			options->show_sta = 1;
+			options->show_ack = 0;
+			snprintf(
+				options->message, sizeof(options->message), "display sta only");
+		}
+		else if (options->show_ap == 0 && options->show_sta == 1
+				 && options->show_ack == 0)
+		{
+			options->show_ap = 1;
+			options->show_sta = 1;
+			options->show_ack = 0;
+			snprintf(
+				options->message, sizeof(options->message), "display ap+sta");
+		}
+	}
 
-    if (keycode == KEY_d)
-    {
-        reset_selections(options);
-        snprintf(options->message,
-                 sizeof(options->message),
-                 "reset selection to default");
-    }
+	if (keycode == KEY_d)
+	{
+		reset_selections(options);
+		snprintf(options->message,
+				 sizeof(options->message),
+				 "reset selection to default");
+	}
 }
 
 static void check_for_user_input(struct local_options * const options)
 {
-    int keycode = 0;
+	int keycode = 0;
 
-    while (pipe_read(options->input_thread_pipe[0],
-                     &keycode,
-                     sizeof keycode))
-    {
-        handle_input_key(options, keycode);
-    }
+	while (pipe_read(options->input_thread_pipe[0], &keycode, sizeof keycode))
+	{
+		handle_input_key(options, keycode);
+	}
 }
-
 
 #define AIRODUMP_NG_CSV_EXT "csv"
 #define KISMET_CSV_EXT "kismet.csv"
@@ -6008,187 +5973,180 @@ static bool open_output_files(struct local_options * const options)
 	size_t const ADDED_LENGTH = 17; /* FIXME: Work out the required length from
 									 *  the extensions etc
 									 */
-    if (!options->filename.include_index)
-    {
-        options->filename.index = -1;
-    }
-    else
-    {
-        options->filename.index =
-            find_first_free_file_index(options->dump_prefix);
-    }
+	if (!options->filename.include_index)
+	{
+		options->filename.index = -1;
+	}
+	else
+	{
+		options->filename.index
+			= find_first_free_file_index(options->dump_prefix);
+	}
 
 	/* Create a buffer of the length of the prefix + '-' + 2 numbers + '.'
 	   + longest extension ("kismet.netxml") + terminating 0. */
-    ofn_len = strlen(options->dump_prefix) + ADDED_LENGTH + 1;
+	ofn_len = strlen(options->dump_prefix) + ADDED_LENGTH + 1;
 	ofn = malloc(ofn_len);
 	ALLEGE(ofn != NULL);
 
-    /* TODO: Loop over the array rather than checking each index
+	/* TODO: Loop over the array rather than checking each index
      * specifically. Note that the wifi dump might need to
      * generate the output filename differently than the others (no
      * index).
      * Perhaps include a suffix and filename generator callback, or
      * just have a filename type specifier.
      */
-    if (options->dump[dump_type_csv].needed)
+	if (options->dump[dump_type_csv].needed)
 	{
-		char const * const filename =
-            create_output_filename(
-                ofn,
-                ofn_len,
-                options->dump_prefix,
-                options->filename.index,
-                AIRODUMP_NG_CSV_EXT);
+		char const * const filename
+			= create_output_filename(ofn,
+									 ofn_len,
+									 options->dump_prefix,
+									 options->filename.index,
+									 AIRODUMP_NG_CSV_EXT);
 
-        options->dump[dump_type_csv].context =
-			dump_open(dump_type_csv,
-                      filename,
-                      options->airodump_start_time,
-                      options->gpsd.required);
+		options->dump[dump_type_csv].context
+			= dump_open(dump_type_csv,
+						filename,
+						options->airodump_start_time,
+						options->gpsd.required);
 
-        if (options->dump[dump_type_csv].context == NULL)
+		if (options->dump[dump_type_csv].context == NULL)
 		{
-            fprintf(stderr, "Could not create \"%s\".\n", filename);
+			fprintf(stderr, "Could not create \"%s\".\n", filename);
 
 			success = false;
 			goto done;
 		}
 	}
 
-    if (options->dump[dump_type_kismet_csv].needed)
+	if (options->dump[dump_type_kismet_csv].needed)
 	{
-        char const * const filename =
-            create_output_filename(
-                ofn,
-                ofn_len,
-                options->dump_prefix,
-                options->filename.index,
-                KISMET_CSV_EXT);
+		char const * const filename
+			= create_output_filename(ofn,
+									 ofn_len,
+									 options->dump_prefix,
+									 options->filename.index,
+									 KISMET_CSV_EXT);
 
-        options->dump[dump_type_kismet_csv].context =
-			dump_open(dump_type_kismet_csv,
-                      filename,
-                      options->airodump_start_time,
-                      options->gpsd.required);
+		options->dump[dump_type_kismet_csv].context
+			= dump_open(dump_type_kismet_csv,
+						filename,
+						options->airodump_start_time,
+						options->gpsd.required);
 
-        if (options->dump[dump_type_kismet_csv].context == NULL)
+		if (options->dump[dump_type_kismet_csv].context == NULL)
 		{
-            fprintf(stderr, "Could not create \"%s\".\n", filename);
+			fprintf(stderr, "Could not create \"%s\".\n", filename);
 
 			success = false;
 			goto done;
 		}
 	}
 
-    if (options->dump[dump_type_kismet_netxml].needed)
+	if (options->dump[dump_type_kismet_netxml].needed)
 	{
-        char const * const filename =
-            create_output_filename(
-                ofn,
-                ofn_len,
-                options->dump_prefix,
-                options->filename.index,
-                KISMET_NETXML_EXT);
+		char const * const filename
+			= create_output_filename(ofn,
+									 ofn_len,
+									 options->dump_prefix,
+									 options->filename.index,
+									 KISMET_NETXML_EXT);
 
-        options->dump[dump_type_kismet_netxml].context =
-			dump_open(dump_type_kismet_netxml,
-                      filename,
-                      options->airodump_start_time,
-                      options->gpsd.required);
+		options->dump[dump_type_kismet_netxml].context
+			= dump_open(dump_type_kismet_netxml,
+						filename,
+						options->airodump_start_time,
+						options->gpsd.required);
 
-        if (options->dump[dump_type_kismet_netxml].context == NULL)
+		if (options->dump[dump_type_kismet_netxml].context == NULL)
 		{
-            fprintf(stderr, "Could not create \"%s\".\n", filename);
+			fprintf(stderr, "Could not create \"%s\".\n", filename);
 
 			success = false;
 			goto done;
 		}
 	}
 
-    if (options->pcap_output.required)
-    {
-        char const * const filename =
-            create_output_filename(
-                ofn,
-                ofn_len,
-                options->dump_prefix,
-                options->filename.index,
-                AIRODUMP_NG_CAP_EXT);
+	if (options->pcap_output.required)
+	{
+		char const * const filename
+			= create_output_filename(ofn,
+									 ofn_len,
+									 options->dump_prefix,
+									 options->filename.index,
+									 AIRODUMP_NG_CAP_EXT);
 
-        options->pcap_output.writer =
-            packet_writer_open(packet_writer_type_pcap, filename);
+		options->pcap_output.writer
+			= packet_writer_open(packet_writer_type_pcap, filename);
 
-        if (options->pcap_output.writer == NULL)
-        {
-            fprintf(stderr, "Could not create \"%s\".\n", filename);
+		if (options->pcap_output.writer == NULL)
+		{
+			fprintf(stderr, "Could not create \"%s\".\n", filename);
 
-            success = false;
-            goto done;
-        }
-    }
-    else if (options->ivs.required)
-    {
-        char const * const filename =
-            create_output_filename(
-                ofn,
-                ofn_len,
-                options->dump_prefix,
-                options->filename.index,
-                IVS2_EXTENSION);
+			success = false;
+			goto done;
+		}
+	}
+	else if (options->ivs.required)
+	{
+		char const * const filename
+			= create_output_filename(ofn,
+									 ofn_len,
+									 options->dump_prefix,
+									 options->filename.index,
+									 IVS2_EXTENSION);
 
-        options->ivs.fp = ivs_log_open(filename);
-        if (options->ivs.fp == NULL)
-        {
-            success = false;
-            goto done;
-        }
-    }
+		options->ivs.fp = ivs_log_open(filename);
+		if (options->ivs.fp == NULL)
+		{
+			success = false;
+			goto done;
+		}
+	}
 
-    if (options->log_csv.required)
-    {
-        char const * const filename =
-            create_output_filename(
-                ofn,
-                ofn_len,
-                options->dump_prefix,
-                options->filename.index,
-                AIRODUMP_NG_LOG_CSV_EXT);
+	if (options->log_csv.required)
+	{
+		char const * const filename
+			= create_output_filename(ofn,
+									 ofn_len,
+									 options->dump_prefix,
+									 options->filename.index,
+									 AIRODUMP_NG_LOG_CSV_EXT);
 
-        options->log_csv.fp = log_csv_file_open(filename);
-        if (options->log_csv.fp == NULL)
-        {
-            success = false;
-            goto done;
-        }
-    }
+		options->log_csv.fp = log_csv_file_open(filename);
+		if (options->log_csv.fp == NULL)
+		{
+			success = false;
+			goto done;
+		}
+	}
 
-    if (options->gpsd.required)
-    {
-        char const * const filename =
-            create_output_filename(
-                ofn,
-                ofn_len,
-                options->dump_prefix,
-                options->filename.index,
-                AIRODUMP_NG_GPS_EXT);
+	if (options->gpsd.required)
+	{
+		char const * const filename
+			= create_output_filename(ofn,
+									 ofn_len,
+									 options->dump_prefix,
+									 options->filename.index,
+									 AIRODUMP_NG_GPS_EXT);
 
-        options->gpsd.fp = fopen(filename, "wb+");
-        if (options->gpsd.fp == NULL)
-        {
-            perror("fopen failed");
-            fprintf(stderr, "Could not create \"%s\".\n", filename);
+		options->gpsd.fp = fopen(filename, "wb+");
+		if (options->gpsd.fp == NULL)
+		{
+			perror("fopen failed");
+			fprintf(stderr, "Could not create \"%s\".\n", filename);
 
-            success = false;
-            goto done;
-        }
-        /* Store the filename as it is possibly used to delete the
+			success = false;
+			goto done;
+		}
+		/* Store the filename as it is possibly used to delete the
          * file at shutdown. There's possibly a better way to do this.
          */
-        options->gpsd.filename = strdup(filename);
-    }
+		options->gpsd.filename = strdup(filename);
+	}
 
-    success = true;
+	success = true;
 
 done:
 	free(ofn);
@@ -6198,66 +6156,64 @@ done:
 
 static void close_output_files(struct local_options * const options)
 {
-    close_dump_output_files(options);
+	close_dump_output_files(options);
 
-    if (options->gpsd.fp != NULL)
+	if (options->gpsd.fp != NULL)
 	{
-        fclose(options->gpsd.fp);
-        if (!options->gps_context.save_gps && options->gpsd.filename != NULL)
-        {
-            unlink(options->gpsd.filename);
-        }
-        free(options->gpsd.filename);
-    }
-
-    if (options->pcap_output.writer != NULL)
-    {
-        packet_writer_close(options->pcap_output.writer);
-        options->pcap_output.writer = NULL;
-    }
-
-    if (options->ivs.fp != NULL)
-	{
-        fclose(options->ivs.fp);
+		fclose(options->gpsd.fp);
+		if (!options->gps_context.save_gps && options->gpsd.filename != NULL)
+		{
+			unlink(options->gpsd.filename);
+		}
+		free(options->gpsd.filename);
 	}
 
-    if (options->log_csv.fp != NULL)
+	if (options->pcap_output.writer != NULL)
 	{
-        fclose(options->log_csv.fp);
+		packet_writer_close(options->pcap_output.writer);
+		options->pcap_output.writer = NULL;
+	}
+
+	if (options->ivs.fp != NULL)
+	{
+		fclose(options->ivs.fp);
+	}
+
+	if (options->log_csv.fp != NULL)
+	{
+		fclose(options->log_csv.fp);
 	}
 }
 
-static void do_quit_request_timeout_check(
-    struct local_options * const options)
+static void do_quit_request_timeout_check(struct local_options * const options)
 {
-    if (options->quitting > 0)
+	if (options->quitting > 0)
 	{
-        time_t const seconds_since_last_quit_event = time(NULL) - options->quitting_event_ts;
-        bool const took_too_long =
-            seconds_since_last_quit_event > maximum_quit_event_interval_seconds;
+		time_t const seconds_since_last_quit_event
+			= time(NULL) - options->quitting_event_ts;
+		bool const took_too_long = seconds_since_last_quit_event
+								   > maximum_quit_event_interval_seconds;
 
 		if (took_too_long)
 		{
-            options->quitting_event_ts = 0;
+			options->quitting_event_ts = 0;
 
-            cancel_quit_request(options);
+			cancel_quit_request(options);
 		}
 	}
 }
 
-static void pace_pcap_reader(
-	struct timeval * const previous_timestamp,
-	struct timeval * const packet_timestamp,
-	int const read_pkts)
+static void pace_pcap_reader(struct timeval * const previous_timestamp,
+							 struct timeval * const packet_timestamp,
+							 int const read_pkts)
 {
-    /* Control the speed that the packets are read from the file
+	/* Control the speed that the packets are read from the file
      * to simulate the rate they were captured at.
      */
-	if (previous_timestamp->tv_sec != 0
-		&& previous_timestamp->tv_usec != 0)
+	if (previous_timestamp->tv_sec != 0 && previous_timestamp->tv_usec != 0)
 	{
 		const useconds_t usec_diff
-			= (useconds_t)time_diff(previous_timestamp, packet_timestamp);
+			= (useconds_t) time_diff(previous_timestamp, packet_timestamp);
 
 		if (usec_diff > 0)
 		{
@@ -6269,1395 +6225,1369 @@ static void pace_pcap_reader(
 		usleep(1);
 	}
 
-    // track the packet's timestamp
+	// track the packet's timestamp
 	*previous_timestamp = *packet_timestamp;
 }
 
-static void airodump_shutdown(
-    struct local_options * const options)
+static void airodump_shutdown(struct local_options * const options)
 {
 	/* TODO: Restore signal handlers. */
-    signal_event_shutdown(options->signal_event_pipe);
+	signal_event_shutdown(options->signal_event_pipe);
 
-    if (options->gpsd.required)
+	if (options->gpsd.required)
 	{
-        gps_tracker_stop(&options->gps_context);
+		gps_tracker_stop(&options->gps_context);
 	}
 
-    free(options->elapsed_time);
-    free(options->own_channels);
+	free(options->elapsed_time);
+	free(options->own_channels);
 
-    pcap_reader_close(options->pcap_reader_context);
+	pcap_reader_close(options->pcap_reader_context);
 
-    essid_filter_context_cleanup(&options->essid_filter);
+	essid_filter_context_cleanup(&options->essid_filter);
 
-    close_cards(options->wi, options->num_cards);
+	close_cards(options->wi, options->num_cards);
 
-    update_dump_output_files(options);
+	update_dump_output_files(options);
 
-    close_output_files(options);
+	close_output_files(options);
 
-    free(options->airodump_start_time);
-    options->airodump_start_time = NULL;
+	free(options->airodump_start_time);
+	options->airodump_start_time = NULL;
 
-    if (options->interactive_mode > 0)
-    {
-        pthread_join(options->input_tid, NULL);
-        close(options->input_thread_pipe[1]);
-        close(options->input_thread_pipe[0]);
-    }
+	if (options->interactive_mode > 0)
+	{
+		pthread_join(options->input_tid, NULL);
+		close(options->input_thread_pipe[1]);
+		close(options->input_thread_pipe[0]);
+	}
 
-    sta_list_free(&options->sta_list);
+	sta_list_free(&options->sta_list);
 
-    ap_list_free(options);
+	ap_list_free(options);
 
-    na_info_list_free(&options->na_list);
+	na_info_list_free(&options->na_list);
 
-    oui_context_free(options->manufacturer_list);
+	oui_context_free(options->manufacturer_list);
 
-    /* TODO: Separate out shared key context init/cleanup. */
-    if (options->shared_key.f_xor != NULL)
-    {
-        fclose(options->shared_key.f_xor);
-    }
+	/* TODO: Separate out shared key context init/cleanup. */
+	if (options->shared_key.f_xor != NULL)
+	{
+		fclose(options->shared_key.f_xor);
+	}
 
-    ap_sort_context_free(options->sort.sort_context);
+	ap_sort_context_free(options->sort.sort_context);
 }
 
-static bool handle_ready_wi_interface(
-    struct local_options * const options,
-    struct wif * * const wi,
-    size_t const interface_index,
-    uint8_t * const packet_buffer,
-    size_t packet_buffer_size)
+static bool handle_ready_wi_interface(struct local_options * const options,
+									  struct wif ** const wi,
+									  size_t const interface_index,
+									  uint8_t * const packet_buffer,
+									  size_t packet_buffer_size)
 {
-    bool success;
-    struct rx_info ri;
+	bool success;
+	struct rx_info ri;
 
-    ssize_t const packet_length =
-        wi_read(*wi, NULL, NULL, packet_buffer, packet_buffer_size, &ri);
+	ssize_t const packet_length
+		= wi_read(*wi, NULL, NULL, packet_buffer, packet_buffer_size, &ri);
 
-    if (packet_length == -1)
-    {
-        options->interface_data[interface_index].consecutive_read_errors++;
-        bool const too_many_failures =
-            options->interface_data[interface_index].consecutive_read_errors
-            >= max_consecutive_read_errors;
+	if (packet_length == -1)
+	{
+		options->interface_data[interface_index].consecutive_read_errors++;
+		bool const too_many_failures
+			= options->interface_data[interface_index].consecutive_read_errors
+			  >= max_consecutive_read_errors;
 
-        if (too_many_failures)
-        {
-            success = false;
-            goto done;
-        }
+		if (too_many_failures)
+		{
+			success = false;
+			goto done;
+		}
 
-        snprintf(options->message,
-                 sizeof(options->message),
-                 "interface %s down ",
-                 wi_get_ifname(*wi));
+		snprintf(options->message,
+				 sizeof(options->message),
+				 "interface %s down ",
+				 wi_get_ifname(*wi));
 
-        if (!reopen_card(options, interface_index))
-        {
-            success = false;
-            goto done;
-        }
-    }
-    else
-    {
-        options->interface_data[interface_index].consecutive_read_errors = 0;
-        dump_add_packet(options,
-                        packet_buffer,
-                        packet_length,
-                        &ri,
-                        interface_index);
-    }
+		if (!reopen_card(options, interface_index))
+		{
+			success = false;
+			goto done;
+		}
+	}
+	else
+	{
+		options->interface_data[interface_index].consecutive_read_errors = 0;
+		dump_add_packet(
+			options, packet_buffer, packet_length, &ri, interface_index);
+	}
 
-    success = true;
+	success = true;
 
 done:
-    return success;
+	return success;
 }
 
-static int capture_packet_from_cards(
-    struct local_options * const options,
-    uint8_t * const packet_buffer,
-    size_t packet_buffer_size)
+static int capture_packet_from_cards(struct local_options * const options,
+									 uint8_t * const packet_buffer,
+									 size_t packet_buffer_size)
 {
-    /* Capture one packet from each card. */
-    struct wif * * const wi = options->wi;
-    size_t const num_cards = options->num_cards;
-    int result;
-    fd_set rfds;
-    int max_fd = -1;
+	/* Capture one packet from each card. */
+	struct wif ** const wi = options->wi;
+	size_t const num_cards = options->num_cards;
+	int result;
+	fd_set rfds;
+	int max_fd = -1;
 
-    FD_ZERO(&rfds);
-    for (size_t i = 0; i < num_cards; i++)
-    {
-        int const interface_fd = wi_fd(wi[i]);
+	FD_ZERO(&rfds);
+	for (size_t i = 0; i < num_cards; i++)
+	{
+		int const interface_fd = wi_fd(wi[i]);
 
-        FD_SET(interface_fd, &rfds); // NOLINT(hicpp-signed-bitwise)
-        if (interface_fd > max_fd)
-        {
-            max_fd = interface_fd;
-        }
-    }
+		FD_SET(interface_fd, &rfds); // NOLINT(hicpp-signed-bitwise)
+		if (interface_fd > max_fd)
+		{
+			max_fd = interface_fd;
+		}
+	}
 
-    struct timeval tv0 =
-    {
-        .tv_sec = options->update_interval_seconds,
-        .tv_usec = (options->update_interval_seconds == 0) ? REFRESH_RATE : 0
-    };
+	struct timeval tv0 = {
+		.tv_sec = options->update_interval_seconds,
+		.tv_usec = (options->update_interval_seconds == 0) ? REFRESH_RATE : 0};
 
-    if (select(max_fd + 1, &rfds, NULL, NULL, &tv0) < 0)
-    {
-        if (errno == EINTR)
-        {
-            result = 0;
-            goto done;
-        }
-        perror("select failed");
+	if (select(max_fd + 1, &rfds, NULL, NULL, &tv0) < 0)
+	{
+		if (errno == EINTR)
+		{
+			result = 0;
+			goto done;
+		}
+		perror("select failed");
 
-        result = -1;
-        goto done;
-    }
+		result = -1;
+		goto done;
+	}
 
-    for (size_t i = 0; i < options->num_cards; i++)
-    {
-        if (FD_ISSET(wi_fd(wi[i]), &rfds)) // NOLINT(hicpp-signed-bitwise)
-        {
-            if (!handle_ready_wi_interface(
-                    options,
-                    &wi[i],
-                    i,
-                    packet_buffer,
-                    packet_buffer_size))
-            {
-                result = -1;
-                goto done;
-            }
-        }
-    }
+	for (size_t i = 0; i < options->num_cards; i++)
+	{
+		if (FD_ISSET(wi_fd(wi[i]), &rfds)) // NOLINT(hicpp-signed-bitwise)
+		{
+			if (!handle_ready_wi_interface(
+					options, &wi[i], i, packet_buffer, packet_buffer_size))
+			{
+				result = -1;
+				goto done;
+			}
+		}
+	}
 
-    result = 1;
+	result = 1;
 
 done:
-    return result;
+	return result;
 }
 
 static void update_console(struct local_options * const options)
 {
-    struct sort_context_st * const sort_context = &options->sort;
+	struct sort_context_st * const sort_context = &options->sort;
 
-    if (sort_context->sort_required || sort_context->always_sort)
-    {
-        dump_sort(options, sort_context->sort_context);
-        sort_context->sort_required = false;
-    }
+	if (sort_context->sort_required || sort_context->always_sort)
+	{
+		dump_sort(options, sort_context->sort_context);
+		sort_context->sort_required = false;
+	}
 
-    dump_print(options,
-               options->window_size.ws_row,
-               options->window_size.ws_col,
-               options->num_cards);
+	dump_print(options,
+			   options->window_size.ws_row,
+			   options->window_size.ws_col,
+			   options->num_cards);
 }
 
 static void do_refresh(struct local_options * const options)
 {
-    purge_old_nodes(options, options->max_node_age_seconds);
-    aps_purge_old_packets(&options->ap_list, BUFFER_TIME_MILLISECS);
+	purge_old_nodes(options, options->max_node_age_seconds);
+	aps_purge_old_packets(&options->ap_list, BUFFER_TIME_MILLISECS);
 
-    update_data_packets_per_second(options);
+	update_data_packets_per_second(options);
 
-    if (options->interactive_mode > 0
-        && (!options->console_output.paused || options->console_output.required))
-    {
-        options->console_output.required = false;
+	if (options->interactive_mode > 0
+		&& (!options->console_output.paused
+			|| options->console_output.required))
+	{
+		options->console_output.required = false;
 
-        update_window_size(&options->window_size);
-        update_console(options);
-    }
+		update_window_size(&options->window_size);
+		update_console(options);
+	}
 }
 
-static void dump_contexts_initialise(
-    struct local_options * const options,
-    bool const are_needed)
+static void dump_contexts_initialise(struct local_options * const options,
+									 bool const are_needed)
 {
-    for (dump_type_t dump_type = 0; dump_type < dump_type_COUNT; dump_type++)
-    {
-        options->dump[dump_type].needed = are_needed;
-    }
+	for (dump_type_t dump_type = 0; dump_type < dump_type_COUNT; dump_type++)
+	{
+		options->dump[dump_type].needed = are_needed;
+	}
 }
 
-static bool read_one_packet_from_file(
-    struct local_options * const options,
-    uint8_t * const packet_buffer,
-    size_t packet_buffer_size)
+static bool read_one_packet_from_file(struct local_options * const options,
+									  uint8_t * const packet_buffer,
+									  size_t packet_buffer_size)
 {
-    bool read_a_packet;
-    size_t packet_length;
-    struct rx_info ri;
+	bool read_a_packet;
+	size_t packet_length;
+	struct rx_info ri;
 
-    pcap_reader_result_t const result =
-        pcap_read(options->pcap_reader_context,
-                  packet_buffer,
-                  packet_buffer_size,
-                  &packet_length,
-                  &ri,
-                  &options->packet_timestamp);
+	pcap_reader_result_t const result = pcap_read(options->pcap_reader_context,
+												  packet_buffer,
+												  packet_buffer_size,
+												  &packet_length,
+												  &ri,
+												  &options->packet_timestamp);
 
-    if (result == pcap_reader_result_ok)
-    {
-        static size_t const file_dummy_card_number = 0;
-        dump_add_packet(options,
-                        packet_buffer,
-                        packet_length,
-                        &ri,
-                        file_dummy_card_number);
+	if (result == pcap_reader_result_ok)
+	{
+		static size_t const file_dummy_card_number = 0;
+		dump_add_packet(
+			options, packet_buffer, packet_length, &ri, file_dummy_card_number);
 
-        read_a_packet = true;
-        goto done;
-    }
+		read_a_packet = true;
+		goto done;
+	}
 
-    read_a_packet = false;
+	read_a_packet = false;
 
-    if (result == pcap_reader_result_done)
-    {
-        pcap_reader_close(options->pcap_reader_context);
-        options->pcap_reader_context = NULL;
+	if (result == pcap_reader_result_done)
+	{
+		pcap_reader_close(options->pcap_reader_context);
+		options->pcap_reader_context = NULL;
 
-        snprintf(options->message,
-                 sizeof(options->message),
-                 "Finished reading input file %s.",
-                 options->s_file);
-
-    }
+		snprintf(options->message,
+				 sizeof(options->message),
+				 "Finished reading input file %s.",
+				 options->s_file);
+	}
 
 done:
-    return read_a_packet;
+	return read_a_packet;
 }
 
 static void options_initialise(struct local_options * const options)
 {
-    memset(options, 0, sizeof *options);
+	memset(options, 0, sizeof *options);
 
-    options->chanoption = 0;
-    options->freqoption = 0;
-    options->num_cards = 0;
+	options->chanoption = 0;
+	options->freqoption = 0;
+	options->num_cards = 0;
 
-    options->channel_switching_method = channel_switching_method_fifo;
-    options->channels = bg_chans;
-    options->one_beacon = 1;
-    options->singlechan = 0;
-    options->singlefreq = 0;
-    options->dump_prefix = NULL;
-    options->record_data = 0;
-    options->pcap_output.writer = NULL;
-    options->max_node_age_seconds = 0;
+	options->channel_switching_method = channel_switching_method_fifo;
+	options->channels = bg_chans;
+	options->one_beacon = 1;
+	options->singlechan = 0;
+	options->singlefreq = 0;
+	options->dump_prefix = NULL;
+	options->record_data = 0;
+	options->pcap_output.writer = NULL;
+	options->max_node_age_seconds = 0;
 
-    options->ivs.required = false;
-    options->ivs.fp = NULL;
+	options->ivs.required = false;
+	options->ivs.fp = NULL;
 
-    options->gpsd.required = false;
-    options->gpsd.fp = NULL;
+	options->gpsd.required = false;
+	options->gpsd.fp = NULL;
 
-    options->shared_key.f_xor = NULL;
-    options->shared_key.sk_len = 0;
-    options->shared_key.sk_len2 = 0;
-    options->shared_key.sk_start = 0;
-    memset(options->shared_key.sharedkey, 0, sizeof options->shared_key.sharedkey);
-    options->check_shared_key = 1;
+	options->shared_key.f_xor = NULL;
+	options->shared_key.sk_len = 0;
+	options->shared_key.sk_len2 = 0;
+	options->shared_key.sk_start = 0;
+	memset(
+		options->shared_key.sharedkey, 0, sizeof options->shared_key.sharedkey);
+	options->check_shared_key = 1;
 
-    options->filename.include_index = 1;
+	options->filename.include_index = 1;
 
-    options->encryption_filter = 0;
-    options->asso_client = 0;
+	options->encryption_filter = 0;
+	options->asso_client = 0;
 
-    options->active_scan_sim = 0;
-    options->update_interval_seconds = 0;
-    options->decloak_detection = true;
+	options->active_scan_sim = 0;
+	options->update_interval_seconds = 0;
+	options->decloak_detection = true;
 
-    options->is_berlin = 0;
-    options->maxnumaps = 0;
-    options->berlin = 120;
-    options->show_ap = 1;
-    options->show_sta = 1;
-    options->show_ack = 0;
-    options->hide_known = 0;
-    options->maxsize_essid_seen = 5; // Initial value: length of "ESSID"
-    options->show_manufacturer = 0;
-    options->show_uptime = 0;
-    options->frequency_hop_millisecs = DEFAULT_HOPFREQ;
-    options->s_file = NULL;
-    options->s_iface = NULL;
-    options->pcap_reader_context = NULL;
-    options->detect_anomaly = 0;
-    options->airodump_start_time = NULL;
-    options->manufacturer_list = NULL;
+	options->is_berlin = 0;
+	options->maxnumaps = 0;
+	options->berlin = 120;
+	options->show_ap = 1;
+	options->show_sta = 1;
+	options->show_ack = 0;
+	options->hide_known = 0;
+	options->maxsize_essid_seen = 5; // Initial value: length of "ESSID"
+	options->show_manufacturer = 0;
+	options->show_uptime = 0;
+	options->frequency_hop_millisecs = DEFAULT_HOPFREQ;
+	options->s_file = NULL;
+	options->s_iface = NULL;
+	options->pcap_reader_context = NULL;
+	options->detect_anomaly = 0;
+	options->airodump_start_time = NULL;
+	options->manufacturer_list = NULL;
 
-    options->channel_hopper_pipe[0] = -1;
-    options->channel_hopper_pipe[1] = -1;
+	options->channel_hopper_pipe[0] = -1;
+	options->channel_hopper_pipe[1] = -1;
 
-    options->signal_event_pipe[0] = -1;
-    options->signal_event_pipe[1] = -1;
+	options->signal_event_pipe[0] = -1;
+	options->signal_event_pipe[1] = -1;
 
-    options->input_thread_pipe[0] = -1;
-    options->input_thread_pipe[1] = -1;
+	options->input_thread_pipe[0] = -1;
+	options->input_thread_pipe[1] = -1;
 
-    options->pcap_output.required = true;
+	options->pcap_output.required = true;
 
-    options->log_csv.fp = NULL;
-    options->log_csv.required = true;
+	options->log_csv.fp = NULL;
+	options->log_csv.required = true;
 
-    dump_contexts_initialise(options, true);
+	dump_contexts_initialise(options, true);
 
-    options->file_write_interval = 5; // Write file every 5 seconds by default
-    options->maxsize_wps_seen = 6;
-    options->show_wps = 0;
-    options->interactive_mode = -1;
-    options->do_exit = 0;
-    options->min_pkts = 2;
-    options->relative_time = false;
+	options->file_write_interval = 5; // Write file every 5 seconds by default
+	options->maxsize_wps_seen = 6;
+	options->show_wps = 0;
+	options->interactive_mode = -1;
+	options->do_exit = 0;
+	options->min_pkts = 2;
+	options->relative_time = false;
 #ifdef CONFIG_LIBNL
-    options->htval = CHANNEL_NO_HT;
+	options->htval = CHANNEL_NO_HT;
 #endif
 
-    essid_filter_context_initialise(&options->essid_filter);
+	essid_filter_context_initialise(&options->essid_filter);
 
-    TAILQ_INIT(&options->na_list);
-    TAILQ_INIT(&options->ap_list);
-    TAILQ_INIT(&options->sta_list);
+	TAILQ_INIT(&options->na_list);
+	TAILQ_INIT(&options->ap_list);
+	TAILQ_INIT(&options->sta_list);
 
-    reset_selections(options);
+	reset_selections(options);
 
-    options->message[0] = '\0';
+	options->message[0] = '\0';
 
-    for (size_t i = 0; i < MAX_CARDS; i++)
-    {
-        struct interface_data_st * const interface_data =
-            &options->interface_data[i];
+	for (size_t i = 0; i < MAX_CARDS; i++)
+	{
+		struct interface_data_st * const interface_data
+			= &options->interface_data[i];
 
-        interface_data->current_channel = channel_sentinel;
-        interface_data->current_frequency = frequency_sentinel;
-        interface_data->consecutive_read_errors = 0;
-    }
+		interface_data->current_channel = channel_sentinel;
+		interface_data->current_frequency = frequency_sentinel;
+		interface_data->consecutive_read_errors = 0;
+	}
 
-    MAC_ADDRESS_CLEAR(&options->f_bssid);
-    MAC_ADDRESS_CLEAR(&options->f_netmask);
+	MAC_ADDRESS_CLEAR(&options->f_bssid);
+	MAC_ADDRESS_CLEAR(&options->f_netmask);
 }
 
 static bool main_loop_run(struct local_options * const options)
 {
-    bool had_error = false;
-    time_t tt1 = time(NULL);
-    time_t tt2 = time(NULL);
-    struct timeval current_time_timestamp;
-    struct timeval last_active_scan_timestamp;
-    struct timeval tv3;
-    uint8_t h80211[4096];
-    int read_pkts = 0;
-    long time_slept = 0;
+	bool had_error = false;
+	time_t tt1 = time(NULL);
+	time_t tt2 = time(NULL);
+	struct timeval current_time_timestamp;
+	struct timeval last_active_scan_timestamp;
+	struct timeval tv3;
+	uint8_t h80211[4096];
+	int read_pkts = 0;
+	long time_slept = 0;
 
-    gettimeofday(&last_active_scan_timestamp, NULL);
-    gettimeofday(&tv3, NULL);
+	gettimeofday(&last_active_scan_timestamp, NULL);
+	gettimeofday(&tv3, NULL);
 
-    while (!options->do_exit)
-    {
-        time_t current_time;
+	while (!options->do_exit)
+	{
+		time_t current_time;
 
-        if (options->interactive_mode > 0)
-        {
-            check_for_user_input(options);
-            do_quit_request_timeout_check(options);
-        }
+		if (options->interactive_mode > 0)
+		{
+			check_for_user_input(options);
+			do_quit_request_timeout_check(options);
+		}
 
-        check_for_signal_events(options);
+		check_for_signal_events(options);
 
-        if (options->do_exit)
-        {
-            /* This flag may have been set by a signal event or user
+		if (options->do_exit)
+		{
+			/* This flag may have been set by a signal event or user
              * input.
              */
-            continue;
-        }
+			continue;
+		}
 
-        check_for_channel_hopper_data(options);
+		check_for_channel_hopper_data(options);
 
-        current_time = time(NULL);
-        time_t const seconds_since_last_output_write = current_time - tt1;
-        bool const need_to_update_dump_outputs =
-            seconds_since_last_output_write >= options->file_write_interval;
+		current_time = time(NULL);
+		time_t const seconds_since_last_output_write = current_time - tt1;
+		bool const need_to_update_dump_outputs
+			= seconds_since_last_output_write >= options->file_write_interval;
 
-        if (need_to_update_dump_outputs)
-        {
-            /* update the output files */
-            tt1 = current_time;
-            update_dump_output_files(options);
-        }
+		if (need_to_update_dump_outputs)
+		{
+			/* update the output files */
+			tt1 = current_time;
+			update_dump_output_files(options);
+		}
 
-        current_time = time(NULL);
-        time_t const seconds_since_last_generic_update = current_time - tt2;
-        bool const generic_update_required =
-            seconds_since_last_generic_update > generic_update_interval_seconds;
+		current_time = time(NULL);
+		time_t const seconds_since_last_generic_update = current_time - tt2;
+		bool const generic_update_required = seconds_since_last_generic_update
+											 > generic_update_interval_seconds;
 
-        if (generic_update_required)
-        {
-            tt2 = current_time;
+		if (generic_update_required)
+		{
+			tt2 = current_time;
 
-            do_generic_update(options, current_time);
-        }
+			do_generic_update(options, current_time);
+		}
 
-        gettimeofday(&current_time_timestamp, NULL);
+		gettimeofday(&current_time_timestamp, NULL);
 
-        if (options->active_scan_sim > 0)
-        {
-            long const cycle_time2 =
-                1000000UL * (current_time_timestamp.tv_sec - last_active_scan_timestamp.tv_sec)
-                + (current_time_timestamp.tv_usec - last_active_scan_timestamp.tv_usec);
-            bool const probe_requests_required =
-                cycle_time2 > options->active_scan_sim * 1000;
+		if (options->active_scan_sim > 0)
+		{
+			long const cycle_time2 = 1000000UL
+										 * (current_time_timestamp.tv_sec
+											- last_active_scan_timestamp.tv_sec)
+									 + (current_time_timestamp.tv_usec
+										- last_active_scan_timestamp.tv_usec);
+			bool const probe_requests_required
+				= cycle_time2 > options->active_scan_sim * 1000;
 
-            if (probe_requests_required)
-            {
-                gettimeofday(&last_active_scan_timestamp, NULL);
+			if (probe_requests_required)
+			{
+				gettimeofday(&last_active_scan_timestamp, NULL);
 
-                do_probe_requests(options);
-            }
-        }
+				do_probe_requests(options);
+			}
+		}
 
-        long const cycle_time = 1000000UL * (current_time_timestamp.tv_sec - tv3.tv_sec)
-            + (current_time_timestamp.tv_usec - tv3.tv_usec);
+		long const cycle_time
+			= 1000000UL * (current_time_timestamp.tv_sec - tv3.tv_sec)
+			  + (current_time_timestamp.tv_usec - tv3.tv_usec);
 
-        if (cycle_time > half_second_interval_milliseconds * 1000)
-        {
-            gettimeofday(&tv3, NULL);
+		if (cycle_time > half_second_interval_milliseconds * 1000)
+		{
+			gettimeofday(&tv3, NULL);
 
-            do_half_second_refresh(options);
-        }
+			do_half_second_refresh(options);
+		}
 
-        if (options->pcap_reader_context != NULL)
-        {
-            /* Read one packet from a file. */
-            if (read_one_packet_from_file(options, h80211, sizeof h80211))
-            {
-                read_pkts++;
-                if (options->relative_time)
-                {
-                    pace_pcap_reader(&options->previous_timestamp,
-                                     &options->packet_timestamp,
-                                     read_pkts);
-                }
-            }
-        }
-        else if (options->s_iface != NULL)
-        {
-            /* Read a packet from each interface/card. */
-            int result =
-                capture_packet_from_cards(
-                options,
-                h80211,
-                sizeof h80211);
+		if (options->pcap_reader_context != NULL)
+		{
+			/* Read one packet from a file. */
+			if (read_one_packet_from_file(options, h80211, sizeof h80211))
+			{
+				read_pkts++;
+				if (options->relative_time)
+				{
+					pace_pcap_reader(&options->previous_timestamp,
+									 &options->packet_timestamp,
+									 read_pkts);
+				}
+			}
+		}
+		else if (options->s_iface != NULL)
+		{
+			/* Read a packet from each interface/card. */
+			int result
+				= capture_packet_from_cards(options, h80211, sizeof h80211);
 
-            if (result < 0)
-            {
-                had_error = true;
-                options->do_exit = true;
-                continue;
-            }
-        }
-        else
-        {
-            usleep(1);
-        }
+			if (result < 0)
+			{
+				had_error = true;
+				options->do_exit = true;
+				continue;
+			}
+		}
+		else
+		{
+			usleep(1);
+		}
 
-        if (options->do_exit)
-        {
-            options->do_exit = true;
-            continue;
-        }
+		if (options->do_exit)
+		{
+			options->do_exit = true;
+			continue;
+		}
 
-        struct timeval tv2;
+		struct timeval tv2;
 
-        gettimeofday(&tv2, NULL);
+		gettimeofday(&tv2, NULL);
 
-        time_slept += 1000000UL * (tv2.tv_sec - current_time_timestamp.tv_sec)
-            + (tv2.tv_usec - current_time_timestamp.tv_usec);
+		time_slept += 1000000UL * (tv2.tv_sec - current_time_timestamp.tv_sec)
+					  + (tv2.tv_usec - current_time_timestamp.tv_usec);
 
-        bool const refresh_required =
-            time_slept > REFRESH_RATE
-            && time_slept > options->update_interval_seconds * 1000000;
+		bool const refresh_required
+			= time_slept > REFRESH_RATE
+			  && time_slept > options->update_interval_seconds * 1000000;
 
-        if (refresh_required)
-        {
-            time_slept = 0;
-            do_refresh(options);
-        }
-    }
+		if (refresh_required)
+		{
+			time_slept = 0;
+			do_refresh(options);
+		}
+	}
 
-    return had_error;
+	return had_error;
 }
 
 int main(int argc, char * argv[])
 {
-    /* The user thread args must remain in scope as long as the
+	/* The user thread args must remain in scope as long as the
      * thread is running.
      */
-    struct input_thread_args_st input_thread_args;
-    int program_exit_code;
-    bool had_error = false;
-
-    char * output_format_string;
-
-    int found;
-    int freq[2];
-    size_t num_opts = 0;
-    int option = 0;
-    int option_index = 0;
-    int output_format_first_time = 1;
-
-    static const struct option long_options[]
-        =
-    {
-        {"ht20", 0, 0, '2'},
-        {"ht40-", 0, 0, '3'},
-        {"ht40+", 0, 0, '5'},
-        {"band", 1, 0, 'b'},
-        {"beacon", 0, 0, 'e'},
-        {"beacons", 0, 0, 'e'},
-        {"cswitch", 1, 0, 's'},
-        {"netmask", 1, 0, 'm'},
-        {"bssid", 1, 0, 'd'},
-        {"essid", 1, 0, 'N'},
-        {"essid-regex", 1, 0, 'R'},
-        {"channel", 1, 0, 'c'},
-        {"gpsd", 0, 0, 'g'},
-        {"ivs", 0, 0, 'i'},
-        {"write", 1, 0, 'w'},
-        {"encrypt", 1, 0, 't'},
-        {"update", 1, 0, 'u'},
-        {"berlin", 1, 0, 'B'},
-        {"help", 0, 0, 'H'},
-        {"no-decloak", 0, 0, 'D'},
-        {"showack", 0, 0, 'A'},
-        {"detect-anomaly", 0, 0, 'E'},
-        {"output-format", 1, 0, 'o'},
-        {"sys-name", 1, 0, 'X'},
-        {"loc-name", 1, 0, 'y'},
-        {"filter-seconds", 1, 0, 'F'},
-        {"max-age", 1, 0, 'v'},
-        {"file-reset-minutes", 1, 0, 'P'},
-        {"ignore-negative-one", 0, &lopt.ignore_negative_one, 1},
-        {"no-filename-index", 0, &lopt.filename.include_index, 0},
-        {"no-shared-key", 0, &lopt.check_shared_key, 0},
-        {"manufacturer", 0, 0, 'M' },
-        {"uptime", 0, 0, 'U'},
-        {"write-interval", 1, 0, 'I'},
-        {"wps", 0, 0, 'W'},
-        {"background", 1, 0, 'K'},
-        {"min-packets", 1, 0, 'n'},
-        {"real-time", 0, 0, 'T'},
-        {0, 0, 0, 0}
-    };
-
-    ac_crypto_init();
-
-    console_utf8_enable(); /* FIXME - only required in interactive mode? */
-
-    /* FIXME - only required in interactive mode? */
-    textstyle(TEXT_RESET); //(TEXT_RESET, TEXT_BLACK, TEXT_WHITE);
-
-    rand_init();
-
-    options_initialise(&lopt);
-
-    /* Check the arguments. */
-
-    for (num_opts = 0; long_options[num_opts].name != NULL; num_opts++)
-    {
-        ; /* Do nothing. */
-    }
-
-    for (size_t i = 0; i < (size_t)argc; i++) // go through all arguments
-    {
-        found = 0;
-        if (strlen(argv[i]) >= 3)
-        {
-            if (argv[i][0] == '-' && argv[i][1] != '-')
-            {
-                // we got a single dash followed by at least 2 chars
-                // lets check that against our long options to find errors
-                for (size_t j = 0; j < num_opts; j++)
-                {
-                    if (strcmp(argv[i] + 1, long_options[j].name) == 0)
-                    {
-                        // found long option after single dash
-                        found = 1;
-                        if (i > 1 && strcmp(argv[i - 1], "-") == 0)
-                        {
-                            // separated dashes?
-                            printf("Notice: You specified \"%s %s\". Did you "
-                                   "mean \"%s%s\" instead?\n",
-                                   argv[i - 1],
-                                   argv[i],
-                                   argv[i - 1],
-                                   argv[i]);
-                        }
-                        else
-                        {
-                            // forgot second dash?
-                            printf("Notice: You specified \"%s\". Did you mean "
-                                   "\"-%s\" instead?\n",
-                                   argv[i],
-                                   argv[i]);
-                        }
-                        break;
-                    }
-                }
-                if (found)
-                {
-                    sleep(3);
-                    break;
-                }
-            }
-        }
-    }
-
-    do
-    {
-        option_index = 0;
-
-        option
-            = getopt_long(argc,
-                          argv,
-                          "S:b:c:egiw:s:t:u:m:d:N:R:aHDB:Ahf:r:EC:o:x:MUI:WK:n:T:F:P:v:",
-                          long_options,
-                          &option_index);
-
-        if (option < 0)
-            break;
-
-        switch (option)
-        {
-            case 0:
-
-                break;
-
-            case ':':
-
-                printf("\"%s --help\" for help.\n", argv[0]);
-                program_exit_code = EXIT_FAILURE;
-                goto done;
-
-            case '?':
-
-                printf("\"%s --help\" for help.\n", argv[0]);
-                program_exit_code = EXIT_FAILURE;
-                goto done;
-
-            case 'K':
-            {
-                char * invalid_str = NULL;
-                long int const bg_mode = strtol(optarg, &invalid_str, 10);
-
-                if ((invalid_str && *invalid_str != 0)
-                    || !(bg_mode == 0 || bg_mode == 1))
-                {
-                    printf("Invalid background mode. Must be '0' or '1'\n");
-                    program_exit_code = EXIT_FAILURE;
-                    goto done;
-                }
-                lopt.interactive_mode = !bg_mode;
-                break;
-            }
-            case 'I':
-
-                if (!is_string_number(optarg))
-                {
-                    printf("Error: Write interval is not a number (>0). "
-                           "Aborting.\n");
-                    program_exit_code = EXIT_FAILURE;
-                    goto done;
-                }
-
-                lopt.file_write_interval = (int)strtol(optarg, NULL, 10);
-
-                if (lopt.file_write_interval <= 0)
-                {
-                    printf("Error: Write interval must be greater than 0. "
-                           "Aborting.\n");
-                    program_exit_code = EXIT_FAILURE;
-                    goto done;
-                }
-                break;
-
-            case 'T':
-                lopt.relative_time = true;
-                break;
-
-            case 'E':
-                lopt.detect_anomaly = 1;
-                break;
-
-            case 'e':
-
-                lopt.one_beacon = 0;
-                break;
-
-            case 'a':
-
-                lopt.asso_client = 1;
-                break;
-
-            case 'A':
-
-                lopt.show_ack = 1;
-                break;
-
-            case 'h':
-
-                lopt.hide_known = 1;
-                break;
-
-            case 'D':
-
-                lopt.decloak_detection = false;
-                break;
-
-            case 'M':
-
-                lopt.show_manufacturer = 1;
-                break;
-
-            case 'U':
-                lopt.show_uptime = 1;
-                break;
-
-            case 'W':
-
-                lopt.show_wps = 1;
-                break;
-
-            case 'c':
-
-                if (lopt.interface_data[0].current_channel > 0
-                    || lopt.chanoption == 1)
-                {
-                    if (lopt.chanoption == 1)
-                    {
-                        printf("Notice: Channel range already given\n");
-                    }
-                    else
-                    {
-                        printf("Notice: Channel already given (%d)\n",
-                               lopt.interface_data[0].current_channel);
-                    }
-                    break;
-                }
-
-                lopt.interface_data[0].current_channel =
-                    get_channels(&lopt.own_channels, optarg);
-
-                if (lopt.interface_data[0].current_channel < 0)
-                {
-                    airodump_usage();
-                    program_exit_code = EXIT_FAILURE;
-                    goto done;
-                }
-
-                lopt.chanoption = 1;
-
-                if (lopt.interface_data[0].current_channel == channel_sentinel)
-                {
-                    lopt.channels = lopt.own_channels;
-                }
-                else
-                {
-                    lopt.channels = bg_chans;
-                }
-                break;
-
-            case 'C':
-
-                if (lopt.interface_data[0].current_channel > 0
-                    || lopt.chanoption == 1)
-                {
-                    if (lopt.chanoption == 1)
-                    {
-                        printf("Notice: Channel range already given\n");
-                    }
-                    else
-                    {
-                        printf("Notice: Channel already given (%d)\n",
-                               lopt.interface_data[0].current_channel);
-                    }
-                    break;
-                }
-
-                if (lopt.freqoption == 1)
-                {
-                    printf("Notice: Frequency range already given\n");
-                    break;
-                }
-
-                lopt.freqstring = optarg;
-                lopt.freqoption = 1;
-
-                break;
-
-            case 'b':
-
-                if (lopt.chanoption == 1)
-                {
-                    printf("Notice: Channel range already given\n");
-                    break;
-                }
-                freq[0] = freq[1] = 0;
-
-                for (size_t i = 0; i < strlen(optarg); i++)
-                {
-                    if (optarg[i] == 'a')
-                    {
-                        freq[1] = 1;
-                    }
-                    else if (optarg[i] == 'b' || optarg[i] == 'g')
-                    {
-                        freq[0] = 1;
-                    }
-                    else
-                    {
-                        printf("Error: invalid band (%c)\n", optarg[i]);
-                        printf("\"%s --help\" for help.\n", argv[0]);
-
-                        program_exit_code = EXIT_FAILURE;
-                        goto done;
-                    }
-                }
-
-                if (freq[1] + freq[0] == 2)
-                {
-                    lopt.channels = abg_chans;
-                }
-                else if (freq[1] == 1)
-                {
-                    lopt.channels = a_chans;
-                }
-                else
-                {
-                    lopt.channels = bg_chans;
-                }
-
-                break;
-
-            case 'i':
-
-                // Reset output format if it's the first time the option is
-                // specified
-                if (output_format_first_time)
-                {
-                    output_format_first_time = 0;
-
-                    lopt.pcap_output.required = false;
-                    lopt.log_csv.required = false;
-
-                    dump_contexts_initialise(&lopt, false);
-                }
-
-                if (lopt.pcap_output.required)
-                {
-                    airodump_usage();
-                    fprintf(stderr,
-                            "Invalid output format: IVS and PCAP "
-                            "format cannot be used together.\n");
-
-                    program_exit_code = EXIT_FAILURE;
-                    goto done;
-                }
-
-                lopt.ivs.required = true;
-                break;
-
-            case 'g':
-
-                lopt.gpsd.required = true;
-                break;
-
-            case 'w':
-
-                if (lopt.dump_prefix != NULL)
-                {
-                    printf("Notice: dump prefix already given\n");
-                    break;
-                }
-                /* Write prefix */
-                lopt.dump_prefix = optarg;
-                lopt.record_data = 1;
-                break;
-
-            case 'r':
-
-                if (lopt.s_file != NULL)
-                {
-                    printf("Packet source already specified.\n");
-                    printf("\"%s --help\" for help.\n", argv[0]);
-                    program_exit_code = EXIT_FAILURE;
-                    goto done;
-                }
-                lopt.s_file = optarg;
-                break;
-
-            case 's':
-
-                if (strtol(optarg, NULL, 10) >= channel_switching_method_COUNT
-                    || errno == EINVAL)
-                {
-                    airodump_usage();
-                    program_exit_code = EXIT_FAILURE;
-                    goto done;
-                }
-                if (lopt.channel_switching_method != channel_switching_method_fifo)
-                {
-                    printf("Notice: switching method already given\n");
-                    break;
-                }
-                lopt.channel_switching_method = (int)strtol(optarg, NULL, 10);
-                break;
-
-            case 'u':
-
-                lopt.update_interval_seconds = (int)strtol(optarg, NULL, 10);
-
-                /* If failed to parse or value < 0, use default, 100ms */
-                if (lopt.update_interval_seconds < 0)
-                {
-                    lopt.update_interval_seconds = 0;
-                }
-
-                break;
-
-            case 'f':
-
-                lopt.frequency_hop_millisecs = (int)strtol(optarg, NULL, 10);
-
-                /* If failed to parse or value <= 0, use default, 100ms */
-                if (lopt.frequency_hop_millisecs <= 0)
-                {
-                    lopt.frequency_hop_millisecs = DEFAULT_HOPFREQ;
-                }
-
-                break;
-
-            case 'B':
-
-                lopt.is_berlin = 1;
-                lopt.berlin = (int)strtol(optarg, NULL, 10);
-                if (lopt.berlin <= 0)
-                {
-                    lopt.berlin = 120;
-                }
-
-                break;
-
-            case 'm':
-
-                if (!MAC_ADDRESS_IS_EMPTY(&lopt.f_netmask))
-                {
-                    printf("Notice: netmask already given\n");
-                    break;
-                }
-                if (getmac(optarg, 1, (uint8_t *)&lopt.f_netmask) != 0)
-                {
-                    printf("Notice: invalid netmask\n");
-                    printf("\"%s --help\" for help.\n", argv[0]);
-                    program_exit_code = EXIT_FAILURE;
-                    goto done;
-                }
-                break;
-
-            case 'd':
-
-                if (!MAC_ADDRESS_IS_EMPTY(&lopt.f_bssid))
-                {
-                    printf("Notice: bssid already given\n");
-                    break;
-                }
-                if (getmac(optarg, 1, (uint8_t *)&lopt.f_bssid) != 0)
-                {
-                    printf("Notice: invalid bssid\n");
-                    printf("\"%s --help\" for help.\n", argv[0]);
-
-                    program_exit_code = EXIT_FAILURE;
-                    goto done;
-                }
-                break;
-
-            case 'N':
-                essid_filter_context_add_essid(&lopt.essid_filter, optarg);
-                break;
-
-            case 'R':
+	struct input_thread_args_st input_thread_args;
+	int program_exit_code;
+	bool had_error = false;
+
+	char * output_format_string;
+
+	int found;
+	int freq[2];
+	size_t num_opts = 0;
+	int option = 0;
+	int option_index = 0;
+	int output_format_first_time = 1;
+
+	static const struct option long_options[]
+		= {{"ht20", 0, 0, '2'},
+		   {"ht40-", 0, 0, '3'},
+		   {"ht40+", 0, 0, '5'},
+		   {"band", 1, 0, 'b'},
+		   {"beacon", 0, 0, 'e'},
+		   {"beacons", 0, 0, 'e'},
+		   {"cswitch", 1, 0, 's'},
+		   {"netmask", 1, 0, 'm'},
+		   {"bssid", 1, 0, 'd'},
+		   {"essid", 1, 0, 'N'},
+		   {"essid-regex", 1, 0, 'R'},
+		   {"channel", 1, 0, 'c'},
+		   {"gpsd", 0, 0, 'g'},
+		   {"ivs", 0, 0, 'i'},
+		   {"write", 1, 0, 'w'},
+		   {"encrypt", 1, 0, 't'},
+		   {"update", 1, 0, 'u'},
+		   {"berlin", 1, 0, 'B'},
+		   {"help", 0, 0, 'H'},
+		   {"no-decloak", 0, 0, 'D'},
+		   {"showack", 0, 0, 'A'},
+		   {"detect-anomaly", 0, 0, 'E'},
+		   {"output-format", 1, 0, 'o'},
+		   {"sys-name", 1, 0, 'X'},
+		   {"loc-name", 1, 0, 'y'},
+		   {"filter-seconds", 1, 0, 'F'},
+		   {"max-age", 1, 0, 'v'},
+		   {"file-reset-minutes", 1, 0, 'P'},
+		   {"ignore-negative-one", 0, &lopt.ignore_negative_one, 1},
+		   {"no-filename-index", 0, &lopt.filename.include_index, 0},
+		   {"no-shared-key", 0, &lopt.check_shared_key, 0},
+		   {"manufacturer", 0, 0, 'M'},
+		   {"uptime", 0, 0, 'U'},
+		   {"write-interval", 1, 0, 'I'},
+		   {"wps", 0, 0, 'W'},
+		   {"background", 1, 0, 'K'},
+		   {"min-packets", 1, 0, 'n'},
+		   {"real-time", 0, 0, 'T'},
+		   {0, 0, 0, 0}};
+
+	ac_crypto_init();
+
+	console_utf8_enable(); /* FIXME - only required in interactive mode? */
+
+	/* FIXME - only required in interactive mode? */
+	textstyle(TEXT_RESET); //(TEXT_RESET, TEXT_BLACK, TEXT_WHITE);
+
+	rand_init();
+
+	options_initialise(&lopt);
+
+	/* Check the arguments. */
+
+	for (num_opts = 0; long_options[num_opts].name != NULL; num_opts++)
+	{
+		; /* Do nothing. */
+	}
+
+	for (size_t i = 0; i < (size_t) argc; i++) // go through all arguments
+	{
+		found = 0;
+		if (strlen(argv[i]) >= 3)
+		{
+			if (argv[i][0] == '-' && argv[i][1] != '-')
+			{
+				// we got a single dash followed by at least 2 chars
+				// lets check that against our long options to find errors
+				for (size_t j = 0; j < num_opts; j++)
+				{
+					if (strcmp(argv[i] + 1, long_options[j].name) == 0)
+					{
+						// found long option after single dash
+						found = 1;
+						if (i > 1 && strcmp(argv[i - 1], "-") == 0)
+						{
+							// separated dashes?
+							printf("Notice: You specified \"%s %s\". Did you "
+								   "mean \"%s%s\" instead?\n",
+								   argv[i - 1],
+								   argv[i],
+								   argv[i - 1],
+								   argv[i]);
+						}
+						else
+						{
+							// forgot second dash?
+							printf("Notice: You specified \"%s\". Did you mean "
+								   "\"-%s\" instead?\n",
+								   argv[i],
+								   argv[i]);
+						}
+						break;
+					}
+				}
+				if (found)
+				{
+					sleep(3);
+					break;
+				}
+			}
+		}
+	}
+
+	do
+	{
+		option_index = 0;
+
+		option = getopt_long(
+			argc,
+			argv,
+			"S:b:c:egiw:s:t:u:m:d:N:R:aHDB:Ahf:r:EC:o:x:MUI:WK:n:T:F:P:v:",
+			long_options,
+			&option_index);
+
+		if (option < 0) break;
+
+		switch (option)
+		{
+			case 0:
+
+				break;
+
+			case ':':
+
+				printf("\"%s --help\" for help.\n", argv[0]);
+				program_exit_code = EXIT_FAILURE;
+				goto done;
+
+			case '?':
+
+				printf("\"%s --help\" for help.\n", argv[0]);
+				program_exit_code = EXIT_FAILURE;
+				goto done;
+
+			case 'K':
+			{
+				char * invalid_str = NULL;
+				long int const bg_mode = strtol(optarg, &invalid_str, 10);
+
+				if ((invalid_str && *invalid_str != 0)
+					|| !(bg_mode == 0 || bg_mode == 1))
+				{
+					printf("Invalid background mode. Must be '0' or '1'\n");
+					program_exit_code = EXIT_FAILURE;
+					goto done;
+				}
+				lopt.interactive_mode = !bg_mode;
+				break;
+			}
+			case 'I':
+
+				if (!is_string_number(optarg))
+				{
+					printf("Error: Write interval is not a number (>0). "
+						   "Aborting.\n");
+					program_exit_code = EXIT_FAILURE;
+					goto done;
+				}
+
+				lopt.file_write_interval = (int) strtol(optarg, NULL, 10);
+
+				if (lopt.file_write_interval <= 0)
+				{
+					printf("Error: Write interval must be greater than 0. "
+						   "Aborting.\n");
+					program_exit_code = EXIT_FAILURE;
+					goto done;
+				}
+				break;
+
+			case 'T':
+				lopt.relative_time = true;
+				break;
+
+			case 'E':
+				lopt.detect_anomaly = 1;
+				break;
+
+			case 'e':
+
+				lopt.one_beacon = 0;
+				break;
+
+			case 'a':
+
+				lopt.asso_client = 1;
+				break;
+
+			case 'A':
+
+				lopt.show_ack = 1;
+				break;
+
+			case 'h':
+
+				lopt.hide_known = 1;
+				break;
+
+			case 'D':
+
+				lopt.decloak_detection = false;
+				break;
+
+			case 'M':
+
+				lopt.show_manufacturer = 1;
+				break;
+
+			case 'U':
+				lopt.show_uptime = 1;
+				break;
+
+			case 'W':
+
+				lopt.show_wps = 1;
+				break;
+
+			case 'c':
+
+				if (lopt.interface_data[0].current_channel > 0
+					|| lopt.chanoption == 1)
+				{
+					if (lopt.chanoption == 1)
+					{
+						printf("Notice: Channel range already given\n");
+					}
+					else
+					{
+						printf("Notice: Channel already given (%d)\n",
+							   lopt.interface_data[0].current_channel);
+					}
+					break;
+				}
+
+				lopt.interface_data[0].current_channel
+					= get_channels(&lopt.own_channels, optarg);
+
+				if (lopt.interface_data[0].current_channel < 0)
+				{
+					airodump_usage();
+					program_exit_code = EXIT_FAILURE;
+					goto done;
+				}
+
+				lopt.chanoption = 1;
+
+				if (lopt.interface_data[0].current_channel == channel_sentinel)
+				{
+					lopt.channels = lopt.own_channels;
+				}
+				else
+				{
+					lopt.channels = bg_chans;
+				}
+				break;
+
+			case 'C':
+
+				if (lopt.interface_data[0].current_channel > 0
+					|| lopt.chanoption == 1)
+				{
+					if (lopt.chanoption == 1)
+					{
+						printf("Notice: Channel range already given\n");
+					}
+					else
+					{
+						printf("Notice: Channel already given (%d)\n",
+							   lopt.interface_data[0].current_channel);
+					}
+					break;
+				}
+
+				if (lopt.freqoption == 1)
+				{
+					printf("Notice: Frequency range already given\n");
+					break;
+				}
+
+				lopt.freqstring = optarg;
+				lopt.freqoption = 1;
+
+				break;
+
+			case 'b':
+
+				if (lopt.chanoption == 1)
+				{
+					printf("Notice: Channel range already given\n");
+					break;
+				}
+				freq[0] = freq[1] = 0;
+
+				for (size_t i = 0; i < strlen(optarg); i++)
+				{
+					if (optarg[i] == 'a')
+					{
+						freq[1] = 1;
+					}
+					else if (optarg[i] == 'b' || optarg[i] == 'g')
+					{
+						freq[0] = 1;
+					}
+					else
+					{
+						printf("Error: invalid band (%c)\n", optarg[i]);
+						printf("\"%s --help\" for help.\n", argv[0]);
+
+						program_exit_code = EXIT_FAILURE;
+						goto done;
+					}
+				}
+
+				if (freq[1] + freq[0] == 2)
+				{
+					lopt.channels = abg_chans;
+				}
+				else if (freq[1] == 1)
+				{
+					lopt.channels = a_chans;
+				}
+				else
+				{
+					lopt.channels = bg_chans;
+				}
+
+				break;
+
+			case 'i':
+
+				// Reset output format if it's the first time the option is
+				// specified
+				if (output_format_first_time)
+				{
+					output_format_first_time = 0;
+
+					lopt.pcap_output.required = false;
+					lopt.log_csv.required = false;
+
+					dump_contexts_initialise(&lopt, false);
+				}
+
+				if (lopt.pcap_output.required)
+				{
+					airodump_usage();
+					fprintf(stderr,
+							"Invalid output format: IVS and PCAP "
+							"format cannot be used together.\n");
+
+					program_exit_code = EXIT_FAILURE;
+					goto done;
+				}
+
+				lopt.ivs.required = true;
+				break;
+
+			case 'g':
+
+				lopt.gpsd.required = true;
+				break;
+
+			case 'w':
+
+				if (lopt.dump_prefix != NULL)
+				{
+					printf("Notice: dump prefix already given\n");
+					break;
+				}
+				/* Write prefix */
+				lopt.dump_prefix = optarg;
+				lopt.record_data = 1;
+				break;
+
+			case 'r':
+
+				if (lopt.s_file != NULL)
+				{
+					printf("Packet source already specified.\n");
+					printf("\"%s --help\" for help.\n", argv[0]);
+					program_exit_code = EXIT_FAILURE;
+					goto done;
+				}
+				lopt.s_file = optarg;
+				break;
+
+			case 's':
+
+				if (strtol(optarg, NULL, 10) >= channel_switching_method_COUNT
+					|| errno == EINVAL)
+				{
+					airodump_usage();
+					program_exit_code = EXIT_FAILURE;
+					goto done;
+				}
+				if (lopt.channel_switching_method
+					!= channel_switching_method_fifo)
+				{
+					printf("Notice: switching method already given\n");
+					break;
+				}
+				lopt.channel_switching_method = (int) strtol(optarg, NULL, 10);
+				break;
+
+			case 'u':
+
+				lopt.update_interval_seconds = (int) strtol(optarg, NULL, 10);
+
+				/* If failed to parse or value < 0, use default, 100ms */
+				if (lopt.update_interval_seconds < 0)
+				{
+					lopt.update_interval_seconds = 0;
+				}
+
+				break;
+
+			case 'f':
+
+				lopt.frequency_hop_millisecs = (int) strtol(optarg, NULL, 10);
+
+				/* If failed to parse or value <= 0, use default, 100ms */
+				if (lopt.frequency_hop_millisecs <= 0)
+				{
+					lopt.frequency_hop_millisecs = DEFAULT_HOPFREQ;
+				}
+
+				break;
+
+			case 'B':
+
+				lopt.is_berlin = 1;
+				lopt.berlin = (int) strtol(optarg, NULL, 10);
+				if (lopt.berlin <= 0)
+				{
+					lopt.berlin = 120;
+				}
+
+				break;
+
+			case 'm':
+
+				if (!MAC_ADDRESS_IS_EMPTY(&lopt.f_netmask))
+				{
+					printf("Notice: netmask already given\n");
+					break;
+				}
+				if (getmac(optarg, 1, (uint8_t *) &lopt.f_netmask) != 0)
+				{
+					printf("Notice: invalid netmask\n");
+					printf("\"%s --help\" for help.\n", argv[0]);
+					program_exit_code = EXIT_FAILURE;
+					goto done;
+				}
+				break;
+
+			case 'd':
+
+				if (!MAC_ADDRESS_IS_EMPTY(&lopt.f_bssid))
+				{
+					printf("Notice: bssid already given\n");
+					break;
+				}
+				if (getmac(optarg, 1, (uint8_t *) &lopt.f_bssid) != 0)
+				{
+					printf("Notice: invalid bssid\n");
+					printf("\"%s --help\" for help.\n", argv[0]);
+
+					program_exit_code = EXIT_FAILURE;
+					goto done;
+				}
+				break;
+
+			case 'N':
+				essid_filter_context_add_essid(&lopt.essid_filter, optarg);
+				break;
+
+			case 'R':
 
 #ifdef HAVE_PCRE
-            {
-                char const * pcreerror;
-                int pcreerroffset;
+			{
+				char const * pcreerror;
+				int pcreerroffset;
 
-                int const added =
-                    essid_filter_context_add_regex(
-                    &lopt.essid_filter,
-                    optarg,
-                    &pcreerror,
-                    &pcreerroffset);
+				int const added = essid_filter_context_add_regex(
+					&lopt.essid_filter, optarg, &pcreerror, &pcreerroffset);
 
-                if (added < 0)
-                {
-                    printf("Error: ESSID regular expression already given. "
-                           "Aborting\n");
+				if (added < 0)
+				{
+					printf("Error: ESSID regular expression already given. "
+						   "Aborting\n");
 
-                    program_exit_code = EXIT_FAILURE;
-                    goto done;
-                }
-                else if (added == 0)
-                {
-                    printf("Error: regular expression compilation failed at "
-                           "offset %d: %s; aborting\n",
-                           pcreerroffset,
-                           pcreerror);
+					program_exit_code = EXIT_FAILURE;
+					goto done;
+				}
+				else if (added == 0)
+				{
+					printf("Error: regular expression compilation failed at "
+						   "offset %d: %s; aborting\n",
+						   pcreerroffset,
+						   pcreerror);
 
-                    program_exit_code = EXIT_FAILURE;
-                    goto done;
-                }
-            }
+					program_exit_code = EXIT_FAILURE;
+					goto done;
+				}
+			}
 #else
-                printf("Error: Airodump-ng wasn't compiled with pcre support; "
-                       "aborting\n");
-                program_exit_code = EXIT_FAILURE;
-                goto done;
+				printf("Error: Airodump-ng wasn't compiled with pcre support; "
+					   "aborting\n");
+				program_exit_code = EXIT_FAILURE;
+				goto done;
 #endif
 
-                break;
+			break;
 
-            case 't':
+			case 't':
 
-                lopt.encryption_filter = set_encryption_filter(optarg);
-                break;
+				lopt.encryption_filter = set_encryption_filter(optarg);
+				break;
 
-            case 'n':
+			case 'n':
 
-                lopt.min_pkts = strtoul(optarg, NULL, 10);
-                break;
+				lopt.min_pkts = strtoul(optarg, NULL, 10);
+				break;
 
-            case 'v':
-                lopt.max_node_age_seconds = strtoul(optarg, NULL, 10) * ONE_MIN;
-                break;
+			case 'v':
+				lopt.max_node_age_seconds = strtoul(optarg, NULL, 10) * ONE_MIN;
+				break;
 
-            case 'o':
+			case 'o':
 
-                // Reset output format if it's the first time the option is
-                // specified
-                if (output_format_first_time)
-                {
-                    output_format_first_time = 0;
+				// Reset output format if it's the first time the option is
+				// specified
+				if (output_format_first_time)
+				{
+					output_format_first_time = 0;
 
-                    lopt.pcap_output.required = false;
-                    lopt.log_csv.required = false;
+					lopt.pcap_output.required = false;
+					lopt.log_csv.required = false;
 
-                    dump_contexts_initialise(&lopt, false);
-                }
+					dump_contexts_initialise(&lopt, false);
+				}
 
-                // Parse the value
-                output_format_string = strtok(optarg, ",");
-                while (output_format_string != NULL)
-                {
-                    if (strlen(output_format_string) > 0)
-                    {
-                        if (strncasecmp(output_format_string, "csv", 3) == 0
-                            || strncasecmp(output_format_string, "txt", 3) == 0)
-                        {
-                            lopt.dump[dump_type_csv].needed = true;
-                        }
-                        else if (strncasecmp(output_format_string, "pcap", 4)
-                                 == 0
-                                 || strncasecmp(output_format_string, "cap", 3)
-                                 == 0)
-                        {
-                            if (lopt.ivs.required)
-                            {
-                                airodump_usage();
-                                fprintf(stderr,
-                                        "Invalid output format: IVS "
-                                        "and PCAP format cannot be "
-                                        "used together.\n");
-                                program_exit_code = EXIT_FAILURE;
-                                goto done;
-                            }
-                            lopt.pcap_output.required = true;
-                        }
-                        else if (strncasecmp(output_format_string, "ivs", 3)
-                                 == 0)
-                        {
-                            if (lopt.pcap_output.required)
-                            {
-                                airodump_usage();
-                                fprintf(stderr,
-                                        "Invalid output format: IVS "
-                                        "and PCAP format cannot be "
-                                        "used together.\n");
-                                program_exit_code = EXIT_FAILURE;
-                                goto done;
-                            }
-                            lopt.ivs.required = true;
-                        }
-                        else if (strncasecmp(output_format_string, "kismet", 6)
-                                 == 0)
-                        {
-                            lopt.dump[dump_type_kismet_csv].needed = true;
-                        }
-                        else if (strncasecmp(output_format_string, "gps", 3)
-                                 == 0)
-                        {
-                            lopt.gpsd.required = true;
-                        }
-                        else if (strncasecmp(output_format_string, "netxml", 6)
-                                 == 0
-                                 || strncasecmp(
-                                output_format_string, "newcore", 7)
-                                 == 0
-                                 || strncasecmp(
-                                output_format_string, "kismet-nc", 9)
-                                 == 0
-                                 || strncasecmp(
-                                output_format_string, "kismet_nc", 9)
-                                 == 0
-                                 || strncasecmp(output_format_string,
-                                                "kismet-newcore",
-                                                14)
-                                 == 0
-                                 || strncasecmp(output_format_string,
-                                                "kismet_newcore",
-                                                14)
-                                 == 0)
-                        {
-                            lopt.dump[dump_type_kismet_netxml].needed = true;
-                        }
-                        else if (strncasecmp(output_format_string, "logcsv", 6)
-                                 == 0)
-                        {
-                            lopt.log_csv.required = true;
-                        }
-                        else if (strncasecmp(output_format_string, "default", 7)
-                                 == 0)
-                        {
-                            lopt.pcap_output.required = true;
-                            lopt.log_csv.required = true;
+				// Parse the value
+				output_format_string = strtok(optarg, ",");
+				while (output_format_string != NULL)
+				{
+					if (strlen(output_format_string) > 0)
+					{
+						if (strncasecmp(output_format_string, "csv", 3) == 0
+							|| strncasecmp(output_format_string, "txt", 3) == 0)
+						{
+							lopt.dump[dump_type_csv].needed = true;
+						}
+						else if (strncasecmp(output_format_string, "pcap", 4)
+									 == 0
+								 || strncasecmp(output_format_string, "cap", 3)
+										== 0)
+						{
+							if (lopt.ivs.required)
+							{
+								airodump_usage();
+								fprintf(stderr,
+										"Invalid output format: IVS "
+										"and PCAP format cannot be "
+										"used together.\n");
+								program_exit_code = EXIT_FAILURE;
+								goto done;
+							}
+							lopt.pcap_output.required = true;
+						}
+						else if (strncasecmp(output_format_string, "ivs", 3)
+								 == 0)
+						{
+							if (lopt.pcap_output.required)
+							{
+								airodump_usage();
+								fprintf(stderr,
+										"Invalid output format: IVS "
+										"and PCAP format cannot be "
+										"used together.\n");
+								program_exit_code = EXIT_FAILURE;
+								goto done;
+							}
+							lopt.ivs.required = true;
+						}
+						else if (strncasecmp(output_format_string, "kismet", 6)
+								 == 0)
+						{
+							lopt.dump[dump_type_kismet_csv].needed = true;
+						}
+						else if (strncasecmp(output_format_string, "gps", 3)
+								 == 0)
+						{
+							lopt.gpsd.required = true;
+						}
+						else if (strncasecmp(output_format_string, "netxml", 6)
+									 == 0
+								 || strncasecmp(
+										output_format_string, "newcore", 7)
+										== 0
+								 || strncasecmp(
+										output_format_string, "kismet-nc", 9)
+										== 0
+								 || strncasecmp(
+										output_format_string, "kismet_nc", 9)
+										== 0
+								 || strncasecmp(output_format_string,
+												"kismet-newcore",
+												14)
+										== 0
+								 || strncasecmp(output_format_string,
+												"kismet_newcore",
+												14)
+										== 0)
+						{
+							lopt.dump[dump_type_kismet_netxml].needed = true;
+						}
+						else if (strncasecmp(output_format_string, "logcsv", 6)
+								 == 0)
+						{
+							lopt.log_csv.required = true;
+						}
+						else if (strncasecmp(output_format_string, "default", 7)
+								 == 0)
+						{
+							lopt.pcap_output.required = true;
+							lopt.log_csv.required = true;
 
-                            dump_contexts_initialise(&lopt, true);
-                        }
-                        else if (strncasecmp(output_format_string, "none", 4)
-                                 == 0)
-                        {
-                            lopt.pcap_output.required = false;
-                            lopt.log_csv.required = false;
-                            lopt.gpsd.required = false;
-                            lopt.ivs.required = false;
+							dump_contexts_initialise(&lopt, true);
+						}
+						else if (strncasecmp(output_format_string, "none", 4)
+								 == 0)
+						{
+							lopt.pcap_output.required = false;
+							lopt.log_csv.required = false;
+							lopt.gpsd.required = false;
+							lopt.ivs.required = false;
 
-                            dump_contexts_initialise(&lopt, false);
-                        }
-                        else
-                        {
-                            // Display an error if it does not match any value
-                            fprintf(stderr,
-                                    "Invalid output format: <%s>\n",
-                                    output_format_string);
-                            program_exit_code = EXIT_FAILURE;
-                            goto done;
-                        }
-                    }
-                    output_format_string = strtok(NULL, ",");
-                }
+							dump_contexts_initialise(&lopt, false);
+						}
+						else
+						{
+							// Display an error if it does not match any value
+							fprintf(stderr,
+									"Invalid output format: <%s>\n",
+									output_format_string);
+							program_exit_code = EXIT_FAILURE;
+							goto done;
+						}
+					}
+					output_format_string = strtok(NULL, ",");
+				}
 
-                break;
+				break;
 
-            case 'H':
-                airodump_usage();
-                program_exit_code = EXIT_FAILURE;
-                goto done;
+			case 'H':
+				airodump_usage();
+				program_exit_code = EXIT_FAILURE;
+				goto done;
 
-            case 'x':
+			case 'x':
 
-                lopt.active_scan_sim = (int)strtol(optarg, NULL, 10);
+				lopt.active_scan_sim = (int) strtol(optarg, NULL, 10);
 
-                if (lopt.active_scan_sim < 0)
-                {
-                    lopt.active_scan_sim = 0;
-                }
-                break;
+				if (lopt.active_scan_sim < 0)
+				{
+					lopt.active_scan_sim = 0;
+				}
+				break;
 
-            case '2':
+			case '2':
 #ifndef CONFIG_LIBNL
-                printf("HT Channel unsupported\n");
+				printf("HT Channel unsupported\n");
 
-                program_exit_code = EXIT_FAILURE;
-                goto done;
+				program_exit_code = EXIT_FAILURE;
+				goto done;
 #else
-                lopt.htval = CHANNEL_HT20;
+				lopt.htval = CHANNEL_HT20;
 #endif
-                break;
-            case '3':
+				break;
+			case '3':
 #ifndef CONFIG_LIBNL
-                printf("HT Channel unsupported\n");
+				printf("HT Channel unsupported\n");
 
-                program_exit_code = EXIT_FAILURE;
-                goto done;
+				program_exit_code = EXIT_FAILURE;
+				goto done;
 #else
-                lopt.htval = CHANNEL_HT40_MINUS;
+				lopt.htval = CHANNEL_HT40_MINUS;
 #endif
-                break;
-            case '5':
+				break;
+			case '5':
 #ifndef CONFIG_LIBNL
-                printf("HT Channel unsupported\n");
+				printf("HT Channel unsupported\n");
 
-                program_exit_code = EXIT_FAILURE;
-                goto done;
+				program_exit_code = EXIT_FAILURE;
+				goto done;
 #else
-                lopt.htval = CHANNEL_HT40_PLUS;
+				lopt.htval = CHANNEL_HT40_PLUS;
 #endif
-                break;
+				break;
 
-            default:
-                airodump_usage();
-                program_exit_code = EXIT_FAILURE;
-                goto done;
-        }
-    }
-    while (1);
+			default:
+				airodump_usage();
+				program_exit_code = EXIT_FAILURE;
+				goto done;
+		}
+	} while (1);
 
-    if ((argc - optind) != 1 && lopt.s_file == NULL)
-    {
-        if (argc == 1)
-        {
-            airodump_usage();
-        }
-        if (argc - optind == 0)
-        {
-            printf("No interface specified.\n");
-        }
-        if (argc > 1)
-        {
-            printf("\"%s --help\" for help.\n", argv[0]);
-        }
+	if ((argc - optind) != 1 && lopt.s_file == NULL)
+	{
+		if (argc == 1)
+		{
+			airodump_usage();
+		}
+		if (argc - optind == 0)
+		{
+			printf("No interface specified.\n");
+		}
+		if (argc > 1)
+		{
+			printf("\"%s --help\" for help.\n", argv[0]);
+		}
 
-        program_exit_code = EXIT_FAILURE;
-        goto done;
-    }
+		program_exit_code = EXIT_FAILURE;
+		goto done;
+	}
 
-    if ((argc - optind) == 1)
-    {
-        lopt.s_iface = argv[argc - 1];
-    }
+	if ((argc - optind) == 1)
+	{
+		lopt.s_iface = argv[argc - 1];
+	}
 
-    if (!MAC_ADDRESS_IS_EMPTY(&lopt.f_netmask)
-        && MAC_ADDRESS_IS_EMPTY(&lopt.f_bssid))
-    {
-        printf("Notice: specify bssid \"--bssid\" with \"--netmask\"\n");
-        printf("\"%s --help\" for help.\n", argv[0]);
-        program_exit_code = EXIT_FAILURE;
-        goto done;
-    }
+	if (!MAC_ADDRESS_IS_EMPTY(&lopt.f_netmask)
+		&& MAC_ADDRESS_IS_EMPTY(&lopt.f_bssid))
+	{
+		printf("Notice: specify bssid \"--bssid\" with \"--netmask\"\n");
+		printf("\"%s --help\" for help.\n", argv[0]);
+		program_exit_code = EXIT_FAILURE;
+		goto done;
+	}
 
-    if (lopt.show_wps && lopt.show_manufacturer)
-    {
-        lopt.maxsize_essid_seen += lopt.maxsize_wps_seen;
-    }
+	if (lopt.show_wps && lopt.show_manufacturer)
+	{
+		lopt.maxsize_essid_seen += lopt.maxsize_wps_seen;
+	}
 
-    if (lopt.s_iface != NULL)
-    {
-        lopt.num_cards = initialise_cards(lopt.s_iface, lopt.wi);
+	if (lopt.s_iface != NULL)
+	{
+		lopt.num_cards = initialise_cards(lopt.s_iface, lopt.wi);
 
-        if (lopt.num_cards <= 0 || lopt.num_cards >= MAX_CARDS)
-        {
-            printf("Failed initializing wireless card(s): %s\n", lopt.s_iface);
-            program_exit_code = EXIT_FAILURE;
-            goto done;
-        }
+		if (lopt.num_cards <= 0 || lopt.num_cards >= MAX_CARDS)
+		{
+			printf("Failed initializing wireless card(s): %s\n", lopt.s_iface);
+			program_exit_code = EXIT_FAILURE;
+			goto done;
+		}
 
-        if (lopt.freqoption && lopt.freqstring != NULL) // use frequencies
-        {
-            struct detected_frequencies_st detected_frequencies;
+		if (lopt.freqoption && lopt.freqstring != NULL) // use frequencies
+		{
+			struct detected_frequencies_st detected_frequencies;
 
-            detect_frequencies(lopt.wi[0], &detected_frequencies);
+			detect_frequencies(lopt.wi[0], &detected_frequencies);
 
-            lopt.interface_data[0].current_frequency =
-                getfrequencies(&lopt.own_frequencies,
-                               &detected_frequencies,
-                               lopt.freqstring);
+			lopt.interface_data[0].current_frequency = getfrequencies(
+				&lopt.own_frequencies, &detected_frequencies, lopt.freqstring);
 
-            detected_frequencies_cleanup(&detected_frequencies);
+			detected_frequencies_cleanup(&detected_frequencies);
 
-            if (lopt.interface_data[0].current_frequency == invalid_frequency)
-            {
-                printf("No valid frequency given.\n");
-                program_exit_code = EXIT_FAILURE;
-                goto done;
-            }
+			if (lopt.interface_data[0].current_frequency == invalid_frequency)
+			{
+				printf("No valid frequency given.\n");
+				program_exit_code = EXIT_FAILURE;
+				goto done;
+			}
 
-            rearrange_frequencies(lopt.own_frequencies);
+			rearrange_frequencies(lopt.own_frequencies);
 
-            if (lopt.interface_data[0].current_frequency == frequency_sentinel)
-            {
-                /* Start a child process to hop between frequencies. */
-                size_t const freq_count =
-                    get_frequency_count(lopt.own_frequencies, false);
+			if (lopt.interface_data[0].current_frequency == frequency_sentinel)
+			{
+				/* Start a child process to hop between frequencies. */
+				size_t const freq_count
+					= get_frequency_count(lopt.own_frequencies, false);
 
-                start_frequency_hopper_process(&lopt, lopt.wi, freq_count);
-            }
-            else
-            {
-                for (size_t i = 0; i < lopt.num_cards; i++)
-                {
-                    if (i > 0)
-                    {
-                        lopt.interface_data[i].current_frequency =
-                            lopt.interface_data[0].current_frequency;
-                    }
+				start_frequency_hopper_process(&lopt, lopt.wi, freq_count);
+			}
+			else
+			{
+				for (size_t i = 0; i < lopt.num_cards; i++)
+				{
+					if (i > 0)
+					{
+						lopt.interface_data[i].current_frequency
+							= lopt.interface_data[0].current_frequency;
+					}
 
-                    wi_set_freq(lopt.wi[i], lopt.interface_data[i].current_frequency);
-                }
-                lopt.singlefreq = 1;
-            }
-        }
-        else // use channels
-        {
-            if (lopt.interface_data[0].current_channel == channel_sentinel)
-            {
-                /* Start a child process to hop between channels. */
-                size_t const chan_count =
-                    get_channel_count(lopt.channels, false);
+					wi_set_freq(lopt.wi[i],
+								lopt.interface_data[i].current_frequency);
+				}
+				lopt.singlefreq = 1;
+			}
+		}
+		else // use channels
+		{
+			if (lopt.interface_data[0].current_channel == channel_sentinel)
+			{
+				/* Start a child process to hop between channels. */
+				size_t const chan_count
+					= get_channel_count(lopt.channels, false);
 
-                start_channel_hopper_process(&lopt, lopt.wi, chan_count);
-            }
-            else
-            {
-                for (size_t i = 0; i < lopt.num_cards; i++)
-                {
-                    if (i > 0)
-                    {
-                        lopt.interface_data[i].current_channel =
-                            lopt.interface_data[0].current_channel;
-                    }
+				start_channel_hopper_process(&lopt, lopt.wi, chan_count);
+			}
+			else
+			{
+				for (size_t i = 0; i < lopt.num_cards; i++)
+				{
+					if (i > 0)
+					{
+						lopt.interface_data[i].current_channel
+							= lopt.interface_data[0].current_channel;
+					}
 #ifdef CONFIG_LIBNL
-                    wi_set_ht_channel(lopt.wi[i],
-                                      lopt.interface_data[i].current_channel,
-                                      lopt.htval);
+					wi_set_ht_channel(lopt.wi[i],
+									  lopt.interface_data[i].current_channel,
+									  lopt.htval);
 #else
-                    wi_set_channel(lopt.wi[i],
-                                   lopt.interface_data[i].current_channel);
+					wi_set_channel(lopt.wi[i],
+								   lopt.interface_data[i].current_channel);
 #endif
-                }
-                lopt.singlechan = 1;
-            }
-        }
-    }
+				}
+				lopt.singlechan = 1;
+			}
+		}
+	}
 
-    drop_privileges();
+	drop_privileges();
 
-    /* Check if an input file was specified. */
+	/* Check if an input file was specified. */
 	if (lopt.s_file != NULL)
 	{
 		lopt.pcap_reader_context = pcap_reader_open(lopt.s_file);
@@ -7669,81 +7599,81 @@ int main(int argc, char * argv[])
 		}
 	}
 
-    lopt.start_time = time(NULL);
+	lopt.start_time = time(NULL);
 	/* Create start time string for kismet netxml file */
-    lopt.airodump_start_time = time_as_string(lopt.start_time);
+	lopt.airodump_start_time = time_as_string(lopt.start_time);
 
 	/* open or create the output files */
-    if (lopt.record_data)
-    {
-        if (!open_output_files(&lopt))
+	if (lopt.record_data)
+	{
+		if (!open_output_files(&lopt))
 		{
 			program_exit_code = EXIT_FAILURE;
 			goto done;
 		}
-    }
-
-    signal_event_initialise(lopt.signal_event_pipe, lopt.interactive_mode);
-
-    /* Start the GPS tracker if requested. */
-    if (lopt.gpsd.required)
-	{
-        if (!gps_tracker_start(&lopt.gps_context, lopt.gpsd.fp, &lopt.do_exit))
-		{
-			program_exit_code = EXIT_FAILURE;
-			goto done;
-		}
-    }
-
-    lopt.elapsed_time = strdup("0 s");
-    ALLEGE(lopt.elapsed_time != NULL);
-
-    if (lopt.interactive_mode == -1)
-	{
-        lopt.interactive_mode = !is_background();
 	}
 
-    if (lopt.interactive_mode > 0)
-    {
-        if (lopt.show_manufacturer)
-        {
-            lopt.manufacturer_list = load_oui_file();
-        }
-        terminal_prepare();
-        lopt.sort.sort_required = true;
+	signal_event_initialise(lopt.signal_event_pipe, lopt.interactive_mode);
 
-        int const pipe_result = pipe(lopt.input_thread_pipe);
-        IGNORE_NZ(pipe_result);
+	/* Start the GPS tracker if requested. */
+	if (lopt.gpsd.required)
+	{
+		if (!gps_tracker_start(&lopt.gps_context, lopt.gpsd.fp, &lopt.do_exit))
+		{
+			program_exit_code = EXIT_FAILURE;
+			goto done;
+		}
+	}
 
-        /* Only start the user input thread if running in interactive
+	lopt.elapsed_time = strdup("0 s");
+	ALLEGE(lopt.elapsed_time != NULL);
+
+	if (lopt.interactive_mode == -1)
+	{
+		lopt.interactive_mode = !is_background();
+	}
+
+	if (lopt.interactive_mode > 0)
+	{
+		if (lopt.show_manufacturer)
+		{
+			lopt.manufacturer_list = load_oui_file();
+		}
+		terminal_prepare();
+		lopt.sort.sort_required = true;
+
+		int const pipe_result = pipe(lopt.input_thread_pipe);
+		IGNORE_NZ(pipe_result);
+
+		/* Only start the user input thread if running in interactive
          * mode.
          */
-        input_thread_args.do_exit = &lopt.do_exit;
-        input_thread_args.update_fd = lopt.input_thread_pipe[1];
+		input_thread_args.do_exit = &lopt.do_exit;
+		input_thread_args.update_fd = lopt.input_thread_pipe[1];
 
-        if (pthread_create(&lopt.input_tid,
-                           NULL,
-                           (void *)input_thread,
-                           &input_thread_args) != 0)
-        {
-            perror("Could not create input thread");
-            program_exit_code = EXIT_FAILURE;
-            goto done;
-        }
-    }
+		if (pthread_create(&lopt.input_tid,
+						   NULL,
+						   (void *) input_thread,
+						   &input_thread_args)
+			!= 0)
+		{
+			perror("Could not create input thread");
+			program_exit_code = EXIT_FAILURE;
+			goto done;
+		}
+	}
 
-    had_error = main_loop_run(&lopt);
+	had_error = main_loop_run(&lopt);
 
 	airodump_shutdown(&lopt);
 
 	program_exit_code = had_error ? EXIT_FAILURE : EXIT_SUCCESS;
 
 done:
-    if (lopt.interactive_mode > 0)
-    {
-        terminal_restore();
-    }
+	if (lopt.interactive_mode > 0)
+	{
+		terminal_restore();
+	}
 
 	return program_exit_code;
 }
-

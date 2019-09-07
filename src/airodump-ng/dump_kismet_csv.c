@@ -14,341 +14,323 @@
 	"GPSMinAlt;GPSMinSpd;GPSMaxLat;GPSMaxLon;GPSMaxAlt;GPSMaxSpd;GPSBestLat;"  \
 	"GPSBestLon;GPSBestAlt;DataSize;IPType;IP;\n"
 
-static void kismet_dump_write_csv(
-    FILE * const fp,
-    struct ap_list_head * ap_list,
-    struct sta_list_head * const sta_list,
-    unsigned int f_encrypt,
-    struct essid_filter_context_st const * const essid_filter)
+static void
+kismet_dump_write_csv(FILE * const fp,
+					  struct ap_list_head * ap_list,
+					  struct sta_list_head * const sta_list,
+					  unsigned int f_encrypt,
+					  struct essid_filter_context_st const * const essid_filter)
 {
-    UNUSED_PARAM(sta_list);
-    int k;
+	UNUSED_PARAM(sta_list);
+	int k;
 
-    if (fp == NULL)
-    {
-        goto done;
-    }
+	if (fp == NULL)
+	{
+		goto done;
+	}
 
-    if (fseek(fp, 0, SEEK_SET) == -1)
-    {
-        goto done;
-    }
+	if (fseek(fp, 0, SEEK_SET) == -1)
+	{
+		goto done;
+	}
 
-    fprintf(fp, KISMET_HEADER);
+	fprintf(fp, KISMET_HEADER);
 
-    k = 1;
+	k = 1;
 
-    struct AP_info * ap_cur;
+	struct AP_info * ap_cur;
 
-    TAILQ_FOREACH(ap_cur, ap_list, entry)
-    {
-        unsigned long const min_packets = 2;
-        bool const check_broadcast = true;
-        int const max_age_seconds = -1; /* no limit. */
+	TAILQ_FOREACH(ap_cur, ap_list, entry)
+	{
+		unsigned long const min_packets = 2;
+		bool const check_broadcast = true;
+		int const max_age_seconds = -1; /* no limit. */
 
-        if (!ap_should_be_logged(ap_cur,
-                                 max_age_seconds,
-                                 f_encrypt,
-                                 essid_filter,
-                                 check_broadcast,
-                                 min_packets))
-        {
-            continue;
-        }
+		if (!ap_should_be_logged(ap_cur,
+								 max_age_seconds,
+								 f_encrypt,
+								 essid_filter,
+								 check_broadcast,
+								 min_packets))
+		{
+			continue;
+		}
 
-        // Network
-        fprintf(fp, "%d;", k);
+		// Network
+		fprintf(fp, "%d;", k);
 
-        // NetType
-        fprintf(fp, "infrastructure;");
+		// NetType
+		fprintf(fp, "infrastructure;");
 
-        // ESSID
-        for (size_t i = 0; i < ap_cur->ssid_length; i++)
-        {
-            fprintf(fp, "%c", ap_cur->essid[i]);
-        }
-        fprintf(fp, ";");
+		// ESSID
+		for (size_t i = 0; i < ap_cur->ssid_length; i++)
+		{
+			fprintf(fp, "%c", ap_cur->essid[i]);
+		}
+		fprintf(fp, ";");
 
-        // BSSID
-        fprintf_mac_address(fp, &ap_cur->bssid);
-        fprintf(fp, ";");
+		// BSSID
+		fprintf_mac_address(fp, &ap_cur->bssid);
+		fprintf(fp, ";");
 
-        // Info
-        fprintf(fp, ";");
+		// Info
+		fprintf(fp, ";");
 
-        // Channel
-        fprintf(fp, "%d;", ap_cur->channel);
+		// Channel
+		fprintf(fp, "%d;", ap_cur->channel);
 
-        // Cloaked
-        fprintf(fp, "No;");
+		// Cloaked
+		fprintf(fp, "No;");
 
-        // Encryption
-        if ((ap_cur->security & (STD_OPN | STD_WEP | STD_WPA | STD_WPA2)) != 0)
-        {
-            if (ap_cur->security & STD_WPA2)
-            {
-                if (ap_cur->security & AUTH_SAE || ap_cur->security & AUTH_OWE)
-                {
-                    fprintf(fp, "WPA3,");
-                }
-                else
-                {
-                    fprintf(fp, "WPA2,");
-                }
-            }
-            if (ap_cur->security & STD_WPA)
-                fprintf(fp, "WPA,");
-            if (ap_cur->security & STD_WEP)
-                fprintf(fp, "WEP,");
-            if (ap_cur->security & STD_OPN)
-                fprintf(fp, "OPN,");
-        }
+		// Encryption
+		if ((ap_cur->security & (STD_OPN | STD_WEP | STD_WPA | STD_WPA2)) != 0)
+		{
+			if (ap_cur->security & STD_WPA2)
+			{
+				if (ap_cur->security & AUTH_SAE || ap_cur->security & AUTH_OWE)
+				{
+					fprintf(fp, "WPA3,");
+				}
+				else
+				{
+					fprintf(fp, "WPA2,");
+				}
+			}
+			if (ap_cur->security & STD_WPA) fprintf(fp, "WPA,");
+			if (ap_cur->security & STD_WEP) fprintf(fp, "WEP,");
+			if (ap_cur->security & STD_OPN) fprintf(fp, "OPN,");
+		}
 
-        if ((ap_cur->security & ENC_FIELD) == 0)
-        {
-            fprintf(fp, "None,");
-        }
-        else
-        {
-            if (ap_cur->security & ENC_CCMP)
-                fprintf(fp, "AES-CCM,");
-            if (ap_cur->security & ENC_WRAP)
-                fprintf(fp, "WRAP,");
-            if (ap_cur->security & ENC_TKIP)
-                fprintf(fp, "TKIP,");
-            if (ap_cur->security & ENC_WEP104)
-                fprintf(fp, "WEP104,");
-            if (ap_cur->security & ENC_WEP40)
-                fprintf(fp, "WEP40,");
-            if (ap_cur->security & ENC_GCMP)
-                fprintf(fp, "GCMP,");
-            if (ap_cur->security & ENC_GMAC)
-                fprintf(fp, "GMAC,");
-            if (ap_cur->security & AUTH_SAE)
-                fprintf(fp, "SAE,");
-            if (ap_cur->security & AUTH_OWE)
-                fprintf(fp, "OWE,");
-        }
+		if ((ap_cur->security & ENC_FIELD) == 0)
+		{
+			fprintf(fp, "None,");
+		}
+		else
+		{
+			if (ap_cur->security & ENC_CCMP) fprintf(fp, "AES-CCM,");
+			if (ap_cur->security & ENC_WRAP) fprintf(fp, "WRAP,");
+			if (ap_cur->security & ENC_TKIP) fprintf(fp, "TKIP,");
+			if (ap_cur->security & ENC_WEP104) fprintf(fp, "WEP104,");
+			if (ap_cur->security & ENC_WEP40) fprintf(fp, "WEP40,");
+			if (ap_cur->security & ENC_GCMP) fprintf(fp, "GCMP,");
+			if (ap_cur->security & ENC_GMAC) fprintf(fp, "GMAC,");
+			if (ap_cur->security & AUTH_SAE) fprintf(fp, "SAE,");
+			if (ap_cur->security & AUTH_OWE) fprintf(fp, "OWE,");
+		}
 
-        fseek(fp, -1, SEEK_CUR);
-        fprintf(fp, ";");
+		fseek(fp, -1, SEEK_CUR);
+		fprintf(fp, ";");
 
-        // Decrypted
-        fprintf(fp, "No;");
+		// Decrypted
+		fprintf(fp, "No;");
 
-        // MaxRate
-        fprintf(fp, "%d.0;", ap_cur->max_speed);
+		// MaxRate
+		fprintf(fp, "%d.0;", ap_cur->max_speed);
 
-        // MaxSeenRate
-        fprintf(fp, "0;");
+		// MaxSeenRate
+		fprintf(fp, "0;");
 
-        // Beacon
-        fprintf(fp, "%lu;", ap_cur->nb_bcn);
+		// Beacon
+		fprintf(fp, "%lu;", ap_cur->nb_bcn);
 
-        // LLC
-        fprintf(fp, "0;");
+		// LLC
+		fprintf(fp, "0;");
 
-        // Data
-        fprintf(fp, "%lu;", ap_cur->nb_data);
+		// Data
+		fprintf(fp, "%lu;", ap_cur->nb_data);
 
-        // Crypt
-        fprintf(fp, "0;");
+		// Crypt
+		fprintf(fp, "0;");
 
-        // Weak
-        fprintf(fp, "0;");
+		// Weak
+		fprintf(fp, "0;");
 
-        // Total
-        fprintf(fp, "%lu;", ap_cur->nb_data);
+		// Total
+		fprintf(fp, "%lu;", ap_cur->nb_data);
 
-        // Carrier
-        fprintf(fp, ";");
+		// Carrier
+		fprintf(fp, ";");
 
-        // Encoding
-        fprintf(fp, ";");
+		// Encoding
+		fprintf(fp, ";");
 
-        // FirstTime
-        fprintf(fp, "%s", ctime(&ap_cur->tinit));
-        fseek(fp, -1, SEEK_CUR);
-        fprintf(fp, ";");
+		// FirstTime
+		fprintf(fp, "%s", ctime(&ap_cur->tinit));
+		fseek(fp, -1, SEEK_CUR);
+		fprintf(fp, ";");
 
-        // LastTime
-        fprintf(fp, "%s", ctime(&ap_cur->tlast));
-        fseek(fp, -1, SEEK_CUR);
-        fprintf(fp, ";");
+		// LastTime
+		fprintf(fp, "%s", ctime(&ap_cur->tlast));
+		fseek(fp, -1, SEEK_CUR);
+		fprintf(fp, ";");
 
-        // BestQuality
-        fprintf(fp, "%d;", ap_cur->avg_power);
+		// BestQuality
+		fprintf(fp, "%d;", ap_cur->avg_power);
 
-        // BestSignal
-        fprintf(fp, "0;");
+		// BestSignal
+		fprintf(fp, "0;");
 
-        // BestNoise
-        fprintf(fp, "0;");
+		// BestNoise
+		fprintf(fp, "0;");
 
-        // GPSMinLat
-        fprintf(fp, "%.6f;", ap_cur->gps_loc_min[0]);
+		// GPSMinLat
+		fprintf(fp, "%.6f;", ap_cur->gps_loc_min[0]);
 
-        // GPSMinLon
-        fprintf(fp, "%.6f;", ap_cur->gps_loc_min[1]);
+		// GPSMinLon
+		fprintf(fp, "%.6f;", ap_cur->gps_loc_min[1]);
 
-        // GPSMinAlt
-        fprintf(fp, "%.6f;", ap_cur->gps_loc_min[2]);
+		// GPSMinAlt
+		fprintf(fp, "%.6f;", ap_cur->gps_loc_min[2]);
 
-        // GPSMinSpd
-        fprintf(fp, "%.6f;", ap_cur->gps_loc_min[3]);
+		// GPSMinSpd
+		fprintf(fp, "%.6f;", ap_cur->gps_loc_min[3]);
 
-        // GPSMaxLat
-        fprintf(fp, "%.6f;", ap_cur->gps_loc_max[0]);
+		// GPSMaxLat
+		fprintf(fp, "%.6f;", ap_cur->gps_loc_max[0]);
 
-        // GPSMaxLon
-        fprintf(fp, "%.6f;", ap_cur->gps_loc_max[1]);
+		// GPSMaxLon
+		fprintf(fp, "%.6f;", ap_cur->gps_loc_max[1]);
 
-        // GPSMaxAlt
-        fprintf(fp, "%.6f;", ap_cur->gps_loc_max[2]);
+		// GPSMaxAlt
+		fprintf(fp, "%.6f;", ap_cur->gps_loc_max[2]);
 
-        // GPSMaxSpd
-        fprintf(fp, "%.6f;", ap_cur->gps_loc_max[3]);
+		// GPSMaxSpd
+		fprintf(fp, "%.6f;", ap_cur->gps_loc_max[3]);
 
-        // GPSBestLat
-        fprintf(fp, "%.6f;", ap_cur->gps_loc_best[0]);
+		// GPSBestLat
+		fprintf(fp, "%.6f;", ap_cur->gps_loc_best[0]);
 
-        // GPSBestLon
-        fprintf(fp, "%.6f;", ap_cur->gps_loc_best[1]);
+		// GPSBestLon
+		fprintf(fp, "%.6f;", ap_cur->gps_loc_best[1]);
 
-        // GPSBestAlt
-        fprintf(fp, "%.6f;", ap_cur->gps_loc_best[2]);
+		// GPSBestAlt
+		fprintf(fp, "%.6f;", ap_cur->gps_loc_best[2]);
 
-        // DataSize
-        fprintf(fp, "0;");
+		// DataSize
+		fprintf(fp, "0;");
 
-        // IPType
-        fprintf(fp, "0;");
+		// IPType
+		fprintf(fp, "0;");
 
-        // IP
-        fprintf(fp,
-                "%d.%d.%d.%d;",
-                ap_cur->lanip[0],
-                ap_cur->lanip[1],
-                ap_cur->lanip[2],
-                ap_cur->lanip[3]);
+		// IP
+		fprintf(fp,
+				"%d.%d.%d.%d;",
+				ap_cur->lanip[0],
+				ap_cur->lanip[1],
+				ap_cur->lanip[2],
+				ap_cur->lanip[3]);
 
-        fprintf(fp, "\r\n");
+		fprintf(fp, "\r\n");
 
-        k++;
-    }
+		k++;
+	}
 
-    fflush(fp);
+	fflush(fp);
 
 done:
-    return;
+	return;
 }
 
 struct kismet_csv_dump_context_st
 {
-    FILE * fp;
+	FILE * fp;
 };
 
-static void kismet_csv_context_free(
-    struct kismet_csv_dump_context_st * const context)
+static void
+kismet_csv_context_free(struct kismet_csv_dump_context_st * const context)
 {
-    free(context);
+	free(context);
 }
 
-static void kismet_csv_dump(
-    void * const priv,
-    struct ap_list_head * const ap_list,
-    struct sta_list_head * const sta_list,
-    unsigned int const f_encrypt,
-    struct essid_filter_context_st const * const essid_filter)
+static void
+kismet_csv_dump(void * const priv,
+				struct ap_list_head * const ap_list,
+				struct sta_list_head * const sta_list,
+				unsigned int const f_encrypt,
+				struct essid_filter_context_st const * const essid_filter)
 {
-    struct kismet_csv_dump_context_st * const context = priv;
+	struct kismet_csv_dump_context_st * const context = priv;
 
-    kismet_dump_write_csv(context->fp,
-                          ap_list,
-                          sta_list,
-                          f_encrypt,
-                          essid_filter);
+	kismet_dump_write_csv(
+		context->fp, ap_list, sta_list, f_encrypt, essid_filter);
 }
 
-static void kismet_csv_dump_close(
-    struct kismet_csv_dump_context_st * const context)
+static void
+kismet_csv_dump_close(struct kismet_csv_dump_context_st * const context)
 {
-    if (context == NULL)
-    {
-        goto done;
-    }
+	if (context == NULL)
+	{
+		goto done;
+	}
 
-    if (context->fp != NULL)
-    {
-        fclose(context->fp);
-    }
+	if (context->fp != NULL)
+	{
+		fclose(context->fp);
+	}
 
-    kismet_csv_context_free(context);
+	kismet_csv_context_free(context);
 
 done:
-    return;
+	return;
 }
 
 static void kismet_csv_close(void * const priv)
 {
-    struct kismet_csv_dump_context_st * const context = priv;
+	struct kismet_csv_dump_context_st * const context = priv;
 
-    kismet_csv_dump_close(context);
+	kismet_csv_dump_close(context);
 }
 
-struct kismet_csv_dump_context_st * kismet_csv_dump_context_open(
-    char const * const filename)
+struct kismet_csv_dump_context_st *
+kismet_csv_dump_context_open(char const * const filename)
 {
-    bool had_error;
-    struct kismet_csv_dump_context_st * context =
-        calloc(1, sizeof *context);
+	bool had_error;
+	struct kismet_csv_dump_context_st * context = calloc(1, sizeof *context);
 
-    if (context == NULL)
-    {
-        had_error = true;
-        goto done;
-    }
+	if (context == NULL)
+	{
+		had_error = true;
+		goto done;
+	}
 
-    context->fp = fopen(filename, "wb+");
-    if (context->fp == NULL)
-    {
-        had_error = true;
-        goto done;
-    }
+	context->fp = fopen(filename, "wb+");
+	if (context->fp == NULL)
+	{
+		had_error = true;
+		goto done;
+	}
 
-    had_error = false;
+	had_error = false;
 
 done:
-    if (had_error)
-    {
-        kismet_csv_dump_close(context);
-        context = NULL;
-    }
+	if (had_error)
+	{
+		kismet_csv_dump_close(context);
+		context = NULL;
+	}
 
-    return context;
+	return context;
 }
 
-bool kismet_csv_dump_open(
-    struct dump_context_st * const dump,
-    char const * const filename)
+bool kismet_csv_dump_open(struct dump_context_st * const dump,
+						  char const * const filename)
 {
-    bool success;
-    struct kismet_csv_dump_context_st * const context =
-        kismet_csv_dump_context_open(filename);
+	bool success;
+	struct kismet_csv_dump_context_st * const context
+		= kismet_csv_dump_context_open(filename);
 
-    if (context == NULL)
-    {
-        success = false;
-        goto done;
-    }
+	if (context == NULL)
+	{
+		success = false;
+		goto done;
+	}
 
-    dump->priv = context;
-    dump->dump = kismet_csv_dump;
-    dump->close = kismet_csv_close;
+	dump->priv = context;
+	dump->dump = kismet_csv_dump;
+	dump->close = kismet_csv_close;
 
-    success = true;
+	success = true;
 
 done:
-    return success;
+	return success;
 }
-

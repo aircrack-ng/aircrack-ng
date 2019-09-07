@@ -6,14 +6,14 @@
 
 struct dump_context_st
 {
-    void * priv;
-    void (*dump)(void * const priv,
-                 struct ap_list_head * const ap_list,
-                 struct sta_list_head * const sta_list,
-                 unsigned int const f_encryptessid_filter,
-                 struct essid_filter_context_st const * const essid_filter);
-    void (*close)(void * const priv);
-}; 
+	void * priv;
+	void (*dump)(void * const priv,
+				 struct ap_list_head * const ap_list,
+				 struct sta_list_head * const sta_list,
+				 unsigned int const f_encryptessid_filter,
+				 struct essid_filter_context_st const * const essid_filter);
+	void (*close)(void * const priv);
+};
 
 char * format_text_for_csv(uint8_t const * const input, size_t const len);
 

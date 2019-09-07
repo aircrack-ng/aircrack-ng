@@ -5,8 +5,6 @@
 
 #include <stdbool.h>
 
-bool csv_dump_open(
-    dump_context_st * const dump,
-    char const * const filename);
+bool csv_dump_open(dump_context_st * const dump, char const * const filename);
 
 #endif /* __DUMP_CSV_H__ */

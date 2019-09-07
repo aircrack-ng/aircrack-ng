@@ -6,4 +6,3 @@
  */
 
 struct communication_options opt;
-

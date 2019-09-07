@@ -8,80 +8,76 @@
 
 #include <stdlib.h>
 
-void packet_writer_write(
-    struct packet_writer_context_st * const context,	
-    uint8_t const * const packet,
-    size_t const packet_length,
-    int32_t const ri_power)
+void packet_writer_write(struct packet_writer_context_st * const context,
+						 uint8_t const * const packet,
+						 size_t const packet_length,
+						 int32_t const ri_power)
 {
-    if (context == NULL)
-    {
-        goto done;
-    }
+	if (context == NULL)
+	{
+		goto done;
+	}
 
-    context->write(context->priv, packet, packet_length, ri_power);
+	context->write(context->priv, packet, packet_length, ri_power);
 
 done:
-    return;
+	return;
 }
 
-void packet_writer_close(
-    struct packet_writer_context_st * const context)
+void packet_writer_close(struct packet_writer_context_st * const context)
 {
-    if (context == NULL)
-    {
-        goto done;
-    }
+	if (context == NULL)
+	{
+		goto done;
+	}
 
-    if (context->close != NULL)
-    {
-        context->close(context->priv);
-    }
+	if (context->close != NULL)
+	{
+		context->close(context->priv);
+	}
 
-    free(context);
+	free(context);
 
 done:
-    return; 
+	return;
 }
 
-struct packet_writer_context_st * packet_writer_open(
-    packet_writer_type_t const  packet_writer_type,
-    char const * const filename)
+struct packet_writer_context_st *
+packet_writer_open(packet_writer_type_t const packet_writer_type,
+				   char const * const filename)
 {
-    bool success;
-    struct packet_writer_context_st * context = calloc(1, sizeof *context);
+	bool success;
+	struct packet_writer_context_st * context = calloc(1, sizeof *context);
 
-    if (context == NULL)
-    {
-        success = false;
-        goto done;
-    }
+	if (context == NULL)
+	{
+		success = false;
+		goto done;
+	}
 
-    switch (packet_writer_type)
-    {
-        case packet_writer_type_pcap:
-            if (!pcap_packet_writer_open(context, filename))
-            {
-                success = false;
-                goto done;
-            }
-            break;
+	switch (packet_writer_type)
+	{
+		case packet_writer_type_pcap:
+			if (!pcap_packet_writer_open(context, filename))
+			{
+				success = false;
+				goto done;
+			}
+			break;
 
-        default:
-            success = false;
-            goto done;
-    }
+		default:
+			success = false;
+			goto done;
+	}
 
-    success = true; 
+	success = true;
 
 done:
-    if (!success)
-    {
-        packet_writer_close(context);
-        context = NULL;
-    }
+	if (!success)
+	{
+		packet_writer_close(context);
+		context = NULL;
+	}
 
-    return context;
+	return context;
 }
-
-
