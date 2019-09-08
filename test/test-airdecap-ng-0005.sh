@@ -5,7 +5,7 @@ TMP_DEC=$(mktemp -u)
 TMP_MD5=$(mktemp -u)
 
 if type "md5" > /dev/null 2>/dev/null ; then
-	MD5_BIN="md5"
+	MD5_BIN="md5 -q"
 fi
 
 "${abs_builddir}/../airdecap-ng${EXEEXT}" \
@@ -20,15 +20,15 @@ fi
 		cut -b 1-32 > ${TMP_MD5}
 
 if [ "$(cat ${TMP_MD5})" != '45a93bc091a3929a7d63f86ddbb81401' ]; then
-	rm ${TMP_MD5} ${TMP_DEC}
+	#rm ${TMP_MD5} ${TMP_DEC}
 	echo "Unexpected airdecap-ng output"
+	echo "Decrypted file: ${TMP_DEC}"
 	exit 1
 fi
 
 rm ${TMP_MD5}
 if [ "$(${MD5_BIN} ${TMP_DEC} | cut -b 1-32)" != '340b5bc23bec76e88f6a2df0cd2eeb33' ]; then
-	echo "Unexpected decrypted file"
-	rm ${TMP_DEC}
+	echo "Unexpected decrypted file: ${TMP_DEC}"
 	exit 1
 fi
 
