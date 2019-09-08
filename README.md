@@ -51,7 +51,7 @@ All tools are command line which allows for heavy scripting. A lot of GUIs have 
  * If you want to use Airpcap, the 'developer' directory from the CD/ISO/SDK is required.
  * In order to build `besside-ng`, `besside-ng-crawler`, `easside-ng`, `tkiptun-ng` and `wesside-ng`,
    libpcap development package is required (on Cygwin, use the Aircap SDK instead; see above)
- * For best performance on FreeBSD (50-70% more), install gcc5 (or better) via: pkg install gcc8
+ * For best performance on FreeBSD (50-70% more), install gcc5 (or better) via: pkg install gcc9
  * rfkill
  * For best performance on SMP machines, ensure the hwloc library and headers are installed. It is strongly recommended on high core count systems, it may give a serious speed boost
  * CMocka for unit testing
@@ -92,7 +92,7 @@ Below are instructions for installing the basic requirements to build
 
 #### FreeBSD
 
-    pkg install pkgconf shtool libtool gcc8 automake autoconf pcre sqlite3 openssl gmake hwloc cmocka
+    pkg install pkgconf shtool libtool gcc9 automake autoconf pcre sqlite3 openssl gmake hwloc cmocka
 
 #### DragonflyBSD
 
@@ -293,10 +293,10 @@ to your choosing:
     make check
     ```
 
-  * Compiling on FreeBSD with gcc8
+  * Compiling on FreeBSD with gcc9
 
     ```
-    env CC=gcc8 CXX=g++8 MAKE=gmake ./configure
+    env CC=gcc9 CXX=g++9 MAKE=gmake ./configure
     gmake
     ```
 
