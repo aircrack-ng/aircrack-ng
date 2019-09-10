@@ -162,6 +162,7 @@ EXTRA_DIST += %D%/test-hex_string_to_array.sh \
               %D%/pingreply.c \
               %D%/Chinese-SSID-Name.pcap \
               %D%/passphrases.db \
+              %D%/capture_wds-01.cap \
 			  %D%/test-airdecap-ng.sh \
 			  %D%/test-airolib-sqlite.sh \
 			  %D%/MOM1.cap \
