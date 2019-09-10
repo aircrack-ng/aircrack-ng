@@ -2,6 +2,7 @@
 #include "channel_hopper.h"
 
 #include <signal.h>
+#include <unistd.h>
 
 void channel_hopper(int const data_write_fd,
 					struct wif ** const wi,
