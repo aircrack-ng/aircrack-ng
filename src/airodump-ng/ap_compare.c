@@ -162,7 +162,7 @@ ap_sort_method_assign(ap_sort_type_t const sort_method_in)
 	ap_sort_info_st const * sort_info;
 	ap_sort_type_t sort_method = sort_method_in;
 
-	if (sort_method < 0 || sort_method >= SORT_MAX)
+	if (sort_method >= SORT_MAX)
 	{
 		sort_method = SORT_FIRST;
 	}
