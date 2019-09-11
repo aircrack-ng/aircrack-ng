@@ -77,6 +77,7 @@ nobase_aircrack_HEADERS = 	%D%/aircrack-ng/adt/avl_tree.h \
                             %D%/aircrack-ng/support/crypto_engine_loader.h \
                             %D%/aircrack-ng/support/fragments.h \
                             %D%/aircrack-ng/support/mcs_index_rates.h \
+                            %D%/aircrack-ng/support/ht_transition.h \
                             %D%/aircrack-ng/support/pcap_local.h \
                             %D%/aircrack-ng/support/station.h \
                             %D%/aircrack-ng/third-party/ieee80211.h \

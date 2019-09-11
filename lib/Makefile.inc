@@ -56,6 +56,7 @@ SRC_LIBAC		= %D%/libac/adt/avl_tree.c \
 							%D%/libac/support/communications.c \
 							%D%/libac/support/crypto_engine_loader.c \
 							%D%/libac/support/mcs_index_rates.c \
+							%D%/libac/support/ht_transition.c \
 							%D%/libac/tui/console.c \
 							%D%/libac/utf8/verifyssid.c
 SRC_RADIOTAP = %D%/radiotap/radiotap.c
