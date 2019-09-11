@@ -226,7 +226,7 @@ get_80211(struct priv_obsd * po, int * plen, struct rx_info * ri)
 	return ptr;
 }
 
-static int obsd_get_channel(struct wif * wi)
+static int obsd_get_channel(struct wif * wi, struct osdep_channel * oc)
 {
 	struct priv_obsd * po = wi_priv(wi);
 	struct ieee80211chanreq channel;
@@ -236,19 +236,24 @@ static int obsd_get_channel(struct wif * wi)
 
 	if (ioctl(po->po_s, SIOCG80211CHANNEL, (caddr_t) &channel) < 0) return -1;
 
+	if (oc) {
+		oc->channel = channel.i_channel;
+		oc->band = getBandFromChannel(oc->channel);
+	}
+
 	return channel.i_channel;
 }
 
-static int obsd_set_channel(struct wif * wi, int chan)
+static int obsd_set_channel(struct wif * wi, struct osdep_channel * oc)
 {
 	struct priv_obsd * po = wi_priv(wi);
 	struct ieee80211chanreq channel;
 
 	memset(&channel, 0, sizeof(channel));
 	strlcpy(channel.i_name, wi_get_ifname(wi), sizeof(channel.i_name));
-	channel.i_channel = chan;
+	channel.i_channel = oc->channel;
 	if (ioctl(po->po_s, SIOCS80211CHANNEL, (caddr_t) &channel) < 0) return -1;
-	po->po_chan = chan;
+	po->po_chan = oc->channel;
 
 	return 0;
 }

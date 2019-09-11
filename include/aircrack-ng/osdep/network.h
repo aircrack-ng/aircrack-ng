@@ -25,9 +25,10 @@ enum
 	NET_GET_MONITOR,
 	NET_GET_RATE,
 	NET_SET_RATE,
+	NET_CHAN, /* osdep_channel */
 };
 
-#define HIGHEST_NET_COMMAND NET_SET_RATE
+#define HIGHEST_NET_COMMAND NET_CHAN
 
 struct net_hdr
 {

@@ -41,6 +41,7 @@
 #include <aircrack-ng/osdep/byteorder.h>
 #include <aircrack-ng/osdep/common.h>
 #include <aircrack-ng/osdep/packed.h>
+#include <aircrack-ng/osdep/channel.h>
 
 #if defined(__APPLE_CC__) && defined(_XCODE)
 #include <pcap/bpf.h>
@@ -77,6 +78,7 @@ struct rx_info
 	uint32_t ri_freq;
 	uint32_t ri_rate;
 	uint32_t ri_antenna;
+	// TODO: Will need an update for HT parameters 
 } __packed;
 
 /* Normal code should not access this directly.  Only osdep.
@@ -98,11 +100,10 @@ struct wif
 					unsigned char * h80211,
 					int len,
 					struct tx_info * ti);
-	int (*wi_set_ht_channel)(struct wif * wi, int chan, unsigned int htval);
-	int (*wi_set_channel)(struct wif * wi, int chan);
-	int (*wi_get_channel)(struct wif * wi);
-	int (*wi_set_freq)(struct wif * wi, int freq);
-	int (*wi_get_freq)(struct wif * wi);
+	int (*wi_set_channel)(struct wif * wi, struct osdep_channel * oc);
+	int (*wi_get_channel)(struct wif * wi, struct osdep_channel * oc);
+	int (*wi_set_freq)(struct wif * wi, struct osdep_freq * of);
+	int (*wi_get_freq)(struct wif * wi, struct osdep_freq * of);
 	void (*wi_close)(struct wif * wi);
 	int (*wi_fd)(struct wif * wi);
 	int (*wi_get_mac)(struct wif * wi, unsigned char * mac);
@@ -131,11 +132,10 @@ IMPORT int wi_write(struct wif * wi,
 					unsigned char * h80211,
 					int len,
 					struct tx_info * ti);
-IMPORT int wi_set_channel(struct wif * wi, int chan);
-IMPORT int wi_set_ht_channel(struct wif * wi, int chan, unsigned int htval);
-IMPORT int wi_get_channel(struct wif * wi);
-IMPORT int wi_set_freq(struct wif * wi, int freq);
-IMPORT int wi_get_freq(struct wif * wi);
+IMPORT int wi_set_channel(struct wif * wi, struct osdep_channel * oc);
+IMPORT int wi_get_channel(struct wif * wi, struct osdep_channel * oc);
+IMPORT int wi_set_freq(struct wif * wi, struct osdep_freq * of);
+IMPORT int wi_get_freq(struct wif * wi, struct osdep_freq * of);
 IMPORT void wi_close(struct wif * wi);
 IMPORT char * wi_get_ifname(struct wif * wi);
 IMPORT int wi_get_mac(struct wif * wi, unsigned char * mac);

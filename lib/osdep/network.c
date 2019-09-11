@@ -83,8 +83,8 @@ EXPORT int net_send(int s, int command, void * arg, int len)
 	pnh->nh_type = command;
 	pnh->nh_len = htonl(len);
 
-	assert(arg != NULL);
-	memcpy(pktbuf + sizeof(struct net_hdr), arg, len);
+	//assert(arg != NULL);
+	if (arg != NULL) memcpy(pktbuf + sizeof(struct net_hdr), arg, len);
 
 	for (;;)
 	{
@@ -389,18 +389,41 @@ static int net_write(struct wif * wi,
 	return net_cmd(pn, NET_WRITE, buf, sz);
 }
 
-static int net_set_channel(struct wif * wi, int chan)
-{
-	uint32_t c = htonl(chan);
-
-	return net_cmd(wi_priv(wi), NET_SET_CHAN, &c, sizeof(c));
-}
-
-static int net_get_channel(struct wif * wi)
+static int net_set_channel(struct wif * wi, struct osdep_channel * oc)
 {
 	struct priv_net * pn = wi_priv(wi);
 
-	return net_cmd(pn, NET_GET_CHAN, NULL, 0);
+	// Need to look into airserv-ng to see how the transition is done between net -> linux
+
+	return net_cmd(pn, NET_SET_CHAN, oc, sizeof(struct osdep_channel));
+}
+
+static int net_get_channel(struct wif * wi, struct osdep_channel * oc)
+{
+	struct priv_net * pn = wi_priv(wi);
+
+	int sz = sizeof(struct osdep_channel);
+	// This provides an extra 1-4 bytes
+	uint32_t buf[1+(sz/sizeof(uint32_t))];
+	int cmd;
+
+	// Send command then receive result
+	if (net_send(pn->pn_s, NET_GET_CHAN, NULL, 0) == -1) return -1;
+	cmd = net_get_nopacket(pn, buf, &sz);
+	if (cmd == -1) return -1;
+	if (cmd == NET_RC) return ntohl(buf[0]);
+	assert(cmd == NET_CHAN);
+	assert(sz == sizeof(struct osdep_channel));
+
+	if (oc) {
+		memcpy(oc, buf, sizeof(struct osdep_channel));
+		return oc->channel;
+	}
+
+	// When no OSdep Channel was given, just return the channel
+	struct osdep_channel tmp_oc;
+	memcpy(&tmp_oc, buf, sizeof(struct osdep_channel));
+	return tmp_oc.channel;
 }
 
 static int net_set_rate(struct wif * wi, int rate)

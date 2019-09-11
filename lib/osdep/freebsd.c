@@ -253,11 +253,17 @@ get_80211(struct priv_fbsd * pf, int * plen, struct rx_info * ri)
 	return ptr;
 }
 
-static int fbsd_get_channel(struct wif * wi)
+static int fbsd_get_channel(struct wif * wi, struct osdep_channel * oc)
 {
 	struct priv_fbsd * pf = wi_priv(wi);
 
 	if (ioctl(pf->pf_s, SIOCG80211, &pf->pf_ireq) != 0) return -1;
+
+	// Fill up structure if present
+	if (oc) {
+		oc->channel = pf->pf_ireq.i_val;
+		oc->band = getBandFromChannel(oc->channel);
+	}
 
 	return pf->pf_ireq.i_val;
 }
@@ -340,11 +346,11 @@ static int fbsd_write(struct wif * wi,
 	return rc - iov[0].iov_len;
 }
 
-static int fbsd_set_channel(struct wif * wi, int chan)
+static int fbsd_set_channel(struct wif * wi, struct osdep_channel * oc)
 {
 	struct priv_fbsd * pf = wi_priv(wi);
 
-	pf->pf_ireq.i_val = chan;
+	pf->pf_ireq.i_val = oc->channel;
 	if (ioctl(pf->pf_s, SIOCS80211, &pf->pf_ireq) != 0) return -1;
 
 	pf->pf_chan = chan;

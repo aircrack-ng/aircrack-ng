@@ -72,6 +72,7 @@
 #include "aircrack-ng/support/pcap_local.h"
 #include "aircrack-ng/tui/console.h"
 #include "aircrack-ng/support/common.h"
+#include "aircrack-ng/support/ht_transition.h"
 
 static int PTW_DEFAULTBF[PTW_KEYHSBYTES]
 	= {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -620,7 +621,9 @@ static void network_print(struct network * n)
 
 static void channel_set(int num)
 {
-	if (wi_set_channel(_state.s_wi, num) == -1) err(1, "wi_set_channel()");
+	if (transition_set_channel(_state.s_wi, num, OSDEP_HT_IGNORE) == -1) {
+		err(1, "wi_set_channel()");
+	}
 
 	_state.s_chan = num;
 }
@@ -958,7 +961,8 @@ static void hop(void * arg)
 		if (c->c_num == old) break;
 
 		// skip unsupported chan.  XXX check if we run out.
-		if (wi_set_channel(_state.s_wi, c->c_num) == -1)
+		if (transition_set_channel(_state.s_wi, c->c_num, OSDEP_HT_IGNORE) 
+			== -1)
 		{
 			_state.s_hopchan->c_next = c->c_next;
 			free(c);
@@ -3030,7 +3034,7 @@ static void pwn(void)
 	free(mac);
 	time_printf(V_NORMAL, "Let's ride\n");
 
-	if (wi_set_channel(s->s_wi, _state.s_chan) == -1)
+	if (transition_set_channel(s->s_wi, _state.s_chan, OSDEP_HT_IGNORE) == -1)
 		err(1, "wi_set_channel()");
 
 	resume();

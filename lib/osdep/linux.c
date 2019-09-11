@@ -382,7 +382,7 @@ static void test_callback(struct nl_msg *msg, void *arg)
 */
 #endif /* End nl80211 */
 
-static int linux_get_channel(struct wif * wi)
+static int linux_get_channel(struct wif * wi, struct osdep_channel * oc)
 {
 	struct priv_linux * dev = wi_priv(wi);
 	struct iwreq wrq;
@@ -413,10 +413,17 @@ static int linux_get_channel(struct wif * wi)
 	else
 		chan = frequency;
 
+	// Fill in new channel info
+	if (oc) {
+		oc->channel = chan;
+		oc->band = getBandFromChannel(chan);
+		oc->ht = OSDEP_HT_IGNORE;
+	}
+
 	return chan;
 }
 
-static int linux_get_freq(struct wif * wi)
+static int linux_get_freq(struct wif * wi, struct osdep_freq * of)
 {
 	struct priv_linux * dev = wi_priv(wi);
 	struct iwreq wrq;
@@ -443,6 +450,12 @@ static int linux_get_freq(struct wif * wi)
 
 	if (frequency < 500) // it's not a freq, but the actual channel
 		frequency = getFrequencyFromChannel(frequency);
+
+	// Fill in new frequency info
+	if (of) {
+		of->freq_mhz = frequency;
+		of->ht = OSDEP_HT_IGNORE;
+	}
 
 	return frequency;
 }
@@ -813,7 +826,7 @@ static int linux_read(struct wif * wi,
 
 	memcpy(buf, tmpbuf + n, caplen);
 
-	if (ri && !got_channel) ri->ri_channel = wi_get_channel(wi);
+	if (ri && !got_channel) ri->ri_channel = wi_get_channel(wi, NULL);
 
 	return (caplen);
 }
@@ -976,7 +989,7 @@ static int ieee80211_channel_to_frequency(int chan)
 }
 
 static int
-linux_set_ht_channel_nl80211(struct wif * wi, int channel, unsigned int htval)
+linux_set_channel_nl80211(struct wif * wi, struct osdep_channel * oc)
 {
 	struct priv_linux * dev = wi_priv(wi);
 	char s[32];
@@ -986,12 +999,14 @@ linux_set_ht_channel_nl80211(struct wif * wi, int channel, unsigned int htval)
 	struct nl_msg * msg;
 	unsigned int freq;
 
+
+	if (!oc) return 1;
 	memset(s, 0, sizeof(s));
 
 	switch (dev->drivertype)
 	{
 		case DT_WLANNG:
-			snprintf(s, sizeof(s) - 1, "channel=%d", channel);
+			snprintf(s, sizeof(s) - 1, "channel=%d", oc->channel);
 
 			if ((pid = fork()) == 0)
 			{
@@ -1012,7 +1027,7 @@ linux_set_ht_channel_nl80211(struct wif * wi, int channel, unsigned int htval)
 
 			if (WIFEXITED(status))
 			{
-				dev->channel = channel;
+				dev->channel = oc->channel;
 				return (WEXITSTATUS(status));
 			}
 			else
@@ -1020,7 +1035,7 @@ linux_set_ht_channel_nl80211(struct wif * wi, int channel, unsigned int htval)
 			break;
 
 		case DT_ORINOCO:
-			snprintf(s, sizeof(s) - 1, "%d", channel);
+			snprintf(s, sizeof(s) - 1, "%d", oc->channel);
 
 			if ((pid = fork()) == 0)
 			{
@@ -1039,12 +1054,12 @@ linux_set_ht_channel_nl80211(struct wif * wi, int channel, unsigned int htval)
 			}
 
 			waitpid(pid, &status, 0);
-			dev->channel = channel;
+			dev->channel = oc->channel;
 			return 0;
 			break; // yeah ;)
 
 		case DT_ZD1211RW:
-			snprintf(s, sizeof(s) - 1, "%d", channel);
+			snprintf(s, sizeof(s) - 1, "%d", oc->channel);
 
 			if ((pid = fork()) == 0)
 			{
@@ -1062,8 +1077,8 @@ linux_set_ht_channel_nl80211(struct wif * wi, int channel, unsigned int htval)
 			}
 
 			waitpid(pid, &status, 0);
-			dev->channel = channel;
-			chan = channel;
+			dev->channel = oc->channel;
+			chan = oc->channel;
 			return 0;
 			break; // yeah ;)
 
@@ -1072,10 +1087,10 @@ linux_set_ht_channel_nl80211(struct wif * wi, int channel, unsigned int htval)
 	}
 
 	/* libnl stuff */
-	chan = channel;
+	chan = oc->channel;
 
 	devid = if_nametoindex(wi->wi_interface);
-	freq = ieee80211_channel_to_frequency(channel);
+	freq = ieee80211_channel_to_frequency(oc->channel);
 	msg = nlmsg_alloc();
 	if (!msg)
 	{
@@ -1096,16 +1111,18 @@ linux_set_ht_channel_nl80211(struct wif * wi, int channel, unsigned int htval)
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_FREQ, freq);
 
 	unsigned ht = NL80211_CHAN_NO_HT;
-	switch (htval)
+	switch (oc->ht)
 	{
-		case CHANNEL_HT20:
-			ht = NL80211_CHAN_HT20;
+		case OSDEP_HT:
+			if (oc->width == OSDEP_CHANNEL_20MHZ) ht = NL80211_CHAN_HT20;
 			break;
-		case CHANNEL_HT40_PLUS:
-			ht = NL80211_CHAN_HT40PLUS;
-			break;
-		case CHANNEL_HT40_MINUS:
+		case OSDEP_HT_MINUS:
+			// Assuming 40MHz
 			ht = NL80211_CHAN_HT40MINUS;
+			break;
+		case OSDEP_HT_PLUS:
+			// Assuming 40MHz
+			ht = NL80211_CHAN_HT40PLUS;
 			break;
 	}
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_CHANNEL_TYPE, ht);
@@ -1113,27 +1130,24 @@ linux_set_ht_channel_nl80211(struct wif * wi, int channel, unsigned int htval)
 	nl_send_auto_complete(state.nl_sock, msg);
 	nlmsg_free(msg);
 
-	dev->channel = channel;
+	dev->channel = oc->channel;
 
 	return (0);
 nla_put_failure:
 	return -ENOBUFS;
 }
-
-static int linux_set_channel_nl80211(struct wif * wi, int channel)
-{
-	return linux_set_ht_channel_nl80211(wi, channel, CHANNEL_NO_HT);
-}
 #else // CONFIG_LIBNL
 
-static int linux_set_channel(struct wif * wi, int channel)
+static int linux_set_channel(struct wif * wi, struct osdep_channel * oc)
 {
 	struct priv_linux * dev = wi_priv(wi);
 	char s[32];
-	int pid, status;
+	int pid, status, channel;
 	struct iwreq wrq;
 
+	if (!oc) return 1;
 	memset(s, 0, sizeof(s));
+	channel = oc->channel;
 
 	switch (dev->drivertype)
 	{
@@ -1241,12 +1255,13 @@ static int linux_set_channel(struct wif * wi, int channel)
 }
 #endif
 
-static int linux_set_freq(struct wif * wi, int freq)
+static int linux_set_freq(struct wif * wi, struct osdep_freq * of)
 {
 	struct priv_linux * dev = wi_priv(wi);
 	char s[32];
 	int pid, status;
 	struct iwreq wrq;
+	int freq = of->freq_mhz;
 
 	memset(s, 0, sizeof(s));
 
@@ -2441,9 +2456,9 @@ static struct wif * linux_open(char * iface)
 	if (!wi) return NULL;
 	wi->wi_read = linux_read;
 	wi->wi_write = linux_write;
+
 #ifdef CONFIG_LIBNL
 	linux_nl80211_init(&state);
-	wi->wi_set_ht_channel = linux_set_ht_channel_nl80211;
 	wi->wi_set_channel = linux_set_channel_nl80211;
 #else
 	wi->wi_set_channel = linux_set_channel;

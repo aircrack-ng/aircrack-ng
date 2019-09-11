@@ -282,18 +282,22 @@ static int file_write(struct wif * wi,
 	return len;
 }
 
-static int file_set_channel(struct wif * wi, int chan)
+static int file_set_channel(struct wif * wi, struct osdep_channel * oc)
 {
 	struct priv_file * pf = wi_priv(wi);
 
-	pf->pf_chan = chan;
+	pf->pf_chan = oc->channel;
 
 	return 0;
 }
 
-static int file_get_channel(struct wif * wi)
+static int file_get_channel(struct wif * wi, struct osdep_channel * oc)
 {
 	struct priv_file * pf = wi_priv(wi);
+
+	oc->channel = pf->pf_chan;
+	// GCC is incorrect, value is returned because pointer
+	oc->band == getBandFromChannel(oc->channel);
 
 	return pf->pf_chan;
 }

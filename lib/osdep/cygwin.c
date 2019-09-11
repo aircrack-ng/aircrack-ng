@@ -225,31 +225,31 @@ static int do_cygwin_open(struct wif * wi, char * iface)
 
 /**
  * Change channel
- * @param chan Channel
+ * @param oc Channel
  * @return 0 if successful, -1 if it failed
  */
-static int cygwin_set_channel(struct wif * wi, int chan)
+static int cygwin_set_channel(struct wif * wi, struct osdep_channel * oc)
 {
 	struct priv_cygwin * priv = wi_priv(wi);
 
-	if (priv->pc_set_chan(chan) == -1) return -1;
+	if (priv->pc_set_chan(oc->channel) == -1) return -1;
 
-	priv->pc_channel = chan;
+	priv->pc_channel = oc->channel;
 	return 0;
 }
 
 /**
  * Change frequency
- * @param freq Frequency
+ * @param of Frequency
  * @return 0 if successful, -1 if it failed
  */
-static int cygwin_set_freq(struct wif * wi, int freq)
+static int cygwin_set_freq(struct wif * wi, struct osdep_freq * oc)
 {
 	struct priv_cygwin * priv = wi_priv(wi);
 
-	if (!priv->pc_set_freq || priv->pc_set_freq(freq) == -1) return -1;
+	if (!priv->pc_set_freq || priv->pc_set_freq(oc->freq_mhz) == -1) return -1;
 
-	priv->pc_frequency = freq;
+	priv->pc_frequency = oc->freq_mhz;
 	return 0;
 }
 
@@ -306,16 +306,23 @@ static int cygwin_write(struct wif * wi,
  * Get device channel
  * @return channel
  */
-static int cygwin_get_channel(struct wif * wi)
+static int cygwin_get_channel(struct wif * wi, struct osdep_channel * oc)
 {
 	struct priv_cygwin * pc = wi_priv(wi);
+
+	if (oc) {
+		oc->channel = pc->pc_channel;
+		oc->band = getBandFromChannel(oc->channel);
+	}
 
 	return pc->pc_channel;
 }
 
-static int cygwin_get_freq(struct wif * wi)
+static int cygwin_get_freq(struct wif * wi, struct osdep_freq * of)
 {
 	struct priv_cygwin * pc = wi_priv(wi);
+
+	if (of) of->freq_mhz = pc->pc_frequency;
 
 	return pc->pc_frequency;
 }

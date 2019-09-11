@@ -64,6 +64,7 @@
 #include "aircrack-ng/support/communications.h"
 #include "aircrack-ng/osdep/osdep.h"
 #include "aircrack-ng/support/pcap_local.h"
+#include "aircrack-ng/support/ht_transition.h"
 #include "aircrack-ng/ptw/aircrack-ptw-lib.h"
 #include "aircrack-ng/third-party/ieee80211.h"
 #include "aircrack-ng/third-party/ethernet.h"
@@ -337,7 +338,9 @@ static void set_chan(struct wstate * ws, int c)
 
 	if (c == ws->ws_chan) return;
 
-	if (wi_set_channel(ws->ws_wi, c)) err(1, "wi_set_channel()");
+	if (transition_set_channel(ws->ws_wi, c, OSDEP_HT_IGNORE)) {
+		err(1, "wi_set_channel()");
+	}
 
 	ws->ws_chan = c;
 }

@@ -53,34 +53,28 @@ EXPORT int wi_write(struct wif * wi,
 	return wi->wi_write(wi, ts, dlt, h80211, len, ti);
 }
 
-EXPORT int wi_set_ht_channel(struct wif * wi, int chan, unsigned int htval)
-{
-	assert(wi->wi_set_ht_channel);
-	return wi->wi_set_ht_channel(wi, chan, htval);
-}
-
-EXPORT int wi_set_channel(struct wif * wi, int chan)
+EXPORT int wi_set_channel(struct wif * wi, struct osdep_channel * oc)
 {
 	assert(wi->wi_set_channel);
-	return wi->wi_set_channel(wi, chan);
+	return wi->wi_set_channel(wi, oc);
 }
 
-EXPORT int wi_get_channel(struct wif * wi)
+EXPORT int wi_get_channel(struct wif * wi, struct osdep_channel * oc)
 {
 	assert(wi->wi_get_channel);
-	return wi->wi_get_channel(wi);
+	return wi->wi_get_channel(wi, oc);
 }
 
-EXPORT int wi_set_freq(struct wif * wi, int freq)
+EXPORT int wi_set_freq(struct wif * wi, struct osdep_freq * of)
 {
 	assert(wi->wi_set_freq);
-	return wi->wi_set_freq(wi, freq);
+	return wi->wi_set_freq(wi, of);
 }
 
-EXPORT int wi_get_freq(struct wif * wi)
+EXPORT int wi_get_freq(struct wif * wi, struct osdep_freq * of)
 {
 	assert(wi->wi_get_freq);
-	return wi->wi_get_freq(wi);
+	return wi->wi_get_freq(wi, of);
 }
 
 EXPORT int wi_get_monitor(struct wif * wi)

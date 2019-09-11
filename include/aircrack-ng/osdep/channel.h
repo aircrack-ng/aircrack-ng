@@ -56,11 +56,6 @@ struct osdep_freq {
 #define HIGHEST_CHANNEL 220
 #define LOWEST_CHANNEL -16
 
-#define CHANNEL_NO_HT 0
-#define CHANNEL_HT20 20
-#define CHANNEL_HT40_PLUS 39
-#define CHANNEL_HT40_MINUS 41
-
 IMPORT int getFrequencyFromChannel(int channel);
 IMPORT int getChannelFromFrequency(int frequency);
 

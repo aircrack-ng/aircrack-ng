@@ -57,6 +57,7 @@
 #include "aircrack-ng/version.h"
 #include "aircrack-ng/osdep/byteorder.h"
 #include "aircrack-ng/support/common.h"
+#include "aircrack-ng/support/ht_transition.h"
 
 #define S_MTU 1500
 #define S_MCAST "\x01\x00\x5e\x01\x00"
@@ -393,7 +394,9 @@ static void set_chan(struct east_state * es)
 
 	int chan = es->es_chanlock ? es->es_chanlock : es->es_apchan;
 
-	if (wi_set_channel(es->es_wi, chan) == -1) err(1, "wi_set_channel");
+	if (transition_set_channel(es->es_wi, chan, OSDEP_HT_IGNORE) == -1) {
+		err(1, "wi_set_channel");
+	}
 }
 
 static void clear_timeout(struct east_state * es)

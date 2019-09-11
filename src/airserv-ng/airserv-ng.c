@@ -152,14 +152,27 @@ static void card_open(struct sstate * ss, char * dev)
 	ss->ss_wi = wi;
 }
 
-static int card_set_chan(struct sstate * ss, int chan)
+static int card_set_chan(struct sstate * ss, struct osdep_channel * oc)
 {
-	return (wi_set_channel(ss->ss_wi, chan));
+	return (wi_set_channel(ss->ss_wi, oc));
 }
 
-static int card_get_chan(struct sstate * ss)
+static int card_set_chan_old(struct sstate * ss, int chan)
 {
-	return (wi_get_channel(ss->ss_wi));
+	struct osdep_channel oc;
+	if (init_osdep_channel(&oc) == 0) {
+		return -1;
+	}
+
+	oc.channel = chan;
+	oc.band = getBandFromChannel(chan);
+
+	return card_set_chan(ss, &oc);
+}
+
+static int card_get_chan(struct sstate * ss, struct osdep_channel * oc)
+{
+	return (wi_get_channel(ss->ss_wi, oc));
 }
 
 static int card_set_rate(struct sstate * ss, int rate)
@@ -232,7 +245,7 @@ open_card_and_sock(struct sstate * ss, char * dev, int port, int chan)
 	printf("Opening card %s\n", dev);
 	card_open(ss, dev);
 	printf("Setting chan %d\n", chan);
-	if (card_set_chan(ss, chan) == -1) err(1, "card_set_chan()");
+	if (card_set_chan_old(ss, chan) == -1) err(1, "card_set_chan_old()");
 
 	printf("Opening sock port %d\n", port);
 	open_sock(ss, port);
@@ -245,10 +258,10 @@ static void net_send_kill(struct client * c, int cmd, void * data, int len)
 	if (net_send(c->c_s, cmd, data, len) == -1) client_kill(c);
 }
 
-static void handle_set_chan(struct sstate * ss,
-							struct client * c,
-							unsigned char * buf,
-							int len)
+static void handle_set_chan_old(struct sstate * ss,
+								struct client * c,
+								unsigned char * buf,
+								int len)
 {
 	uint32_t chan;
 	uint32_t rc;
@@ -262,8 +275,42 @@ static void handle_set_chan(struct sstate * ss,
 	chan = *((uint32_t *) buf);
 	chan = ntohl(chan);
 
-	debug(ss, c, 2, "Got setchan %d\n", chan);
-	rc = card_set_chan(ss, chan);
+	debug(ss, c, 2, "Got old setchan %d\n", chan);
+	rc = card_set_chan_old(ss, chan);
+
+	rc = htonl(rc);
+	net_send_kill(c, NET_RC, &rc, sizeof(rc));
+}
+
+static void handle_set_chan(struct sstate * ss,
+								struct client * c,
+								unsigned char * buf,
+								int len)
+{
+	struct osdep_channel oc;
+	uint32_t rc;
+
+	// Handle old protocol
+	if (len != sizeof(uint32_t)) {
+		handle_set_chan_old(ss, c, buf, len);
+		return;
+	}
+
+	if (len != sizeof(oc))
+	{
+		client_kill(c);
+		return;
+	}
+
+	memcpy(&oc, buf, sizeof(oc));
+	// Convert back to host
+	if (ntoh_osdep_channel(&oc) == 0) {
+		return;
+	}
+
+	debug(ss, c, 2, "Got setchan %d - width %d - HT %d\n", oc.channel,
+		oc.width, oc.ht);
+	rc = card_set_chan(ss, &oc);
 
 	rc = htonl(rc);
 	net_send_kill(c, NET_RC, &rc, sizeof(rc));
@@ -311,12 +358,21 @@ static void handle_get_mac(struct sstate * ss, struct client * c)
 
 static void handle_get_chan(struct sstate * ss, struct client * c)
 {
-	int rc = card_get_chan(ss);
-	uint32_t chan;
+	struct osdep_channel oc;
+	init_osdep_channel(&oc);
+	int rc = card_get_chan(ss, &oc);
 
-	chan = htonl(rc);
+	if (rc > 0) {
+		if (hton_osdep_channel(&oc)) {
+			net_send_kill(c, NET_CHAN, &oc, sizeof(struct osdep_channel));
+			return;
+		}
+		rc = -1;
+	}
 
-	net_send_kill(c, NET_RC, &chan, sizeof(chan));
+	// Return error code
+	uint32_t x = htonl(rc);
+	net_send_kill(c, NET_RC, &x, sizeof(x));
 }
 
 static void handle_get_rate(struct sstate * ss, struct client * c)

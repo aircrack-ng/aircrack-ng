@@ -82,10 +82,11 @@
 #include "aircrack-ng/osdep/osdep.h"
 #include "airodump-ng.h"
 #include "dump_write.h"
-#include "aircrack-ng/osdep/common.h"
+#include "aircrack-ng/osdep/channel.h"
 #include "aircrack-ng/third-party/ieee80211.h"
 #include "aircrack-ng/support/common.h"
 #include "aircrack-ng/support/mcs_index_rates.h"
+#include "aircrack-ng/support/ht_transition.h"
 #include "aircrack-ng/utf8/verifyssid.h"
 #include "aircrack-ng/tui/console.h"
 #include "radiotap/radiotap.h"
@@ -272,9 +273,7 @@ static struct local_options
 	u_int maxsize_wps_seen;
 	int show_wps;
 	struct tm gps_time; /* the timestamp from the gps data */
-#ifdef CONFIG_LIBNL
-	unsigned int htval;
-#endif
+	uint8_t htval; /* No HT/HT20/HT40+-/VHT/HE/etc. */
 	int background_mode;
 
 	unsigned long min_pkts;
@@ -5054,7 +5053,7 @@ channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 				dropped++;
 				if (dropped >= chan_count)
 				{
-					ch = wi_get_channel(wi[card]);
+					ch = wi_get_channel(wi[card], NULL);
 					lopt.channel[card] = ch;
 					IGNORE_LTZ(write(lopt.cd_pipe[1], &card, sizeof(int)));
 					IGNORE_LTZ(write(lopt.ch_pipe[1], &ch, sizeof(int)));
@@ -5068,11 +5067,7 @@ channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 
 			ch = lopt.channels[ch_idx];
 
-#ifdef CONFIG_LIBNL
-			if (wi_set_ht_channel(wi[card], ch, lopt.htval) == 0)
-#else
-			if (wi_set_channel(wi[card], ch) == 0)
-#endif
+			if (transition_set_channel(wi[card], ch, lopt.htval) == 0)
 			{
 				lopt.channel[card] = ch;
 				IGNORE_LTZ(write(lopt.cd_pipe[1], &card, sizeof(int)));
@@ -5157,7 +5152,7 @@ frequency_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 				dropped++;
 				if (dropped >= chan_count)
 				{
-					ch = wi_get_freq(wi[card]);
+					ch = wi_get_freq(wi[card], NULL);
 					lopt.frequency[card] = ch;
 					IGNORE_LTZ(write(lopt.cd_pipe[1], &card, sizeof(int)));
 					IGNORE_LTZ(write(lopt.ch_pipe[1], &ch, sizeof(int)));
@@ -5171,7 +5166,7 @@ frequency_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 
 			ch = lopt.own_frequencies[ch_idx];
 
-			if (wi_set_freq(wi[card], ch) == 0)
+			if (transition_set_freq(wi[card], ch, lopt.htval) == 0)
 			{
 				lopt.frequency[card] = ch;
 				IGNORE_LTZ(write(lopt.cd_pipe[1], &card, sizeof(int)));
@@ -5613,7 +5608,7 @@ static int check_channel(struct wif * wi[], int cards)
 	int i, chan;
 	for (i = 0; i < cards; i++)
 	{
-		chan = wi_get_channel(wi[i]);
+		chan = wi_get_channel(wi[i], NULL);
 		if (opt.ignore_negative_one == 1 && chan == -1) return (0);
 		if (lopt.channel[i] != chan)
 		{
@@ -5623,11 +5618,7 @@ static int check_channel(struct wif * wi[], int cards)
 					 "][ fixed channel %s: %d ",
 					 wi_get_ifname(wi[i]),
 					 chan);
-#ifdef CONFIG_LIBNL
-			wi_set_ht_channel(wi[i], lopt.channel[i], lopt.htval);
-#else
-			wi_set_channel(wi[i], lopt.channel[i]);
-#endif
+			transition_set_channel(wi[i], lopt.channel[i], lopt.htval);
 		}
 	}
 	return (0);
@@ -5638,7 +5629,7 @@ static int check_frequency(struct wif * wi[], int cards)
 	int i, freq;
 	for (i = 0; i < cards; i++)
 	{
-		freq = wi_get_freq(wi[i]);
+		freq = wi_get_freq(wi[i], NULL);
 		if (freq < 0) continue;
 		if (lopt.frequency[i] != freq)
 		{
@@ -5648,7 +5639,7 @@ static int check_frequency(struct wif * wi[], int cards)
 					 "][ fixed frequency %s: %d ",
 					 wi_get_ifname(wi[i]),
 					 freq);
-			wi_set_freq(wi[i], lopt.frequency[i]);
+			transition_set_freq(wi[i], lopt.frequency[i], lopt.htval);
 		}
 	}
 	return (0);
@@ -5671,7 +5662,7 @@ static int detect_frequencies(struct wif * wi)
 	memset(frequencies, 0, (max_freq_num + 1) * sizeof(int));
 	for (freq = start_freq; freq <= end_freq; freq += 5)
 	{
-		if (wi_set_freq(wi, freq) == 0)
+		if (transition_set_freq(wi, freq, lopt.htval) == 0)
 		{
 			frequencies[i] = freq;
 			i++;
@@ -5680,7 +5671,7 @@ static int detect_frequencies(struct wif * wi)
 		{
 			// special case for chan 14, as its 12MHz away from 13, not 5MHz
 			freq = 2484;
-			if (wi_set_freq(wi, freq) == 0)
+			if (transition_set_freq(wi, freq, lopt.htval) == 0)
 			{
 				frequencies[i] = freq;
 				i++;
@@ -5694,7 +5685,7 @@ static int detect_frequencies(struct wif * wi)
 	end_freq = 6000;
 	for (freq = start_freq; freq <= end_freq; freq += 5)
 	{
-		if (wi_set_freq(wi, freq) == 0)
+		if (transition_set_freq(wi, freq, lopt.htval) == 0)
 		{
 			frequencies[i] = freq;
 			i++;
@@ -5933,9 +5924,7 @@ int main(int argc, char * argv[])
 	lopt.do_exit = 0;
 	lopt.min_pkts = 2;
 	lopt.relative_time = 0;
-#ifdef CONFIG_LIBNL
-	lopt.htval = CHANNEL_NO_HT;
-#endif
+	lopt.htval = OSDEP_HT_IGNORE;
 #ifdef HAVE_PCRE
 	lopt.f_essid_regex = NULL;
 #endif
@@ -6536,28 +6525,13 @@ int main(int argc, char * argv[])
 				break;
 
 			case '2':
-#ifndef CONFIG_LIBNL
-				printf("HT Channel unsupported\n");
-				return (EXIT_FAILURE);
-#else
-				lopt.htval = CHANNEL_HT20;
-#endif
+				lopt.htval = OSDEP_HT;
 				break;
 			case '3':
-#ifndef CONFIG_LIBNL
-				printf("HT Channel unsupported\n");
-				return (EXIT_FAILURE);
-#else
-				lopt.htval = CHANNEL_HT40_MINUS;
-#endif
+				lopt.htval = OSDEP_HT_MINUS;
 				break;
 			case '5':
-#ifndef CONFIG_LIBNL
-				printf("HT Channel unsupported\n");
-				return (EXIT_FAILURE);
-#else
-				lopt.htval = CHANNEL_HT40_PLUS;
-#endif
+				lopt.htval = OSDEP_HT_PLUS;
 				break;
 
 			default:
@@ -6678,7 +6652,7 @@ int main(int argc, char * argv[])
 			{
 				for (i = 0; i < lopt.num_cards; i++)
 				{
-					wi_set_freq(wi[i], lopt.frequency[0]);
+					transition_set_freq(wi[i], lopt.frequency[0], lopt.htval);
 					lopt.frequency[i] = lopt.frequency[0];
 				}
 				lopt.singlefreq = 1;
@@ -6739,11 +6713,7 @@ int main(int argc, char * argv[])
 			{
 				for (i = 0; i < lopt.num_cards; i++)
 				{
-#ifdef CONFIG_LIBNL
-					wi_set_ht_channel(wi[i], lopt.channel[0], lopt.htval);
-#else
-					wi_set_channel(wi[i], lopt.channel[0]);
-#endif
+					transition_set_channel(wi[i], lopt.channel[0], lopt.htval);
 					lopt.channel[i] = lopt.channel[0];
 				}
 				lopt.singlechan = 1;

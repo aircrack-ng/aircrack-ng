@@ -249,7 +249,7 @@ int attack_check(uint8_t * bssid,
 {
 	int ap_chan = 0, iface_chan = 0;
 
-	iface_chan = wi_get_channel(wi);
+	iface_chan = wi_get_channel(wi, NULL);
 
 	if (iface_chan == -1 && !ignore_negative_one)
 	{
@@ -315,14 +315,14 @@ int getnet(struct wif * wi,
 			   bssid[3],
 			   bssid[4],
 			   bssid[5],
-			   wi_get_channel(wi));
+			   wi_get_channel(wi, NULL));
 	}
 	else if (strlen((const char *) r_essid) > 0)
 	{
 		PCT;
 		printf("Waiting for beacon frame (ESSID: %s) on channel %d\n",
 			   r_essid,
-			   wi_get_channel(wi));
+			   wi_get_channel(wi, NULL));
 	}
 	else if (force)
 	{

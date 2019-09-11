@@ -5283,14 +5283,20 @@ static int do_attack_test(void)
 
 	for (i = 0; i < found; i++)
 	{
-		if (wi_get_channel(_wi_out) != ap[i].chan)
+		struct osdep_channel tmp_oc;
+
+		init_osdep_channel(&tmp_oc);
+		if (wi_get_channel(_wi_out, &tmp_oc) != ap[i].chan)
 		{
-			wi_set_channel(_wi_out, ap[i].chan);
+			tmp_oc.channel = ap[i].chan;
+			wi_set_channel(_wi_out, &tmp_oc);
 		}
 
-		if (wi_get_channel(_wi_in) != ap[i].chan)
+		init_osdep_channel(&tmp_oc);
+		if (wi_get_channel(_wi_in, &tmp_oc) != ap[i].chan)
 		{
-			wi_set_channel(_wi_in, ap[i].chan);
+			tmp_oc.channel = ap[i].chan;
+			wi_set_channel(_wi_in, &tmp_oc);
 		}
 
 		PCT;
@@ -5690,10 +5696,14 @@ static int do_attack_test(void)
 		PCT;
 		printf("Trying card-to-card injection...\n");
 
+		struct osdep_channel tmp_oc;
+		init_osdep_channel(&tmp_oc);
+
 		/* sync both cards to the same channel, or the test will fail */
-		if (wi_get_channel(_wi_out) != wi_get_channel(_wi_in))
+		wi_get_channel(_wi_in, &tmp_oc);
+		if (wi_get_channel(_wi_out, NULL) != tmp_oc.channel)
 		{
-			wi_set_channel(_wi_out, wi_get_channel(_wi_in));
+			wi_set_channel(_wi_out, &tmp_oc);
 		}
 
 		/* Attacks */
