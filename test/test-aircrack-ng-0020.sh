@@ -21,7 +21,7 @@ exec cp ${abs_srcdir}/wep_64_ptw_01.cap pipe.cap
 spawn ${abs_builddir}/../aircrack-ng -X pipe.cap
 set tool_spawn_id $spawn_id
 
-set timeout 15
+set timeout 900
 
 # wait for startup
 expect "Opening pipe.cap"
