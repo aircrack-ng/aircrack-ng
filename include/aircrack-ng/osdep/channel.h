@@ -1,7 +1,7 @@
 /*
  *  OS dependent APIs for Linux
  *
- *  Copyright (C) 2018 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+ *  Copyright (C) 2018-2019 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,11 +22,12 @@
 #define OSDEP_CHANNELS_H
 
 #include <stdint.h>
-#include "common.h"
+#include <aircrack-ng/osdep/common.h>
+#include <aircrack-ng/osdep/packed.h>
 
 struct osdep_channel {
-	int channel;
-	int addl_channel;
+	int32_t channel;
+	int32_t addl_channel;
 	// Secondary channel
 	// Only set when using 80+80MHz
 	// Or with HT40; -1 indicates HT40-
@@ -37,7 +38,8 @@ struct osdep_channel {
 	//  and possibly other bands
 	uint16_t width;
 	uint8_t ht;
-};
+	uint8_t unused;
+} __packed;
 
 struct osdep_freq {
 	uint32_t freq_mhz;
@@ -46,8 +48,9 @@ struct osdep_freq {
 	// Only set when using 80+80MHz
 	// Band isn't necessary since we already know freq
 	uint16_t width;
-	uint8_t ht;	
-};
+	uint8_t ht;
+	uint8_t unused;
+} __packed;
 
 
 #define HIGHEST_CHANNEL 220
@@ -61,14 +64,18 @@ struct osdep_freq {
 IMPORT int getFrequencyFromChannel(int channel);
 IMPORT int getChannelFromFrequency(int frequency);
 
-IMPORT int getBandFromChannel(int channel);
-IMPORT int getBandFromFreq(int freq);
+IMPORT uint32_t getBandFromChannel(int channel);
+IMPORT uint32_t getBandFromFreq(int freq);
 
 IMPORT int are_channel_params_valid(const struct osdep_channel * oc);
-IMPORT void init_channel(struct osdep_channel * oc);
+IMPORT int init_osdep_channel(struct osdep_channel * oc);
+IMPORT int ntoh_osdep_channel(struct osdep_channel * oc);
+IMPORT int hton_osdep_channel(struct osdep_channel * oc);
 
 IMPORT int are_freq_params_valid(const struct osdep_freq * of);
-IMPORT void init_freq(struct osdep_freq * of);
+IMPORT int init_osdep_freq(struct osdep_freq * of);
+IMPORT int ntoh_osdep_freq(struct osdep_freq * of);
+IMPORT int hton_osdep_freq(struct osdep_freq * of);
 
 
 #define OSDEP_BAND_UNKNOWN 0
@@ -90,6 +97,7 @@ IMPORT void init_freq(struct osdep_freq * of);
 #define OSDEP_CHANNEL_5MHZ 10
 #define OSDEP_CHANNEL_10MHZ 20
 #define OSDEP_CHANNEL_16MHZ 32
+// 802.11b is actually 22MHz, but for simplication, use 20MHz
 #define OSDEP_CHANNEL_20MHZ 40
 #define OSDEP_CHANNEL_40MHZ 80
 #define OSDEP_CHANNEL_80MHZ 160

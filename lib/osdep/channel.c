@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
+#include <arpa/inet.h>
 #include "channel.h"
 
 // Wikipedia seem to contradict itself. It mentions channels 20 to 26 for
@@ -88,7 +89,7 @@ EXPORT int getChannelFromFrequency(int frequency)
 // XXX: Later on, redo this as multiple bands have same channels
 //      *May* need to adjust channel info on top right in airodump-ng
 //      to indicate band as well
-EXPORT int getBandFromChannel(int channel)
+EXPORT uint32_t getBandFromChannel(int channel)
 {
 	if (channel < 1) return OSDEP_BAND_UNKNOWN;
 	if (channel <= 14) return OSDEP_BAND_2400MHZ;
@@ -98,7 +99,7 @@ EXPORT int getBandFromChannel(int channel)
 	return OSDEP_BAND_UNKNOWN;
 }
 
-EXPORT int getBandFromFreq(int freq)
+EXPORT uint32_t getBandFromFreq(int freq)
 {
 	// Have the most common ones first
 	if (freq >= 2400 && freq <= 2484) return OSDEP_BAND_2400MHZ;
@@ -200,9 +201,9 @@ EXPORT int are_channel_params_valid(const struct osdep_channel * oc)
 	return 1;
 }
 
-EXPORT void init_channel(struct osdep_channel * oc)
+EXPORT int init_osdep_channel(struct osdep_channel * oc)
 {
-	if (!oc) return;
+	if (oc == NULL) return 0;
 
 	memset(oc, 0, sizeof(struct osdep_channel));
 
@@ -210,6 +211,8 @@ EXPORT void init_channel(struct osdep_channel * oc)
 	oc->channel = 6;
 	oc->band = OSDEP_BAND_2400MHZ;
 	oc->width = OSDEP_CHANNEL_20MHZ;
+
+	return 1;
 }
 
 /* 
@@ -254,13 +257,71 @@ EXPORT int are_freq_params_valid(const struct osdep_freq * of)
 	return 1;
 }
 
-EXPORT void init_freq(struct osdep_freq * of)
+EXPORT int init_osdep_freq(struct osdep_freq * of)
 {
-	if (!of) return;
+	if (of == NULL) return 1;
 
 	memset(of, 0, sizeof(struct osdep_freq));
 
 	// Default frequency of 2437MHz (channel 6)
 	of->freq_mhz = 2437;
 	of->width = OSDEP_CHANNEL_20MHZ;
+
+	return 1;
+}
+
+// Network <-> Host conversions
+
+EXPORT int ntoh_osdep_channel(struct osdep_channel * oc)
+{
+	if (!oc) {
+		return 0;
+	}
+	
+	oc->channel = ntohl(oc->channel);
+	oc->addl_channel = ntohl(oc->addl_channel);
+	oc->band = ntohl(oc->band);
+	oc->width = ntohs(oc->width);
+
+	return 1;
+}
+
+EXPORT int hton_osdep_channel(struct osdep_channel * oc)
+{
+	if (!oc) {
+		return 0;
+	}
+
+	oc->channel = htonl(oc->channel);
+	oc->addl_channel = htonl(oc->addl_channel);
+	oc->band = htonl(oc->band);
+	oc->width = htons(oc->width);
+
+	return 1;
+}
+
+EXPORT int ntoh_osdep_freq(struct osdep_freq * of)
+{
+	if (!of) {
+		return 0;
+	}
+
+	of->freq_mhz = ntohl(of->freq_mhz);
+	of->addl_freq_mhz = ntohl(of->addl_freq_mhz);
+	of->width = ntohs(of->width);
+
+	return 1;
+}
+
+EXPORT int hton_osdep_freq(struct osdep_freq * of)
+{
+	if (!of) {
+		return 0;
+	}
+
+	of->freq_mhz = htonl(of->freq_mhz);
+	of->addl_freq_mhz = htonl(of->addl_freq_mhz);
+	of->width = htons(of->width);
+
+	return 1;
 }
