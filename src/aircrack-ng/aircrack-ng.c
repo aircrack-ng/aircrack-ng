@@ -4758,7 +4758,7 @@ static int do_wpa_crack(void)
 		else
 		{
 			ALLEGE(pthread_mutex_lock(&mx_dic) == 0);
-			if (opt.dict == NULL || fgets(key1, sizeof(key1), opt.dict) == NULL)
+			if (opt.dict == NULL || fgets(key1, sizeof(key1) - 1, opt.dict) == NULL)
 			{
 				ALLEGE(pthread_mutex_unlock(&mx_dic) == 0);
 
