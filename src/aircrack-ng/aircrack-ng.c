@@ -4776,6 +4776,20 @@ static int do_wpa_crack(void)
 			}
 			else
 				ALLEGE(pthread_mutex_unlock(&mx_dic) == 0);
+
+			// Validate incoming passphrase meets the following criteria:
+			// a. is not the pipeline shutdown sentinel.
+			// b. is at least 8 bytes and roughly UTF-8 compatible.
+			if (((uint8_t) key1[0] == 0xff && (uint8_t) key1[1] == 0xff)
+				|| calculate_passphrase_length((uint8_t* const) key1) < 8U)
+			{
+				ALLEGE(pthread_mutex_lock(&mx_nb) == 0);
+				++nb_tried;
+				++nb_kprev;
+				ALLEGE(pthread_mutex_unlock(&mx_nb) == 0);
+
+				continue;
+			}
 		}
 
 		/* count number of lines in next wordlist chunk */
