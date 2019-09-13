@@ -55,79 +55,50 @@
  *  find a better solution performance wise.
  */
 
+#include <algorithm>
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <ctime>
 #include <string.h>
 #include <sys/types.h>
+
 #include "linecount.h"
 
 using namespace std;
 
-unsigned int FileRead(istream & is, vector<char> & buff)
+static size_t FileRead(istream & is, vector<char> & buff)
 {
+	if (!is.good() || is.eof()) return 0;
+
 	is.read(&buff[0], buff.size());
+
 	return is.gcount();
-}
-
-unsigned int countBuffer(const vector<char> & buff, int bufsize)
-{
-	int lines = 0, i = 4;
-	const char * p = &buff[0];
-	unsigned short charct = 0;
-
-	bufsize--;
-
-	while (i++ < bufsize)
-	{
-		if (p[i] == '\n')
-		{
-			if (charct > 7) lines++;
-
-			i += 1;
-			charct = 1;
-			continue;
-		}
-
-		charct++;
-	}
-
-	return lines;
 }
 
 unsigned int linecount(const char * file, off_t offset, size_t offsetmax)
 {
-	const int SZ = READBUF_BLKSIZE;
+	const size_t SZ = READBUF_BLKSIZE;
 	std::vector<char> buff(SZ);
 	ifstream ifs(file);
-	unsigned int n = 0;
-	int cc = 0;
+	size_t n = 0;
+	size_t cc = 0;
 	size_t blkcnt = 1;
+
+	if (offsetmax <= 0U) return -1;
 
 	if (offset) ifs.seekg(offset, ifs.beg);
 
-	// I know doing a redundant loop looks dirty but it's so we don't get a
-	// performance penalty
-	// inside the loop if we're not using offsetmax, since some files could be
-	// 20+ GB this is important.
-	if (offsetmax)
+	while ((cc = FileRead(ifs, buff)) > 0)
 	{
-		while ((cc = FileRead(ifs, buff)))
-		{
-			n += countBuffer(buff, cc);
+		const size_t nb_read
+			= std::count(buff.begin(), buff.begin() + cc, '\n');
 
-			if (blkcnt >= offsetmax) return n;
+		n += nb_read;
 
-			blkcnt++;
-		}
-	}
-	else
-	{
-		while ((cc = FileRead(ifs, buff)))
-		{
-			n += countBuffer(buff, cc);
-		}
+		if (blkcnt >= offsetmax) return n;
+
+		blkcnt++;
 	}
 
 	return n;
