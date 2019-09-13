@@ -148,6 +148,7 @@ EXTRA_DIST += %D%/test-hex_string_to_array.sh \
               %D%/StayAlfred.hccapx \
               %D%/test1.pcap \
               %D%/test-pmkid.pcap \
+              %D%/capture_wds-01.cap \
               %D%/wpa-psk-linksys.cap \
               %D%/wpa2.eapol.cap \
               %D%/wps2.0.pcap \
