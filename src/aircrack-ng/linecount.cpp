@@ -103,7 +103,7 @@ unsigned int linecount(const char * file, off_t offset, size_t offsetmax)
 	ifstream ifs(file);
 	unsigned int n = 0;
 	int cc = 0;
-	size_t blkcnt = 0;
+	size_t blkcnt = 1;
 
 	if (offset) ifs.seekg(offset, ifs.beg);
 
