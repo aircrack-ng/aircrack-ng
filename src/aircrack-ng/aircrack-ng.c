@@ -5641,6 +5641,7 @@ static int perform_wpa_crack(struct AP_info * ap_cur)
 			{
 				printf("KEY FOUND! [ %s ]\n", wpa_data[i].key);
 				clean_exit(EXIT_SUCCESS);
+				return (SUCCESS);
 			}
 
 			if (opt.l33t)
@@ -5660,40 +5661,43 @@ static int perform_wpa_crack(struct AP_info * ap_cur)
 				textcolor_fg(TEXT_GREEN);
 			}
 
+			moveto(0, 22);
+
 			clean_exit(EXIT_SUCCESS);
 		}
 		else if (!close_aircrack)
 		{
-			if (!opt.is_quiet)
+			if (opt.is_quiet)
 			{
-				moveto((80 - 13) / 2, 8);
-				erase_line(2);
+				printf("\nKEY NOT FOUND\n");
+				clean_exit(EXIT_FAILURE);
+				return (FAILURE);
 			}
-			else
-			{
-				printf("\n");
-			}
-
-			printf("KEY NOT FOUND\n");
-
-			if (opt.is_quiet) clean_exit(EXIT_FAILURE);
 
 			if (opt.stdin_dict)
 			{
 				moveto(30, 5);
-				printf(" %lld", nb_tried);
+				printf(" %lld\n", nb_tried);
 			}
 			else
 			{
-				moveto(18, 4);
-				printf("%lld/%lld keys tested ", nb_tried, opt.wordcount);
-				moveto(7, 6);
-				printf("Time left: ");
-				calctime(0, ((float) nb_tried / (float) opt.wordcount) * 100);
+				uint8_t ptk[64] = {0};
+				uint8_t mic[32] = {0};
+
+				show_wpa_stats(wpa_data[i].key,
+							   (int) strlen(wpa_data[i].key),
+							   (unsigned char *) (wpa_data[i].key),
+							   ptk,
+							   mic,
+							   1);
+
+				moveto((80 - 13) / 2, 8);
+				erase_line(2);
+				printf("KEY NOT FOUND\n");
+
+				moveto(0, 22);
 			}
 		}
-
-		printf("\n\n");
 	}
 #ifdef HAVE_SQLITE
 	else
