@@ -3701,14 +3701,16 @@ static void show_wpa_stats(char * key,
 
 		moveto(7, 6);
 		printf("Time left: ");
-		if (opt.wordcount != 0 && ksec > FLT_EPSILON)
-		{
-			calc = ((float) nb_tried / (float) opt.wordcount) * 100.0f;
-			remain = (opt.wordcount - nb_tried);
-			eta = (remain / (long long int) ksec);
 
+		calc = ((float) nb_tried / (float) opt.wordcount) * 100.0f;
+		remain = opt.wordcount - nb_tried;
+		long long int ll_ksec = (long long int) ksec;
+
+		if (remain > 0 && ll_ksec > 0)
+		{
+			eta = (remain / ll_ksec);
 			calctime(eta, calc);
-		}
+		} else printf("--\n");
 	}
 
 	memset(tmpbuf, ' ', sizeof(tmpbuf));
