@@ -125,7 +125,7 @@ class dotCreate:
             color = "firebrick2"
         elif enc == "WEP":
             color = "gold2"
-        elif enc in ["WPA","WPA2WPA","WPA2","WPAOPN"]:
+        elif enc in ["WPA","WPA2WPA","WPA2","WPAOPN", "WPA3 WPA2"]:
             color = "green3"
         else: #unknown enc type
             color = "black"
