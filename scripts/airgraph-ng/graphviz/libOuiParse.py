@@ -91,9 +91,9 @@ class macOUI_lookup:
         """
         if self.ouiKeyChk(mac) is not False:
             return self.oui_company[mac]
-        else: 
+        else:
             return False
-    
+
     def lookup_company(self,companyLst):
         """
         look up a company name and return their OUI's
@@ -113,13 +113,13 @@ class macOUI_lookup:
             if companyLst in self.company_oui:
                 oui = self.company_oui[companyLst]
             else:
-                
+
                 compMatch = re.compile(companyLst,re.I)
                 for key in self.company_oui:
                     if compMatch.search(key) is not None:
                         oui.extend(self.company_oui[key]) #return the oui for that key
         return oui
-                
+
     def ouiOpen(self,fname,flag='R'):
         """
         open the file and read it in
@@ -135,8 +135,8 @@ class macOUI_lookup:
         except IOError:
             return False
 
-    
-    def ouiParse(self): 
+
+    def ouiParse(self):
         """
         generate a oui to company lookup dict
         """
@@ -152,7 +152,7 @@ class macOUI_lookup:
                 HexOui[lineList[0].replace("-",":")] = lineList[2].strip()
                 #build a dict in the format of mac:company name 
         return HexOui
-    
+
     def companyParse(self):
         """
         generate a company to oui lookup dict
@@ -164,7 +164,6 @@ class macOUI_lookup:
             else:
                 company_oui[self.oui_company[oui]] = [oui]
         return company_oui
-        
 
     def ouiUpdate(self):
         """
@@ -177,7 +176,7 @@ class macOUI_lookup:
         except Exception as error:
             print(("Could not download file:\n %s\n Exiting airgraph-ng" %(error)))
             sys.exit(0)
-   
+
     def identDeviceDict(self,fname):
         """
         Create two dicts allowing device type lookup
