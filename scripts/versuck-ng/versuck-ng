@@ -42,9 +42,9 @@ def createKey(essid,bssid):
 	#are appended to the calculated key
 
 def banner():
-	print "\n"+"#"*16
-	print "#"+" "*2+"Versuck-ng"+" "*2+"#"
-	print "#"*16
+	print("\n"+"#"*16)
+	print("#"+" "*2+"Versuck-ng"+" "*2+"#")
+	print("#"*16)
 
 if __name__ == "__main__":
 	parser = optparse.OptionParser("usage: %prog options -m -e")
@@ -57,9 +57,9 @@ if __name__ == "__main__":
 		sys.exit(0)
 	(options, args) = parser.parse_args()
 	data = createKey(options.essid,options.mac)
-	print "Key is most likely"
-	print data["best"]
-	print "Key may also be one of these"
-	for key in data.keys():
+	print("Key is most likely")
+	print(data["best"])
+	print("Key may also be one of these")
+	for key in list(data.keys()):
 		if key is not "best":
-			print data[key]
+			print(data[key])
