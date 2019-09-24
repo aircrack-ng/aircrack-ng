@@ -5597,7 +5597,7 @@ static int perform_wpa_crack(struct AP_info * ap_cur)
 			{
 				int active;
 
-				if (close_aircrack_fast)
+				if (close_aircrack_fast || wpa_cracked)
 				{
 					circular_queue_reset(wpa_data[i].cqueue);
 				}
