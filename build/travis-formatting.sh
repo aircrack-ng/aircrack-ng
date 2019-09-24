@@ -29,6 +29,8 @@ git clean -f
 # Print any diff here, so the error message below is the last thing
 git diff
 
+set -e
+
 git diff --quiet || (
   echo "***************************************************";
   echo "*** The code is not clean against clang-format  ***";
