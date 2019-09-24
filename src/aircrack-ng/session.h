@@ -55,7 +55,7 @@ struct session
 	pthread_mutex_t
 		mutex; // Locking for when updating wordlist settings and saving file
 	unsigned char is_loaded;
-				// Set to 1 when session is loaded
+	// Set to 1 when session is loaded
 };
 
 struct session * ac_session_new(void);

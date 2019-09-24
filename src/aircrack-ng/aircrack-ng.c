@@ -3712,7 +3712,9 @@ static void show_wpa_stats(char * key,
 		{
 			eta = (remain / ll_ksec);
 			calctime(eta, calc);
-		} else printf("--\n");
+		}
+		else
+			printf("--\n");
 	}
 
 	memset(tmpbuf, ' ', sizeof(tmpbuf));
@@ -4762,7 +4764,8 @@ static int do_wpa_crack(void)
 		else
 		{
 			ALLEGE(pthread_mutex_lock(&mx_dic) == 0);
-			if (opt.dict == NULL || fgets(key1, sizeof(key1) - 1, opt.dict) == NULL)
+			if (opt.dict == NULL
+				|| fgets(key1, sizeof(key1) - 1, opt.dict) == NULL)
 			{
 				ALLEGE(pthread_mutex_unlock(&mx_dic) == 0);
 
@@ -4785,8 +4788,8 @@ static int do_wpa_crack(void)
 			// a. is not the pipeline shutdown sentinel.
 			// b. is at least 8 bytes and roughly UTF-8 compatible.
 			if (((uint8_t) key1[0] == 0xff && (uint8_t) key1[1] == 0xff)
-				|| calculate_passphrase_length((uint8_t*) key1)
-					< MIN_WPA_PASSPHRASE_LEN)
+				|| calculate_passphrase_length((uint8_t *) key1)
+					   < MIN_WPA_PASSPHRASE_LEN)
 			{
 				ALLEGE(pthread_mutex_lock(&mx_nb) == 0);
 				++nb_tried;
@@ -5941,8 +5944,7 @@ int main(int argc, char * argv[])
 				break;
 			case 'R':
 				// Restore and continue session
-				fprintf(stderr,
-						"This option must be used alone!\n");
+				fprintf(stderr, "This option must be used alone!\n");
 				return (EXIT_FAILURE);
 
 			case 'W':
@@ -6468,9 +6470,9 @@ int main(int argc, char * argv[])
 	progname = getVersion(
 		"Aircrack-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 
-	if ((cracking_session && cracking_session->is_loaded && 
-		cracking_session->argc - optind < 1) || (!cracking_session && 
-		!_pmkid_16800 && argc - optind < 1))
+	if ((cracking_session && cracking_session->is_loaded
+		 && cracking_session->argc - optind < 1)
+		|| (!cracking_session && !_pmkid_16800 && argc - optind < 1))
 	{
 		if (nbarg == 1)
 		{

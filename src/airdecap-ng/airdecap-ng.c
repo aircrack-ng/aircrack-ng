@@ -1126,7 +1126,7 @@ int main(int argc, char * argv[])
 		   stats.nb_unwpa,
 		   stats.nb_failed_tkip,
 		   stats.nb_failed_ccmp);
-	if ( !memcmp(opt.bssid, ZERO, 6)  && wds )
+	if (!memcmp(opt.bssid, ZERO, 6) && wds)
 		printf("Warning: WDS packets detected, but no BSSID specified\n");
 
 	return (EXIT_SUCCESS);
