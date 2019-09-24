@@ -32,7 +32,7 @@
 #if defined(__i386__) || defined(__x86_64__)
 #define _X86 1
 #include <cpuid.h>
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
 #ifdef HAS_AUXV
 #include <sys/auxv.h>
 #include <asm/hwcap.h>
@@ -133,11 +133,15 @@ int cpuid_simdsize(int viewmax)
 	if (edx & (1 << 26)) // SSE2
 		return 4;
 
-#elif defined(__arm__) && defined(HAS_AUXV)
+#elif (defined(__arm__) || defined(__aarch64__)) && defined(HAS_AUXV)
 	long hwcaps = getauxval(AT_HWCAP);
 
 	if (hwcaps & (1 << 12)) // NEON
 		return 4;
+#if defined(__aarch64__)
+	if (hwcaps & (1 << 1)) // ASIMD
+		return 4;
+#endif
 #endif
 	(void) viewmax;
 
@@ -236,9 +240,12 @@ static char * cpuid_featureflags(void)
 		if (ebx & (1 << 16)) // AVX512F
 			sprintcat((char *) &flags, "AVX512F", sizeof(flags));
 	}
-#elif defined(__arm__) && defined(HAS_AUXV)
+#elif (defined(__arm__) || defined(__aarch64__)) && defined(HAS_AUXV)
 	long hwcaps = getauxval(AT_HWCAP);
 
+#if defined(__aarch64__)
+	if (hwcaps & (1 << 1)) sprintcat((char *) &flags, "ASIMD", sizeof(flags));
+#else
 	if (hwcaps & (1 << 12)) sprintcat((char *) &flags, "NEON", sizeof(flags));
 
 	if (hwcaps & (1 << 1)) sprintcat((char *) &flags, "HALF", sizeof(flags));
@@ -263,6 +270,7 @@ static char * cpuid_featureflags(void)
 
 	if ((hwcaps & (1 << 17)) || (hwcaps & (1 << 18)))
 		sprintcat((char *) &flags, "IDIV", sizeof(flags));
+#endif
 #endif
 	return strdup(flags);
 }

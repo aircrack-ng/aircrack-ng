@@ -5978,7 +5978,8 @@ int main(int argc, char * argv[])
 				return (EXIT_FAILURE);
 
 			case 'u':
-#if defined(__i386__) || defined(__x86_64__) || defined(__arm__)
+#if defined(__i386__) || defined(__x86_64__) || defined(__arm__)               \
+	|| defined(__aarch64__)
 				cpuid_getinfo();
 				int in_use_simdsize = dso_ac_crypto_engine_simd_width();
 				printf("SIMD size in use= %d ", in_use_simdsize);
