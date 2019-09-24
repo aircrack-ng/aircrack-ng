@@ -289,6 +289,16 @@ to your choosing:
     gmake
    ```
 
+  * Compiling and debugging aircrack-ng
+
+   ```
+   export CFLAGS='-O0 -g'
+   export CXXFLAGS='-O0 -g'
+   ./configure
+   make
+   LD_LIBRARY_PATH=.libs gdb --args ./aircrack-ng [PARAMETERS]
+   ```
+
 == Packaging ==
 
 Automatic detection of CPU optimization is done at run time. This behavior
