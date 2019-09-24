@@ -106,6 +106,8 @@ static char * db = NULL; ///-V707
 #define DYNAMIC 1
 #endif
 
+#define MIN_WPA_PASSPHRASE_LEN 2U
+
 #define H16800_PMKID_LEN 32
 #define H16800_BSSID_LEN 12
 #define H16800_STMAC_LEN 12
@@ -3985,7 +3987,7 @@ static int crack_wpa_thread(void * arg)
 				}
 
 				i = calculate_passphrase_length(keys[j].v);
-			} while (i < 8);
+			} while (i < MIN_WPA_PASSPHRASE_LEN);
 
 			keys[j].length = (uint32_t) i;
 #ifdef XDEBUG
@@ -4096,7 +4098,7 @@ static int crack_wpa_pmkid_thread(void * arg)
 				}
 
 				i = calculate_passphrase_length(keys[j].v);
-			} while (i < 8);
+			} while (i < MIN_WPA_PASSPHRASE_LEN);
 
 			keys[j].length = (uint32_t) i;
 #ifdef XDEBUG
@@ -4783,7 +4785,7 @@ static int do_wpa_crack(void)
 			// a. is not the pipeline shutdown sentinel.
 			// b. is at least 8 bytes and roughly UTF-8 compatible.
 			if (((uint8_t) key1[0] == 0xff && (uint8_t) key1[1] == 0xff)
-				|| calculate_passphrase_length((uint8_t* const) key1) < 8U)
+				|| calculate_passphrase_length((uint8_t*) key1) < MIN_WPA_PASSPHRASE_LEN)
 			{
 				ALLEGE(pthread_mutex_lock(&mx_nb) == 0);
 				++nb_tried;
