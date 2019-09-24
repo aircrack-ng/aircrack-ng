@@ -4787,7 +4787,6 @@ static int do_wpa_crack(void)
 			{
 				ALLEGE(pthread_mutex_lock(&mx_nb) == 0);
 				++nb_tried;
-				++nb_kprev;
 				ALLEGE(pthread_mutex_unlock(&mx_nb) == 0);
 
 				continue;
