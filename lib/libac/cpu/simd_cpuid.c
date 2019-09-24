@@ -488,6 +488,8 @@ static char * cpuid_modelinfo(void)
 	pm = modelbuf;
 #endif
 
+	if (pm == NULL) return NULL;
+
 	// Clean up the empty spaces in the model name on some intel's because they
 	// let their engineers fall asleep on the space bar
 	while (*pm == ' ')
@@ -662,10 +664,17 @@ int cpuid_getinfo()
 	else
 		printf("(unknown)\n");
 
-	free(cpuinfo.flags);
-	cpuinfo.flags = NULL;
-	free(cpuinfo.model);
-	cpuinfo.model = NULL;
+	if (cpuinfo.flags != NULL)
+	{
+		free(cpuinfo.flags);
+		cpuinfo.flags = NULL;
+	}
+
+	if (cpuinfo.model != NULL)
+	{
+		free(cpuinfo.model);
+		cpuinfo.model = NULL;
+	}
 
 	if (cpuinfo.cputemppath != NULL)
 	{
