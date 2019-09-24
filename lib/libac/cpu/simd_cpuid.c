@@ -217,11 +217,6 @@ static char * cpuid_featureflags(void)
 
 	if (ecx & (1 << 25)) sprintcat((char *) &flags, "AES-NI", sizeof(flags));
 
-	// Don't set this if we got it from a higher topology previously.
-	if (cpuinfo.maxlogic
-		== 0) // Maximum addressable logical CPUs per pkg/socket.
-		cpuinfo.maxlogic = (ebx >> 16) & 0xFF;
-
 	if (edx & (1 << 28)) // Hyper-threading
 		cpuinfo.htt = 1;
 
@@ -516,88 +511,170 @@ static char * cpuid_modelinfo(void)
 	return model;
 }
 
+#ifdef _X86
+static inline unsigned cpuid_x86_max_function_id(void)
+{
+	unsigned eax = 0, ebx = 0, ecx = 0, edx = 0;
+	__cpuid(0, eax, ebx, ecx, edx);
+	return (eax);
+}
+
+static inline unsigned cpuid_x86_max_extended_function_id(void)
+{
+	unsigned eax = 0, ebx = 0, ecx = 0, edx = 0;
+	__cpuid(0x80000000UL, eax, ebx, ecx, edx);
+	return (eax);
+}
+
+static unsigned int cpuid_x86_threads_per_core(void);
+static unsigned int cpuid_x86_threads_per_core(void)
+{
+	unsigned eax = 0, ebx = 0, ecx = 0, edx = 0;
+	unsigned int mfi = cpuid_x86_max_function_id();
+	unsigned int mefi = cpuid_x86_max_extended_function_id();
+	const char * vendor = cpuid_vendor();
+
+	if (mfi < 0x04U
+		|| (strcmp(vendor, "Intel") != 0 && strcmp(vendor, "AMD") != 0))
+	{
+		return (1);
+	}
+
+	if (strcmp(vendor, "AMD") == 0 && mefi >= 0x8000001EU)
+	{
+		__cpuid(0x8000001EU, eax, ebx, ecx, edx);
+		return (((ebx >> 8U) & 7U) + 1U);
+	}
+
+	if (mfi < 0x0BU)
+	{
+		__cpuid(1, eax, ebx, ecx, edx);
+		if ((edx & (1U << 28U)) != 0)
+		{
+			// v will contain logical core count
+			const unsigned v = (ebx >> 16) & 255;
+			if (v > 1)
+			{
+				__cpuid(4, eax, ebx, ecx, edx);
+				// physical cores
+				const unsigned v2 = (eax >> 26U) + 1U;
+				if (v2 > 0)
+				{
+					return v / v2;
+				}
+			}
+		}
+
+		return (1);
+	}
+
+	if (mfi < 0x1FU)
+	{
+		/*
+		CPUID leaf 1FH is a preferred superset to leaf 0BH. Intel
+		recommends first checking for the existence of Leaf 1FH
+		before using leaf 0BH.
+		*/
+		__cpuid_count(0x0BU, 0, eax, ebx, ecx, edx);
+		if ((ebx & 0xFFFFU) == 0)
+		{
+			return (1);
+		}
+
+		return (ebx & 0xFFFFU);
+	}
+
+	__cpuid_count(0x1FU, 0, eax, ebx, ecx, edx);
+	if ((ebx & 0xFFFFU) == 0)
+	{
+		return (1);
+	}
+
+	return (ebx & 0xFFFFU);
+}
+
+static unsigned int cpuid_x86_logical_cores(void);
+static unsigned int cpuid_x86_logical_cores(void)
+{
+	unsigned eax = 0, ebx = 0, ecx = 0, edx = 0;
+	unsigned int mfi = cpuid_x86_max_function_id();
+	const char * vendor = cpuid_vendor();
+
+	if (strcmp(vendor, "Intel") == 0)
+	{
+		// Use this on old Intel processors
+		if (mfi < 0x0BU)
+		{
+			if (mfi < 0x01U)
+			{
+				return (0);
+			}
+
+			__cpuid(1, eax, ebx, ecx, edx);
+			return ((ebx >> 16U) & 0xFFU);
+		}
+
+		if (mfi < 0x1FU)
+		{
+			/*
+			CPUID leaf 1FH is a preferred superset to leaf 0BH. Intel
+			recommends first checking for the existence of Leaf 1FH
+			before using leaf 0BH.
+			*/
+			__cpuid_count(0x0BU, 1, eax, ebx, ecx, edx);
+			return (ebx & 0xFFFFU);
+		}
+
+		__cpuid_count(0x1FU, 1, eax, ebx, ecx, edx);
+		return (ebx & 0xFFFFU);
+	}
+	else if (strcmp(vendor, "AMD") == 0)
+	{
+		__cpuid(1, eax, ebx, ecx, edx);
+		return ((ebx >> 16U) & 0xFFU);
+	}
+	else
+	{
+		return (0);
+	}
+}
+
+static unsigned int cpuid_x86_physical_cores(void);
+static unsigned int cpuid_x86_physical_cores(void)
+{
+	unsigned eax = 0, ebx = 0, ecx = 0, edx = 0;
+	unsigned int mfi = cpuid_x86_max_function_id();
+	unsigned int mefi = cpuid_x86_max_extended_function_id();
+	const char * vendor = cpuid_vendor();
+
+	if (strcmp(vendor, "Intel") == 0 && mfi >= 0x01U)
+	{
+		return (cpuid_x86_logical_cores() / cpuid_x86_threads_per_core());
+	}
+	else if (strcmp(vendor, "AMD") == 0 && mefi >= 0x80000008UL)
+	{
+		__cpuid(0x80000008UL, eax, ebx, ecx, edx);
+		return (((ecx & 0xFFU) + 1U) / cpuid_x86_threads_per_core());
+	}
+
+	return (1);
+}
+#endif
+
 int cpuid_getinfo()
 {
 	int cpu_count = get_nb_cpus();
 	float cpu_temp;
+
 #ifdef _X86
-	unsigned eax = 0, ebx = 0, ecx = 0, edx = 0;
-	unsigned int max_level = __get_cpuid_max(0, NULL);
-	int topologyLevel = 0, topologyType;
-#ifdef DEBUG
-	int topologyShift;
-#endif
-
-	// Attempt higher level topology scan first.
-	do
-	{
-		__cpuid_count(11, topologyLevel, eax, ebx, ecx, edx);
-
-		// if EBX ==0 then this subleaf is not valid, and the processor doesn't
-		// support this.
-		if (ebx == 0) break;
-
-		topologyType = getRegister(ecx, 8, 15);
-#ifdef DEBUG
-		topologyShift = getRegister(eax, 0, 4);
-#endif
-
-		if ((topologyType == 2) && ((int) eax != 0 && (int) ebx != 0))
-		{
-			cpuinfo.cores = (int) eax;
-			cpuinfo.maxlogic = (int) ebx;
-		}
-#ifdef DEBUG
-		printf("%u %u %u %u\n", eax, ebx, ecx, edx);
-		printf("type %d, shift = %d\n", topologyType, topologyShift);
-#endif
-		topologyLevel++;
-	} while (topologyLevel < 5);
-
-#ifdef DEBUG
-	__cpuid(1, eax, ebx, ecx, edx);
-
-	printf("Family: %d", (eax >> 8) & 0xF);
-	printf("\t\tStepping %d\t\t", eax & 0xF);
-	printf("Model %d\n", (eax >> 4) & 0xF);
-	printf("Processor type %d\t", (eax >> 12) & 0x3);
-	printf("Extended model %d\t", (eax >> 16) & 0xF);
-	printf("Extended family %d\n", (eax >> 20) & 0xFF);
-#endif
+	cpuinfo.maxlogic = cpuid_x86_logical_cores();
+	cpuinfo.cores = cpuid_x86_physical_cores();
 
 	printf("Vendor          = %s\n", cpuid_vendor());
-
-	if (max_level >= 4)
-	{
-		__cpuid(4, eax, ebx, ecx, edx);
-
-		if (topologyLevel == 0)
-		{
-			if (eax >> 26)
-				cpuinfo.coreperid = (eax >> 26) + 1;
-			else // This processor only supports level1 topology. :'(
-				cpuinfo.coreperid = 1;
-		}
-	}
-	else
-		cpuinfo.coreperid = 1;
-
-#ifdef DEBUG
-	printf("cpuinfo.coreperid = %d, cpuinfo.cores = %d, maxlogic = %d (tlevel "
-		   "%d)\n",
-		   cpuinfo.coreperid,
-		   cpuinfo.cores,
-		   cpuinfo.maxlogic,
-		   topologyLevel);
+#else
+	cpuinfo.maxlogic = cpu_count;
 #endif
 
-	if ((cpuinfo.cores == 0) && (cpuinfo.coreperid != 0))
-	{
-		// On lower topology processors we have to calculate the cores from max
-		// cores per id (pkg/socket) by max addressable
-		cpuinfo.cores = (cpuinfo.maxlogic / cpuinfo.coreperid);
-	}
-#endif
 #ifdef __linux__
 	cpuid_findcpusensorpath(CORETEMP_PATH);
 	cpuinfo.cpufreq_cur = cpuid_getfreq(1);
@@ -609,22 +686,7 @@ int cpuid_getinfo()
 
 	if (cpuinfo.model != NULL) printf("Model           = %s\n", cpuinfo.model);
 	if (cpuinfo.flags != NULL) printf("Features        = %s\n", cpuinfo.flags);
-
-	// this shouldn't happen but prepare for the worst.
-	if (cpuinfo.cores == 0) cpuinfo.cores = cpu_count;
-
-	// If our max logic matches our cores, we don't have HT even if the proc
-	// says otherwise.
-	if (cpuinfo.cores == cpuinfo.maxlogic) cpuinfo.htt = 0;
-
-#ifdef _X86
-	printf("Hyper-Threading = %s\n", cpuinfo.htt ? "Yes" : "No");
-#endif
-
 	if (cpuinfo.hv) printf("Hypervisor      = Yes (Virtualization detected)\n");
-
-	// This inaccuracy can happen when running under a hypervisor, correct it.
-	if (cpuinfo.cores > cpuinfo.maxlogic) cpuinfo.maxlogic = cpuinfo.cores;
 
 	if (cpuinfo.cpufreq_cur)
 		printf("CPU frequency   = %d MHz (Max: %d MHz)\n",
@@ -635,23 +697,36 @@ int cpuid_getinfo()
 	if (cpu_temp != 0.0) //-V550
 		printf("CPU temperature = %2.2f C\n", cpu_temp);
 
-	if (cpuinfo.htt) printf("Logical CPUs    = %d\n", cpuinfo.maxlogic);
+#ifdef _X86
+	printf("Hyper-Threading = %s\n", cpuinfo.htt ? "Yes" : "No");
+#endif
 
-	printf("CPU cores       = %d", cpuinfo.cores);
+	printf("Logical CPUs    = %d\n", cpuinfo.maxlogic);
 
-	if (cpuinfo.maxlogic != cpu_count)
+#ifdef _X86
+	printf("Threads per core= %d\n", cpuid_x86_threads_per_core());
+#endif
+
+	if (cpuinfo.cores > 0)
 	{
-		if (cpu_count > cpuinfo.maxlogic)
-			printf(" (%d total, %d sockets)",
-				   cpu_count,
-				   (cpu_count / cpuinfo.maxlogic));
-		else
-			printf(" (%d total)", cpu_count);
+		printf("CPU cores       = %d", cpuinfo.cores);
+
+		if (cpuinfo.maxlogic != cpu_count)
+		{
+			if (cpu_count > cpuinfo.maxlogic)
+				printf(" (%d total, %d sockets)",
+					   cpu_count,
+					   (cpu_count / cpuinfo.maxlogic));
+			else
+				printf(" (%d total)", cpu_count);
+		}
+
+		puts("");
 	}
 
 	cpuinfo.simdsize = cpuid_simdsize(1);
 
-	printf("\nSIMD size       = %d ", cpuinfo.simdsize);
+	printf("SIMD size       = %d ", cpuinfo.simdsize);
 
 	if (cpuinfo.simdsize == 1)
 		printf("(64 bit)\n");
