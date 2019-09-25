@@ -3909,6 +3909,7 @@ static inline int calculate_passphrase_length(uint8_t * key)
 	key[i] = '\0';
 
 	// ensure only valid characters in byte sequence.
+	UNROLL_LOOP_N_TIME(8)
 	for (int j = 0; j < i; j++)
 		if (!isascii(key[j]) || key[j] < 32) i = 0;
 

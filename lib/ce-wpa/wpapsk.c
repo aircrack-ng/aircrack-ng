@@ -200,9 +200,11 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t * engine,
 			SHA1_Init(&ctx_ipad[j]);
 			SHA1_Init(&ctx_opad[j]);
 
+			UNROLL_LOOP_N_TIME(8)
 			for (i = 0; i < 16; i++) buffer[j].i[i] ^= 0x36363636;
 			SHA1_Update(&ctx_ipad[j], buffer[j].c, 64);
 
+			UNROLL_LOOP_N_TIME(8)
 			for (i = 0; i < 16; i++) buffer[j].i[i] ^= 0x6a6a6a6a;
 			SHA1_Update(&ctx_opad[j], buffer[j].c, 64);
 
@@ -343,11 +345,13 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t * engine,
 							t_sse_hash1)[(((j / SIMD_COEF_32) * SHA_BUF_SIZ)
 										  * SIMD_COEF_32)
 										 + (j & (SIMD_COEF_32 - 1))];
+				UNROLL_LOOP_N_TIME(5)
 				for (k = 0; k < 5; k++) outbuf[j].i[k] ^= p[(k * SIMD_COEF_32)];
 #else
 				uint32_t * p = &((
 					uint32_t *) t_sse_hash1)[(((j >> 2) * SHA_BUF_SIZ) << 2)
 												 + (j & (MMX_COEF - 1))];
+				UNROLL_LOOP_N_TIME(5)
 				for (k = 0; k < 5; k++)
 					outbuf[j].i[k] ^= p[(k << (MMX_COEF >> 1))];
 #endif
@@ -428,12 +432,14 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t * engine,
 							t_sse_hash1)[(((j / SIMD_COEF_32) * SHA_BUF_SIZ)
 										  * SIMD_COEF_32)
 										 + (j & (SIMD_COEF_32 - 1))];
+				UNROLL_LOOP_N_TIME(4)
 				for (k = 5; k < 8; k++)
 					outbuf[j].i[k] ^= p[((k - 5) * SIMD_COEF_32)];
 #else
 				uint32_t * p = &((
 					uint32_t *) t_sse_hash1)[(((j >> 2) * SHA_BUF_SIZ) << 2)
 												 + (j & (MMX_COEF - 1))];
+				UNROLL_LOOP_N_TIME(4)
 				for (k = 5; k < 8; k++)
 					outbuf[j].i[k] ^= p[((k - 5) << (MMX_COEF >> 1))];
 #endif

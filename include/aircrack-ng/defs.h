@@ -170,6 +170,20 @@
 		}                                                                      \
 	} while (0)
 
+#if __STDC_VERSION__ >= 199901L
+#define DO_PRAGMA(x) _Pragma (#x)
+#else
+#define DO_PRAGMA(x)
+#endif
+
+#if defined(__clang_major__) && __clang_major__ >= 4
+#define UNROLL_LOOP_N_TIME(n) DO_PRAGMA(clang loop unroll_count(n))
+#elif defined(__GNUC__) && __GNUC__ >= 8
+#define UNROLL_LOOP_N_TIME(n) DO_PRAGMA(GCC unroll n)
+#else
+#define UNROLL_LOOP_N_TIME(n)
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
