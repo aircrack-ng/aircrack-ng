@@ -1802,6 +1802,11 @@ void SIMDSHA1body(vtype * _data,
 		}
 	}
 #endif
+
+#if defined(__AVX2__) || defined(__AVX512F__)
+	/* The fix for known issues with mixing AVX2+ and SSE. */
+	_mm256_zeroupper();
+#endif
 }
 #endif /* SIMD_PARA_SHA1 */
 
