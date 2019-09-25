@@ -166,10 +166,12 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t * engine,
 			unsigned char c[64];
 			uint32_t i[16];
 		} buffer[NBKEYS];
+		char __dummy[CACHELINE_SIZE];
 		union {
 			unsigned char c[40]; // only 40 are used
 			uint32_t i[10]; // only 8 are used
 		} outbuf[NBKEYS];
+		char __dummy2[CACHELINE_SIZE];
 		SHA_CTX ctx_ipad[NBKEYS];
 		SHA_CTX ctx_opad[NBKEYS];
 
@@ -185,6 +187,8 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t * engine,
 		i1 = (unsigned int *) t_sse_crypt1;
 		i2 = (unsigned int *) t_sse_crypt2;
 		o1 = (unsigned int *) t_sse_hash1;
+		(void) __dummy;
+		(void) __dummy2;
 
 		for (j = 0; j < NBKEYS; ++j)
 		{
