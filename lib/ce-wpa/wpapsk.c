@@ -338,15 +338,15 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t * engine,
 			for (j = 0; j < NBKEYS; j++)
 			{
 #ifdef SIMD_CORE
-				unsigned * p
-					= &((unsigned int *)
+				uint32_t * p
+					= &((uint32_t *)
 							t_sse_hash1)[(((j / SIMD_COEF_32) * SHA_BUF_SIZ)
 										  * SIMD_COEF_32)
 										 + (j & (SIMD_COEF_32 - 1))];
 				for (k = 0; k < 5; k++) outbuf[j].i[k] ^= p[(k * SIMD_COEF_32)];
 #else
-				unsigned * p = &((
-					unsigned int *) t_sse_hash1)[(((j >> 2) * SHA_BUF_SIZ) << 2)
+				uint32_t * p = &((
+					uint32_t *) t_sse_hash1)[(((j >> 2) * SHA_BUF_SIZ) << 2)
 												 + (j & (MMX_COEF - 1))];
 				for (k = 0; k < 5; k++)
 					outbuf[j].i[k] ^= p[(k << (MMX_COEF >> 1))];
@@ -423,16 +423,16 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t * engine,
 			for (j = 0; j < NBKEYS; j++)
 			{
 #ifdef SIMD_CORE
-				unsigned * p
-					= &((unsigned int *)
+				uint32_t * p
+					= &((uint32_t *)
 							t_sse_hash1)[(((j / SIMD_COEF_32) * SHA_BUF_SIZ)
 										  * SIMD_COEF_32)
 										 + (j & (SIMD_COEF_32 - 1))];
 				for (k = 5; k < 8; k++)
 					outbuf[j].i[k] ^= p[((k - 5) * SIMD_COEF_32)];
 #else
-				unsigned * p = &((
-					unsigned int *) t_sse_hash1)[(((j >> 2) * SHA_BUF_SIZ) << 2)
+				uint32_t * p = &((
+					uint32_t *) t_sse_hash1)[(((j >> 2) * SHA_BUF_SIZ) << 2)
 												 + (j & (MMX_COEF - 1))];
 				for (k = 5; k < 8; k++)
 					outbuf[j].i[k] ^= p[((k - 5) << (MMX_COEF >> 1))];
