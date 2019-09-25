@@ -8,6 +8,7 @@ indent_size=4
 [{*.c,*.cp,*.cc,*.hpp,*.cpp,*.tcc,*.hp,*.cxx,*.icc,*.mm,*.hxx,*.ii,*.hh,*.m,*.i,*.h,*.h++,*.c++,*.pch,*.inl}]
 indent_style=tab
 indent_size=4
+insert_final_newline=false
 
 [{CMakeLists.txt,*.cmake}]
 indent_style=space
