@@ -29,7 +29,7 @@ Select the target network based on the ESSID. This option is also required for W
 Select the target network based on the access point MAC address.
 .TP
 .I -p <nbcpu>
-Set this option to the number of CPUs to use (only available on SMP systems) for cracking they key/passphrase. By default, it uses all available CPUs
+Set this option to the number of CPUs to use (only available on SMP systems) for cracking the key/passphrase. By default, it uses all available CPUs
 .TP
 .I -q
 If set, no status information is displayed.
