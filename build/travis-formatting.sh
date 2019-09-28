@@ -3,7 +3,7 @@
 #
 # Bail on OS X for testing this functionality.
 #
-if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+if [ "x${TRAVIS_OS_NAME:-}" = "xosx" ]; then
     exit 0
 fi
 
