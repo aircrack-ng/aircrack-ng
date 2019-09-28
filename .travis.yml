@@ -12,8 +12,6 @@ before_install:
 
 addons:
   apt:
-    sources:
-      - sourceline: 'ppa:jbenden/travis'
     packages:
       - libnl-3-dev
       - libgcrypt11-dev
