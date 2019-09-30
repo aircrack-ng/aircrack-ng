@@ -719,7 +719,7 @@ int cpuid_getinfo()
 	{
 		printf("CPU cores       = %d", cpuinfo.cores);
 
-		if (cpuinfo.maxlogic != cpu_count)
+		if (cpuinfo.maxlogic > 0 && cpuinfo.maxlogic != cpu_count)
 		{
 			if (cpu_count > cpuinfo.maxlogic)
 				printf(" (%d total, %d sockets)",
