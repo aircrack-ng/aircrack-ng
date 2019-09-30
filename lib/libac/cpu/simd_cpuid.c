@@ -484,14 +484,14 @@ static char * cpuid_modelinfo(void)
 	line = NULL;
 
 	fclose(cfd);
+
+	if (pm == NULL) return NULL;
 #elif __FreeBSD__
 	if (sysctl(mib, 2, modelbuf, &len, NULL, 0))
 		snprintf(modelbuf, sizeof(modelbuf), "Unknown");
 
 	pm = modelbuf;
 #endif
-
-	if (pm == NULL) return NULL;
 
 	// Clean up the empty spaces in the model name on some intel's because they
 	// let their engineers fall asleep on the space bar
