@@ -25,8 +25,8 @@ class bcolors:
 
 encoding = sys.getfilesystemencoding()
 if hasattr(sys, 'frozen'):
-    install_dir = os.path.abspath(os.path.dirname(unicode(sys.executable, encoding)))
-install_dir = os.path.abspath(os.path.dirname(unicode(__file__, encoding)))
+    install_dir = os.path.abspath(os.path.dirname(str(sys.executable, encoding)))
+install_dir = os.path.abspath(os.path.dirname(str(__file__, encoding)))
 try:
     os.mkdir(install_dir + "/support")
 except:

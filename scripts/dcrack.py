@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import sys
 import os
@@ -23,11 +23,12 @@ if sys.version_info[0] >= 3:
 	from http.client import HTTPConnection
 	from http.server import SimpleHTTPRequestHandler
 else:
-	from SocketServer import ThreadingTCPServer
-	from urllib2 import urlopen, URLError
-	from urlparse import urlparse, parse_qs
-	from httplib import HTTPConnection
-	from SimpleHTTPServer import SimpleHTTPRequestHandler
+	from socketserver import ThreadingTCPServer
+	from urllib.request import urlopen
+	from urllib.error import URLError
+	from urllib.parse import urlparse, parse_qs
+	from http.client import HTTPConnection
+	from http.server import SimpleHTTPRequestHandler
 
 	bytes = lambda a, b : a
 
@@ -572,7 +573,7 @@ def server():
 	try:
 		httpd = server_class(('', port), ServerHandler)
 	except socket.error as exc:
-		print("Failed listening on port %d" % port)
+		print(("Failed listening on port %d" % port))
 		return
 
 	print("Starting server")
@@ -649,7 +650,7 @@ def get_work():
 		except:
 			# In case of failure, default to 60 sec
 			interval = 60
-		print("Waiting %d sec" % interval)
+		print(("Waiting %d sec" % interval))
 		return interval
 
 	wl  = setup_dict(crack)
@@ -689,7 +690,7 @@ def get_work():
 
 		pw = pw[:i]
 
-		print("Key for %s is %s" % (crack['net'], pw))
+		print(("Key for %s is %s" % (crack['net'], pw)))
 
 		u = "%snet/%s/result?pass=%s" % (url, crack['net'], pw)
 		stuff = urlopen(u).read()
@@ -706,7 +707,7 @@ def setup_dict(crack):
 
 	d = crack['dict']
 	if not re.compile("^[a-f0-9]{5,40}").match(d):
-		print("Invalid dictionary: %s" % d)
+		print(("Invalid dictionary: %s" % d))
 		return None
 
 	#if not re.match("^[0-9]+$", d['start']) or not re.match("^[0-9]+$", d['end']):
@@ -722,7 +723,7 @@ def setup_dict(crack):
 	try:
 		with open(fn): pass
 	except:
-		print("Downloading dictionary %s" % d)
+		print(("Downloading dictionary %s" % d))
 
 		u = "%sdict/%s" % (url, d)
 		stuff = urlopen(u)
@@ -746,7 +747,7 @@ def setup_dict(crack):
 	try:
 		with open(s): pass
 	except:
-		print("Splitting dict %s" % s)
+		print(("Splitting dict %s" % s))
 		with open(fn, "rb") as fid1:
 			with open(s, "wb") as fid2:
 				for i, l in enumerate(fid1):
@@ -873,11 +874,11 @@ def client():
 	url += "worker/"
 
 	speed = get_speed()
-	print("Speed", speed)
+	print(("Speed", speed))
 
 	cid = get_cid()
 
-	print("CID", cid)
+	print(("CID", cid))
 
 	try_ping(speed)
 	t = threading.Thread(target=pinger, args=(speed,))
@@ -950,10 +951,10 @@ def send_dict():
 		print("No valid passphrase in dictionary")
 		return
 
-	print("Calculating dictionary hash for cleaned up %s" % d)
+	print(("Calculating dictionary hash for cleaned up %s" % d))
 	h = get_sha1sum_string(new_dict)
 
-	print("Hash is %s" % h)
+	print(("Hash is %s" % h))
 
 	u = url + "dict/" + h + "/status"
 	stuff = urlopen(u).read()
@@ -967,7 +968,7 @@ def send_dict():
 		upload_file(u, new_dict + ".gz")
 		os.remove(new_dict + ".gz")
 
-	print("Setting dictionary to %s" % d)
+	print(("Setting dictionary to %s" % d))
 	u = url + "dict/" + h + "/set"
 	stuff = urlopen(u).read()
 
@@ -990,7 +991,7 @@ def send_cap():
 		print("Capture file does not exists!")
 		return;
 
-	print("Cleaning cap %s" % cap)
+	print(("Cleaning cap %s" % cap))
 	clean_cap = "/tmp/" + next(tempfile._get_candidate_names()) + ".cap"
 	subprocess.Popen(["wpaclean", clean_cap, cap], \
 	   stderr=subprocess.STDOUT, stdout=subprocess.PIPE).communicate()[0]
@@ -1011,7 +1012,7 @@ def send_cap():
 	elif ret == "NO":
 		print("Failed uploading wordlist")
 	else:
-		print("Unknown return value from server: %s" % (ret,))
+		print(("Unknown return value from server: %s" % (ret,)))
 
 	# Delete temporary file
 	os.remove(clean_cap + ".gz")
@@ -1023,7 +1024,7 @@ def cmd_crack():
 	elif ret == "NO":
 		print("Failed adding cracking job!")
 	else:
-		print("Unknown return value from server: %s" % (ret,))
+		print(("Unknown return value from server: %s" % (ret,)))
 
 def net_cmd(op):
 	global url
@@ -1034,7 +1035,7 @@ def net_cmd(op):
 
 	bssid = sys.argv[4]
 
-	print("%s %s" % (op, bssid))
+	print(("%s %s" % (op, bssid)))
 	u = "%snet/%s/%s" % (url, bssid, op)
 	return urlopen(u).read()
 
@@ -1052,7 +1053,7 @@ def cmd_status():
 	for idx, c in enumerate(stuff['clients'], start=1):
 		speed += c
 
-	print("Clients\t%d\nSpeed\t%d\n" % (idx, speed))
+	print(("Clients\t%d\nSpeed\t%d\n" % (idx, speed)))
 
 	need = 0
 
@@ -1071,12 +1072,12 @@ def cmd_status():
 		print(out)
 
 	if need != 0:
-		print("\nKeys left %d" % need)
+		print(("\nKeys left %d" % need))
 		if speed != 0:
 			s = int(float(need) / float(speed))
 			sec = datetime.timedelta(seconds=s)
 			d = datetime.datetime(1,1,1) + sec
-			print("ETA %dh %dm" % (d.hour, d.minute))
+			print(("ETA %dh %dm" % (d.hour, d.minute)))
 
 def do_cmd():
 	global url
@@ -1101,7 +1102,7 @@ def do_cmd():
 	elif "remove" in cmd:
 		cmd_remove()
 	else:
-		print("Unknown cmd %s" % cmd)
+		print(("Unknown cmd %s" % cmd))
 		usage()
 
 def get_sha1sum_string(f):
@@ -1138,16 +1139,16 @@ def main():
 			do_cmd()
 		except URLError as ue:
 			if "Connection refused" in ue.reason:
-				print("Connection to %s refused" % (sys.argv[2],))
+				print(("Connection to %s refused" % (sys.argv[2],)))
 			else:
-				print(ue.reason)
+				print((ue.reason))
 		except socket.error as se:
 			if se.errno == errno.ECONNREFUSED:
 				print("Connection refused")
 			else:
 				print(se)
 	else:
-		print("Unknown cmd", cmd)
+		print(("Unknown cmd", cmd))
 		usage()
 
 	exit(0)

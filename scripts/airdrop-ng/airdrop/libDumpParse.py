@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 #airodump parsing lib
 #returns in an array of client and Ap information
 #part of the airdrop-ng project
@@ -23,12 +23,12 @@ class airDumpParse:
 		try:
 			openedFile = open(file, "r")
 		except TypeError:
-			print "Missing Airodump-ng file"
+			print("Missing Airodump-ng file")
 			Exit(1)
 		except IOError:
-			print "Error Airodump File",file,"does not exist"
+			print("Error Airodump File",file,"does not exist")
 			Exit(1)
-		data = openedFile.xreadlines()
+		data = openedFile
 		cleanedData = [line.rstrip() for line in data]
 		openedFile.close()
 		return cleanedData
@@ -49,7 +49,7 @@ class airDumpParse:
 			except Exception:
 				stationStart = cleanedDump.index('Station MAC, First time seen, Last time seen, Power, # packets, BSSID, ESSID')
 		except Exception:
-			print "You Seem to have provided an improper input file please make sure you are loading an airodump txt file and not a pcap"
+			print("You Seem to have provided an improper input file please make sure you are loading an airodump txt file and not a pcap")
 			Exit(1)
 	
 		del cleanedDump[stationStart] #Remove the heading line
@@ -135,8 +135,8 @@ class airDumpParse:
 		for key in (clients):
 			mac = clients[key] #mac is the MAC address of the client
 			if mac["bssid"] != ' (notassociated) ': #one line of our dictionary of clients
-				if AP.has_key(mac["bssid"]): # if it is check to see it's an AP we can see and have info on
-					if apClient.has_key(mac["bssid"]): 
+				if mac["bssid"] in AP: # if it is check to see it's an AP we can see and have info on
+					if mac["bssid"] in apClient: 
 						apClient[mac["bssid"]].extend([key]) #if key exists append new client
 					else: 
 						apClient[mac["bssid"]] = [key] #create new key and append the client

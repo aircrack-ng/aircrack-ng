@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 #airodump parsing lib
 #returns in an array of client and Ap information
 #part of the airdrop-ng project
@@ -28,7 +28,7 @@ class airDumpParse:
         try:
             openedFile = open(file, "r")
         except IOError:
-            print("Error Airodump File",file,"does not exist")
+            print(("Error Airodump File",file,"does not exist"))
             Exit(1)
         data = openedFile
         cleanedData = [line.rstrip() for line in data]

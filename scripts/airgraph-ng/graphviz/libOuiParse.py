@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 __author__ = 'Ben "TheX1le" Smith, Marfi'
 __email__ = 'thex1le@gmail.com'
 __website__= ''
@@ -27,7 +27,7 @@ import sys
 if sys.version_info[0] >= 3:
 	import urllib.request, urllib.parse, urllib.error
 else:
-	import urllib
+	import urllib.request, urllib.parse, urllib.error
 import os
 import pdb
 #this lib is crap and needs to be rewritten -Textile 

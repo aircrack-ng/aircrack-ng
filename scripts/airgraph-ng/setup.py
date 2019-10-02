@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # This file is Copyright David Francos Cuartero, licensed under the GPL2 license.
 
 from distutils.core import setup
