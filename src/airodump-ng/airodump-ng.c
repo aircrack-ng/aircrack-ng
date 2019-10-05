@@ -371,12 +371,10 @@ static void color_on(void)
 			{
 				ap_cur->marked = 1;
 				if (!memcmp(ap_cur->bssid, BROADCAST, 6))
-					ap_cur->marked_color = 1;
+					ap_cur->marked_color = 0;
 				else
 					ap_cur->marked_color = color++;
 			}
-			else
-				ap_cur->marked_color = 1;
 
 			st_cur = st_cur->prev;
 		}
