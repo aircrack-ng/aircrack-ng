@@ -25,6 +25,7 @@ It focuses on different areas of WiFi security:
 
 All tools are command line which allows for heavy scripting. A lot of GUIs have taken advantage of this feature. It works primarily Linux but also Windows, OS X, FreeBSD, OpenBSD, NetBSD, as well as Solaris and even eComStation 2. 
 
+# for wifi hacking
 # Building
 
 ## Requirements
