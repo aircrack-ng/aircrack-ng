@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #airodump parsing lib
 #returns in an array of client and Ap information
 #part of the airdrop-ng project
