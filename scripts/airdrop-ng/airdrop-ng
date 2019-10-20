@@ -21,9 +21,9 @@ from airdrop import libOuiParse, libDumpParse
 from binascii import a2b_hex
 try:
     import PyLorcon2
-except ImportError, e:
-    print "Did you read the readme? You seem to be missing PyLorcon2"
-    print e
+except ImportError as e:
+    print("Did you read the readme? You seem to be missing PyLorcon2")
+    print(e)
 
 
 class messages:
@@ -50,7 +50,7 @@ class messages:
                 file.write(self.date+"-"+self.time+"\n")
                 file.write("Airdrop-ng Logfile\n")
                 file.close
-            except IOError,e:
+            except IOError as e:
                 self.logging = False
                 self.printError(["Could not open file "+self.logfile+"\n\n",
                     str(e)+"\n"])
@@ -62,9 +62,9 @@ class messages:
         TYPE = type(message).__name__
         if TYPE == 'list':
             for line in message:
-                print line
+                print(line)
         elif TYPE == 'str':
-            print message
+            print(message)
         self.log(message,TYPE)
         
     def printError(self,error):
@@ -87,7 +87,7 @@ class messages:
             return
         try:
             file = open(self.logfile,'a')
-        except IOError,e:
+        except IOError as e:
             self.logging = False
             self.printError(["Could not open file "+self.logfile+"\n",
                 str(e)+"\n"])
@@ -109,7 +109,7 @@ class parseFiles:
         """
         try:
             openFile = open(name,"r")
-        except IOError,e:
+        except IOError as e:
             message.printError("\nAirdrop-ng rule file "+name+" does not exist")
             sys.exit(-1)
         rules = openFile.xreadlines()
@@ -822,12 +822,12 @@ def lorconTX(pktNum=5,packet=None, channel=1 ,slept=0):
     count = 0
     try:
         cchannel = tx.get_channel()
-    except PyLorcon2.Lorcon2Exception ,e:
+    except PyLorcon2.Lorcon2Exception as e:
         message.printError(["\n Error Message from lorcon:",str(e),
             "Unable to get channel the wireless card is on"])
     try:
         tx.set_channel(channel) #set the channel to send packets on
-    except PyLorcon2.Lorcon2Exception ,e:
+    except PyLorcon2.Lorcon2Exception as e:
         message.printError(["\nError Message from lorcon:",str(e),
             "Unable to set channel card does not seem to support it",
             "Skipping packet"])
@@ -835,7 +835,7 @@ def lorconTX(pktNum=5,packet=None, channel=1 ,slept=0):
     while count != pktNum:
         try:
             tx.send_bytes(packet)
-        except PyLorcon2.Lorcon2Exception ,e:
+        except PyLorcon2.Lorcon2Exception as e:
             message.printMessage(['\nError Message from lorcon:',str(e),
             "Are you sure you are using the correct driver with the -d option?",
             "Or try ifconfig up on the card you provided and its vap."])
@@ -882,11 +882,11 @@ def help():
     function for lemonwedge intigration
     supports its show help call
     """
-    print "<"+"~"*59+">\n"      
-    print "Airdrop Module for rule based deauth"
-    print "This module requires airodump-ng to run"
-    print "Module options:\n"
-    print "\t? These need to be set"
+    print("<"+"~"*59+">\n")
+    print("Airdrop Module for rule based deauth")
+    print("This module requires airodump-ng to run")
+    print("Module options:\n")
+    print("\t? These need to be set")
 
 def firstLoad():
     """
@@ -916,13 +916,13 @@ def usage():
     """
     Prints the usage to use airgraph-ng
     """
-    print "\n"+bcolors.OKBLUE+"#"*49
-    print "#"+" "*13+bcolors.ENDC+"Welcome to AirDrop-ng"+bcolors.OKBLUE+" "*13+"#"
-    print "#"*49+bcolors.ENDC+"\n"
+    print("\n"+bcolors.OKBLUE+"#"*49)
+    print("#"+" "*13+bcolors.ENDC+"Welcome to AirDrop-ng"+bcolors.OKBLUE+" "*13+"#")
+    print("#"*49+bcolors.ENDC+"\n")
 
 def commandUsage():
-    print "\nSample command line arguments:"
-    print "\npython airdrop-ng -i wlan0mon -t airodump.csv -r rulefile.txt\n"
+    print("\nSample command line arguments:")
+    print("\npython airdrop-ng -i wlan0mon -t airodump.csv -r rulefile.txt\n")
 
 def OUIupdate():
     """
@@ -1003,7 +1003,7 @@ if __name__ == "__main__":
             """
             tx = PyLorcon2.Context(options.card)
             tx.open_injmon()
-        except PyLorcon2.Lorcon2Exception ,e:
+        except PyLorcon2.Lorcon2Exception as e:
             message.printMessage(["\n",
                 e,"Interface %s does not exist" %(options.card)])
             sys.exit(-1)
@@ -1024,7 +1024,7 @@ if __name__ == "__main__":
                 message.printError("Please run airodump-ng-oui-update")
                 sys.exit(-1)
 
-        except ImportError,e:
+        except ImportError as e:
             message.printMessage(["\n",e,"ouiParser error"]) 
             sys.exit(-1)
         

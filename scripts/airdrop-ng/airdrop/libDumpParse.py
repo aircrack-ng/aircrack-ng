@@ -28,8 +28,7 @@ class airDumpParse:
 		except IOError:
 			print("Error Airodump File",file,"does not exist")
 			Exit(1)
-		data = openedFile.xreadlines()
-		cleanedData = [line.rstrip() for line in data]
+		cleanedData = [line.rstrip() for line in openedFile]
 		openedFile.close()
 		return cleanedData
 	
@@ -135,8 +134,8 @@ class airDumpParse:
 		for key in (clients):
 			mac = clients[key] #mac is the MAC address of the client
 			if mac["bssid"] != ' (notassociated) ': #one line of our dictionary of clients
-				if AP.has_key(mac["bssid"]): # if it is check to see it's an AP we can see and have info on
-					if apClient.has_key(mac["bssid"]): 
+				if mac["bssid"] in AP: # if it is check to see it's an AP we can see and have info on
+					if mac["bssid"] in apClient: 
 						apClient[mac["bssid"]].extend([key]) #if key exists append new client
 					else: 
 						apClient[mac["bssid"]] = [key] #create new key and append the client
