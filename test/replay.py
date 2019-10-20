@@ -13,7 +13,7 @@ except NameError:
     conf.verb=0
 
 if len(sys.argv) != 2:
-    print "Usage: ./replay.py <iface>"
+    print("Usage: ./replay.py <iface>")
     sys.exit(1)
 
 interface=sys.argv[1]
@@ -43,7 +43,7 @@ def recv_pkts(hdr, data):
         return
 
     # manipulate/drop/insert dot11 packet
-    print packet.summary()
+    print(packet.summary())
     # end of manipulation
 
     # construct packet and replay

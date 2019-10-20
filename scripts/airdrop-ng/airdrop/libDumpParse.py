@@ -23,10 +23,10 @@ class airDumpParse:
 		try:
 			openedFile = open(file, "r")
 		except TypeError:
-			print "Missing Airodump-ng file"
+			print("Missing Airodump-ng file")
 			Exit(1)
 		except IOError:
-			print "Error Airodump File",file,"does not exist"
+			print("Error Airodump File",file,"does not exist")
 			Exit(1)
 		data = openedFile.xreadlines()
 		cleanedData = [line.rstrip() for line in data]
@@ -49,7 +49,7 @@ class airDumpParse:
 			except Exception:
 				stationStart = cleanedDump.index('Station MAC, First time seen, Last time seen, Power, # packets, BSSID, ESSID')
 		except Exception:
-			print "You Seem to have provided an improper input file please make sure you are loading an airodump txt file and not a pcap"
+			print("You Seem to have provided an improper input file please make sure you are loading an airodump txt file and not a pcap")
 			Exit(1)
 	
 		del cleanedDump[stationStart] #Remove the heading line
