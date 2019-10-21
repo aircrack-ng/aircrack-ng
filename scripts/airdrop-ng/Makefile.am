@@ -62,5 +62,4 @@ clean-local:
 EXTRA_DIST = airdrop \
 			 airdrop-ng \
 			 README \
-			 setup.py \
-			 old-installers
+			 setup.py
