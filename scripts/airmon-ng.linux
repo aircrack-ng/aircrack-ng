@@ -1088,22 +1088,6 @@ getExtendedInfo() {
 }
 
 scanProcesses() {
-	#this test means it errored and said it was busybox since busybox doesn't print without error
-	if (ps -A 2>&1 | grep -q BusyBox)
-	then
-		#busybox in openwrt cannot handle -A but its output by default is -A
-		psopts=""
-	else
-		psopts="-A"
-	fi
-	if ( ps -o comm= 2>&1 | grep -q BusyBox )
-	then
-		#busybox in openwrt cannot handle -o
-		pso="0"
-	else
-		pso="1"
-	fi
-
 	PROCESSES="wpa_action\|wpa_supplicant\|wpa_cli\|dhclient\|ifplugd\|dhcdbd\|dhcpcd\|udhcpc\|NetworkManager\|knetworkmanager\|avahi-autoipd\|avahi-daemon\|wlassistant\|wifibox\|net_applet\|wicd-daemon\|wicd-client"
 	#PS_ERROR="invalid\|illegal"
 
@@ -1120,12 +1104,7 @@ scanProcesses() {
 	fi
 
 	unset match
-	if [ "${pso}" = 1 ]; then
-		match="$(ps ${psopts} -o comm= | grep ${PROCESSES} | grep -v grep | wc -l)"
-	elif [ "${pso}" = 0 ]; then
-		#openwrt busybox grep hits on itself so we -v it out
-		match="$(ps ${psopts} | grep ${PROCESSES} | grep -v grep | wc -l)"
-	fi
+	match="$(pgrep ${PROCESSES} | wc -l)"
 	if [ ${match} -gt 0 ] && [ "${1}" != "kill" ]; then
 		printf "Found $match processes that could cause trouble.\n"
 		printf "Kill them using 'airmon-ng check kill' before putting\n"
@@ -1142,24 +1121,13 @@ scanProcesses() {
 		if [ "${1}" = "kill" ]; then
 			printf "Killing these processes:\n\n"
 		fi
-		if [ "${pso}" = "1" ]; then
-			ps ${psopts} -o pid=PID -o comm=Name | grep "${PROCESSES}\|PID"
-		else
-			#openwrt busybox grep hits on itself so we -v it out
-			ps ${psopts} | grep "${PROCESSES}\|PID | grep -v grep"
-		fi
+
+		pgrep "${PROCESSES}"
 		if [ "${1}" = "kill" ]; then
 			#we have to use signal 9 because things like nm actually respawn wpa_supplicant too quickly
-			if [ "${pso}" = "1" ]; then
-				for pid in $(ps ${psopts} -o pid= -o comm= | grep ${PROCESSES} | awk '{print $1}'); do
-					kill -9 ${pid}
-				done
-			else
-				#openwrt busybox grep hits on itself so we -v it out
-				for pid in $(ps ${psopts} | grep ${PROCESSES} | grep -v grep | awk '{print $1}'); do
-					kill -9 ${pid}
-				done
-			fi
+			for pid in $(pgrep ${PROCESSES}); do
+				kill -9 ${pid}
+			done
 		fi
 	fi
 
