@@ -53,6 +53,7 @@ All tools are command line which allows for heavy scripting. A lot of GUIs have 
    libpcap development package is required (on Cygwin, use the Aircap SDK instead; see above)
  * For best performance on FreeBSD (50-70% more), install gcc5 (or better) via: pkg install gcc9
  * rfkill
+ * If you want Airodump-ng to log GPS coordinates, gpsd is needed
  * For best performance on SMP machines, ensure the hwloc library and headers are installed. It is strongly recommended on high core count systems, it may give a serious speed boost
  * CMocka for unit testing
  * For intergation testing on Linux only: tcpdump, HostAPd, WPA Supplicant and screen
