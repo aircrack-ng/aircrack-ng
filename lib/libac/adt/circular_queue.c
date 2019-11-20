@@ -25,7 +25,7 @@ struct circular_queue_t
 	pthread_cond_t empty_cv; /// Signals upon no longer empty.
 };
 
-API_EXPORT cqueue_handle_t circular_queue_init(uint8_t * buffer,
+cqueue_handle_t circular_queue_init(uint8_t * buffer,
 											   size_t bufferSize,
 											   size_t elementSize)
 {
@@ -45,7 +45,7 @@ API_EXPORT cqueue_handle_t circular_queue_init(uint8_t * buffer,
 	return cq;
 }
 
-API_EXPORT void circular_queue_free(cqueue_handle_t cq)
+void circular_queue_free(cqueue_handle_t cq)
 {
 	REQUIRE(cq);
 
@@ -57,7 +57,7 @@ API_EXPORT void circular_queue_free(cqueue_handle_t cq)
 	free(cq);
 }
 
-API_EXPORT void circular_queue_reset(cqueue_handle_t cq)
+void circular_queue_reset(cqueue_handle_t cq)
 {
 	REQUIRE(cq);
 
@@ -78,7 +78,7 @@ do_push(cqueue_handle_t cq, void const * const data, size_t size)
 	ALLEGE(pthread_mutex_unlock(&(cq->lock)) == 0);
 }
 
-API_EXPORT void
+void
 circular_queue_push(cqueue_handle_t cq, void const * const data, size_t size)
 {
 	REQUIRE(cq && data && size > 0);
@@ -93,7 +93,7 @@ circular_queue_push(cqueue_handle_t cq, void const * const data, size_t size)
 	do_push(cq, data, size);
 }
 
-API_EXPORT int circular_queue_try_push(cqueue_handle_t cq,
+int circular_queue_try_push(cqueue_handle_t cq,
 									   void const * const data,
 									   size_t size)
 {
@@ -112,7 +112,7 @@ API_EXPORT int circular_queue_try_push(cqueue_handle_t cq,
 	return 0;
 }
 
-API_EXPORT void
+void
 circular_queue_pop(cqueue_handle_t cq, void * const * data, size_t size)
 {
 	REQUIRE(cq && data && size > 0);
@@ -131,7 +131,7 @@ circular_queue_pop(cqueue_handle_t cq, void * const * data, size_t size)
 	ALLEGE(pthread_mutex_unlock(&(cq->lock)) == 0);
 }
 
-API_EXPORT bool circular_queue_is_empty(cqueue_handle_t cq)
+bool circular_queue_is_empty(cqueue_handle_t cq)
 {
 	REQUIRE(cq);
 	bool rc;
@@ -143,7 +143,7 @@ API_EXPORT bool circular_queue_is_empty(cqueue_handle_t cq)
 	return rc;
 }
 
-API_EXPORT bool circular_queue_is_full(cqueue_handle_t cq)
+bool circular_queue_is_full(cqueue_handle_t cq)
 {
 	REQUIRE(cq);
 	bool rc;

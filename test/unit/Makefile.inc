@@ -75,10 +75,10 @@ test_wpapsk_CFLAGS  = "-DLIBAIRCRACK_CE_WPA_PATH=\"$(LIBAIRCRACK_CE_WPA_PATH)\""
 											"-DABS_TOP_BUILDDIR=\"$(abs_top_builddir)\"" \
 											"-DLIBDIR=\"$(libdir)\"" \
 											$(UNIT_COMMON_CFLAGS)
-test_wpapsk_LDFLAGS = -rdynamic
 test_wpapsk_LDADD   = $(LIBAIRCRACK_CE_WPA_LIBS) \
 											$(LIBAIRCRACK_LIBS) \
-											$(UNIT_COMMON_LDADD)
+											$(UNIT_COMMON_LDADD) \
+											$(LIBAIRCRACK_CE_WPA$(SIMD_SUFFIX)_LIBS)
 
 test_wpapsk_cmac_SOURCES = %D%/test-wpapsk-cmac.c
 test_wpapsk_cmac_CFLAGS  =	"-DLIBAIRCRACK_CE_WPA_PATH=\"$(LIBAIRCRACK_CE_WPA_PATH)\"" \
@@ -86,20 +86,16 @@ test_wpapsk_cmac_CFLAGS  =	"-DLIBAIRCRACK_CE_WPA_PATH=\"$(LIBAIRCRACK_CE_WPA_PAT
 														"-DABS_TOP_BUILDDIR=\"$(abs_top_builddir)\"" \
 														"-DLIBDIR=\"$(libdir)\"" \
 														$(UNIT_COMMON_CFLAGS)
-test_wpapsk_cmac_LDFLAGS = -rdynamic
 test_wpapsk_cmac_LDADD   = $(LIBAIRCRACK_LIBS) \
-												   $(UNIT_COMMON_LDADD)
+											$(UNIT_COMMON_LDADD) \
+											$(LIBAIRCRACK_CE_WPA$(SIMD_SUFFIX)_LIBS)
 
 TESTS += test-calc-one-pmk test-circular-buffer test-circular-queue test-string-has-suffix
 
-if !STATIC_BUILD
 TESTS += test-wpapsk
 TESTS += test-wpapsk-cmac
-endif
 
 check_PROGRAMS += test-calc-one-pmk test-circular-buffer test-circular-queue test-string-has-suffix
 
-if !STATIC_BUILD
 check_PROGRAMS += test-wpapsk
 check_PROGRAMS += test-wpapsk-cmac
-endif

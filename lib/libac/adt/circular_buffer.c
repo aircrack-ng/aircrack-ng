@@ -80,7 +80,7 @@ static inline void check_invariants(cbuf_handle_t cbuf)
 	INVARIANT(cbuf->write_pos - cbuf->read_pos <= (cbuf->max / cbuf->size));
 }
 
-API_EXPORT cbuf_handle_t circular_buffer_init(uint8_t * buffer,
+cbuf_handle_t circular_buffer_init(uint8_t * buffer,
 											  size_t bufferSize,
 											  size_t elementSize)
 {
@@ -101,14 +101,14 @@ API_EXPORT cbuf_handle_t circular_buffer_init(uint8_t * buffer,
 	return cbuf;
 }
 
-API_EXPORT void circular_buffer_free(cbuf_handle_t cbuf)
+void circular_buffer_free(cbuf_handle_t cbuf)
 {
 	REQUIRE(cbuf);
 	cbuf->buffer = NULL;
 	free(cbuf);
 }
 
-API_EXPORT void circular_buffer_reset(cbuf_handle_t cbuf)
+void circular_buffer_reset(cbuf_handle_t cbuf)
 {
 	REQUIRE(cbuf);
 
@@ -116,31 +116,31 @@ API_EXPORT void circular_buffer_reset(cbuf_handle_t cbuf)
 	cbuf->write_pos = 0;
 }
 
-API_EXPORT bool circular_buffer_is_empty(cbuf_handle_t cbuf)
+bool circular_buffer_is_empty(cbuf_handle_t cbuf)
 {
 	REQUIRE(cbuf);
 	return cbuf->read_pos == cbuf->write_pos;
 }
 
-API_EXPORT bool circular_buffer_is_full(cbuf_handle_t cbuf)
+bool circular_buffer_is_full(cbuf_handle_t cbuf)
 {
 	REQUIRE(cbuf);
 	return cbuf->write_pos == (cbuf->read_pos + (cbuf->max / cbuf->size));
 }
 
-API_EXPORT size_t circular_buffer_capacity(cbuf_handle_t cbuf)
+size_t circular_buffer_capacity(cbuf_handle_t cbuf)
 {
 	REQUIRE(cbuf);
 	return cbuf->max / cbuf->size;
 }
 
-API_EXPORT size_t circular_buffer_size(cbuf_handle_t cbuf)
+size_t circular_buffer_size(cbuf_handle_t cbuf)
 {
 	REQUIRE(cbuf);
 	return cbuf->write_pos - cbuf->read_pos;
 }
 
-API_EXPORT void
+void
 circular_buffer_put(cbuf_handle_t cbuf, void const * const data, size_t size)
 {
 	REQUIRE(cbuf && data && size > 0);
@@ -159,7 +159,7 @@ circular_buffer_put(cbuf_handle_t cbuf, void const * const data, size_t size)
 	check_invariants(cbuf);
 }
 
-API_EXPORT void
+void
 circular_buffer_get(cbuf_handle_t cbuf, void * const * data, size_t size)
 {
 	REQUIRE(cbuf && data && size > 0);
