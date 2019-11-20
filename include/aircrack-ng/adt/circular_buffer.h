@@ -51,7 +51,7 @@ typedef circular_buffer_t * cbuf_handle_t;
  * @param[in] elementSize The number of bytes used by a single entry stored.
  * @return A brand-new circular buffer handle, else NULL on error.
  */
-API_IMPORT cbuf_handle_t circular_buffer_init(uint8_t * buffer,
+cbuf_handle_t circular_buffer_init(uint8_t * buffer,
 											  size_t bufferSize,
 											  size_t elementSize);
 
@@ -63,13 +63,13 @@ API_IMPORT cbuf_handle_t circular_buffer_init(uint8_t * buffer,
  * The API consumer is expected to release the memory region
  * given to the @a circular_buffer_init function, by themselves.
  */
-API_IMPORT void circular_buffer_free(cbuf_handle_t cbuf);
+void circular_buffer_free(cbuf_handle_t cbuf);
 
 /*!
  * @brief Reset the circular buffer back to its' initial state.
  * @param[in] cbuf The circular buffer handle to operate upon.
  */
-API_IMPORT void circular_buffer_reset(cbuf_handle_t cbuf);
+void circular_buffer_reset(cbuf_handle_t cbuf);
 
 /*!
  * @brief Store an entry to the circular buffer.
@@ -85,7 +85,7 @@ API_IMPORT void circular_buffer_reset(cbuf_handle_t cbuf);
  * buffer's memory location. This is because we internally use
  * the @f memcpy function.
  */
-API_IMPORT void
+void
 circular_buffer_put(cbuf_handle_t cbuf, void const * const data, size_t size);
 
 /*!
@@ -101,7 +101,7 @@ circular_buffer_put(cbuf_handle_t cbuf, void const * const data, size_t size);
  * buffer's memory location. This is because we internally use
  * the @f memcpy function.
  */
-API_IMPORT void
+void
 circular_buffer_get(cbuf_handle_t cbuf, void * const * data, size_t size);
 
 /*!
@@ -110,7 +110,7 @@ circular_buffer_get(cbuf_handle_t cbuf, void * const * data, size_t size);
  * @return A boolean representing the emptiness state of the
  *         circular buffer.
  */
-API_IMPORT bool circular_buffer_is_empty(cbuf_handle_t cbuf);
+bool circular_buffer_is_empty(cbuf_handle_t cbuf);
 
 /*!
  * @brief Returns whether the circular buffer is full.
@@ -118,7 +118,7 @@ API_IMPORT bool circular_buffer_is_empty(cbuf_handle_t cbuf);
  * @return A boolean representing the fullness state of the
  *         circular buffer.
  */
-API_IMPORT bool circular_buffer_is_full(cbuf_handle_t cbuf);
+bool circular_buffer_is_full(cbuf_handle_t cbuf);
 
 /*!
  * @brief Returns the number of storable entries.
@@ -126,14 +126,14 @@ API_IMPORT bool circular_buffer_is_full(cbuf_handle_t cbuf);
  * @return The number of entries that may be stored within the
  *         circular buffer.
  */
-API_IMPORT size_t circular_buffer_capacity(cbuf_handle_t cbuf);
+size_t circular_buffer_capacity(cbuf_handle_t cbuf);
 
 /*!
  * @brief Returns the number of currently stored entries.
  * @param[in] cbuf The circular buffer handle to operate upon.
  * @return The number of entries within the circular buffer.
  */
-API_IMPORT size_t circular_buffer_size(cbuf_handle_t cbuf);
+size_t circular_buffer_size(cbuf_handle_t cbuf);
 
 #ifdef __cplusplus
 }

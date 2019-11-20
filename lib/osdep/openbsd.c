@@ -557,7 +557,7 @@ static struct wif * obsd_open(char * iface)
 
 struct wif * wi_open_osdep(char * iface) { return obsd_open(iface); }
 
-EXPORT int get_battery_state(void)
+int get_battery_state(void)
 {
 #if defined(__FreeBSD__)
 	int value;

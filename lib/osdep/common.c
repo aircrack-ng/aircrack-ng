@@ -32,7 +32,7 @@
 /**
  * Return the frequency in Mhz from a channel number
  */
-EXPORT int getFrequencyFromChannel(int channel)
+int getFrequencyFromChannel(int channel)
 {
 	static int frequencies[] = {
 		-1, // No channel 0
@@ -67,7 +67,7 @@ EXPORT int getFrequencyFromChannel(int channel)
 /**
  * Return the channel from the frequency (in Mhz)
  */
-EXPORT int getChannelFromFrequency(int frequency)
+int getChannelFromFrequency(int frequency)
 {
 	if (frequency >= 2412 && frequency <= 2472)
 		return (frequency - 2407) / 5;

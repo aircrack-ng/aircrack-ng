@@ -36,4 +36,4 @@ static struct tif * ti_open_dummy(char * iface)
 	return NULL;
 }
 
-EXPORT struct tif * ti_open(char * iface) { return ti_open_dummy(iface); }
+struct tif * ti_open(char * iface) { return ti_open_dummy(iface); }

@@ -220,4 +220,4 @@ static struct tif * ti_open_fbsd(char * iface)
 	return ti;
 }
 
-EXPORT struct tif * ti_open(char * iface) { return ti_open_fbsd(iface); }
+struct tif * ti_open(char * iface) { return ti_open_fbsd(iface); }

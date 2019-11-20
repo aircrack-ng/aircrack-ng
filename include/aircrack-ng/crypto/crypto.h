@@ -208,7 +208,6 @@ static inline int eapol_handshake_step(const unsigned char * eapol,
 }
 
 /// Initialize the system cryptography librar(ies).
-API_IMPORT
 void ac_crypto_init(void);
 
 #endif /* crypto.h */

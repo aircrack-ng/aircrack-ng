@@ -52,7 +52,7 @@ typedef circular_queue_t * cqueue_handle_t;
  * @param[in] elementSize The number of bytes used by a single entry stored.
  * @return A brand-new circular queue handle, else NULL on error.
  */
-API_IMPORT cqueue_handle_t circular_queue_init(uint8_t * buffer,
+cqueue_handle_t circular_queue_init(uint8_t * buffer,
 											   size_t bufferSize,
 											   size_t elementSize);
 
@@ -64,13 +64,13 @@ API_IMPORT cqueue_handle_t circular_queue_init(uint8_t * buffer,
  * The API consumer is expected to release the memory region
  * given to the @a circular_queue_init function, by themselves.
  */
-API_IMPORT void circular_queue_free(cqueue_handle_t cq);
+void circular_queue_free(cqueue_handle_t cq);
 
 /*!
  * @brief Reset the circular queue back to its initial state.
  * @param[in] cq The circular queue handle to operate upon.
  */
-API_IMPORT void circular_queue_reset(cqueue_handle_t cq);
+void circular_queue_reset(cqueue_handle_t cq);
 
 /*!
  * @brief Store an entry to the circular queue.
@@ -86,7 +86,7 @@ API_IMPORT void circular_queue_reset(cqueue_handle_t cq);
  * queue's memory location. This is because we internally use
  * the @f memcpy function.
  */
-API_IMPORT void
+void
 circular_queue_push(cqueue_handle_t cq, void const * const data, size_t size);
 
 /*!
@@ -104,7 +104,7 @@ circular_queue_push(cqueue_handle_t cq, void const * const data, size_t size);
  * queue's memory location. This is because we internally use
  * the @f memcpy function.
  */
-API_IMPORT int circular_queue_try_push(cqueue_handle_t cq,
+int circular_queue_try_push(cqueue_handle_t cq,
 									   void const * const data,
 									   size_t size);
 
@@ -121,7 +121,7 @@ API_IMPORT int circular_queue_try_push(cqueue_handle_t cq,
  * queue's memory location. This is because we internally use
  * the @f memcpy function.
  */
-API_IMPORT void
+void
 circular_queue_pop(cqueue_handle_t cq, void * const * data, size_t size);
 
 /*!
@@ -130,7 +130,7 @@ circular_queue_pop(cqueue_handle_t cq, void * const * data, size_t size);
  * @return A boolean representing the emptiness state of the
  *         circular queue.
  */
-API_IMPORT bool circular_queue_is_empty(cqueue_handle_t cq);
+bool circular_queue_is_empty(cqueue_handle_t cq);
 
 /*!
  * @brief Returns whether the circular queue is full.
@@ -138,7 +138,7 @@ API_IMPORT bool circular_queue_is_empty(cqueue_handle_t cq);
  * @return A boolean representing the fullness state of the
  *         circular queue.
  */
-API_IMPORT bool circular_queue_is_full(cqueue_handle_t cq);
+bool circular_queue_is_full(cqueue_handle_t cq);
 
 #ifdef __cplusplus
 }

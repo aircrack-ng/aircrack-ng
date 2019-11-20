@@ -53,13 +53,11 @@ SRCS_CYGWIN    += $(SRCS_APCAP)
 endif
 
 if CYGWIN
+libaircrack_osdep_la_SOURCES = $(SRCS_CYGWIN)
 if AIRPCAP
-libaircrack_osdep_la_SOURCES = $(SRCS_CYGWIN)
 libaircrack_osdep_la_CFLAGS = $(AIRPCAP_CFLAGS)
-libaircrack_osdep_la_LIBADD = $(AIRPCAP_LIBS) $(LIBRADIOTAP_LIBS) -lsetupapi -liphlpapi
-else
-libaircrack_osdep_la_SOURCES = $(SRCS_CYGWIN)
 endif
+libaircrack_osdep_la_LIBADD += -lsetupapi -liphlpapi
 endif
 
 if DARWIN
@@ -77,7 +75,6 @@ endif
 if LINUX
 libaircrack_osdep_la_SOURCES = $(SRCS_LINUX)
 libaircrack_osdep_la_CFLAGS  = $(LIBNL_CFLAGS)
-libaircrack_osdep_la_LIBADD = $(LIBNL_LIBS) $(LIBRADIOTAP_LIBS)
 endif
 
 if NETBSD
@@ -88,15 +85,7 @@ if OPENBSD
 libaircrack_osdep_la_SOURCES = $(SRCS_OBSD)
 endif
 
-if !AIRPCAP
-libaircrack_osdep_la_LIBADD = $(LIBRADIOTAP_LIBS)
-if CYGWIN
-libaircrack_osdep_la_LIBADD += -lsetupapi -liphlpapi
-endif
-endif
-
-lib_LTLIBRARIES += libaircrack-osdep.la
-libaircrack_osdep_la_LDFLAGS = -release $(LT_VER) -no-undefined
+noinst_LTLIBRARIES += libaircrack-osdep.la
 libaircrack_osdep_la_CPPFLAGS = -I$(top_srcdir)/include/aircrack-ng/osdep $(AM_CPPFLAGS)
 
 EXTRA_DIST +=     %D%/openbsd.c \
