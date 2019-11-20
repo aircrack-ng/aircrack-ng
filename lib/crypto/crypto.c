@@ -58,7 +58,6 @@ GCRY_THREAD_OPTION_PTHREAD_IMPL;
 #endif
 #endif
 
-API_EXPORT
 void ac_crypto_init(void)
 {
 #ifdef USE_GCRYPT

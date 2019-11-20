@@ -184,7 +184,7 @@ static void sha256_prf_bits(const u8 * key,
 }
 #endif /* HAVE_OPENSSL_CMAC_H || GCRYPT_WITH_CMAC_AES */
 
-EXPORT int ac_crypto_engine_supported_features(void)
+int ac_crypto_engine_supported_features(void)
 {
 #if defined(JOHN_AVX512F)
 	return SIMD_SUPPORTS_AVX512F;
@@ -207,7 +207,7 @@ EXPORT int ac_crypto_engine_supported_features(void)
 #endif
 }
 
-EXPORT int ac_crypto_engine_simd_width()
+int ac_crypto_engine_simd_width()
 {
 #ifdef SIMD_COEF_32
 	return SIMD_COEF_32;
@@ -216,7 +216,7 @@ EXPORT int ac_crypto_engine_simd_width()
 #endif
 }
 
-EXPORT int ac_crypto_engine_init(ac_crypto_engine_t * engine)
+int ac_crypto_engine_init(ac_crypto_engine_t * engine)
 {
 	assert(engine != NULL);
 #ifdef XDEBUG
@@ -234,7 +234,7 @@ EXPORT int ac_crypto_engine_init(ac_crypto_engine_t * engine)
 	return 0;
 }
 
-EXPORT void ac_crypto_engine_destroy(ac_crypto_engine_t * engine)
+void ac_crypto_engine_destroy(ac_crypto_engine_t * engine)
 {
 	assert(engine != NULL);
 #ifdef XDEBUG
@@ -245,7 +245,7 @@ EXPORT void ac_crypto_engine_destroy(ac_crypto_engine_t * engine)
 	engine->essid = NULL;
 }
 
-EXPORT void ac_crypto_engine_set_essid(ac_crypto_engine_t * engine,
+void ac_crypto_engine_set_essid(ac_crypto_engine_t * engine,
 									   const uint8_t * essid)
 {
 	assert(engine != NULL);
@@ -256,7 +256,7 @@ EXPORT void ac_crypto_engine_set_essid(ac_crypto_engine_t * engine,
 	engine->essid_length = (uint32_t) strlen((char *) essid);
 }
 
-EXPORT int ac_crypto_engine_thread_init(ac_crypto_engine_t * engine,
+int ac_crypto_engine_thread_init(ac_crypto_engine_t * engine,
 										int threadid)
 {
 	assert(engine != NULL);
@@ -271,7 +271,7 @@ EXPORT int ac_crypto_engine_thread_init(ac_crypto_engine_t * engine,
 	return 0;
 }
 
-EXPORT void ac_crypto_engine_thread_destroy(ac_crypto_engine_t * engine,
+void ac_crypto_engine_thread_destroy(ac_crypto_engine_t * engine,
 											int threadid)
 {
 	assert(engine != NULL);
@@ -287,20 +287,20 @@ EXPORT void ac_crypto_engine_thread_destroy(ac_crypto_engine_t * engine,
 	}
 }
 
-EXPORT uint8_t *
+uint8_t *
 ac_crypto_engine_get_pmk(ac_crypto_engine_t * engine, int threadid, int index)
 {
 	return (uint8_t *) engine->thread_data[threadid]->pmk
 		   + (sizeof(wpapsk_hash) * index);
 }
 
-EXPORT uint8_t *
+uint8_t *
 ac_crypto_engine_get_ptk(ac_crypto_engine_t * engine, int threadid, int index)
 {
 	return (uint8_t *) engine->thread_data[threadid]->ptk + (20 * index);
 }
 
-EXPORT void ac_crypto_engine_calc_pke(ac_crypto_engine_t * engine,
+void ac_crypto_engine_calc_pke(ac_crypto_engine_t * engine,
 									  const uint8_t bssid[6],
 									  const uint8_t stmac[6],
 									  const uint8_t anonce[32],
@@ -336,7 +336,7 @@ EXPORT void ac_crypto_engine_calc_pke(ac_crypto_engine_t * engine,
 }
 
 /* derive the PMK from the passphrase and the essid */
-EXPORT void ac_crypto_engine_calc_one_pmk(const uint8_t * key,
+void ac_crypto_engine_calc_one_pmk(const uint8_t * key,
 										  const uint8_t * essid_pre,
 										  uint32_t essid_pre_len,
 										  uint8_t pmk[40])
@@ -423,7 +423,7 @@ EXPORT void ac_crypto_engine_calc_one_pmk(const uint8_t * key,
 	}
 }
 
-EXPORT void ac_crypto_engine_calc_pmk(
+void ac_crypto_engine_calc_pmk(
 	ac_crypto_engine_t * engine,
 	const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
 	const int nparallel,
@@ -451,7 +451,7 @@ EXPORT void ac_crypto_engine_calc_pmk(
 		}
 }
 
-EXPORT void ac_crypto_engine_calc_ptk(ac_crypto_engine_t * engine,
+void ac_crypto_engine_calc_ptk(ac_crypto_engine_t * engine,
 									  const uint8_t keyver,
 									  int vectorIdx,
 									  int threadid)
@@ -497,7 +497,7 @@ EXPORT void ac_crypto_engine_calc_ptk(ac_crypto_engine_t * engine,
 #endif
 }
 
-EXPORT void ac_crypto_engine_calc_mic(ac_crypto_engine_t * engine,
+void ac_crypto_engine_calc_mic(ac_crypto_engine_t * engine,
 									  const uint8_t eapol[256],
 									  const uint32_t eapol_size,
 									  uint8_t mic[MAX_KEYS_PER_CRYPT_SUPPORTED]
@@ -555,7 +555,7 @@ EXPORT void ac_crypto_engine_calc_mic(ac_crypto_engine_t * engine,
 	}
 }
 
-EXPORT int ac_crypto_engine_wpa_crack(
+int ac_crypto_engine_wpa_crack(
 	ac_crypto_engine_t * engine,
 	const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
 	const uint8_t eapol[256],
@@ -587,7 +587,7 @@ EXPORT int ac_crypto_engine_wpa_crack(
 	return -1;
 }
 
-EXPORT void ac_crypto_engine_set_pmkid_salt(ac_crypto_engine_t * engine,
+void ac_crypto_engine_set_pmkid_salt(ac_crypto_engine_t * engine,
 											const uint8_t bssid[6],
 											const uint8_t stmac[6],
 											int threadid)
@@ -602,7 +602,7 @@ EXPORT void ac_crypto_engine_set_pmkid_salt(ac_crypto_engine_t * engine,
 	memcpy(pke + 14, stmac, 6);
 }
 
-EXPORT int ac_crypto_engine_wpa_pmkid_crack(
+int ac_crypto_engine_wpa_pmkid_crack(
 	ac_crypto_engine_t * engine,
 	const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
 	const uint8_t pmkid[32],

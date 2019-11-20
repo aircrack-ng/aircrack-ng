@@ -646,4 +646,4 @@ err:
 	return NULL;
 }
 
-EXPORT struct tif * ti_open(char * iface) { return ti_open_cygwin(iface); }
+struct tif * ti_open(char * iface) { return ti_open_cygwin(iface); }

@@ -70,22 +70,14 @@ endif
 
 libaccrypto_la_SOURCES	= $(SRC_CRYPTO)
 libaccrypto_la_CFLAGS		= $(COMMON_CFLAGS) $(PCRE_CFLAGS)
-libaccrypto_la_LIBADD		= $(PCRE_LIBS) $(LIBAIRCRACK_OSDEP_LIBS) $(CRYPTO_LIBS)
 
 libcowpatty_la_SOURCES = $(SRC_COW)
 libcowpatty_la_CFLAGS = $(COMMON_CFLAGS) $(LIBCOW_CFLAGS)
-if !STATIC_CRYPTO
-libcowpatty_la_LIBADD = $(COMMON_LDADD)
-endif
 
 libptw_la_SOURCES	= $(SRC_PTW)
 libptw_la_CFLAGS	= $(COMMON_CFLAGS)
-if !STATIC_CRYPTO
-libptw_la_LIBADD	= $(COMMON_LDADD)
-endif
 
 libradiotap_la_SOURCES	= $(SRC_RADIOTAP)
-libradiotap_la_LDFLAGS	= -no-undefined
 
 ########################################################################
 # Aircrack Support Library                                             #
@@ -122,28 +114,15 @@ libaircrack_la_CFLAGS		= $(COMMON_CFLAGS) $(PCRE_CFLAGS) \
 													"-DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"" \
 													"-DABS_TOP_BUILDDIR=\"$(abs_top_builddir)\"" \
 													"-DLIBDIR=\"$(libdir)\""
-libaircrack_la_LIBADD		= $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(PCRE_LIBS) $(CRYPTO_LIBS)
 
 if CYGWIN
-libaircrack_la_LIBADD += -lshlwapi
+libaircrack_la_LIBADD = -lshlwapi
 endif
 
-if STATIC_BUILD
 libaircrack_la_CFLAGS += -DSTATIC_BUILD
-endif
 
 if HAVE_HWLOC
 libaircrack_la_CFLAGS += $(HWLOC_CFLAGS)
-if !CYGWIN
-if !STATIC_HWLOC
-libaircrack_la_LIBADD += $(HWLOC_LIBS)
-endif
-endif
-if CYGWIN
-if !STATIC_HWLOC
-libaircrack_la_LIBADD += $(HWLOC_LIBS)
-endif
-endif
 endif
 
 ########################################################################
@@ -152,7 +131,6 @@ endif
 
 libaircrack_ce_wep_la_SOURCES	= $(SRC_CE_WEP)
 libaircrack_ce_wep_la_CFLAGS	= $(COMMON_CFLAGS)
-libaircrack_ce_wep_la_LIBADD	= $(CRYPTO_LIBS)
 
 ########################################################################
 # Aircrack Crypto Engine for WPA                                       #
@@ -161,84 +139,52 @@ libaircrack_ce_wep_la_LIBADD	= $(CRYPTO_LIBS)
 # Intel/AMD
 libaircrack_ce_wpa_x86_avx512_la_SOURCES = $(SRC_CE_WPA)
 libaircrack_ce_wpa_x86_avx512_la_CFLAGS = $(x86_avx512_cflags) -DSIMD_CORE -DJOHN_AVX512F $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
-libaircrack_ce_wpa_x86_avx512_la_LDFLAGS = -release $(LT_VER) -no-undefined
-if !STATIC_CRYPTO
-libaircrack_ce_wpa_x86_avx512_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
-endif
 
 libaircrack_ce_wpa_x86_avx2_la_SOURCES = $(SRC_CE_WPA)
 libaircrack_ce_wpa_x86_avx2_la_CFLAGS = $(x86_avx2_cflags) -DSIMD_CORE -DJOHN_AVX2 $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
-libaircrack_ce_wpa_x86_avx2_la_LDFLAGS = -release $(LT_VER) -no-undefined
-if !STATIC_CRYPTO
-libaircrack_ce_wpa_x86_avx2_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
-endif
 
 libaircrack_ce_wpa_x86_avx_la_SOURCES = $(SRC_CE_WPA)
 libaircrack_ce_wpa_x86_avx_la_CFLAGS = $(x86_avx_cflags) -DSIMD_CORE -DJOHN_AVX $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
-libaircrack_ce_wpa_x86_avx_la_LDFLAGS = -release $(LT_VER) -no-undefined
-if !STATIC_CRYPTO
-libaircrack_ce_wpa_x86_avx_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
-endif
 
 libaircrack_ce_wpa_x86_sse2_la_SOURCES = $(SRC_CE_WPA)
 libaircrack_ce_wpa_x86_sse2_la_CFLAGS = $(x86_sse2_cflags) -DSIMD_CORE -DJOHN_SSE2 $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
-libaircrack_ce_wpa_x86_sse2_la_LDFLAGS = -release $(LT_VER) -no-undefined
-if !STATIC_CRYPTO
-libaircrack_ce_wpa_x86_sse2_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
-endif
 
 # ARM/AARCH64
 libaircrack_ce_wpa_arm_neon_la_SOURCES = $(SRC_CE_WPA)
 libaircrack_ce_wpa_arm_neon_la_CFLAGS = $(arm_neon_cflags) -DSIMD_CORE -DHAS_NEON $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
-libaircrack_ce_wpa_arm_neon_la_LDFLAGS = -release $(LT_VER) -no-undefined
-if !STATIC_CRYPTO
-libaircrack_ce_wpa_arm_neon_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
-endif
 
 # PowerPC
 libaircrack_ce_wpa_ppc_altivec_la_SOURCES = $(SRC_CE_WPA)
 libaircrack_ce_wpa_ppc_altivec_la_CFLAGS = $(ppc_altivec_cflags) -DSIMD_CORE -DHAS_ALTIVEC=1 -DJOHN_ALTIVEC $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
-libaircrack_ce_wpa_ppc_altivec_la_LDFLAGS = -release $(LT_VER) -no-undefined
-if !STATIC_CRYPTO
-libaircrack_ce_wpa_ppc_altivec_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
-endif
 
 libaircrack_ce_wpa_ppc_power8_la_SOURCES = $(SRC_CE_WPA)
 libaircrack_ce_wpa_ppc_power8_la_CFLAGS = $(ppc_altivec_cflags) -DSIMD_CORE -DHAS_ALTIVEC=1 -DJOHN_ALTIVEC -DJOHN_POWER8 $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
-libaircrack_ce_wpa_ppc_power8_la_LDFLAGS = -release $(LT_VER) -no-undefined
-if !STATIC_CRYPTO
-libaircrack_ce_wpa_ppc_power8_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
-endif
 
 # Generic library
 libaircrack_ce_wpa_la_CFLAGS = $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS)
 libaircrack_ce_wpa_la_SOURCES = $(SRC_CE_WPA)
-libaircrack_ce_wpa_la_LDFLAGS = -release $(LT_VER) -no-undefined
-if !STATIC_CRYPTO
-libaircrack_ce_wpa_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
-endif
 
 # Build librarie(s)
-lib_LTLIBRARIES += libaircrack-ce-wpa.la
+noinst_LTLIBRARIES += libaircrack-ce-wpa.la
 
 if ARM
 if NEON
-lib_LTLIBRARIES += libaircrack-ce-wpa-arm-neon.la
+noinst_LTLIBRARIES += libaircrack-ce-wpa-arm-neon.la
 endif
 endif
 if PPC
 if ALTIVEC
-lib_LTLIBRARIES += libaircrack-ce-wpa-ppc-altivec.la
+noinst_LTLIBRARIES += libaircrack-ce-wpa-ppc-altivec.la
 endif
 if POWER8
-lib_LTLIBRARIES += libaircrack-ce-wpa-ppc-power8.la
+noinst_LTLIBRARIES += libaircrack-ce-wpa-ppc-power8.la
 endif
 endif
 if X86
 if AVX512F
-lib_LTLIBRARIES += libaircrack-ce-wpa-x86-avx512.la
+noinst_LTLIBRARIES += libaircrack-ce-wpa-x86-avx512.la
 endif
-lib_LTLIBRARIES += libaircrack-ce-wpa-x86-avx2.la libaircrack-ce-wpa-x86-avx.la libaircrack-ce-wpa-x86-sse2.la
+noinst_LTLIBRARIES += libaircrack-ce-wpa-x86-avx2.la libaircrack-ce-wpa-x86-avx.la libaircrack-ce-wpa-x86-sse2.la
 endif
 
 noinst_LTLIBRARIES += libaircrack-ce-wep.la libcowpatty.la libaccrypto.la libptw.la libaircrack.la libradiotap.la

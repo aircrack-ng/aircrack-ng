@@ -79,21 +79,6 @@
 #define INVARIANT(c)
 #endif
 
-#if defined(_MSC_VER)
-//  Microsoft
-#define API_EXPORT __declspec(dllexport)
-#define API_IMPORT __declspec(dllimport)
-#elif defined(__GNUC__) || defined(__llvm__) || defined(__clang__)             \
-	|| defined(__INTEL_COMPILER)
-#define API_EXPORT __attribute__((visibility("default")))
-#define API_IMPORT
-#else
-//  do nothing and hope for the best?
-#define API_EXPORT
-#define API_IMPORT
-#pragma warning Unknown dynamic link import / export semantics.
-#endif
-
 #define STATIC_ASSERT(COND, MSG)                                               \
 	typedef char static_assertion_##MSG[(!!(COND)) * 2 - 1]
 // token pasting madness:

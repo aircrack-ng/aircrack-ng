@@ -107,7 +107,7 @@ AC_DEFINE([LT_CYGWIN_VER], ["-version_major-version_minor-version_micro.dll"], [
 #
 # Initialize libtool
 #
-LT_INIT([win32-dll disable-static shared])
+LT_INIT([win32-dll disable-shared])
 
 #
 # Operating Systems
@@ -194,7 +194,6 @@ AM_CONDITIONAL([HAVE_AIRPCAP_OR_PCAP], [test "$AIRPCAP" = yes -o "$PCAP_FOUND" =
 AM_CONDITIONAL([MULTIBIN], [test "$with_multibin" = yes])
 AM_CONDITIONAL([ENABLE_INSTALLED_TESTS], [test "nope" = yes]) # for glib tests
 AM_CONDITIONAL([CMOCKA], [test "$CMOCKA_FOUND" = yes])
-AM_CONDITIONAL([STATIC_BUILD], [test "$enable_static" = yes])
 AM_CONDITIONAL([EXPECT], [test "$EXPECT_FOUND" = yes])
 
 #

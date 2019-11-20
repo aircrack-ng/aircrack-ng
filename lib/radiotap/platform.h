@@ -34,20 +34,6 @@
 #define le32_to_cpu		le32toh
 #endif
 
-#if defined(_MSC_VER)
-//  Microsoft
-#define EXPORT __declspec(dllexport)
-#define IMPORT __declspec(dllimport)
-#elif defined(__GNUC__) || defined(__llvm__) || defined(__clang__) || defined(__INTEL_COMPILER)
-#define EXPORT __attribute__((visibility("default")))
-#define IMPORT
-#else
-//  do nothing and hope for the best?
-#define EXPORT
-#define IMPORT
-#pragma warning Unknown dynamic link import/export semantics.
-#endif
-
 #if defined(RADIOTAP_FAST_UNALIGNED_ACCESS)
 #define get_unaligned(p)					\
 ({								\

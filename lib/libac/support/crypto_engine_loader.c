@@ -238,7 +238,7 @@ static char * get_executable_directory(void)
 }
 #endif
 
-EXPORT int ac_crypto_engine_loader_get_available(void)
+int ac_crypto_engine_loader_get_available(void)
 {
 	int simd_flags = SIMD_SUPPORTS_NONE;
 	char library_path[8192];
@@ -310,7 +310,7 @@ out:
 	return simd_flags;
 }
 
-EXPORT char * ac_crypto_engine_loader_best_library_for(int simd_features)
+char * ac_crypto_engine_loader_best_library_for(int simd_features)
 {
 	char buffer[8192] = {"aircrack-ce-wpa"};
 	char library_path[8192];
@@ -407,7 +407,7 @@ EXPORT char * ac_crypto_engine_loader_best_library_for(int simd_features)
 	return strdup(module_filename);
 }
 
-EXPORT int ac_crypto_engine_loader_string_to_flag(const char * const str)
+int ac_crypto_engine_loader_string_to_flag(const char * const str)
 {
 	int simd_features = -1;
 
@@ -435,7 +435,7 @@ EXPORT int ac_crypto_engine_loader_string_to_flag(const char * const str)
 	return simd_features;
 }
 
-EXPORT char * ac_crypto_engine_loader_flags_to_string(int flags)
+char * ac_crypto_engine_loader_flags_to_string(int flags)
 {
 	char buffer[8192] = {0};
 
@@ -453,7 +453,7 @@ EXPORT char * ac_crypto_engine_loader_flags_to_string(int flags)
 	return strdup(buffer);
 }
 
-EXPORT int ac_crypto_engine_loader_load(int flags)
+int ac_crypto_engine_loader_load(int flags)
 {
 #ifndef STATIC_BUILD
 	if (flags == -1) flags = ac_crypto_engine_loader_get_available();
@@ -528,7 +528,7 @@ EXPORT int ac_crypto_engine_loader_load(int flags)
 	return 0;
 }
 
-EXPORT void ac_crypto_engine_loader_unload(void)
+void ac_crypto_engine_loader_unload(void)
 {
 #ifndef STATIC_BUILD
 	dlclose(module);

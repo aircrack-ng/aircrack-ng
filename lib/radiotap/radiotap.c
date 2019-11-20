@@ -87,7 +87,6 @@ static const struct ieee80211_radiotap_namespace radiotap_ns = {
  * Example code: parse.c
  */
 
-EXPORT
 int ieee80211_radiotap_iterator_init(
 	struct ieee80211_radiotap_iterator *iterator,
 	struct ieee80211_radiotap_header *radiotap_header,
@@ -229,7 +228,6 @@ static int find_override(struct ieee80211_radiotap_iterator *iterator,
  * iterator.this_arg for type "type" safely on all arches.
  */
 
-EXPORT
 int ieee80211_radiotap_iterator_next(
 	struct ieee80211_radiotap_iterator *iterator)
 {

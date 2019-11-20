@@ -33,21 +33,6 @@
 #ifndef AIRCRACK_NG_CRYPTO_ENGINE_LOADER_H
 #define AIRCRACK_NG_CRYPTO_ENGINE_LOADER_H
 
-#if defined(_MSC_VER)
-//  Microsoft
-#define EXPORT __declspec(dllexport)
-#define IMPORT __declspec(dllimport)
-#elif defined(__GNUC__) || defined(__llvm__) || defined(__clang__)             \
-	|| defined(__INTEL_COMPILER)
-#define EXPORT __attribute__((visibility("default")))
-#define IMPORT
-#else
-//  do nothing and hope for the best?
-#define EXPORT
-#define IMPORT
-#pragma warning Unknown dynamic link import / export semantics.
-#endif
-
 #define STATIC_ASSERT(COND, MSG)                                               \
 	typedef char static_assertion_##MSG[(!!(COND)) * 2 - 1]
 // token pasting madness:
@@ -80,7 +65,7 @@ extern "C" {
  *
  * @return Integer bit representation of SIMD flags.
  */
-IMPORT int ac_crypto_engine_loader_get_available(void);
+int ac_crypto_engine_loader_get_available(void);
 
 /**
  * Returns an absolute path to the best Aircrack-ng Crypto
@@ -90,10 +75,10 @@ IMPORT int ac_crypto_engine_loader_get_available(void);
  * @param simd_features Integer bit representation of SIMD flags.
  * @return character sequence that must be deallocated by caller.
  */
-IMPORT char * ac_crypto_engine_loader_best_library_for(int simd_features);
+char * ac_crypto_engine_loader_best_library_for(int simd_features);
 
 /// Produces an integer bit representation of a SIMD character sequence.
-IMPORT int ac_crypto_engine_loader_string_to_flag(const char * const str);
+int ac_crypto_engine_loader_string_to_flag(const char * const str);
 
 /**
  * Produces a character representation of the SIMD integer flags.
@@ -106,14 +91,14 @@ IMPORT int ac_crypto_engine_loader_string_to_flag(const char * const str);
  * @param flags Integer bit representation of SIMD flags.
  * @return character sequence that must be deallocated by caller.
  */
-IMPORT char * ac_crypto_engine_loader_flags_to_string(int flags);
+char * ac_crypto_engine_loader_flags_to_string(int flags);
 
 /// Loads the specified Aircrack-ng Crypto Engine specified by \a flags.
 /// Does nothing in a static build.
-IMPORT int ac_crypto_engine_loader_load(int flags);
+int ac_crypto_engine_loader_load(int flags);
 
 /// Unloads the Aircrack-ng Crypto Engine. Does nothing in a static build.
-IMPORT void ac_crypto_engine_loader_unload(void);
+void ac_crypto_engine_loader_unload(void);
 
 // Symbols defined by the loader.
 

@@ -37,7 +37,7 @@ struct wif * wi_open_osdep(char * iface)
 	return NULL;
 }
 
-EXPORT int get_battery_state(void)
+int get_battery_state(void)
 {
 	errno = EOPNOTSUPP;
 	return -1;

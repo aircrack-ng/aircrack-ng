@@ -218,4 +218,4 @@ static struct tif * ti_open_obsd(char * iface)
 	return ti;
 }
 
-EXPORT struct tif * ti_open(char * iface) { return ti_open_obsd(iface); }
+struct tif * ti_open(char * iface) { return ti_open_obsd(iface); }

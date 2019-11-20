@@ -41,21 +41,6 @@
 
 #define MAX_THREADS 256
 
-#if defined(_MSC_VER)
-//  Microsoft
-#define EXPORT __declspec(dllexport)
-#define IMPORT __declspec(dllimport)
-#elif defined(__GNUC__) || defined(__llvm__) || defined(__clang__)             \
-	|| defined(__INTEL_COMPILER)
-#define EXPORT __attribute__((visibility("default")))
-#define IMPORT
-#else
-//  do nothing and hope for the best?
-#define EXPORT
-#define IMPORT
-#pragma warning Unknown dynamic link import / export semantics.
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -188,54 +173,54 @@ struct ac_crypto_engine
 typedef struct ac_crypto_engine ac_crypto_engine_t;
 
 /// The compiled-in features required to correctly execute on host.
-IMPORT int ac_crypto_engine_supported_features(void);
+int ac_crypto_engine_supported_features(void);
 
 /// global init. this could initialize threadid 1, but...
-IMPORT int ac_crypto_engine_init(ac_crypto_engine_t * engine);
-IMPORT void ac_crypto_engine_destroy(ac_crypto_engine_t * engine);
+int ac_crypto_engine_init(ac_crypto_engine_t * engine);
+void ac_crypto_engine_destroy(ac_crypto_engine_t * engine);
 
-IMPORT void ac_crypto_engine_set_essid(ac_crypto_engine_t * engine,
+void ac_crypto_engine_set_essid(ac_crypto_engine_t * engine,
 									   const uint8_t * essid);
 
-IMPORT uint8_t *
+uint8_t *
 ac_crypto_engine_get_pmk(ac_crypto_engine_t * engine, int threadid, int index);
 
-IMPORT uint8_t *
+uint8_t *
 ac_crypto_engine_get_ptk(ac_crypto_engine_t * engine, int threadid, int index);
 
-IMPORT void ac_crypto_engine_calc_pke(ac_crypto_engine_t * engine,
+void ac_crypto_engine_calc_pke(ac_crypto_engine_t * engine,
 									  const uint8_t bssid[6],
 									  const uint8_t stmac[6],
 									  const uint8_t anonce[32],
 									  const uint8_t snonce[32],
 									  int threadid);
 
-IMPORT void ac_crypto_engine_set_pmkid_salt(ac_crypto_engine_t * engine,
+void ac_crypto_engine_set_pmkid_salt(ac_crypto_engine_t * engine,
 											const uint8_t bssid[6],
 											const uint8_t stmac[6],
 											int threadid);
 
 /// per-thread-in-use init. separate to allow (possible) NUMA-local allocation.
-IMPORT int ac_crypto_engine_thread_init(ac_crypto_engine_t * engine,
+int ac_crypto_engine_thread_init(ac_crypto_engine_t * engine,
 										int threadid);
-IMPORT void ac_crypto_engine_thread_destroy(ac_crypto_engine_t * engine,
+void ac_crypto_engine_thread_destroy(ac_crypto_engine_t * engine,
 											int threadid);
 
 /// acquire the width of simd we're compiled for.
-IMPORT int ac_crypto_engine_simd_width(void);
+int ac_crypto_engine_simd_width(void);
 
-IMPORT void ac_crypto_engine_calc_pmk(
+void ac_crypto_engine_calc_pmk(
 	ac_crypto_engine_t * engine,
 	const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
 	int nparallel,
 	int threadid);
 
-IMPORT void ac_crypto_engine_calc_ptk(ac_crypto_engine_t * engine,
+void ac_crypto_engine_calc_ptk(ac_crypto_engine_t * engine,
 									  const uint8_t keyver,
 									  int vectorIdx,
 									  int threadid);
 
-IMPORT void ac_crypto_engine_calc_mic(ac_crypto_engine_t * engine,
+void ac_crypto_engine_calc_mic(ac_crypto_engine_t * engine,
 									  const uint8_t eapol[256],
 									  uint32_t eapol_size,
 									  uint8_t mic[MAX_KEYS_PER_CRYPT_SUPPORTED]
@@ -244,7 +229,7 @@ IMPORT void ac_crypto_engine_calc_mic(ac_crypto_engine_t * engine,
 									  int vectorIdx,
 									  int threadid);
 
-IMPORT int ac_crypto_engine_wpa_crack(
+int ac_crypto_engine_wpa_crack(
 	ac_crypto_engine_t * engine,
 	const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
 	const uint8_t eapol[256],
@@ -255,7 +240,7 @@ IMPORT int ac_crypto_engine_wpa_crack(
 	int nparallel,
 	int threadid);
 
-IMPORT int ac_crypto_engine_wpa_pmkid_crack(
+int ac_crypto_engine_wpa_pmkid_crack(
 	ac_crypto_engine_t * engine,
 	const wpapsk_password key[MAX_KEYS_PER_CRYPT_SUPPORTED],
 	const uint8_t pmkid[32],
@@ -265,7 +250,7 @@ IMPORT int ac_crypto_engine_wpa_pmkid_crack(
 // Quick Utilities.
 
 /// Calculate one pairwise master key, from the \a essid and \a key.
-IMPORT void ac_crypto_engine_calc_one_pmk(const uint8_t * key,
+void ac_crypto_engine_calc_one_pmk(const uint8_t * key,
 										  const uint8_t * essid,
 										  uint32_t essid_length,
 										  uint8_t pmk[40]);
