@@ -57,7 +57,7 @@ libaircrack_osdep_la_SOURCES = $(SRCS_CYGWIN)
 if AIRPCAP
 libaircrack_osdep_la_CFLAGS = $(AIRPCAP_CFLAGS)
 endif
-libaircrack_osdep_la_LIBADD += -lsetupapi -liphlpapi
+libaircrack_osdep_la_LIBADD = -lsetupapi -liphlpapi
 endif
 
 if DARWIN
