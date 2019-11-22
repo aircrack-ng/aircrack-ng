@@ -66,9 +66,9 @@ size_t copy_string(char * dest, size_t dest_bufsz, const char * src)
 	size_t src_str_len = strlen(src);
 	size_t num_bytes_to_copy = MIN(src_str_len, (dest_bufsz - 1));
 
-	if (num_bytes_to_copy == 0) return 0;
-
-	memmove(dest, src, num_bytes_to_copy);
+	if (num_bytes_to_copy > 0) {
+		memmove(dest, src, num_bytes_to_copy);
+	}
 	dest[num_bytes_to_copy] = '\0';
 
 	return num_bytes_to_copy;
@@ -95,7 +95,7 @@ size_t copy_string(char * dest, size_t dest_bufsz, const char * src)
 size_t concat_string(char * dest, size_t dest_bufsz, const char * src)
 {
 	if (dest == NULL || src == NULL) return 0;
-	if (dest_bufsz <= 1) return 0;
+	if (dest_bufsz == 0) return 0;
 
 	size_t dest_str_len = strlen(dest);
 	size_t src_str_len = strlen(src);
@@ -107,9 +107,9 @@ size_t concat_string(char * dest, size_t dest_bufsz, const char * src)
 
 	size_t num_bytes_to_copy = MIN(src_str_len, (dest_bufsz - dest_str_len - 1));
 
-	if (num_bytes_to_copy == 0) return 0;
-
-	memmove(dest + dest_str_len, src, num_bytes_to_copy);
+	if (num_bytes_to_copy > 0) {
+		memmove(dest + dest_str_len, src, num_bytes_to_copy);
+	}
 	dest[dest_str_len + num_bytes_to_copy] = '\0';
 
 	return num_bytes_to_copy;
