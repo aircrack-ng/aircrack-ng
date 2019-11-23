@@ -290,7 +290,7 @@ static int nbsd_read(struct wif * wi,
 		clock_gettime(CLOCK_REALTIME, ts);
 	}
 
-	if (ri && !ri->ri_channel) ri->ri_channel = wi_get_channel(wi);
+	if (ri && !ri->ri_channel) ri->ri_channel = wi_get_channel(wi, NULL);
 
 	return plen;
 }

@@ -309,7 +309,7 @@ static int fbsd_read(struct wif * wi,
 		clock_gettime(CLOCK_REALTIME, ts);
 	}
 
-	if (ri && !ri->ri_channel) ri->ri_channel = wi_get_channel(wi);
+	if (ri && !ri->ri_channel) ri->ri_channel = wi_get_channel(wi, NULL);
 
 	return plen;
 }
@@ -353,7 +353,7 @@ static int fbsd_set_channel(struct wif * wi, struct osdep_channel * oc)
 	pf->pf_ireq.i_val = oc->channel;
 	if (ioctl(pf->pf_s, SIOCS80211, &pf->pf_ireq) != 0) return -1;
 
-	pf->pf_chan = chan;
+	pf->pf_chan = oc->channel;
 	return 0;
 }
 
