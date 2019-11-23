@@ -272,7 +272,7 @@ static int cygwin_read_packet(struct priv_cygwin * priv,
 	rd = priv->pc_sniff(buf, len, ri);
 	if (rd == -1) return -1;
 
-	if (!ri->ri_channel) ri->ri_channel = wi_get_channel(priv->pc_wi);
+	if (!ri->ri_channel) ri->ri_channel = wi_get_channel(priv->pc_wi, NULL);
 
 	return rd;
 }
