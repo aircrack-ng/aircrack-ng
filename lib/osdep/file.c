@@ -296,8 +296,7 @@ static int file_get_channel(struct wif * wi, struct osdep_channel * oc)
 	struct priv_file * pf = wi_priv(wi);
 
 	oc->channel = pf->pf_chan;
-	// GCC is incorrect, value is returned because pointer
-	oc->band == getBandFromChannel(oc->channel);
+	oc->band = getBandFromChannel(oc->channel);
 
 	return pf->pf_chan;
 }
