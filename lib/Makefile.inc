@@ -272,6 +272,7 @@ EXTRA_DIST +=	%D%/ce-wep/uniqueiv.c \
 							%D%/libac/utf8/verifyssid.c \
 							%D%/osdep/aircrack_ng_airpcap.h \
 							%D%/osdep/airpcap.c \
+							%D%/osdep/channel.c \
 							%D%/osdep/crctable_osdep.h \
 							%D%/osdep/cygwin.c \
 							%D%/osdep/cygwin.h \
