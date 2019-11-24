@@ -389,7 +389,7 @@ static int net_write(struct wif * wi,
 	return net_cmd(pn, NET_WRITE, buf, sz);
 }
 
-static int net_set_channel(struct wif * wi, struct osdep_channel * oc)
+static int net_set_channel(struct wif * wi, const struct osdep_channel * oc)
 {
 	struct priv_net * pn = wi_priv(wi);
 
