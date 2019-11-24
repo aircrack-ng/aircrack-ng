@@ -57,7 +57,7 @@ struct priv_net
 	int pn_queue_len;
 };
 
-EXPORT int net_send(int s, int command, void * arg, int len)
+EXPORT int net_send(int s, int command, const void * arg, int len)
 {
 	struct net_hdr * pnh;
 	char * pktbuf;
@@ -240,7 +240,7 @@ static int net_get_nopacket(struct priv_net * pn, void * arg, int * len)
 	return c;
 }
 
-static int net_cmd(struct priv_net * pn, int command, void * arg, int alen)
+static int net_cmd(struct priv_net * pn, int command, const void * arg, int alen)
 {
 	uint32_t rc;
 	int len;

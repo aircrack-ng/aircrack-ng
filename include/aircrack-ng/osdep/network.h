@@ -38,7 +38,7 @@ struct net_hdr
 } __packed;
 
 IMPORT struct wif * net_open(char * iface);
-IMPORT int net_send(int s, int command, void * arg, int len);
+IMPORT int net_send(int s, int command, const void * arg, int len);
 IMPORT int net_read_exact(int s, void * arg, int len);
 IMPORT int net_get(int s, void * arg, int * len);
 
