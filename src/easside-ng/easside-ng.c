@@ -394,7 +394,8 @@ static void set_chan(struct east_state * es)
 
 	int chan = es->es_chanlock ? es->es_chanlock : es->es_apchan;
 
-	if (transition_set_channel(es->es_wi, chan, OSDEP_HT_IGNORE) == -1) {
+	if (transition_set_channel(es->es_wi, chan, OSDEP_HT_IGNORE) == -1)
+	{
 		err(1, "wi_set_channel");
 	}
 }

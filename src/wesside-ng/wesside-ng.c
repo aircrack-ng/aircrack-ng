@@ -338,7 +338,8 @@ static void set_chan(struct wstate * ws, int c)
 
 	if (c == ws->ws_chan) return;
 
-	if (transition_set_channel(ws->ws_wi, c, OSDEP_HT_IGNORE)) {
+	if (transition_set_channel(ws->ws_wi, c, OSDEP_HT_IGNORE))
+	{
 		err(1, "wi_set_channel()");
 	}
 

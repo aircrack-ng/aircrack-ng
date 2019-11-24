@@ -160,7 +160,8 @@ static int card_set_chan(struct sstate * ss, struct osdep_channel * oc)
 static int card_set_chan_old(struct sstate * ss, int chan)
 {
 	struct osdep_channel oc;
-	if (init_osdep_channel(&oc) == 0) {
+	if (init_osdep_channel(&oc) == 0)
+	{
 		return -1;
 	}
 
@@ -283,15 +284,16 @@ static void handle_set_chan_old(struct sstate * ss,
 }
 
 static void handle_set_chan(struct sstate * ss,
-								struct client * c,
-								unsigned char * buf,
-								int len)
+							struct client * c,
+							unsigned char * buf,
+							int len)
 {
 	struct osdep_channel oc;
 	uint32_t rc;
 
 	// Handle old protocol
-	if (len != sizeof(uint32_t)) {
+	if (len != sizeof(uint32_t))
+	{
 		handle_set_chan_old(ss, c, buf, len);
 		return;
 	}
@@ -304,12 +306,18 @@ static void handle_set_chan(struct sstate * ss,
 
 	memcpy(&oc, buf, sizeof(oc));
 	// Convert back to host
-	if (ntoh_osdep_channel(&oc) == 0) {
+	if (ntoh_osdep_channel(&oc) == 0)
+	{
 		return;
 	}
 
-	debug(ss, c, 2, "Got setchan %d - width %d - HT %d\n", oc.channel,
-		oc.width, oc.ht);
+	debug(ss,
+		  c,
+		  2,
+		  "Got setchan %d - width %d - HT %d\n",
+		  oc.channel,
+		  oc.width,
+		  oc.ht);
 	rc = card_set_chan(ss, &oc);
 
 	rc = htonl(rc);
@@ -362,8 +370,10 @@ static void handle_get_chan(struct sstate * ss, struct client * c)
 	init_osdep_channel(&oc);
 	int rc = card_get_chan(ss, &oc);
 
-	if (rc > 0) {
-		if (hton_osdep_channel(&oc)) {
+	if (rc > 0)
+	{
+		if (hton_osdep_channel(&oc))
+		{
 			net_send_kill(c, NET_CHAN, &oc, sizeof(struct osdep_channel));
 			return;
 		}

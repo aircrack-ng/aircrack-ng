@@ -2113,7 +2113,8 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 					// add channel
 					packet[length] = 0x03;
 					packet[length + 1] = 0x01;
-					temp_channel = wi_get_channel(_wi_in, NULL); // current channel
+					temp_channel
+						= wi_get_channel(_wi_in, NULL); // current channel
 					if (!invalid_channel_displayed)
 					{
 						if (temp_channel > 255)
@@ -2251,7 +2252,8 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 					// add channel
 					packet[length] = 0x03;
 					packet[length + 1] = 0x01;
-					temp_channel = wi_get_channel(_wi_in, NULL); // current channel
+					temp_channel
+						= wi_get_channel(_wi_in, NULL); // current channel
 					if (!invalid_channel_displayed)
 					{
 						if (temp_channel > 255)
@@ -3957,7 +3959,8 @@ int main(int argc, char * argv[])
 		}
 	}
 
-	if (lopt.channel > 0) transition_set_channel(_wi_out, lopt.channel, OSDEP_HT_IGNORE);
+	if (lopt.channel > 0)
+		transition_set_channel(_wi_out, lopt.channel, OSDEP_HT_IGNORE);
 
 	if (memcmp(opt.r_bssid, NULL_MAC, 6) == 0 && !lopt.adhoc)
 	{

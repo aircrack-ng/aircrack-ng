@@ -621,7 +621,8 @@ static void network_print(struct network * n)
 
 static void channel_set(int num)
 {
-	if (transition_set_channel(_state.s_wi, num, OSDEP_HT_IGNORE) == -1) {
+	if (transition_set_channel(_state.s_wi, num, OSDEP_HT_IGNORE) == -1)
+	{
 		err(1, "wi_set_channel()");
 	}
 
@@ -961,7 +962,7 @@ static void hop(void * arg)
 		if (c->c_num == old) break;
 
 		// skip unsupported chan.  XXX check if we run out.
-		if (transition_set_channel(_state.s_wi, c->c_num, OSDEP_HT_IGNORE) 
+		if (transition_set_channel(_state.s_wi, c->c_num, OSDEP_HT_IGNORE)
 			== -1)
 		{
 			_state.s_hopchan->c_next = c->c_next;
