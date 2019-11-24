@@ -235,7 +235,7 @@ static int nbsd_get_channel(struct wif * wi, struct osdep_channel * oc)
 	return channel.i_channel;
 }
 
-static int nbsd_set_channel(struct wif * wi, struct osdep_channel * oc)
+static int nbsd_set_channel(struct wif * wi, const struct osdep_channel * oc)
 {
 	struct priv_nbsd * pn = wi_priv(wi);
 	struct ieee80211chanreq channel;

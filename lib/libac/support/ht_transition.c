@@ -26,7 +26,7 @@
 #include "aircrack-ng/support/ht_transition.h"
 
 // This is temporarily there, the channel stuff is complex to tackle
-EXPORT int transition_set_channel(struct wif * swip, int chan, uint8_t htval)
+EXPORT int transition_set_channel(const struct wif * swip, const int chan, const uint8_t htval)
 {
 	if (swip == NULL || chan <= 0) return -1;
 
@@ -49,7 +49,7 @@ EXPORT int transition_set_channel(struct wif * swip, int chan, uint8_t htval)
 	return wi_set_channel(swip, &oc);
 }
 
-EXPORT int transition_set_freq(struct wif * swip, int freq, uint8_t htval)
+EXPORT int transition_set_freq(const struct wif * swip, const int freq, const uint8_t htval)
 {
 	if (swip == NULL || freq <= 0) return -1;
 

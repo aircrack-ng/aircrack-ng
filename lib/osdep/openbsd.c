@@ -244,7 +244,7 @@ static int obsd_get_channel(struct wif * wi, struct osdep_channel * oc)
 	return channel.i_channel;
 }
 
-static int obsd_set_channel(struct wif * wi, struct osdep_channel * oc)
+static int obsd_set_channel(struct wif * wi, const struct osdep_channel * oc)
 {
 	struct priv_obsd * po = wi_priv(wi);
 	struct ieee80211chanreq channel;

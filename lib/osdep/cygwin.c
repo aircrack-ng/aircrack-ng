@@ -228,7 +228,7 @@ static int do_cygwin_open(struct wif * wi, char * iface)
  * @param oc Channel
  * @return 0 if successful, -1 if it failed
  */
-static int cygwin_set_channel(struct wif * wi, struct osdep_channel * oc)
+static int cygwin_set_channel(struct wif * wi, const struct osdep_channel * oc)
 {
 	struct priv_cygwin * priv = wi_priv(wi);
 
@@ -243,7 +243,7 @@ static int cygwin_set_channel(struct wif * wi, struct osdep_channel * oc)
  * @param of Frequency
  * @return 0 if successful, -1 if it failed
  */
-static int cygwin_set_freq(struct wif * wi, struct osdep_freq * oc)
+static int cygwin_set_freq(struct wif * wi, const struct osdep_freq * oc)
 {
 	struct priv_cygwin * priv = wi_priv(wi);
 

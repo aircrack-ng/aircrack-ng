@@ -282,7 +282,7 @@ static int file_write(struct wif * wi,
 	return len;
 }
 
-static int file_set_channel(struct wif * wi, struct osdep_channel * oc)
+static int file_set_channel(struct wif * wi, const struct osdep_channel * oc)
 {
 	struct priv_file * pf = wi_priv(wi);
 

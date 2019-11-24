@@ -346,7 +346,7 @@ static int fbsd_write(struct wif * wi,
 	return rc - iov[0].iov_len;
 }
 
-static int fbsd_set_channel(struct wif * wi, struct osdep_channel * oc)
+static int fbsd_set_channel(struct wif * wi, const struct osdep_channel * oc)
 {
 	struct priv_fbsd * pf = wi_priv(wi);
 

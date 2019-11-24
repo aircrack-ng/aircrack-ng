@@ -100,9 +100,9 @@ struct wif
 					unsigned char * h80211,
 					int len,
 					struct tx_info * ti);
-	int (*wi_set_channel)(struct wif * wi, struct osdep_channel * oc);
+	int (*wi_set_channel)(struct wif * wi, const struct osdep_channel * oc);
 	int (*wi_get_channel)(struct wif * wi, struct osdep_channel * oc);
-	int (*wi_set_freq)(struct wif * wi, struct osdep_freq * of);
+	int (*wi_set_freq)(struct wif * wi, const struct osdep_freq * of);
 	int (*wi_get_freq)(struct wif * wi, struct osdep_freq * of);
 	void (*wi_close)(struct wif * wi);
 	int (*wi_fd)(struct wif * wi);
@@ -132,9 +132,9 @@ IMPORT int wi_write(struct wif * wi,
 					unsigned char * h80211,
 					int len,
 					struct tx_info * ti);
-IMPORT int wi_set_channel(struct wif * wi, struct osdep_channel * oc);
+IMPORT int wi_set_channel(struct wif * wi, const struct osdep_channel * oc);
 IMPORT int wi_get_channel(struct wif * wi, struct osdep_channel * oc);
-IMPORT int wi_set_freq(struct wif * wi, struct osdep_freq * of);
+IMPORT int wi_set_freq(struct wif * wi, const struct osdep_freq * of);
 IMPORT int wi_get_freq(struct wif * wi, struct osdep_freq * of);
 IMPORT void wi_close(struct wif * wi);
 IMPORT char * wi_get_ifname(struct wif * wi);

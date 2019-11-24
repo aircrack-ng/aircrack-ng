@@ -53,7 +53,7 @@ EXPORT int wi_write(struct wif * wi,
 	return wi->wi_write(wi, ts, dlt, h80211, len, ti);
 }
 
-EXPORT int wi_set_channel(struct wif * wi, struct osdep_channel * oc)
+EXPORT int wi_set_channel(struct wif * wi, const struct osdep_channel * oc)
 {
 	assert(wi->wi_set_channel);
 	return wi->wi_set_channel(wi, oc);
@@ -65,7 +65,7 @@ EXPORT int wi_get_channel(struct wif * wi, struct osdep_channel * oc)
 	return wi->wi_get_channel(wi, oc);
 }
 
-EXPORT int wi_set_freq(struct wif * wi, struct osdep_freq * of)
+EXPORT int wi_set_freq(struct wif * wi, const struct osdep_freq * of)
 {
 	assert(wi->wi_set_freq);
 	return wi->wi_set_freq(wi, of);

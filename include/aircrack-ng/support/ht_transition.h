@@ -25,7 +25,7 @@
 #include <aircrack-ng/osdep/common.h>
 #include <stdlib.h>
 
-IMPORT int transition_set_channel(struct wif * swip, int chan, uint8_t htval);
-IMPORT int transition_set_freq(struct wif * swip, int freq, uint8_t htval);
+IMPORT int transition_set_channel(const struct wif * swip, const int chan, const uint8_t htval);
+IMPORT int transition_set_freq(const struct wif * swip, const int freq, const uint8_t htval);
 
 #endif /* SUPPORT_HT_TRANSITION_H */

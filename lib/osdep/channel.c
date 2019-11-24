@@ -36,7 +36,7 @@
 /**
  * Return the frequency in Mhz from a channel number
  */
-EXPORT int getFrequencyFromChannel(int channel)
+EXPORT int getFrequencyFromChannel(const int channel)
 {
 	static int frequencies[] = {
 		-1, // No channel 0
@@ -72,7 +72,7 @@ EXPORT int getFrequencyFromChannel(int channel)
 /**
  * Return the channel from the frequency (in Mhz)
  */
-EXPORT int getChannelFromFrequency(int frequency)
+EXPORT int getChannelFromFrequency(const int frequency)
 {
 	if (frequency >= 2412 && frequency <= 2472)
 		return (frequency - 2407) / 5;
@@ -89,7 +89,7 @@ EXPORT int getChannelFromFrequency(int frequency)
 // XXX: Later on, redo this as multiple bands have same channels
 //      *May* need to adjust channel info on top right in airodump-ng
 //      to indicate band as well
-EXPORT uint32_t getBandFromChannel(int channel)
+EXPORT uint32_t getBandFromChannel(const int channel)
 {
 	if (channel < 1) return OSDEP_BAND_UNKNOWN;
 	if (channel <= 14) return OSDEP_BAND_2400MHZ;
@@ -99,7 +99,7 @@ EXPORT uint32_t getBandFromChannel(int channel)
 	return OSDEP_BAND_UNKNOWN;
 }
 
-EXPORT uint32_t getBandFromFreq(int freq)
+EXPORT uint32_t getBandFromFreq(const int freq)
 {
 	// Have the most common ones first
 	if (freq >= 2400 && freq <= 2484) return OSDEP_BAND_2400MHZ;

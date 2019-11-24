@@ -56,11 +56,11 @@ struct osdep_freq {
 #define HIGHEST_CHANNEL 220
 #define LOWEST_CHANNEL -16
 
-IMPORT int getFrequencyFromChannel(int channel);
-IMPORT int getChannelFromFrequency(int frequency);
+IMPORT int getFrequencyFromChannel(const int channel);
+IMPORT int getChannelFromFrequency(const int frequency);
 
-IMPORT uint32_t getBandFromChannel(int channel);
-IMPORT uint32_t getBandFromFreq(int freq);
+IMPORT uint32_t getBandFromChannel(const int channel);
+IMPORT uint32_t getBandFromFreq(const int freq);
 
 IMPORT int are_channel_params_valid(const struct osdep_channel * oc);
 IMPORT int init_osdep_channel(struct osdep_channel * oc);

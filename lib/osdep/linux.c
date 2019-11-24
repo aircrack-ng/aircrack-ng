@@ -1138,7 +1138,7 @@ nla_put_failure:
 }
 #else // CONFIG_LIBNL
 
-static int linux_set_channel(struct wif * wi, struct osdep_channel * oc)
+static int linux_set_channel(struct wif * wi, const struct osdep_channel * oc)
 {
 	struct priv_linux * dev = wi_priv(wi);
 	char s[32];
@@ -1255,7 +1255,7 @@ static int linux_set_channel(struct wif * wi, struct osdep_channel * oc)
 }
 #endif
 
-static int linux_set_freq(struct wif * wi, struct osdep_freq * of)
+static int linux_set_freq(struct wif * wi, const struct osdep_freq * of)
 {
 	struct priv_linux * dev = wi_priv(wi);
 	char s[32];
