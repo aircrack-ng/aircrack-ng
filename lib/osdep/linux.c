@@ -989,7 +989,7 @@ static int ieee80211_channel_to_frequency(int chan)
 }
 
 static int
-linux_set_channel_nl80211(struct wif * wi, struct osdep_channel * oc)
+linux_set_channel_nl80211(struct wif * wi, const struct osdep_channel * oc)
 {
 	struct priv_linux * dev = wi_priv(wi);
 	char s[32];
