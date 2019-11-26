@@ -34,6 +34,8 @@
 #include <sys/param.h>
 #include <string.h>
 
+#include "stringlib/string.h"
+
 /*
  * Copy the string at src to dest
  *
