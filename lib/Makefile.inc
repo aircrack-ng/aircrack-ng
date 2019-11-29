@@ -59,7 +59,7 @@ SRC_LIBAC		= %D%/libac/adt/avl_tree.c \
 							%D%/libac/tui/console.c \
 							%D%/libac/utf8/verifyssid.c
 SRC_RADIOTAP = %D%/radiotap/radiotap.c
-SRC_STRING = %D%/string/string.c
+SRC_STRING = %D%/stringlib/string.c
 
 if LIBGCRYPT
 SRC_CRYPTO	+=	%D%/crypto/sha1-git.c

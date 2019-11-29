@@ -41,7 +41,7 @@
 
 #include "osdep.h"
 
-#include "aircrack-ng/string/string.h"
+#include "stringlib/string.h"
 
 struct tip_linux
 {

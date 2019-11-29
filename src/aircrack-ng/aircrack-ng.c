@@ -93,7 +93,7 @@
 #include "aircrack-ng/osdep/osdep.h"
 #include "aircrack-ng/third-party/ieee80211.h"
 #include "aircrack-ng/third-party/ethernet.h"
-#include "aircrack-ng/string/string.h"
+#include "stringlib/string.h"
 
 #ifdef HAVE_SQLITE
 #include <sqlite3.h>

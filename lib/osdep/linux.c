@@ -68,7 +68,7 @@
 		 */
 #include "osdep.h"
 #include "aircrack-ng/support/pcap_local.h"
-#include "aircrack-ng/string/string.h"
+#include "stringlib/string.h"
 #include "crctable_osdep.h"
 #include "common.h"
 #include "channel.h"

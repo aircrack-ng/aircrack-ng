@@ -74,7 +74,7 @@
 
 #include "aircrack-ng/defs.h"
 #include "aircrack-ng/version.h"
-#include "aircrack-ng/string/string.h"
+#include "stringlib/string.h"
 #include "aircrack-ng/support/pcap_local.h"
 #include "aircrack-ng/ce-wep/uniqueiv.h"
 #include "aircrack-ng/support/communications.h"
