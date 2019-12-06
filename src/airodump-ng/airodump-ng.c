@@ -6845,7 +6845,12 @@ int main(int argc, char * argv[])
 	gettimeofday(&tv3, NULL);
 	gettimeofday(&tv4, NULL);
 
-	lopt.batt = getBatteryString();
+	char * init_batt = getBatteryString();
+	
+	// do not update lopt.batt while dump_print is running
+	ALLEGE(pthread_mutex_lock(&(lopt.mx_print)) == 0);
+	lopt.batt = init_batt;
+	ALLEGE(pthread_mutex_unlock(&(lopt.mx_print)) == 0);
 
 	char * init_elapsed_time = (char *) calloc(1, 4);
 	if (init_elapsed_time == NULL)
@@ -6856,7 +6861,7 @@ int main(int argc, char * argv[])
 	strncpy(init_elapsed_time, "0 s", 4);
 	init_elapsed_time[3] = '\0';
 
-	// do not update lopt.elapsed_time this while dump_print is running
+	// do not update lopt.elapsed_time while dump_print is running
 	ALLEGE(pthread_mutex_lock(&(lopt.mx_print)) == 0);
 	lopt.elapsed_time = init_elapsed_time;
 	ALLEGE(pthread_mutex_unlock(&(lopt.mx_print)) == 0);
@@ -6918,14 +6923,19 @@ int main(int argc, char * argv[])
 			}
 
 			/* update the battery state */
-			free(lopt.batt);
-			lopt.batt = NULL;
 
-			tt2 = time(NULL);
-			lopt.batt = getBatteryString();
+			char * old_batt;
+			char * new_batt = getBatteryString();
+			// do not update lopt.batt this while dump_print is running
+			ALLEGE(pthread_mutex_lock(&(lopt.mx_print)) == 0);
+			old_batt = lopt.batt;
+			lopt.batt = new_batt;
+			ALLEGE(pthread_mutex_unlock(&(lopt.mx_print)) == 0);
+			free(old_batt);
 
 			/* update elapsed time */
 
+			tt2 = time(NULL);
 			char * old_elapsed_time;
 			char * new_elapsed_time = getStringTimeFromSec(difftime(tt2, start_time));
 			// do not update lopt.elapsed_time this while dump_print is running
