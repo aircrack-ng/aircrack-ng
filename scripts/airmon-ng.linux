@@ -1485,9 +1485,7 @@ for iface in $(printf "${iface_list}"); do
 			getExtendedInfo ${iface}
 		fi
 	else
- 		printf "\nethtool failed...\n"
-		printf "Only mac80211 devices on kernel 2.6.33 or higher are officially supported by airmon-ng.\n"
-		exit 1
+ 		CHIPSET="ethtool failed... driver is broken"
 	fi
 
 	#yes this really is the main output loop
