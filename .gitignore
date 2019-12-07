@@ -23,6 +23,7 @@ autom4te.cache/
 compile
 /config.h
 /config.h.in
+/config.h.in~
 config.guess
 config.log
 config.status
@@ -103,8 +104,7 @@ coverage*.info
 /GTAGS
 /VERSION
 /aminclude_static.am
-/config.h
-/config.h.in
 /include/aircrack-ng/version.h
 /manpages/*.1
 /manpages/*.8
+.autotools

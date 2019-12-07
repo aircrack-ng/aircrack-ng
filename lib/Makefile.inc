@@ -59,6 +59,7 @@ SRC_LIBAC		= %D%/libac/adt/avl_tree.c \
 							%D%/libac/tui/console.c \
 							%D%/libac/utf8/verifyssid.c
 SRC_RADIOTAP = %D%/radiotap/radiotap.c
+SRC_STRING = %D%/stringlib/string.c
 
 if LIBGCRYPT
 SRC_CRYPTO	+=	%D%/crypto/sha1-git.c
@@ -86,6 +87,9 @@ endif
 
 libradiotap_la_SOURCES	= $(SRC_RADIOTAP)
 libradiotap_la_LDFLAGS	= -no-undefined
+
+libstring_la_SOURCES	= $(SRC_STRING)
+libstring_la_LDFLAGS	= -static
 
 ########################################################################
 # Aircrack Support Library                                             #
@@ -241,7 +245,7 @@ endif
 lib_LTLIBRARIES += libaircrack-ce-wpa-x86-avx2.la libaircrack-ce-wpa-x86-avx.la libaircrack-ce-wpa-x86-sse2.la
 endif
 
-noinst_LTLIBRARIES += libaircrack-ce-wep.la libcowpatty.la libaccrypto.la libptw.la libaircrack.la libradiotap.la
+noinst_LTLIBRARIES += libaircrack-ce-wep.la libcowpatty.la libaccrypto.la libptw.la libaircrack.la libradiotap.la libstring.la
 
 EXTRA_DIST +=	%D%/ce-wep/uniqueiv.c \
 							%D%/ce-wpa/crypto_engine.c \

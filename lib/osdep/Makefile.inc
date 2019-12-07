@@ -77,7 +77,7 @@ endif
 if LINUX
 libaircrack_osdep_la_SOURCES = $(SRCS_LINUX)
 libaircrack_osdep_la_CFLAGS  = $(LIBNL_CFLAGS)
-libaircrack_osdep_la_LIBADD = $(LIBNL_LIBS) $(LIBRADIOTAP_LIBS)
+libaircrack_osdep_la_LIBADD = $(LIBNL_LIBS) $(LIBRADIOTAP_LIBS) $(LIBSTRING_LIBS)
 endif
 
 if NETBSD
@@ -89,7 +89,7 @@ libaircrack_osdep_la_SOURCES = $(SRCS_OBSD)
 endif
 
 if !AIRPCAP
-libaircrack_osdep_la_LIBADD = $(LIBRADIOTAP_LIBS)
+libaircrack_osdep_la_LIBADD = $(LIBRADIOTAP_LIBS) $(LIBSTRING_LIBS)
 if CYGWIN
 libaircrack_osdep_la_LIBADD += -lsetupapi -liphlpapi
 endif

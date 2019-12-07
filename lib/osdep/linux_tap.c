@@ -41,6 +41,8 @@
 
 #include "osdep.h"
 
+#include "stringlib/string.h"
+
 struct tip_linux
 {
 	int tl_fd;
@@ -73,10 +75,8 @@ static int ti_do_open_linux(struct tif * ti, char * name)
 		return -1;
 	}
 
-	strncpy(priv->tl_name, if_request.ifr_name, MAX_IFACE_NAME);
-	strncpy(priv->tl_ifr.ifr_name,
-			priv->tl_name,
-			sizeof(priv->tl_ifr.ifr_name) - 1);
+	copy_string(priv->tl_name, sizeof(priv->tl_name), if_request.ifr_name);
+	copy_string(priv->tl_ifr.ifr_name, sizeof(priv->tl_ifr.ifr_name), priv->tl_name);
 
 	if ((priv->tl_ioctls = socket(PF_INET, SOCK_DGRAM, 0)) == -1)
 	{

@@ -74,6 +74,7 @@
 
 #include "aircrack-ng/defs.h"
 #include "aircrack-ng/version.h"
+#include "stringlib/string.h"
 #include "aircrack-ng/support/pcap_local.h"
 #include "aircrack-ng/ce-wep/uniqueiv.h"
 #include "aircrack-ng/support/communications.h"
@@ -1211,6 +1212,12 @@ static int remove_namac(unsigned char * mac)
 
 	return (0);
 }
+
+// function dump_add_packet() will generate the following warning:
+// "warning: assuming pointer wraparound does not occur when comparing P +- C1 with P +- C2 [-Wstrict-overflow]"
+// these pragmas will suppress that warning
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-overflow"
 
 // NOTE(jbenden): This is also in ivstools.c
 static int dump_add_packet(unsigned char * h80211,
@@ -3068,6 +3075,8 @@ write_packet:
 	return (0);
 }
 
+#pragma GCC diagnostic pop
+
 static void dump_sort(void)
 {
 	time_t tt = time(NULL);
@@ -3490,7 +3499,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 		{
 			memset(buffer, '\0', sizeof(buffer));
 			snprintf(buffer, sizeof(buffer), ",%4d", lopt.frequency[i]);
-			strncat(strbuf, buffer, sizeof(strbuf) - strlen(strbuf) - 1);
+			concat_string(strbuf, sizeof(strbuf), buffer);
 		}
 	}
 	else
@@ -3500,7 +3509,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 		{
 			memset(buffer, '\0', sizeof(buffer));
 			snprintf(buffer, sizeof(buffer), ",%2d", lopt.channel[i]);
-			strncat(strbuf, buffer, sizeof(strbuf) - strlen(strbuf) - 1);
+			concat_string(strbuf, sizeof(strbuf), buffer);
 		}
 	}
 	memset(buffer, '\0', sizeof(buffer));
@@ -3558,7 +3567,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				 lt->tm_min);
 	}
 
-	strncat(strbuf, buffer, (512 - strlen(strbuf) - 1));
+	concat_string(strbuf, sizeof(strbuf), buffer);
 	memset(buffer, '\0', 512);
 
 	if (lopt.is_berlin)
@@ -3571,12 +3580,12 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				 lopt.maxaps);
 	}
 
-	strncat(strbuf, buffer, (512 - strlen(strbuf) - 1));
+	concat_string(strbuf, sizeof(strbuf), buffer);
 	memset(buffer, '\0', 512);
 
 	if (strlen(lopt.message) > 0)
 	{
-		strncat(strbuf, lopt.message, (512 - strlen(strbuf) - 1));
+		concat_string(strbuf, sizeof(strbuf), lopt.message);
 	}
 
 	strbuf[ws_col - 1] = '\0';
@@ -3791,8 +3800,8 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			{
 				if (ap_cur->security & STD_WPA2)
 				{
-					if (ap_cur->security & AUTH_SAE
-						|| ap_cur->security & AUTH_OWE)
+					if ((ap_cur->security & AUTH_SAE)
+						|| (ap_cur->security & AUTH_OWE))
 						snprintf(strbuf + len, sizeof(strbuf) - len, "WPA3");
 					else
 						snprintf(strbuf + len, sizeof(strbuf) - len, "WPA2");
@@ -5242,11 +5251,11 @@ static int getchannels(const char * optarg)
 	chan_remain = chan_max;
 
 	// create a writable string
-	optc = optchan = (char *) malloc(strlen(optarg) + 1);
+	int optchan_len = strlen(optarg);
+	optc = optchan = (char *) malloc(optchan_len + 1);
 	ALLEGE(optc != NULL);
 	ALLEGE(optchan != NULL);
-	strncpy(optchan, optarg, strlen(optarg));
-	optchan[strlen(optarg)] = '\0';
+	copy_string(optchan, optchan_len + 1, optarg);
 
 	tmp_channels = (int *) malloc(sizeof(int) * (chan_max + 1));
 	ALLEGE(tmp_channels != NULL);
@@ -5370,11 +5379,11 @@ static int getfrequencies(const char * optarg)
 	freq_remain = freq_max;
 
 	// create a writable string
-	optc = optfreq = (char *) malloc(strlen(optarg) + 1);
+	int optfreq_len = strlen(optarg);
+	optc = optfreq = (char *) malloc(optfreq_len + 1);
 	ALLEGE(optc != NULL);
 	ALLEGE(optfreq != NULL);
-	strncpy(optfreq, optarg, strlen(optarg));
-	optfreq[strlen(optarg)] = '\0';
+	copy_string(optfreq, optfreq_len + 1, optarg);
 
 	tmp_frequencies = (int *) malloc(sizeof(int) * (freq_max + 1));
 	ALLEGE(tmp_frequencies != NULL);

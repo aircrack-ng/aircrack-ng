@@ -51,6 +51,7 @@
 
 #include "aircrack-ng/cpu/simd_cpuid.h"
 #include "aircrack-ng/support/common.h"
+#include "stringlib/string.h"
 
 #ifdef __linux__
 #define CPUFREQ_CPU0C "/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq"
@@ -334,8 +335,7 @@ static int cpuid_findcpusensorpath(const char * path)
 		}
 		else if (!strncmp(dp->d_name, "temp", 4))
 		{
-			strncpy(tbuf[cnt], dp->d_name, 31);
-			tbuf[cnt][31] = '\0'; // ensure NULL termination
+			copy_string(tbuf[cnt], sizeof(tbuf[cnt]), dp->d_name);
 			if (cnt < (MAX_SENSOR_PATHS - 1)) ++cnt; //-V547
 		}
 	}
