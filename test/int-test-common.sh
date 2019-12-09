@@ -5,6 +5,7 @@ cleanup() {
 	kill_wpa_supplicant
 	kill_hostapd
 	unload_module
+	restore_regdomain
 }
 
 screen_cleanup() {
@@ -121,7 +122,61 @@ get_hwsim_interface_name() {
 	echo "Interface $1 name: ${IFACE}"
 }
 
+######################## regdomain iw commands ########################
+
+REG_DOMAIN=""
+
+backup_regdomain() {
+	REG_DOMAIN="$(iw reg get | ${GREP} country | ${AWK} -F\: '{print $1}' | ${AWK} '{print $2}')"
+	echo "Current regdomain: ${REG_DOMAIN}"
+}
+
+set_regdomain() {
+	if [ -z "$1" ]; then
+		echo "set_regdomain(): No regdomain given"
+		retun 1
+	fi
+
+	echo "Changing regdomain to $1"
+	iw reg set $1
+}
+
+restore_regdomain() {
+	[ -n "${REG_DOMAIN}" ] && set_regdomain ${REG_DOMAIN}
+}
+
 ########################## Channel settings ##########################
+
+FIRST_5GHZ_CHANNEL=""
+
+get_first_5ghz_channel() {
+	if [ -z "$1" ]; then
+		echo 'get_first_5ghz_channel(): missing interface name'
+		return 1
+	fi
+
+	TMP_IFACE_PHY=$(iw dev $1 info | ${GREP} wiphy | ${AWK} '{print $2}')
+
+	if [ -z "${TMP_IFACE_PHY}" ]; then
+		echo "get_first_5ghz_channel(): Interface $1 does not exist or does not have associated PHY"
+		return 1
+	fi
+
+	FIRST_5GHZ_CHANNEL=$(iw phy phy${TMP_IFACE_PHY} info | ${GREP} -E '\* 5[0-9]{3} MHz' | ${GREP} -v -E '(no IR|disabled)' | ${AWK} -F\[ '{ print $2}' | ${AWK} -F\] '{print $1}' | head -n 1)
+
+	if [ -z "${FIRST_5GHZ_CHANNEL}" ]; then
+		echo "get_first_5ghz_channel(): No 5GHz channel available"
+		return 1
+	fi
+
+	if [ $(echo "${FIRST_5GHZ_CHANNEL}" | ${GREP} -E '^[1-9][0-9]{1,2}$' | wc -l) -ne 1 ]; then
+		echo "get_first_5ghz_channel(): Failure to get channel: ${FIRST_5GHZ_CHANNEL}"
+		return 1
+	fi
+	echo "First 5GHz channel: ${FIRST_5GHZ_CHANNEL}"
+
+	return 0
+}
 
 set_interface_channel() {
 	if [ -z "$1" ]; then
