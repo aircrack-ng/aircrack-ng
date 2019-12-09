@@ -127,10 +127,12 @@ timeout 60 "${abs_builddir}/../aircrack-ng${EXEEXT}" \
 
 RET=$?
 
-[ ${RET} -eq 1 ] && echo "Failed cracking passphrase"
-
-# Cleanup PCAP
-rm -f ${AB_PCAP}
+if [ ${RET} -eq 1 ]; then
+    echo "Failed cracking passphrase, PCAP: ${AB_PCAP}"
+else
+    # Cleanup PCAP
+    rm -f ${AB_PCAP}
+fi
 
 # Cleanup
 exit ${RET}
