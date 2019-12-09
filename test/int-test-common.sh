@@ -81,6 +81,25 @@ is_pid_running() {
 	return 1
 }
 
+check_tools_compiled() {
+	echo 'Checking required Aircrack-ng tools are compiled'
+
+	# Check that all the tools are compiled
+	if [ ! -f "${abs_builddir}/../scripts/airmon-ng" ]; then
+		echo 'Tools are unlikely to be compiled - airmon-ng is not present'
+		exit 1
+	fi
+
+	# Linux only, we'll have to adapt if we ever support Windows officially
+	if [ ! -f "${abs_builddir}/../aircrack-ng" ] \
+		|| [ ! -f "${abs_builddir}/../aircrack-ng" ] \
+		|| [ ! -f "${abs_builddir}/../airodump-ng" ] \
+		|| [ ! -f "${abs_builddir}/../aireplay-ng" ]; then
+		echo 'Aircrack-ng tools not compiled'
+		exit 1
+	fi
+}
+
 check_root() {
 	if [ $(id -u) -ne 0 ]; then
 		echo 'Not root, skipping'
@@ -337,3 +356,5 @@ kill_wpa_supplicant() {
 		WPAS_PID_FILE=""
 	fi
 }
+
+check_tools_compiled
