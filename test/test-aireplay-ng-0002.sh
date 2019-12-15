@@ -19,7 +19,7 @@ airmon_ng_check
 # Cleanup
 finish() {
 	if [ -n "${TCPDUMP_PID}" ]; then
-		kill -9 ${TCPDUMP_PID}
+		kill -9 ${TCPDUMP_PID} 2>/dev/null
 		rm -rf ${TEMP_PCAP}
 	fi
 	cleanup
