@@ -43,7 +43,9 @@ set_monitor_mode ${WI_IFACE}
 
 # Start capture in the background
 TEMP_PCAP=$(mktemp)
-tcpdump -i ${WI_IFACE} -w ${TEMP_PCAP} -U & 2>&1 >/dev/null
+# -Z is used because it drops file permissions to 'tcpdump'
+# user by default and apparmor will prevent reading it back
+tcpdump -Z root -i ${WI_IFACE} -w ${TEMP_PCAP} -U & 2>&1 >/dev/null
 # Get tcpdump PID
 TCPDUMP_PID=$!
 
