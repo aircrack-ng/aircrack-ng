@@ -79,5 +79,5 @@ AMOUNT_PACKETS=$(tcpdump -r ${TEMP_PCAP} 2>/dev/null | ${GREP} "DeAuthentication
 # There should be exactly 256 deauth
 [ ${AMOUNT_PACKETS} -eq 256 ] && exit 0
 
-echo "Invalid amount of deauth (${AMOUNT_DEAUTH}), expected 256"
+echo "Invalid amount of deauth (${AMOUNT_PACKETS}), expected 256"
 exit 1
