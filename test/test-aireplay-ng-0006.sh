@@ -73,4 +73,6 @@ sleep 3
 AMOUNT_PACKETS=$(tcpdump -r ${TEMP_PCAP} 2>/dev/null | ${GREP} "DeAuthentication (${AP_MAC}" | ${GREP} 'Disassociated because the information in the Power Capability element is unacceptable' | wc -l)
 [ ${AMOUNT_PACKETS} -eq 256 ] && exit 0
 
+echo "Expected 256 deauth frames, got ${AMOUNT_PACKETS}"
+
 exit 1

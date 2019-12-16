@@ -75,7 +75,15 @@ AMOUNT_PACKETS_AP=$(tcpdump -r ${TEMP_PCAP} 2>/dev/null | ${GREP} "DeAuthenticat
 AMOUNT_PACKETS_CLIENT=$(tcpdump -r ${TEMP_PCAP} 2>/dev/null | ${GREP} "DeAuthentication (${CLIENT_MAC}" | wc -l)
 
 # There should be exactly 256 deauth total
-[ ${AMOUNT_PACKETS_CLIENT} -ne 128 ] && exit 1
-[ ${AMOUNT_PACKETS_AP} -ne 128 ] && exit 1
+RET=0
+if [ ${AMOUNT_PACKETS_CLIENT} -ne 128 ]; then
+	RET=1
+	echo "Expected 128 deauth frames from the client, got ${AMOUNT_PACKETS_CLIENT}"
+fi
 
-exit 0
+if [ ${AMOUNT_PACKETS_AP} -ne 128 ]; then
+	RET=1
+	echo "Expected 128 deauth frames from the AP, got ${AMOUNT_PACKETS_AP}"
+fi
+
+exit ${RET}
