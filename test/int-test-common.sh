@@ -4,6 +4,8 @@ cleanup() {
 	echo "Cleanup"
 	kill_wpa_supplicant
 	kill_hostapd
+	# takes care of killing tcpdump if necessary
+	clean_tcpdump
 	unload_module
 	restore_regdomain
 }
@@ -240,6 +242,75 @@ set_monitor_mode() {
 	return 0
 }
 
+########################## tcpdump ##########################
+
+TCPDUMP_PID=""
+TEMP_TCPDUMP_PCAP=$(mktemp -u)
+TCPDUMP_IFACE=""
+run_tcpdump() {
+	ADDL_TCPDUMP_PARAMS="$1"
+
+	if [ -z "{TCPDUMP_IFACE}" ]; then
+		echo 'Missing capture interface'
+		cleanup
+		exit 1
+	fi
+
+	if [ -n "$1" ]; then
+		echo "Additional tcpdump parameters: $1"
+		cleanup
+		exit 1
+	fi
+
+	# Run tcpdump
+	echo "Starting tcpdump on ${TCPDUMP_IFACE}"
+	tcpdump -Z root -i ${TCPDUMP_IFACE} -w ${TEMP_TCPDUMP_PCAP} -U ${ADDL_TCPDUMP_PARAMS} & 2>&1 >/dev/null
+
+	# Get PID
+	TCPDUMP_PID=$!
+	sleep 1
+	is_pid_running ${TCPDUMP_PID}
+	if [ $? -eq 0 ]; then
+		echo 'Failed starting tcpdump'
+		cleanup
+		return 0
+	fi
+
+	# Display PID
+	echo "tcpdump PID: ${TCPDUMP_PID}"
+
+	return 1
+}
+
+kill_tcpdump() {
+	if [ -n "${TCPDUMP_PID}" ] && [ -f "/proc/${TCPDUMP_PID}/status" ]; then
+
+		echo "Killing tcpdump PID ${TCPDUMP_PID}"
+
+		# If there is nothing, just kill it slowly
+		if [ -z "$1" ]; then
+			# Kill tcpdump (SIGTERM)
+			kill -15 ${TCPDUMP_PID}
+
+			# Wait a few seconds so it exits gracefully and
+			# writes the frames to the file
+			sleep 3
+		fi
+
+		# Kill and cleanup
+		kill -9 ${TCPDUMP_PID} 2>/dev/null
+		TCPDUMP_PID=""
+	fi
+}
+
+clean_tcpdump() {
+	kill_tcpdump nowait
+
+	if [ -n "${TEMP_TCPDUMP_PCAP}" ] && [ -f ${TEMP_TCPDUMP_PCAP} ]; then
+		rm -f ${TEMP_TCPDUMP_PCAP}
+		TEMP_TCPDUMP_PCAP=""
+	fi
+}
 
 ########################## HostAPd ##########################
 
