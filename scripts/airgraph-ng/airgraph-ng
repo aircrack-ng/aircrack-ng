@@ -224,7 +224,6 @@ if __name__ == "__main__":
         help="Our Output Image ie... Image.png")
     parser.add_argument("-i",
         "--input",
-        dest="input",
         help="Airodump-ng txt file in CSV format. NOT the pcap")
     parser.add_argument("-g",
         "--graph",
