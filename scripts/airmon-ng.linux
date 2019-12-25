@@ -734,10 +734,10 @@ getDriver() {
 
 	#here we test for driver usb, ath9k_htc,rt2870, possibly others show this
 	if [ "$DRIVER" = "usb" ]; then
-		printf "Warn ON: USB\n"
 		BUSADDR="$(printf "$ethtool_output" | awk '/bus-info/ {print $2}'):1.0"
 
 		if [ "$DEBUG" = "1" ]; 	then
+			printf "Warn ON: USB\n"
 			printf "${BUSADDR}\n"
 		fi
 
