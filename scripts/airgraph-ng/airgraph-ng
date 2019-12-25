@@ -144,7 +144,7 @@ class dotCreate:
 
     def linker(self,objA,sep,objB):
         """
-        Retrun a graphviz line that links 2 objects togeather
+        Return a graphviz line that links 2 objects together
         Both objects are passed in with a separator
         returns graphiz format line
         """
