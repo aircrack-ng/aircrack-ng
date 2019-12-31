@@ -859,7 +859,8 @@ int is_essid_hidden(const uint8_t * essid, const size_t length)
 {
 	if (!essid || length == 0) return 1;
 
-	for (size_t i = 0; i < length; ++i) {
+	for (size_t i = 0; i < length; ++i)
+	{
 		if (essid[i] != 0) return 0;
 	}
 
@@ -1000,7 +1001,8 @@ int dump_write_kismet_netxml(struct AP_info * ap_1st,
 			fprintf(opt.f_kis_xml, NETXML_ENCRYPTION_TAG, "\t\t\t", "WEP40");
 
 		/* ESSID */
-		if (!is_essid_hidden(ap_cur->essid, (size_t) ap_cur->ssid_length)) {
+		if (!is_essid_hidden(ap_cur->essid, (size_t) ap_cur->ssid_length))
+		{
 			essid = sanitize_xml(ap_cur->essid, (size_t) ap_cur->ssid_length);
 		}
 
@@ -1008,7 +1010,8 @@ int dump_write_kismet_netxml(struct AP_info * ap_1st,
 				"\t\t\t<essid cloaked=\"%s\">%s</essid>\n",
 				(essid) ? "false" : "true",
 				(essid) ? essid : "");
-		if (essid) {
+		if (essid)
+		{
 			free(essid);
 			essid = NULL;
 		}
