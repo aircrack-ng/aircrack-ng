@@ -374,3 +374,7 @@ Documentation, tutorials, ... can be found on https://aircrack-ng.org
 See also manpages and the forum.
 
 For further information check the [README](README) file
+
+# Infrastructure sponsors
+
+<img src="https://uploads-ssl.webflow.com/5ac3c046c82724970fc60918/5c019d917bba312af7553b49_MacStadium-developerlogo.png" alt="MacStadium" width="150" height="61">
