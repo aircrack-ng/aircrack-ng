@@ -145,6 +145,7 @@ EXTRA_DIST += %D%/test-hex_string_to_array.sh \
               %D%/int-test-common.sh \
               %D%/wep.open.system.authentication.cap \
               %D%/wpa2-psk-linksys.cap \
+              %D%/wpa3-psk.pcap \
               %D%/test-hex_string_to_array.c \
               %D%/wpa.cap \
               %D%/test.ivs \
