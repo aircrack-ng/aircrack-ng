@@ -162,7 +162,7 @@ EXTRA_DIST += %D%/test-hex_string_to_array.sh \
               %D%/password-2.lst \
               %D%/password-3.lst \
               %D%/n-02.cap \
-	      %D%/zn2i.cap \
+	      %D%/zn2i.pcap \
               %D%/wep.shared.key.authentication.cap \
               %D%/wep_64_ptw.cap \
               %D%/pingreply.c \
