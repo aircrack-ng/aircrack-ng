@@ -1087,6 +1087,7 @@ int main(int argc, char * argv[])
 				st_cur->keyver = h80211[z + 6] & 7;
 			}
 
+			memcpy(st_cur->bssid, bssid, sizeof(st_cur->bssid));
 			st_cur->valid_ptk = calc_ptk(st_cur, opt.pmk);
 		}
 	}

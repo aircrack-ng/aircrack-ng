@@ -79,6 +79,7 @@ TESTS += %D%/test-hex_string_to_array.sh \
 		 %D%/test-airdecap-ng-0003.sh \
 		 %D%/test-airdecap-ng-0004.sh \
 		 %D%/test-airdecap-ng-0005.sh \
+		 %D%/test-airdecap-ng-0006.sh \
 		 %D%/test-wpaclean-0001.sh \
 		 %D%/test-wpaclean-0002.sh \
 		 %D%/test-alltools.sh
@@ -136,6 +137,7 @@ EXTRA_DIST += %D%/test-hex_string_to_array.sh \
 			  %D%/test-airdecap-ng-0003.sh \
 			  %D%/test-airdecap-ng-0004.sh \
 			  %D%/test-airdecap-ng-0005.sh \
+			  %D%/test-airdecap-ng-0006.sh \
 			  %D%/test-wpaclean-0001.sh \
 			  %D%/test-wpaclean-0002.sh \
 			  %D%/test-alltools.sh \
@@ -159,6 +161,7 @@ EXTRA_DIST += %D%/test-hex_string_to_array.sh \
               %D%/password-2.lst \
               %D%/password-3.lst \
               %D%/n-02.cap \
+	      %D%/zn2i.cap \
               %D%/wep.shared.key.authentication.cap \
               %D%/wep_64_ptw.cap \
               %D%/pingreply.c \
