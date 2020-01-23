@@ -1,7 +1,7 @@
 /*
   *  IVS Tools - Convert or merge IVs
   *
-  *  Copyright (C) 2006-2018 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+  *  Copyright (C) 2006-2020 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
   *  Copyright (C) 2004, 2005  Christophe Devine (pcap2ivs and mergeivs)
   *
   *  This program is free software; you can redistribute it and/or modify
@@ -77,7 +77,7 @@ static void usage(int what)
 {
 	char * version_info
 		= getVersion("ivsTools", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
-	printf("\n  %s - (C) 2006-2018 Thomas d\'Otreppe\n"
+	printf("\n  %s - (C) 2006-2020 Thomas d\'Otreppe\n"
 		   "  https://www.aircrack-ng.org\n"
 		   "\n   usage: ",
 		   version_info);
