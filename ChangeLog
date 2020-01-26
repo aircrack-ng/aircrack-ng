@@ -1,4 +1,4 @@
-Version 1.6 (changes from aircrack-ng 1.5.2) - Released XX Jan 2020:
+Version 1.6 (changes from aircrack-ng 1.5.2) - Released 25 Jan 2020:
 * Aircrack-ng: Added support for MidnightBSD
 * Aircrack-ng: Fixed ARM processors display with -u
 * Aircrack-ng: Fixed AVX-512F support
