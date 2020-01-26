@@ -49,28 +49,28 @@ AC_DEFUN([AX_CHECK_OPENSSL], [
               ;;
             esac
         ], [
-            AC_CHECK_LIB([crypto], [OPENSSL_init], [
-                OPENSSL_LIBS="-lssl -lcrypto"
-                OPENSSL_LDFLAGS=""
-
-                AC_CHECK_HEADERS([openssl/crypto.h], [
-                    OPENSSL_INCLUDES=""
+            # if pkg-config is installed and openssl has installed a .pc file,
+            # then use that information and don't search ssldirs
+            AC_CHECK_TOOL([PKG_CONFIG], [pkg-config])
+            if test x"$PKG_CONFIG" != x""; then
+                OPENSSL_LDFLAGS=`$PKG_CONFIG openssl --libs-only-L 2>/dev/null`
+                if test $? = 0; then
+                    OPENSSL_LIBS=`$PKG_CONFIG openssl --libs-only-l 2>/dev/null`
+                    OPENSSL_INCLUDES=`$PKG_CONFIG openssl --cflags-only-I 2>/dev/null`
                     found=true
-                ])
-            ])
+                fi
+            fi
 
             if ! $found; then
-                # if pkg-config is installed and openssl has installed a .pc file,
-                # then use that information and don't search ssldirs
-                AC_CHECK_TOOL([PKG_CONFIG], [pkg-config])
-                if test x"$PKG_CONFIG" != x""; then
-                    OPENSSL_LDFLAGS=`$PKG_CONFIG openssl --libs-only-L 2>/dev/null`
-                    if test $? = 0; then
-                        OPENSSL_LIBS=`$PKG_CONFIG openssl --libs-only-l 2>/dev/null`
-                        OPENSSL_INCLUDES=`$PKG_CONFIG openssl --cflags-only-I 2>/dev/null`
+                AC_CHECK_LIB([crypto], [OPENSSL_init], [
+                    OPENSSL_LIBS="-lssl -lcrypto"
+                    OPENSSL_LDFLAGS=""
+
+                    AC_CHECK_HEADERS([openssl/crypto.h], [
+                        OPENSSL_INCLUDES=""
                         found=true
-                    fi
-                fi
+                    ])
+                ])
             fi
 
             # no such luck; use some default ssldirs
