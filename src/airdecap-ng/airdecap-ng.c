@@ -724,7 +724,7 @@ int main(int argc, char * argv[])
 		{
 			/* remove the radiotap header */
 
-			n = *(unsigned short *) (h80211 + 2);
+			n = le16_to_cpu(*(unsigned short *) (h80211 + 2));
 
 			if (n <= 0 || n >= (unsigned) pkh.caplen) continue;
 
