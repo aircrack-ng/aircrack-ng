@@ -351,8 +351,6 @@ void blk_SHA1_Final(unsigned char hashout[20], blk_SHA_CTX * ctx)
 	blk_SHA1_Update(ctx, padlen, 8);
 
 	/* Output hash */
-	assert(((uintptr_t) hashout % 4UL) == 0); // V1032 catch
-
 	put_be32(&hashout[0], ctx->h0);
 	put_be32(&hashout[4], ctx->h1);
 	put_be32(&hashout[8], ctx->h2);
