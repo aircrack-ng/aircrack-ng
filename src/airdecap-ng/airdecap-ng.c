@@ -637,7 +637,8 @@ int main(int argc, char * argv[])
 	pfh.thiszone = 0;
 	pfh.sigfigs = 0;
 	pfh.snaplen = cpu_to_le32(65535);
-	pfh.linktype = cpu_to_le32((opt.no_convert) ? LINKTYPE_IEEE802_11 : LINKTYPE_ETHERNET);
+	pfh.linktype = cpu_to_le32((opt.no_convert) ? LINKTYPE_IEEE802_11
+												: LINKTYPE_ETHERNET);
 
 	n = sizeof(pfh);
 
