@@ -192,6 +192,9 @@ write_packet(FILE * f_out, struct pcap_pkthdr * pkh, unsigned char * h80211)
 		pkh->caplen += 12;
 	}
 
+	pkh->len = __cpu_to_le32(pkh->len);
+	pkh->caplen = __cpu_to_le32(pkh->caplen);
+
 	n = sizeof(struct pcap_pkthdr);
 
 	if (fwrite(pkh, 1, n, f_out) != (size_t) n)
@@ -200,7 +203,7 @@ write_packet(FILE * f_out, struct pcap_pkthdr * pkh, unsigned char * h80211)
 		return (EXIT_FAILURE);
 	}
 
-	n = pkh->caplen;
+	n = __le32_to_cpu(pkh->caplen);
 
 	if (fwrite(buffer, 1, n, f_out) != (size_t) n)
 	{
@@ -624,13 +627,17 @@ int main(int argc, char * argv[])
 		}
 	}
 
+#if (AIRCRACK_NG_BYTE_ORDER == AIRCRACK_NG_BIG_ENDIAN)
+	pfh.magic = TCPDUMP_CIGAM;
+#else
 	pfh.magic = TCPDUMP_MAGIC;
-	pfh.version_major = PCAP_VERSION_MAJOR;
-	pfh.version_minor = PCAP_VERSION_MINOR;
+#endif
+	pfh.version_major = cpu_to_le16(PCAP_VERSION_MAJOR);
+	pfh.version_minor = cpu_to_le16(PCAP_VERSION_MINOR);
 	pfh.thiszone = 0;
 	pfh.sigfigs = 0;
-	pfh.snaplen = 65535;
-	pfh.linktype = (opt.no_convert) ? LINKTYPE_IEEE802_11 : LINKTYPE_ETHERNET;
+	pfh.snaplen = cpu_to_le32(65535);
+	pfh.linktype = cpu_to_le32((opt.no_convert) ? LINKTYPE_IEEE802_11 : LINKTYPE_ETHERNET);
 
 	n = sizeof(pfh);
 
