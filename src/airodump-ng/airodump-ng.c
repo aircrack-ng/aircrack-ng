@@ -5564,11 +5564,16 @@ static int set_encryption_filter(const char * input)
 	{
 		lopt.f_encrypt |= STD_WPA;
 		lopt.f_encrypt |= STD_WPA2;
+		lopt.f_encrypt |= AUTH_SAE;
 	}
 
 	if (strcasecmp(input, "wpa1") == 0) lopt.f_encrypt |= STD_WPA;
 
 	if (strcasecmp(input, "wpa2") == 0) lopt.f_encrypt |= STD_WPA2;
+
+	if (strcasecmp(input, "wpa3") == 0) lopt.f_encrypt |= AUTH_SAE;
+
+	if (strcasecmp(input, "owe") == 0) lopt.f_encrypt |= AUTH_OWE;
 
 	return (0);
 }
