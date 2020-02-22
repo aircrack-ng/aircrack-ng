@@ -203,7 +203,9 @@ int dump_write_csv(struct AP_info * ap_1st,
 
 		fprintf(opt.f_txt, "%2d, %3d,", ap_cur->channel, ap_cur->max_speed);
 
-		if ((ap_cur->security & (STD_OPN | STD_WEP | STD_WPA | STD_WPA2 | AUTH_SAE | AUTH_OWE)) == 0)
+		if ((ap_cur->security
+			 & (STD_OPN | STD_WEP | STD_WPA | STD_WPA2 | AUTH_SAE | AUTH_OWE))
+			== 0)
 			fprintf(opt.f_txt, " ");
 		else
 		{
