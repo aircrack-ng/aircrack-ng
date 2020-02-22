@@ -22,7 +22,7 @@ HOSTAPD_VER="$(hostapd -v 2>&1 | ${GREP} hostapd | ${AWK} '{print $2}')"
 if [ -z "${HOSTAPD_VER}" ]; then
 	echo "Failed getting hostapd version, skipping"
 	exit 1
-elif [ "$(echo ${HOSTAPD_VER} | ${GREP} -v -E '^v((2\.[789])|(3.[0-9]))')" ]; then
+elif [ "$(echo ${HOSTAPD_VER} | ${GREP} -v -E '^v((2\.([789]|[1-9][0-9]))|(3.[0-9]))(-devel)?$')" ]; then
 	echo "hostapd version does not support WPA3, skipping"
 	echo "v2.7+ required, got ${HOSTAPD_VER}"
 	exit 77
