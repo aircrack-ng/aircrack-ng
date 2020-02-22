@@ -2129,6 +2129,7 @@ skip_probe:
 				// RSN => WPA2
 				if (type == 0x30)
 				{
+					ap_cur->security |= STD_WPA2;
 					offset = 0;
 				}
 
@@ -2171,7 +2172,6 @@ skip_probe:
 							break;
 						case 0x02:
 							ap_cur->security |= ENC_TKIP;
-							ap_cur->security &= ~STD_WPA2;
 							break;
 						case 0x03:
 							ap_cur->security |= ENC_WRAP;
@@ -3785,7 +3785,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 			len = strlen(strbuf);
 
-			if ((ap_cur->security & STD_FIELD) == 0)
+			if ((ap_cur->security & (STD_FIELD | AUTH_SAE | AUTH_OWE)) == 0)
 				snprintf(strbuf + len, sizeof(strbuf) - len, "    ");
 			else
 			{
