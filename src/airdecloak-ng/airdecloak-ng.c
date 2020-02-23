@@ -507,10 +507,10 @@ static BOOLEAN read_packets(void)
 			_packet_elt_head->current->is_dropped = 1;
 		}
 
-// TODO: Get the speed from the packet if radiotap/prism header exist.
+		// TODO: Get the speed from the packet if radiotap/prism header exist.
 
-// TODO: Get also the channel from the headers (the sensor may inject
-//       cloaked frames on a channel is not the same as the AP)
+		// TODO: Get also the channel from the headers (the sensor may inject
+		//       cloaked frames on a channel is not the same as the AP)
 
 #ifdef DEBUG
 		printf("Retry bit: %d\n", _packet_elt_head->current->retry_bit);
@@ -1797,14 +1797,16 @@ int main(int argc, char * argv[])
 		if (!manual_cloaked_fname)
 		{
 			_filename_output_cloaked_buf_len = temp + 9 + 5;
-			_filename_output_cloaked = (char *) calloc(_filename_output_cloaked_buf_len, 1);
+			_filename_output_cloaked
+				= (char *) calloc(_filename_output_cloaked_buf_len, 1);
 			ALLEGE(_filename_output_cloaked != NULL);
 		}
 
 		if (!manual_filtered_fname)
 		{
 			_filename_output_filtered_buf_len = temp + 10 + 5;
-			_filename_output_filtered = (char *) calloc(_filename_output_filtered_buf_len, 1);
+			_filename_output_filtered
+				= (char *) calloc(_filename_output_filtered_buf_len, 1);
 			ALLEGE(_filename_output_filtered != NULL);
 		}
 
@@ -1818,12 +1820,12 @@ int main(int argc, char * argv[])
 		{
 			if (!manual_cloaked_fname)
 				snprintf(_filename_output_cloaked,
-						_filename_output_cloaked_buf_len,
+						 _filename_output_cloaked_buf_len,
 						 "%s-cloaked.pcap",
 						 input_filename);
 			if (!manual_filtered_fname)
 				snprintf(_filename_output_filtered,
-						_filename_output_filtered_buf_len,
+						 _filename_output_filtered_buf_len,
 						 "%s-filtered.pcap",
 						 input_filename);
 		}
@@ -1831,13 +1833,21 @@ int main(int argc, char * argv[])
 		{
 			if (!manual_cloaked_fname)
 			{
-				copy_string(_filename_output_cloaked, _filename_output_cloaked_buf_len, input_filename);
-				concat_string(_filename_output_cloaked, _filename_output_cloaked_buf_len, "-cloaked.pcap");
+				copy_string(_filename_output_cloaked,
+							_filename_output_cloaked_buf_len,
+							input_filename);
+				concat_string(_filename_output_cloaked,
+							  _filename_output_cloaked_buf_len,
+							  "-cloaked.pcap");
 			}
 			if (!manual_filtered_fname)
 			{
-				copy_string(_filename_output_filtered, _filename_output_filtered_buf_len, input_filename);
-				concat_string(_filename_output_filtered, _filename_output_filtered_buf_len, "-filtered.pcap");
+				copy_string(_filename_output_filtered,
+							_filename_output_filtered_buf_len,
+							input_filename);
+				concat_string(_filename_output_filtered,
+							  _filename_output_filtered_buf_len,
+							  "-filtered.pcap");
 			}
 		}
 	}

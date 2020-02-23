@@ -59,13 +59,15 @@ size_t copy_string(char * dest, size_t dest_bufsz, const char * src)
 	if (dest == NULL) return 0;
 	if (dest_bufsz == 0) return 0;
 
-	if (dest_bufsz == 1) {
+	if (dest_bufsz == 1)
+	{
 		// only one result is possible here
 		dest[0] = '\0';
 		return 0;
 	}
 
-	if (src == NULL) {
+	if (src == NULL)
+	{
 		dest[0] = '\0';
 		return 0;
 	}
@@ -73,7 +75,8 @@ size_t copy_string(char * dest, size_t dest_bufsz, const char * src)
 	size_t src_str_len = strlen(src);
 	size_t num_bytes_to_copy = MIN(src_str_len, (dest_bufsz - 1));
 
-	if (num_bytes_to_copy > 0) {
+	if (num_bytes_to_copy > 0)
+	{
 		memmove(dest, src, num_bytes_to_copy);
 	}
 	dest[num_bytes_to_copy] = '\0';
@@ -105,22 +108,26 @@ size_t concat_string(char * dest, size_t dest_bufsz, const char * src)
 	if (dest_bufsz == 0) return 0;
 
 	size_t dest_str_len = strnlen(dest, dest_bufsz);
-	if (dest_str_len == dest_bufsz) {
+	if (dest_str_len == dest_bufsz)
+	{
 		// there is no null terminator in the dest str
 		dest[dest_bufsz - 1] = '\0';
 		return 0;
 	}
 
-	if (src == NULL) {
+	if (src == NULL)
+	{
 		// we know dest is already correctly null terminated
 		return 0;
 	}
 
 	size_t src_str_len = strlen(src);
 
-	size_t num_bytes_to_copy = MIN(src_str_len, (dest_bufsz - dest_str_len - 1));
+	size_t num_bytes_to_copy
+		= MIN(src_str_len, (dest_bufsz - dest_str_len - 1));
 
-	if (num_bytes_to_copy > 0) {
+	if (num_bytes_to_copy > 0)
+	{
 		memmove(dest + dest_str_len, src, num_bytes_to_copy);
 	}
 	dest[dest_str_len + num_bytes_to_copy] = '\0';
