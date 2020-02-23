@@ -13,7 +13,7 @@ import sys, argparse, os
 import pdb
 
 try:
-    from graphviz import *
+    from airgraphviz import *
 except ImportError as error:
     raise Exception("Your airgraph-ng installation is broken, could not import libraries: %s" %(error))
 
