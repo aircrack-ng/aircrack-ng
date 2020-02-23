@@ -6,7 +6,7 @@ USERID=""
 IFACE=""
 checkvm_status=""
 MAC80211=0
-IW_SOURCE="https://mirrors.edge.kernel.org/pub/software/network/iw/iw-5.3.tar.xz"
+IW_SOURCE="https://mirrors.edge.kernel.org/pub/software/network/iw/iw-5.4.tar.xz"
 IW_ERROR=""
 if [ ! -d /sys/ ]; then
 	printf "CONFIG_SYSFS is disabled in your kernel, this program will almost certainly not work.\n"
@@ -734,10 +734,10 @@ getDriver() {
 
 	#here we test for driver usb, ath9k_htc,rt2870, possibly others show this
 	if [ "$DRIVER" = "usb" ]; then
-		printf "Warn ON: USB\n"
 		BUSADDR="$(printf "$ethtool_output" | awk '/bus-info/ {print $2}'):1.0"
 
 		if [ "$DEBUG" = "1" ]; 	then
+			printf "Warn ON: USB\n"
 			printf "${BUSADDR}\n"
 		fi
 
@@ -1485,9 +1485,7 @@ for iface in $(printf "${iface_list}"); do
 			getExtendedInfo ${iface}
 		fi
 	else
- 		printf "\nethtool failed...\n"
-		printf "Only mac80211 devices on kernel 2.6.33 or higher are officially supported by airmon-ng.\n"
-		exit 1
+ 		CHIPSET="ethtool failed... driver is broken"
 	fi
 
 	#yes this really is the main output loop

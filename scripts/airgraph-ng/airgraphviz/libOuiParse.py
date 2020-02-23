@@ -31,15 +31,22 @@ else:
 import os
 import pdb
 #this lib is crap and needs to be rewritten -Textile 
-
-if os.path.isdir('./support/'):
+print(os.getenv('AIRGRAPH_HOME'))
+if os.getenv('AIRGRAPH_HOME') is not None and os.path.isdir(os.getenv('AIRGRAPH_HOME')):
+    path=os.getenv('AIRGRAPH_HOME') + '/support/'
+    if not os.path.isdir(path):
+        try:
+            os.mkdir(path)
+        except:
+            raise Exception("Can't create destination directory (%s)!" % path)
+elif os.path.isdir('./support/'):
     path='./support/'
 elif os.path.isdir('/usr/local/share/airgraph-ng/'):
     path='/usr/local/share/airgraph-ng/'
 elif os.path.isdir('/usr/share/airgraph-ng/'):
     path='/usr/share/airgraph-ng/'
 else:
-    raise Exception("Could not determine path, please, check your installation")
+    raise Exception("Could not determine path, please, check your installation or set AIRGRAPH_HOME environment variable")
 
 class macOUI_lookup:
     """

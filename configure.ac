@@ -1,6 +1,6 @@
 # Aircrack-ng
 #
-# Copyright (C) 2017 Joseph Benden <joe@benden.us>
+# Copyright (C) 2017-2020 Joseph Benden <joe@benden.us>
 #
 # Autotool support was written by: Joseph Benden <joe@benden.us>
 #
@@ -37,10 +37,10 @@
 # If you delete this exception statement from all source files in the
 # program, then also delete it here.
 
-m4_define([version_date], "December 2018")
+m4_define([version_date], "January 2020")
 m4_define([version_major], 1)
-m4_define([version_minor], 5)
-m4_define([version_micro], 2)
+m4_define([version_minor], 6)
+m4_define([version_micro], 0)
 m4_define([version_beta],  0)
 m4_define([version_rc],    0)
 m4_define([version_scm],[m4_translit(m4_esyscmd([$(pwd)/evalrev . scm || echo]),m4_newline)])

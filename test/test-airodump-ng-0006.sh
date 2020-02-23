@@ -1,5 +1,5 @@
 #!/bin/sh
-# Airodump-ng: Test WPA3 (OWE) detection
+# Airodump-ng: Test WPA2 PSK TKIP detection
 
 if test ! -z "${CI}"; then exit 77; fi
 
@@ -16,17 +16,6 @@ is_tool_present hostapd
 
 # Check for interfering processes
 airmon_ng_check
-
-# Check HostAPd version supports WPA3
-HOSTAPD_VER="$(hostapd -v 2>&1 | ${GREP} hostapd | ${AWK} '{print $2}')"
-if [ -z "${HOSTAPD_VER}" ]; then
-	echo "Failed getting hostapd version, skipping"
-	exit 1
-elif [ "$(echo ${HOSTAPD_VER} | ${GREP} -v -E '^v((2\.([789]|[1-9][0-9]))|(3.[0-9]))(-devel)?$')" ]; then
-	echo "hostapd version does not support WPA3, skipping"
-	echo "v2.7+ required, got ${HOSTAPD_VER}"
-	exit 77
-fi
 
 # Cleanup
 finish() {
@@ -47,17 +36,15 @@ check_radios_present 1
 get_hwsim_interface_name 1
 WI_IFACE=${IFACE}
 
-# Start hostapd with WPA3
+# Start hostapd with WPA PSK TKIP
 cat >> ${TEMP_HOSTAPD_CONF_FILE} << EOF
 interface=${WI_IFACE}
 ssid=test
 channel=1
 wpa=2
+wpa_pairwise=TKIP
 wpa_passphrase=password
-wpa_key_mgmt=OWE
-rsn_pairwise=CCMP
-ieee80211w=2
-# Airodump-ng test 3
+# Airodump-ng test 5
 EOF
 
 # Start hostapd
@@ -78,49 +65,38 @@ screen -AmdS capture \
 # Wait a few seconds for it to finish
 sleep 6
 
-# Some cleanup
-cleanup
-
 # Check CSV
 ENCRYPTION_SECTION="$(head -n 3 ${TEMP_FILE}-01.csv | tail -n 1 | ${AWK} -F, '{print $6 $7 $8}')"
 if [ -z "${ENCRYPTION_SECTION}" ]; then
 	echo "Something failed with airodump-ng, did not get info from CSV"
-	rm -f ${TEMP_FILE}-01.*
 	exit 1
-elif [ "$(echo ${ENCRYPTION_SECTION} | tr -d ' ')" != 'WPA3WPA2CCMPOWE' ]; then
+elif [ "$(echo ${ENCRYPTION_SECTION} | tr -d ' ')" != 'WPA2TKIPPSK' ]; then
 	echo "Encryption section is not what is expected. Got ${ENCRYPTION_SECTION}"
-	rm -f ${TEMP_FILE}-01.*
 	exit 1
 fi
 
 # Check NetXML
 if [ ! -f ${TEMP_FILE}-01.kismet.netxml ]; then
 	echo "Kismet netxml file not found"
-	rm -f ${TEMP_FILE}-01.*
 	exit 1
 fi
-ENCRYPTION_SECTION="$(${GREP} '<encryption>WPA+OWE</encryption>' ${TEMP_FILE}-01.kismet.netxml)"
-if [ -z "${ENCRYPTION_SECTION}" ]; then
-        echo "Failed to find OWE in the kismet netxml"
-	rm -f ${TEMP_FILE}-01.*
+ENCRYPTION_SECTION="$(${GREP} '<encryption>WPA+PSK</encryption>' ${TEMP_FILE}-01.kismet.netxml)"
+if [ -z "${ENCRYPTION_SECTION}" ] || [ -z "$(${GREP} '<encryption>WPA+TKIP</encryption>' ${TEMP_FILE}-01.kismet.netxml)" ]; then
+        echo "Failed to find PSK and WPA in the kismet netxml"
+	cat ${TEMP_FILE}-01.kismet.netxml
         exit 1
 fi
 
 # Check Kismet CSV
 if [ ! -f ${TEMP_FILE}-01.kismet.csv ]; then
-	echo 'Kismet CSV not found'
-	rm -f ${TEMP_FILE}-01.*
+	echo 'Kismet CSV not found'=
 	exit 1
 fi
 ENCRYPTION_SECTION="$(tail -n 1 ${TEMP_FILE}-01.kismet.csv | ${AWK} -F\; '{print $8}')"
-if [ "x${ENCRYPTION_SECTION}" != 'xWPA3,AES-CCM,OWE' ]; then
+if [ "x${ENCRYPTION_SECTION}" != 'xWPA2,TKIP' ]; then
 	echo "Encryption section not found or invalid in Kismet CSV"
-	echo "Expected 'OWE,AES-CCM,SAE', got ${ENCRYPTION_SECTION}"
-	rm -f ${TEMP_FILE}-01.*
+	echo "Expected 'WPA2,TKIP', got ${ENCRYPTION_SECTION}"
 	exit 1
 fi
-
-# Cleanup
-rm -f ${TEMP_FILE}-01.*
 
 exit 0

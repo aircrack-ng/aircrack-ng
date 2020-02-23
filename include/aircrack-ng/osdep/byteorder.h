@@ -1,7 +1,7 @@
 /*
  *  Compatibility header
  *
- *  Copyright (C) 2009-2018 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+ *  Copyright (C) 2009-2020 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -236,7 +236,7 @@ typedef uint8_t u_int8_t;
 #endif
 
 // FreeBSD
-#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__) || defined(__MidnightBSD__)
+#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__) || defined(__MidnightBSD__) || defined(__NetBSD__)
 #undef ushort
 #undef uint
 #include <sys/types.h>

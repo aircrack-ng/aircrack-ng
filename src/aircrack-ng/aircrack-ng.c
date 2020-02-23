@@ -1,7 +1,7 @@
 /*
  *  802.11 WEP / WPA-PSK Key Cracker
  *
- *  Copyright (C) 2006-2018 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+ *  Copyright (C) 2006-2020 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *  Copyright (C) 2004, 2005 Christophe Devine
  *
  *  Advanced WEP attacks developed by KoreK
@@ -210,7 +210,7 @@ static const unsigned char R[256] = {
 
 static const char usage[]
 	= "\n"
-	  "  %s - (C) 2006-2018 Thomas d\'Otreppe\n"
+	  "  %s - (C) 2006-2020 Thomas d\'Otreppe\n"
 	  "  https://www.aircrack-ng.org\n"
 	  "\n"
 	  "  usage: aircrack-ng [options] <input file(s)>\n"

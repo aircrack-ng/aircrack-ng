@@ -94,8 +94,8 @@ Removes the message that says \(aqfixed channel <interface>: -1\(aq.
 .PP
 .B Filter options:
 .TP
-.I -t <OPN|WEP|WPA|WPA1|WPA2>, --encrypt <OPN|WEP|WPA|WPA1|WPA2>
-It will only show networks matching the given encryption. May be specified more than once: \(aq\-t OPN \-t WPA2\(aq
+.I -t <OPN|WEP|WPA|WPA1|WPA2|WPA3|OWE>, --encrypt <OPN|WEP|WPA|WPA1|WPA2|WPA3|OWE>
+It will only show networks matching the given encryption. Note that WPA is a shortcut for WPA1, WPA2 and WPA3. May be specified more than once: \(aq\-t OPN \-t WPA2\(aq
 .TP
 .I -d <bssid>, --bssid <bssid>
 It will only show networks, matching the given bssid.
@@ -246,7 +246,7 @@ It means lost packets coming from the client. To determine the number of packets
 .I Notes
 Additional information about the client, such as captured EAPOL or PMKID.
 .TP
-.I Packets
+.I Frames
 The number of data packets sent by the client.
 .TP
 .I Probes
