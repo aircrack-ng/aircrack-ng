@@ -16,16 +16,7 @@ is_tool_present tcpdump
 # Check for interfering processes
 airmon_ng_check
 
-# Cleanup
-finish() {
-	if [ -n "${TCPDUMP_PID}" ]; then
-		kill -9 ${TCPDUMP_PID}
-		rm -rf ${TEMP_PCAP}
-	fi
-	cleanup
-}
-
-trap  finish INT QUIT SEGV PIPE ALRM TERM EXIT
+trap  cleanup INT QUIT SEGV PIPE ALRM TERM EXIT
 
 # Load mac80211_hwsim
 load_module 1
@@ -46,11 +37,9 @@ set_interface_channel ${WI_IFACE} 1
 # Check it is in monitor mode
 [ -z "$(iw dev ${WI_IFACE} info | ${GREP} 'type monitor')" ] && exit 1
 
-# Start capture in the background
-TEMP_PCAP=$(mktemp)
-tcpdump -i ${WI_IFACE} -w ${TEMP_PCAP} -U & 2>&1 >/dev/null
-# Get tcpdump PID
-TCPDUMP_PID=$!
+# Start tcpdump capture in the background
+TCPDUMP_IFACE=${WI_IFACE}
+run_tcpdump
 
 # Next test is directed
 AP_MAC="00:11:22:33:44:55"
@@ -64,18 +53,14 @@ AP_MAC="00:11:22:33:44:55"
 # Wait a second
 sleep 2
 
-# Kill tcpdump (SIGTERM)
-kill -15 ${TCPDUMP_PID}
-
-# Wait a few seconds so it exits gracefully and writes the frames
-# to the file
-sleep 3
+# Kill tcpdump
+kill_tcpdump
 
 # Count packets
-AMOUNT_PACKETS=$(tcpdump -r ${TEMP_PCAP} 2>/dev/null | ${GREP} "DeAuthentication (${AP_MAC}" | wc -l)
+AMOUNT_PACKETS=$(tcpdump -r ${TEMP_TCPDUMP_PCAP} 2>/dev/null | ${GREP} "DeAuthentication (${AP_MAC}" | wc -l)
 
 # There should be exactly 256 deauth
 [ ${AMOUNT_PACKETS} -eq 256 ] && exit 0
 
-echo "Invalid amount of deauth (${AMOUNT_DEAUTH}), expected 256"
+echo "Invalid amount of deauth (${AMOUNT_PACKETS}), expected 256"
 exit 1
