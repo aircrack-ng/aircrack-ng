@@ -1,7 +1,7 @@
 /*
  *  WEP Cloaking filtering
  *
- *  Copyright (C) 2008-2018 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+ *  Copyright (C) 2008-2020 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *
  *  Thanks to Alex Hernandez aka alt3kx for the hardware.
  *
@@ -1502,7 +1502,7 @@ static void usage(void)
 		"Airdecloak-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 	printf(
 		"\n"
-		"  %s - (C) 2008-2018 Thomas d\'Otreppe\n"
+		"  %s - (C) 2008-2020 Thomas d\'Otreppe\n"
 		"  https://www.aircrack-ng.org\n"
 		"\n"
 		"  usage: airdecloak-ng [options]\n"

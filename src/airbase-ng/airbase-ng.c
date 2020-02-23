@@ -2,7 +2,7 @@
  *  802.11 monitor AP
  *  based on airtun-ng
  *
- *  Copyright (C) 2008-2018 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+ *  Copyright (C) 2008-2020 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *  Copyright (C) 2008, 2009 Martin Beck <martin.beck2@gmx.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -142,7 +142,7 @@
 
 static const char usage[]
 	= "\n"
-	  "  %s - (C) 2008-2018 Thomas d'Otreppe\n"
+	  "  %s - (C) 2008-2020 Thomas d'Otreppe\n"
 	  "  Original work: Martin Beck\n"
 	  "  https://www.aircrack-ng.org\n"
 	  "\n"
