@@ -1,7 +1,7 @@
 /*
  *  pcap-compatible 802.11 packet sniffer
  *
- *  Copyright (C) 2006-2018 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+ *  Copyright (C) 2006-2020 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *  Copyright (C) 2004, 2005 Christophe Devine
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -750,7 +750,7 @@ static struct oui * load_oui_file(void)
 static const char usage[] =
 
 	"\n"
-	"  %s - (C) 2006-2018 Thomas d\'Otreppe\n"
+	"  %s - (C) 2006-2020 Thomas d\'Otreppe\n"
 	"  https://www.aircrack-ng.org\n"
 	"\n"
 	"  usage: airodump-ng <options> <interface>[,<interface>,...]\n"
@@ -2129,6 +2129,7 @@ skip_probe:
 				// RSN => WPA2
 				if (type == 0x30)
 				{
+					ap_cur->security |= STD_WPA2;
 					offset = 0;
 				}
 
@@ -2171,7 +2172,6 @@ skip_probe:
 							break;
 						case 0x02:
 							ap_cur->security |= ENC_TKIP;
-							ap_cur->security &= ~STD_WPA2;
 							break;
 						case 0x03:
 							ap_cur->security |= ENC_WRAP;
@@ -3785,7 +3785,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 			len = strlen(strbuf);
 
-			if ((ap_cur->security & STD_FIELD) == 0)
+			if ((ap_cur->security & (STD_FIELD | AUTH_SAE | AUTH_OWE)) == 0)
 				snprintf(strbuf + len, sizeof(strbuf) - len, "    ");
 			else
 			{
@@ -5564,11 +5564,16 @@ static int set_encryption_filter(const char * input)
 	{
 		lopt.f_encrypt |= STD_WPA;
 		lopt.f_encrypt |= STD_WPA2;
+		lopt.f_encrypt |= AUTH_SAE;
 	}
 
 	if (strcasecmp(input, "wpa1") == 0) lopt.f_encrypt |= STD_WPA;
 
 	if (strcasecmp(input, "wpa2") == 0) lopt.f_encrypt |= STD_WPA2;
+
+	if (strcasecmp(input, "wpa3") == 0) lopt.f_encrypt |= AUTH_SAE;
+
+	if (strcasecmp(input, "owe") == 0) lopt.f_encrypt |= AUTH_OWE;
 
 	return (0);
 }

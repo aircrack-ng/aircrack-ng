@@ -1,3 +1,55 @@
+Version 1.6 (changes from aircrack-ng 1.5.2) - Released 25 Jan 2020:
+* Aircrack-ng: Added support for MidnightBSD
+* Aircrack-ng: Fixed ARM processors display with -u
+* Aircrack-ng: Fixed AVX-512F support
+* Aircrack-ng: Fixed cracking speed calculation
+* Aircrack-ng: Fixed cracking WEP beyond 10k IVS
+* Aircrack-ng: Fixed creating new session and added test case
+* Aircrack-ng: Fixed encryption display in some cases when prompting for network to crack
+* Aircrack-ng: Fixed exiting Aircrack-ng in some cases
+* Aircrack-ng: Fixed logical and physical processor count detection
+* Aircrack-ng: Fixed PMKID length check
+* Aircrack-ng: Various fixes and improvements to WPA cracking engine and its performance
+* Airdecap-ng: Decrypt both directions when WDS is in use
+* Airdecap-ng: Fixed decrypting WPA PCAP when BSSID changes
+* Airgraph-ng: Added support for WPA3
+* Airgraph-ng: Switch to argparse
+* Airmon-ng: Added detection for wicd, Intel Wireless Daemon (iwd), net_applet
+* Airmon-ng: Handle case when avahi keeps getting restarted
+* Airmon-ng: Indicates when interface doesn't exist
+* Airodump-ng: Added autocolorization interactive key
+* Airodump-ng: Added option to read PCAP in realtime (-T)
+* Airodump-ng: Added PMKID detection
+* Airodump-ng: Added support for GMAC
+* Airodump-ng: Added support for WPA3 and OWE (Enhanced Open)
+* Airodump-ng: Basic UTF-8 support
+* Airodump-ng: Checked management frames are complete before processing IE to avoid switch from WEP to WPA
+* Airodump-ng: Display signal when reading from PCAP
+* Airodump-ng: Fixed netxml output with hidden SSID
+* Airodump-ng: Improved rates calculation for 802.11n/ac
+* Airtun-ng: Fixed using -p with -e
+* Autoconf: Fixed order of ssl and crypto libraries
+* dcrack: Fixed client reporting benchmark
+* dcrack: Now handles chunked encoding when communicating (default in Python3)
+* Freeradius-WPE: Updated patch for v3.0.20
+* General: Added NetBSD endianness support
+* General: Added python3 support to scripts
+* General: Added script to update autotools on CentOS 7
+* General: Added security policy to report security issues
+* General: Reorganizing filesystem layout (See PR 2032), and switch to automake 1.14+
+* General: Convert to non-recursive make (part of PR 2032)
+* General: Deduplicating functions and code cleanups
+* General: Fixed packaging on cygwin due to openssl library name change
+* General: Fixed SPARC build on Solaris 11
+* General: Removed coveralls.io
+* General: Updated dependencies in README.md/INSTALLING
+* General: Use upstream radiotap libary, as a sub-tree
+* General: various fixes and improvements (code, CI, integration tests, coverity)
+* HostAPd-WPE: Updated for v2.9
+* Manpages: Fixes and improvements
+* Tests: Added Integration tests for aireplay-ng, airodump-ng, aircrack-ng, airbase-ng, and others
+* Tests: Added tests for airdecap-ng, aircrack-ng
+
 Version 1.5.2 (changes from aircrack-ng 1.4) - Released 09 Dec 2018:
 * Airodump-ng: Fixed AP selection slip in interactive mode
 * Airodump-ng: Revamped GPS logging functionality and added new logging format (logcsv)
