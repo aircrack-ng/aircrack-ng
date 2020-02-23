@@ -6858,8 +6858,7 @@ int main(int argc, char * argv[])
 	ALLEGE(pthread_mutex_unlock(&(lopt.mx_print)) == 0);
 
 	char * init_elapsed_time = (char *) calloc(1, 4);
-	if (init_elapsed_time == NULL)
-	{
+	if (init_elapsed_time == NULL) {
 		perror("Error allocating memory");
 		return (EXIT_FAILURE);
 	}
