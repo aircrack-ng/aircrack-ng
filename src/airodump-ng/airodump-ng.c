@@ -115,9 +115,9 @@ static const char * OUI_PATHS[]
 static int read_pkts = 0;
 
 static const int abg_chans[]
-	= {1,	7,	 13,  2,   8,	3,	 14,  9,   4,	10,	 5,	  11,  6,
-	   12,	36,	 38,  40,  42,	44,	 46,  48,  50,	52,	 54,  56,  58,
-	   60,	62,	 64,  100, 102, 104, 106, 108, 110, 112, 114, 116, 118,
+	= {1,   7,   13,  2,   8,   3,   14,  9,   4,   10,  5,   11,  6,
+	   12,  36,  38,  40,  42,  44,  46,  48,  50,  52,  54,  56,  58,
+	   60,  62,  64,  100, 102, 104, 106, 108, 110, 112, 114, 116, 118,
 	   120, 122, 124, 126, 128, 132, 134, 136, 138, 140, 142, 144, 149,
 	   151, 153, 155, 157, 159, 161, 165, 169, 173, 0};
 
@@ -125,8 +125,8 @@ static const int bg_chans[]
 	= {1, 7, 13, 2, 8, 3, 14, 9, 4, 10, 5, 11, 6, 12, 0};
 
 static const int a_chans[]
-	= {36,	38,	 40,  42,  44,	46,	 48,  50,  52,	54,	 56,  58,
-	   60,	62,	 64,  100, 102, 104, 106, 108, 110, 112, 114, 116,
+	= {36,  38,  40,  42,  44,  46,  48,  50,  52,  54,  56,  58,
+	   60,  62,  64,  100, 102, 104, 106, 108, 110, 112, 114, 116,
 	   118, 120, 122, 124, 126, 128, 132, 134, 136, 138, 140, 142,
 	   144, 149, 151, 153, 155, 157, 159, 161, 165, 169, 173, 0};
 
@@ -913,23 +913,20 @@ static void update_rx_quality(void)
 			if (ap_cur->fcapt > 1)
 			{
 				capt_time
-					= (1000000UL
-						   * (ap_cur->ftimel.tv_sec
-							  - ap_cur->ftimef.tv_sec) // time between
+					= (1000000UL * (ap_cur->ftimel.tv_sec
+									- ap_cur->ftimef.tv_sec) // time between
 					   // first and last
 					   // captured frame
 					   + (ap_cur->ftimel.tv_usec - ap_cur->ftimef.tv_usec));
 
 				miss_time
-					= (1000000UL
-						   * (ap_cur->ftimef.tv_sec
-							  - ap_cur->ftimer.tv_sec) // time between
+					= (1000000UL * (ap_cur->ftimef.tv_sec
+									- ap_cur->ftimer.tv_sec) // time between
 					   // timer reset and
 					   // first frame
 					   + (ap_cur->ftimef.tv_usec - ap_cur->ftimer.tv_usec))
-					  + (1000000UL
-							 * (cur_time.tv_sec
-								- ap_cur->ftimel.tv_sec) // time between
+					  + (1000000UL * (cur_time.tv_sec
+									  - ap_cur->ftimel.tv_sec) // time between
 						 // last frame and
 						 // this moment
 						 + (cur_time.tv_usec - ap_cur->ftimel.tv_usec));
@@ -2082,12 +2079,12 @@ skip_probe:
 				float max_rate
 					= (ap_cur->standard[0] == 'n')
 						  ? get_80211n_rate(
-							  width, sgi, ap_cur->n_channel.mcs_index)
+								width, sgi, ap_cur->n_channel.mcs_index)
 						  : get_80211ac_rate(
-							  width,
-							  sgi,
-							  ap_cur->ac_channel.mcs_index[amount_ss - 1],
-							  amount_ss);
+								width,
+								sgi,
+								ap_cur->ac_channel.mcs_index[amount_ss - 1],
+								amount_ss);
 
 				// If no error, update rate
 				if (max_rate > 0)
@@ -2684,7 +2681,8 @@ skip_probe:
 			/* frame 1: Pairwise == 1, Install == 0, Ack == 1, MIC == 0 */
 
 			if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
-				&& (h80211[z + 6] & 0x80) != 0 && (h80211[z + 5] & 0x01) == 0)
+				&& (h80211[z + 6] & 0x80) != 0
+				&& (h80211[z + 5] & 0x01) == 0)
 			{
 				memcpy(st_cur->wpa.anonce, &h80211[z + 17], 32);
 
@@ -2728,7 +2726,8 @@ skip_probe:
 			if (z + 17 + 32 > (unsigned) caplen) goto write_packet;
 
 			if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
-				&& (h80211[z + 6] & 0x80) == 0 && (h80211[z + 5] & 0x01) != 0)
+				&& (h80211[z + 6] & 0x80) == 0
+				&& (h80211[z + 5] & 0x01) != 0)
 			{
 				if (memcmp(&h80211[z + 17], ZERO, 32) != 0)
 				{
@@ -2763,7 +2762,8 @@ skip_probe:
 			/* frame 3: Pairwise == 1, Install == 1, Ack == 1, MIC == 1 */
 
 			if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) != 0
-				&& (h80211[z + 6] & 0x80) != 0 && (h80211[z + 5] & 0x01) != 0)
+				&& (h80211[z + 6] & 0x80) != 0
+				&& (h80211[z + 5] & 0x01) != 0)
 			{
 				if (memcmp(&h80211[z + 17], ZERO, 32) != 0)
 				{
@@ -3630,7 +3630,8 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 						   sizeof(strbuf) - columns_ap - lopt.maxsize_wps_seen
 							   - 1);
 					snprintf(strbuf + columns_ap + lopt.maxsize_wps_seen
-								 + lopt.maxsize_essid_seen - 4,
+								 + lopt.maxsize_essid_seen
+								 - 4,
 							 15,
 							 "%s",
 							 "MANUFACTURER");
@@ -4434,7 +4435,8 @@ json_get_value_for_name(const char * buffer, const char * name, char * value)
 	int ret = 0;
 
 	if (buffer == NULL || strlen(buffer) == 0 || name == NULL
-		|| strlen(name) == 0 || value == NULL)
+		|| strlen(name) == 0
+		|| value == NULL)
 	{
 		return (0);
 	}

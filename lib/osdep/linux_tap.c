@@ -76,8 +76,7 @@ static int ti_do_open_linux(struct tif * ti, char * name)
 	}
 
 	copy_string(priv->tl_name, sizeof(priv->tl_name), if_request.ifr_name);
-	copy_string(
-		priv->tl_ifr.ifr_name, sizeof(priv->tl_ifr.ifr_name), priv->tl_name);
+	copy_string(priv->tl_ifr.ifr_name, sizeof(priv->tl_ifr.ifr_name), priv->tl_name);
 
 	if ((priv->tl_ioctls = socket(PF_INET, SOCK_DGRAM, 0)) == -1)
 	{

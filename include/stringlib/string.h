@@ -36,13 +36,12 @@
 #include <stddef.h>
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
-	size_t copy_string(char * dest, size_t dest_bufsz, const char * src);
+size_t copy_string(char * dest, size_t dest_bufsz, const char * src);
 
-	size_t concat_string(char * dest, size_t dest_bufsz, const char * src);
+size_t concat_string(char * dest, size_t dest_bufsz, const char * src);
 
 #ifdef __cplusplus
 };
