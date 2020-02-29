@@ -110,7 +110,7 @@ aircrack_ng_LDADD			= $(LIBACCRYPTO_LIBS) $(LIBAIRCRACK_LIBS) $(LIBAIRCRACK_CE_W
 
 if STATIC_BUILD
 aircrack_ng_CFLAGS		+= -DDYNAMIC=0
-aircrack_ng_LDADD			+= $(LIBAIRCRACK_CE_WPA@SIMD_SUFFIX@_LIBS)
+aircrack_ng_LDADD		+= $(LIBAIRCRACK_CE_WPA$(SIMD_SUFFIX)_LIBS)
 else
 aircrack_ng_LDFLAGS		= -rdynamic
 endif
