@@ -6851,7 +6851,7 @@ int main(int argc, char * argv[])
 	gettimeofday(&tv4, NULL);
 
 	char * init_batt = getBatteryString();
-	
+
 	// do not update lopt.batt while dump_print is running
 	ALLEGE(pthread_mutex_lock(&(lopt.mx_print)) == 0);
 	lopt.batt = init_batt;
@@ -7338,37 +7338,44 @@ int main(int argc, char * argv[])
 		}
 	}
 
-	if (lopt.batt) {
+	if (lopt.batt)
+	{
 		free(lopt.batt);
 		lopt.batt = NULL;
 	}
 
-	if (lopt.elapsed_time) {
+	if (lopt.elapsed_time)
+	{
 		free(lopt.elapsed_time);
 		lopt.elapsed_time = NULL;
 	}
 
-	if (lopt.own_channels) {
+	if (lopt.own_channels)
+	{
 		free(lopt.own_channels);
 		lopt.own_channels = NULL;
 	}
 
-	if (lopt.f_essid) {
+	if (lopt.f_essid)
+	{
 		free(lopt.f_essid);
 		lopt.f_essid = NULL;
 	}
 
-	if (opt.prefix) {
+	if (opt.prefix)
+	{
 		free(opt.prefix);
 		opt.prefix = NULL;
 	}
 
-	if (opt.f_cap_name) {
+	if (opt.f_cap_name)
+	{
 		free(opt.f_cap_name);
 		opt.f_cap_name = NULL;
 	}
 
-	if (lopt.keyout) {
+	if (lopt.keyout)
+	{
 		free(lopt.keyout);
 		lopt.keyout = NULL;
 	}
