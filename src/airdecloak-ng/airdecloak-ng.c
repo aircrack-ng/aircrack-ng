@@ -1819,13 +1819,13 @@ int main(int argc, char * argv[])
 			if (!manual_cloaked_fname)
 				snprintf(_filename_output_cloaked,
 						_filename_output_cloaked_buf_len,
-						 "%s-cloaked.pcap",
-						 input_filename);
+						"%s-cloaked.pcap",
+						input_filename);
 			if (!manual_filtered_fname)
 				snprintf(_filename_output_filtered,
 						_filename_output_filtered_buf_len,
-						 "%s-filtered.pcap",
-						 input_filename);
+						"%s-filtered.pcap",
+						input_filename);
 		}
 		else
 		{

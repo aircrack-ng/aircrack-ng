@@ -5957,11 +5957,11 @@ int main(int argc, char * argv[])
 				break;
 
 			case 'I':
-				{
-					_pmkid_16800 = 1;
-					copy_string((char *) _pmkid_16800_str, sizeof(_pmkid_16800_str), optarg);
-				}
+			{
+				_pmkid_16800 = 1;
+				copy_string((char *) _pmkid_16800_str, sizeof(_pmkid_16800_str), optarg);
 				break;
+			}
 
 			case 'Z':
 				_speed_test_length = strtol(optarg, NULL, 10);
@@ -6235,62 +6235,62 @@ int main(int argc, char * argv[])
 				break;
 
 			case 'l':
+			{
+				int optarg_len = strlen(optarg);
+				opt.logKeyToFile = (char *) calloc(1, optarg_len + 1);
+				if (opt.logKeyToFile == NULL)
 				{
-					int optarg_len = strlen(optarg);
-					opt.logKeyToFile = (char *) calloc(1, optarg_len + 1);
-					if (opt.logKeyToFile == NULL)
-					{
-						printf("Error allocating memory\n");
-						return (EXIT_FAILURE);
-					}
-					copy_string(opt.logKeyToFile, optarg_len + 1, optarg);
+					printf("Error allocating memory\n");
+					return (EXIT_FAILURE);
 				}
+				copy_string(opt.logKeyToFile, optarg_len + 1, optarg);
 				break;
+			}
 
 			case 'E':
+			{
+				// Make sure there's enough space for file extension just in
+				// case it was forgotten
+				int optarg_len = strlen(optarg) + 4;
+				opt.wkp = (char *) calloc(1, optarg_len + 1);
+				if (opt.wkp == NULL)
 				{
-					// Make sure there's enough space for file extension just in
-					// case it was forgotten
-					int optarg_len = strlen(optarg) + 4;
-					opt.wkp = (char *) calloc(1, optarg_len + 1);
-					if (opt.wkp == NULL)
-					{
-						printf("Error allocating memory\n");
-						return (EXIT_FAILURE);
-					}
-					copy_string(opt.wkp, optarg_len + 1, optarg);
+					printf("Error allocating memory\n");
+					return (EXIT_FAILURE);
 				}
+				copy_string(opt.wkp, optarg_len + 1, optarg);
 				break;
+			}
 
 			case 'J':
+			{
+				// Make sure there's enough space for file extension just in
+				// case it was forgotten
+				int optarg_len = strlen(optarg) + 6;
+				opt.hccap = (char *) calloc(1, optarg_len + 1);
+				if (opt.hccap == NULL)
 				{
-					// Make sure there's enough space for file extension just in
-					// case it was forgotten
-					int optarg_len = strlen(optarg) + 6;
-					opt.hccap = (char *) calloc(1, optarg_len + 1);
-					if (opt.hccap == NULL)
-					{
-						printf("Error allocating memory\n");
-						return (EXIT_FAILURE);
-					}
-					copy_string(opt.hccap, optarg_len + 1, optarg);
+					printf("Error allocating memory\n");
+					return (EXIT_FAILURE);
 				}
+				copy_string(opt.hccap, optarg_len + 1, optarg);
 				break;
+			}
 
 			case 'j':
+			{
+				// Make sure there's enough space for file extension just in
+				// case it was forgotten
+				int optarg_len = strlen(optarg) + 7;
+				opt.hccapx = (char *) calloc(1, optarg_len + 1);
+				if (opt.hccapx == NULL)
 				{
-					// Make sure there's enough space for file extension just in
-					// case it was forgotten
-					int optarg_len = strlen(optarg) + 7;
-					opt.hccapx = (char *) calloc(1, optarg_len + 1);
-					if (opt.hccapx == NULL)
-					{
-						printf("Error allocating memory\n");
-						return (EXIT_FAILURE);
-					}
-					copy_string(opt.hccapx, optarg_len + 1, optarg);
+					printf("Error allocating memory\n");
+					return (EXIT_FAILURE);
 				}
+				copy_string(opt.hccapx, optarg_len + 1, optarg);
 				break;
+			}
 
 			case 'M':
 
