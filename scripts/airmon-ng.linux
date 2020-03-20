@@ -3,7 +3,6 @@ DEBUG="0"
 VERBOSE="0"
 ELITE="0"
 USERID=""
-IFACE=""
 checkvm_status=""
 MAC80211=0
 IW_SOURCE="https://mirrors.edge.kernel.org/pub/software/network/iw/iw-5.4.tar.xz"
@@ -1433,41 +1432,6 @@ if [ "${VERBOSE}" = "1" ]; then
 else
 	printf "PHY\tInterface\tDriver\t\tChipset\n\n"
 fi
-
-#this whole block of code shouldn't be here, it makes no sense
-#per shellcheck, this block is broken as it runs the loops once with iface=listIfaceUnspec instead of the output of listIFaceUnspec
-#for iface in listIfaceUnspec; do
-#
-#	if [ -e "/proc/sys/dev/$iface/fftxqmin" ]
-#	then
-#		setLink ${iface} up
-#		printf "$iface\t\tAtheros\t\tmadwifi-ng"
-#		if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
-#		then
-#			IFACE=$(wlanconfig ath create wlandev $iface wlanmode monitor -bssid | grep ath)
-#			setLink ${iface} up
-#			if [ $CH -lt 1000 ]
-#			then
-#				iwconfig $IFACE channel $CH 2> /dev/null > /dev/null
-#			else
-#				iwconfig $IFACE freq "$CH"000000 2> /dev/null > /dev/null
-#			fi
-#		setLink ${IFACE} up
-#		UDEV_ISSUE=$?
-#		fi
-#
-#		if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
-#		then
-#			printf "$iface does not support 'stop', do it on ath interface\n"
-#		fi
-#
-#		#why, dear god why is there a random newline here?
-#		printf "\n"
-#		sleep 1
-#		continue
-#	fi
-#done
-#end random block of code that needs to die
 
 for iface in $(printf "${iface_list}"); do
 	unset ethtool_output DRIVER FROM FIRMWARE STACK MADWIFI MAC80211 BUS BUSADDR BUSINFO DEVICEID CHIPSET EXTENDED NET_TYPE PHYDEV ifacet DRIVERt FIELD1 FIELD1t FIELD2 FIELD2t CHIPSETt
