@@ -1106,22 +1106,25 @@ scanProcesses() {
 	PROCESSES="wpa_action\|wpa_supplicant\|wpa_cli\|dhclient\|ifplugd\|dhcdbd\|dhcpcd\|udhcpc\|NetworkManager\|knetworkmanager\|avahi-autoipd\|avahi-daemon\|wlassistant\|wifibox\|net_applet\|wicd-daemon\|wicd-client\|iwd"
 	#PS_ERROR="invalid\|illegal"
 
-	if [ -x "$(command -v service 2>&1)" ] && [ "$1" = "kill" ]; then
-		service network-manager stop 2> /dev/null > /dev/null
-		service NetworkManager stop 2> /dev/null > /dev/null
-		service avahi-daemon stop 2> /dev/null > /dev/null
-		killavahi=1
-		while [ $? -eq 1 ]; do
-			# Sometimes avahi is persistent and keeps being restarted by systemd.
-			# It's usually 4 times that it needs to be stopped
-			service avahi-daemon stop 2> /dev/null > /dev/null
-			killavahi=$((killavahi + 1))
-			if [ ${killavahi} -gt 5 ]; then
-				printf "Failed to stop avahi-daemon, good luck...\n"
-				break
+	if [ "${1}" = "kill" ]; then
+		servicecmd=""
+		if [ -x "$(command -v service 2>&1)" ]; then
+			servicecmd="service"
+		elif [ -x "$(command -v rc-service 2>&1)" ]; then
+			servicecmd="rc-service"
+		fi
+		for service in network-manager NetworkManager avahi-daemon wicd; do
+			if "${servicecmd}" "${service}" status 2> /dev/null > /dev/null; then
+				killservice=1
+				until "${servicecmd}" "${service}" stop 2> /dev/null > /dev/null; do
+					killservice=$((killservice + 1))
+					if [ ${killservice} -gt 5 ]; then
+						printf "Failed to stop ${service}, please stop it on your own.\n"
+						break
+					fi
+				done
 			fi
 		done
-		service wicd stop 2> /dev/null > /dev/null
 	fi
 
 	unset match
