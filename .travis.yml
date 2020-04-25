@@ -2,13 +2,18 @@ os:
     - linux
     - osx
 
+#need due bug on homebrew see 
+#https://changelog.travis-ci.com/xcode-11-3-1-xcode-11-2-1-xcode-11-1-and-xcode11-images-updated-142286
+osx_image: xcode11.4
+
 language: c
 
-sudo: true
-
 before_install:
-    - if [ "$TRAVIS_OS_NAME" == "osx" ]; then (brew update && brew install cmocka openssl libgcrypt sqlite3 libpcap pcre || echo -e "\e[1;31m Skipping Homebrew... \e[0m"); fi
-    - if [ "$TRAVIS_OS_NAME" == "osx" ]; then echo -e "\e[1;31m Skipping Code Coverage... \e[0m"; else pip install --user cpp-coveralls; fi
+    #ccache hacks. see https://github.com/travis-ci/travis-ci/issues/5383 
+    #Install ccache on osx
+    - if [ "$TRAVIS_OS_NAME" == "osx" ]; then export PATH="/usr/local/opt/ccache/libexec:$PATH"; fi
+    #Fix ccache for clang
+    - if [ "$CC" = "clang" ] && [ "$TRAVIS_OS_NAME" == "linux" ]; then export CFLAGS="-Qunused-arguments"; else CFLAGS=""; fi
 
 addons:
   apt:
@@ -25,7 +30,19 @@ addons:
       - libcmocka0
       - libcmocka-dev
       - libhwloc-dev
+      - clang-format-3.8
+  homebrew:
+    packages:
+      - ccache
+      - cmocka
+      - libpcap
+      - libgcrypt
+      - openssl
+      - pcre
+      - sqlite3
 
+    #update: true
+ 
 compiler:
   - gcc
   - clang
@@ -35,3 +52,5 @@ script:
     - ./build/travis-format.sh GCrypt "Building with GCrypt..." ./build/gcrypt.sh
     - ./build/travis-format.sh OpenSSL "Building with OpenSSL..." ./build/openssl.sh
     - ./build/travis-format.sh Dist "Creating a dist tarball and then building from it..." ./build/dist_check.sh
+
+cache: ccache
