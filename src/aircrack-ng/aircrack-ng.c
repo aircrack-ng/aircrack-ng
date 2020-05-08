@@ -1211,7 +1211,7 @@ static int atomic_read(read_buf * rb, int fd, int len, void * buf)
 	}
 	else
 	{
-		tail_until_close:
+	tail_until_close:
 		do
 		{
 			if (may_read(fd))
