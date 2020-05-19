@@ -676,9 +676,9 @@ stopMac80211Iface() {
 								fi
 							done
 						fi
-						printf "\n\t\t(mac80211 station mode vif enabled on [${PHYDEV}]${interface})\n"
+						printf "\t\t(mac80211 station mode vif enabled on [${PHYDEV}]${interface})\n"
 					else
-						printf "\n\n ERROR adding station mode interface: ${IW_ERROR}\n"
+						printf "\n ERROR adding station mode interface: ${IW_ERROR}\n"
 					fi
 				fi
 			fi
