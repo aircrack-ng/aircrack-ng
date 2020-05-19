@@ -387,6 +387,12 @@ startDeprecatedIface() {
 	printf " (monitor mode enabled)"
 }
 
+changeMac80211IfaceTypeMonitor() {
+  iw dev ${1} set type monitor > /dev/null 2>&1
+  setLink ${1} up
+  printf " (monitor mode enabled)"
+}
+
 yesorno() {
 	read -r input
 	case $input in
@@ -443,10 +449,10 @@ startMac80211Iface() {
 		done
 	fi
   #check if chipset has driver not under mac80211 stack
-  if [ "${DRIVER}" = "8812au" ] || [ "${DRIVER}" = "8814au" ] || [ "${DRIVER}" = "88XXau" ]; then
+  if [ "${DRIVER}" = "88XXau" ] || iw phy ${PHYDEV} info | grep -q 'interface combinations are not supported'; then
     #grumble grumble, seriously crap vendor driver
     setLink ${1} down
-    startDeprecatedIface ${1}
+    changeMac80211IfaceTypeMonitor ${1}
     setChannelMac80211 ${1}
     return
   fi
@@ -614,6 +620,12 @@ stopDeprecatedIface() {
 	printf " (monitor mode disabled)"
 }
 
+changeMac80211IfaceTypeManaged() {
+  iw dev ${1} set type managed > /dev/null 2>&1
+  setLink ${1} up
+  printf " (monitor mode disabled)"
+}
+
 stopMac80211Iface() {
 	if [ -f /sys/class/net/${1}/type ]; then
 		if [ "${2}" != "abort" ] && [ "$(cat /sys/class/net/${1}/type)" != "803" ]; then
@@ -625,9 +637,9 @@ stopMac80211Iface() {
 			printf "please report it.\n"
 			exit 1
 		else
-			if [ "${DRIVER}" = "8812au" ] || [ "${DRIVER}" = "8814au" ] || [ "${DRIVER}" = "88XXau" ]; then
+			if [ "${DRIVER}" = "88XXau" ] || iw phy ${PHYDEV} info | grep -q 'interface combinations are not supported'; then
 				#grumble grumble, seriously crap vendor driver
-				stopDeprecatedIface ${1}
+				changeMac80211IfaceTypeManaged ${1}
 				return
 			fi
 			if [ "${ELITE}" = "0" ]; then
@@ -764,7 +776,7 @@ getDriver() {
 	if [ "$DRIVER" = "rtl8187" ] && [ "$STACK" = "ieee80211" ]; then
 		DRIVER="r8187"
 	fi
-	if [ "$DRIVER" = "rtl88xxau" ]; then
+	if [ "${DRIVER}" = "8812au" ] || [ "${DRIVER}" = "8814au" ] || [ "${DRIVER}" = "rtl88xxau" ] || [ "${DRIVER}" = "rtl88XXau" ]; then
 		DRIVER="88XXau"
 	fi
 	if [ "$DRIVER" = "rtl8812au" ]; then
