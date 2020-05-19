@@ -686,14 +686,14 @@ stopMac80211Iface() {
 			IW_ERROR="$(iw dev "${1}" del 2>&1 | grep "nl80211 not found")"
 			if [ -z "$IW_ERROR" ]; then
 				if [ "${2}" != "abort" ]; then
-					printf "\n\t\t(mac80211 monitor mode vif disabled for [${PHYDEV}]${1})\n"
+					printf "\t\t(mac80211 monitor mode vif disabled for [${PHYDEV}]${1})\n"
 				elif [ "${2}" = "abort" ]; then
 					printf "\nWARNING: unable to start monitor mode, please run \"airmon-ng check kill\"\n"
 				fi
 			else
 				if [ -f /sys/class/ieee80211/${PHYDEV}/remove_iface ]; then
 					printf "${1}" > /sys/class/ieee80211/${PHYDEV}/remove_iface
-					printf "\n\t\t(mac80211 monitor mode vif disabled for [${PHYDEV}]${1})\n"
+					printf "\t\t(mac80211 monitor mode vif disabled for [${PHYDEV}]${1})\n"
 				else
 					printf "\n\nERROR: Neither the sysfs interface links nor the iw command is available.\nPlease download and install iw from\n$IW_SOURCE\n"
 				fi
