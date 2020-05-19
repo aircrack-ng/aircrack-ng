@@ -384,13 +384,13 @@ startDeprecatedIface() {
 	fi
 	iwconfig ${1} key off > /dev/null 2>&1
 	setLink ${1} up
-	printf " (monitor mode enabled)"
+	printf " (monitor mode enabled)\n"
 }
 
 changeMac80211IfaceTypeMonitor() {
   iw dev ${1} set type monitor > /dev/null 2>&1
   setLink ${1} up
-  printf " (monitor mode enabled)"
+  printf " (monitor mode enabled)\n"
 }
 
 yesorno() {
@@ -617,13 +617,13 @@ stopDeprecatedIface() {
 	setLink $1 down
 	iwconfig $1 mode Managed > /dev/null 2>&1
 	setLink $1 up
-	printf " (monitor mode disabled)"
+	printf " (monitor mode disabled)\n"
 }
 
 changeMac80211IfaceTypeManaged() {
   iw dev ${1} set type managed > /dev/null 2>&1
   setLink ${1} up
-  printf " (monitor mode disabled)"
+  printf " (monitor mode disabled)\n"
 }
 
 stopMac80211Iface() {
