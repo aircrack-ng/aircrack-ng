@@ -629,7 +629,7 @@ changeMac80211IfaceTypeManaged() {
 stopMac80211Iface() {
 	if [ -f /sys/class/net/${1}/type ]; then
 		if [ "${2}" != "abort" ] && [ "$(cat /sys/class/net/${1}/type)" != "803" ]; then
-			printf "\n\nYou are trying to stop a device that isn't in monitor mode.\n"
+			printf "\nYou are trying to stop a device that isn't in monitor mode.\n"
 			printf "Doing so is a terrible idea, if you really want to do it then you\n"
 			printf "need to type 'iw ${1} del' yourself since it is a terrible idea.\n"
 			printf "Most likely you want to remove an interface called wlan[0-9]mon\n"
