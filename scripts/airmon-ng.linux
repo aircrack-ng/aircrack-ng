@@ -852,8 +852,8 @@ getFrom() {
 
 getFirmware() {
 	FIRMWARE="$(printf "$ethtool_output" | awk '/firmware-version/ {print $2}')"
-	#ath9k_htc firmware is a shorter version number than most so trap and make it pretty
-	if [ "$DRIVER" = "ath9k_htc" ]; then
+	#ath9k_htc and intel firmware is a shorter version number than most so trap and make it pretty
+	if [ "${DRIVER}" = "ath9k_htc" ] || [ "${DRIVER}" = "iwlwifi" ]; then
 		FIRMWARE="$FIRMWARE\t"
 	fi
 
