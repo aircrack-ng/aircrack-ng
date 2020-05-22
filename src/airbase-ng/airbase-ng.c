@@ -151,6 +151,7 @@ static const char usage[]
 	  "  Options:\n"
 	  "\n"
 	  "      -a bssid         : set Access Point MAC address\n"
+	  "      -R               : randomize Access Point MAC address\n"
 	  "      -i iface         : capture packets from this interface\n"
 	  // "      -y file          : read PRGA from this file\n"
 	  "      -w WEP key       : use this WEP key to en-/decrypt packets\n"
@@ -325,6 +326,18 @@ static pCF_t rCF;
 static void beacon_thread(void * arg);
 static void caffelatte_thread(void);
 static void cfrag_thread(void);
+
+// generates a random locally administered mac address
+static inline void get_random_mac(uint8_t * mac)
+{
+	unsigned i;
+
+	ALLEGE(mac != NULL);
+
+	// force OUI to be locally administered and unicast
+	mac[0] = (rand_u8() & 0xfe) | 0x02;
+	for (i = 1; i < 6; i++) mac[i] = rand_u8();
+}
 
 static int addESSID(char * essid, int len, int expiration)
 {
@@ -3216,7 +3229,7 @@ int main(int argc, char * argv[])
 		int option = getopt_long(
 			argc,
 			argv,
-			"a:h:i:C:I:r:w:HPe:E:c:d:D:f:W:qMY:b:B:XsS:Lx:vAz:Z:yV:0NF:n:",
+			"a:h:i:C:I:r:w:HPe:E:c:d:D:f:W:qMY:b:B:XsS:Lx:vAz:Z:yV:0NF:n:R",
 			long_options,
 			&option_index);
 
@@ -3261,6 +3274,10 @@ int main(int argc, char * argv[])
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (EXIT_FAILURE);
 				}
+				break;
+
+			case 'R':
+				get_random_mac(opt.r_bssid);
 				break;
 
 			case 'c':
@@ -3970,11 +3987,7 @@ int main(int argc, char * argv[])
 
 	if (lopt.adhoc)
 	{
-		for (i = 0; i < 6; i++) // random cell
-			opt.r_bssid[i] = rand_u8();
-
-		// generate an even first byte
-		if (opt.r_bssid[0] & 0x01) opt.r_bssid[0] ^= 0x01;
+		get_random_mac(opt.r_bssid);
 	}
 
 	memcpy(apc.bssid, opt.r_bssid, 6);
