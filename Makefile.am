@@ -78,6 +78,7 @@ endif
 LIBCOWPATTY_LIBS = libcowpatty.la
 LIBPTW_LIBS = libptw.la
 LIBRADIOTAP_LIBS = libradiotap.la
+LIBSTRING_LIBS = libstring.la
 
 LIBAIRCRACK_CE_WPA_LIBS = libaircrack-ce-wpa.la
 LIBAIRCRACK_CE_WPA_X86_AVX512_LIBS = libaircrack-ce-wpa-x86-avx512.la

@@ -47,6 +47,7 @@
 #include "aircrack-ng/version.h"
 #include "aircrack-ng/defs.h"
 #include "radiotap/radiotap_iter.h"
+#include "stringlib/string.h"
 #include "aircrack-ng/tui/console.h"
 
 static unsigned char buffer[65536];
@@ -54,6 +55,10 @@ static unsigned char buffer[65536];
 static char * _filename_output_invalid;
 static char * _filename_output_cloaked;
 static char * _filename_output_filtered;
+
+static int _filename_output_cloaked_buf_len = 0;
+static int _filename_output_filtered_buf_len = 0;
+
 static FILE * _output_cloaked_packets_file;
 static FILE * _output_clean_capture_file;
 static FILE * _input_file;
@@ -1788,15 +1793,18 @@ int main(int argc, char * argv[])
 	if (manual_cloaked_fname == 0 || manual_filtered_fname == 0)
 	{
 		temp = strlen(input_filename);
+
 		if (!manual_cloaked_fname)
 		{
-			_filename_output_cloaked = (char *) calloc(temp + 9 + 5, 1);
+			_filename_output_cloaked_buf_len = temp + 9 + 5;
+			_filename_output_cloaked = (char *) calloc(_filename_output_cloaked_buf_len, 1);
 			ALLEGE(_filename_output_cloaked != NULL);
 		}
 
 		if (!manual_filtered_fname)
 		{
-			_filename_output_filtered = (char *) calloc(temp + 10 + 5, 1);
+			_filename_output_filtered_buf_len = temp + 10 + 5;
+			_filename_output_filtered = (char *) calloc(_filename_output_filtered_buf_len, 1);
 			ALLEGE(_filename_output_filtered != NULL);
 		}
 
@@ -1810,30 +1818,26 @@ int main(int argc, char * argv[])
 		{
 			if (!manual_cloaked_fname)
 				snprintf(_filename_output_cloaked,
-						 strlen(input_filename) + 9 + 5,
-						 "%s-cloaked.pcap",
-						 input_filename);
+						_filename_output_cloaked_buf_len,
+						"%s-cloaked.pcap",
+						input_filename);
 			if (!manual_filtered_fname)
 				snprintf(_filename_output_filtered,
-						 strlen(input_filename) + 10 + 5,
-						 "%s-filtered.pcap",
-						 input_filename);
+						_filename_output_filtered_buf_len,
+						"%s-filtered.pcap",
+						input_filename);
 		}
 		else
 		{
 			if (!manual_cloaked_fname)
 			{
-				strncpy(_filename_output_cloaked,
-						input_filename,
-						strlen(input_filename) + 9 + 5 - 1);
-				strncat(_filename_output_cloaked, "-cloaked.pcap", 14);
+				copy_string(_filename_output_cloaked, _filename_output_cloaked_buf_len, input_filename);
+				concat_string(_filename_output_cloaked, _filename_output_cloaked_buf_len, "-cloaked.pcap");
 			}
 			if (!manual_filtered_fname)
 			{
-				strncpy(_filename_output_filtered,
-						input_filename,
-						strlen(input_filename) + 10 + 5 - 1);
-				strncat(_filename_output_filtered, "-filtered.pcap", 15);
+				copy_string(_filename_output_filtered, _filename_output_filtered_buf_len, input_filename);
+				concat_string(_filename_output_filtered, _filename_output_filtered_buf_len, "-filtered.pcap");
 			}
 		}
 	}

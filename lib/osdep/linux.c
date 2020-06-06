@@ -68,6 +68,7 @@
 		 */
 #include "osdep.h"
 #include "aircrack-ng/support/pcap_local.h"
+#include "stringlib/string.h"
 #include "crctable_osdep.h"
 #include "common.h"
 #include "channel.h"
@@ -2139,16 +2140,16 @@ static int do_linux_open(struct wif * wi, char * iface)
 		acpi = NULL;
 
 		// use name in buf as new iface and set original iface as main iface
-		dev->main_if = (char *) malloc(strlen(iface) + 1);
+		int iface_len = strlen(iface);
+		dev->main_if = (char *) malloc(iface_len + 1);
 		if (dev->main_if == NULL) goto close_out;
-		memset(dev->main_if, 0, strlen(iface) + 1);
-		strncpy(dev->main_if, iface, strlen(iface));
-
-		iface = (char *) malloc(strlen(buf) + 1);
+		copy_string(dev->main_if, iface_len + 1, iface);
+		
+		int buf_len = strlen(buf);
+		iface = (char *) malloc(buf_len + 1);
 		if (iface == NULL) goto close_out;
+		copy_string(iface, buf_len + 1, buf);
 		iface_malloced = 1;
-		memset(iface, 0, strlen(buf) + 1);
-		strncpy(iface, buf, strlen(buf));
 	}
 
 	/* test if rtap interface and try to find real interface */

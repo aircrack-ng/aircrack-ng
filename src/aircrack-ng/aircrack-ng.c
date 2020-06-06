@@ -93,6 +93,7 @@
 #include "aircrack-ng/osdep/osdep.h"
 #include "aircrack-ng/third-party/ieee80211.h"
 #include "aircrack-ng/third-party/ethernet.h"
+#include "stringlib/string.h"
 
 #ifdef HAVE_SQLITE
 #include <sqlite3.h>
@@ -5956,12 +5957,11 @@ int main(int argc, char * argv[])
 				break;
 
 			case 'I':
+			{
 				_pmkid_16800 = 1;
-				memset((char *) _pmkid_16800_str, 0, sizeof(_pmkid_16800_str));
-				strncpy((char *) _pmkid_16800_str,
-						optarg,
-						sizeof(_pmkid_16800_str));
+				copy_string((char *) _pmkid_16800_str, sizeof(_pmkid_16800_str), optarg);
 				break;
+			}
 
 			case 'Z':
 				_speed_test_length = strtol(optarg, NULL, 10);
@@ -6235,61 +6235,62 @@ int main(int argc, char * argv[])
 				break;
 
 			case 'l':
-
-				opt.logKeyToFile = (char *) calloc(1, strlen(optarg) + 1);
+			{
+				int optarg_len = strlen(optarg);
+				opt.logKeyToFile = (char *) calloc(1, optarg_len + 1);
 				if (opt.logKeyToFile == NULL)
 				{
 					printf("Error allocating memory\n");
 					return (EXIT_FAILURE);
 				}
-
-				strncpy(opt.logKeyToFile, optarg, strlen(optarg));
+				copy_string(opt.logKeyToFile, optarg_len + 1, optarg);
 				break;
+			}
 
 			case 'E':
-
+			{
 				// Make sure there's enough space for file extension just in
 				// case it was forgotten
-				opt.wkp = (char *) calloc(1, strlen(optarg) + 1 + 4);
+				int optarg_len = strlen(optarg) + 4;
+				opt.wkp = (char *) calloc(1, optarg_len + 1);
 				if (opt.wkp == NULL)
 				{
 					printf("Error allocating memory\n");
 					return (EXIT_FAILURE);
 				}
-
-				strncpy(opt.wkp, optarg, strlen(optarg));
-
+				copy_string(opt.wkp, optarg_len + 1, optarg);
 				break;
+			}
 
 			case 'J':
-
+			{
 				// Make sure there's enough space for file extension just in
 				// case it was forgotten
-				opt.hccap = (char *) calloc(1, strlen(optarg) + 1 + 6);
+				int optarg_len = strlen(optarg) + 6;
+				opt.hccap = (char *) calloc(1, optarg_len + 1);
 				if (opt.hccap == NULL)
 				{
 					printf("Error allocating memory\n");
 					return (EXIT_FAILURE);
 				}
-
-				strncpy(opt.hccap, optarg, strlen(optarg));
-
+				copy_string(opt.hccap, optarg_len + 1, optarg);
 				break;
+			}
 
 			case 'j':
-
+			{
 				// Make sure there's enough space for file extension just in
 				// case it was forgotten
-				opt.hccapx = (char *) calloc(1, strlen(optarg) + 1 + 7);
+				int optarg_len = strlen(optarg) + 7;
+				opt.hccapx = (char *) calloc(1, optarg_len + 1);
 				if (opt.hccapx == NULL)
 				{
 					printf("Error allocating memory\n");
 					return (EXIT_FAILURE);
 				}
-
-				strncpy(opt.hccapx, optarg, strlen(optarg));
-
+				copy_string(opt.hccapx, optarg_len + 1, optarg);
 				break;
+			}
 
 			case 'M':
 
