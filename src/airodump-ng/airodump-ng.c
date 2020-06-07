@@ -318,7 +318,7 @@ static void color_on(void)
 {
 	struct AP_info * ap_cur;
 	struct ST_info * st_cur;
-	int color = 1;
+	int color = 2;
 
 	color_off();
 
@@ -375,8 +375,6 @@ static void color_on(void)
 				else
 					ap_cur->marked_color = color++;
 			}
-			else
-				ap_cur->marked_color = 1;
 
 			st_cur = st_cur->prev;
 		}
