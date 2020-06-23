@@ -2260,6 +2260,7 @@ static int do_linux_open(struct wif * wi, char * iface)
 
 	if (iface_malloced) free(iface);
 	if (iwpriv) free(iwpriv);
+	dev->iwpriv = NULL;
 	if (r_file)
 	{
 		free(r_file);
@@ -2276,6 +2277,7 @@ close_in:
 	if (acpi) fclose(acpi);
 	if (iface_malloced) free(iface);
 	if (iwpriv) free(iwpriv);
+	dev->iwpriv = NULL;
 	return 1;
 }
 
