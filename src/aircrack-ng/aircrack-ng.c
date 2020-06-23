@@ -1211,6 +1211,7 @@ static int atomic_read(read_buf * rb, int fd, int len, void * buf)
 	}
 	else
 	{
+	tail_until_close:
 		do
 		{
 			if (may_read(fd))
@@ -1232,6 +1233,10 @@ static int atomic_read(read_buf * rb, int fd, int len, void * buf)
 			memcpy(buf, (char *) rb->buf1 + rb->off1, (size_t) len);
 			rb->off1 += len;
 			return (1);
+		}
+		else
+		{
+			if (rb->tail) goto tail_until_close;
 		}
 	}
 
