@@ -42,6 +42,7 @@ matrix:
       COMPILER: clang
     - TARGET: cygwin64
       COMPILER: clang
+    - TARGET: msys64
 
 # cache:
 # - '%AIRCRACK_CI_CACHE%'
