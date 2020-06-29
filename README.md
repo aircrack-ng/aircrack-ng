@@ -45,7 +45,7 @@ All tools are command line which allows for heavy scripting. A lot of GUIs have 
 
 Note: Airmon-ng only requires pciutils if the system has a PCI/PCIe bus and it is populated.
       Such bus can be present even if not physically visible. For example, it is present,
-      but not populated on the Raspberry Pi 4, therefore pciutils isn't required on that board
+      and populated on the Raspberry Pi 4, therefore pciutils is required on that device.
 
 ## Optional stuff
 
