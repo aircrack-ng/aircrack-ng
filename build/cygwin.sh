@@ -14,8 +14,8 @@ echo "I: ${COMPILER} compiler"
 
 if [ "x${COMPILER}" = xclang ]
 then
-	CC=clang-5.0
-	CXX=clang++-5.0
+	CC=$(ls -vl /usr/bin/clang{,-{0..9}*} | awk '{ print $9 }' | tail -n 1)
+	CXX=$(ls -vl /usr/bin/clang++{,-{0..9}*} | awk '{ print $9 }' | tail -n 1)
 	LIBS='-liconv'
 
 	export CC CXX LIBS
