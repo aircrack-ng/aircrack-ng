@@ -30,7 +30,7 @@ LONGNAME="$1"; shift
 #
 # Begin our fold
 #
-echo -e 'travis_fold:start:'"${SHORTNAME}"'\n\e[0K\e[33;1m'"${LONGNAME}"'\e[0m'
+echo -e 'travis_fold:start:'"${SHORTNAME}"'\n\033[0K\033[33;1m'"${LONGNAME}"'\033[0m'
 
 #
 # Begin a timed block
