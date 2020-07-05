@@ -3515,13 +3515,13 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 					 sizeof(buffer) - 1,
 					 " %s[ GPS %3.6f,%3.6f %02d:%02d:%02d ][ Elapsed: %s ][ "
 					 "%04d-%02d-%02d %02d:%02d ",
-					 lopt.batt,
+					 (lopt.batt == NULL ? "" : lopt.batt),
 					 lopt.gps_loc[0],
 					 lopt.gps_loc[1],
 					 gtime->tm_hour,
 					 gtime->tm_min,
 					 gtime->tm_sec,
-					 lopt.elapsed_time,
+					 (lopt.elapsed_time == NULL ? "" : lopt.elapsed_time),
 					 1900 + lt->tm_year,
 					 1 + lt->tm_mon,
 					 lt->tm_mday,
@@ -3534,9 +3534,9 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				buffer,
 				sizeof(buffer) - 1,
 				" %s[ GPS %-29s ][ Elapsed: %s ][ %04d-%02d-%02d %02d:%02d ",
-				lopt.batt,
+				(lopt.batt == NULL ? "" : lopt.batt),
 				" *** No Fix! ***",
-				lopt.elapsed_time,
+				(lopt.elapsed_time == NULL ? "" : lopt.elapsed_time),
 				1900 + lt->tm_year,
 				1 + lt->tm_mon,
 				lt->tm_mday,
@@ -3549,8 +3549,8 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 		snprintf(buffer,
 				 sizeof(buffer) - 1,
 				 " %s[ Elapsed: %s ][ %04d-%02d-%02d %02d:%02d ",
-				 lopt.batt,
-				 lopt.elapsed_time,
+				 (lopt.batt == NULL ? "" : lopt.batt),
+				 (lopt.elapsed_time == NULL ? "" : lopt.elapsed_time),
 				 1900 + lt->tm_year,
 				 1 + lt->tm_mon,
 				 lt->tm_mday,
@@ -6850,16 +6850,26 @@ int main(int argc, char * argv[])
 	gettimeofday(&tv3, NULL);
 	gettimeofday(&tv4, NULL);
 
-	lopt.batt = getBatteryString();
+	char * init_batt = getBatteryString();
 
-	lopt.elapsed_time = (char *) calloc(1, 4);
-	if (lopt.elapsed_time == NULL)
+	// do not update lopt.batt while dump_print is running
+	ALLEGE(pthread_mutex_lock(&(lopt.mx_print)) == 0);
+	lopt.batt = init_batt;
+	ALLEGE(pthread_mutex_unlock(&(lopt.mx_print)) == 0);
+
+	char * init_elapsed_time = (char *) calloc(1, 4);
+	if (init_elapsed_time == NULL)
 	{
 		perror("Error allocating memory");
 		return (EXIT_FAILURE);
 	}
-	strncpy(lopt.elapsed_time, "0 s", 4);
-	lopt.elapsed_time[3] = '\0';
+	strncpy(init_elapsed_time, "0 s", 4);
+	init_elapsed_time[3] = '\0';
+
+	// do not update lopt.elapsed_time while dump_print is running
+	ALLEGE(pthread_mutex_lock(&(lopt.mx_print)) == 0);
+	lopt.elapsed_time = init_elapsed_time;
+	ALLEGE(pthread_mutex_unlock(&(lopt.mx_print)) == 0);
 
 	/* Create start time string for kismet netxml file */
 	lopt.airodump_start_time = (char *) calloc(1, 1000 * sizeof(char));
@@ -6918,17 +6928,27 @@ int main(int argc, char * argv[])
 			}
 
 			/* update the battery state */
-			free(lopt.batt);
-			lopt.batt = NULL;
 
-			tt2 = time(NULL);
-			lopt.batt = getBatteryString();
+			char * old_batt;
+			char * new_batt = getBatteryString();
+			// do not update lopt.batt this while dump_print is running
+			ALLEGE(pthread_mutex_lock(&(lopt.mx_print)) == 0);
+			old_batt = lopt.batt;
+			lopt.batt = new_batt;
+			ALLEGE(pthread_mutex_unlock(&(lopt.mx_print)) == 0);
+			free(old_batt);
 
 			/* update elapsed time */
 
-			free(lopt.elapsed_time);
-			lopt.elapsed_time = NULL;
-			lopt.elapsed_time = getStringTimeFromSec(difftime(tt2, start_time));
+			tt2 = time(NULL);
+			char * old_elapsed_time;
+			char * new_elapsed_time = getStringTimeFromSec(difftime(tt2, start_time));
+			// do not update lopt.elapsed_time this while dump_print is running
+			ALLEGE(pthread_mutex_lock(&(lopt.mx_print)) == 0);
+			old_elapsed_time = lopt.elapsed_time;
+			lopt.elapsed_time = new_elapsed_time;
+			ALLEGE(pthread_mutex_unlock(&(lopt.mx_print)) == 0);
+			free(old_elapsed_time);
 
 			/* flush the output files */
 
@@ -7318,19 +7338,47 @@ int main(int argc, char * argv[])
 		}
 	}
 
-	if (lopt.batt) free(lopt.batt);
+	if (lopt.batt)
+	{
+		free(lopt.batt);
+		lopt.batt = NULL;
+	}
 
-	if (lopt.elapsed_time) free(lopt.elapsed_time);
+	if (lopt.elapsed_time)
+	{
+		free(lopt.elapsed_time);
+		lopt.elapsed_time = NULL;
+	}
 
-	if (lopt.own_channels) free(lopt.own_channels);
+	if (lopt.own_channels)
+	{
+		free(lopt.own_channels);
+		lopt.own_channels = NULL;
+	}
 
-	if (lopt.f_essid) free(lopt.f_essid);
+	if (lopt.f_essid)
+	{
+		free(lopt.f_essid);
+		lopt.f_essid = NULL;
+	}
 
-	if (opt.prefix) free(opt.prefix);
+	if (opt.prefix)
+	{
+		free(opt.prefix);
+		opt.prefix = NULL;
+	}
 
-	if (opt.f_cap_name) free(opt.f_cap_name);
+	if (opt.f_cap_name)
+	{
+		free(opt.f_cap_name);
+		opt.f_cap_name = NULL;
+	}
 
-	if (lopt.keyout) free(lopt.keyout);
+	if (lopt.keyout)
+	{
+		free(lopt.keyout);
+		lopt.keyout = NULL;
+	}
 
 #ifdef HAVE_PCRE
 	if (lopt.f_essid_regex) pcre_free(lopt.f_essid_regex);
