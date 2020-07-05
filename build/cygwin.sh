@@ -28,6 +28,13 @@ export CFLAGS CXXFLAGS
 PATH="/usr/lib/ccache:$PATH"
 export PATH
 
+if [ -e /usr/bin/ccache ]
+then
+	CC="ccache ${CC:=gcc}"
+	CXX="ccache ${CXX:=g++}"
+	export CC CXX
+fi
+
 RETRY=0
 
 while [ $RETRY -lt 3 ];
@@ -46,8 +53,10 @@ then
 	exit 1
 fi
 
+ccache -s || echo "W: Skip ccache stats..."
 make -j ${CPUS:-1}
 make check || { find . -name 'test-suite.log' -exec cat {} ';' && exit 1; }
 make clean
+ccache -s || echo "W: Skip ccache stats..."
 
 exit 0
