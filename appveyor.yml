@@ -44,7 +44,10 @@ matrix:
       COMPILER: clang
     - TARGET: msys64
 
-# cache:
+cache:
+  - 'c:\cygwin\home\.ccache'
+  - 'c:\cygwin64\home\.ccache'
+  - 'c:\msys64\home\.ccache'
 # - '%AIRCRACK_CI_CACHE%'
 
 # Uncomment to enable debugging on AppVeyor equipment
@@ -77,7 +80,7 @@ install:
 - ps: |
     function updateCygwin($cygwinexe, $installFolder, $cacheFolder) {
       Write-Host "Update Cygwin: $cygwinexe"
-      Exec-External {& cmd /c $cygwinexe -gqnNdO -R $installFolder -s http://mirrors.kernel.org/sourceware/cygwin/ -l $cacheFolder -P autoconf -P automake -P bison -P clang -P gcc-core -P gcc-g++ -P mingw-runtime -P mingw-binutils -P mingw-gcc-core -P mingw-gcc-g++ -P mingw-pthreads -P mingw-w32api -P libtool -P make -P python -P gettext-devel -P gettext -P intltool -P libiconv -P libiconv-devel -P pkg-config -P git -P wget -P curl -P libcurl4 -P libpcre-devel -P libssl-devel -P libsqlite3-devel -P zlib-devel -P cmocka -P unzip -P zip -P rsync -P expect -P libhwloc-devel}
+      Exec-External {& cmd /c $cygwinexe -gqnNdO -R $installFolder -s http://mirrors.kernel.org/sourceware/cygwin/ -l $cacheFolder -P autoconf -P automake -P bison -P clang -P gcc-core -P gcc-g++ -P mingw-runtime -P mingw-binutils -P mingw-gcc-core -P mingw-gcc-g++ -P mingw-pthreads -P mingw-w32api -P libtool -P make -P python -P gettext-devel -P gettext -P intltool -P libiconv -P libiconv-devel -P pkg-config -P git -P wget -P curl -P libcurl4 -P libpcre-devel -P libssl-devel -P libsqlite3-devel -P zlib-devel -P cmocka -P unzip -P zip -P rsync -P expect -P libhwloc-devel -P ccache}
       Write-Host "Update Cygwin: $cygwinexe " -NoNewLine
       Write-Host "[ OK ]" -ForegroundColor Green
     }
@@ -115,7 +118,7 @@ install:
       # update core packages
       bash "pacman -Syu --noconfirm --cache `"$unix_msys2_cache`""
       # install Aircrack-ng build dependencies
-      bash "pacman --sync --noconfirm --cache `"$unix_msys2_cache`" autoconf automake1.15 libtool msys2-w32api-headers msys2-w32api-runtime pkg-config git python openssl-devel openssl libopenssl msys2-runtime-devel binutils make pcre-devel libsqlite-devel zlib-devel"
+      bash "pacman --sync --noconfirm --cache `"$unix_msys2_cache`" autoconf automake1.15 libtool msys2-w32api-headers msys2-w32api-runtime pkg-config git python openssl-devel openssl libopenssl msys2-runtime-devel binutils make pcre-devel libsqlite-devel zlib-devel ccache"
     }
 
 build_script:

@@ -14,23 +14,24 @@ echo "I: ${COMPILER} compiler"
 
 if [ "x${COMPILER}" = xclang ]
 then
-	CC=$(ls -vl /usr/bin/clang{,-{0..9}*} | awk '{ print $9 }' | tail -n 1)
-	CXX=$(ls -vl /usr/bin/clang++{,-{0..9}*} | awk '{ print $9 }' | tail -n 1)
+	CC=$(ls -vl /usr/bin/clang{,-{0..9}*} | awk '{ gsub("/usr/bin/",""); print $9 }' | tail -n 1)
+	CXX=$(ls -vl /usr/bin/clang++{,-{0..9}*} | awk '{ gsub("/usr/bin/",""); print $9 }' | tail -n 1)
 	LIBS='-liconv'
 
 	export CC CXX LIBS
 fi
 
 CPUS=$((`grep processor /proc/cpuinfo | wc -l` * 3 / 2))
-CFLAGS="-O2 -DNDEBUG"
-CXXFLAGS="-O2 -DNDEBUG"
+CFLAGS="-Os -g -DNDEBUG"
+CXXFLAGS="-Os -g -DNDEBUG"
 export CFLAGS CXXFLAGS
+PATH="/usr/lib/ccache:$PATH"
+export PATH
 
 RETRY=0
 
 while [ $RETRY -lt 3 ];
 do
-	# ./autogen.sh "$@" && break
 	autoreconf -vi && ./configure "$@" && break
 	[ -f config.log ] && cat config.log
 
