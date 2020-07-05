@@ -1,19 +1,19 @@
 os:
-    - linux
-    - osx
+  - linux
+  - osx
 
-#need due bug on homebrew see 
-#https://changelog.travis-ci.com/xcode-11-3-1-xcode-11-2-1-xcode-11-1-and-xcode11-images-updated-142286
+# need due bug on homebrew see:
+#   https://changelog.travis-ci.com/xcode-11-3-1-xcode-11-2-1-xcode-11-1-and-xcode11-images-updated-142286
 osx_image: xcode11.4
 
 language: c
 
 before_install:
-    #ccache hacks. see https://github.com/travis-ci/travis-ci/issues/5383 
-    #Install ccache on osx
-    - if [ "$TRAVIS_OS_NAME" == "osx" ]; then export PATH="/usr/local/opt/ccache/libexec:$PATH"; fi
-    #Fix ccache for clang
-    - if [ "$CC" = "clang" ] && [ "$TRAVIS_OS_NAME" == "linux" ]; then export CFLAGS="-Qunused-arguments"; else CFLAGS=""; fi
+  # ccache hacks. see: https://github.com/travis-ci/travis-ci/issues/5383
+  #Install ccache on osx
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then export PATH="/usr/local/opt/ccache/libexec:$PATH"; fi
+  #Fix ccache for clang
+  - if [ "$CC" = "clang" ] && [ "$TRAVIS_OS_NAME" == "linux" ]; then export CFLAGS="-Qunused-arguments"; else CFLAGS=""; fi
 
 addons:
   apt:
@@ -40,17 +40,17 @@ addons:
       - openssl
       - pcre
       - sqlite3
-
     #update: true
- 
+
 compiler:
   - gcc
   - clang
 
-script:
-    - ./build/travis-format.sh Style "Checking source code style..." ./build/travis-formatting.sh
-    - ./build/travis-format.sh GCrypt "Building with GCrypt..." ./build/gcrypt.sh
-    - ./build/travis-format.sh OpenSSL "Building with OpenSSL..." ./build/openssl.sh
-    - ./build/travis-format.sh Dist "Creating a dist tarball and then building from it..." ./build/dist_check.sh
+script: |
+  ./build/travis-format.sh Style "Checking source code style..." ./build/travis-formatting.sh &&
+  ./build/travis-format.sh GCrypt "Building with GCrypt..." ./build/gcrypt.sh &&
+  ./build/travis-format.sh OpenSSL "Building with OpenSSL..." ./build/openssl.sh &&
+  ./build/travis-format.sh Dist "Creating a dist tarball and then building from it..." ./build/dist_check.sh &&
+  exit 0
 
 cache: ccache
