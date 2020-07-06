@@ -45,9 +45,9 @@ matrix:
     - TARGET: msys64
 
 cache:
-  - 'c:\cygwin\home\.ccache'
-  - 'c:\cygwin64\home\.ccache'
-  - 'c:\msys64\home\.ccache'
+  - 'c:\cygwin\home'
+  - 'c:\cygwin64\home'
+  - 'c:\msys64\home'
 # - '%AIRCRACK_CI_CACHE%'
 
 # Uncomment to enable debugging on AppVeyor equipment
