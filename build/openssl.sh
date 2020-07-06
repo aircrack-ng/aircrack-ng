@@ -8,6 +8,7 @@ case "${CC:=}" in
     *) export CFLAGS="-Werror -Wno-unused-result"; export CXXFLAGS="-Werror -Wno-unused-result";;
 esac
 
+# shellcheck disable=SC2086
 if [ "$TRAVIS_OS_NAME" == "osx" ]; then ./autogen.sh --with-experimental ${EXTRA}; else ./autogen.sh --with-experimental ${EXTRA}; fi || { cat config.log; exit 1; }
 make
 make check || { find . -name 'test-suite.log' -exec cat {} ';' && exit 1; }

@@ -9,7 +9,7 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     exit 0
 fi
 
-find . -name .deps -o -name '*.la' -o -name .libs -o -name Makefile -print0 | xargs -0 rm -vfr
+find . \( -name .deps \) -o \( -name '*.la' \) -o \( -name .libs \) -o \( -name Makefile \) -print0 | xargs -0 rm -vfr
 if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     ./autogen.sh --with-experimental --with-ext-scripts
 else
@@ -24,7 +24,7 @@ BN=$(find . -name '*.tar.gz' | tail -n1 | sed -e 's/\.tar\.gz//g;s/^\.\///g')
 mkdir dist_build
 cd dist_build
 
-tar xzf ../$BN.tar.gz
+tar xzf "../${BN}.tar.gz"
 cd "$BN"
 if [ "$TRAVIS_OS_NAME" == "osx" ]; then ./configure --with-experimental --with-ext-scripts; else ./configure --with-experimental --with-ext-scripts; fi
 make

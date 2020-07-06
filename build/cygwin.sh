@@ -14,14 +14,16 @@ echo "I: ${COMPILER} compiler"
 
 if [ "x${COMPILER}" = xclang ]
 then
-	CC=$(ls -vl /usr/bin/clang{,-{0..9}*} | awk '{ gsub("/usr/bin/",""); print $9 }' | tail -n 1)
-	CXX=$(ls -vl /usr/bin/clang++{,-{0..9}*} | awk '{ gsub("/usr/bin/",""); print $9 }' | tail -n 1)
+	# shellcheck disable=SC2012
+	CC=$(ls -vl /usr/bin/clang{,-{0..9}*} 2>/dev/null | awk '{ gsub("/usr/bin/",""); print $9 }' | tail -n 1)
+	# shellcheck disable=SC2012
+	CXX=$(ls -vl /usr/bin/clang++{,-{0..9}*} 2>/dev/null | awk '{ gsub("/usr/bin/",""); print $9 }' | tail -n 1)
 	LIBS='-liconv'
 
 	export CC CXX LIBS
 fi
 
-CPUS=$((`grep processor /proc/cpuinfo | wc -l` * 3 / 2))
+CPUS=$(($(grep -c processor /proc/cpuinfo) * 3 / 2))
 CFLAGS="-Os -g -DNDEBUG"
 CXXFLAGS="-Os -g -DNDEBUG"
 export CFLAGS CXXFLAGS
@@ -43,8 +45,8 @@ do
 	[ -f config.log ] && cat config.log
 
 	echo "W: failed to run autogen.sh, will retry..."
-	RETRY=$(($RETRY + 1))
-	sleep $((10 * $RETRY))
+	RETRY=$((RETRY + 1))
+	sleep $((10 * RETRY))
 done
 
 if [ $RETRY -ge 3 ];
