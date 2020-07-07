@@ -92,8 +92,6 @@
 #include "radiotap/radiotap_iter.h"
 
 struct devices dev;
-uint8_t h80211[4096] __attribute__((aligned(16)));
-uint8_t tmpbuf[4096] __attribute__((aligned(16)));
 
 static const unsigned char llcnull[] = {0, 0, 0, 0};
 

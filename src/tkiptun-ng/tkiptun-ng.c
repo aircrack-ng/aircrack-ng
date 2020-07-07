@@ -267,7 +267,7 @@ static struct local_options
 
 // unused, but needed for link
 struct devices dev;
-struct wif *_wi_in, *_wi_out;
+extern struct wif *_wi_in, *_wi_out;
 
 struct ARP_req
 {
@@ -289,7 +289,7 @@ struct APt
 };
 
 unsigned long nb_pkt_sent;
-unsigned char h80211[4096];
+extern unsigned char h80211[4096];
 static unsigned char srcbuf[4096];
 static char strbuf[512];
 static int alarmed;
