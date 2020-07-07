@@ -43,7 +43,18 @@ AC_CHECK_HEADERS([bsd/string.h], [HAVE_BSD_STRING_H=yes], [HAVE_BSD_STRING_H=no]
 AM_CONDITIONAL([HAVE_BSD_STRING_H], [test "$HAVE_BSD_STRING_H" = yes])
 AC_CHECK_LIB([bsd], [strlcpy], [ LIBS="$LIBS -lbsd" ], [:])
 AC_CHECK_FUNCS([strlcpy strlcat], [:])
-AM_CONDITIONAL([HAVE_STRLCAT], [test "$HAVE_STRLCAT" = yes])
-AM_CONDITIONAL([HAVE_STRLCPY], [test "$HAVE_STRLCPY" = yes])
+
+have_bsd=no
+AC_RUN_IFELSE([AC_LANG_PROGRAM([
+#include <stdlib.h>
+#include <string.h>
+],[
+#ifndef strlcpy
+exit(1);
+#endif
+])], [have_bsd=yes])
+
+AM_CONDITIONAL([HAVE_STRLCAT], [test "$HAVE_STRLCAT" = yes -o "$have_bsd" = yes])
+AM_CONDITIONAL([HAVE_STRLCPY], [test "$HAVE_STRLCPY" = yes -o "$have_bsd" = yes])
 
 ])
