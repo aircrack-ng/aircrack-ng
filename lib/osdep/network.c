@@ -317,7 +317,8 @@ static int net_read(struct wif * wi,
 	if (ri)
 	{
 		// re-assemble 64-bit integer
-		ri->ri_mactime = __be64_to_cpu((uint64_t) buf[0] << 32u | buf[1]);
+		uint64_t hi = buf[0];
+		ri->ri_mactime = __be64_to_cpu(((hi) << 32U) | buf[1]);
 		ri->ri_power = __be32_to_cpu(buf[2]);
 		ri->ri_noise = __be32_to_cpu(buf[3]);
 		ri->ri_channel = __be32_to_cpu(buf[4]);
