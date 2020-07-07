@@ -54,6 +54,7 @@
 #include "aircrack-ng/defs.h"
 #include "aircrack-ng/ptw/aircrack-ptw-lib.h"
 #include "aircrack-ng/aircrack-ng.h"
+#include <aircrack-ng/support/common.h>
 
 #define n PTW_n
 #define CONTROLSESSIONS PTW_CONTROLSESSIONS
@@ -453,7 +454,7 @@ static int correct(PTW_attackstate * state, uint8_t * key, int keylen)
 
 	tried++;
 
-	k = rand() % (state->sessions_collected - 10);
+	k = rand_u32() % (state->sessions_collected - 10);
 	for (i = k; i < k + 10; i++)
 	{
 		if (!state->rc4test(key,
