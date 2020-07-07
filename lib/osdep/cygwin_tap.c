@@ -132,8 +132,10 @@ static int ti_try_open(struct tip_cygwin * priv, char * guid)
 	if (!any && strcmp(priv->tc_guid, guid) != 0) return 0;
 
 	/* open the device */
-	snprintf(
+	const size_t device_len = snprintf(
 		device, sizeof(device), "%s%s%s", USERMODEDEVICEDIR, guid, TAPSUFFIX);
+	if (device_len == -1 || device_len >= sizeof(device))
+		return -1;
 	h = CreateFile(device,
 				   GENERIC_READ | GENERIC_WRITE,
 				   0,
@@ -189,7 +191,9 @@ static int ti_get_devs_component(struct tip_cygwin * priv, char * name)
 	char key[256];
 	int rc = 0;
 
-	snprintf(key, sizeof(key) - 1, "%s\\%s", ADAPTER_KEY, name);
+	const size_t key_len = snprintf(key, sizeof(key) - 1, "%s\\%s", ADAPTER_KEY, name);
+	if (key_len == -1 || key_len >= sizeof(key))
+		return -1;
 	if (RegOpenKeyEx(
 			HKEY_LOCAL_MACHINE, key, 0, KEY_READ | KEY_WRITE, &priv->tc_key)
 		!= ERROR_SUCCESS)
