@@ -70,6 +70,8 @@ EXPORT int net_send(int s, int command, void * arg, int len)
 		return -1;
 	}
 
+	if (arg == NULL) return -1;
+
 	pktlen = sizeof(struct net_hdr) + len;
 
 	pktbuf = (char *) calloc(sizeof(char), pktlen);
