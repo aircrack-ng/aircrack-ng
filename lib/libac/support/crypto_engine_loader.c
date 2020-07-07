@@ -202,7 +202,7 @@ void (*dso_ac_crypto_engine_calc_mic)(ac_crypto_engine_t * engine,
 	= NULL;
 #endif
 
-#if defined(CYGWIN)
+#if defined(WIN32_PORTABLE)
 /*
 	This is merely a hack until code refactoring can occur.
 
