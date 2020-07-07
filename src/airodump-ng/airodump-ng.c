@@ -2898,7 +2898,7 @@ write_packet:
 		if (h80211[0] & 0x04)
 		{
 			p = h80211 + 4;
-			while (p <= h80211 + 16 && p <= h80211 + caplen)
+			while ((uintptr_t) p <= adds_uptr((uintptr_t) h80211, 16) && (uintptr_t) p <= adds_uptr((uintptr_t) h80211, caplen))
 			{
 				memcpy(namac, p, 6);
 

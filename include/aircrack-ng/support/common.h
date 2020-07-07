@@ -381,6 +381,15 @@ static inline uint32_t adds_u32(uint32_t a, uint32_t b)
 	return (c);
 }
 
+/// Saturated add for unsigned, machine word integers.
+static inline uintptr_t adds_uptr(uintptr_t a, uintptr_t b)
+{
+	uintptr_t c = a + b;
+	if (unlikely(c < a)) /* can only happen due to overflow */
+		c = -1;
+	return (c);
+}
+
 #ifdef __cplusplus
 };
 #endif
