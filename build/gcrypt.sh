@@ -5,7 +5,8 @@ set -e
 EXTRA=
 case "${CC:=}" in
     clang*|llvm*) export CXX=clang++;;
-    *) export CFLAGS="-Werror -Wno-unused-result"; export CXXFLAGS="-Werror -Wno-unused-result";;
+    *) export CFLAGS="-Werror -Wno-unused-result -Wno-incompatible-library-redeclaration"
+	   export CXXFLAGS="-Werror -Wno-unused-result -Wno-incompatible-library-redeclaration";;
 esac
 
 # shellcheck disable=SC2086
