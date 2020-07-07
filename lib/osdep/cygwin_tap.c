@@ -56,7 +56,7 @@ static void * ti_reader(void * arg);
 
 struct tip_cygwin
 {
-	char tc_name[MAX_IFACE_NAME];
+	char tc_name[256];
 	HANDLE tc_h;
 	pthread_t tc_reader;
 	volatile int tc_running;
