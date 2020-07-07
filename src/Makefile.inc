@@ -168,7 +168,7 @@ besside_ng_LDADD		= $(COMMON_LDADD) $(PCRE_LIBS) $(LIBAIRCRACK_OSDEP_LIBS) $(LIB
 
 besside_ng_crawler_SOURCES	= $(SRC_BC)
 besside_ng_crawler_CFLAGS		= $(COMMON_CFLAGS) $(PCAP_CFLAGS)
-besside_ng_crawler_LDADD		= $(COMMON_LDADD) $(PCAP_LIBS) $(CRYPTO_LIBS)
+besside_ng_crawler_LDADD		= $(COMMON_LDADD) $(PCAP_LIBS) $(LIBAIRCRACK_LIBS) $(CRYPTO_LIBS)
 
 makeivs_ng_SOURCES	= $(SRC_MI)
 makeivs_ng_CFLAGS		= $(COMMON_CFLAGS)

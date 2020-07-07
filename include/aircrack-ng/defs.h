@@ -184,6 +184,8 @@
 #define UNROLL_LOOP_N_TIME(n)
 #endif
 
+#include <aircrack-ng/compat.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

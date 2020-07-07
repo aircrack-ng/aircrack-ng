@@ -729,6 +729,9 @@ static void clean_exit(int ret)
 		ac_session_free(&cracking_session);
 	}
 
+	fflush(stdout);
+	fflush(stderr);
+
 	exit(EXIT_SUCCESS);
 }
 
@@ -5963,7 +5966,7 @@ int main(int argc, char * argv[])
 			case 'I':
 				_pmkid_16800 = 1;
 				memset((char *) _pmkid_16800_str, 0, sizeof(_pmkid_16800_str));
-				strncpy((char *) _pmkid_16800_str,
+				strlcpy((char *) _pmkid_16800_str,
 						optarg,
 						sizeof(_pmkid_16800_str));
 				break;
@@ -6248,7 +6251,7 @@ int main(int argc, char * argv[])
 					return (EXIT_FAILURE);
 				}
 
-				strncpy(opt.logKeyToFile, optarg, strlen(optarg));
+				strlcpy(opt.logKeyToFile, optarg, sizeof(opt.logKeyToFile));
 				break;
 
 			case 'E':
@@ -6262,7 +6265,7 @@ int main(int argc, char * argv[])
 					return (EXIT_FAILURE);
 				}
 
-				strncpy(opt.wkp, optarg, strlen(optarg));
+				strlcpy(opt.wkp, optarg, sizeof(opt.wkp));
 
 				break;
 
@@ -6277,7 +6280,7 @@ int main(int argc, char * argv[])
 					return (EXIT_FAILURE);
 				}
 
-				strncpy(opt.hccap, optarg, strlen(optarg));
+				strlcpy(opt.hccap, optarg, sizeof(opt.hccap));
 
 				break;
 
@@ -6292,7 +6295,7 @@ int main(int argc, char * argv[])
 					return (EXIT_FAILURE);
 				}
 
-				strncpy(opt.hccapx, optarg, strlen(optarg));
+				strlcpy(opt.hccapx, optarg, sizeof(opt.hccapx));
 
 				break;
 

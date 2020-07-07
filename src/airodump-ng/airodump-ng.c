@@ -3427,7 +3427,6 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	struct NA_info * na_cur;
 	int columns_ap = 83;
 	int columns_sta = 74;
-	int columns_na = 68;
 	ssize_t len;
 
 	int num_ap;
@@ -3490,7 +3489,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 		{
 			memset(buffer, '\0', sizeof(buffer));
 			snprintf(buffer, sizeof(buffer), ",%4d", lopt.frequency[i]);
-			strncat(strbuf, buffer, sizeof(strbuf) - strlen(strbuf) - 1);
+			strlcat(strbuf, buffer, sizeof(strbuf));
 		}
 	}
 	else
@@ -3499,8 +3498,8 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 		for (i = 1; i < if_num; i++)
 		{
 			memset(buffer, '\0', sizeof(buffer));
-			snprintf(buffer, sizeof(buffer), ",%2d", lopt.channel[i]);
-			strncat(strbuf, buffer, sizeof(strbuf) - strlen(strbuf) - 1);
+			snprintf(buffer, sizeof(buffer) - 1, ",%2d", lopt.channel[i]);
+			strlcat(strbuf, buffer, sizeof(strbuf));
 		}
 	}
 	memset(buffer, '\0', sizeof(buffer));
@@ -3558,7 +3557,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				 lt->tm_min);
 	}
 
-	strncat(strbuf, buffer, (512 - strlen(strbuf) - 1));
+	strlcat(strbuf, buffer, sizeof(strbuf));
 	memset(buffer, '\0', 512);
 
 	if (lopt.is_berlin)
@@ -3571,12 +3570,12 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				 lopt.maxaps);
 	}
 
-	strncat(strbuf, buffer, (512 - strlen(strbuf) - 1));
+	strlcat(strbuf, buffer, sizeof(strbuf));
 	memset(buffer, '\0', 512);
 
 	if (strlen(lopt.message) > 0)
 	{
-		strncat(strbuf, lopt.message, (512 - strlen(strbuf) - 1));
+		strlcat(strbuf, lopt.message, sizeof(strbuf));
 	}
 
 	strbuf[ws_col - 1] = '\0';
@@ -3594,17 +3593,17 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	if (lopt.show_ap)
 	{
 		strbuf[0] = 0;
-		strcat(strbuf, " BSSID              PWR ");
+		strlcat(strbuf, " BSSID              PWR ", sizeof(strbuf));
 
-		if (lopt.singlechan) strcat(strbuf, "RXQ ");
+		if (lopt.singlechan) strlcat(strbuf, "RXQ ", sizeof(strbuf));
 
-		strcat(strbuf, " Beacons    #Data, #/s  CH   MB   ENC CIPHER  AUTH ");
+		strlcat(strbuf, " Beacons    #Data, #/s  CH   MB   ENC CIPHER  AUTH ", sizeof(strbuf));
 
-		if (lopt.show_uptime) strcat(strbuf, "        UPTIME ");
+		if (lopt.show_uptime) strlcat(strbuf, "        UPTIME ", sizeof(strbuf));
 
 		if (lopt.show_wps)
 		{
-			strcat(strbuf, "WPS   ");
+			strlcat(strbuf, "WPS   ", sizeof(strbuf));
 			if (ws_col > (columns_ap - 4))
 			{
 				memset(strbuf + strlen(strbuf),
@@ -3631,7 +3630,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 		}
 		else
 		{
-			strcat(strbuf, "ESSID");
+			strlcat(strbuf, "ESSID", sizeof(strbuf));
 
 			if (lopt.show_manufacturer && (ws_col > (columns_ap - 4)))
 			{
@@ -3805,7 +3804,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 					snprintf(strbuf + len, sizeof(strbuf) - len, "OPN ");
 			}
 
-			strncat(strbuf, " ", sizeof(strbuf) - strlen(strbuf) - 1);
+			strlcat(strbuf, " ", sizeof(strbuf));
 
 			len = strlen(strbuf);
 
@@ -3922,9 +3921,9 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	{                                                                          \
 		if (ap_cur->wps.meth & (1u << (bit)))                                  \
 		{                                                                      \
-			if (sep) strcat(tbuf, ",");                                        \
+			if (sep) strlcat(tbuf, ",", sizeof(tbuf));                         \
 			sep = 1;                                                           \
-			strncat(tbuf, (name), (64 - strlen(tbuf) - 1));                    \
+			strlcat(tbuf, (name), sizeof(tbuf));                               \
 		}                                                                      \
 	} while (0)
 								T(0u, "USB"); // USB method
@@ -4044,9 +4043,10 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 	if (lopt.show_sta)
 	{
-		strcpy(strbuf,
+		strlcpy(strbuf,
 			   " BSSID              STATION "
-			   "           PWR   Rate    Lost    Frames  Notes  Probes");
+			   "           PWR   Rate    Lost    Frames  Notes  Probes",
+			   sizeof(strbuf));
 		strbuf[ws_col - 1] = '\0';
 		console_puts(strbuf);
 		CHECK_END_OF_SCREEN();
@@ -4204,10 +4204,10 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 		move(CURSOR_DOWN, 1);
 		CHECK_END_OF_SCREEN();
 
-		memcpy(strbuf,
+		strlcpy(strbuf,
 			   " MAC       "
 			   "          CH PWR    ACK ACK/s    CTS RTS_RX RTS_TX  OTHER",
-			   (size_t) columns_na);
+			   sizeof(strbuf));
 		strbuf[ws_col - 1] = '\0';
 		console_puts(strbuf);
 		CHECK_END_OF_SCREEN();
@@ -5245,8 +5245,7 @@ static int getchannels(const char * optarg)
 	optc = optchan = (char *) malloc(strlen(optarg) + 1);
 	ALLEGE(optc != NULL);
 	ALLEGE(optchan != NULL);
-	strncpy(optchan, optarg, strlen(optarg));
-	optchan[strlen(optarg)] = '\0';
+	strlcpy(optchan, optarg, strlen(optarg) + 1);
 
 	tmp_channels = (int *) malloc(sizeof(int) * (chan_max + 1));
 	ALLEGE(tmp_channels != NULL);
@@ -5373,8 +5372,7 @@ static int getfrequencies(const char * optarg)
 	optc = optfreq = (char *) malloc(strlen(optarg) + 1);
 	ALLEGE(optc != NULL);
 	ALLEGE(optfreq != NULL);
-	strncpy(optfreq, optarg, strlen(optarg));
-	optfreq[strlen(optarg)] = '\0';
+	strlcpy(optfreq, optarg, strlen(optarg) + 1);
 
 	tmp_frequencies = (int *) malloc(sizeof(int) * (freq_max + 1));
 	ALLEGE(tmp_frequencies != NULL);
@@ -5595,8 +5593,7 @@ static int check_monitor(struct wif * wi[], int * fd_raw, int * fdh, int cards)
 					 wi_get_ifname(wi[i]));
 			// reopen in monitor mode
 
-			strncpy(ifname, wi_get_ifname(wi[i]), sizeof(ifname) - 1);
-			ifname[sizeof(ifname) - 1] = 0;
+			strlcpy(ifname, wi_get_ifname(wi[i]), sizeof(ifname));
 
 			wi_close(wi[i]);
 			wi[i] = wi_open(ifname);
@@ -6657,8 +6654,7 @@ int main(int argc, char * argv[])
 					*/
 					for (i = 0; i < lopt.num_cards; i++)
 					{
-						strncpy(ifnam, wi_get_ifname(wi[i]), sizeof(ifnam) - 1);
-						ifnam[sizeof(ifnam) - 1] = 0;
+						strlcpy(ifnam, wi_get_ifname(wi[i]), sizeof(ifnam));
 
 						wi_close(wi[i]);
 						wi[i] = wi_open(ifnam);
@@ -6718,8 +6714,7 @@ int main(int argc, char * argv[])
 					*/
 					for (i = 0; i < lopt.num_cards; i++)
 					{
-						strncpy(ifnam, wi_get_ifname(wi[i]), sizeof(ifnam) - 1);
-						ifnam[sizeof(ifnam) - 1] = 0;
+						strlcpy(ifnam, wi_get_ifname(wi[i]), sizeof(ifnam));
 
 						wi_close(wi[i]);
 						wi[i] = wi_open(ifnam);
@@ -6858,13 +6853,12 @@ int main(int argc, char * argv[])
 		perror("Error allocating memory");
 		return (EXIT_FAILURE);
 	}
-	strncpy(lopt.elapsed_time, "0 s", 4);
-	lopt.elapsed_time[3] = '\0';
+	strlcpy(lopt.elapsed_time, "0 s", 4);
 
 	/* Create start time string for kismet netxml file */
 	lopt.airodump_start_time = (char *) calloc(1, 1000 * sizeof(char));
 	ALLEGE(lopt.airodump_start_time != NULL);
-	strncpy(lopt.airodump_start_time, ctime(&start_time), 1000 - 1);
+	strlcpy(lopt.airodump_start_time, ctime(&start_time), 1000);
 	lopt.airodump_start_time[strlen(lopt.airodump_start_time) - 1]
 		= 0; // remove new line
 	lopt.airodump_start_time = (char *) realloc( //-V701
@@ -7277,8 +7271,7 @@ int main(int argc, char * argv[])
 
 						// reopen in monitor mode
 
-						strncpy(ifnam, wi_get_ifname(wi[i]), sizeof(ifnam) - 1);
-						ifnam[sizeof(ifnam) - 1] = 0;
+						strlcpy(ifnam, wi_get_ifname(wi[i]), sizeof(ifnam));
 
 						wi_close(wi[i]);
 						wi[i] = wi_open(ifnam);

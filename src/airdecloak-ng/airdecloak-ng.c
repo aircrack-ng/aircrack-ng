@@ -53,7 +53,9 @@ static unsigned char buffer[65536];
 
 static char * _filename_output_invalid;
 static char * _filename_output_cloaked;
+static size_t _filename_output_cloaked_len;
 static char * _filename_output_filtered;
+static size_t _filename_output_filtered_len;
 static FILE * _output_cloaked_packets_file;
 static FILE * _output_clean_capture_file;
 static FILE * _input_file;
@@ -1632,6 +1634,7 @@ int main(int argc, char * argv[])
 				if (optarg != NULL)
 				{
 					_filename_output_cloaked = optarg;
+					_filename_output_cloaked_len = strlen(optarg) + 16;
 					manual_cloaked_fname = 1;
 				}
 				break;
@@ -1639,6 +1642,7 @@ int main(int argc, char * argv[])
 				if (optarg != NULL)
 				{
 					_filename_output_filtered = optarg;
+					_filename_output_filtered_len = strlen(optarg) + 16;
 					manual_filtered_fname = 1;
 				}
 				break;
@@ -1790,13 +1794,15 @@ int main(int argc, char * argv[])
 		temp = strlen(input_filename);
 		if (!manual_cloaked_fname)
 		{
-			_filename_output_cloaked = (char *) calloc(temp + 9 + 5, 1);
+			_filename_output_cloaked_len = temp + 9 + 5;
+			_filename_output_cloaked = (char *) calloc(_filename_output_cloaked_len, 1);
 			ALLEGE(_filename_output_cloaked != NULL);
 		}
 
 		if (!manual_filtered_fname)
 		{
-			_filename_output_filtered = (char *) calloc(temp + 10 + 5, 1);
+			_filename_output_filtered_len = temp + 10 + 5;
+			_filename_output_filtered = (char *) calloc(_filename_output_filtered_len, 1);
 			ALLEGE(_filename_output_filtered != NULL);
 		}
 
@@ -1810,12 +1816,12 @@ int main(int argc, char * argv[])
 		{
 			if (!manual_cloaked_fname)
 				snprintf(_filename_output_cloaked,
-						 strlen(input_filename) + 9 + 5,
+						 _filename_output_cloaked_len,
 						 "%s-cloaked.pcap",
 						 input_filename);
 			if (!manual_filtered_fname)
 				snprintf(_filename_output_filtered,
-						 strlen(input_filename) + 10 + 5,
+						 _filename_output_filtered_len,
 						 "%s-filtered.pcap",
 						 input_filename);
 		}
@@ -1823,17 +1829,17 @@ int main(int argc, char * argv[])
 		{
 			if (!manual_cloaked_fname)
 			{
-				strncpy(_filename_output_cloaked,
+				strlcpy(_filename_output_cloaked,
 						input_filename,
-						strlen(input_filename) + 9 + 5 - 1);
-				strncat(_filename_output_cloaked, "-cloaked.pcap", 14);
+						_filename_output_cloaked_len);
+				strlcat(_filename_output_cloaked, "-cloaked.pcap", _filename_output_cloaked_len);
 			}
 			if (!manual_filtered_fname)
 			{
-				strncpy(_filename_output_filtered,
+				strlcpy(_filename_output_filtered,
 						input_filename,
-						strlen(input_filename) + 10 + 5 - 1);
-				strncat(_filename_output_filtered, "-filtered.pcap", 15);
+						_filename_output_filtered_len);
+				strlcat(_filename_output_filtered, "-filtered.pcap", _filename_output_filtered_len);
 			}
 		}
 	}

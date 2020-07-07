@@ -360,9 +360,9 @@ static void process_directory(const char * dir, time_t begin)
 		ALLEGE(fullname == NULL);
 		fullname = malloc(fullname_size);
 		ALLEGE(fullname != NULL);
-		strncpy(fullname, dir, strlen(dir) + 1);
-		strncat(fullname, "/", fullname_size - 1);
-		strncat(fullname, curent->d_name, fullname_size - 1);
+		ALLEGE(strlcpy(fullname, dir, fullname_size) < fullname_size);
+		ALLEGE(strlcat(fullname, "/", fullname_size) < fullname_size);
+		ALLEGE(strlcat(fullname, curent->d_name, fullname_size) < fullname_size);
 
 		if (stat(fullname, &curstat))
 		{
