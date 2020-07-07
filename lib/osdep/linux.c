@@ -1839,6 +1839,7 @@ static int do_linux_open(struct wif * wi, char * iface)
 	char * r_file = NULL;
 	struct ifreq ifr;
 	int iface_malloced = 0;
+	size_t iface_len = 0;
 
 	if (iface == NULL || strlen(iface) >= IFNAMSIZ)
 	{
@@ -2139,16 +2140,18 @@ static int do_linux_open(struct wif * wi, char * iface)
 		acpi = NULL;
 
 		// use name in buf as new iface and set original iface as main iface
-		dev->main_if = (char *) malloc(strlen(iface) + 1);
+		iface_len = strlen(iface) + 1;
+		dev->main_if = (char *) malloc(iface_len);
 		if (dev->main_if == NULL) goto close_out;
-		memset(dev->main_if, 0, strlen(iface) + 1);
-		strncpy(dev->main_if, iface, strlen(iface));
+		memset(dev->main_if, 0, iface_len);
+		memcpy(dev->main_if, iface, iface_len);
 
-		iface = (char *) malloc(strlen(buf) + 1);
+		iface_len = strlen(buf) + 1;
+		iface = (char *) malloc(iface_len);
 		if (iface == NULL) goto close_out;
 		iface_malloced = 1;
-		memset(iface, 0, strlen(buf) + 1);
-		strncpy(iface, buf, strlen(buf));
+		memset(iface, 0, iface_len);
+		memcpy(iface, buf, iface_len);
 	}
 
 	/* test if rtap interface and try to find real interface */
