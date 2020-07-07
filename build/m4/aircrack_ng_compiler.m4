@@ -90,6 +90,10 @@ AC_LANG_CASE([C], [
         AX_APPEND_FLAG(-std=gnu99, [opt_[]_AC_LANG_ABBREV[]flags])
     ])
 
+    AX_CHECK_COMPILE_FLAG([-fcommon], [
+        AX_APPEND_FLAG(-fcommon, [opt_[]_AC_LANG_ABBREV[]flags])
+    ])
+
     AX_CHECK_COMPILE_FLAG([-fno-strict-aliasing], [
         AX_APPEND_FLAG(-fno-strict-aliasing, [opt_[]_AC_LANG_ABBREV[]flags])
     ])
