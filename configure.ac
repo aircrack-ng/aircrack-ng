@@ -88,6 +88,9 @@ AC_PROG_INSTALL
 AM_PROG_AS
 PKG_PROG_PKG_CONFIG
 AM_PROG_CC_C_O
+AC_C_CONST
+AC_HEADER_STDC
+AC_CHECK_HEADERS([locale.h stdio.h stdarg.h fcntl.h malloc.h stdlib.h string.h strings.h unistd.h sys/stat.h getopt.h sys/time.h sys/types.h dirent.h])
 
 #
 # Set versioning detail
