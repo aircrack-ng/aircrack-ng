@@ -54,7 +54,7 @@ exit(1);
 #endif
 ])], [have_bsd=yes])
 
-AM_CONDITIONAL([HAVE_STRLCAT], [test "$HAVE_STRLCAT" = yes -o "$have_bsd" = yes])
-AM_CONDITIONAL([HAVE_STRLCPY], [test "$HAVE_STRLCPY" = yes -o "$have_bsd" = yes])
+AM_CONDITIONAL([HAVE_STRLCAT], [test "$HAVE_STRLCAT" = yes || test "$have_bsd" = yes])
+AM_CONDITIONAL([HAVE_STRLCPY], [test "$HAVE_STRLCPY" = yes || test "$have_bsd" = yes])
 
 ])
