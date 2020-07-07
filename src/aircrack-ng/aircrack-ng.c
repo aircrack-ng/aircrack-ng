@@ -6255,48 +6255,51 @@ int main(int argc, char * argv[])
 				break;
 
 			case 'E':
-
-				// Make sure there's enough space for file extension just in
-				// case it was forgotten
-				opt.wkp = (char *) calloc(1, strlen(optarg) + 1 + 4);
-				if (opt.wkp == NULL)
 				{
-					printf("Error allocating memory\n");
-					return (EXIT_FAILURE);
+					// Make sure there's enough space for file
+					// extension just in case it was forgotten
+					const size_t wkp_len = strlen(optarg) + 6;
+					opt.wkp = (char *) calloc(1, wkp_len);
+					if (opt.wkp == NULL)
+					{
+						printf("Error allocating memory\n");
+						return (EXIT_FAILURE);
+					}
+
+					strlcpy(opt.wkp, optarg, wkp_len);
 				}
-
-				strlcpy(opt.wkp, optarg, sizeof(opt.wkp));
-
 				break;
 
 			case 'J':
-
-				// Make sure there's enough space for file extension just in
-				// case it was forgotten
-				opt.hccap = (char *) calloc(1, strlen(optarg) + 1 + 6);
-				if (opt.hccap == NULL)
 				{
-					printf("Error allocating memory\n");
-					return (EXIT_FAILURE);
+					// Make sure there's enough space for file
+					// extension just in case it was forgotten
+					const size_t hccap_len = strlen(optarg) + 8;
+					opt.hccap = (char *) calloc(1, hccap_len);
+					if (opt.hccap == NULL)
+					{
+						printf("Error allocating memory\n");
+						return (EXIT_FAILURE);
+					}
+
+					strlcpy(opt.hccap, optarg, hccap_len);
 				}
-
-				strlcpy(opt.hccap, optarg, sizeof(opt.hccap));
-
 				break;
 
 			case 'j':
-
-				// Make sure there's enough space for file extension just in
-				// case it was forgotten
-				opt.hccapx = (char *) calloc(1, strlen(optarg) + 1 + 7);
-				if (opt.hccapx == NULL)
 				{
-					printf("Error allocating memory\n");
-					return (EXIT_FAILURE);
+					// Make sure there's enough space for file
+					// extension just in case it was forgotten
+					const size_t hccapx_len = strlen(optarg) + 8;
+					opt.hccapx = (char *) calloc(1, hccapx_len);
+					if (opt.hccapx == NULL)
+					{
+						printf("Error allocating memory\n");
+						return (EXIT_FAILURE);
+					}
+
+					strlcpy(opt.hccapx, optarg, sizeof(hccapx_len));
 				}
-
-				strlcpy(opt.hccapx, optarg, sizeof(opt.hccapx));
-
 				break;
 
 			case 'M':
