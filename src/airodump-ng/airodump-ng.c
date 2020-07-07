@@ -2898,7 +2898,8 @@ write_packet:
 		if (h80211[0] & 0x04)
 		{
 			p = h80211 + 4;
-			while ((uintptr_t) p <= adds_uptr((uintptr_t) h80211, 16) && (uintptr_t) p <= adds_uptr((uintptr_t) h80211, caplen))
+			while ((uintptr_t) p <= adds_uptr((uintptr_t) h80211, 16)
+				   && (uintptr_t) p <= adds_uptr((uintptr_t) h80211, caplen))
 			{
 				memcpy(namac, p, 6);
 
@@ -3597,9 +3598,12 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 		if (lopt.singlechan) strlcat(strbuf, "RXQ ", sizeof(strbuf));
 
-		strlcat(strbuf, " Beacons    #Data, #/s  CH   MB   ENC CIPHER  AUTH ", sizeof(strbuf));
+		strlcat(strbuf,
+				" Beacons    #Data, #/s  CH   MB   ENC CIPHER  AUTH ",
+				sizeof(strbuf));
 
-		if (lopt.show_uptime) strlcat(strbuf, "        UPTIME ", sizeof(strbuf));
+		if (lopt.show_uptime)
+			strlcat(strbuf, "        UPTIME ", sizeof(strbuf));
 
 		if (lopt.show_wps)
 		{
@@ -4044,9 +4048,9 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	if (lopt.show_sta)
 	{
 		strlcpy(strbuf,
-			   " BSSID              STATION "
-			   "           PWR   Rate    Lost    Frames  Notes  Probes",
-			   sizeof(strbuf));
+				" BSSID              STATION "
+				"           PWR   Rate    Lost    Frames  Notes  Probes",
+				sizeof(strbuf));
 		strbuf[ws_col - 1] = '\0';
 		console_puts(strbuf);
 		CHECK_END_OF_SCREEN();
@@ -4205,9 +4209,9 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 		CHECK_END_OF_SCREEN();
 
 		strlcpy(strbuf,
-			   " MAC       "
-			   "          CH PWR    ACK ACK/s    CTS RTS_RX RTS_TX  OTHER",
-			   sizeof(strbuf));
+				" MAC       "
+				"          CH PWR    ACK ACK/s    CTS RTS_RX RTS_TX  OTHER",
+				sizeof(strbuf));
 		strbuf[ws_col - 1] = '\0';
 		console_puts(strbuf);
 		CHECK_END_OF_SCREEN();
