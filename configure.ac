@@ -215,6 +215,7 @@ summary_libs="$LIBS"
 CFLAGS="$opt_cflags $CFLAGS"
 CPPFLAGS="$opt_cppflags $CPPFLAGS"
 CXXFLAGS="$opt_cxxflags $CXXFLAGS"
+LDFLAGS="$opt_ldflags $LDFLAGS"
 LIBS="$opt_libs $LIBS"
 
 #
@@ -290,6 +291,7 @@ ${PACKAGE} ${VERSION}
     Optimized CFLAGS:            ${opt_cflags}
     Optimized CXXFLAGS:          ${opt_cxxflags}
     Optimized CPPFLAGS:          ${opt_cppflags}
+    Optimized LDFLAGS:           ${opt_ldflags}
     Optimized LIBS:              ${opt_libs}
 
   Target Environment:
