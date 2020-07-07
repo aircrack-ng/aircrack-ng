@@ -1090,11 +1090,11 @@ static void got_ip(struct wstate * ws)
 	}
 
 	memset(ws->ws_netip, 0, 16);
-	strncpy(ws->ws_netip, inet_ntoa(*in), 16 - 1);
+	strlcpy(ws->ws_netip, inet_ntoa(*in), 16);
 
 	time_print("Got IP=(%s)\n", ws->ws_netip);
 	memset(ws->ws_myip, 0, sizeof(ws->ws_myip));
-	strncpy(ws->ws_myip, ws->ws_netip, sizeof(ws->ws_myip) - 1);
+	strlcpy(ws->ws_myip, ws->ws_netip, sizeof(ws->ws_myip));
 
 	ptr = strchr(ws->ws_myip, '.');
 	ALLEGE(ptr);
@@ -1696,7 +1696,7 @@ static void save_key(unsigned char * key, int len)
 	while (len--)
 	{
 		snprintf(tmp, 3, "%.2X", *key++);
-		strncat(k, tmp, 2);
+		strlcat(k, tmp, sizeof(k));
 		if (len) strncat(k, ":", 2);
 	}
 

@@ -116,6 +116,14 @@ if !HAVE_HWLOC
 CPUSET = %D%/libac/cpu/cpuset_pthread.c
 endif
 
+if !HAVE_STRLCAT
+SRC_LIBAC += %D%/libac/support/strlcat.c
+endif
+
+if !HAVE_STRLCPY
+SRC_LIBAC += %D%/libac/support/strlcpy.c
+endif
+
 libaircrack_la_SOURCES	= $(SRC_LIBAC) $(TRAMPOLINE) $(CPUSET)
 libaircrack_la_CFLAGS		= $(COMMON_CFLAGS) $(PCRE_CFLAGS) \
 													"-DLIBAIRCRACK_CE_WPA_PATH=\"$(LIBAIRCRACK_CE_WPA_PATH)\"" \

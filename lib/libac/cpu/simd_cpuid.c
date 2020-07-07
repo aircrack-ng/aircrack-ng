@@ -334,8 +334,7 @@ static int cpuid_findcpusensorpath(const char * path)
 		}
 		else if (!strncmp(dp->d_name, "temp", 4))
 		{
-			strncpy(tbuf[cnt], dp->d_name, 31);
-			tbuf[cnt][31] = '\0'; // ensure NULL termination
+			ALLEGE(strlcpy(tbuf[cnt], dp->d_name, 32) < 32);
 			if (cnt < (MAX_SENSOR_PATHS - 1)) ++cnt; //-V547
 		}
 	}
