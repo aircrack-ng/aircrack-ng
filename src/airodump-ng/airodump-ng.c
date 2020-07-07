@@ -5246,10 +5246,11 @@ static int getchannels(const char * optarg)
 	chan_remain = chan_max;
 
 	// create a writable string
-	optc = optchan = (char *) malloc(strlen(optarg) + 1);
+	const size_t optchan_len = strlen(optarg) + 1;
+	optc = optchan = (char *) malloc(optchan_len);
 	ALLEGE(optc != NULL);
 	ALLEGE(optchan != NULL);
-	strlcpy(optchan, optarg, strlen(optarg) + 1);
+	strlcpy(optchan, optarg, optchan_len);
 
 	tmp_channels = (int *) malloc(sizeof(int) * (chan_max + 1));
 	ALLEGE(tmp_channels != NULL);
@@ -5373,10 +5374,11 @@ static int getfrequencies(const char * optarg)
 	freq_remain = freq_max;
 
 	// create a writable string
-	optc = optfreq = (char *) malloc(strlen(optarg) + 1);
+	const size_t optfreq_len = strlen(optarg) + 1;
+	optc = optfreq = (char *) malloc(optfreq_len);
 	ALLEGE(optc != NULL);
 	ALLEGE(optfreq != NULL);
-	strlcpy(optfreq, optarg, strlen(optarg) + 1);
+	strlcpy(optfreq, optarg, optfreq_len);
 
 	tmp_frequencies = (int *) malloc(sizeof(int) * (freq_max + 1));
 	ALLEGE(tmp_frequencies != NULL);
