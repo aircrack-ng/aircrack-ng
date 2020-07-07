@@ -244,7 +244,7 @@ static int net_get_nopacket(struct priv_net * pn, void * arg, int * len)
 
 static int net_cmd(struct priv_net * pn, int command, void * arg, int alen)
 {
-	uint32_t rc;
+	uint32_t rc = 0;
 	int len;
 	int cmd;
 
@@ -289,7 +289,7 @@ static int net_read(struct wif * wi,
 					struct rx_info * ri)
 {
 	struct priv_net * pn = wi_priv(wi);
-	uint32_t buf[512]; // 512 * 4 = 2048
+	uint32_t buf[512] = {0}; // 512 * 4 = 2048
 	unsigned char * bufc = (unsigned char *) buf;
 	int cmd;
 	int sz = sizeof(*ri);
