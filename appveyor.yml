@@ -32,7 +32,7 @@ environment:
     COMPILER: clang
   - TARGET: cygwin64
     COMPILER: clang
-  - TARGET: msys64
+  # - TARGET: msys64
   - TARGET: pkg
 
 matrix:
@@ -42,7 +42,7 @@ matrix:
       COMPILER: clang
     - TARGET: cygwin64
       COMPILER: clang
-    - TARGET: msys64
+    # - TARGET: msys64
 
 cache:
   - 'c:\cygwin\home'
