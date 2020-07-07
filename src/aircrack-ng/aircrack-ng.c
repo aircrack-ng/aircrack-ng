@@ -6255,52 +6255,52 @@ int main(int argc, char * argv[])
 				break;
 
 			case 'E':
+			{
+				// Make sure there's enough space for file
+				// extension just in case it was forgotten
+				const size_t wkp_len = strlen(optarg) + 6;
+				opt.wkp = (char *) calloc(1, wkp_len);
+				if (opt.wkp == NULL)
 				{
-					// Make sure there's enough space for file
-					// extension just in case it was forgotten
-					const size_t wkp_len = strlen(optarg) + 6;
-					opt.wkp = (char *) calloc(1, wkp_len);
-					if (opt.wkp == NULL)
-					{
-						printf("Error allocating memory\n");
-						return (EXIT_FAILURE);
-					}
-
-					strlcpy(opt.wkp, optarg, wkp_len);
+					printf("Error allocating memory\n");
+					return (EXIT_FAILURE);
 				}
-				break;
+
+				strlcpy(opt.wkp, optarg, wkp_len);
+			}
+			break;
 
 			case 'J':
+			{
+				// Make sure there's enough space for file
+				// extension just in case it was forgotten
+				const size_t hccap_len = strlen(optarg) + 8;
+				opt.hccap = (char *) calloc(1, hccap_len);
+				if (opt.hccap == NULL)
 				{
-					// Make sure there's enough space for file
-					// extension just in case it was forgotten
-					const size_t hccap_len = strlen(optarg) + 8;
-					opt.hccap = (char *) calloc(1, hccap_len);
-					if (opt.hccap == NULL)
-					{
-						printf("Error allocating memory\n");
-						return (EXIT_FAILURE);
-					}
-
-					strlcpy(opt.hccap, optarg, hccap_len);
+					printf("Error allocating memory\n");
+					return (EXIT_FAILURE);
 				}
-				break;
+
+				strlcpy(opt.hccap, optarg, hccap_len);
+			}
+			break;
 
 			case 'j':
+			{
+				// Make sure there's enough space for file
+				// extension just in case it was forgotten
+				const size_t hccapx_len = strlen(optarg) + 8;
+				opt.hccapx = (char *) calloc(1, hccapx_len);
+				if (opt.hccapx == NULL)
 				{
-					// Make sure there's enough space for file
-					// extension just in case it was forgotten
-					const size_t hccapx_len = strlen(optarg) + 8;
-					opt.hccapx = (char *) calloc(1, hccapx_len);
-					if (opt.hccapx == NULL)
-					{
-						printf("Error allocating memory\n");
-						return (EXIT_FAILURE);
-					}
-
-					strlcpy(opt.hccapx, optarg, sizeof(hccapx_len));
+					printf("Error allocating memory\n");
+					return (EXIT_FAILURE);
 				}
-				break;
+
+				strlcpy(opt.hccapx, optarg, sizeof(hccapx_len));
+			}
+			break;
 
 			case 'M':
 
