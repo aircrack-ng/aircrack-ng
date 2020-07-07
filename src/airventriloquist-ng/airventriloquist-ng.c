@@ -173,7 +173,7 @@ static struct local_options
 } lopt;
 
 struct devices dev;
-struct wif *_wi_in, *_wi_out;
+extern struct wif *_wi_in, *_wi_out;
 
 struct ARP_req
 {
@@ -195,8 +195,8 @@ struct APt
 };
 
 unsigned long nb_pkt_sent;
-u_int8_t h80211[4096];
-static u_int8_t tmpbuf[4096];
+extern u_int8_t h80211[4096];
+extern u_int8_t tmpbuf[4096];
 
 static int tcp_test(const char * ip_str, const short port)
 {
