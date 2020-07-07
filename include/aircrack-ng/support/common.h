@@ -315,7 +315,7 @@ get_line_from_buffer(char * buffer, size_t size, char * line)
 	{
 		*cursor = '\0';
 		cursor++;
-		strcpy(line, buffer);
+		strlcpy(line, buffer, size);
 		memmove(buffer, cursor, size - (strlen(line) + 1));
 
 		return (size - (strlen(line) + 1));
