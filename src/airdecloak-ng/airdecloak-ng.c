@@ -1795,14 +1795,16 @@ int main(int argc, char * argv[])
 		if (!manual_cloaked_fname)
 		{
 			_filename_output_cloaked_len = temp + 9 + 5;
-			_filename_output_cloaked = (char *) calloc(_filename_output_cloaked_len, 1);
+			_filename_output_cloaked
+				= (char *) calloc(_filename_output_cloaked_len, 1);
 			ALLEGE(_filename_output_cloaked != NULL);
 		}
 
 		if (!manual_filtered_fname)
 		{
 			_filename_output_filtered_len = temp + 10 + 5;
-			_filename_output_filtered = (char *) calloc(_filename_output_filtered_len, 1);
+			_filename_output_filtered
+				= (char *) calloc(_filename_output_filtered_len, 1);
 			ALLEGE(_filename_output_filtered != NULL);
 		}
 
@@ -1832,14 +1834,18 @@ int main(int argc, char * argv[])
 				strlcpy(_filename_output_cloaked,
 						input_filename,
 						_filename_output_cloaked_len);
-				strlcat(_filename_output_cloaked, "-cloaked.pcap", _filename_output_cloaked_len);
+				strlcat(_filename_output_cloaked,
+						"-cloaked.pcap",
+						_filename_output_cloaked_len);
 			}
 			if (!manual_filtered_fname)
 			{
 				strlcpy(_filename_output_filtered,
 						input_filename,
 						_filename_output_filtered_len);
-				strlcat(_filename_output_filtered, "-filtered.pcap", _filename_output_filtered_len);
+				strlcat(_filename_output_filtered,
+						"-filtered.pcap",
+						_filename_output_filtered_len);
 			}
 		}
 	}

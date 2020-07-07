@@ -362,7 +362,8 @@ static void process_directory(const char * dir, time_t begin)
 		ALLEGE(fullname != NULL);
 		ALLEGE(strlcpy(fullname, dir, fullname_size) < fullname_size);
 		ALLEGE(strlcat(fullname, "/", fullname_size) < fullname_size);
-		ALLEGE(strlcat(fullname, curent->d_name, fullname_size) < fullname_size);
+		ALLEGE(strlcat(fullname, curent->d_name, fullname_size)
+			   < fullname_size);
 
 		if (stat(fullname, &curstat))
 		{

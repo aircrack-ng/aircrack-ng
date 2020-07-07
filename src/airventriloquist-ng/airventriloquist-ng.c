@@ -526,8 +526,7 @@ static u_int16_t calcsum(char * buffer, size_t length)
 	for (int i = 0; i < length - 1; i += 2)
 		sum += (buffer[i] << 8) + buffer[i + 1];
 
-	if (length % 2)
-		sum += buffer[length - 1];
+	if (length % 2) sum += buffer[length - 1];
 
 	while (sum >> 16) sum = (sum & 0xFFFF) + (sum >> 16);
 
@@ -548,8 +547,7 @@ static u_int16_t calcsum_for_protocol(u_int16_t protocol,
 	for (int i = 0; i < length - 1; i += 2)
 		chksum += (buf[i] << 8) + buf[i + 1];
 
-	if (length % 2)
-		chksum += buf[length - 1];
+	if (length % 2) chksum += buf[length - 1];
 
 	// Add the pseudo-header
 	chksum += *(ip_src++);
@@ -570,18 +568,14 @@ static u_int16_t calcsum_for_protocol(u_int16_t protocol,
 // This needs to be cleaned up so that we can do UDP/TCP in one function. Don't
 // want to do that now and risk
 // breaking UDP checksums right now
-static u_int16_t calcsum_tcp(char * buf,
-							 size_t length,
-							 u_int32_t src_addr,
-							 u_int32_t dest_addr)
+static u_int16_t
+calcsum_tcp(char * buf, size_t length, u_int32_t src_addr, u_int32_t dest_addr)
 {
 	return calcsum_for_protocol(IPPROTO_TCP, buf, length, src_addr, dest_addr);
 }
 
-static u_int16_t calcsum_udp(char * buf,
-							 size_t length,
-							 u_int32_t src_addr,
-							 u_int32_t dest_addr)
+static u_int16_t
+calcsum_udp(char * buf, size_t length, u_int32_t src_addr, u_int32_t dest_addr)
 {
 	return calcsum_for_protocol(IPPROTO_UDP, buf, length, src_addr, dest_addr);
 }
@@ -1059,8 +1053,8 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 						p_resip_ack->tot_len
 							= htons(hdr_size + sizeof(struct ip_frame));
 						p_resip_ack->check = 0;
-						p_resip_ack->check
-							= calcsum((void *) p_resip_ack, sizeof(struct ip_frame));
+						p_resip_ack->check = calcsum((void *) p_resip_ack,
+													 sizeof(struct ip_frame));
 
 						// We could try some stuff with tcp reset
 						p_restcp_ack->rst = 1;
@@ -1214,8 +1208,8 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 								+ sizeof(struct ip_frame));
 					// Set checksum to zero before calculating...
 					p_resip->check = 0;
-					p_resip->check = calcsum((void *) p_resip,
-											 sizeof(struct ip_frame));
+					p_resip->check
+						= calcsum((void *) p_resip, sizeof(struct ip_frame));
 
 					p_resudp->len = htons(dns_resplen + sizeof(struct udp_hdr));
 					p_resudp->checksum = 0;
@@ -1271,8 +1265,8 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 						= (struct ip_frame *) (pkt + offset_ip);
 					// Set checksum to zero before calculating checksum...
 					p_resip->check = 0;
-					p_resip->check = calcsum((void *) p_resip,
-											 sizeof(struct ip_frame));
+					p_resip->check
+						= calcsum((void *) p_resip, sizeof(struct ip_frame));
 
 					struct icmp * p_resicmp
 						= (struct icmp *) (pkt + size_80211hdr
