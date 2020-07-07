@@ -64,6 +64,7 @@ nobase_aircrack_HEADERS = 	%D%/aircrack-ng/adt/avl_tree.h \
                             %D%/aircrack-ng/crypto/gcrypt-openssl-wrapper.h \
                             %D%/aircrack-ng/crypto/sha1-git.h \
                             %D%/aircrack-ng/crypto/sha1-sse2.h \
+                            %D%/aircrack-ng/compat.h \
                             %D%/aircrack-ng/defs.h \
                             %D%/aircrack-ng/osdep/byteorder.h \
                             %D%/aircrack-ng/osdep/channel.h \
