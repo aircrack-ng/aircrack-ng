@@ -6298,7 +6298,7 @@ int main(int argc, char * argv[])
 					return (EXIT_FAILURE);
 				}
 
-				strlcpy(opt.hccapx, optarg, sizeof(hccapx_len));
+				strlcpy(opt.hccapx, optarg, hccapx_len);
 			}
 			break;
 
