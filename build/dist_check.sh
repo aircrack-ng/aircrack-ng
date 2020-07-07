@@ -15,7 +15,7 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
 else
     ./autogen.sh
 fi
-make
+make || { cat config.log; exit 1; }
 make dist
 
 BN=$(find . -name '*.tar.gz' | tail -n1 | sed -e 's/\.tar\.gz//g;s/^\.\///g')
@@ -27,7 +27,7 @@ cd dist_build
 tar xzf "../${BN}.tar.gz"
 cd "$BN"
 if [ "$TRAVIS_OS_NAME" == "osx" ]; then ./configure --with-experimental --with-ext-scripts; else ./configure --with-experimental --with-ext-scripts; fi
-make
+make || { cat config.log; exit 1; }
 make check || { find . -name 'test-suite.log' -exec cat {} ';' && exit 1; }
 make DESTDIR=/tmp/ac install
 

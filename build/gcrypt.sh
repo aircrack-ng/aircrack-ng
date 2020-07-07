@@ -10,7 +10,7 @@ esac
 
 # shellcheck disable=SC2086
 ./autogen.sh --with-experimental --with-gcrypt ${EXTRA} || { cat config.log; exit 1; }
-make
+make || { cat config.log; exit 1; }
 make check || { find . -name 'test-suite.log' -exec cat {} ';' && exit 1; }
 make clean
 exit 0
