@@ -6243,16 +6243,18 @@ int main(int argc, char * argv[])
 				break;
 
 			case 'l':
-
-				opt.logKeyToFile = (char *) calloc(1, strlen(optarg) + 1);
+			{
+				const size_t optarg_len = strlen(optarg) + 1;
+				opt.logKeyToFile = (char *) calloc(1, optarg_len);
 				if (opt.logKeyToFile == NULL)
 				{
 					printf("Error allocating memory\n");
 					return (EXIT_FAILURE);
 				}
 
-				strlcpy(opt.logKeyToFile, optarg, sizeof(opt.logKeyToFile));
-				break;
+				strlcpy(opt.logKeyToFile, optarg, optarg_len);
+			}
+			break;
 
 			case 'E':
 			{
