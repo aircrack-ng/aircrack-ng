@@ -35,8 +35,9 @@
 #include "aircrack-ng/adt/avl_tree.h"
 
 #define BALANCE(n)                                                             \
-	((((n)->left == NULL) ? 0 : (n)->left->height)                             \
-	 - (((n)->right == NULL) ? 0 : (n)->right->height))
+	(((n) == NULL) ? 0                                                         \
+				   : (((n)->left == NULL) ? 0 : (n)->left->height)             \
+						 - (((n)->right == NULL) ? 0 : (n)->right->height))
 
 /*
  * private data types
@@ -358,7 +359,7 @@ static int _remove(c_avl_tree_t * t, c_avl_node_t * n)
 {
 	assert((t != NULL) && (n != NULL));
 
-	if ((n->left != NULL) && (n->right != NULL))
+	if (n && (n->left != NULL) && (n->right != NULL))
 	{
 		c_avl_node_t * r; /* replacement node */
 		if (BALANCE(n) > 0) /* left subtree is higher */
