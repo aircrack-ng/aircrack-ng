@@ -968,7 +968,7 @@ static int checkbssids(const char * bssidlist)
 	return (nbBSSID);
 }
 
-static void session_save_thread(void * arg)
+static THREAD_ENTRY(session_save_thread)
 {
 	UNUSED_PARAM(arg);
 
@@ -979,7 +979,7 @@ static void session_save_thread(void * arg)
 
 	if (!cracking_session || opt.stdin_dict)
 	{
-		return;
+		return (NULL);
 	}
 
 	// Start chrono
@@ -1025,6 +1025,8 @@ static void session_save_thread(void * arg)
 		// Update amount of keys tried and save it
 		ac_session_save(cracking_session, (uint64_t) pos, nb_tried);
 	}
+
+	return (NULL);
 }
 
 static int mergebssids(const char * bssidlist, unsigned char * bssid)
@@ -1980,7 +1982,7 @@ static int packet_reader_process_packet(packet_reader_t * me,
  * @param arg A heap allocated, filled in \a packet_reader_t structure.
  *            We handle releasing the memory upon function exit.
  */
-static void packet_reader_thread(void * arg)
+static THREAD_ENTRY(packet_reader_thread)
 {
 	REQUIRE(arg != NULL);
 
@@ -2291,6 +2293,8 @@ read_fail:
 	if (fd != -1) close(fd);
 
 	free(arg);
+
+	return (NULL);
 }
 
 /* timing routine */
@@ -2374,7 +2378,7 @@ static ssize_t safe_write(int fd, void * buf, size_t len)
 
 /* each thread computes the votes over a subset of the IVs */
 
-static int crack_wep_thread(void * arg)
+static THREAD_ENTRY(crack_wep_thread)
 {
 	long xv, min, max;
 	unsigned char jj[256];
@@ -2396,7 +2400,7 @@ static int crack_wep_thread(void * arg)
 	{
 		if (safe_read(mc_pipe[cid][0], (void *) &B, sizeof(int)) != sizeof(int))
 		{
-			return (FAILURE);
+			return ((void *) FAILURE);
 		}
 		if (close_aircrack) break;
 
@@ -2641,7 +2645,7 @@ static int crack_wep_thread(void * arg)
 		}
 	}
 
-	return (0);
+	return ((void *) SUCCESS);
 }
 
 /* display the current votes */
@@ -3556,24 +3560,24 @@ static int do_wep_crack2(int B)
 	return (FAILURE);
 }
 
-static int inner_bruteforcer_thread(void * arg)
+static THREAD_ENTRY(inner_bruteforcer_thread)
 {
 	int i, j, k, l;
 	size_t nthread = (size_t) arg;
 	unsigned char wepkey[64];
-	int ret = 0;
+	void * ret = NULL;
 
 inner_bruteforcer_thread_start:
 
 	if (close_aircrack) return (ret);
 
-	if (wepkey_crack_success) return (SUCCESS);
+	if (wepkey_crack_success) return ((void *) SUCCESS);
 
 	/* we get the key for which we'll bruteforce the last 2 bytes from the pipe
 	 */
 	if (safe_read(bf_pipe[nthread][0], (void *) wepkey, 64) != 64)
 	{
-		return (FAILURE);
+		return ((void *) FAILURE);
 	}
 
 	if (close_aircrack) return (ret);
@@ -3599,7 +3603,7 @@ inner_bruteforcer_thread_start:
 						wepkey[opt.brutebytes[3]] = (uint8_t) j;
 
 						if (check_wep_key(wepkey, opt.keylen - 2, 0) == SUCCESS)
-							return (SUCCESS);
+							return ((void *) SUCCESS);
 					}
 				}
 			}
@@ -3620,7 +3624,7 @@ inner_bruteforcer_thread_start:
 					wepkey[opt.brutebytes[2]] = (uint8_t) j;
 
 					if (check_wep_key(wepkey, opt.keylen - 2, 0) == SUCCESS)
-						return (SUCCESS);
+						return ((void *) SUCCESS);
 				}
 			}
 		}
@@ -3636,7 +3640,7 @@ inner_bruteforcer_thread_start:
 				wepkey[opt.brutebytes[1]] = (uint8_t) j;
 
 				if (check_wep_key(wepkey, opt.keylen - 2, 0) == SUCCESS)
-					return (SUCCESS);
+					return ((void *) SUCCESS);
 			}
 		}
 	}
@@ -3647,7 +3651,7 @@ inner_bruteforcer_thread_start:
 			wepkey[opt.brutebytes[0]] = (uint8_t) j;
 
 			if (check_wep_key(wepkey, opt.keylen - 2, 0) == SUCCESS)
-				return (SUCCESS);
+				return ((void *) SUCCESS);
 		}
 	}
 
@@ -3967,7 +3971,7 @@ static inline int calculate_passphrase_length(uint8_t * key)
 	return (i);
 }
 
-static int crack_wpa_thread(void * arg)
+static THREAD_ENTRY(crack_wpa_thread)
 {
 	REQUIRE(arg != NULL);
 
@@ -3979,7 +3983,7 @@ static int crack_wpa_thread(void * arg)
 	struct WPA_data * data;
 	struct AP_info * ap;
 	int threadid = 0;
-	int ret = 0;
+	void * ret = NULL;
 	int i;
 	int j;
 
@@ -4092,7 +4096,7 @@ static int crack_wpa_thread(void * arg)
 	return (ret);
 }
 
-static int crack_wpa_pmkid_thread(void * arg)
+static THREAD_ENTRY(crack_wpa_pmkid_thread)
 {
 	REQUIRE(arg != NULL);
 
@@ -4104,7 +4108,7 @@ static int crack_wpa_pmkid_thread(void * arg)
 	struct WPA_data * data;
 	struct AP_info * ap;
 	int threadid = 0;
-	int ret = 0;
+	void * ret = NULL;
 	int i;
 	int j;
 	int nparallel = dso_ac_crypto_engine_simd_width();
@@ -5424,7 +5428,7 @@ static int perform_wep_crack(struct AP_info * ap_cur)
 			{
 				if (pthread_create(&(tid[id]),
 								   NULL,
-								   (void *) inner_bruteforcer_thread,
+								   &inner_bruteforcer_thread,
 								   (void *) (long) i)
 					!= 0)
 				{
@@ -5434,10 +5438,8 @@ static int perform_wep_crack(struct AP_info * ap_cur)
 				id++;
 			}
 
-			if (pthread_create(&(tid[id]),
-							   NULL,
-							   (void *) crack_wep_thread,
-							   (void *) (long) i)
+			if (pthread_create(
+					&(tid[id]), NULL, &crack_wep_thread, (void *) (long) i)
 				!= 0)
 			{
 				perror("pthread_create failed");
@@ -5645,9 +5647,9 @@ static int perform_wpa_crack(struct AP_info * ap_cur)
 
 			if (pthread_create(&(tid[id]),
 							   NULL,
-							   (void *) (ap_cur->wpa.state == 7
-											 ? crack_wpa_thread
-											 : crack_wpa_pmkid_thread),
+							   (ap_cur->wpa.state == 7
+									? &crack_wpa_thread
+									: &crack_wpa_pmkid_thread),
 							   (void *) &(wpa_data[i]))
 				!= 0)
 			{
@@ -6679,8 +6681,7 @@ int main(int argc, char * argv[])
 			request->mode = PACKET_READER_CHECK_MODE;
 			request->filename = optind_arg;
 
-			if (pthread_create(
-					&(tid[id]), NULL, (void *) packet_reader_thread, request)
+			if (pthread_create(&(tid[id]), NULL, &packet_reader_thread, request)
 				!= 0)
 			{
 				perror("pthread_create failed");
@@ -6929,8 +6930,7 @@ int main(int argc, char * argv[])
 		request->mode = PACKET_READER_READ_MODE;
 		request->filename = optind_arg;
 
-		if (pthread_create(
-				&(tid[id]), NULL, (void *) packet_reader_thread, request)
+		if (pthread_create(&(tid[id]), NULL, &packet_reader_thread, request)
 			!= 0)
 		{
 			perror("pthread_create failed");
@@ -7032,7 +7032,7 @@ __start:
 	if (cracking_session)
 	{
 		if (pthread_create(
-				&cracking_session_tid, NULL, (void *) session_save_thread, NULL)
+				&cracking_session_tid, NULL, &session_save_thread, NULL)
 			!= 0)
 		{
 			perror("pthread_create failed");
