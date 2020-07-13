@@ -2263,7 +2263,8 @@ static int getHDSK(void)
 
 int main(int argc, char * argv[])
 {
-	int i, j, n, ret, got_hdsk;
+	int i, j, ret, got_hdsk;
+	unsigned int n;
 	char *s, buf[128];
 	int caplen = 0;
 	unsigned char packet1[4096];

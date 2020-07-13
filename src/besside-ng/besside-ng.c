@@ -2859,7 +2859,7 @@ static int parse_hex(unsigned char * out, char * in, int l)
 	while (in)
 	{
 		char * p = strchr(in, ':');
-		int x;
+		unsigned int x;
 
 		if (--l < 0) err(1, "parse_hex len");
 
