@@ -383,7 +383,7 @@ static void color_on(void)
 	}
 }
 
-static void input_thread(void * arg)
+static THREAD_ENTRY(input_thread)
 {
 	UNUSED_PARAM(arg);
 
@@ -640,6 +640,8 @@ static void input_thread(void * arg)
 			ALLEGE(pthread_mutex_unlock(&(lopt.mx_print)) == 0);
 		}
 	}
+
+	return (NULL);
 }
 
 static FILE * open_oui_file(void)
@@ -4519,7 +4521,7 @@ json_get_value_for_name(const char * buffer, const char * name, char * value)
 	return (ret);
 }
 
-static void * gps_tracker_thread(void * arg)
+static THREAD_ENTRY(gps_tracker_thread)
 {
 	int gpsd_sock;
 	char line[1537], buffer[1537], data[1537];
@@ -6871,8 +6873,7 @@ int main(int argc, char * argv[])
 	if (lopt.background_mode == -1) lopt.background_mode = is_background();
 
 	if (!lopt.background_mode
-		&& pthread_create(&(lopt.input_tid), NULL, (void *) input_thread, NULL)
-			   != 0)
+		&& pthread_create(&(lopt.input_tid), NULL, &input_thread, NULL) != 0)
 	{
 		perror("pthread_create failed");
 		return (EXIT_FAILURE);

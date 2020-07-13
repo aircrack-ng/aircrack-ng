@@ -142,8 +142,10 @@ static void sql_error(sqlite3 * db)
 	fprintf(stderr, "Database error: %s\n", sqlite3_errmsg(db));
 }
 
-static int
-sql_exec_cb(sqlite3 * db, const char * sql, void * callback, void * cb_arg)
+static int sql_exec_cb(sqlite3 * db,
+					   const char * sql,
+					   int (*callback)(void *, int, char **, char **),
+					   void * cb_arg)
 {
 	REQUIRE(db != NULL);
 	REQUIRE(sql != NULL);

@@ -321,11 +321,6 @@ static pMAC_t rClient;
 pFrag_t rFragment;
 static pCF_t rCF;
 
-// Threads
-static void beacon_thread(void * arg);
-static void caffelatte_thread(void);
-static void cfrag_thread(void);
-
 static int addESSID(char * essid, int len, int expiration)
 {
 	pESSID_t tmp;
@@ -2654,7 +2649,7 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 	return (0);
 }
 
-static void beacon_thread(void * arg)
+static THREAD_ENTRY(beacon_thread)
 {
 	REQUIRE(arg != NULL);
 
@@ -2685,13 +2680,13 @@ static void beacon_thread(void * arg)
 			if ((rc = read(dev.fd_rtc, &n, sizeof(n))) < 0)
 			{
 				perror("read(/dev/rtc) failed");
-				return;
+				return (NULL);
 			}
 
 			if (rc == 0)
 			{
 				perror("EOF encountered on /dev/rtc");
-				return;
+				return (NULL);
 			}
 
 			ticks[0]++;
@@ -2849,15 +2844,17 @@ static void beacon_thread(void * arg)
 			if (my_send_packet(beacon, beacon_len) < 0)
 			{
 				printf("Error sending beacon!\n");
-				return;
+				return (NULL);
 			}
 
 			seq++;
 		}
 	}
+
+	return (NULL);
 }
 
-static void caffelatte_thread(void)
+static THREAD_ENTRY(caffelatte_thread)
 {
 	struct timeval tv, tv2;
 	float f, ticks[3];
@@ -2896,7 +2893,7 @@ static void caffelatte_thread(void)
 				if (my_send_packet(arp[arp_off1].buf,
 								   (size_t) arp[arp_off1].len)
 					< 0)
-					return;
+					return (NULL);
 
 				nb_pkt_sent_1++;
 
@@ -2907,7 +2904,7 @@ static void caffelatte_thread(void)
 					if (my_send_packet(arp[arp_off1].buf,
 									   (size_t) arp[arp_off1].len)
 						< 0)
-						return;
+						return (NULL);
 
 					nb_pkt_sent_1++;
 				}
@@ -2916,6 +2913,8 @@ static void caffelatte_thread(void)
 			}
 		}
 	}
+
+	return (NULL);
 }
 
 static int del_next_CF(pCF_t curCF)
@@ -2990,7 +2989,7 @@ static int cfrag_fuzz(unsigned char * packet,
 	return (0);
 }
 
-static void cfrag_thread(void)
+static THREAD_ENTRY(cfrag_thread)
 {
 	struct timeval tv, tv2;
 	float f, ticks[3];
@@ -3068,7 +3067,7 @@ static void cfrag_thread(void)
 					if (my_send_packet(buffer, curCF->fraglen[i]) < 0)
 					{
 						ALLEGE(pthread_mutex_unlock(&mx_cf) == 0);
-						return;
+						return (NULL);
 					}
 				}
 				memcpy(buffer, curCF->final, curCF->finallen);
@@ -3080,7 +3079,7 @@ static void cfrag_thread(void)
 				if (my_send_packet(buffer, curCF->finallen) < 0)
 				{
 					ALLEGE(pthread_mutex_unlock(&mx_cf) == 0);
-					return;
+					return (NULL);
 				}
 
 				curCF->xmitcount++;
@@ -3103,7 +3102,7 @@ static void cfrag_thread(void)
 						if (my_send_packet(buffer, curCF->fraglen[i]) < 0)
 						{
 							ALLEGE(pthread_mutex_unlock(&mx_cf) == 0);
-							return;
+							return (NULL);
 						}
 					}
 					memcpy(buffer, curCF->final, curCF->finallen);
@@ -3115,7 +3114,7 @@ static void cfrag_thread(void)
 					if (my_send_packet(buffer, curCF->finallen) < 0)
 					{
 						ALLEGE(pthread_mutex_unlock(&mx_cf) == 0);
-						return;
+						return (NULL);
 					}
 
 					curCF->xmitcount++;
@@ -3125,6 +3124,8 @@ static void cfrag_thread(void)
 			ALLEGE(pthread_mutex_unlock(&mx_cf) == 0);
 		}
 	}
+
+	return (NULL);
 }
 
 int main(int argc, char * argv[])
@@ -4027,9 +4028,7 @@ int main(int argc, char * argv[])
 		}
 	}
 	// start sending beacons
-	if (pthread_create(
-			&(beaconpid), NULL, (void *) beacon_thread, (void *) &apc)
-		!= 0)
+	if (pthread_create(&(beaconpid), NULL, &beacon_thread, (void *) &apc) != 0)
 	{
 		perror("Beacons pthread_create");
 		return (EXIT_FAILURE);
@@ -4041,8 +4040,7 @@ int main(int argc, char * argv[])
 										* sizeof(struct ARP_req));
 		ALLEGE(arp != NULL);
 
-		if (pthread_create(
-				&(caffelattepid), NULL, (void *) caffelatte_thread, NULL)
+		if (pthread_create(&(caffelattepid), NULL, &caffelatte_thread, NULL)
 			!= 0)
 		{
 			perror("Caffe-Latte pthread_create");
@@ -4052,7 +4050,7 @@ int main(int argc, char * argv[])
 
 	if (lopt.cf_attack)
 	{
-		if (pthread_create(&(cfragpid), NULL, (void *) cfrag_thread, NULL) != 0)
+		if (pthread_create(&(cfragpid), NULL, &cfrag_thread, NULL) != 0)
 		{
 			perror("cfrag pthread_create");
 			return (EXIT_FAILURE);

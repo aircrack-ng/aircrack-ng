@@ -124,6 +124,8 @@
 
 #define ArrayCount(a) (sizeof((a)) / sizeof((a)[0]))
 
+#define THREAD_ENTRY(fn) void * fn(void * arg)
+
 #define IGNORE_LTZ(c)                                                          \
 	do                                                                         \
 	{                                                                          \
