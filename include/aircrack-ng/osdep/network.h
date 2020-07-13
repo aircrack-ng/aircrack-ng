@@ -33,7 +33,7 @@ struct net_hdr
 {
 	uint8_t nh_type;
 	uint32_t nh_len;
-	uint8_t nh_data[0];
+	uint8_t nh_data[];
 } __packed;
 
 IMPORT struct wif * net_open(char * iface);
