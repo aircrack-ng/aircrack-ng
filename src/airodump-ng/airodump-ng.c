@@ -4896,11 +4896,7 @@ static void sighandler(int signum)
 
 	if (signum == SIGALRM)
 	{
-#if defined(__sun__)
 		fprintf(stdout,
-#else
-		dprintf(STDERR_FILENO,
-#endif
 				"Caught signal 14 (SIGALRM). Please"
 				" contact the author!\n\n");
 		show_cursor();
