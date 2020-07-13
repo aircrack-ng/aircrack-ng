@@ -198,7 +198,7 @@ static inline size_t ustrlen(const uint8_t * s1)
 }
 
 #define destroy(var, fn)                                                       \
-	({                                                                         \
+	__extension__({                                                            \
 		if ((var) != NULL)                                                     \
 		{                                                                      \
 			fn((__typeof__(var))(var));                                        \
