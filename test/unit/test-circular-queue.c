@@ -16,7 +16,7 @@ static void test_cqueue_init_and_empty(void ** state)
 	(void) state;
 
 	// GIVEN
-	const size_t size = 64;
+#define	size 64
 	uint8_t buffer[size];
 
 	// WHEN
@@ -28,6 +28,7 @@ static void test_cqueue_init_and_empty(void ** state)
 	assert_false(circular_queue_is_full(cq));
 
 	// END
+#undef size
 	circular_queue_free(cq);
 }
 

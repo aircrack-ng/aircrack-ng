@@ -16,7 +16,7 @@ static void test_cbuf_init_and_empty(void ** state)
 	(void) state;
 
 	// GIVEN
-	const size_t size = 64;
+#define	size 64
 	uint8_t buffer[size];
 
 	// WHEN
@@ -30,6 +30,7 @@ static void test_cbuf_init_and_empty(void ** state)
 	assert_int_equal(0, circular_buffer_size(cbuf));
 
 	// END
+#undef size
 	circular_buffer_free(cbuf);
 }
 
@@ -38,7 +39,7 @@ static void test_cbuf_byte_size_one_element(void ** state)
 	(void) state;
 
 	// GIVEN
-	const size_t size = 2;
+#define	size 2
 	uint8_t buffer[size];
 	cbuf_handle_t cbuf = circular_buffer_init(buffer, size, 1);
 
@@ -51,6 +52,7 @@ static void test_cbuf_byte_size_one_element(void ** state)
 	assert_false(circular_buffer_is_full(cbuf));
 
 	// END
+#undef size
 	circular_buffer_free(cbuf);
 }
 
@@ -59,7 +61,7 @@ static void test_cbuf_byte_size_two_element(void ** state)
 	(void) state;
 
 	// GIVEN
-	const size_t size = 2;
+#define	size 2
 	uint8_t buffer[size];
 	cbuf_handle_t cbuf = circular_buffer_init(buffer, size, 1);
 
@@ -73,6 +75,7 @@ static void test_cbuf_byte_size_two_element(void ** state)
 	assert_true(circular_buffer_is_full(cbuf));
 
 	// END
+#undef size
 	circular_buffer_free(cbuf);
 }
 
@@ -81,9 +84,9 @@ static void test_cbuf_multibyte_compare_buffer(void ** state)
 	(void) state;
 
 	// GIVEN
-	const size_t nb_elements = 2;
-	const size_t elementSize = 8;
-	const size_t size = nb_elements * elementSize;
+#define	nb_elements 2
+#define	elementSize 8
+#define	size (nb_elements * elementSize)
 	uint8_t buffer[size + 1];
 	buffer[size] = 0;
 	cbuf_handle_t cbuf = circular_buffer_init(buffer, size, elementSize);
@@ -99,6 +102,9 @@ static void test_cbuf_multibyte_compare_buffer(void ** state)
 	assert_string_equal("a1234567b1234567", buffer);
 
 	// END
+#undef size
+#undef elementSize
+#undef nb_elements
 	circular_buffer_free(cbuf);
 }
 
@@ -107,9 +113,9 @@ static void test_cbuf_multibyte_compare_buffer_of_short_put(void ** state)
 	(void) state;
 
 	// GIVEN
-	const size_t nb_elements = 2;
-	const size_t elementSize = 8;
-	const size_t size = nb_elements * elementSize;
+#define	nb_elements 2
+#define	elementSize 8
+#define	size (nb_elements * elementSize)
 	uint8_t buffer[size + 1];
 	buffer[size] = 0;
 	cbuf_handle_t cbuf = circular_buffer_init(buffer, size, elementSize);
@@ -125,6 +131,9 @@ static void test_cbuf_multibyte_compare_buffer_of_short_put(void ** state)
 	assert_memory_equal("a123\0\0\0\0b1234567", buffer, size);
 
 	// END
+#undef size
+#undef elementSize
+#undef nb_elements
 	circular_buffer_free(cbuf);
 }
 
@@ -133,9 +142,9 @@ static void test_cbuf_multibyte_get_first(void ** state)
 	(void) state;
 
 	// GIVEN
-	const size_t nb_elements = 2;
-	const size_t elementSize = 8;
-	const size_t size = nb_elements * elementSize;
+#define	nb_elements 2
+#define	elementSize 8
+#define	size (nb_elements * elementSize)
 	uint8_t buffer[size + 1];
 	buffer[size] = 0;
 	cbuf_handle_t cbuf = circular_buffer_init(buffer, size, elementSize);
@@ -152,6 +161,9 @@ static void test_cbuf_multibyte_get_first(void ** state)
 	assert_memory_equal("a123\0\0\0\0", output, 8);
 
 	// END
+#undef size
+#undef elementSize
+#undef nb_elements
 	circular_buffer_free(cbuf);
 }
 
@@ -160,9 +172,9 @@ static void test_cbuf_multibyte_get_both(void ** state)
 	(void) state;
 
 	// GIVEN
-	const size_t nb_elements = 2;
-	const size_t elementSize = 8;
-	const size_t size = nb_elements * elementSize;
+#define	nb_elements 2
+#define	elementSize 8
+#define	size (nb_elements * elementSize)
 	uint8_t buffer[size + 1];
 	buffer[size] = 0;
 	cbuf_handle_t cbuf = circular_buffer_init(buffer, size, elementSize);
@@ -185,6 +197,9 @@ static void test_cbuf_multibyte_get_both(void ** state)
 	assert_memory_equal("b1234567", output, 8);
 
 	// END
+#undef size
+#undef elementSize
+#undef nb_elements
 	circular_buffer_free(cbuf);
 }
 
