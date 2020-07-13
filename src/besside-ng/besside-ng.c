@@ -3202,28 +3202,18 @@ static void print_state(int UNUSED(x))
 	} while (c != c2);
 	printf("\n");
 
-	printf(
-#if !defined(__APPLE_CC__) && !defined(__NetBSD__) && !defined(__OpenBSD__)
-		"Now: %lu.%lu\n",
-#else
-		"Now: %lu.%d\n",
-#endif
-		s->s_now.tv_sec,
-		s->s_now.tv_usec);
+	printf("Now: %lu.%lu\n",
+		   (unsigned long) s->s_now.tv_sec,
+		   (unsigned long) s->s_now.tv_usec);
 
 	while (t)
 	{
-		printf(
-#if !defined(__APPLE_CC__) && !defined(__NetBSD__) && !defined(__OpenBSD__)
-			"Timer: %lu.%lu %p[%s](%p)\n",
-#else
-			"Timer: %lu.%d %p[%s](%p)\n",
-#endif
-			t->t_tv.tv_sec,
-			t->t_tv.tv_usec,
-			t->t_cb,
-			timer_cb2str(t->t_cb),
-			t->t_arg);
+		printf("Timer: %lu.%lu %p[%s](%p)\n",
+			   (unsigned long) t->t_tv.tv_sec,
+			   (unsigned long) t->t_tv.tv_usec,
+			   t->t_cb,
+			   timer_cb2str(t->t_cb),
+			   t->t_arg);
 
 		t = t->t_next;
 	}
@@ -3245,16 +3235,14 @@ static void usage(char * prog)
 		   "\n"
 		   "  Options:\n"
 		   "\n"
-		   "       -b <victim mac> : Victim BSSID\n"
-#ifdef HAVE_PCRE
-		   "       -R <victim ap regex> : Victim ESSID regex\n"
-#endif
-		   "       -s <WPA server> : Upload wpa.cap for cracking\n"
-		   "       -c       <chan> : chanlock\n"
-		   "       -p       <pps>  : flood rate\n"
-		   "       -W              : WPA only\n"
-		   "       -v              : verbose, -vv for more, etc.\n"
-		   "       -h              : This help screen\n"
+		   "       -b <victim mac>       Victim BSSID\n"
+		   "       -R <victim ap regex>  Victim ESSID regex (requires pcre)\n"
+		   "       -s <WPA server>       Upload wpa.cap for cracking\n"
+		   "       -c <chan>             chanlock\n"
+		   "       -p <pps>              flood rate\n"
+		   "       -W                    WPA only\n"
+		   "       -v                    verbose, -vv for more, etc.\n"
+		   "       -h                    This help screen\n"
 		   "\n",
 		   version_info,
 		   prog);
@@ -3317,8 +3305,8 @@ int main(int argc, char * argv[])
 				parse_hex(_conf.cf_bssid, optarg, 6);
 				break;
 
-#ifdef HAVE_PCRE
 			case 'R':
+#ifdef HAVE_PCRE
 				if (_conf.cf_essid_regex != NULL)
 				{
 					printf("Error: ESSID regular expression already given. "
@@ -3338,6 +3326,10 @@ int main(int argc, char * argv[])
 					exit(EXIT_FAILURE);
 				}
 				break;
+#else
+				printf("Error: Regular expressions are unsupported in this "
+					   "build.\n");
+				exit(EXIT_FAILURE);
 #endif
 
 			default:

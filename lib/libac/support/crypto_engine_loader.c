@@ -374,32 +374,36 @@ EXPORT char * ac_crypto_engine_loader_best_library_for(int simd_features)
 	}
 	free(working_directory);
 
-	snprintf(module_filename,
-			 sizeof(module_filename) - 1,
 #if defined(WIN32_PORTABLE)
-			 "%s%s%s",
+#define LIB_FMT "%s%s%s"
 #else
-			 "%s/%s%s%s",
-			 library_path,
+#define LIB_FMT "%s/%s%s%s", library_path
 #endif
+
 #if defined(WIN32) || defined(_WIN32) || defined(CYGWIN)
 #if defined(MSYS2)
-			 "msys-",
+#define LIB_PREFIX "msys-"
 #else
-			 "cyg",
+#define LIB_PREFIX "cyg"
 #endif
 #else
-			 "lib",
+#define LIB_PREFIX "lib"
 #endif
-			 buffer,
+
 #if defined(WIN32) || defined(_WIN32) || defined(CYGWIN)
-			 LT_CYGWIN_VER
+#define LIB_SUFFIX LT_CYGWIN_VER
 #elif defined(__APPLE__)
-			 ".dylib"
+#define LIB_SUFFIX ".dylib"
 #else
-			 ".so"
+#define LIB_SUFFIX ".so"
 #endif
-			 )
+
+	snprintf(module_filename,
+			 sizeof(module_filename) - 1,
+			 LIB_FMT,
+			 LIB_PREFIX,
+			 buffer,
+			 LIB_SUFFIX)
 			< 0
 		? abort()
 		: (void) 0;

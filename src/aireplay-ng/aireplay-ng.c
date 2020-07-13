@@ -5099,16 +5099,9 @@ static int tcp_test(const char * ip_str, const short port)
 	printf("ping %s:%d (min/avg/max): %.3fms/%.3fms/%.3fms\n",
 		   ip_str,
 		   port,
-		   min /
-#if defined(__x86_64__) && defined(__CYGWIN__)
-			   (0.0f + 1000),
-		   avg / (0.0f + 1000),
-		   max / (0.0f + 1000));
-#else
-			   1000.0,
-		   avg / 1000.0,
-		   max / 1000.0);
-#endif
+		   min / 1000.0f,
+		   avg / 1000.0f,
+		   max / 1000.0f);
 
 	return 0;
 }
@@ -5557,17 +5550,10 @@ static int do_attack_test(void)
 			avg2 /= ap[i].found;
 			PCT;
 			printf("Ping (min/avg/max): %.3fms/%.3fms/%.3fms Power: %.2f\n",
-#if defined(__x86_64__) && defined(__CYGWIN__)
-				   (min / (0.0f + 1000)),
-				   (avg / (0.0f + 1000)),
-				   (max / (0.0f + 1000)),
+				   (min / 1000.0f),
+				   (avg / 1000.0f),
+				   (max / 1000.0f),
 				   avg2);
-#else
-				   (min / 1000.0),
-				   (avg / 1000.0),
-				   (max / 1000.0),
-				   avg2);
-#endif
 		}
 		PCT;
 		printf("%2d/%2d: %3d%%\n\n",
@@ -5701,12 +5687,7 @@ static int do_attack_test(void)
 				if (ap[i].found > 0) avg2 /= ap[i].found;
 				PCT;
 				printf("Probing at %2.1f Mbps:\t%2d/%2d: %3d%%\n",
-					   wi_get_rate(_wi_out) /
-#if defined(__x86_64__) && defined(__CYGWIN__)
-						   (0.0f + 1000000),
-#else
-						   1000000.0,
-#endif
+					   wi_get_rate(_wi_out) / 1000000.0f,
 					   ap[i].found,
 					   REQUESTS,
 					   ((ap[i].found * 100) / REQUESTS));
