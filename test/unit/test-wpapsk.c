@@ -31,9 +31,9 @@
  * So, we force a bit of hacks to ensure we do link against it.
  */
 #ifdef USE_GCRYPT
-void * keep_libgcrypt_ = &gcry_md_open;
+void * keep_libgcrypt_ = (void *) ((uintptr_t) &gcry_md_open);
 #else
-void * keep_libcrypto_ = &HMAC;
+void * keep_libcrypto_ = (void *) ((uintptr_t) &HMAC);
 #endif
 
 void perform_unit_testing(void ** state)
