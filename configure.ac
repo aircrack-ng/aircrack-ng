@@ -67,7 +67,7 @@ AC_CONFIG_MACRO_DIR([build/m4/stubs])
 AC_CONFIG_HEADERS([config.h])
 
 AM_INIT_AUTOMAKE([1.14 dist-bzip2 dist-zip foreign subdir-objects])
-AM_MAINTAINER_MODE([enable])
+AM_MAINTAINER_MODE([disable])
 AC_SUBST([ACLOCAL_AMFLAGS], ["-I build/m4/stubs -I build/m4 \${ACLOCAL_FLAGS}"])
 
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
