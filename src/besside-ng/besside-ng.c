@@ -3211,7 +3211,7 @@ static void print_state(int UNUSED(x))
 		printf("Timer: %lu.%lu %p[%s](%p)\n",
 			   (unsigned long) t->t_tv.tv_sec,
 			   (unsigned long) t->t_tv.tv_usec,
-			   t->t_cb,
+			   (void *) ((uintptr_t) t->t_cb),
 			   timer_cb2str(t->t_cb),
 			   t->t_arg);
 
