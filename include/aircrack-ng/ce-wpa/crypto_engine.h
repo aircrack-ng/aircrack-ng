@@ -97,7 +97,7 @@ typedef struct
 	union {
 		uint32_t v[8];
 		uint8_t c[32];
-	};
+	} data;
 } wpapsk_hash;
 
 #ifndef CACHELINE_SIZE

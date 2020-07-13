@@ -486,7 +486,7 @@ EXPORT void ac_crypto_engine_calc_ptk(ac_crypto_engine_t * engine,
 		memcpy(data + 6, pke + 6, 6);
 		memcpy(data + 12, pke + 35 - 23, 64); //-V512
 
-		sha256_prf_bits((unsigned char *) (pmk[vectorIdx].v),
+		sha256_prf_bits((unsigned char *) (pmk[vectorIdx].data.v),
 						32,
 						"Pairwise key expansion",
 						data,
