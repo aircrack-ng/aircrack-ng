@@ -236,7 +236,8 @@ typedef uint8_t u_int8_t;
 #endif
 
 // FreeBSD
-#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__) || defined(__MidnightBSD__) || defined(__NetBSD__)
+#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)     \
+	|| defined(__MidnightBSD__) || defined(__NetBSD__)
 #undef ushort
 #undef uint
 #include <sys/types.h>
