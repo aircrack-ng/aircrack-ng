@@ -2,7 +2,7 @@
 
 set -euf
 
-TESTS=$(./src/aircrack-ng --simd-list)
+TESTS=$(./aircrack-ng --simd-list)
 BENCHMARKS=benchmark.csv
 TOP=$(dirname "$0")/..
 REV=$(cd "$TOP" && "./evalrev")
@@ -13,18 +13,18 @@ echo "revision,processor,simd,nbcpus,kps" | tee -a "$BENCHMARKS"
 for T in $TESTS; do
     NCPU=$(nproc)
 
-    while [ $NCPU -ge 1 ]; do
+    while [ "$NCPU" -ge 1 ]; do
     	LOOPS=1
 
-    	while [ $LOOPS -le 5 ]; do
-        	RESULT=$(./src/aircrack-ng --simd=$T -p $NCPU -S | tr '\r' '\n' | awk -v max=0 '{if($1>max){max=$1}}END{print max}')
+    	while [ "$LOOPS" -le 5 ]; do
+        	RESULT=$(./aircrack-ng "--simd=$T" -p "$NCPU" -S | tr '\r' '\n' | awk -v max=0 '{if($1>max){max=$1}}END{print max}')
         	echo "$REV,$(uname -m),$T,$NCPU,$RESULT" | tee -a "$BENCHMARKS"
 
-        	LOOPS=$(($LOOPS + 1))
+        	LOOPS=$((LOOPS + 1))
         done
 
-        [ ${NCPU} -eq 1 ] && break
-        [ $(( $NCPU & 1 )) ] && NCPU=$((NCPU + 1))
+        [ "${NCPU}" -eq 1 ] && break
+        [ $((NCPU & 1)) ] && NCPU=$((NCPU + 1))
         NCPU=$((NCPU/2))
     done
 done

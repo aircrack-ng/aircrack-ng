@@ -19,7 +19,7 @@ CLANG_FORMAT_VERSION=$CLANG_MAJOR.$CLANG_MINOR
 
 # define a function to check the current $CLANG_FORMAT
 valid_clang_format() {
-	if which $CLANG_FORMAT > /dev/null 2>&1; then
+	if which "$CLANG_FORMAT" > /dev/null 2>&1; then
 		if $CLANG_FORMAT --version | grep -q $CLANG_FORMAT_VERSION; then
 			echo "Located $CLANG_FORMAT";
 			return 0;
@@ -66,11 +66,11 @@ if ! valid_clang_format; then
 fi;
 
 # Format all source code
-find src -iname '*.h' -a \( ! -path "include/aircrack-ng/third-party/*" -a ! -path "lib/radiotap/*" \) | \
-    xargs -n1 $CLANG_FORMAT -i -style=file
-find src -iname '*.cpp' -a \( ! -path "include/aircrack-ng/third-party/*" -a ! -path "lib/radiotap/*" \) | \
-    xargs -n1 $CLANG_FORMAT -i -style=file
-find src -iname '*.c' -a \( ! -path "include/aircrack-ng/third-party/*" -a ! -path "lib/radiotap/*" \) | \
-    xargs -n1 $CLANG_FORMAT -i -style=file
+find src -iname '*.h' -a \( ! -path "include/aircrack-ng/third-party/*" -a ! -path "lib/radiotap/*" \) -print0 | \
+    xargs -0 -n1 $CLANG_FORMAT -i -style=file
+find src -iname '*.cpp' -a \( ! -path "include/aircrack-ng/third-party/*" -a ! -path "lib/radiotap/*" \) -print0 | \
+    xargs -0 -n1 $CLANG_FORMAT -i -style=file
+find src -iname '*.c' -a \( ! -path "include/aircrack-ng/third-party/*" -a ! -path "lib/radiotap/*" \) -print0 | \
+    xargs -0 -n1 $CLANG_FORMAT -i -style=file
 $CLANG_FORMAT -i -style=file include/aircrack-ng/third-party/eapol.h
 $CLANG_FORMAT -i -style=file include/aircrack-ng/third-party/hashcat.h
