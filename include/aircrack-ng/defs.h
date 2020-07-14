@@ -173,7 +173,7 @@
 	} while (0)
 
 #if __STDC_VERSION__ >= 199901L
-#define DO_PRAGMA(x) _Pragma (#x)
+#define DO_PRAGMA(x) _Pragma(#x)
 #else
 #define DO_PRAGMA(x)
 #endif
