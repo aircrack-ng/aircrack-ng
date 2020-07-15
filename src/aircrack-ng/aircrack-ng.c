@@ -811,7 +811,7 @@ static inline void wl_count_next_block(struct WPA_data * data)
 
 			if (opt.dictidx[i].dictsize > READBUF_BLKSIZE)
 			{
-				if (pthread_mutex_trylock(&mx_dic) >= 0)
+				if (pthread_mutex_trylock(&mx_dic) == 0)
 				{
 					tmpword = (off_t) linecount(
 						opt.dicts[i], opt.dictidx[i].dictpos, 32);
