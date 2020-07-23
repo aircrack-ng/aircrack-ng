@@ -50,7 +50,7 @@
 
 #if defined(RADIOTAP_FAST_UNALIGNED_ACCESS)
 #define get_unaligned(p)					\
-({								\
+__extension__({								\
 	struct packed_dummy_struct {				\
 		typeof(*(p)) __val;				\
 	} __attribute__((packed)) *__ptr = (void *) (p);	\
@@ -59,7 +59,7 @@
 })
 #else
 #define get_unaligned(p)					\
-({								\
+__extension__({								\
  typeof(*(p)) __tmp;						\
  memmove(&__tmp, (p), sizeof(*(p)));				\
  __tmp;								\
