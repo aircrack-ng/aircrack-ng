@@ -45,14 +45,17 @@ AC_CHECK_LIB([bsd], [strlcpy], [ LIBS="$LIBS -lbsd" ], [:])
 AC_CHECK_FUNCS([strlcpy strlcat], [:])
 
 have_bsd=no
-AC_RUN_IFELSE([AC_LANG_PROGRAM([
-#include <stdlib.h>
-#include <string.h>
-],[
-#ifndef strlcpy
-exit(1);
-#endif
-])], [have_bsd=yes])
+if test "$cross_compiling" != yes
+then
+	AC_RUN_IFELSE([AC_LANG_PROGRAM([
+	#include <stdlib.h>
+	#include <string.h>
+	],[
+	#ifndef strlcpy
+	exit(1);
+	#endif
+	])], [have_bsd=yes])
+fi
 
 AM_CONDITIONAL([HAVE_STRLCAT], [test "$HAVE_STRLCAT" = yes || test "$have_bsd" = yes])
 AM_CONDITIONAL([HAVE_STRLCPY], [test "$HAVE_STRLCPY" = yes || test "$have_bsd" = yes])
