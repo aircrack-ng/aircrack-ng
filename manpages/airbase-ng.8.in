@@ -52,7 +52,7 @@ This is the source MAC for the man-in-the-middle attack. The "-M" must also be s
 .I -f <disallow>
 If this option is not specified, it defaults to "-f allow". This means the various client MAC filters (-d and -D) define which clients to accept. 
 
-By using the "-f disallow" option, this reverses selection and causes airbase to ignore the clients specified by the filters.
+By using the "-f disallow" option, this reverses selection and causes airbase-ng to ignore the clients specified by the filters.
 .TP
 .I -W <0|1>
 This sets the beacon WEP flag. Remember that clients will normally only connect to APs which are the same as themselves. Meaning WEP to WEP, open to open. 
