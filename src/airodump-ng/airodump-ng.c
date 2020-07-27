@@ -488,6 +488,19 @@ static void input_thread(void * arg)
 							 sizeof(lopt.message),
 							 "][ sorting by ESSID");
 					break;
+				case SORT_BY_UPTIME:
+					snprintf(lopt.message,
+							 sizeof(lopt.message),
+							 "][ sorting by uptime");
+					break;
+				default:
+					break;
+			}
+			ALLEGE(pthread_mutex_lock(&(lopt.mx_sort)) == 0);
+			dump_sort();
+			ALLEGE(pthread_mutex_unlock(&(lopt.mx_sort)) == 0);
+		}
+
 				default:
 					break;
 			}
@@ -3181,6 +3194,12 @@ static void dump_sort(void)
 										 (char *) ap_min->essid,
 										 ESSID_LENGTH))
 								* lopt.sort_inv
+							< 0)
+							ap_min = ap_cur;
+						break;
+					case SORT_BY_UPTIME:
+						if ((ap_cur->timestamp < ap_min->timestamp) 
+								&& lopt.sort_inv
 							< 0)
 							ap_min = ap_cur;
 						break;
