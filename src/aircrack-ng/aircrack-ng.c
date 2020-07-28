@@ -1602,9 +1602,19 @@ skip_station:
 
 	if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
 		&& (h80211[z + 6] & 0x80) == 0
-		&& (h80211[z + 5] & 0x01) != 0
-		&& st_cur->wpa.replay == replay_counter)
+		&& (h80211[z + 5] & 0x01) != 0)
 	{
+		if (st_cur->wpa.state == 0)
+		{
+			// no M1; so we store the M2 replay counter.
+			st_cur->wpa.replay = replay_counter;
+		}
+		else if (st_cur->wpa.replay != replay_counter)
+		{
+			// Bad replay counter value in message M2 or M4.
+			return (1);
+		}
+
 		if (memcmp(&h80211[z + 17], ZERO, sizeof(st_cur->wpa.snonce)) != 0)
 		{
 			memcpy(st_cur->wpa.snonce,
@@ -1666,13 +1676,16 @@ skip_station:
 	}
 
 	/* frame 3: Pairwise == 1, Install == 1, Ack == 1, MIC == 1 */
+	/* M3's replay counter MUST be larger than M1/M2's. */
 
 	if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) != 0
 		&& (h80211[z + 6] & 0x80) != 0
 		&& (h80211[z + 5] & 0x01) != 0
-		&& st_cur->wpa.replay == replay_counter)
+		&& st_cur->wpa.replay < replay_counter)
 	{
 		st_cur->wpa.found |= 1 << 3;
+		// Store M3 for comparison with M4.
+		st_cur->wpa.replay = replay_counter;
 
 		if (memcmp(&h80211[z + 17], ZERO, sizeof(st_cur->wpa.anonce)) != 0)
 		{
