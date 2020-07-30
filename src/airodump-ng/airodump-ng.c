@@ -3041,7 +3041,7 @@ write_packet:
 		gettimeofday(&tv, NULL);
 
 		pkh.tv_sec = (int32_t) tv.tv_sec;
-		pkh.tv_usec = (int32_t)((tv.tv_usec & ~0x1ff) + ri->ri_power + 64);
+		pkh.tv_usec = (int32_t) tv.tv_usec;
 
 		n = sizeof(pkh);
 
