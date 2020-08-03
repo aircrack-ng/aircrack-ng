@@ -1574,6 +1574,9 @@ skip_station:
 	{
 		memcpy(st_cur->wpa.anonce, &h80211[z + 17], sizeof(st_cur->wpa.anonce));
 
+		st_cur->wpa.tv_sec = pkh->tv_sec;
+		st_cur->wpa.tv_usec = pkh->tv_usec;
+
 		/* authenticator nonce set */
 		st_cur->wpa.state = 1;
 
@@ -1604,6 +1607,19 @@ skip_station:
 		&& (h80211[z + 6] & 0x80) == 0
 		&& (h80211[z + 5] & 0x01) != 0)
 	{
+		if ((st_cur->wpa.found & (1 << 1)) == (1 << 1))
+		{
+			if (st_cur->wpa.tv_sec != 0
+				&& (pkh->tv_sec - st_cur->wpa.tv_sec) >= 5)
+			{
+				st_cur->wpa.state &= ~1;
+				st_cur->wpa.found &= ~(1 << 1);
+			}
+		}
+
+		st_cur->wpa.tv_sec = pkh->tv_sec;
+		st_cur->wpa.tv_usec = pkh->tv_usec;
+
 		if (st_cur->wpa.state == 0)
 		{
 			// no M1; so we store the M2 replay counter.
@@ -1683,6 +1699,18 @@ skip_station:
 		&& (h80211[z + 5] & 0x01) != 0
 		&& st_cur->wpa.replay < replay_counter)
 	{
+		if ((st_cur->wpa.found & (1 << 1 | 1 << 2)) != 0)
+		{
+			if (st_cur->wpa.tv_sec != 0
+				&& (pkh->tv_sec - st_cur->wpa.tv_sec) >= 5)
+			{
+				st_cur->wpa.state &= ~(1 | 2);
+				st_cur->wpa.found &= ~(1 << 1 | 1 << 2);
+			}
+		}
+		st_cur->wpa.tv_sec = pkh->tv_sec;
+		st_cur->wpa.tv_usec = pkh->tv_usec;
+
 		st_cur->wpa.found |= 1 << 3;
 		// Store M3 for comparison with M4.
 		st_cur->wpa.replay = replay_counter;
