@@ -84,6 +84,13 @@ fi
 #
 AIRCRACK_NG_PROG_CC
 AIRCRACK_NG_PROG_CXX
+AX_CXX_COMPILE_STDCXX([17], [ext], [optional])
+if test "$HAVE_CXX17" = "0"; then
+    AX_CXX_COMPILE_STDCXX([14], [ext], [optional])
+    if test "$HAVE_CXX14" = "0"; then
+        AX_CXX_COMPILE_STDCXX([11], [ext], [mandatory])
+    fi
+fi
 AC_PROG_INSTALL
 AM_PROG_AS
 PKG_PROG_PKG_CONFIG
