@@ -305,6 +305,7 @@ ${PACKAGE} ${VERSION}
     OS:                          ${OS}
     ASAN:                        ${asan}
     CPU L1 cache-line size:      ${CACHELINE_SIZE}
+    LTO                          ${with_lto:-no}
 
   Crypto Libraries:
     Crypto Engine:               ${CRYPTO_TYPE}

@@ -187,8 +187,7 @@ void show_wep_stats(int B,
 					PTW_tableentry table[PTW_KEYHSBYTES][PTW_n],
 					int choices[KEYHSBYTES],
 					int depth[KEYHSBYTES],
-					int prod,
-					int keylimit);
+					int prod);
 
 /* display the current votes */
 
@@ -197,8 +196,7 @@ void show_wep_stats(int B,
 					PTW_tableentry table[PTW_KEYHSBYTES][PTW_n],
 					int choices[KEYHSBYTES],
 					int depth[KEYHSBYTES],
-					int prod,
-					int keylimit)
+					int prod)
 {
 	UNUSED_PARAM(B);
 	UNUSED_PARAM(force);
@@ -206,7 +204,6 @@ void show_wep_stats(int B,
 	UNUSED_PARAM(choices);
 	UNUSED_PARAM(depth);
 	UNUSED_PARAM(prod);
-	UNUSED_PARAM(keylimit);
 }
 
 static inline struct wstate * get_ws(void) { return &_wstate; }

@@ -70,6 +70,17 @@ case "$ax_cv_c_compiler_vendor" in
         ;;
 esac
 
+AC_ARG_WITH(lto,
+    [AS_HELP_STRING([--with-lto],
+        [enable link-time optimizations])])
+
+AS_IF([test "x$with_lto" = "xyes"], [
+    AX_CHECK_COMPILE_FLAG([-flto], [
+        AX_APPEND_FLAG(-flto, [opt_[]_AC_LANG_ABBREV[]flags])
+        AX_APPEND_FLAG(-flto, [opt_ldflags])
+    ])
+])
+
 AC_ARG_WITH(opt,
     [AS_HELP_STRING([--without-opt],
         [disable -O3 optimizations])])
