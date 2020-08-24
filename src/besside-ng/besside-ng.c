@@ -3236,7 +3236,7 @@ static void usage(char * prog)
 		   "  Options:\n"
 		   "\n"
 		   "       -b <victim mac>       Victim BSSID\n"
-		   "       -R <victim ap regex>  Victim ESSID regex (requires pcre)\n"
+		   "       -R <victim ap regex>  Victim ESSID regex (requires PCRE)\n"
 		   "       -s <WPA server>       Upload wpa.cap for cracking\n"
 		   "       -c <chan>             chanlock\n"
 		   "       -p <pps>              flood rate\n"

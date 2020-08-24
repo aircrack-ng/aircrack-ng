@@ -6386,7 +6386,7 @@ int main(int argc, char * argv[])
 					exit(EXIT_FAILURE);
 				}
 #else
-				printf("Error: Airodump-ng wasn't compiled with pcre support; "
+				printf("Error: Airodump-ng wasn't compiled with PCRE support; "
 					   "aborting\n");
 #endif
 
