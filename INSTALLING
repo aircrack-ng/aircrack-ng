@@ -199,6 +199,10 @@ to your choosing:
                     is to compile the generic optimization in the binary. --with-static-simd merely allows
                     to choose another one.
 
+* --enable-maintainer-mode: It is important to enable this flag when
+                            developing with Aircrack-ng. This flag enables
+                            additional compile warnings and safety features.
+
 ===== Examples =====
 
   * Configure and compiling:
@@ -299,7 +303,7 @@ to your choosing:
    ```
    export CFLAGS='-O0 -g'
    export CXXFLAGS='-O0 -g'
-   ./configure
+   ./configure --with-experimental --enable-maintainer-mode --without-opt
    make
    LD_LIBRARY_PATH=.libs gdb --args ./aircrack-ng [PARAMETERS]
    ```
