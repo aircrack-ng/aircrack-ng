@@ -617,10 +617,11 @@ static int linux_read(struct wif * wi,
 
 	if ((unsigned) count > sizeof(tmpbuf)) return (-1);
 
-	if ((caplen = read(dev->fd_in, tmpbuf, count)) < 0)
+	caplen = read(dev->fd_in, tmpbuf, count);
+	if (caplen < 0 && errno == EAGAIN)
+		return (-1);
+	else if (caplen < 0)
 	{
-		if (errno == EAGAIN) return (0);
-
 		perror("read failed");
 		return (-1);
 	}
@@ -942,19 +943,6 @@ static int linux_write(struct wif * wi,
 
 	/* radiotap header length is stored little endian on all systems */
 	if (usedrtap) ret -= letoh16(*p_rtlen);
-
-	if (ret < 0)
-	{
-		if (errno == EAGAIN || errno == EWOULDBLOCK || errno == ENOBUFS
-			|| errno == ENOMEM)
-		{
-			usleep(10000);
-			return (0);
-		}
-
-		perror("write failed");
-		return (-1);
-	}
 
 	return (ret);
 }

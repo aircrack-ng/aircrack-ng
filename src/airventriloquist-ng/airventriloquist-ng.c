@@ -1148,7 +1148,7 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 							printf("Error Sending Packet\n");
 						printf("\n");
 						// Uncomment to send RST packet to the server
-						// if (send_packet(_wi_out, tmpbuf, tmpbuf_len, true) != 0)
+						// if (send_packet(_wi_out, tmpbuf, tmpbuf_len, kRewriteSequenceNumber) != 0)
 						//    printf("ERROR: couldn't send Ack\n");
 						return;
 					}
