@@ -1502,8 +1502,7 @@ skip_station:
 				data_len -= 6;
 			}
 
-			if (me->mode == PACKET_READER_READ_MODE)
-				calculate_wep_keystream(body, data_len, ap_cur, h80211);
+			calculate_wep_keystream(body, data_len, ap_cur, h80211);
 
 			return (0);
 		}
@@ -5311,6 +5310,13 @@ static int perform_wep_crack(struct AP_info * ap_cur)
 
 	int ret = FAILURE;
 	int j = 0;
+	struct winsize ws;
+
+	if (ioctl(0, TIOCGWINSZ, &ws) < 0)
+	{
+		ws.ws_row = 25;
+		ws.ws_col = 80;
+	}
 
 	/* Default key length: 128 bits */
 	if (opt.keylen == 0) opt.keylen = 13;
@@ -5357,6 +5363,19 @@ static int perform_wep_crack(struct AP_info * ap_cur)
 								  - (ap_cur->nb_ivs_vague % PTW_TRY_STEP));
 		do
 		{
+			if (!opt.is_quiet)
+			{
+				char buf[1024];
+				snprintf(buf,
+						 sizeof(buf),
+						 "Got %ld out of %d IVs",
+						 ap_cur->nb_ivs_vague,
+						 opt.next_ptw_try);
+				moveto((ws.ws_col - (int) strlen(buf)) / 2, 6);
+				fputs(buf, stdout);
+				erase_line(0);
+			}
+
 			if (ap_cur->nb_ivs_vague >= opt.next_ptw_try)
 			{
 				if (!opt.is_quiet)
@@ -5382,7 +5401,7 @@ static int perform_wep_crack(struct AP_info * ap_cur)
 					printf("Failed. Next try with %d IVs.\n", opt.next_ptw_try);
 				}
 			}
-			if (ret) usleep(1000);
+			if (ret) usleep(8000);
 		} while (!close_aircrack && ret != 0);
 	}
 
@@ -6782,7 +6801,7 @@ int main(int argc, char * argv[])
 						break;
 
 					case 2:
-						printf("WEP (%ld IVs)\n", ap_cur->nb_ivs);
+						printf("WEP (%ld IVs)\n", ap_cur->nb_ivs_vague);
 						break;
 
 					case 3:
