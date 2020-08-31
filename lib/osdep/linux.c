@@ -660,7 +660,7 @@ static int linux_read(struct wif * wi,
 			{
 				ri->ri_power = (int32_t) load32_le(tmpbuf + 0x33);
 				ri->ri_noise = (int32_t) load32_le(tmpbuf + 0x33 + 12);
-				ri->ri_rate = load32_le(buf + 0x33 + 24) * 500000;
+				ri->ri_rate = load32_le(tmpbuf + 0x33 + 24) * 500000;
 
 				got_signal = 1;
 				got_noise = 1;
