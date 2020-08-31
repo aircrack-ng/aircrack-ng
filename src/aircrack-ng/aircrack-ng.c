@@ -143,8 +143,8 @@ static pthread_mutex_t mx_ivb; /* lock access to ivbuf array   */
 static pthread_mutex_t mx_dic; /* lock access to opt.dict      */
 static pthread_cond_t cv_eof; /* read EOF condition variable  */
 static int nb_eof = 0; /* # of threads who reached eof */
-static long nb_pkt = 0; /* # of packets read so far     */
-static long nb_prev_pkt = 0; /* # of packets read in prior pass */
+static volatile long nb_pkt = 0; /* # of packets read so far     */
+static volatile long nb_prev_pkt = 0; /* # of packets read in prior pass */
 static int mc_pipe[256][2]; /* master->child control pipe   */
 static int cm_pipe[256][2]; /* child->master results pipe   */
 static int bf_pipe[256][2]; /* bruteforcer 'queue' pipe	 */
@@ -2009,9 +2009,11 @@ static void packet_reader_thread(void * arg)
 
 	ALLEGE(signal(SIGINT, sighandler) != SIG_ERR);
 
-	rb.tail
-		= ((request->mode == PACKET_READER_READ_MODE && !opt.bssid_set) ? 1
-																		: 0);
+	rb.tail = (request->mode == PACKET_READER_CHECK_MODE
+			   || (request->mode == PACKET_READER_READ_MODE
+				   && (opt.essid_set || opt.bssid_set)))
+				  ? 0
+				  : 1;
 
 	if ((buffer = (unsigned char *) malloc(65536)) == NULL)
 	{
@@ -6922,13 +6924,15 @@ int main(int argc, char * argv[])
 
 	/* wait until threads re-read the original packets read in first pass */
 	ALLEGE(pthread_mutex_lock(&mx_eof) == 0);
-	if (!opt.bssid_set)
+	if (!opt.bssid_set && !opt.essid_set)
 	{
-		while (nb_prev_pkt != nb_pkt) pthread_cond_wait(&cv_eof, &mx_eof);
+		while (nb_prev_pkt > nb_pkt && nb_eof != id)
+			pthread_cond_wait(&cv_eof, &mx_eof);
 	}
 	else
 	{
-		while (nb_eof != id) pthread_cond_wait(&cv_eof, &mx_eof);
+		while (nb_prev_pkt >= nb_pkt && nb_eof != id)
+			pthread_cond_wait(&cv_eof, &mx_eof);
 	}
 	ALLEGE(pthread_mutex_unlock(&mx_eof) == 0);
 
