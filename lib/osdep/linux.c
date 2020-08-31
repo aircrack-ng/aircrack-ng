@@ -634,11 +634,6 @@ static int linux_read(struct wif * wi,
 			break;
 	}
 
-	memset(buf, 0, count);
-
-	/* XXX */
-	if (ri) memset(ri, 0, sizeof(*ri));
-
 	if (dlt)
 	{
 		// TODO(jbenden): Future code could receive the actual linktype received.
