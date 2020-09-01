@@ -3420,8 +3420,8 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	time_t tt;
 	struct tm * lt;
 	int nlines, i, n;
-	char strbuf[512];
-	char buffer[512];
+	char strbuf[1024];
+	char buffer[1024];
 	char ssid_list[512];
 	struct AP_info * ap_cur;
 	struct ST_info * st_cur;
