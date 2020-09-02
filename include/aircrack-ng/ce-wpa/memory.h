@@ -131,8 +131,7 @@ extern void * mem_alloc_func(size_t size);
  * this version same as mem_alloc, but initialized the memory
  * to NULL bytes, like CALLOC(3) function does
  */
-extern void * mem_calloc_func(size_t count,
-							  size_t size);
+extern void * mem_calloc_func(size_t count, size_t size);
 
 #define mem_alloc(a) mem_alloc_func(a)
 #define mem_calloc(a, b) mem_calloc_func(a, b)
@@ -144,12 +143,9 @@ extern void * mem_calloc_func(size_t count,
 #define mem_calloc_align(a, b, c) mem_calloc_align_func(a, b, c)
 
 /* These allow alignment and are wrappers to system-specific functions */
-void * mem_alloc_align_func(size_t size,
-							size_t align);
+void * mem_alloc_align_func(size_t size, size_t align);
 
-void * mem_calloc_align_func(size_t count,
-							 size_t size,
-							 size_t align);
+void * mem_calloc_align_func(size_t count, size_t size, size_t align);
 
 /*
  * Frees memory allocated with mem_alloc() and sets the pointer to NULL.
@@ -184,22 +180,18 @@ char * strdup_MSVC(const char * str);
  * Similar to the above function, except the memory can't be freed.
  * This one is used to reduce the overhead.
  */
-extern void * mem_alloc_tiny_func(size_t size,
-								  size_t align);
+extern void * mem_alloc_tiny_func(size_t size, size_t align);
 
 /*
  * this version same as mem_alloc_tiny, but initialized the memory
  * to NULL bytes, like CALLOC(3) function does
  */
-extern void * mem_calloc_tiny_func(size_t size,
-								   size_t align);
+extern void * mem_calloc_tiny_func(size_t size, size_t align);
 
 /*
  * Uses mem_alloc_tiny() to allocate the memory, and copies src in there.
  */
-extern void * mem_alloc_copy_func(void * src,
-								  size_t size,
-								  size_t align);
+extern void * mem_alloc_copy_func(void * src, size_t size, size_t align);
 
 /*
  * Similar to the above function, but for ASCIIZ strings.

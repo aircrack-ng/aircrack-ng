@@ -234,8 +234,7 @@ static inline int get_ip_port(char * iface, char * ip, const int ip_size)
 	if (!inet_aton(host, (struct in_addr *) &addr))
 		goto out; /* XXX resolve hostname */
 
-	if (strlen(host) > 15)
-		goto out;
+	if (strlen(host) > 15) goto out;
 
 	strncpy(ip, host, (size_t) ip_size);
 

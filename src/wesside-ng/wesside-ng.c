@@ -528,7 +528,8 @@ static void send_auth(struct wstate * ws)
 {
 	REQUIRE(ws != NULL);
 
-	unsigned char buf[sizeof(struct ieee80211_frame) * 16] __attribute__((aligned(8)));
+	unsigned char buf[sizeof(struct ieee80211_frame) * 16]
+		__attribute__((aligned(8)));
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	unsigned short * n;
 
@@ -1400,7 +1401,8 @@ send_fragment(struct wstate * ws, struct frag_state * fs, struct prga_info * pi)
 	REQUIRE(fs != NULL);
 	REQUIRE(pi != NULL);
 
-	unsigned char buf[sizeof(struct ieee80211_frame) * 256] __attribute__((aligned(8)));
+	unsigned char buf[sizeof(struct ieee80211_frame) * 16]
+		__attribute__((aligned(8)));
 	struct ieee80211_frame * wh;
 	unsigned char * body;
 	int fragsize;
@@ -1440,9 +1442,7 @@ send_fragment(struct wstate * ws, struct frag_state * fs, struct prga_info * pi)
 	pcrc = (unsigned int *) (body + fragsize); //-V1032
 	*pcrc = htole32(crc);
 
-	for (i = 0; fragsize < (INT_MAX - 4) && i < (fragsize + 4)
-				&& i < (sizeof(buf) - sizeof(*wh));
-		 i++)
+	for (i = 0; i < (fragsize + 4) && i < (sizeof(buf) - sizeof(*wh) - 1); i++)
 		body[i] ^= pi->pi_prga[i];
 
 	seq = (unsigned short *) &wh->i_seq;

@@ -2434,7 +2434,7 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 		{
 			if (packet[0] == 0x00) // asso req
 			{
-			  reasso = 0; //-V1048
+				reasso = 0; //-V1048
 				fixed = 4;
 			}
 			else

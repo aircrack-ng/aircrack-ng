@@ -486,7 +486,8 @@ static BOOLEAN read_packets(void)
 			// future)
 			_packet_elt_head->current->is_cloaked = VALID_FRAME_UNCLOAKED;
 		}
-		else if (_packet_elt_head->current->frame_type == FRAME_TYPE_DATA) //-V547
+		else if (_packet_elt_head->current->frame_type //-V547
+				 == FRAME_TYPE_DATA)
 		{
 			_packet_elt_head->current->is_cloaked
 				= UKNOWN_FRAME_CLOAKING_STATUS;
