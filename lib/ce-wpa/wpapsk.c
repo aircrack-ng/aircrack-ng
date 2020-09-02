@@ -109,8 +109,6 @@
 #endif
 #endif
 
-#include "aircrack-ng/ce-wpa/memdbg.h"
-
 #ifndef SIMD_CORE
 #undef SIMDSHA1body
 #define SIMDSHA1body SSESHA1body

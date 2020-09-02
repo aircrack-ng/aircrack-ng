@@ -68,7 +68,6 @@
 #include "aircrack-ng/ce-wpa/simd-intrinsics-load-flags.h"
 #include "aircrack-ng/ce-wpa/aligned.h"
 #include "aircrack-ng/ce-wpa/misc.h"
-#include "aircrack-ng/ce-wpa/memdbg.h"
 
 /* Shorter names for use in index calculations */
 #define VS32 SIMD_COEF_32
