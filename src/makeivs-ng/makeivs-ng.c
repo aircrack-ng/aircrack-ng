@@ -121,10 +121,6 @@ int main(int argc, char * argv[])
 				break;
 
 			case ':':
-
-				goto usage;
-				break;
-
 			case '?':
 
 				goto usage;
@@ -249,7 +245,6 @@ int main(int argc, char * argv[])
 
 			case 'f':
 
-				paramUsed = 1;
 				if (atoi(optarg) < 0 || atoi(optarg) > 0xFFFFFF)
 				{
 					printf(usage,

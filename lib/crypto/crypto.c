@@ -571,12 +571,12 @@ int known_clear(
 				 * bruteforce it later
 		 */
 		// ID=0
-		len = 2;
+		/*  len = 2; */
 		memcpy(ptr, "\x00\x00", len);
 		ptr += len;
 
 		// ip flags=don't fragment
-		len = 2;
+		/* len = 2; */
 		memcpy(ptr, "\x40\x00", len);
 		ptr += len;
 

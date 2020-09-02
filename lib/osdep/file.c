@@ -115,6 +115,7 @@ static int file_read(struct wif * wi,
 								*((uint64_t *) iterator.this_arg));
 						break;
 
+					case IEEE80211_RADIOTAP_DB_ANTSIGNAL:
 					case IEEE80211_RADIOTAP_DBM_ANTSIGNAL:
 						if (ri && !got_signal)
 						{
@@ -127,31 +128,8 @@ static int file_read(struct wif * wi,
 						}
 						break;
 
-					case IEEE80211_RADIOTAP_DB_ANTSIGNAL:
-						if (ri && !got_signal)
-						{
-							if (*iterator.this_arg < 127)
-								ri->ri_power = *iterator.this_arg;
-							else
-								ri->ri_power = *iterator.this_arg - 255;
-
-							got_signal = 1;
-						}
-						break;
-
-					case IEEE80211_RADIOTAP_DBM_ANTNOISE:
-						if (ri && !got_noise)
-						{
-							if (*iterator.this_arg < 127)
-								ri->ri_noise = *iterator.this_arg;
-							else
-								ri->ri_noise = *iterator.this_arg - 255;
-
-							got_noise = 1;
-						}
-						break;
-
 					case IEEE80211_RADIOTAP_DB_ANTNOISE:
+					case IEEE80211_RADIOTAP_DBM_ANTNOISE:
 						if (ri && !got_noise)
 						{
 							if (*iterator.this_arg < 127)

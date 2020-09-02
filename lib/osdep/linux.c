@@ -716,17 +716,6 @@ static int linux_read(struct wif * wi,
 					break;
 
 				case IEEE80211_RADIOTAP_DBM_ANTSIGNAL:
-					if (!got_signal)
-					{
-						if (*iterator.this_arg < 127)
-							ri->ri_power = *iterator.this_arg;
-						else
-							ri->ri_power = *iterator.this_arg - 255;
-
-						got_signal = 1;
-					}
-					break;
-
 				case IEEE80211_RADIOTAP_DB_ANTSIGNAL:
 					if (!got_signal)
 					{
@@ -740,17 +729,6 @@ static int linux_read(struct wif * wi,
 					break;
 
 				case IEEE80211_RADIOTAP_DBM_ANTNOISE:
-					if (!got_noise)
-					{
-						if (*iterator.this_arg < 127)
-							ri->ri_noise = *iterator.this_arg;
-						else
-							ri->ri_noise = *iterator.this_arg - 255;
-
-						got_noise = 1;
-					}
-					break;
-
 				case IEEE80211_RADIOTAP_DB_ANTNOISE:
 					if (!got_noise)
 					{
@@ -2044,10 +2022,10 @@ static int do_linux_open(struct wif * wi, char * iface)
 		}
 	}
 
-	/* test if orinoco */
-
 	if (memcmp(iface, "eth", 3) == 0)
 	{
+		/* test if orinoco */
+
 		if ((pid = fork()) == 0)
 		{
 			close(0);
@@ -2070,12 +2048,9 @@ static int do_linux_open(struct wif * wi, char * iface)
 				 iface);
 
 		if (system(strbuf) == 0) dev->drivertype = DT_AT76USB;
-	}
 
-	/* test if zd1211rw */
+		/* test if zd1211rw */
 
-	if (memcmp(iface, "eth", 3) == 0)
-	{
 		if ((pid = fork()) == 0)
 		{
 			close(0);

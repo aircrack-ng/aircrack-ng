@@ -1167,8 +1167,7 @@ static int do_attack_fake_auth(void)
 			 > (100 * 1000))
 			&& (gotack > 0)
 			&& (gotack < packets)
-			&& (state == 3)
-			&& (packets > 1))
+			&& (state == 3))
 		{
 			PCT;
 			printf("Not enough acks, repeating...\n");
@@ -6081,10 +6080,6 @@ int main(int argc, char * argv[])
 				break;
 
 			case ':':
-
-				printf("\"%s --help\" for help.\n", argv[0]);
-				return (1);
-
 			case '?':
 
 				printf("\"%s --help\" for help.\n", argv[0]);
