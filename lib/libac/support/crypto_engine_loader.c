@@ -251,7 +251,7 @@ EXPORT int ac_crypto_engine_loader_get_available(void)
 #endif
 
 	if (strncmp(working_directory, ABS_TOP_BUILDDIR, strlen(ABS_TOP_BUILDDIR))
-			== 0)
+		== 0)
 	{
 		// use development paths
 		snprintf(library_path,
@@ -353,7 +353,7 @@ EXPORT char * ac_crypto_engine_loader_best_library_for(int simd_features)
 
 	if (strncmp(
 			working_directory, ABS_TOP_BUILDDIR, sizeof(ABS_TOP_BUILDDIR) - 1)
-			== 0)
+		== 0)
 	{
 		// use development paths
 		snprintf(library_path,

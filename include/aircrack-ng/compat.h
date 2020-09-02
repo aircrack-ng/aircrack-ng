@@ -41,7 +41,9 @@ extern "C" {
  * Returns strlen(src) + MIN(dsize, strlen(initial dst)).
  * If retval >= dsize, truncation occurred.
  */
-API_IMPORT size_t strlcat(char * restrict dst, const char * restrict src, size_t dsize);
+API_IMPORT size_t strlcat(char * restrict dst,
+						  const char * restrict src,
+						  size_t dsize);
 #endif
 
 #ifndef HAVE_STRLCPY
@@ -50,7 +52,9 @@ API_IMPORT size_t strlcat(char * restrict dst, const char * restrict src, size_t
  * chars will be copied.  Always NUL terminates (unless dsize == 0).
  * Returns strlen(src); if retval >= dsize, truncation occurred.
  */
-API_IMPORT size_t strlcpy(char * restrict dst, const char * restrict src, size_t dsize);
+API_IMPORT size_t strlcpy(char * restrict dst,
+						  const char * restrict src,
+						  size_t dsize);
 #endif
 
 #ifdef __cplusplus

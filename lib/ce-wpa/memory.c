@@ -117,8 +117,7 @@ void * mem_alloc_func(size_t size)
 	return res;
 }
 
-void * mem_calloc_func(size_t count,
-					   size_t size)
+void * mem_calloc_func(size_t count, size_t size)
 {
 	void * res;
 
@@ -147,8 +146,7 @@ void * mem_calloc_func(size_t count,
 #undef MEM_ALLOC_SIZE
 #define MEM_ALLOC_SIZE 0
 #endif
-void * mem_alloc_tiny_func(size_t size,
-						   size_t align)
+void * mem_alloc_tiny_func(size_t size, size_t align)
 {
 	static char * buffer = NULL;
 	static size_t bufree = 0;
@@ -212,23 +210,19 @@ void * mem_alloc_tiny_func(size_t size,
 	return p;
 }
 
-void * mem_calloc_tiny_func(size_t size,
-							size_t align)
+void * mem_calloc_tiny_func(size_t size, size_t align)
 {
 	char * cp = (char *) mem_alloc_tiny(size, align);
 	memset(cp, 0, size);
 	return cp;
 }
 
-void * mem_alloc_copy_func(void * src,
-						   size_t size,
-						   size_t align)
+void * mem_alloc_copy_func(void * src, size_t size, size_t align)
 {
 	return memcpy(mem_alloc_tiny(size, align), src, size);
 }
 
-void * mem_alloc_align_func(size_t size,
-							size_t align)
+void * mem_alloc_align_func(size_t size, size_t align)
 {
 	void * ptr = NULL;
 #if HAVE_POSIX_MEMALIGN
@@ -267,9 +261,7 @@ void * mem_alloc_align_func(size_t size,
 	return ptr;
 }
 
-void * mem_calloc_align_func(size_t count,
-							 size_t size,
-							 size_t align)
+void * mem_calloc_align_func(size_t count, size_t size, size_t align)
 {
 	void * ptr = mem_alloc_align_func(size * count, align);
 

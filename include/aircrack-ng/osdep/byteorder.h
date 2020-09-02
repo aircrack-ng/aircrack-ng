@@ -77,7 +77,7 @@
 typedef uint64_t u_int64_t; //-V677
 typedef uint32_t u_int32_t; //-V677
 typedef uint16_t u_int16_t; //-V677
-typedef uint8_t u_int8_t;   //-V677
+typedef uint8_t u_int8_t; //-V677
 #endif
 
 #endif
