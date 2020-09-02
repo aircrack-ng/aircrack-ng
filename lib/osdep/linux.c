@@ -2495,7 +2495,6 @@ EXPORT int get_battery_state(void)
 		int batno = 0;
 		static int info_timer = 0;
 		int batt_full_capacity[3];
-		linux_apm = 0;
 		linux_acpi = 1;
 		ac_adapters = opendir("/proc/acpi/ac_adapter");
 		if (ac_adapters == NULL) return 0;

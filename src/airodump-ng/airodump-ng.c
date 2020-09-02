@@ -397,7 +397,7 @@ static THREAD_ENTRY(input_thread)
 		{
 			quitting_event_ts = time(NULL);
 
-			if (++quitting > 1)
+			if (++quitting > 1) //-V1051
 				lopt.do_exit = 1;
 			else
 				snprintf(
@@ -587,8 +587,6 @@ static THREAD_ENTRY(input_thread)
 		{
 			if (lopt.show_ap == 1 && lopt.show_sta == 1 && lopt.show_ack == 0)
 			{
-				lopt.show_ap = 1;
-				lopt.show_sta = 1;
 				lopt.show_ack = 1;
 				snprintf(lopt.message,
 						 sizeof(lopt.message),
@@ -597,7 +595,6 @@ static THREAD_ENTRY(input_thread)
 			else if (lopt.show_ap == 1 && lopt.show_sta == 1
 					 && lopt.show_ack == 1)
 			{
-				lopt.show_ap = 1;
 				lopt.show_sta = 0;
 				lopt.show_ack = 0;
 				snprintf(
@@ -608,7 +605,6 @@ static THREAD_ENTRY(input_thread)
 			{
 				lopt.show_ap = 0;
 				lopt.show_sta = 1;
-				lopt.show_ack = 0;
 				snprintf(
 					lopt.message, sizeof(lopt.message), "][ display sta only");
 			}
@@ -616,8 +612,6 @@ static THREAD_ENTRY(input_thread)
 					 && lopt.show_ack == 0)
 			{
 				lopt.show_ap = 1;
-				lopt.show_sta = 1;
-				lopt.show_ack = 0;
 				snprintf(
 					lopt.message, sizeof(lopt.message), "][ display ap+sta");
 			}
@@ -1276,8 +1270,6 @@ static int dump_add_packet(unsigned char * h80211,
 			memcpy(bssid, h80211 + 4, 6);
 			break; // ToDS
 		case IEEE80211_FC1_DIR_FROMDS:
-			memcpy(bssid, h80211 + 10, 6);
-			break; // FromDS
 		case IEEE80211_FC1_DIR_DSTODS:
 			memcpy(bssid, h80211 + 10, 6);
 			break; // WDS -> Transmitter taken as BSSID
@@ -3559,7 +3551,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	}
 
 	strlcat(strbuf, buffer, sizeof(strbuf));
-	memset(buffer, '\0', 512);
+	memset(buffer, '\0', sizeof(buffer));
 
 	if (lopt.is_berlin)
 	{
@@ -3572,7 +3564,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	}
 
 	strlcat(strbuf, buffer, sizeof(strbuf));
-	memset(buffer, '\0', 512);
+	memset(buffer, '\0', sizeof(buffer));
 
 	if (strlen(lopt.message) > 0)
 	{
@@ -5529,8 +5521,8 @@ static int init_cards(const char * cardstr, char * iface[], struct wif ** wi)
 		return (-1);
 	}
 
-	while (((iface[if_count] = strsep(&buffer, ",")) != NULL)
-		   && (if_count < MAX_CARDS))
+	while ((if_count < MAX_CARDS)
+		   && ((iface[if_count] = strsep(&buffer, ",")) != NULL))
 	{
 		again = 0;
 		for (i = 0; i < if_count; i++)
@@ -6049,10 +6041,6 @@ int main(int argc, char * argv[])
 				break;
 
 			case ':':
-
-				printf("\"%s --help\" for help.\n", argv[0]);
-				return (EXIT_FAILURE);
-
 			case '?':
 
 				printf("\"%s --help\" for help.\n", argv[0]);
@@ -7069,17 +7057,6 @@ int main(int argc, char * argv[])
 							break;
 
 						case IEEE80211_RADIOTAP_DBM_ANTSIGNAL:
-							if (!got_signal)
-							{
-								if (*iterator.this_arg < 127)
-									ri.ri_power = *iterator.this_arg;
-								else
-									ri.ri_power = *iterator.this_arg - 255;
-
-								got_signal = 1;
-							}
-							break;
-
 						case IEEE80211_RADIOTAP_DB_ANTSIGNAL:
 							if (!got_signal)
 							{
@@ -7093,17 +7070,6 @@ int main(int argc, char * argv[])
 							break;
 
 						case IEEE80211_RADIOTAP_DBM_ANTNOISE:
-							if (!got_noise)
-							{
-								if (*iterator.this_arg < 127)
-									ri.ri_noise = *iterator.this_arg;
-								else
-									ri.ri_noise = *iterator.this_arg - 255;
-
-								got_noise = 1;
-							}
-							break;
-
 						case IEEE80211_RADIOTAP_DB_ANTNOISE:
 							if (!got_noise)
 							{

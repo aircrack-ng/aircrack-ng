@@ -1470,7 +1470,7 @@ static void read_wifi(struct east_state * es)
 {
 	REQUIRE(es != NULL);
 
-	unsigned char buf[8192];
+	unsigned char buf[sizeof(struct ieee80211_frame) * 32];
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 
 	const int len = wi_read(es->es_wi, NULL, NULL, buf, sizeof(buf), NULL);
@@ -1547,7 +1547,7 @@ static void fill_basic(struct east_state * es, struct ieee80211_frame * wh)
 	unsigned short * sp;
 
 	/* macs */
-	memcpy(wh->i_addr1, es->es_apmac, sizeof(wh->i_addr1));
+	memcpy(wh->i_addr1, es->es_apmac, sizeof(wh->i_addr1)); //-V525
 	memcpy(wh->i_addr2, es->es_mymac, sizeof(wh->i_addr2));
 	memcpy(wh->i_addr3, es->es_apmac, sizeof(wh->i_addr3));
 
@@ -1604,7 +1604,7 @@ static void send_auth(struct east_state * es, struct timeval * tv)
 {
 	REQUIRE(es != NULL);
 
-	unsigned char buf[4096];
+	unsigned char buf[sizeof(struct ieee80211_frame) * 32];
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	unsigned short * sp;
 
@@ -1628,7 +1628,7 @@ static void send_assoc(struct east_state * es, struct timeval * tv)
 {
 	REQUIRE(es != NULL);
 
-	unsigned char buf[4096];
+	unsigned char buf[sizeof(struct ieee80211_frame) * 32];
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	unsigned short * sp;
 	int len;
@@ -1694,7 +1694,7 @@ static void expand_prga(struct east_state * es, struct timeval * tv)
 {
 	REQUIRE(es != NULL);
 
-	unsigned char buf[2048];
+	unsigned char buf[sizeof(struct ieee80211_frame) * 32];
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	unsigned char * data = (unsigned char *) (wh + 1);
 	unsigned short * sp = (unsigned short *) wh->i_seq;
@@ -1792,7 +1792,7 @@ static void decrypt_packet(struct east_state * es, struct timeval * tv)
 {
 	REQUIRE(es != NULL);
 
-	unsigned char buf[2048];
+	unsigned char buf[sizeof(struct ieee80211_frame) * 16];
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	unsigned char * data = (unsigned char *) (wh + 1);
 	int dlen;
@@ -1863,7 +1863,7 @@ static void decrypt_ip(struct east_state * es, struct timeval * tv)
 	/* init */
 	if (es->es_astate != AS_DECRYPT_IP)
 	{
-		unsigned char clear[1024];
+		unsigned char clear[1024] = {0};
 		unsigned char * prga = es->es_prga_d;
 		unsigned char * ct;
 		struct ieee80211_frame * wh = (struct ieee80211_frame *) es->es_packet;
@@ -1892,8 +1892,7 @@ static void decrypt_ip(struct east_state * es, struct timeval * tv)
 		/* tot len */
 		totlen = es->es_have_packet - sizeof(*wh) - 4 - 8 - 4;
 		totlen = htons(totlen);
-		len = 2;
-		memcpy(clear, &totlen, len);
+		memcpy(clear, &totlen, len); //-V512
 		xor(prga, clear, ct, len);
 		prga += len;
 		ct += len;
@@ -1927,7 +1926,7 @@ static void send_whohas(struct east_state * es, struct timeval * tv)
 {
 	REQUIRE(es != NULL);
 
-	unsigned char buf[2048];
+	unsigned char buf[sizeof(struct ieee80211_frame) * 16];
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	unsigned char * data = (unsigned char *) (wh + 1);
 	int dlen;
@@ -1955,7 +1954,7 @@ static void send_whohas(struct east_state * es, struct timeval * tv)
 	data += 8;
 
 	/* arp */
-	ah = (struct arphdr *) data;
+	ah = (struct arphdr *) data; //-V641
 	ah->ar_hrd = htons(ARPHRD_ETHER);
 	ah->ar_pro = htons(ETHERTYPE_IP);
 	ah->ar_hln = 6;
@@ -1976,8 +1975,10 @@ static void send_whohas(struct east_state * es, struct timeval * tv)
 	assert(es->es_prgalen >= dlen + 4);
 	xor(datas, datas, es->es_prga, dlen + 4);
 
-	printf("Sending who has %s", inet_ntoa(es->es_rtrip));
-	printf(" tell %s\n", inet_ntoa(es->es_myip));
+	char const * const netip = inet_ntoa(es->es_rtrip);
+	printf("Sending who has %s", netip ? netip : "<unknown>");
+	char const * const myip = inet_ntoa(es->es_myip);
+	printf(" tell %s\n", myip ? myip : "<unknown>");
 	send_frame(es, wh, data - buf + 4);
 }
 
@@ -1985,7 +1986,7 @@ static void check_inet(struct east_state * es, struct timeval * tv)
 {
 	REQUIRE(es != NULL);
 
-	unsigned char buf[2048];
+	unsigned char buf[sizeof(struct ieee80211_frame) * 16];
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	unsigned char * data = (unsigned char *) (wh + 1);
 	int dlen;
@@ -2015,7 +2016,7 @@ static void check_inet(struct east_state * es, struct timeval * tv)
 	data += 8;
 
 	/* ip */
-	iph = (struct ip *) data;
+	iph = (struct ip *) data; //-V641
 	iph->ip_hl = 5;
 	iph->ip_v = 4;
 	iph->ip_len = htons(sizeof(*iph) + sizeof(*uh) + S_HELLO_LEN);
@@ -2027,7 +2028,7 @@ static void check_inet(struct east_state * es, struct timeval * tv)
 	iph->ip_sum = in_cksum((unsigned short *) iph, 20);
 
 	/* udp */
-	uh = (struct udphdr *) (iph + 1);
+	uh = (struct udphdr *) (iph + 1); //-V1027
 	uh->uh_sport = htons(53);
 	uh->uh_dport = htons(es->es_udp_port);
 	uh->uh_ulen = htons(sizeof(*uh) + S_HELLO_LEN);
@@ -2056,7 +2057,7 @@ static void redirect_sendip(struct east_state * es, struct rpacket * rp)
 {
 	REQUIRE(es != NULL);
 
-	unsigned char buf[2048];
+	unsigned char buf[sizeof(struct ieee80211_frame) * 16];
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	unsigned char * data = (unsigned char *) (wh + 1);
 	int dlen;
@@ -2084,7 +2085,7 @@ static void redirect_sendip(struct east_state * es, struct rpacket * rp)
 	data += 8;
 
 	/* ip */
-	iph = (struct ip *) data;
+	iph = (struct ip *) data; //-V641
 	iph->ip_hl = 5;
 	iph->ip_v = 4;
 	dlen = rp->rp_len - sizeof(*wh) - 4 - 4 + 2;
@@ -2097,7 +2098,7 @@ static void redirect_sendip(struct east_state * es, struct rpacket * rp)
 	iph->ip_sum = in_cksum((unsigned short *) iph, 20);
 
 	/* udp */
-	uh = (struct udphdr *) (iph + 1);
+	uh = (struct udphdr *) (iph + 1); //-V1027
 	uh->uh_sport = htons(53);
 	uh->uh_dport = htons(es->es_udp_port);
 	uh->uh_ulen = htons(sizeof(*uh) + dlen);
@@ -2122,7 +2123,7 @@ static void redirect_sendfrag(struct east_state * es, struct rpacket * rp)
 {
 	REQUIRE(es != NULL);
 
-	unsigned char buf[2048];
+	unsigned char buf[sizeof(struct ieee80211_frame) * 16];
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	unsigned char * data = (unsigned char *) (wh + 1);
 	int dlen;
@@ -2237,7 +2238,8 @@ static void buddy_inet_check(struct east_state * es)
 	if (es->es_astate != AS_CHECK_INET) return;
 
 	memcpy(&es->es_pubip, &data.addr, sizeof(es->es_pubip));
-	printf("Internet w0rx.  Public IP %s\n", inet_ntoa(es->es_pubip));
+	char const * const pubip = inet_ntoa(es->es_pubip);
+	printf("Internet w0rx.  Public IP %s\n", pubip ? pubip : "<unknown>");
 
 	data.id = ntohs(data.id);
 	if (data.id != es->es_rpacket_id)
@@ -2372,7 +2374,7 @@ static void read_tap(struct east_state * es)
 {
 	REQUIRE(es != NULL);
 
-	unsigned char buf[2048];
+	unsigned char buf[sizeof(struct ieee80211_frame) * 16];
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	unsigned char * data = (unsigned char *) (wh + 1);
 	int dlen;

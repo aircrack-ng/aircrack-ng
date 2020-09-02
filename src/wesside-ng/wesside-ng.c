@@ -1400,7 +1400,7 @@ send_fragment(struct wstate * ws, struct frag_state * fs, struct prga_info * pi)
 	REQUIRE(fs != NULL);
 	REQUIRE(pi != NULL);
 
-	unsigned char buf[sizeof(struct ieee80211_frame) * 128] __attribute__((aligned(8)));
+	unsigned char buf[sizeof(struct ieee80211_frame) * 256] __attribute__((aligned(8)));
 	struct ieee80211_frame * wh;
 	unsigned char * body;
 	int fragsize;
@@ -1411,7 +1411,7 @@ send_fragment(struct wstate * ws, struct frag_state * fs, struct prga_info * pi)
 	unsigned short sn, fn;
 
 	wh = (struct ieee80211_frame *) buf;
-	memcpy(wh, &fs->fs_wh, sizeof(*wh));
+	memcpy(wh, &fs->fs_wh, sizeof(*wh)); //-V512
 
 	body = (unsigned char *) wh + sizeof(*wh);
 	memcpy(body, &pi->pi_iv, 3);

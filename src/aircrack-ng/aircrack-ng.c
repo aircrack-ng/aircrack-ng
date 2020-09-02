@@ -1363,9 +1363,6 @@ static int packet_reader__update_ap_info(struct AP_info * ap_cur,
 	switch (h80211[1] & IEEE80211_FC1_DIR_MASK)
 	{
 		case IEEE80211_FC1_DIR_NODS:
-			memcpy(stmac, h80211 + 10, ETHER_ADDR_LEN);
-			break;
-
 		case IEEE80211_FC1_DIR_TODS:
 			memcpy(stmac, h80211 + 10, ETHER_ADDR_LEN);
 			break;
@@ -1830,8 +1827,6 @@ static int packet_reader_process_packet(packet_reader_t * me,
 				memcpy(bssid, h80211 + 4, ETHER_ADDR_LEN);
 				break; // ToDS
 			case IEEE80211_FC1_DIR_FROMDS:
-				memcpy(bssid, h80211 + 10, ETHER_ADDR_LEN);
-				break; // FromDS
 			case IEEE80211_FC1_DIR_DSTODS:
 				memcpy(bssid, h80211 + 10, ETHER_ADDR_LEN);
 				break; // WDS -> Transmitter taken as BSSID
@@ -1845,14 +1840,10 @@ static int packet_reader_process_packet(packet_reader_t * me,
 		switch (h80211[1] & IEEE80211_FC1_DIR_MASK)
 		{
 			case IEEE80211_FC1_DIR_NODS:
+			case IEEE80211_FC1_DIR_FROMDS:
 				memcpy(dest, h80211 + 4, ETHER_ADDR_LEN);
 				break; // Adhoc
 			case IEEE80211_FC1_DIR_TODS:
-				memcpy(dest, h80211 + 16, ETHER_ADDR_LEN);
-				break; // ToDS
-			case IEEE80211_FC1_DIR_FROMDS:
-				memcpy(dest, h80211 + 4, ETHER_ADDR_LEN);
-				break; // FromDS
 			case IEEE80211_FC1_DIR_DSTODS:
 				memcpy(dest, h80211 + 16, ETHER_ADDR_LEN);
 				break; // WDS -> Transmitter taken as BSSID
@@ -2011,7 +2002,7 @@ static THREAD_ENTRY(packet_reader_thread)
 	ALLEGE(signal(SIGINT, sighandler) != SIG_ERR);
 
 	rb.tail = (request->mode == PACKET_READER_CHECK_MODE
-			   || (request->mode == PACKET_READER_READ_MODE
+			   || (request->mode == PACKET_READER_READ_MODE //-V560
 				   && (opt.essid_set || opt.bssid_set)))
 				  ? 0
 				  : 1;
@@ -2400,7 +2391,7 @@ static THREAD_ENTRY(crack_wep_thread)
 	{
 		if (safe_read(mc_pipe[cid][0], (void *) &B, sizeof(int)) != sizeof(int))
 		{
-			return ((void *) FAILURE);
+			return ((void *) FAILURE); //-V566
 		}
 		if (close_aircrack) break;
 
@@ -3577,7 +3568,7 @@ inner_bruteforcer_thread_start:
 	 */
 	if (safe_read(bf_pipe[nthread][0], (void *) wepkey, 64) != 64)
 	{
-		return ((void *) FAILURE);
+		return ((void *) FAILURE); //-V566
 	}
 
 	if (close_aircrack) return (ret);
@@ -6044,10 +6035,6 @@ int main(int argc, char * argv[])
 				break;
 
 			case ':':
-
-				printf("\"%s --help\" for help.\n", argv[0]);
-				return (EXIT_FAILURE);
-
 			case '?':
 
 				printf("\"%s --help\" for help.\n", argv[0]);
@@ -6607,7 +6594,6 @@ int main(int argc, char * argv[])
 		if (remaining
 			< H16800_PMKID_LEN + H16800_BSSID_LEN + H16800_STMAC_LEN + 4)
 		{
-			ret = EXIT_FAILURE;
 			fprintf(stderr, "Input is too short!\n");
 			goto exit_main;
 		}
@@ -6668,7 +6654,7 @@ int main(int argc, char * argv[])
 
 		do
 		{
-			char * optind_arg = (restore_session)
+			char * optind_arg = (restore_session && cracking_session)
 									? cracking_session->argv[optind]
 									: argv[optind];
 			if (strcmp(optind_arg, "-") == 0) opt.no_stdin = 1;
@@ -6857,6 +6843,7 @@ int main(int argc, char * argv[])
 				c_avl_iterator_next(it, &key, (void **) &ap_cur);
 				c_avl_iterator_destroy(it);
 				it = NULL;
+				ALLEGE(ap_cur != NULL);
 				ap_cur->target = 1;
 				c_avl_insert(targets, ap_cur->bssid, ap_cur);
 			}
@@ -6866,6 +6853,8 @@ int main(int argc, char * argv[])
 			}
 
 			printf("\n");
+
+			ALLEGE(ap_cur != NULL);
 
 			// Release memory of all APs we don't care about currently.
 			ap_avl_release_unused(ap_cur);
@@ -6889,7 +6878,6 @@ int main(int argc, char * argv[])
 		id = 0;
 	}
 
-	id = 0;
 	nb_prev_pkt = nb_pkt;
 	nb_pkt = 0;
 	nb_eof = 0;

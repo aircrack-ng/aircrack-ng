@@ -42,6 +42,8 @@
 #if defined(__CYGWIN32__) && !defined(__CYGWIN64__)
 int fseeko64(FILE * fp, int64_t offset, int whence);
 int64_t ftello64(FILE * fp);
+//-V:fseek:1059
+//-V:ftello:1059
 #undef fseek
 #define fseek fseeko64
 #undef ftello
@@ -49,6 +51,8 @@ int64_t ftello64(FILE * fp);
 #endif
 
 #if defined(__FreeBSD__) || defined(__OpenBSD__)
+//-V:rand:1059
+//-V:srand:1059
 #undef rand
 #define rand lrand48
 #undef srand

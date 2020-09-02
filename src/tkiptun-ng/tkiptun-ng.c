@@ -1253,7 +1253,7 @@ static int guess_packet(unsigned char * srcbuf,
 
 		printf("Checking 10.x.y.z\n");
 		/* check 10.i.j.1-254 */
-		psip[0] = 10;
+		psip[0] = 10; //-V519
 
 		if (check_guess(srcbuf,
 						chopped,
@@ -1553,7 +1553,7 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 				   "RTL8180.\n"
 				   "    * The wireless interface isn't setup on the correct "
 				   "channel.\n");
-			if (is_deauth_mode)
+			if (is_deauth_mode) //-V547
 				printf("    * The AP isn't vulnerable when operating in "
 					   "non-authenticated mode.\n"
 					   "      Run aireplay-ng in authenticated mode instead "
@@ -1717,7 +1717,7 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 			 * AP properly drops frames with an invalid ICV *
 			 * so this guess always has its bit 8 set to 0  */
 
-			if (is_deauth_mode)
+			if (is_deauth_mode) //-V547
 			{
 				opt.r_smac[1] |= (guess < 256);
 				opt.r_smac[5] = guess & 0xFF;
@@ -1823,7 +1823,7 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 			if (h80211[7] != opt.r_smac[3]) continue;
 			if (h80211[8] != opt.r_smac[4]) continue;
 
-			if (data_end < 41) goto header_rec;
+			if (data_end < 41) goto header_rec; //-V547
 
 			printf("\n\nFailure: the access point does not properly "
 				   "discard frames with an\ninvalid ICV - try running "
@@ -1904,7 +1904,7 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 			   nb_pkt_sent,
 			   ticks[3]);
 
-		if (is_deauth_mode)
+		if (is_deauth_mode) //-V547
 		{
 			opt.r_smac[1] = rand_u8() & 0x3E;
 			opt.r_smac[2] = rand_u8();
@@ -2325,10 +2325,6 @@ int main(int argc, char * argv[])
 				break;
 
 			case ':':
-
-				printf("\"%s --help\" for help.\n", argv[0]);
-				return (1);
-
 			case '?':
 
 				printf("\"%s --help\" for help.\n", argv[0]);
@@ -2545,7 +2541,7 @@ int main(int argc, char * argv[])
 				j = 0;
 				while (sscanf(buf, "%x", &n) == 1)
 				{
-					if (n < 0 || n > 255)
+					if (n > 255)
 					{
 						printf("Invalid keystream.\n");
 						printf("\"%s --help\" for help.\n", argv[0]);

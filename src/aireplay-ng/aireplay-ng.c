@@ -741,6 +741,7 @@ static int do_attack_fake_auth(void)
 				break;
 
 			case 1:
+			case 3:
 
 				/* waiting for an authentication response */
 
@@ -873,60 +874,6 @@ static int do_attack_fake_auth(void)
 					if (send_packet(_wi_out, ackbuf, 14, kRewriteSequenceNumber)
 						< 0)
 						return (EXIT_FAILURE);
-				}
-
-				break;
-
-			case 3:
-
-				/* waiting for an authentication response (using ska) */
-
-				if (time(NULL) - tt >= 2)
-				{
-					if (opt.npackets > 0)
-					{
-						tries++;
-
-						if (tries > 15)
-						{
-							abort = 1;
-						}
-					}
-					else
-					{
-						if (x_send < 256)
-						{
-							x_send *= 2;
-						}
-						else
-						{
-							abort = 1;
-						}
-					}
-
-					if (abort)
-					{
-						printf(
-							"\nAttack was unsuccessful. Possible reasons:\n\n"
-							"    * Perhaps MAC address filtering is enabled.\n"
-							"    * Check that the BSSID (-a option) is "
-							"correct.\n"
-							"    * Try to change the number of packets (-o "
-							"option).\n"
-							"    * The driver/card doesn't support injection.\n"
-							"    * This attack sometimes fails against some "
-							"APs.\n"
-							"    * The card is not on the same channel as the "
-							"AP.\n"
-							"    * You're too far from the AP. Get closer, or "
-							"lower\n"
-							"      the transmit rate.\n\n");
-						return (EXIT_FAILURE);
-					}
-
-					state = 0;
-					challengelen = 0;
-					printf("\n");
 				}
 
 				break;
@@ -4252,7 +4199,7 @@ static int do_attack_fragment(void)
 		again = RETRY;
 
 		memcpy(packet, packet2, caplen2);
-		caplen = caplen2;
+		caplen = caplen2; //-V1048
 		memcpy(prga, packet + z + 4, prga_len); //-V512
 		memcpy(iv, packet + z, 4);
 
@@ -5807,7 +5754,7 @@ static int do_attack_test(void)
 				opt.f_fromds = 0;
 				opt.f_minlen = opt.f_maxlen = 24 + 4 + 132;
 			}
-			else if (i == 4) // attack -5
+			else // attack -5
 			{
 				memcpy(h80211, NULL_DATA, 24);
 				memcpy(h80211 + 4, opt.f_bssid, 6);
@@ -5889,7 +5836,7 @@ static int do_attack_test(void)
 								break;
 							}
 						}
-						else if (i == 4) // attack -5/-7
+						else // attack -5/-7
 						{
 							if (h80211[0] == packet[0]
 								&& memcmp(h80211 + 24, packet + 24, caplen - 24)
@@ -5946,7 +5893,7 @@ static int do_attack_test(void)
 					PCT;
 					printf("Attack -2/-3/-4/-6:  OK\n");
 				}
-				else if (i == 4) // attack -5
+				else // attack -5
 				{
 					PCT;
 					printf("Attack -5/-7:        OK\n");
@@ -5974,7 +5921,7 @@ static int do_attack_test(void)
 					PCT;
 					printf("Attack -2/-3/-4/-6:  Failed\n");
 				}
-				else if (i == 4) // attack -5
+				else // attack -5
 				{
 					PCT;
 					printf("Attack -5/-7:        Failed\n");

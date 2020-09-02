@@ -651,7 +651,7 @@ static void deauth_send(struct network * n, unsigned char * mac)
 	REQUIRE(n != NULL);
 	REQUIRE(mac != NULL);
 
-	unsigned char buf[2048];
+	unsigned char buf[sizeof(struct ieee80211_frame) * 16];
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	uint16_t * rc = (uint16_t *) (wh + 1);
 
@@ -982,7 +982,7 @@ static void send_auth(struct network * n)
 {
 	REQUIRE(n != NULL);
 
-	unsigned char buf[2048];
+	unsigned char buf[sizeof(struct ieee80211_frame) * 16];
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	uint16_t * rc = (uint16_t *) (wh + 1);
 
@@ -1349,7 +1349,7 @@ static void do_assoc(struct network * n, int stype)
 {
 	REQUIRE(n != NULL);
 
-	unsigned char buf[2048];
+	unsigned char buf[sizeof(struct ieee80211_frame) * 16];
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	uint16_t * rc = (uint16_t *) (wh + 1);
 	unsigned char * p;
@@ -2603,7 +2603,7 @@ static struct network * network_update(struct ieee80211_frame * wh)
 static void wifi_read(void)
 {
 	struct state * s = &_state;
-	unsigned char buf[2048];
+	unsigned char buf[sizeof(struct ieee80211_frame) * 8];
 	int rd;
 	struct rx_info ri;
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
@@ -2909,7 +2909,7 @@ static void resume_network(char * buf)
 				if (strstr(p, "handshake"))
 				{
 					n->n_crypto = CRYPTO_WPA;
-					n->n_client_handshake = (void *) 0xbad;
+					n->n_client_handshake = (void *) 0xbad; //-V566
 				}
 				else if (strchr(p, ':'))
 				{
@@ -3037,7 +3037,7 @@ static void pwn(void)
 
 	scan_start();
 
-	while (s->s_state != STATE_DONE)
+	while (s->s_state != STATE_DONE) //-V1044
 	{
 		timer_next(&tv);
 

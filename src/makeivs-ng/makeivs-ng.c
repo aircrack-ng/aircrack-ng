@@ -120,12 +120,6 @@ int main(int argc, char * argv[])
 
 				break;
 
-			case ':':
-			case '?':
-
-				goto usage;
-				break;
-
 			case 'n':
 
 				paramUsed = 1;
@@ -370,11 +364,6 @@ int main(int argc, char * argv[])
 				weplen = i;
 				keylen = i + 3;
 
-				break;
-
-			case 'h':
-			case 'H':
-				goto usage;
 				break;
 
 			default:
