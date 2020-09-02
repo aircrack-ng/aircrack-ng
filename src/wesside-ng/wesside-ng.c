@@ -1593,7 +1593,7 @@ static void send_arp(struct wstate * ws,
 
 	wepify(ws, body, 8 + 8 + 20);
 	arp_len = sizeof(*wh) + 4 + 8 + 8 + 20 + 4;
-	assert(arp_len < (int) sizeof(arp_pkt));
+	assert(arp_len < (int) sizeof(arp_pkt)); //-V547
 
 	send_frame(ws, arp_pkt, arp_len);
 }
