@@ -31,6 +31,12 @@
 #include <string.h>
 #include <assert.h>
 
+// PVS-Studio warning opt-outs:
+//-V:ALLEGE:547
+//-V:REQUIRE:547
+//-V:ENSURE:547
+//-V:INVARIANT:547
+
 // NOTE(jbenden): These macros violates MISRA C:2012. 20.10 - The #
 // and ## preprocessor operators should not be used.
 #define ALLEGE(c)                                                              \
