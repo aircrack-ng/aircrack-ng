@@ -235,14 +235,12 @@ static inline int get_ip_port(char * iface, char * ip, const int ip_size)
 		goto out; /* XXX resolve hostname */
 
 	if (strlen(host) > 15)
-	{
-		port = -1;
 		goto out;
-	}
 
 	strncpy(ip, host, (size_t) ip_size);
+
 	port = (int) strtol(ptr, NULL, 10);
-	if (port <= 0) port = -1;
+	if (port <= 0 || port > 65535) port = -1;
 
 out:
 	free(host);
