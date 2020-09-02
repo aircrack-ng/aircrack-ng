@@ -122,7 +122,8 @@ static void client_add(struct sstate * ss, int s, struct sockaddr_in * s_in)
 	if (!(c = calloc(sizeof(struct client), 1))) err(1, "calloc()");
 
 	c->c_s = s;
-	strncpy(c->c_ip, inet_ntoa(s_in->sin_addr), sizeof(c->c_ip) - 1);
+	char * netip = inet_ntoa(s_in->sin_addr);
+	(void) strlcpy(c->c_ip, netip ? netip : "<unknown>", sizeof(c->c_ip) - 1);
 	printf("Connect from %s\n", c->c_ip);
 
 	c->c_prev = &ss->ss_clients;

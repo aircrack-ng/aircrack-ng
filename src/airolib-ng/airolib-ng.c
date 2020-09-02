@@ -299,7 +299,7 @@ static int stmt_stdout(sqlite3_stmt * stmt, int * rowcount)
 	int rcount = 0;
 	int rc;
 
-	if (stmt == 0 || (ccount = sqlite3_column_count(stmt)) == 0)
+	if ((ccount = sqlite3_column_count(stmt)) == 0)
 	{
 		return (sql_step(stmt, 0));
 	}
@@ -896,11 +896,8 @@ static int import_cowpatty(sqlite3 * db, char * filename)
 					"Invalid password %s will not be imported.\n",
 					rec->word);
 		}
-		if (rec)
-		{
-			free(rec->word);
-			free(rec);
-		}
+		free(rec->word);
+		free(rec);
 	}
 
 	// Finalize
@@ -982,8 +979,8 @@ static int import_ascii(sqlite3 * db, const char * mode, const char * filename)
 	while (!exit_airolib && fgets(buffer, sizeof(buffer), f) != 0)
 	{
 		int i = strlen(buffer);
-		if (buffer[i - 1] == '\n') buffer[--i] = '\0';
-		if (buffer[i - 1] == '\r') buffer[--i] = '\0';
+		if (i > 0 && buffer[i - 1] == '\n') buffer[--i] = '\0';
+		if (i > 0 && buffer[i - 1] == '\r') buffer[--i] = '\0';
 		imported++;
 		if ((imode == 0 && verify_essid(buffer) == 0)
 			|| (imode == 1 && verify_passwd(buffer) == 0))

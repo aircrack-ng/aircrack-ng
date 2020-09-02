@@ -486,7 +486,7 @@ static BOOLEAN read_packets(void)
 			// future)
 			_packet_elt_head->current->is_cloaked = VALID_FRAME_UNCLOAKED;
 		}
-		else if (_packet_elt_head->current->frame_type == FRAME_TYPE_DATA)
+		else if (_packet_elt_head->current->frame_type == FRAME_TYPE_DATA) //-V547
 		{
 			_packet_elt_head->current->is_cloaked
 				= UKNOWN_FRAME_CLOAKING_STATUS;
@@ -748,14 +748,7 @@ static BOOLEAN next_packet_pointer_from_ap(void)
 			return false;
 		}
 	}
-	if (_packet_elt_head->current->toDS == 0)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	return true;
 }
 
 static BOOLEAN next_packet_pointer_from_client(void)
@@ -1564,6 +1557,7 @@ int main(int argc, char * argv[])
 {
 	int temp = 0, option;
 	int manual_cloaked_fname = 0, manual_filtered_fname = 0;
+	//-V:tempBool:1048
 	BOOLEAN tempBool;
 	char * input_filename;
 	char * input_bssid;
