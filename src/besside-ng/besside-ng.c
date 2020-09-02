@@ -337,12 +337,6 @@ static void save_network(FILE * f, struct network * n)
 		len = 17;
 	}
 
-	if (n->n_astate == ASTATE_UNREACH)
-	{
-		fprintf(f, "Crappy connection");
-		len = 17;
-	}
-
 	while (len++ < 38) fprintf(f, " ");
 
 	char * mac_bssid = mac2string(n->n_bssid);

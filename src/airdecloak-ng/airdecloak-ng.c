@@ -1616,12 +1616,7 @@ int main(int argc, char * argv[])
 		switch (option)
 		{
 			case ':':
-
-				printf("\"%s --help\" for help.\n", argv[0]);
-				return (EXIT_FAILURE);
-
 			case '?':
-
 				printf("\"%s --help\" for help.\n", argv[0]);
 				return (EXIT_FAILURE);
 			case 'a':

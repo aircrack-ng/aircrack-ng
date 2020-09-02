@@ -251,9 +251,7 @@ EXPORT int ac_crypto_engine_loader_get_available(void)
 #endif
 
 	if (strncmp(working_directory, ABS_TOP_BUILDDIR, strlen(ABS_TOP_BUILDDIR))
-			== 0
-		|| strncmp(working_directory, ABS_TOP_SRCDIR, strlen(ABS_TOP_SRCDIR))
-			   == 0)
+			== 0)
 	{
 		// use development paths
 		snprintf(library_path,
@@ -355,10 +353,7 @@ EXPORT char * ac_crypto_engine_loader_best_library_for(int simd_features)
 
 	if (strncmp(
 			working_directory, ABS_TOP_BUILDDIR, sizeof(ABS_TOP_BUILDDIR) - 1)
-			== 0
-		|| strncmp(
-			   working_directory, ABS_TOP_SRCDIR, sizeof(ABS_TOP_SRCDIR) - 1)
-			   == 0)
+			== 0)
 	{
 		// use development paths
 		snprintf(library_path,
@@ -463,6 +458,7 @@ EXPORT int ac_crypto_engine_loader_load(int flags)
 	if (flags == -1) flags = ac_crypto_engine_loader_get_available();
 
 	char * module_filename = ac_crypto_engine_loader_best_library_for(flags);
+	REQUIRE(module_filename != NULL);
 
 	module = dlopen(module_filename, RTLD_LAZY);
 	if (!module)

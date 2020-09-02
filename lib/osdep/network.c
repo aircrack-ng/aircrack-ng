@@ -85,7 +85,6 @@ EXPORT int net_send(int s, int command, void * arg, int len)
 	pnh->nh_type = command;
 	pnh->nh_len = htonl(len);
 
-	assert(arg != NULL);
 	memcpy(pktbuf + sizeof(struct net_hdr), arg, len);
 
 	for (;;)

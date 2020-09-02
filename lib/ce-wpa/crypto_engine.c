@@ -242,7 +242,6 @@ EXPORT void ac_crypto_engine_destroy(ac_crypto_engine_t * engine)
 #endif
 
 	MEM_FREE(engine->essid);
-	engine->essid = NULL;
 }
 
 EXPORT void ac_crypto_engine_set_essid(ac_crypto_engine_t * engine,
@@ -283,7 +282,6 @@ EXPORT void ac_crypto_engine_thread_destroy(ac_crypto_engine_t * engine,
 	if (engine->thread_data[threadid] != NULL)
 	{
 		MEM_FREE(engine->thread_data[threadid]);
-		engine->thread_data[threadid] = NULL;
 	}
 }
 
