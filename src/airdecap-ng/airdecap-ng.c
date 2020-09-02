@@ -225,7 +225,7 @@ int main(int argc, char * argv[])
 	unsigned n;
 	unsigned z;
 	unsigned char * h80211 = NULL;
-	unsigned char bssid[6], stmac[6];
+	unsigned char bssid[6] = {0}, stmac[6] = {0};
 
 	c_avl_tree_t * stations = c_avl_create(station_compare);
 	ALLEGE(stations != NULL);
@@ -786,11 +786,11 @@ int main(int argc, char * argv[])
 				break; // FromDS
 			case 3:
 				wds = true;
-				if (memcmp(opt.bssid, ZERO, 6))
+				if (memcmp(opt.bssid, ZERO, 6) != 0)
 				{
 					/* BSSID has been specified */
-					if (memcmp(opt.bssid, h80211 + 4, 6))
-						if (memcmp(opt.bssid, h80211 + 10, 6))
+					if (memcmp(opt.bssid, h80211 + 4, 6) != 0)
+						if (memcmp(opt.bssid, h80211 + 10, 6) != 0)
 							/* BSSID doesn't match either RA nor TA */
 							continue;
 						else
@@ -820,10 +820,10 @@ int main(int argc, char * argv[])
 				memcpy(stmac, h80211 + 4, sizeof(stmac));
 				break;
 			case 3:
-				if (memcmp(opt.bssid, ZERO, 6))
+				if (memcmp(opt.bssid, ZERO, 6) != 0)
 				{
 					/* BSSID has been specified */
-					if (memcmp(bssid, h80211 + 4, 6))
+					if (memcmp(bssid, h80211 + 4, 6) != 0)
 						/* BSSID is not RA, STA must be RA */
 						memcpy(stmac, h80211 + 4, sizeof(stmac));
 				}

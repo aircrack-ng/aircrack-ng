@@ -332,7 +332,7 @@ static void process_directory(const char * dir, time_t begin)
 	DIR * curdir;
 	struct dirent * curent;
 	struct stat curstat;
-	char * fullname = NULL;
+	char * fullname;
 	size_t fullname_size = 0;
 
 	stats_dirs++;
@@ -357,7 +357,6 @@ static void process_directory(const char * dir, time_t begin)
 		}
 
 		fullname_size = strlen(dir) + strlen(curent->d_name) + 2;
-		ALLEGE(fullname == NULL);
 		fullname = malloc(fullname_size);
 		ALLEGE(fullname != NULL);
 		ALLEGE(strlcpy(fullname, dir, fullname_size) < fullname_size);
