@@ -456,7 +456,7 @@ static void send_assoc(struct wstate * ws)
 {
 	REQUIRE(ws != NULL);
 
-	unsigned char buf[128];
+	unsigned char buf[sizeof(struct ieee80211_frame) * 32];
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	unsigned char * body;
 	int ssidlen;
@@ -528,7 +528,7 @@ static void send_auth(struct wstate * ws)
 {
 	REQUIRE(ws != NULL);
 
-	unsigned char buf[128] __attribute__((aligned(8)));
+	unsigned char buf[sizeof(struct ieee80211_frame) * 16] __attribute__((aligned(8)));
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	unsigned short * n;
 
@@ -950,7 +950,7 @@ decrypt_arpreq(struct wstate * ws, struct ieee80211_frame * wh, int rd)
 
 	unsigned char * body;
 	int bodylen;
-	unsigned char clear[36];
+	unsigned char clear[sizeof(struct arphdr) * 32];
 	unsigned char * ptr;
 	struct arphdr * h;
 	int i;
@@ -1399,7 +1399,7 @@ send_fragment(struct wstate * ws, struct frag_state * fs, struct prga_info * pi)
 	REQUIRE(fs != NULL);
 	REQUIRE(pi != NULL);
 
-	unsigned char buf[4096] __attribute__((aligned(8)));
+	unsigned char buf[sizeof(struct ieee80211_frame) * 128] __attribute__((aligned(8)));
 	struct ieee80211_frame * wh;
 	unsigned char * body;
 	int fragsize;
@@ -1567,7 +1567,7 @@ static void send_arp(struct wstate * ws,
 					 char * dstip,
 					 unsigned char * dstmac)
 {
-	static unsigned char arp_pkt[128];
+	static unsigned char arp_pkt[sizeof(struct ieee80211_frame) * 16];
 	unsigned char * body;
 	unsigned char * ptr;
 	struct ieee80211_frame * wh;

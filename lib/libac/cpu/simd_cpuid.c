@@ -711,7 +711,7 @@ int cpuid_getinfo()
 	printf("Logical CPUs    = %d\n", cpuinfo.maxlogic);
 
 #ifdef _X86
-	printf("Threads per core= %d\n", cpuid_x86_threads_per_core());
+	printf("Threads per core= %u\n", cpuid_x86_threads_per_core());
 #endif
 
 	if (cpuinfo.cores > 0)
