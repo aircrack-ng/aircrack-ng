@@ -1087,7 +1087,8 @@ static void got_ip(struct wstate * ws)
 	}
 
 	memset(ws->ws_netip, 0, 16);
-	strlcpy(ws->ws_netip, inet_ntoa(*in), 16);
+	char * netip = inet_ntoa(*in);
+	strlcpy(ws->ws_netip, netip ? netip : "", 16);
 
 	time_print("Got IP=(%s)\n", ws->ws_netip);
 	memset(ws->ws_myip, 0, sizeof(ws->ws_myip));

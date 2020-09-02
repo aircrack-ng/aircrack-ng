@@ -260,12 +260,13 @@ static void reset(struct east_state * es)
 	f = fopen(S_OWN_LOG, "a");
 	if (!f) err(1, "fopen()");
 	mac2str(mac, es->es_apmac, sizeof(mac));
+	char * pubip = inet_ntoa(es->es_pubip);
 	fprintf(f,
 			"%s %d %s %s\n",
 			mac,
 			es->es_apchan,
 			es->es_apssid,
-			inet_ntoa(es->es_pubip));
+			pubip ? pubip : "<unknown>");
 	fclose(f);
 
 	/* start over */
@@ -1011,12 +1012,14 @@ static void found_net_addr(struct east_state * es, unsigned char * a)
 
 	ip[3] = 123;
 	memcpy(&es->es_myip, ip, 4);
-	printf("My IP %s\n", inet_ntoa(es->es_myip));
+	char * myip = inet_ntoa(es->es_myip);
+	printf("My IP %s\n", myip ? myip : "<unknown>");
 	set_tap_ip(es);
 
 	ip[3] = 1;
 	memcpy(&es->es_rtrip, ip, 4);
-	printf("Rtr IP %s\n", inet_ntoa(es->es_rtrip));
+	char * rtrip = inet_ntoa(es->es_rtrip);
+	printf("Rtr IP %s\n", rtrip ? rtrip : "<unknown>");
 	es->es_astate = AS_FIND_RTR_MAC;
 }
 
@@ -1134,7 +1137,8 @@ check_decrypt_ip(struct east_state * es, struct ieee80211_frame * wh, int len)
 
 		decrypt_ip_addr(es, &sip, &i, data, off_s_addr);
 		decrypt_ip_addr(es, dip, &iplen, data, off_d_addr);
-		printf("\nIPs so far %s->", inet_ntoa(sip));
+		char * sipip = inet_ntoa(sip);
+		printf("\nIPs so far %s->", sipip ? sipip : "<unknown>");
 		for (i = 0; i < iplen; i++)
 		{
 			printf("%d", dip[i]);
@@ -1158,8 +1162,9 @@ static void setup_internet(struct east_state * es)
 
 	es->es_astate = AS_CHECK_INET;
 	clear_timeout(es);
+	char * srvip = inet_ntoa(es->es_srvip);
 	printf("Trying to connect to buddy: %s:%d\n",
-		   inet_ntoa(es->es_srvip),
+		   srvip ? srvip : "<unknown>",
 		   es->es_port);
 
 	ALLEGE(es->es_buddys == 0);
