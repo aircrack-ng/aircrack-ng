@@ -1442,6 +1442,7 @@ send_fragment(struct wstate * ws, struct frag_state * fs, struct prga_info * pi)
 	pcrc = (unsigned int *) (body + fragsize); //-V1032
 	*pcrc = htole32(crc);
 
+	ALLEGE(fragsize < INT_MAX - 4);
 	for (i = 0; i < (fragsize + 4) && i < (sizeof(buf) - sizeof(*wh) - 1); i++)
 		body[i] ^= pi->pi_prga[i];
 
