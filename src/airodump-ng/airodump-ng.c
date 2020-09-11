@@ -5766,7 +5766,7 @@ int main(int argc, char * argv[])
 	long time_slept, cycle_time, cycle_time2;
 	char * output_format_string;
 	int caplen = 0, i, j, fdh, chan_count, freq_count;
-	int fd_raw[MAX_CARDS], arptype[MAX_CARDS];
+	int fd_raw[MAX_CARDS];
 	int ivs_only, found;
 	int freq[2];
 	int num_opts = 0;
@@ -5961,7 +5961,6 @@ int main(int argc, char * argv[])
 
 	for (i = 0; i < MAX_CARDS; i++)
 	{
-		arptype[i] = 0;
 		fd_raw[i] = -1;
 		lopt.channel[i] = 0;
 	}

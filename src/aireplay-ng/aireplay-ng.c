@@ -2050,7 +2050,7 @@ static int do_attack_arp_resend(void)
 static int do_attack_caffe_latte(void)
 {
 	int nb_bad_pkt;
-	int arp_off1, arp_off2;
+	int arp_off1;
 	int i, n, caplen, nb_arp, z;
 	long nb_pkt_read, nb_arp_tot, nb_ack_pkt;
 	unsigned char flip[4096];
@@ -2163,7 +2163,6 @@ static int do_attack_caffe_latte(void)
 	nb_arp = 0;
 	nb_arp_tot = 0;
 	arp_off1 = 0;
-	arp_off2 = 0;
 
 	while (1)
 	{
@@ -2524,7 +2523,7 @@ static int do_attack_caffe_latte(void)
 static int do_attack_migmode(void)
 {
 	int nb_bad_pkt;
-	int arp_off1, arp_off2;
+	int arp_off1;
 	int i, n, caplen, nb_arp, z;
 	long nb_pkt_read, nb_arp_tot, nb_ack_pkt;
 	unsigned char flip[4096];
@@ -2650,7 +2649,6 @@ static int do_attack_migmode(void)
 	nb_arp = 0;
 	nb_arp_tot = 0;
 	arp_off1 = 0;
-	arp_off2 = 0;
 
 	while (1)
 	{
@@ -4080,13 +4078,12 @@ static void save_prga(char * filename,
 					  int prgalen)
 {
 	FILE * xorfile;
-	size_t unused;
 	xorfile = fopen(filename, "wb");
 	if (xorfile)
 	{
 		if (fwrite(iv, 1, 4, xorfile) > 0)
 		{
-			unused = fwrite(prga, 1, prgalen, xorfile);
+			(void) fwrite(prga, 1, prgalen, xorfile);
 		}
 		fclose(xorfile);
 	}

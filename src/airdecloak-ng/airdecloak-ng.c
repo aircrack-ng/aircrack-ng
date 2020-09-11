@@ -322,12 +322,10 @@ static int get_rtap_signal(int caplen)
 // !!!! WDS not yet implemented
 static BOOLEAN read_packets(void)
 {
-	int i, start;
+	int start;
 	time_t tt;
 	unsigned char * h80211;
 	size_t bytes_read;
-
-	i = 0;
 
 	memset(&stats, 0, sizeof(stats));
 	tt = time(NULL);
