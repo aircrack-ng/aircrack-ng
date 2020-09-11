@@ -1911,7 +1911,7 @@ skip_probe:
 				 *
 				 * For now, just figure out the highest MCS rate.
 				 */
-				if ((unsigned) ap_cur->n_channel.mcs_index == -1U)
+				if ((unsigned char) ap_cur->n_channel.mcs_index == 0xff)
 				{
 					uint32_t rx_mcs_bitmask = 0;
 					memcpy(&rx_mcs_bitmask, p + 5, sizeof(uint32_t));
