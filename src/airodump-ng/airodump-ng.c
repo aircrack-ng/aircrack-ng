@@ -1911,7 +1911,7 @@ skip_probe:
 				 *
 				 * For now, just figure out the highest MCS rate.
 				 */
-				if (ap_cur->n_channel.mcs_index == -1)
+				if ((unsigned) ap_cur->n_channel.mcs_index == -1U)
 				{
 					uint32_t rx_mcs_bitmask = 0;
 					memcpy(&rx_mcs_bitmask, p + 5, sizeof(uint32_t));
@@ -3990,7 +3990,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 				if (lopt.show_manufacturer)
 				{
-					if (lopt.maxsize_essid_seen <= len - essid_len)
+					if (lopt.maxsize_essid_seen <= (u_int)(len - essid_len))
 						lopt.maxsize_essid_seen
 							= (u_int) MAX(len - essid_len, 5);
 					else
