@@ -225,7 +225,6 @@ static void reset(struct east_state * es)
 	REQUIRE(es != NULL);
 
 	int sz;
-	void * ptr;
 	struct rpacket * p;
 	struct owned * ow;
 	FILE * f;
@@ -236,8 +235,9 @@ static void reset(struct east_state * es)
 	es->es_buddys = 0;
 
 	/* reset state */
-	ptr = es->es_apmac;
-	sz = sizeof(*es) - ((unsigned long) ptr - (unsigned long) es);
+	char * ptr = (void *) es;
+	ptr += offsetof(struct east_state, es_apmac);
+	sz = sizeof(*es) - offsetof(struct east_state, es_apmac);
 	memset(ptr, 0, sz);
 
 	/* fixup state */
