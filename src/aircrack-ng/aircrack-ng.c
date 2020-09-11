@@ -2377,7 +2377,7 @@ static ssize_t safe_write(int fd, void * buf, size_t len)
 static THREAD_ENTRY(crack_wep_thread)
 {
 	long xv, min, max;
-	unsigned char jj[256];
+	unsigned char jj[256] = {0};
 	unsigned char S[256], Si[256];
 	unsigned char K[64];
 
@@ -5842,6 +5842,7 @@ int main(int argc, char * argv[])
 	int old = 0;
 	char essid[ESSID_LENGTH + 1];
 	int restore_session = 0;
+	int in_use_simdsize = 0;
 	int nbarg = argc;
 	access_points = c_avl_create(station_compare);
 	targets = c_avl_create(station_compare);
@@ -6049,7 +6050,7 @@ int main(int argc, char * argv[])
 #if defined(__i386__) || defined(__x86_64__) || defined(__arm__)               \
 	|| defined(__aarch64__)
 				cpuid_getinfo();
-				int in_use_simdsize = dso_ac_crypto_engine_simd_width();
+				in_use_simdsize = dso_ac_crypto_engine_simd_width();
 				printf("SIMD size in use= %d ", in_use_simdsize);
 
 				if (in_use_simdsize == 1)
