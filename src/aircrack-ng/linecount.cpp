@@ -85,7 +85,7 @@ unsigned int linecount(const char * file, off_t offset, size_t offsetmax)
 	size_t cc = 0;
 	size_t blkcnt = 1;
 
-	if (offsetmax == 0U) return -1;
+	if (offsetmax <= 0U) return 0;
 
 	if (offset) ifs.seekg(offset, ifs.beg);
 
