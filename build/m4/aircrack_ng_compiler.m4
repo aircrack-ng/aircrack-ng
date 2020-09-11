@@ -113,6 +113,26 @@ AS_IF([test "x$enable_maintainer_mode" = "xyes"], [
                 ;;
         esac
     ])
+
+    AX_CHECK_COMPILE_FLAG([-Wextra], [
+        AX_APPEND_FLAG(-Wextra, [opt_[]_AC_LANG_ABBREV[]flags])
+    ])
+
+    AX_CHECK_COMPILE_FLAG([-Werror], [
+        AX_APPEND_FLAG(-Werror, [opt_[]_AC_LANG_ABBREV[]flags])
+    ])
+
+    AC_LANG_CASE([C], [
+        case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
+            gnu|clang|intel)
+                AX_APPEND_FLAG(-Wstrict-prototypes, [opt_[]_AC_LANG_ABBREV[]flags])
+                ;;
+        esac
+    ])
+
+    AX_CHECK_COMPILE_FLAG([-Wpointer-arith], [
+        AX_APPEND_FLAG(-Wpointer-arith, [opt_[]_AC_LANG_ABBREV[]flags])
+    ])
 ])
 
 AC_LANG_CASE([C], [
@@ -121,16 +141,8 @@ AC_LANG_CASE([C], [
         AX_APPEND_FLAG(-std=gnu99, [opt_[]_AC_LANG_ABBREV[]flags])
     ])
 
-    AX_CHECK_COMPILE_FLAG([-fno-common], [
-        AX_APPEND_FLAG(-fno-common, [opt_[]_AC_LANG_ABBREV[]flags])
-    ])
-
-    AX_CHECK_COMPILE_FLAG([-fno-strict-aliasing], [
-        AX_APPEND_FLAG(-fno-strict-aliasing, [opt_[]_AC_LANG_ABBREV[]flags])
-    ])
-
-    AX_CHECK_COMPILE_FLAG([-Wpointer-arith], [
-        AX_APPEND_FLAG(-Wpointer-arith, [opt_[]_AC_LANG_ABBREV[]flags])
+    AX_CHECK_COMPILE_FLAG([-fcommon], [
+        AX_APPEND_FLAG(-fcommon, [opt_[]_AC_LANG_ABBREV[]flags])
     ])
 
 	case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
@@ -145,12 +157,6 @@ AC_LANG_CASE([C], [
         intel)
 			dnl warning 2218 is: result of call is not used
             AX_APPEND_FLAG(-diag-disable 2218, [opt_[]_AC_LANG_ABBREV[]flags])
-            ;;
-    esac
-
-    case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
-        gnu|clang|intel)
-            AX_APPEND_FLAG(-Wstrict-prototypes, [opt_[]_AC_LANG_ABBREV[]flags])
             ;;
     esac
 ])
@@ -197,19 +203,6 @@ case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
         esac
         ;;
 esac
-
-AS_IF([test "x$gcc_over45" = "xyes"], [
-    case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
-        gnu|intel)
-            AX_CHECK_COMPILE_FLAG([-Wno-unused-but-set-variable], [
-                AX_APPEND_FLAG(-Wno-unused-but-set-variable, [opt_[]_AC_LANG_ABBREV[]flags])
-            ])
-            ;;
-    esac
-    AX_CHECK_COMPILE_FLAG([-Wno-array-bounds], [
-        AX_APPEND_FLAG(-Wno-array-bounds, [opt_[]_AC_LANG_ABBREV[]flags])
-    ])
-], [])
 ])
 
 AC_DEFUN([AIRCRACK_NG_COMPILER_C], [
