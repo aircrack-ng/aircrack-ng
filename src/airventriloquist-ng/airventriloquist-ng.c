@@ -1833,6 +1833,7 @@ int main(int argc, char * argv[])
 				break;
 
 			case 'n':
+			{
 				printf("DNS IP: %s\n", optarg);
 				int retval = inet_pton(AF_INET, optarg, &lopt.p_dnsspoof_ip);
 				if (1 != retval)
@@ -1844,7 +1845,8 @@ int main(int argc, char * argv[])
 					return (EXIT_FAILURE);
 				}
 				lopt.flag_dnsspoof = 1;
-				break;
+			}
+			break;
 
 			case 's':
 				printf("Hijack search term: %s\n", optarg);
