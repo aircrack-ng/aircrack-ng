@@ -44,6 +44,10 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
+#if defined(__DragonFly__)
+#include <pthread_np.h>
+#endif
+
 #include "aircrack-ng/defs.h"
 #include "aircrack-ng/cpu/cpuset.h"
 
