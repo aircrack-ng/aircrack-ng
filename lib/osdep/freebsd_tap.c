@@ -80,7 +80,7 @@ static int ti_do_open_fbsd(struct tif * ti, char * name)
 	/* get flags */
 	ifr = &priv->tf_ifr;
 	memset(ifr, 0, sizeof(*ifr));
-	snprintf(ifr->ifr_name, sizeof(ifr->ifr_name) - 1, "%s", priv->tf_name);
+	snprintf(ifr->ifr_name, sizeof(ifr->ifr_name), "%s", priv->tf_name);
 	if (ioctl(s, SIOCGIFFLAGS, ifr) == -1) goto err2;
 	flags = (ifr->ifr_flags & 0xffff) | (ifr->ifr_flagshigh << 16);
 
