@@ -2147,8 +2147,8 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 	fclose(f_cap_out);
 
 	PCT;
-	printf("\nCompleted in %lds (%0.2f bytes/s)\n\n",
-		   (long) time(NULL) - tt,
+	printf("\nCompleted in %llds (%0.2f bytes/s)\n\n",
+		   (long long) time(NULL) - tt,
 		   (float) (pkh.caplen - 6 - 26) / (float) (time(NULL) - tt));
 
 	free(chopped);
