@@ -2253,7 +2253,7 @@ static THREAD_ENTRY(packet_reader_thread)
 		if (rv < 0)
 		{
 			// NOTE: An error occurred during processing, bail!
-			goto read_fail;
+			goto done_reading;
 		}
 
 		if (ap_cur != NULL)
@@ -2268,15 +2268,20 @@ static THREAD_ENTRY(packet_reader_thread)
 
 		if (request->mode == PACKET_READER_READ_MODE && nb_prev_pkt == nb_pkt)
 		{
+			ALLEGE(pthread_mutex_lock(&mx_eof) == 0);
 			pthread_cond_signal(&cv_eof);
+			ALLEGE(pthread_mutex_unlock(&mx_eof) == 0);
 		}
 	}
 
 done_reading:
 	++nb_eof;
-	pthread_cond_signal(&cv_eof);
 
 read_fail:
+	ALLEGE(pthread_mutex_lock(&mx_eof) == 0);
+	pthread_cond_signal(&cv_eof);
+	ALLEGE(pthread_mutex_unlock(&mx_eof) == 0);
+
 	destroy(buffer, free);
 	destroy(rb.buf1, free);
 	destroy(rb.buf2, free);
