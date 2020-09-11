@@ -523,7 +523,7 @@ static u_int16_t calcsum(char * buffer, size_t length)
 {
 	u_int32_t sum = 0;
 
-	for (int i = 0; i < length - 1; i += 2)
+	for (size_t i = 0; i < length - 1; i += 2)
 		sum += (buffer[i] << 8) + buffer[i + 1];
 
 	if (length % 2) sum += buffer[length - 1];
@@ -544,7 +544,7 @@ static u_int16_t calcsum_for_protocol(u_int16_t protocol,
 	u_int16_t * ip_dst = (u_int16_t *) &dest_addr;
 
 	// Calculate the chksum
-	for (int i = 0; i < length - 1; i += 2)
+	for (size_t i = 0; i < length - 1; i += 2)
 		chksum += (buf[i] << 8) + buf[i + 1];
 
 	if (length % 2) chksum += buf[length - 1];

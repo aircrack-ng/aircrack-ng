@@ -674,7 +674,7 @@ static int guess_packet(unsigned char * srcbuf,
 	int i, j, k, l, z, len;
 	unsigned char smac[6], dmac[6], bssid[6];
 
-	unsigned char *ptr, *psmac, *psip, *pdmac, *pdip;
+	unsigned char *ptr, *psip, *pdmac, *pdip;
 	unsigned char arp[4096];
 
 	z = ((srcbuf[1] & 3) != 3) ? 24 : 30;
@@ -711,7 +711,6 @@ static int guess_packet(unsigned char * srcbuf,
 	}
 
 	ptr = arp;
-	psmac = arp + 16;
 	pdmac = arp + 26;
 	psip = arp + 22;
 	pdip = arp + 32;
@@ -1294,8 +1293,8 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 	REQUIRE(src_packet != NULL);
 
 	float f, ticks[4];
-	int i, j, n, z, caplen, srcz, srclen;
-	int data_start, data_end, srcdiff, diff;
+	int i, j, n, z, caplen, srclen;
+	int data_start, data_end;
 	int guess, is_deauth_mode;
 	int nb_bad_pkt;
 	int tried_header_rec = 0;
@@ -1345,7 +1344,6 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 	z = ((h80211[1] & 3) != 3) ? 24 : 30;
 	if ((h80211[0] & 0x80) == 0x80) /* QoS */
 		z += 2;
-	srcz = z;
 
 	if ((unsigned) caplen > sizeof(srcbuf)
 		|| (unsigned) caplen > sizeof(h80211))
@@ -1443,7 +1441,6 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 
 	data_start = 26 + 8;
 	srclen = data_end = n;
-	srcdiff = z - 24;
 
 	chopped[24] ^= 0x01;
 	chopped[25] = 0x00;
@@ -1640,8 +1637,6 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 			z = ((h80211[1] & 3) != 3) ? 24 : 30;
 			if ((h80211[0] & 0x80) == 0x80) /* QoS */
 				z += 2;
-
-			diff = z - 24;
 
 			if ((chopped[data_end + 0] ^ srcbuf[data_end + 0]) == 0x06
 				&& (chopped[data_end + 1] ^ srcbuf[data_end + 1]) == 0x04
@@ -1955,7 +1950,6 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 	z = ((h80211[1] & 3) != 3) ? 24 : 30;
 	if ((h80211[0] & 0x80) == 0x80) /* QoS */
 		z += 2;
-	diff = z - 24;
 
 	chopped[26 + 8 + 0] = srcbuf[26 + 8 + 0] ^ b1;
 	chopped[26 + 8 + 1] = srcbuf[26 + 8 + 1] ^ b2;
@@ -2164,12 +2158,10 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 
 static int getHDSK(void)
 {
-	int i, n;
+	int i;
 	int aacks, sacks, caplen;
 	struct timeval tv;
 	fd_set rfds;
-
-	n = 0;
 
 	/* deauthenticate the target */
 
@@ -2263,7 +2255,7 @@ static int getHDSK(void)
 
 int main(int argc, char * argv[])
 {
-	int i, j, ret, got_hdsk;
+	int i, ret, got_hdsk;
 	unsigned int n;
 	char *s, buf[128];
 	int caplen = 0;
@@ -2538,7 +2530,6 @@ int main(int argc, char * argv[])
 				buf[1] = s[1];
 				buf[2] = '\0';
 				i = 0;
-				j = 0;
 				while (sscanf(buf, "%x", &n) == 1)
 				{
 					if (n > 255)

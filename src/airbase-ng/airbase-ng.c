@@ -2862,6 +2862,8 @@ static THREAD_ENTRY(caffelatte_thread)
 	int nb_pkt_sent_1 = 0;
 	int seq = 0;
 
+	UNUSED_PARAM(arg);
+
 	ticks[0] = 0;
 	ticks[1] = 0;
 	ticks[2] = 0;
@@ -2998,6 +3000,8 @@ static THREAD_ENTRY(cfrag_thread)
 	pCF_t curCF;
 	unsigned char rnd[2];
 	unsigned char buffer[4096];
+
+	UNUSED_PARAM(arg);
 
 	ticks[0] = 0;
 	ticks[1] = 0;
