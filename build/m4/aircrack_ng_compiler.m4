@@ -95,52 +95,6 @@ AS_IF([test "x$enable_code_coverage" = "xno"], [
     esac
 ])
 
-AS_IF([test "x$enable_maintainer_mode" = "xyes"], [
-    AX_CHECK_COMPILE_FLAG([-pedantic], [
-        AX_APPEND_FLAG(-pedantic, [opt_[]_AC_LANG_ABBREV[]flags])
-
-        case "$ax_cv_c_compiler_vendor" in
-            clang)
-                AX_CHECK_COMPILE_FLAG([-Wno-newline-eof], [
-                    AX_APPEND_FLAG(-Wno-newline-eof, [opt_[]_AC_LANG_ABBREV[]flags])
-                ])
-                AX_CHECK_COMPILE_FLAG([-Wno-language-extension-token], [
-                    AX_APPEND_FLAG(-Wno-language-extension-token, [opt_[]_AC_LANG_ABBREV[]flags])
-                ])
-                AX_CHECK_COMPILE_FLAG([-Wno-gnu-statement-expression], [
-                    AX_APPEND_FLAG(-Wno-gnu-statement-expression, [opt_[]_AC_LANG_ABBREV[]flags])
-                ])
-                ;;
-        esac
-    ])
-
-    AX_CHECK_COMPILE_FLAG([-Wextra], [
-        AX_APPEND_FLAG(-Wextra, [opt_[]_AC_LANG_ABBREV[]flags])
-    ])
-
-    case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
-        intel)
-            ;;
-        *)
-            AX_CHECK_COMPILE_FLAG([-Werror], [
-                AX_APPEND_FLAG(-Werror, [opt_[]_AC_LANG_ABBREV[]flags])
-            ])
-		    ;;
-	esac
-
-    AC_LANG_CASE([C], [
-        case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
-            gnu|clang|intel)
-                AX_APPEND_FLAG(-Wstrict-prototypes, [opt_[]_AC_LANG_ABBREV[]flags])
-                ;;
-        esac
-    ])
-
-    AX_CHECK_COMPILE_FLAG([-Wpointer-arith], [
-        AX_APPEND_FLAG(-Wpointer-arith, [opt_[]_AC_LANG_ABBREV[]flags])
-    ])
-])
-
 AC_LANG_CASE([C], [
     saved_cflags="$CFLAGS"
     AX_CHECK_COMPILE_FLAG([-std=gnu99], [
@@ -178,6 +132,54 @@ case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
         AX_COMPARE_VERSION([$ax_cv_[]_AC_LANG_ABBREV[]_compiler_version], [ge], [4.9], [gcc_over49=yes], [gcc_over49=x])
     ;;
 esac
+
+AS_IF([test "x$enable_maintainer_mode" = "xyes"], [
+    AS_IF([test "x$gcc_over49" = "xyes"], [
+        AX_CHECK_COMPILE_FLAG([-pedantic], [
+            AX_APPEND_FLAG(-pedantic, [opt_[]_AC_LANG_ABBREV[]flags])
+
+            case "$ax_cv_c_compiler_vendor" in
+                clang)
+                    AX_CHECK_COMPILE_FLAG([-Wno-newline-eof], [
+                        AX_APPEND_FLAG(-Wno-newline-eof, [opt_[]_AC_LANG_ABBREV[]flags])
+                    ])
+                    AX_CHECK_COMPILE_FLAG([-Wno-language-extension-token], [
+                        AX_APPEND_FLAG(-Wno-language-extension-token, [opt_[]_AC_LANG_ABBREV[]flags])
+                    ])
+                    AX_CHECK_COMPILE_FLAG([-Wno-gnu-statement-expression], [
+                        AX_APPEND_FLAG(-Wno-gnu-statement-expression, [opt_[]_AC_LANG_ABBREV[]flags])
+                    ])
+                    ;;
+            esac
+        ])
+	])
+
+    AX_CHECK_COMPILE_FLAG([-Wextra], [
+        AX_APPEND_FLAG(-Wextra, [opt_[]_AC_LANG_ABBREV[]flags])
+    ])
+
+    case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
+        intel)
+            ;;
+        *)
+            AX_CHECK_COMPILE_FLAG([-Werror], [
+                AX_APPEND_FLAG(-Werror, [opt_[]_AC_LANG_ABBREV[]flags])
+            ])
+		    ;;
+	esac
+
+    AC_LANG_CASE([C], [
+        case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
+            gnu|clang|intel)
+                AX_APPEND_FLAG(-Wstrict-prototypes, [opt_[]_AC_LANG_ABBREV[]flags])
+                ;;
+        esac
+    ])
+
+    AX_CHECK_COMPILE_FLAG([-Wpointer-arith], [
+        AX_APPEND_FLAG(-Wpointer-arith, [opt_[]_AC_LANG_ABBREV[]flags])
+    ])
+])
 
 dnl
 dnl Enable compiler flags that meet the required minimum version
