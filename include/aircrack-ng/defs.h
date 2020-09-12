@@ -117,6 +117,27 @@
 #define unlikely(x) (x)
 #endif
 
+#if defined(HAS_ATTRIBUTE)
+#undef HAS_ATTRIBUTE
+#endif
+#if defined(__has_attribute)
+#define HAS_ATTRIBUTE(attribute) __has_attribute(attribute)
+#else
+#define HAS_ATTRIBUTE(attribute) (0)
+#endif
+
+#if defined(fallthrough)
+#undef fallthrough
+#endif
+#if HAS_ATTRIBUTE(fallthrough)                                                 \
+	|| (defined(__GNUC__) && __GNUC__ >= 7 && !defined(__INTEL_COMPILER)       \
+		&& !defined(__llvm__)                                                  \
+		&& !defined(__clang__))
+#define fallthrough __attribute__((__fallthrough__))
+#else
+#define fallthrough
+#endif
+
 #define UNUSED_PARAM(x) (void) x
 
 #ifdef UNUSED
