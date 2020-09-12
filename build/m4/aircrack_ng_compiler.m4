@@ -160,6 +160,7 @@ AS_IF([test "x$enable_maintainer_mode" = "xyes"], [
 
     case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
         intel)
+            AX_APPEND_FLAG(-diag-disable remark, [opt_[]_AC_LANG_ABBREV[]flags])
             ;;
         *)
             AX_CHECK_COMPILE_FLAG([-Werror], [
