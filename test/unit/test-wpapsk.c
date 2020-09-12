@@ -204,7 +204,7 @@ int main(int argc, char * argv[])
 			cmocka_unit_test(test_crypto_engine_ppc_altivec),
 			cmocka_unit_test(test_crypto_engine_ppc_power8),
 #else
-#warning "SIMD not available."
+/* warning "SIMD not available." */
 #endif
 		  };
 	return cmocka_run_group_tests(tests, group_setup, NULL);
