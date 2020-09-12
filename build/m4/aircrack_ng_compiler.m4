@@ -180,6 +180,16 @@ AS_IF([test "x$enable_maintainer_mode" = "xyes"], [
     AX_CHECK_COMPILE_FLAG([-Wpointer-arith], [
         AX_APPEND_FLAG(-Wpointer-arith, [opt_[]_AC_LANG_ABBREV[]flags])
     ])
+
+    case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
+        gnu|clang)
+            dnl BSD systems complain about CMocka using ,##__VA_ARGS__
+            dnl Suppress this warning
+            AX_CHECK_COMPILE_FLAG([-Werror -Wno-gnu-zero-variadic-macro-arguments], [
+                AX_APPEND_FLAG(-Wno-gnu-zero-variadic-macro-arguments, [opt_[]_AC_LANG_ABBREV[]flags])
+            ])
+        ;;
+    esac
 ])
 
 dnl
