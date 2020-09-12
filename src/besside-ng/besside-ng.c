@@ -928,7 +928,7 @@ static void attack_wpa(struct network * n)
 	{
 		case ASTATE_READY:
 			n->n_astate = ASTATE_DEAUTH;
-		/* fallthrough */
+			fallthrough;
 		case ASTATE_DEAUTH:
 			deauth(n);
 			break;
@@ -1564,7 +1564,7 @@ static void attack_wep(struct network * n)
 	{
 		case ASTATE_READY:
 			n->n_astate = ASTATE_WEP_PRGA_GET;
-		/* fallthrough */
+			fallthrough;
 		case ASTATE_WEP_PRGA_GET:
 			prga_get(n);
 			break;
@@ -1593,7 +1593,7 @@ static void attack_continue(struct network * n)
 
 		case ASTATE_DONE:
 			pwned(n);
-		/* fallthrough */
+			fallthrough;
 		case ASTATE_UNREACH:
 			if (_conf.cf_bssid)
 				_state.s_state = STATE_DONE;
