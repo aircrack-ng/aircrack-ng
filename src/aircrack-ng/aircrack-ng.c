@@ -619,7 +619,7 @@ static int parse_ivs2(struct AP_info * ap_cur,
 	return (0);
 }
 
-static void clean_exit(int ret)
+static __attribute__((noinline)) void clean_exit(int ret)
 {
 	int i = 0;
 
@@ -2295,7 +2295,8 @@ read_fail:
 
 /* timing routine */
 
-static inline float chrono(struct timeval * start, int reset)
+static __attribute__((always_inline)) float chrono(struct timeval * start,
+												   int reset)
 {
 	REQUIRE(start != NULL);
 
@@ -4200,7 +4201,7 @@ static THREAD_ENTRY(crack_wpa_pmkid_thread)
  * nb: index of the dictionary
  * return 0 on success and FAILURE if it failed
  */
-static int next_dict(int nb)
+static __attribute__((noinline)) int next_dict(int nb)
 {
 	off_t tmpword = 0;
 
@@ -4385,7 +4386,8 @@ sql_wpacallback(void * arg, int ccount, char ** values, char ** columnnames)
 }
 #endif
 
-static int display_wpa_hash_information(struct AP_info * ap_cur)
+static int __attribute__((noinline))
+display_wpa_hash_information(struct AP_info * ap_cur)
 {
 	unsigned i = 0;
 
