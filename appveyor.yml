@@ -16,7 +16,7 @@ clone_depth: 500
 
 environment:
   global:
-    # APPVEYOR_SAVE_CACHE_ON_ERROR: true
+    APPVEYOR_SAVE_CACHE_ON_ERROR: true
     AIRCRACK_CI_CACHE: C:\aircrack_ci_cache
     CYG_CACHE: '%AIRCRACK_CI_CACHE%\cygwin'
     MSYS2_CACHE: '%AIRCRACK_CI_CACHE%\msys2'
@@ -90,7 +90,7 @@ install:
       New-Item -Force -Type Directory $env:CYG_CACHE
 
       downloadIfOlderThanDays "https://cygwin.com/setup-x86.exe" "${env:AIRCRACK_CI_CACHE}\setup-x86.exe" 7
-      
+
       updateCygwin "${env:AIRCRACK_CI_CACHE}\setup-x86.exe" C:/cygwin $env:CYG_CACHE
     }
 
@@ -99,7 +99,7 @@ install:
       New-Item -Force -Type Directory $env:CYG_CACHE
 
       downloadIfOlderThanDays "https://cygwin.com/setup-x86_64.exe" "${env:AIRCRACK_CI_CACHE}\setup-x86_64.exe" 7
-      
+
       updateCygwin "${env:AIRCRACK_CI_CACHE}\setup-x86_64.exe" C:/cygwin64 $env:CYG_CACHE
     }
 
@@ -163,14 +163,14 @@ build_script:
       Exec-External {& C:\msys64\usr\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental"}
     }
 - ps: |
-    if ($env:TARGET -eq "pkg") {
+    if ($env:TARGET -eq "pkg" -and -not $env:APPVEYOR_PULL_REQUEST_NUMBER) {
       Exec-External {& C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll /c/Windows/System"}
       Exec-External {& C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll /c/Windows/System32"}
       Exec-External {& C:\msys64\usr\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x64/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x64/libairpcap.dll.a"}
       Exec-External {& C:\cygwin\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x86/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x86/libairpcap.dll.a"}
       .\build\package-win32.ps1 2>&1 | %{ "$_" }
     }
-    
+
 artifacts:
   - path: 'aircrack-ng-*.zip'
 
