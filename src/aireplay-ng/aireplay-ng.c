@@ -4030,9 +4030,10 @@ static int do_attack_chopchop(void)
 	free(chopped);
 	fclose(f_cap_out);
 
+	float const delta_tt = (float) (time(NULL) - tt);
 	printf("\nCompleted in %lds (%0.2f bytes/s)\n\n",
-		   (long) (time(NULL) - tt),
-		   (float) (pkh.caplen - 6 - 24) / (float) (time(NULL) - tt));
+		   (long) delta_tt,
+		   (delta_tt != 0 ? (float) ((pkh.caplen - 6 - 24) / delta_tt) : 0.f));
 
 	return (0);
 }
