@@ -6139,17 +6139,27 @@ int main(int argc, char * argv[])
 				break;
 
 			case 'p':
-
-				opt.nbcpu = (int) strtol(optarg, NULL, 10);
-				if (opt.nbcpu < 1 || opt.nbcpu > MAX_THREADS)
+			{
+				int const nbcpu = (int) strtol(optarg, NULL, 10);
+				if (nbcpu < 1 || nbcpu > MAX_THREADS)
 				{
 					printf("Invalid number of processes (recommended: %d)\n",
 						   cpu_count);
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (EXIT_FAILURE);
 				}
+				if (nbcpu > cpu_count)
+				{
+					fprintf(stderr,
+							"Specifying more processes (%d) than available "
+							"CPUs (%d) will cause performance degradation.\n",
+							nbcpu,
+							cpu_count);
+				}
+				opt.nbcpu = nbcpu;
 
 				break;
+			}
 
 			case 'q':
 
