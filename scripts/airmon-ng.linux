@@ -1471,6 +1471,15 @@ if [ "$VERBOSE" = "1" ]; then
 		printf "\n"
 	fi
 	uname -a
+	printf "\n"
+	if iw reg get | grep -q 'country 00:'; then
+		printf "Regulatory Domain appears to be unset, please consider setting it with 'iw reg set XX'\n"
+		printf "https://wireless.wiki.kernel.org/en/users/documentation/iw#updating_your_regulatory_domain\n"
+	else
+		for regdomain in $(iw reg get | awk '/country/ {print substr($2,1,length($2)-1)}' | sort -u); do
+			printf "Regulatory Domain set to ${regdomain}, see 'iw reg get' for details\n"
+		done
+	fi
 
 	checkvm
 	if [ -n "${vm}" ]; then
