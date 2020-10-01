@@ -1359,7 +1359,6 @@ checkvm() {
 		if [ -x "$(command -v lscpu 2>&1)" ]; then
                         lscpu_data="$(lscpu 2>&1)"
 			printf "${lscpu_data}" | grep -iq "Xen" 2> /dev/null && vm="Xen"
-			printf "${lscpu_data}" | grep -iq "KVM" 2> /dev/null && vm="KVM"
 			printf "${lscpu_data}" | grep -iq "Microsoft" 2> /dev/null && vm="MS Hyper-V"
 			[ -n "${vm}" ] && vm_from="lscpu"
 		fi
