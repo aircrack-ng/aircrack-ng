@@ -1887,9 +1887,9 @@ int main(int argc, char * argv[])
 				free(progname);
 				return (EXIT_SUCCESS);
 
-			default:
-			// intentional fall through
 			case ':':
+				fallthrough;
+			default:
 				printf("\"%s --help\" for help.\n", argv[0]);
 		}
 	}

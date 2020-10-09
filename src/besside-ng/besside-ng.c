@@ -1585,7 +1585,7 @@ static void attack_continue(struct network * n)
 	{
 		case ASTATE_NONE:
 			n->n_astate = ASTATE_PING;
-		/* fall through */
+			fallthrough;
 		case ASTATE_PING:
 			n->n_ping_got = n->n_ping_sent = 0;
 			attack_ping(n);
