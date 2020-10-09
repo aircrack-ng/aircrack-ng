@@ -138,10 +138,10 @@ build_script:
       Exec-External {& C:\cygwin\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll /cygdrive/c/Windows/System32"}
       Exec-External {& C:\cygwin\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x86/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x86/libairpcap.dll.a"}
       if ($env:COMPILER -eq "gcc") {
-        Exec-External {& C:\cygwin\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental --with-airpcap=/cygdrive/c/projects/aircrack-ng"}
-        Exec-External {& C:\cygwin\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental"}
+        Exec-External {& C:\cygwin\bin\bash -e -l -c "./build/cygwin.sh gcc --enable-maintainer-mode --with-experimental --with-airpcap=/cygdrive/c/projects/aircrack-ng"}
+        Exec-External {& C:\cygwin\bin\bash -e -l -c "./build/cygwin.sh gcc --enable-maintainer-mode --with-experimental"}
       } else {
-        Exec-External {& C:\cygwin\bin\bash -e -l -c "./build/cygwin.sh clang --with-experimental --with-airpcap=/cygdrive/c/projects/aircrack-ng"}
+        Exec-External {& C:\cygwin\bin\bash -e -l -c "./build/cygwin.sh clang --enable-maintainer-mode --with-experimental --with-airpcap=/cygdrive/c/projects/aircrack-ng"}
       }
     }
 - ps: |
@@ -149,18 +149,18 @@ build_script:
       Exec-External {& C:\cygwin64\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll /cygdrive/c/Windows/System"}
       Exec-External {& C:\cygwin64\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x64/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x64/libairpcap.dll.a"}
       if ($env:COMPILER -eq "gcc") {
-        Exec-External {& C:\cygwin64\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental --with-airpcap=/cygdrive/c/projects/aircrack-ng"}
-        Exec-External {& C:\cygwin64\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental"}
+        Exec-External {& C:\cygwin64\bin\bash -e -l -c "./build/cygwin.sh gcc --enable-maintainer-mode --with-experimental --with-airpcap=/cygdrive/c/projects/aircrack-ng"}
+        Exec-External {& C:\cygwin64\bin\bash -e -l -c "./build/cygwin.sh gcc --enable-maintainer-mode --with-experimental"}
       } else {
-        Exec-External {& C:\cygwin64\bin\bash -e -l -c "./build/cygwin.sh clang --with-experimental --with-airpcap=/cygdrive/c/projects/aircrack-ng"}
+        Exec-External {& C:\cygwin64\bin\bash -e -l -c "./build/cygwin.sh clang --enable-maintainer-mode --with-experimental --with-airpcap=/cygdrive/c/projects/aircrack-ng"}
       }
     }
 - ps: |
     if ($env:TARGET -eq "msys64") {
       Exec-External {& C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll /c/Windows/System"}
       Exec-External {& C:\msys64\usr\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x64/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x64/libairpcap.dll.a"}
-      Exec-External {& C:\msys64\usr\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental --with-airpcap=/c/projects/aircrack-ng"}
-      Exec-External {& C:\msys64\usr\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental"}
+      Exec-External {& C:\msys64\usr\bin\bash -e -l -c "./build/cygwin.sh gcc --enable-maintainer-mode --with-experimental --with-airpcap=/c/projects/aircrack-ng"}
+      Exec-External {& C:\msys64\usr\bin\bash -e -l -c "./build/cygwin.sh gcc --enable-maintainer-mode --with-experimental"}
     }
 - ps: |
     if ($env:TARGET -eq "pkg" -and -not $env:APPVEYOR_PULL_REQUEST_NUMBER) {
