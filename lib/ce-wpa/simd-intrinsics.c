@@ -1403,6 +1403,10 @@ void SIMDSHA1body(vtype * _data,
 	unsigned int i;
 	vtype * data;
 
+#ifdef NDEBUG
+	(void) SSEi_flags;
+#endif
+
 #if 0
 	if (SSEi_flags & SSEi_FLAT_IN)
 	{

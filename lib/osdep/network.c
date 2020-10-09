@@ -271,6 +271,10 @@ static int queue_get(struct priv_net * pn, void * buf, int len)
 
 	if (q == head) return 0;
 
+#ifdef NDEBUG
+	(void) len;
+#endif
+
 	assert(q->q_len <= len);
 	memcpy(buf, q->q_buf, q->q_len);
 
