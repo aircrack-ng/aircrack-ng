@@ -42,7 +42,15 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <windows.h>
+
+#if defined(__GNUC__) || defined(__llvm__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#endif
 #include <airpcap.h>
+#if defined(__GNUC__) || defined(__llvm__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 #include "osdep.h"
 
