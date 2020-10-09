@@ -889,7 +889,7 @@ static int linux_write(struct wif * wi,
 
 				buf = tmpbuf;
 			}
-		/* fall through */
+			fallthrough;
 		case DT_HOSTAP:
 			if ((((unsigned char *) buf)[1] & 3) == 2)
 			{
