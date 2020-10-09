@@ -154,6 +154,10 @@ static int do_cygwin_open(struct wif * wi, char * iface)
 		lib = dlopen(file, RTLD_LAZY);
 		if (!lib) goto errdll;
 
+#if defined(__GNUC__) || defined(__llvm__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#endif
 		priv->pc_init = dlsym(lib, xstr(CYGWIN_DLL_INIT));
 		priv->pc_set_chan = dlsym(lib, xstr(CYGWIN_DLL_SET_CHAN));
 		priv->pc_set_freq = dlsym(lib, xstr(CYGWIN_DLL_SET_FREQ));
@@ -162,6 +166,9 @@ static int do_cygwin_open(struct wif * wi, char * iface)
 		priv->pc_close = dlsym(lib, xstr(CYGWIN_DLL_CLOSE));
 		priv->pc_inject = dlsym(lib, xstr(CYGWIN_DLL_INJECT));
 		priv->pc_sniff = dlsym(lib, xstr(CYGWIN_DLL_SNIFF));
+#if defined(__GNUC__) || defined(__llvm__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 		if (!(priv->pc_init && priv->pc_set_chan && priv->pc_get_mac
 			  && priv->pc_inject
