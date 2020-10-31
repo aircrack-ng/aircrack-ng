@@ -1627,9 +1627,7 @@ static void attack(struct network * n)
 
 	char * mac = mac2string(n->n_bssid);
 	ALLEGE(mac != NULL);
-	time_printf(V_VERBOSE, "Pwning [%s] %s\n", n->n_ssid, mac);
-	time_printf(V_VERBOSE, "Pwning [%s] %s on chan %d\n", n->n_ssid, mac2string(n->n_bssid), n->n_chan);
-
+	time_printf(V_VERBOSE, "Pwning [%s] %s on chan %d\n", n->n_ssid, mac, n->n_chan);
 	free(mac);
 
 	if (n->n_start.tv_sec == 0)
