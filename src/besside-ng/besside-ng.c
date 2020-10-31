@@ -256,7 +256,7 @@ static struct state
 
 static void attack_continue(struct network * n);
 static void attack(struct network * n);
-static void autodetect_channels();
+static void autodetect_channels(void);
 
 void show_wep_stats(int UNUSED(B),
 					int UNUSED(force),
@@ -3118,7 +3118,7 @@ static void autodetect_freq(int start, int end, int incr)
 	}
 }
 
-static void autodetect_channels()
+static void autodetect_channels(void)
 {
 	time_printf(V_NORMAL, "Autodetecting supported channels...\n");
 
