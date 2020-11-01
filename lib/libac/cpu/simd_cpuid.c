@@ -369,10 +369,7 @@ static int cpuid_findcpusensorpath(const char * path)
 static int cpuid_readsysfs(const char * file)
 {
 	int fd, ival = 0;
-	struct stat sf;
 	char buf[16] = {0};
-
-	if (stat(file, &sf)) return -1;
 
 	fd = open(file, O_RDONLY);
 
