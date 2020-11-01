@@ -394,12 +394,9 @@ static int cpuid_readsysfs(const char * file)
 static int cpuid_getfreq(int type)
 {
 	int fd, ifreq = 0;
-	struct stat sf;
 	char freq[16] = {0}, *fptr;
 
 	fptr = (type == 1 ? CPUFREQ_CPU0C : CPUFREQ_CPU0M);
-
-	if (stat(fptr, &sf)) return 0;
 
 	fd = open(fptr, O_RDONLY);
 
