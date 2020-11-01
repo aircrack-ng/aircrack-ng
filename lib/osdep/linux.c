@@ -2588,7 +2588,8 @@ EXPORT int get_battery_state(void)
 			}
 			total_cap += batt_full_capacity[batno];
 			fclose(acpi);
-			batteryTime += (int) ((((float) remain) / rate) * 3600);
+			if (rate != 0)
+				batteryTime += (int) ((((float) remain) / rate) * 3600);
 			batno++;
 		}
 		info_timer++;
