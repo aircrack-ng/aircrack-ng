@@ -5030,8 +5030,10 @@ static int set_dicts(const char * args)
 			return (FAILURE);
 		}
 
+		ALLEGE(pthread_mutex_lock(&mx_dic) == 0);
 		opt.nbdict++;
 		opt.totaldicts++;
+		ALLEGE(pthread_mutex_unlock(&mx_dic) == 0);
 	}
 	free(optargs);
 
