@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <inttypes.h>
 #include <assert.h>
 #include <err.h>
 #include <fcntl.h>
@@ -1367,11 +1368,11 @@ redirect_enque(struct east_state * es, struct ieee80211_frame * wh, int len)
 
 	mac2str(s, get_sa(wh), sizeof(s));
 	mac2str(d, get_da(wh), sizeof(d));
-	printf_time("Enqueued packet id %d %s->%s %z [qlen %d]\n",
+	printf_time("Enqueued packet id %d %s->%s %" PRIuMAX " [qlen %d]\n",
 				slot->rp_id,
 				s,
 				d,
-				(size_t) len - sizeof(*wh) - (size_t) 8,
+				(uintmax_t)((size_t) len - sizeof(*wh) - 8),
 				queue_len(es));
 }
 
