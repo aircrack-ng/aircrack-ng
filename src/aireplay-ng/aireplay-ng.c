@@ -5591,6 +5591,10 @@ static int do_attack_test(void)
 					{
 						caplen
 							= read_packet(_wi_in, packet, sizeof(packet), &ri);
+						if (caplen < 0 && errno == EINTR)
+							continue;
+						else if (caplen < 0)
+							break;
 
 						if (packet[0] == 0x50) // Is probe response
 						{
