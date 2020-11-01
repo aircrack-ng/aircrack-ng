@@ -375,7 +375,7 @@ static int cpuid_readsysfs(const char * file)
 
 	if (fd == -1) return -1;
 
-	if (read(fd, &buf, sizeof(buf)))
+	if (read(fd, &buf, sizeof(buf)) > 0)
 	{
 		ival = atoi(buf);
 	}
