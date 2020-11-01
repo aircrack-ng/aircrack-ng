@@ -402,7 +402,7 @@ static int cpuid_getfreq(int type)
 
 	if (fd == -1) return 0;
 
-	if (read(fd, &freq, sizeof(freq))) ifreq = atoi(freq) / 1000;
+	if (read(fd, &freq, sizeof(freq)) > 0) ifreq = atoi(freq) / 1000;
 
 	close(fd);
 
