@@ -320,7 +320,7 @@ static long load_hccapx_file(int fd)
 
 	lseek(fd, 0, SEEK_SET);
 
-	while (read(fd, &hx, sizeof(hccapx_t)))
+	while (read(fd, &hx, sizeof(hccapx_t)) > 0)
 	{
 		nb_pkt++;
 		ap_cur = hccapx_to_ap(&hx);
