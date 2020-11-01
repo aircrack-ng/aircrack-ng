@@ -643,7 +643,9 @@ static __attribute__((noinline)) void clean_exit(int ret)
 	if (opt.dict)
 	{
 		ALLEGE(fclose(opt.dict) == 0);
+		ALLEGE(pthread_mutex_lock(&mx_dic) == 0);
 		opt.dict = NULL;
+		ALLEGE(pthread_mutex_unlock(&mx_dic) == 0);
 	}
 
 	for (i = 0; i < opt.nbcpu; i++)
