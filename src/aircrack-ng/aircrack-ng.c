@@ -5802,16 +5802,25 @@ static int perform_wpa_crack(struct AP_info * ap_cur)
 				fflush(stdout);
 				looperc = (looperc + 1) % sizeof(looper);
 				sleep(1);
+				if (zErrMsg)
+				{
+					sqlite3_free(zErrMsg);
+					zErrMsg = NULL;
+				}
 			}
 			else
 			{
 				if (rc != SQLITE_OK && rc != SQLITE_ABORT)
 				{
 					fprintf(stderr, "SQL error: %s\n", zErrMsg);
-					sqlite3_free(zErrMsg);
 				}
 				if (waited != 0) printf("\n\n");
 				wpa_wordlists_done = 1;
+				if (zErrMsg)
+				{
+					sqlite3_free(zErrMsg);
+					zErrMsg = NULL;
+				}
 				break;
 			}
 		}
