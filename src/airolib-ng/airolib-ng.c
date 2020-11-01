@@ -173,15 +173,24 @@ static int sql_exec_cb(sqlite3 * db,
 					looper[looperc++ % sizeof(looper)]);
 			fflush(stdout);
 			sleep(1);
+			if (zErrMsg)
+			{
+				sqlite3_free(zErrMsg);
+				zErrMsg = NULL;
+			}
 		}
 		else
 		{
 			if (rc != SQLITE_OK)
 			{
 				fprintf(stderr, "SQL error. %s\n", zErrMsg);
-				sqlite3_free(zErrMsg);
 			}
 			if (waited != 0) printf("\n\n");
+			if (zErrMsg)
+			{
+				sqlite3_free(zErrMsg);
+				zErrMsg = NULL;
+			}
 			return (rc);
 		}
 	}
