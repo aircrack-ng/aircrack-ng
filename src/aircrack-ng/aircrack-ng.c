@@ -959,7 +959,7 @@ static int checkbssids(const char * bssidlist)
 				free(frontlist);
 				return (-1);
 			}
-			getmac(tmp, 1, opt.firstbssid);
+			ALLEGE(getmac(tmp, 1, opt.firstbssid) == 0);
 			first = 0;
 		}
 
