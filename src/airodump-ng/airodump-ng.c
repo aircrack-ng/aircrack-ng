@@ -4515,7 +4515,7 @@ json_get_value_for_name(const char * buffer, const char * name, char * value)
 
 static THREAD_ENTRY(gps_tracker_thread)
 {
-	int gpsd_sock;
+	int gpsd_sock = -1;
 	char line[1537], buffer[1537], data[1537];
 	char * temp;
 	struct sockaddr_in gpsd_addr;
@@ -4552,6 +4552,11 @@ static THREAD_ENTRY(gps_tracker_thread)
 
 		/* attempt to connect to localhost, port 2947 */
 		pos = 0;
+		if (gpsd_sock >= 0)
+		{
+			close(gpsd_sock);
+			gpsd_sock = -1;
+		}
 		gpsd_sock = socket(AF_INET, SOCK_STREAM, 0);
 		if (gpsd_sock < 0) continue;
 
