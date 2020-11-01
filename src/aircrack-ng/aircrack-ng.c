@@ -5005,7 +5005,9 @@ static int set_dicts(const char * args)
 		return (FAILURE);
 	}
 
+	ALLEGE(pthread_mutex_lock(&mx_dic) == 0);
 	opt.dictfinish = opt.totaldicts = opt.nbdict = 0;
+	ALLEGE(pthread_mutex_unlock(&mx_dic) == 0);
 
 	// Use a temporary poptargs var because \a strsep trashes the value.
 	while ((opt.nbdict < MAX_DICTS)
