@@ -5354,6 +5354,7 @@ static int do_attack_test(void)
 			while (1) // waiting for relayed packet
 			{
 				caplen = read_packet(_wi_in, packet, sizeof(packet), &ri);
+				ALLEGE(caplen >= 0);
 
 				if (packet[0] == 0x50) // Is probe response
 				{
