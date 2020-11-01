@@ -585,14 +585,14 @@ static int build_arp_request(unsigned char * packet, int * length, int toDS)
 
 	if (toDS)
 	{
-		if (lopt.chopped_to_prga_len - 8 < *length - 26 - 8) return (1);
+		if (lopt.chopped_to_prga_len < *length - 26) return (1);
 
 		for (i = 0; i < *length - 26 - 8; i++)
 			packet[26 + 8 + i] ^= lopt.chopped_to_prga[8 + i];
 	}
 	else
 	{
-		if (lopt.chopped_from_prga_len - 8 < *length - 26 - 8) return (1);
+		if (lopt.chopped_from_prga_len < *length - 26) return (1);
 
 		INVARIANT(*length < (INT_MAX - 26 - 8 - 1));
 
