@@ -2358,7 +2358,7 @@ check_replay(struct network * n, struct ieee80211_frame * wh, int len)
 		|| n->n_astate != ASTATE_WEP_FLOOD)
 		return;
 
-	if (!(wh->i_fc[1] | IEEE80211_FC1_DIR_FROMDS)) return;
+	if (!(wh->i_fc[1] & IEEE80211_FC1_DIR_FROMDS)) return;
 
 	if (memcmp(wh->i_addr3, _state.s_mac, sizeof(wh->i_addr3)) != 0) return;
 
