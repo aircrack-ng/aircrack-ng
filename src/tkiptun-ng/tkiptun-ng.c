@@ -2811,7 +2811,7 @@ int main(int argc, char * argv[])
 	/* DO MICHAEL TEST */
 
 	memset(buf, 0, 128);
-	memcpy(buf, "M", 1);
+	buf[0] = 'M';
 	i = michael_test((unsigned char *) "\x82\x92\x5c\x1c\xa1\xd1\x30\xb8",
 					 (unsigned char *) buf,
 					 strlen(buf),
