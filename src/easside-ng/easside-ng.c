@@ -1367,11 +1367,11 @@ redirect_enque(struct east_state * es, struct ieee80211_frame * wh, int len)
 
 	mac2str(s, get_sa(wh), sizeof(s));
 	mac2str(d, get_da(wh), sizeof(d));
-	printf_time("Enqueued packet id %d %s->%s %d [qlen %d]\n",
+	printf_time("Enqueued packet id %d %s->%s %z [qlen %d]\n",
 				slot->rp_id,
 				s,
 				d,
-				len - sizeof(*wh) - 4 - 4,
+				(size_t) len - sizeof(*wh) - (size_t) 8,
 				queue_len(es));
 }
 
