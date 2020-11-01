@@ -4555,7 +4555,6 @@ static THREAD_ENTRY(gps_tracker_thread)
 		if (gpsd_sock >= 0)
 		{
 			close(gpsd_sock);
-			gpsd_sock = -1;
 		}
 		gpsd_sock = socket(AF_INET, SOCK_STREAM, 0);
 		if (gpsd_sock < 0) continue;
