@@ -39,8 +39,9 @@
 #define EXTERNC
 #endif
 
-EXTERNC unsigned int linecount(const char * file, off_t offset, size_t blksize);
+EXTERNC size_t linecount(const char * file, off_t offset, size_t maxblocks);
 
 #define READBUF_BLKSIZE (1024 * 1024 * 3)
+#define READBUF_MAX_BLOCKS 32U
 
 #endif /* LINECOUNT_H */

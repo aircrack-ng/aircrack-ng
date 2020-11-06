@@ -76,7 +76,7 @@ static size_t FileRead(istream & is, vector<char> & buff)
 	return is.gcount();
 }
 
-unsigned int linecount(const char * file, off_t offset, size_t offsetmax)
+size_t linecount(const char * file, off_t offset, size_t maxblocks)
 {
 	const size_t SZ = READBUF_BLKSIZE;
 	std::vector<char> buff(SZ);
@@ -85,9 +85,9 @@ unsigned int linecount(const char * file, off_t offset, size_t offsetmax)
 	size_t cc = 0;
 	size_t blkcnt = 1;
 
-	if (offsetmax <= 0U) return 0;
+	if (maxblocks <= size_t(0)) return 0;
 
-	if (offset) ifs.seekg(offset, ifs.beg);
+	if (offset > 0) ifs.seekg(offset, ifs.beg);
 
 	while ((cc = FileRead(ifs, buff)) > 0)
 	{
@@ -96,7 +96,7 @@ unsigned int linecount(const char * file, off_t offset, size_t offsetmax)
 
 		n += nb_read;
 
-		if (blkcnt >= offsetmax) return n;
+		if (blkcnt >= maxblocks) return n;
 
 		blkcnt++;
 	}
