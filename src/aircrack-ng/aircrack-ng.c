@@ -126,8 +126,8 @@ static struct timeval t_begin; /* time at start of attack      */
 static struct timeval t_stats; /* time since last update       */
 static struct timeval t_kprev; /* time at start of window      */
 static struct timeval t_dictup; /* next dictionary total read   */
-static volatile long long int nb_kprev; /* last  # of keys tried        */
-static volatile long long int nb_tried; /* total # of keys tried        */
+static volatile size_t nb_kprev; /* last  # of keys tried        */
+static volatile size_t nb_tried; /* total # of keys tried        */
 static ac_crypto_engine_t engine; /* crypto engine */
 static int first_wpa_threadid = 0;
 
@@ -801,7 +801,7 @@ static inline void wl_count_next_block(struct WPA_data * data)
 	{
 		int i;
 		int fincnt = 0;
-		off_t tmpword = 0;
+		size_t tmpword = 0;
 
 		for (i = 0; i < opt.totaldicts; i++)
 		{
@@ -815,12 +815,14 @@ static inline void wl_count_next_block(struct WPA_data * data)
 			{
 				if (pthread_mutex_trylock(&mx_dic) == 0)
 				{
-					tmpword = (off_t) linecount(
-						opt.dicts[i], opt.dictidx[i].dictpos, 32);
+					tmpword = linecount(opt.dicts[i],
+										opt.dictidx[i].dictpos,
+										READBUF_MAX_BLOCKS);
 
 					opt.dictidx[i].wordcount += tmpword;
 					opt.wordcount += tmpword;
-					opt.dictidx[i].dictpos += (READBUF_BLKSIZE * 32);
+					opt.dictidx[i].dictpos
+						+= (READBUF_BLKSIZE * READBUF_MAX_BLOCKS);
 
 					if (opt.dictidx[i].dictpos >= opt.dictidx[i].dictsize)
 						opt.dictidx[i].loaded = 1;
@@ -2703,7 +2705,7 @@ void show_wep_stats(int B,
 			   prod,
 			   opt.ap->nb_ivs);
 	else
-		printf("[%02d:%02d:%02d] Tested %lld keys (got %ld IVs)",
+		printf("[%02d:%02d:%02d] Tested %zd keys (got %ld IVs)",
 			   et_h,
 			   et_m,
 			   et_s,
@@ -3676,9 +3678,9 @@ static void show_wpa_stats(char * key,
 	int et_s;
 	int i;
 	char tmpbuf[28];
-	long long int remain;
-	long long int eta;
-	long long int cur_nb_kprev;
+	size_t remain;
+	size_t eta;
+	size_t cur_nb_kprev;
 
 	if (chrono(&t_stats, 0) < 0.15 && force == 0) return;
 
@@ -3734,36 +3736,35 @@ static void show_wpa_stats(char * key,
 	if (opt.stdin_dict)
 	{
 		moveto(20, 5);
-		printf("[%02d:%02d:%02d] %lld keys tested "
+		printf("[%02d:%02d:%02d] %zd keys tested "
 			   "(%2.2f k/s) ",
 			   et_h,
 			   et_m,
 			   et_s,
 			   nb_tried,
-			   (float) cur_nb_kprev / delta);
+			   ksec);
 	}
 	else
 	{
 		moveto(7, 4);
-		printf("[%02d:%02d:%02d] %lld/%lld keys tested "
+		printf("[%02d:%02d:%02d] %zd/%zd keys tested "
 			   "(%2.2f k/s) ",
 			   et_h,
 			   et_m,
 			   et_s,
 			   nb_tried,
 			   opt.wordcount,
-			   (float) cur_nb_kprev / delta);
+			   ksec);
 
 		moveto(7, 6);
 		printf("Time left: ");
 
 		calc = ((float) nb_tried / (float) opt.wordcount) * 100.0f;
 		remain = opt.wordcount - nb_tried;
-		long long int ll_ksec = (long long int) ksec;
 
-		if (remain > 0 && ll_ksec > 0)
+		if (remain > 0 && ksec > 0)
 		{
-			eta = (remain / ll_ksec);
+			eta = (remain / ksec);
 			calctime(eta, calc);
 		}
 		else
@@ -4205,7 +4206,7 @@ static THREAD_ENTRY(crack_wpa_pmkid_thread)
  */
 static __attribute__((noinline)) int next_dict(int nb)
 {
-	off_t tmpword = 0;
+	size_t tmpword = 0;
 
 	ALLEGE(pthread_mutex_lock(&mx_dic) == 0);
 	if (opt.dict != NULL)
@@ -4248,7 +4249,7 @@ static __attribute__((noinline)) int next_dict(int nb)
 				continue;
 			}
 
-			ALLEGE(fseek(opt.dict, 0L, SEEK_END) != -1);
+			ALLEGE(fseeko(opt.dict, 0L, SEEK_END) != -1);
 
 			if (ftello(opt.dict) <= 0L)
 			{
@@ -4270,16 +4271,16 @@ static __attribute__((noinline)) int next_dict(int nb)
 					|| (opt.dictidx[opt.nbdict].dictpos
 						> opt.dictidx[opt.nbdict].dictsize))
 				{
-					tmpword = (off_t) linecount(
-						opt.dicts[opt.nbdict],
-						(opt.dictidx[opt.nbdict].dictpos
-							 ? opt.dictidx[opt.nbdict].dictpos
-							 : 0),
-						32);
+					tmpword = linecount(opt.dicts[opt.nbdict],
+										(opt.dictidx[opt.nbdict].dictpos
+											 ? opt.dictidx[opt.nbdict].dictpos
+											 : 0),
+										READBUF_MAX_BLOCKS);
 
 					opt.dictidx[opt.nbdict].wordcount += tmpword;
 					opt.wordcount += tmpword;
-					opt.dictidx[opt.nbdict].dictpos = (READBUF_BLKSIZE * 32);
+					opt.dictidx[opt.nbdict].dictpos
+						= (READBUF_BLKSIZE * READBUF_MAX_BLOCKS);
 				}
 			}
 
@@ -5758,7 +5759,7 @@ static int perform_wpa_crack(struct AP_info * ap_cur)
 			if (opt.stdin_dict)
 			{
 				moveto(30, 5);
-				printf(" %lld\n", nb_tried);
+				printf(" %zd\n", nb_tried);
 			}
 			else
 			{
