@@ -2326,9 +2326,9 @@ static __attribute__((always_inline)) float chrono(struct timeval * start,
 
 static ssize_t safe_read(int fd, void * buf, size_t len)
 {
-	REQUIRE(fd >= 0);
 	REQUIRE(buf != NULL);
 	REQUIRE(len > 0);
+	if (fd < 0) return (-1);
 
 	ssize_t n;
 	size_t sum = 0;
@@ -2359,9 +2359,9 @@ static ssize_t safe_read(int fd, void * buf, size_t len)
 
 static ssize_t safe_write(int fd, void * buf, size_t len)
 {
-	REQUIRE(fd >= 0);
 	REQUIRE(buf != NULL);
 	REQUIRE(len > 0);
+	if (fd < 0) return (-1);
 
 	ssize_t n;
 	size_t sum = 0;
