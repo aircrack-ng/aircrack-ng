@@ -1456,14 +1456,6 @@ if [ "$DEBUG" = "1" ]; then
 			/bin/sh --version
 		fi
 	fi
-	if [ -n "$SHELL" ]; then
-		if $SHELL --version > /dev/null 2>&1
-		then
-			printf "\nSHELL is $($SHELL --version)\n\n"
-		else
-			printf "\nSHELL is $SHELL\n\n"
-		fi
-	fi
 fi
 if [ "$VERBOSE" = "1" ]; then
 	if [ -n "$(command -v lsb_release 2> /dev/null)" ]; then
