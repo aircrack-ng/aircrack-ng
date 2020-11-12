@@ -1459,7 +1459,7 @@ if [ "$DEBUG" = "1" ]; then
 fi
 if [ "$VERBOSE" = "1" ]; then
 	if [ -n "$(command -v lsb_release 2> /dev/null)" ]; then
-		lsb_release -a
+		lsb_release -a | grep -iv 'n/a'
 		printf "\n"
 	fi
 	uname -a
