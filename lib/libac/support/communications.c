@@ -87,16 +87,104 @@ int read_packet(struct wif * wi,
 	return (rc);
 }
 
+/* A beacon-frame contains a lot of data ordered like this:
+ * <tag (1 byte)><length(1 byte)><data (length bytes)><tag><length><data>.....
+ * This functions tries to find a specific tag
+ */
+static int get_tagged_data(uint8_t * beacon_pkt,
+						   size_t pkt_len,
+						   uint8_t tag,
+						   uint8_t * tag_len, /* Receives length of the data */
+						   uint8_t ** tag_data) /* Receives pointer to data */
+{
+	size_t pos;
+	size_t
+		taglen; /* Length of tag-data. Does not include the two-byte tag-header */
+	uint8_t tagtype;
+
+	if (beacon_pkt[0] != 0x80) return -1;
+
+	pos = 0;
+	taglen = 22; /* First 22 bytes contains standard stuff like SRC+DST */
+	taglen += 12; /* The fixed tags are 12 bytes long */
+	do
+	{
+		pos += taglen + 2;
+		tagtype = beacon_pkt[pos];
+		taglen = beacon_pkt[pos + 1];
+	} while (tagtype != tag && pos < pkt_len - 2);
+
+	if (tagtype != tag)
+	{
+		/* Tag not found */
+		return -1;
+	}
+
+	if (pos + 2 + taglen > pkt_len)
+	{
+		/* Malformed packet? */
+		return -1;
+	}
+
+	if (tag_data != NULL)
+	{
+		*tag_data = &beacon_pkt[pos + 2];
+	}
+
+	if (tag_len != NULL)
+	{
+		*tag_len = taglen;
+	}
+
+	return 0;
+}
+
+int get_channel(uint8_t * beacon_pkt, size_t pkt_len)
+{
+	uint8_t * ch;
+	uint8_t * ht_info;
+	uint8_t tag_len;
+
+	/* Look for the standard tag */
+	if (get_tagged_data(beacon_pkt, pkt_len, MGNT_PAR_CHANNEL, &tag_len, &ch)
+		== 0)
+	{
+		if (tag_len >= 1)
+		{
+			return *ch;
+		}
+	}
+
+	/* Tag not found, look for the HT information tag used by 11n devices*/
+	if (get_tagged_data(
+			beacon_pkt, pkt_len, MGNT_PAR_HT_INFO, &tag_len, &ht_info))
+	{
+		/* tag not found... */
+		return -1;
+	}
+
+	if (tag_len < 1)
+	{
+		/* Malformed packet? */
+		return -1;
+	}
+
+	/* Main channel is first in HT info */
+	return ht_info[0];
+}
+
 int wait_for_beacon(struct wif * wi,
 					uint8_t * bssid,
 					uint8_t * capa,
 					char * essid)
 {
-	int chan = 0, tagtype = 0;
-	size_t taglen = 0, pos = 0, len = 0;
-	uint8_t pkt_sniff[4096];
+	int chan = 0;
+	size_t len = 0;
+	uint8_t taglen = 0;
+	uint8_t pkt_sniff[4096] __attribute__((aligned(16)));
 	struct timeval tv, tv2;
 	char essid2[33];
+	uint8_t * data = NULL;
 
 	gettimeofday(&tv, NULL);
 	while (1)
@@ -116,119 +204,94 @@ int wait_for_beacon(struct wif * wi,
 			if (len <= 0) usleep(1);
 		}
 
-		if (!memcmp(pkt_sniff, "\x80", 1))
+		/* Not a beacon-frame? */
+		if (pkt_sniff[0] != 0x80) continue;
+
+		chan = get_channel(pkt_sniff, len);
+		if (chan < 0) continue;
+
+		if (essid == NULL) continue;
+
+		/* Look for ESSID (network name), tag 0 */
+		if (get_tagged_data(pkt_sniff, len, MGNT_PAR_SSID, &taglen, &data))
+			continue;
+
+		if (taglen <= 1)
 		{
-			pos = 0;
-			taglen = 22; // initial value to get the fixed tags parsing started
-			taglen += 12; // skip fixed tags in frames
-			do
+			/* Empty ssid. Check only if the bssid match */
+			if (bssid != NULL
+				&& memcmp(bssid, pkt_sniff + 10, ETHER_ADDR_LEN) == 0)
+				break;
+			else
+				continue;
+		}
+
+		/* Only use/compare the first 32 chars of an SSID */
+		if (taglen > 32) taglen = 32;
+
+		/* Ignore SSID with weird chars */
+		if (data[0] < 32 && bssid != NULL
+			&& memcmp(bssid, pkt_sniff + 10, ETHER_ADDR_LEN) == 0)
+		{
+			break;
+		}
+
+		/* if bssid is given, copy essid */
+		if (bssid != NULL && memcmp(bssid, pkt_sniff + 10, ETHER_ADDR_LEN) == 0
+			&& strlen(essid) == 0)
+		{
+			memset(essid, 0, 33);
+			memcpy(essid, data, taglen);
+			break;
+		}
+
+		/* if essid is given, copy bssid AND essid, so we can handle
+		 * case insensitive arguments */
+		if (bssid != NULL && memcmp(bssid, NULL_MAC, ETHER_ADDR_LEN) == 0
+			&& strncasecmp(essid, (char *) data, taglen) == 0
+			&& strlen(essid) == (unsigned) taglen)
+		{
+			memset(essid, 0, 33);
+			memcpy(essid, data, taglen);
+			memcpy(bssid, pkt_sniff + 10, ETHER_ADDR_LEN);
+			printf("Found BSSID \"%02X:%02X:%02X:%02X:%02X:%02X\" to "
+				   "given ESSID \"%s\".\n",
+				   bssid[0],
+				   bssid[1],
+				   bssid[2],
+				   bssid[3],
+				   bssid[4],
+				   bssid[5],
+				   essid);
+			break;
+		}
+
+		/* if essid and bssid are given, check both */
+		if (bssid != NULL && memcmp(bssid, pkt_sniff + 10, ETHER_ADDR_LEN) == 0
+			&& strlen(essid) > 0)
+		{
+			memset(essid2, 0, 33);
+			memcpy(essid2, data, taglen);
+			if (strncasecmp(essid, essid2, taglen) == 0
+				&& strlen(essid) == (unsigned) taglen)
+				break;
+			else
 			{
-				pos += taglen + 2;
-				tagtype = pkt_sniff[pos];
-				taglen = pkt_sniff[pos + 1];
-			} while (tagtype != 3 && pos < len - 2);
-
-			if (tagtype != 3) continue;
-			if (taglen != 1) continue;
-			if (pos + 2 + taglen > len) continue;
-
-			chan = pkt_sniff[pos + 2];
-
-			if (essid)
-			{
-				pos = 0;
-				taglen
-					= 22; // initial value to get the fixed tags parsing started
-				taglen += 12; // skip fixed tags in frames
-				do
-				{
-					pos += taglen + 2;
-					tagtype = pkt_sniff[pos];
-					taglen = pkt_sniff[pos + 1];
-				} while (tagtype != 0 && pos < len - 2);
-
-				if (tagtype != 0) continue;
-				if (taglen <= 1)
-				{
-					if (bssid != NULL
-						&& memcmp(bssid, pkt_sniff + 10, ETHER_ADDR_LEN) == 0)
-						break;
-					else
-						continue;
-				}
-				if (pos + 2 + taglen > len) continue;
-
-				if (taglen > 32) taglen = 32;
-
-				if ((pkt_sniff + pos + 2)[0] < 32 && bssid != NULL
-					&& memcmp(bssid, pkt_sniff + 10, ETHER_ADDR_LEN) == 0)
-				{
-					break;
-				}
-
-				/* if bssid is given, copy essid */
-				if (bssid != NULL
-					&& memcmp(bssid, pkt_sniff + 10, ETHER_ADDR_LEN) == 0
-					&& strlen(essid) == 0)
-				{
-					memset(essid, 0, 33);
-					memcpy(essid, pkt_sniff + pos + 2, taglen);
-					break;
-				}
-
-				/* if essid is given, copy bssid AND essid, so we can handle
-				 * case insensitive arguments */
-				if (bssid != NULL
-					&& memcmp(bssid, NULL_MAC, ETHER_ADDR_LEN) == 0
-					&& strncasecmp(essid, (char *) pkt_sniff + pos + 2, taglen)
-						   == 0
-					&& strlen(essid) == (unsigned) taglen)
-				{
-					memset(essid, 0, 33);
-					memcpy(essid, pkt_sniff + pos + 2, taglen);
-					memcpy(bssid, pkt_sniff + 10, ETHER_ADDR_LEN);
-					printf("Found BSSID \"%02X:%02X:%02X:%02X:%02X:%02X\" to "
-						   "given ESSID \"%s\".\n",
-						   bssid[0],
-						   bssid[1],
-						   bssid[2],
-						   bssid[3],
-						   bssid[4],
-						   bssid[5],
-						   essid);
-					break;
-				}
-
-				/* if essid and bssid are given, check both */
-				if (bssid != NULL
-					&& memcmp(bssid, pkt_sniff + 10, ETHER_ADDR_LEN) == 0
-					&& strlen(essid) > 0)
-				{
-					memset(essid2, 0, 33);
-					memcpy(essid2, pkt_sniff + pos + 2, taglen);
-					if (strncasecmp(essid, essid2, taglen) == 0
-						&& strlen(essid) == (unsigned) taglen)
-						break;
-					else
-					{
-						printf("For the given BSSID "
-							   "\"%02X:%02X:%02X:%02X:%02X:%02X\", there is an "
-							   "ESSID mismatch!\n",
-							   bssid[0],
-							   bssid[1],
-							   bssid[2],
-							   bssid[3],
-							   bssid[4],
-							   bssid[5]);
-						printf(
-							"Found ESSID \"%s\" vs. specified ESSID \"%s\"\n",
-							essid2,
-							essid);
-						printf("Using the given one, double check it to be "
-							   "sure its correct!\n");
-						break;
-					}
-				}
+				printf("For the given BSSID "
+					   "\"%02X:%02X:%02X:%02X:%02X:%02X\", there is an "
+					   "ESSID mismatch!\n",
+					   bssid[0],
+					   bssid[1],
+					   bssid[2],
+					   bssid[3],
+					   bssid[4],
+					   bssid[5]);
+				printf("Found ESSID \"%s\" vs. specified ESSID \"%s\"\n",
+					   essid2,
+					   essid);
+				printf("Using the given one, double check it to be "
+					   "sure its correct!\n");
+				break;
 			}
 		}
 	}

@@ -51,6 +51,11 @@
 #include <aircrack-ng/support/common.h>
 #include <aircrack-ng/third-party/ieee80211.h>
 
+/* Tagged parameters in beacon-frames */
+#define MGNT_PAR_SSID 0x00
+#define MGNT_PAR_CHANNEL 0x03
+#define MGNT_PAR_HT_INFO 0x3d
+
 #define RATE_1M 1000000
 #define RATE_2M 2000000
 #define RATE_5_5M 5500000
