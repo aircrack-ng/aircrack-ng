@@ -60,7 +60,7 @@
  */
 
 #define SHA_ASM(op, x, n)                                                      \
-	({                                                                         \
+	__extension__({                                                            \
 		unsigned int __res;                                                    \
 		__asm__(op " %1,%0" : "=r"(__res) : "i"(n), "0"(x));                   \
 		__res;                                                                 \

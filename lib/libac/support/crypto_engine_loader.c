@@ -523,6 +523,8 @@ EXPORT int ac_crypto_engine_loader_load(int flags)
 	}
 
 	free(module_filename);
+#else
+	(void) flags;
 #endif
 
 	return 0;
