@@ -180,6 +180,7 @@ int wait_for_beacon(struct wif * wi,
 {
 	int chan = 0;
 	size_t len = 0;
+	ssize_t read_len = 0;
 	uint8_t taglen = 0;
 	uint8_t pkt_sniff[4096] __attribute__((aligned(16)));
 	struct timeval tv, tv2;
@@ -189,10 +190,11 @@ int wait_for_beacon(struct wif * wi,
 	gettimeofday(&tv, NULL);
 	while (1)
 	{
-		len = 0;
-		while (len < 22)
+		read_len = len = 0;
+
+		while (read_len < 22)
 		{
-			len = (size_t) read_packet(wi, pkt_sniff, sizeof(pkt_sniff), NULL);
+			read_len = read_packet(wi, pkt_sniff, sizeof(pkt_sniff), NULL);
 
 			gettimeofday(&tv2, NULL);
 			if (((tv2.tv_sec - tv.tv_sec) * 1000000)
@@ -201,8 +203,12 @@ int wait_for_beacon(struct wif * wi,
 			{
 				return (-1);
 			}
-			if (len <= 0) usleep(1);
+
+			if (read_len <= 0) usleep(1);
 		}
+
+		ENSURE(read_len >= 22);
+		len = (size_t) read_len;
 
 		/* Not a beacon-frame? */
 		if (pkt_sniff[0] != 0x80) continue;
