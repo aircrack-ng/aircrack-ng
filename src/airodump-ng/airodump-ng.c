@@ -184,10 +184,6 @@ static struct local_options
 
 	int asso_client; /* only show associated clients */
 
-	char * iwpriv;
-	char * iwconfig;
-	char * wlanctlng;
-
 	unsigned char wpa_bssid[6]; /* the wpa handshake bssid   */
 	char message[512];
 	char decloak;

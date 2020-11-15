@@ -1787,7 +1787,6 @@ static int do_linux_open(struct wif * wi, char * iface)
 	int kver;
 	struct utsname checklinuxversion;
 	struct priv_linux * dev = wi_priv(wi);
-	char * iwpriv = NULL;
 	char strbuf[512];
 	FILE * f;
 	char athXraw[] = "athXraw";
@@ -1827,15 +1826,12 @@ static int do_linux_open(struct wif * wi, char * iface)
 		return (1);
 	}
 
-	/* Check iwpriv existence */
-	iwpriv = wiToolsPath("iwpriv");
-
 #ifndef CONFIG_LIBNL
-	dev->iwpriv = iwpriv;
+	dev->iwpriv = wiToolsPath("iwpriv");
 	dev->iwconfig = wiToolsPath("iwconfig");
 	dev->ifconfig = wiToolsPath("ifconfig");
 
-	if (!iwpriv)
+	if (!(dev->iwpriv))
 	{
 		fprintf(stderr,
 				"Required wireless tools when compiled without libnl "
@@ -1846,7 +1842,7 @@ static int do_linux_open(struct wif * wi, char * iface)
 
 	/* Exit if ndiswrapper : check iwpriv ndis_reset */
 
-	if (is_ndiswrapper(iface, iwpriv))
+	if (is_ndiswrapper(iface, dev->iwpriv))
 	{
 		fprintf(stderr, "Ndiswrapper doesn't support monitor mode.\n");
 		goto close_in;
@@ -2220,9 +2216,6 @@ static int do_linux_open(struct wif * wi, char * iface)
 	dev->arptype_in = dev->arptype_out;
 
 	if (iface_malloced) free(iface);
-#ifdef CONFIG_LIBNL
-	if (iwpriv) free(iwpriv);
-#endif
 	if (r_file)
 	{
 		free(r_file);
@@ -2238,7 +2231,6 @@ close_in:
 	close(dev->fd_in);
 	if (acpi) fclose(acpi);
 	if (iface_malloced) free(iface);
-	if (iwpriv) free(iwpriv);
 	return 1;
 }
 
