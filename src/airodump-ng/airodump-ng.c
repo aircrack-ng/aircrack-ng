@@ -4011,7 +4011,12 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			len = strlen(strbuf);
 
 			// write spaces (32) until the end of column
-			memset(strbuf + len, 32, (size_t) ws_col - 1);
+			int len_remaining = ws_col - len;
+			if (len_remaining > 0)
+			{
+				ALLEGE((size_t) len + len_remaining <= sizeof(strbuf));
+				memset(strbuf + len, 32, len_remaining);
+			}
 
 			strbuf[ws_col - 1] = '\0';
 			console_puts(strbuf);
