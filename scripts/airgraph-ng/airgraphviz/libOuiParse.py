@@ -31,7 +31,7 @@ else:
 import os
 import pdb
 #this lib is crap and needs to be rewritten -Textile 
-print(os.getenv('AIRGRAPH_HOME'))
+
 if os.getenv('AIRGRAPH_HOME') is not None and os.path.isdir(os.getenv('AIRGRAPH_HOME')):
     path=os.getenv('AIRGRAPH_HOME') + '/support/'
     if not os.path.isdir(path):
