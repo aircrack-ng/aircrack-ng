@@ -9,7 +9,7 @@ packetforge-ng - forge packets: ARP, UDP, ICMP or custom packets.
 .BI packetforge-ng
 is a tool to create encrypted packets that can subsequently be used for injection. You may create various types of packets such as arp requests, UDP, ICMP and custom packets. The most common use is to create ARP requests for subsequent injection. 
 .PP
-To create an encrypted packet, you must have a PRGA (pseudo random genration algorithm) file. This is used to encrypt the packet you create. This is typically obtained from aireplay-ng chopchop or fragmentation attacks.
+To create an encrypted packet, you must have a PRGA (pseudo random generation algorithm) file. This is used to encrypt the packet you create. This is typically obtained from aireplay-ng chopchop or fragmentation attacks.
 .SH OPTIONS
 .PP
 .TP
