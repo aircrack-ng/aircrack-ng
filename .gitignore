@@ -108,3 +108,8 @@ coverage*.info
 /include/aircrack-ng/version.h
 /manpages/*.1
 /manpages/*.8
+/.ccls-cache
+/.cache
+/.gdb_history
+/cscope*
+/strace_out
