@@ -4,6 +4,8 @@
 #part of the airdrop-ng project
 from sys import exit as Exit
 
+import re
+
 class airDumpParse:
     def parser(self,file):
         """
@@ -68,10 +70,34 @@ class airDumpParse:
         dict = {}
         for entry in devices:
             ap = {}
+            # NOTE: It is expected a rstripped entry.
+            # WARNING: Splitting the entry on every comma means to split the ESSID too if it contains a comma, resulting in more items than expected.
             string_list = entry.split(',')
             #sorry for the clusterfuck but I swear it all makes sense, this is building a dic from our list so we don't have to do position calls later
-            len(string_list)
-            if len(string_list) == 15:
+            if re.match(r'^([^,]+,){9}(\s*[0-9]+\.){3}\s*[0-9]+,',entry): # len(string_list) == 11 (see the WARNING above)
+                ip = string_list[9]
+                essid = re.search(re.escape(ip) + r',(.*)$',entry).group(1)[1:]
+                ap = {"bssid":string_list[0].replace(' ',''),
+                    "fts":string_list[1],
+                    "lts":string_list[2],
+                    "channel":string_list[3].replace(' ',''),
+                    "speed":string_list[4],
+                    "privacy":string_list[5].replace(' ',''),
+                    "power":string_list[6],
+                    "beacons":string_list[7],
+                    "data":string_list[8],
+                    "ip":ip.replace(' ',''),
+                    "essid":essid}
+            elif re.match(r'^([^,]+,){11}(\s*[0-9]+\.){3}\s*[0-9]+,',entry): # len(string_list) == 15 (see the WARNING above)
+                essid_length = string_list[12].replace(' ','')
+                # this regex may fail if the entry is malformed, e.g. ID-length > 0 but empty ESSID
+                p = re.match(r'^([^,]+,){13} (.{' + essid_length + '}),(.*)$',entry)
+                if p:
+                    essid = p.group(2)
+                    key = p.group(3)[1:]
+                else:
+                    essid = string_list[13][1:]
+                    key = string_list[14][1:]
                 ap = {"bssid":string_list[0].replace(' ',''),
                     "fts":string_list[1],
                     "lts":string_list[2],
@@ -84,21 +110,9 @@ class airDumpParse:
                     "beacons":string_list[9],
                     "iv":string_list[10],
                     "ip":string_list[11],
-                    "id":string_list[12],
-                    "essid":string_list[13][1:],
-                    "key":string_list[14]}
-            elif len(string_list) == 11:
-                ap = {"bssid":string_list[0].replace(' ',''),
-                    "fts":string_list[1],
-                    "lts":string_list[2],
-                    "channel":string_list[3].replace(' ',''),
-                    "speed":string_list[4],
-                    "privacy":string_list[5].replace(' ',''),
-                    "power":string_list[6],
-                    "beacons":string_list[7],
-                    "data":string_list[8],
-                    "ip":string_list[9],
-                    "essid":string_list[10][1:]}
+                    "id":essid_length,
+                    "essid":essid,
+                    "key":key}
             if len(ap) != 0:
                 dict[string_list[0]] = ap
         return dict
@@ -110,6 +124,7 @@ class airDumpParse:
         dict = {}
         for entry in devices:
             client = {}
+            # WARNING: Splitting the entry on every comma means to split the ESSID too if it contains a comma, resulting in more items than expected.
             string_list = entry.split(',')
             if len(string_list) >= 7:
                 client = {"station":string_list[0].replace(' ',''),
@@ -118,7 +133,7 @@ class airDumpParse:
                     "power":string_list[3],
                     "packets":string_list[4],
                     "bssid":string_list[5].replace(' ',''),
-                    "probe":string_list[6:][0:]}
+                    "probe":string_list[6:][0:]} # ESSIDs cannot be split faithfully if any contains a comma (see the WARNING above)
             if len(client) != 0:
                 dict[string_list[0]] = client
         return dict
