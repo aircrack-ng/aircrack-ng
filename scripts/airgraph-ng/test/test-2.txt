@@ -1,0 +1,11 @@
+
+BSSID, First time seen, Last time seen, channel, Speed, Privacy, Cipher, Authentication, Power, # beacons, # IV, LAN IP, ID-length, ESSID, Key
+AB:FF:C2:3D:B1:B6, 2020-12-24 05:45:02, 2020-12-25 05:45:14,  6,  -1, WPA, ,   , -57,        0,        4,   0.  0.  0.  0,   0, , 
+5E:E8:C9:26:AB:DF, 2020-12-24 05:45:09, 2020-12-11 05:45:15,  2, 130, WPA2, CCMP, PSK, -78,       11,        0,   0.  0.  0.  0,  4, test, 
+54:79:8A:BB:20:73, 2020-12-24 05:45:10, 2020-12-25 05:45:16,  9, 130, WPA2, CCMP, PSK, -21,       10,        0,   0.  0.  0.  0,  14, this is, my ap, 
+
+Station MAC, First time seen, Last time seen, Power, # packets, BSSID, Probed ESSIDs
+8A:35:B7:9A:DD:ED, 2020-12-24 05:45:07, 2020-12-25 05:45:08, -81,        2, (not associated) ,
+58:78:DB:FF:5E:82, 2020-12-24 05:45:09, 2020-12-25 05:45:09, -43,        3, 5E:E8:C9:26:AB:DF,
+83:EF:35:A2:CB:5D, 2020-12-24 05:45:12, 2020-12-25 05:45:11, -83,        1, (not associated) ,second ap
+5E:35:72:DA:45:18, 2020-12-24 05:45:16, 2020-12-25 05:45:15, -83,        1, 54:79:8A:BB:20:73,17,name with , comma,9,second ap
