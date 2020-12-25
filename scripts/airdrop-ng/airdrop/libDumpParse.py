@@ -122,16 +122,35 @@ class airDumpParse:
 		dict = {}
 		for entry in devices:
 			client = {}
+			# NOTE: It is expected a rstripped entry.
 			# WARNING: Splitting the entry on every comma means to split the ESSID too if it contains a comma, resulting in more items than expected.
 			string_list = entry.split(',')
 			if len(string_list) >= 7:
+				 probe_list = []
+				 p = re.match(r'^([^,]+,){6}(.*)$',entry).group(2)
+				 while p:
+					 # expect essid_length,essid_string[,...]
+					 essid_length = re.match(r'^([0-9]{1,2}),',p)
+					 if not essid_length:
+						 # this may happen if the entry is malformed or incompatible
+						 probe_list = string_list[6:][0:]
+						 break
+					 essid_length = essid_length.group(1)
+					 l = len(essid_length)
+					 n = int(essid_length)
+					 if n > 32:
+						# this may happen if the entry is malformed or incompatible
+						probe_list = string_list[6:][0:]
+						break
+					 probe_list.append(p[l+1:l+1+n])
+					 p = p[l+2+n:]
 				client = {"station":string_list[0].replace(' ',''),
 					"fts":string_list[1],
 					"lts":string_list[2],
 					"power":string_list[3],
 					"packets":string_list[4],
 					"bssid":string_list[5].replace(' ',''),
-					"probe":string_list[6:][0:]} # ESSIDs cannot be split faithfully if any contains a comma (see the WARNING above)
+					"probe":probe_list} # ESSIDs cannot be split faithfully if any contains a comma (see the WARNING above)
 			if len(client) != 0:
 				dict[string_list[0]] = client
 		return dict

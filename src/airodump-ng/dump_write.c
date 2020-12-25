@@ -381,12 +381,12 @@ int dump_write_csv(struct AP_info * ap_1st,
 
 			if (probes_written == 0)
 			{
-				fprintf(opt.f_txt, "%s", temp);
+				fprintf(opt.f_txt, "%d,%s", st_cur->ssid_length[i], temp);
 				probes_written = 1;
 			}
 			else
 			{
-				fprintf(opt.f_txt, ",%s", temp);
+				fprintf(opt.f_txt, ",%d,%s", st_cur->ssid_length[i], temp);
 			}
 
 			free(temp);
