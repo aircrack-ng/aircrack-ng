@@ -76,11 +76,19 @@ Below are instructions for installing the basic requirements to build
 
     sudo apt-get install build-essential autoconf automake libtool pkg-config libnl-3-dev libnl-genl-3-dev libssl-dev ethtool shtool rfkill zlib1g-dev libpcap-dev libsqlite3-dev libpcre3-dev libhwloc-dev libcmocka-dev hostapd wpasupplicant tcpdump screen iw usbutils
 
-#### Fedora/CentOS/RHEL
+#### Fedora
 
-    sudo yum install libtool pkgconfig sqlite-devel autoconf automake openssl-devel libpcap-devel pcre-devel rfkill libnl3-devel gcc gcc-c++ ethtool hwloc-devel libcmocka-devel git make file expect hostapd wpa_supplicant iw usbutils tcpdump screen
+    sudo yum install libtool pkgconfig sqlite-devel autoconf automake openssl-devel libpcap-devel pcre-devel rfkill libnl3-devel gcc gcc-c++ ethtool hwloc-devel libcmocka-devel make file expect hostapd wpa_supplicant iw usbutils tcpdump screen
 
-**Note**: on CentOS and RedHat, HostAPd requires 'epel' repository to be enabled: sudo yum install epel-release
+#### CentOS/RHEL
+
+    sudo yum install epel-release
+    sudo ./centos_autotools.sh
+    # Remove older installation 
+    sudo yum remove autoconf automake
+    sudo yum install sqlite-devel openssl-devel libpcap-devel pcre-devel rfkill libnl3-devel ethtool hwloc-devel libcmocka-devel make file expect hostapd wpa_supplicant iw usbutils tcpdump screen
+
+**Note**: autoconf and automake in CentOS 7 repositories are too old. We are providing a script to install more recent version called centos_autotools.sh. It automatically install dependencies required for the installation of autotools and automake and compiles them from source
 
 #### openSUSE
 
