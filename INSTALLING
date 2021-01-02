@@ -32,7 +32,7 @@ Note: Airmon-ng only requires pciutils if the system has a PCI/PCIe bus and it i
  * If you want Airodump-ng to log GPS coordinates, gpsd is needed
  * For best performance on SMP machines, ensure the hwloc library and headers are installed. It is strongly recommended on high core count systems, it may give a serious speed boost
  * CMocka for unit testing
- * For intergation testing on Linux only: tcpdump, HostAPd, WPA Supplicant and screen
+ * For integration testing on Linux only: tcpdump, HostAPd, WPA Supplicant and screen
 
 === Installing required and optional dependencies ===
 
