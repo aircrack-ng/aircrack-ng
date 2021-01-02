@@ -551,8 +551,11 @@ isRPiWireless() {
 	[ "${HW_REV}" = 'b03111' ] && return 1
 	[ "${HW_REV}" = 'c03111' ] && return 1
 	[ "${HW_REV}" = 'b03112' ] && return 1
+	[ "${HW_REV}" = 'b03114' ] && return 1
 	[ "${HW_REV}" = 'c03112' ] && return 1
+	[ "${HW_REV}" = 'c03114' ] && return 1
 	[ "${HW_REV}" = 'd03114' ] && return 1
+	[ "${HW_REV}" = 'c03130' ] && return 1
 	return 0
 }
 
