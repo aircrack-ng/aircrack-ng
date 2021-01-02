@@ -51,18 +51,18 @@ Note: CMocka, tcpdump, screen, HostAPd and WPA Supplicant should not be dependen
  
     `sudo yum install libtool pkgconfig sqlite-devel autoconf automake openssl-devel libpcap-devel pcre-devel rfkill libnl3-devel gcc gcc-c++ ethtool hwloc-devel libcmocka-devel make file expect hostapd wpa_supplicant iw usbutils tcpdump screen zlib-devel`
  
-==== CentOS/RHEL ====
+==== CentOS/RHEL 7 ====
 
-CentOS/RHEL 7:
     `sudo yum install epel-release`
     `sudo ./centos_autotools.sh`
-    # Remove older installation 
+    # Remove older installation of automake/autoconf
     `sudo yum remove autoconf automake`
     `sudo yum install sqlite-devel openssl-devel libpcap-devel pcre-devel rfkill libnl3-devel ethtool hwloc-devel libcmocka-devel make file expect hostapd wpa_supplicant iw usbutils tcpdump screen zlib-devel`
 
-Note: autoconf and automake in CentOS 7 repositories are too old. We are providing a script to install more recent version called centos_autotools.sh. It automatically install dependencies required for the installation of autotools and automake and compiles them from source
+Note: autoconf, automake, libtool, and pkgconfig in the repositories are too old. The script centos_autotools.sh automatically installs dependencies to compile then install the tools.
 
-CentOS/RHEL 8:
+==== CentOS/RHEL 8 ====
+
     `sudo yum config-manager --set-enabled powertools`
     `sudo yum install epel-release`
     `sudo yum install git libtool pkgconfig sqlite-devel autoconf automake openssl-devel libpcap-devel pcre-devel rfkill libnl3-devel gcc gcc-c++ ethtool hwloc-devel libcmocka-devel make file expect hostapd wpa_supplicant iw usbutils tcpdump screen zlib-devel`
