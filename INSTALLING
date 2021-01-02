@@ -49,23 +49,23 @@ Note: CMocka, tcpdump, screen, HostAPd and WPA Supplicant should not be dependen
 
 ==== Fedora ====
  
-    `sudo yum install libtool pkgconfig sqlite-devel autoconf automake openssl-devel libpcap-devel pcre-devel rfkill libnl3-devel gcc gcc-c++ ethtool hwloc-devel libcmocka-devel make file expect hostapd wpa_supplicant iw usbutils tcpdump screen zlib-devel
+    `sudo yum install libtool pkgconfig sqlite-devel autoconf automake openssl-devel libpcap-devel pcre-devel rfkill libnl3-devel gcc gcc-c++ ethtool hwloc-devel libcmocka-devel make file expect hostapd wpa_supplicant iw usbutils tcpdump screen zlib-devel`
  
 ==== CentOS/RHEL ====
 
 CentOS/RHEL 7:
-    `sudo yum install epel-release
-    `sudo ./centos_autotools.sh
+    `sudo yum install epel-release`
+    `sudo ./centos_autotools.sh`
     # Remove older installation 
-    `sudo yum remove autoconf automake
-    `sudo yum install sqlite-devel openssl-devel libpcap-devel pcre-devel rfkill libnl3-devel ethtool hwloc-devel libcmocka-devel make file expect hostapd wpa_supplicant iw usbutils tcpdump screen
+    `sudo yum remove autoconf automake`
+    `sudo yum install sqlite-devel openssl-devel libpcap-devel pcre-devel rfkill libnl3-devel ethtool hwloc-devel libcmocka-devel make file expect hostapd wpa_supplicant iw usbutils tcpdump screen`
 
 Note: autoconf and automake in CentOS 7 repositories are too old. We are providing a script to install more recent version called centos_autotools.sh. It automatically install dependencies required for the installation of autotools and automake and compiles them from source
 
 CentOS/RHEL 8:
-    sudo yum config-manager --set-enabled powertools
-    sudo yum install epel-release
-    sudo yum install git libtool pkgconfig sqlite-devel autoconf automake openssl-devel libpcap-devel pcre-devel rfkill libnl3-devel gcc gcc-c++ ethtool hwloc-devel libcmocka-devel make file expect hostapd wpa_supplicant iw usbutils tcpdump screen
+    `sudo yum config-manager --set-enabled powertools`
+    `sudo yum install epel-release`
+    `sudo yum install git libtool pkgconfig sqlite-devel autoconf automake openssl-devel libpcap-devel pcre-devel rfkill libnl3-devel gcc gcc-c++ ethtool hwloc-devel libcmocka-devel make file expect hostapd wpa_supplicant iw usbutils tcpdump screen`
 
 ===== openSUSE =====
 
