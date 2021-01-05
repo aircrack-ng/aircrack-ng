@@ -83,6 +83,17 @@ typedef uint8_t u_int8_t; //-V677
 #endif
 
 /*
+	 * Android/termux
+	 */
+#if defined(__ANDROID__)
+#include <asm/byteorder.h>
+#include <unistd.h>
+
+#define AIRCRACK_NG_BYTE_ORDER_DEFINED
+
+#endif
+
+/*
 	 * Cygwin
 	 */
 #if defined(__CYGWIN32__) || defined(CYGWIN)
