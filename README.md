@@ -104,7 +104,9 @@ Below are instructions for installing the basic requirements to build
 
 #### Alpine
 
-    sudo apk add gcc g++ make autoconf automake libtool libnl3-dev openssl-dev ethtool libpcap-dev cmocka-dev hostapd wpa_supplicant tcpdump screen iw pkgconf util-linux sqlite-dev pcre-dev linux-headers zlib-dev
+    sudo apk add gcc g++ make autoconf automake libtool libnl3-dev openssl-dev ethtool libpcap-dev cmocka-dev hostapd wpa_supplicant tcpdump screen iw pkgconf util-linux sqlite-dev pcre-dev linux-headers zlib-dev pciutils usbutils
+
+**Note**: Community repository needs to be enabled for iw
 
 ### BSD
 
