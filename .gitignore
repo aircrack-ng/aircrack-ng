@@ -64,7 +64,6 @@ src/Makefile.in
 !/build/m4/stubs/.gitkeep
 /test/test-env.sh
 /.idea
-/.vscode
 /.clang_complete
 CMakeLists.txt
 /cmake-build-*
@@ -113,3 +112,9 @@ coverage*.info
 /.gdb_history
 /cscope*
 /strace_out
+/.clangd
+/r*hs
+/r*hs-bad
+/r*tr
+/r*tr-bad
+*~

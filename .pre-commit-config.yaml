@@ -1,0 +1,37 @@
+---
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+exclude: >
+  (?x)^(
+      .github/|AUTHORS|ChangeLog|INSTALLING|LICENSE|README|
+      appveyor.yml|build/airpcap.dll.def|contrib/|lib/csharp|
+      lib/radiotap|include/aircrack-ng/third-party|patches/|
+      test/|scripts/|manpages/|apparmor/
+  )
+
+fail_fast: false
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.4.0
+    hooks:
+      - id: trailing-whitespace
+        exclude_types: [asm]
+      - id: check-added-large-files
+      - id: mixed-line-ending
+        exclude_types: [asm]
+      - id: check-byte-order-marker
+      - id: check-executables-have-shebangs
+      - id: check-merge-conflict
+
+  - repo: https://github.com/pocc/pre-commit-hooks
+    rev: python
+    hooks:
+      - id: clang-format
+        args: ["--version=3.8", "--style=file", "-i"]
+
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.7.1.1
+    hooks:
+      - id: shellcheck
+        files: 'test/|scripts/|build/'
