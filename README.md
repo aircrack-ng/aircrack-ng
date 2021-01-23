@@ -39,7 +39,7 @@ All tools are command line which allows for heavy scripting. A lot of GUIs have 
  * On Windows, if using clang, libiconv and libiconv-devel
  * Linux: LibNetlink 1 or 3. It can be disabled by passing --disable-libnl to configure.
  * pkg-config (pkgconf on FreeBSD)
- * FreeBSD, OpenBSD, NetBSD, Solaris and OS X with macports: gmake
+ * FreeBSD, OpenBSD, NetBSD, Solaris and OS X with Macports: gmake
  * Linux/Cygwin: make and Standard C++ Library development package (Debian: libstdc++-dev)
 
 Note: Airmon-ng only requires pciutils if the system has a PCI/PCIe bus and it is populated.
@@ -49,12 +49,12 @@ Note: Airmon-ng only requires pciutils if the system has a PCI/PCIe bus and it i
 ## Optional stuff
 
  * If you want SSID filtering with regular expression in airodump-ng
-   (-essid-regex) pcre development package is required.
+   (-essid-regex) PCRE development package is required.
  * If you want to use airolib-ng and '-r' option in aircrack-ng,
    SQLite development package >= 3.3.17 (3.6.X version or better is recommended)
  * If you want to use Airpcap, the 'developer' directory from the CD/ISO/SDK is required.
  * In order to build `besside-ng`, `besside-ng-crawler`, `easside-ng`, `tkiptun-ng` and `wesside-ng`,
-   libpcap development package is required (on Cygwin, use the Aircap SDK instead; see above)
+   libpcap development package is required (on Cygwin, use the Airpcap SDK instead; see above)
  * rfkill
  * If you want Airodump-ng to log GPS coordinates, gpsd is needed
  * For best performance on SMP machines, ensure the hwloc library and headers are installed. It is strongly recommended on high core count systems, it may give a serious speed boost
@@ -409,7 +409,7 @@ the additional flag `--without-opt` to the `./configure` line:
 
 `./configure --without-opt`
 
-# Using precompiled binaries
+# Using pre-compiled binaries
 
 ## Linux/BSD
  * Use your package manager to download aircrack-ng
@@ -417,7 +417,7 @@ the additional flag `--without-opt` to the `./configure` line:
 
 ## Windows
  * Install the appropriate "monitor" driver for your card (standard drivers doesn't work for capturing data).
- * aircrack-ng suite is command line tools. So, you have to open a commandline
+ * aircrack-ng suite is command line tools. So, you have to open a command-line
    `Start menu -> Run... -> cmd.exe` then use them
  * Run the executables without any parameters to have help
 
