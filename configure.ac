@@ -173,11 +173,6 @@ CFLAGS="$saved_cflags"
 AIRCRACK_NG_CODE_COVERAGE
 
 #
-# Valgrind Support
-#
-AX_VALGRIND_CHECK
-
-#
 # Compiler set-up
 #
 AIRCRACK_NG_COMPILER_C
