@@ -108,3 +108,4 @@ coverage*.info
 /include/aircrack-ng/version.h
 /manpages/*.1
 /manpages/*.8
+*.pidb
