@@ -396,6 +396,30 @@ We provide up to date version via PackageCloud for a number of Linux distrubutio
    `Start menu -> Run... -> cmd.exe` then use them
  * Run the executables without any parameters to have help
 
+# Continous integration
+
+Travis (Linux/Mac): https://travis-ci.org/aircrack-ng/aircrack-ng
+AppVeyor: https://ci.appveyor.com/project/aircrack-ng/aircrack-ng
+Coverity Scan: https://scan.coverity.com/projects/aircrack-ng
+
+## Buildbots
+
+URL: https://buildbot.aircrack-ng.org/
+
+Linux buildbots:
+- CentOS
+- AArch64
+- Kali Linux
+- Armel Kali Linux
+- Armhf Kali Linux
+- Alpine Linux
+
+BSD buildbots:
+- OpenBSD
+- FreeBSD
+- NetBSD
+- DragonflyBSD
+
 # Documentation
 
 Some more information is present in the [README](README) file.

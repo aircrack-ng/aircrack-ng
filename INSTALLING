@@ -366,13 +366,19 @@ Coverity Scan: https://scan.coverity.com/projects/aircrack-ng
 
 URL: https://buildbot.aircrack-ng.org/
 
-Current buildbots:
-- Intel Compiler
-- Alpine Linux
+Linux buildbots:
+- CentOS
+- AArch64
 - Kali Linux
 - Armel Kali Linux
 - Armhf Kali Linux
+- Alpine Linux
+
+BSD buildbots:
+- OpenBSD
 - FreeBSD
+- NetBSD
+- DragonflyBSD
 
 == Documentation ==
 
