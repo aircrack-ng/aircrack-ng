@@ -70,6 +70,10 @@ Below are instructions for installing the basic requirements to build
 
 ### Linux
 
+#### Arch Linux
+
+sudo pacman -Sy base-devel libnl openssl ethtool util-linux zlib libpcap sqlite pcre hwloc cmocka hostapd wpa_supplicant tcpdump screen iw usbutils pciutils`
+
 #### Debian/Ubuntu
 
     sudo apt-get install build-essential autoconf automake libtool pkg-config libnl-3-dev libnl-genl-3-dev libssl-dev ethtool shtool rfkill zlib1g-dev libpcap-dev libsqlite3-dev libpcre3-dev libhwloc-dev libcmocka-dev hostapd wpasupplicant tcpdump screen iw usbutils
