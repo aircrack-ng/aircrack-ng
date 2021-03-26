@@ -382,12 +382,17 @@ the additional flag `--without-opt` to the `./configure` line:
 # Using precompiled binaries
 
 ## Linux/BSD
- * Use your package manager to download aircrack-ng
- * In most cases, they have an old version.
+
+Aircrack-ng is available in most distributions repositories. However, it is not always up to date.
+
+We provide up to date version via PackageCloud for a number of Linux distrubutions:
+
+- development (each commit in this repo): https://packagecloud.io/aircrack-ng/git
+- stable releases: https://packagecloud.io/aircrack-ng/release
 
 ## Windows
- * Install the appropriate "monitor" driver for your card (standard drivers doesn't work for capturing data).
- * aircrack-ng suite is command line tools. So, you have to open a commandline
+ * Install the appropriate "monitor" driver for your card; standard drivers doesn't work for capturing data.
+ * Aircrack-ng suite is command line tools. So, you have to open a commandline
    `Start menu -> Run... -> cmd.exe` then use them
  * Run the executables without any parameters to have help
 
