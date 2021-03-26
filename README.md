@@ -398,9 +398,9 @@ We provide up to date version via PackageCloud for a number of Linux distrubutio
 
 # Continous integration
 
-Travis (Linux/Mac): https://travis-ci.org/aircrack-ng/aircrack-ng
-AppVeyor: https://ci.appveyor.com/project/aircrack-ng/aircrack-ng
-Coverity Scan: https://scan.coverity.com/projects/aircrack-ng
+- Travis (Linux/Mac): https://travis-ci.org/aircrack-ng/aircrack-ng
+- AppVeyor: https://ci.appveyor.com/project/aircrack-ng/aircrack-ng
+- Coverity Scan: https://scan.coverity.com/projects/aircrack-ng
 
 ## Buildbots
 
