@@ -393,12 +393,13 @@ the additional flag `--without-opt` to the `./configure` line:
 
 # Documentation
 
+Some more information is present in the [README](README) file.
 
 Documentation, tutorials, ... can be found on https://aircrack-ng.org
 
-See also manpages and the forum.
+Support is available in the [forum](https://forum.aircrack-ng.org) and on IRC (in the channel #aircrack-ng in Freenode).
 
-For further information check the [README](README) file
+Every tool has its own manpage. For aircrack-ng, `man aircrack-ng`
 
 # Infrastructure sponsors
 

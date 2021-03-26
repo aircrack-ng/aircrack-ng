@@ -373,6 +373,10 @@ Current buildbots:
 
 == Documentation ==
 
-Documentation, tutorials, ... can be found on https://www.aircrack-ng.org
+Some more information is present in the README file.
 
-See also manpages and the forum.
+Documentation, tutorials, ... can be found on https://aircrack-ng.org
+
+Support is available in the forum (https://forum.aircrack-ng.org) and on IRC (in the channel #aircrack-ng in Freenode).
+
+Every tool has its own manpage. For aircrack-ng, `man aircrack-ng`
