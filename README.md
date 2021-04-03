@@ -112,6 +112,12 @@ sudo pacman -Sy base-devel libnl openssl ethtool util-linux zlib libpcap sqlite 
 
 **Note**: Community repository needs to be enabled for iw
 
+#### Clear Linux
+
+    sudo swupd bundle-add c-basic devpkg-openssl devpkg-libgcrypt devpkg-libnl devpkg-hwloc devpkg-libpcap devpkg-pcre devpkg-sqlite-autoconf ethtool wget network-basic software-testing sysadmin-basic wpa_supplicant
+
+**Note**: hostapd must be compiled manually, it is not present in the repository
+
 ### BSD
 
 #### FreeBSD
