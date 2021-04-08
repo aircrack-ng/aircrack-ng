@@ -277,7 +277,7 @@ static struct local_options
 
 static void resetSelection(void)
 {
-	lopt.sort_by = SORT_BY_POWER;
+	lopt.sort_by = SORT_BY_NOTHING;
 	lopt.sort_inv = 1;
 
 	lopt.relative_time = 0;
