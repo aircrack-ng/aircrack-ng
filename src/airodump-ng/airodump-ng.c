@@ -522,7 +522,10 @@ static THREAD_ENTRY(input_thread)
 
 		if (keycode == KEY_m)
 		{
-			lopt.mark_cur_ap = 1;
+			if (lopt.p_selected_ap != NULL)
+			{
+				lopt.mark_cur_ap = 1;
+			}
 		}
 
 		if (keycode == KEY_ARROW_DOWN)
