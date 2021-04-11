@@ -1,0 +1,59 @@
+diff --git a/drivers/net/wireless/b43/main.c b/drivers/net/wireless/b43/main.c
+index a37d7fa..5655688 100644
+--- a/drivers/net/wireless/b43/main.c
++++ b/drivers/net/wireless/b43/main.c
+@@ -2841,6 +2841,10 @@ static int b43_op_tx(struct ieee80211_hw *hw,
+ 			err = b43_dma_tx(dev, skb, ctl);
+ 	}
+ 
++	if (ctl->type == IEEE80211_IF_TYPE_MNTR) {
++		ctl->flags |= IEEE80211_TXCTL_NO_ACK;
++	}
++
+ 	read_unlock_irqrestore(&wl->tx_lock, flags);
+ 
+ 	if (unlikely(err))
+diff --git a/drivers/net/wireless/b43/xmit.c b/drivers/net/wireless/b43/xmit.c
+index 8849194..bfc1665 100644
+--- a/drivers/net/wireless/b43/xmit.c
++++ b/drivers/net/wireless/b43/xmit.c
+@@ -318,7 +318,8 @@ int b43_generate_txhdr(struct b43_wldev *dev,
+ 	/* MAC control */
+ 	if (!(txctl->flags & IEEE80211_TXCTL_NO_ACK))
+ 		mac_ctl |= B43_TXH_MAC_ACK;
+-	if (!(((fctl & IEEE80211_FCTL_FTYPE) == IEEE80211_FTYPE_CTL) &&
++	if ( (txctl->type != IEEE80211_IF_TYPE_MNTR) &&
++	      !(((fctl & IEEE80211_FCTL_FTYPE) == IEEE80211_FTYPE_CTL) &&
+ 	      ((fctl & IEEE80211_FCTL_STYPE) == IEEE80211_STYPE_PSPOLL)))
+ 		mac_ctl |= B43_TXH_MAC_HWSEQ;
+ 	if (txctl->flags & IEEE80211_TXCTL_FIRST_FRAGMENT)
+diff --git a/drivers/net/wireless/b43legacy/main.c b/drivers/net/wireless/b43legacy/main.c
+index a353dae..14ef22e 100644
+--- a/drivers/net/wireless/b43legacy/main.c
++++ b/drivers/net/wireless/b43legacy/main.c
+@@ -2370,6 +2370,11 @@ static int b43legacy_op_tx(struct ieee80211_hw *hw,
+ 		goto out;
+ 	if (unlikely(b43legacy_status(dev) < B43legacy_STAT_STARTED))
+ 		goto out;
++
++	if (ctl->type == IEEE80211_IF_TYPE_MNTR) {
++		ctl->flags |= IEEE80211_TXCTL_NO_ACK;
++	}
++
+ 	/* DMA-TX is done without a global lock. */
+ 	if (b43legacy_using_pio(dev)) {
+ 		spin_lock_irqsave(&wl->irq_lock, flags);
+diff --git a/drivers/net/wireless/b43legacy/xmit.c b/drivers/net/wireless/b43legacy/xmit.c
+index fc83dab..b4c6ebb 100644
+--- a/drivers/net/wireless/b43legacy/xmit.c
++++ b/drivers/net/wireless/b43legacy/xmit.c
+@@ -292,7 +292,8 @@ static int generate_txhdr_fw3(struct b43legacy_wldev *dev,
+ 	/* MAC control */
+ 	if (!(txctl->flags & IEEE80211_TXCTL_NO_ACK))
+ 		mac_ctl |= B43legacy_TX4_MAC_ACK;
+-	if (!(((fctl & IEEE80211_FCTL_FTYPE) == IEEE80211_FTYPE_CTL) &&
++	if ( (txctl->type != IEEE80211_IF_TYPE_MNTR) &&
++	      !(((fctl & IEEE80211_FCTL_FTYPE) == IEEE80211_FTYPE_CTL) &&
+ 	      ((fctl & IEEE80211_FCTL_STYPE) == IEEE80211_STYPE_PSPOLL)))
+ 		mac_ctl |= B43legacy_TX4_MAC_HWSEQ;
+ 	if (txctl->flags & IEEE80211_TXCTL_FIRST_FRAGMENT)

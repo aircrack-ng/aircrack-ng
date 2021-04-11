@@ -1,0 +1,84 @@
+Index: ath/if_ath.c
+===================================================================
+--- ath/if_ath.c	(revision 2662)
++++ ath/if_ath.c	(working copy)
+@@ -2282,6 +2282,7 @@
+ ath_tx_startraw(struct net_device *dev, struct ath_buf *bf, struct sk_buff *skb)
+ {
+ 	struct ath_softc *sc = dev->priv;
++	struct ieee80211com *ic = &sc->sc_ic;
+ 	struct ath_hal *ah = sc->sc_ah;
+ 	struct ieee80211_phy_params *ph = (struct ieee80211_phy_params *) (skb->cb + sizeof(struct ieee80211_cb));
+ 	const HAL_RATE_TABLE *rt;
+@@ -2294,7 +2295,11 @@
+ 	struct ieee80211_frame *wh;
+ 
+ 	wh = (struct ieee80211_frame *) skb->data;
+-	try0 = ph->try0;
++	try0 = (ic->ic_opmode == IEEE80211_M_MONITOR) ? 1 : ph->try0;
++	/*
++	 * The retry value has to be patched to 1 when injecting,
++	 * otherwise the sequence number will be overwritten
++	 */
+ 	rt = sc->sc_currates;
+ 	txrate = dot11_to_ratecode(sc, rt, ph->rate0);
+ 	power = ph->power > 60 ? 60 : ph->power;
+@@ -5360,18 +5365,21 @@
+ {
+ 	struct ath_softc *sc = dev->priv;
+ 	struct ieee80211com *ic = &sc->sc_ic;
+-	struct ieee80211_frame *wh = (struct ieee80211_frame *) skb->data;
+-	unsigned int headersize = ieee80211_anyhdrsize(wh);
+-	int padbytes = roundup(headersize, 4) - headersize;
++	struct ieee80211_frame *wh;
+ 
+ 	KASSERT(ic->ic_flags & IEEE80211_F_DATAPAD,
+ 		("data padding not enabled?"));
+ 
+-	if (padbytes > 0) {
++	wh = (struct ieee80211_frame *) skb->data;
++	if (IEEE80211_QOS_HAS_SEQ(wh)) {
++		struct sk_buff *skb1 = skb_copy(skb, GFP_ATOMIC);
+ 		/* Remove hw pad bytes */
+-		struct sk_buff *skb1 = skb_copy(skb, GFP_ATOMIC);
+-		memmove(skb1->data + padbytes, skb1->data, headersize);
+-		skb_pull(skb1, padbytes);
++		unsigned int headersize = ieee80211_hdrsize(wh);
++		int padbytes = roundup(headersize, 4) - headersize;
++		if (padbytes > 0) {
++			memmove(skb1->data + padbytes, skb1->data, headersize);
++			skb_pull(skb1, padbytes);
++		}
+ 		ieee80211_input_monitor(ic, skb1, bf, 0, rtsf, sc);
+ 		dev_kfree_skb(skb1);
+ 	} else {
+@@ -5392,8 +5400,6 @@
+ 				   A_MAX(sizeof(struct wlan_ng_prism2_header),
+ 					 ATHDESC_HEADER_SIZE));
+ 	u_int32_t tstamp;
+-	unsigned int headersize;
+-	int padbytes;
+ 	/*                                                                      
+ 	 * release the owner of this skb since we're basically                  
+ 	 * recycling it                                                         
+@@ -5411,13 +5417,15 @@
+ 		skb_orphan(skb);
+ 
+ 	wh = (struct ieee80211_frame *) skb->data;
+-	headersize = ieee80211_anyhdrsize(wh);
+-	padbytes = roundup(headersize, 4) - headersize;
+-	if (padbytes > 0) {
++	if (IEEE80211_QOS_HAS_SEQ(wh)) {
+ 		/* Unlike in rx_capture, we're freeing the skb at the end
+ 		 * anyway, so we don't need to worry about using a copy */
+-		memmove(skb->data + padbytes, skb->data, headersize);
+-		skb_pull(skb, padbytes);
++		unsigned int headersize = ieee80211_hdrsize(wh);
++		int padbytes = roundup(headersize, 4) - headersize;
++		if (padbytes > 0) {
++			memmove(skb->data + padbytes, skb->data, headersize);
++			skb_pull(skb, padbytes);
++		}
+ 	}
+ 
+ 	if (skb_headroom(skb) < extra &&
