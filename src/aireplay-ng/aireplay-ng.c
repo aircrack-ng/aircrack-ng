@@ -357,14 +357,8 @@ static void send_fragments(unsigned char * packet,
 		memcpy(frag + header_size, iv, 4);
 
 		// Copy data
-		if (fragsize <= packet_len - (header_size + t - fragsize))
-			memcpy(frag + header_size + 4,
-				   packet + header_size + t - fragsize,
-				   fragsize);
-		else
-			memcpy(frag + header_size + 4,
-				   packet + header_size + t - fragsize,
-				   packet_len - (header_size + t - fragsize));
+		(fragsize <= packet_len - (header_size + t - fragsize)) ? memcpy(frag + header_size + 4, packet + header_size + t - fragsize, fragsize) 
+			: memcpy(frag + header_size + 4, packet + header_size + t - fragsize, packet_len - (header_size + t - fragsize));
 
 		// Make ToDS frame
 		if (!ska)
@@ -1450,22 +1444,11 @@ read_packets:
 			mi_s = 24;
 			break;
 	}
-
-	if (memcmp(opt.r_bssid, NULL_MAC, 6) == 0)
-		memcpy(bssid, h80211 + mi_b, 6);
-	else
-		memcpy(bssid, opt.r_bssid, 6);
-
-	if (memcmp(opt.r_smac, NULL_MAC, 6) == 0)
-		memcpy(smac, h80211 + mi_s, 6);
-	else
-		memcpy(smac, opt.r_smac, 6);
-
-	if (memcmp(opt.r_dmac, NULL_MAC, 6) == 0)
-		memcpy(dmac, h80211 + mi_d, 6);
-	else
-		memcpy(dmac, opt.r_dmac, 6);
-
+	
+	(memcmp(opt.r_bssid, NULL_MAC, 6) == 0) ? memcpy(bssid, h80211 + mi_b, 6) : memcpy(bssid, opt.r_bssid, 6);
+	(memcmp(opt.r_smac, NULL_MAC, 6) == 0)  ? memcpy(smac, h80211 + mi_s, 6)  : memcpy(smac, opt.r_smac, 6);
+	(memcmp(opt.r_dmac, NULL_MAC, 6) == 0)  ? memcpy(dmac, h80211 + mi_d, 6)  : memcpy(dmac, opt.r_dmac, 6);
+	
 	if (opt.r_fctrl != -1U)
 	{
 		h80211[0] = opt.r_fctrl >> 8;
@@ -1682,17 +1665,8 @@ static int do_attack_arp_resend(void)
 		}
 	}
 
-	if (opt.ringbuffer)
-	{
-		arp = (struct ARP_req *) malloc(opt.ringbuffer
-										* sizeof(struct ARP_req));
-		ALLEGE(arp != NULL);
-	}
-	else
-	{
-		arp = (struct ARP_req *) malloc(sizeof(struct ARP_req) * MAX_ARP_SLOTS);
-		ALLEGE(arp != NULL);
-	}
+	(opt.ringbuffer) ? arp = (struct ARP_req *) malloc(opt.ringbuffer * sizeof(struct ARP_req)), ALLEGE(arp != NULL)
+		: arp = (struct ARP_req *) malloc(sizeof(struct ARP_req) * MAX_ARP_SLOTS), ALLEGE(arp != NULL);
 
 	memset(ticks, 0, sizeof(ticks));
 
@@ -2168,27 +2142,12 @@ static int do_attack_caffe_latte(void)
 	{
 		/* sleep until the next clock tick */
 
-		if (dev.fd_rtc >= 0)
-		{
-			IGNORE_LTZ(read(dev.fd_rtc, &n, sizeof(n)));
-
-			ticks[0]++;
-			ticks[1]++;
-			ticks[2]++;
-		}
-		else
-		{
-			gettimeofday(&tv, NULL);
-			usleep(1000000 / RTC_RESOLUTION);
-			gettimeofday(&tv2, NULL);
-
-			f = 1000000 * (float) (tv2.tv_sec - tv.tv_sec)
-				+ (float) (tv2.tv_usec - tv.tv_usec);
-
-			ticks[0] += f / (1000000.f / RTC_RESOLUTION);
-			ticks[1] += f / (1000000.f / RTC_RESOLUTION);
+		(dev.fd_rtc >= 0) ? IGNORE_LTZ(read(dev.fd_rtc, &n, sizeof(n))), ticks[0]++, ticks[1]++, ticks[2]++
+			: gettimeofday(&tv, NULL), usleep(1000000 / RTC_RESOLUTION), gettimeofday(&tv2, NULL), 
+			f = 1000000 * (float) (tv2.tv_sec - tv.tv_sec) + (float) (tv2.tv_usec - tv.tv_usec),
+			ticks[0] += f / (1000000.f / RTC_RESOLUTION),
+			ticks[1] += f / (1000000.f / RTC_RESOLUTION),
 			ticks[2] += f / (1000000.f / RTC_RESOLUTION);
-		}
 
 		if (ticks[1] > (RTC_RESOLUTION / 10.f))
 		{
