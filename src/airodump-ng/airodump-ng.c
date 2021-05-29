@@ -1251,7 +1251,8 @@ static int dump_add_packet(unsigned char * h80211,
 
 	/* if it's a LLC null packet, just forget it (may change in the future) */
 
-	if (caplen > 28)
+	if (((h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_DATA)
+		&& (caplen > 28))
 		if (memcmp(h80211 + 24, llcnull, 4) == 0) return (0);
 
 	/* grab the sequence number */
