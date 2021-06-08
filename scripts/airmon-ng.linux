@@ -5,7 +5,7 @@ ELITE="0"
 USERID=""
 checkvm_status=""
 MAC80211=0
-IW_SOURCE="https://mirrors.edge.kernel.org/pub/software/network/iw/iw-5.4.tar.xz"
+IW_SOURCE="https://mirrors.edge.kernel.org/pub/software/network/iw/iw-5.9.tar.xz"
 IW_ERROR=""
 if [ ! -d /sys/ ]; then
 	printf "CONFIG_SYSFS is disabled in your kernel, this program will almost certainly not work.\n"
@@ -393,6 +393,30 @@ changeMac80211IfaceTypeMonitor() {
   printf "\t\t(monitor mode enabled)\n"
 }
 
+qcaldSafetyCheck() {
+  icnss_file="/sys/module/wlan/parameters/con_mode"
+  if [ ! -f "${icnss_file}" ]; then
+    printf "Unable to find ${icnss_file} which is needed to control mode.\n"
+    printf "Is /sys mounted correctly?\n"
+    exit 1
+  fi
+  if [ ! -w "${icnss_file}" ]; then
+    printf "${icnss_file} is present but we do not have write permission\n"
+    printf "Unable to control mode, giving up\n"
+    exit 1
+  fi
+}
+
+changeQcacldIfaceTypeMonitor() {
+  #this is far too fragile for me, since it obviously doesn't
+  #work if you have multiple cards with this driver
+  #hopefully that never happens
+  qcaldSafetyCheck
+  echo 4 > /sys/module/wlan/parameters/con_mode
+  setLink ${1} up
+  printf "\t\t(monitor mode enabled)\n"
+}
+
 yesorno() {
 	read -r input
 	case $input in
@@ -448,6 +472,13 @@ startMac80211Iface() {
 			fi
 		done
 	fi
+  #handle Qualcomm qcacld
+  if [ "${DRIVER}" = "icnss" ]; then
+    setLink ${1} down
+    changeQcacldIfaceTypeMonitor ${1}
+    setChannelMac80211 ${1}
+    return
+  fi
   #check if chipset has driver not under mac80211 stack
   if [ "${DRIVER}" = "88XXau" ] || iw phy ${PHYDEV} info | grep -q 'interface combinations are not supported'; then
     #grumble grumble, seriously crap vendor driver
@@ -520,8 +551,11 @@ isRPiWireless() {
 	[ "${HW_REV}" = 'b03111' ] && return 1
 	[ "${HW_REV}" = 'c03111' ] && return 1
 	[ "${HW_REV}" = 'b03112' ] && return 1
+	[ "${HW_REV}" = 'b03114' ] && return 1
 	[ "${HW_REV}" = 'c03112' ] && return 1
+	[ "${HW_REV}" = 'c03114' ] && return 1
 	[ "${HW_REV}" = 'd03114' ] && return 1
+	[ "${HW_REV}" = 'c03130' ] && return 1
 	return 0
 }
 
@@ -627,6 +661,14 @@ changeMac80211IfaceTypeManaged() {
   printf "\t\t(monitor mode disabled)\n"
 }
 
+changeQcacldIfaceTypeManaged() {
+  #stupidly unsafe with more than one card, oh well
+  qcaldSafetyCheck
+  echo 0 > /sys/module/wlan/parameters/con_mode
+  setLink ${1} up
+  printf "\t\t(monitor mode disabled)\n"
+}
+
 stopMac80211Iface() {
 	if [ -f /sys/class/net/${1}/type ]; then
 		if [ "${2}" != "abort" ] && [ "$(cat /sys/class/net/${1}/type)" != "803" ]; then
@@ -638,6 +680,10 @@ stopMac80211Iface() {
 			printf "please report it.\n"
 			exit 1
 		else
+			if [ "${DRIVER}" = "icnss" ]; then
+				changeQcacldIfaceTypeManaged ${1}
+				return
+			fi
 			if [ "${DRIVER}" = "88XXau" ] || iw phy ${PHYDEV} info | grep -q 'interface combinations are not supported'; then
 				#grumble grumble, seriously crap vendor driver
 				changeMac80211IfaceTypeManaged ${1}
@@ -1316,7 +1362,6 @@ checkvm() {
 		if [ -x "$(command -v lscpu 2>&1)" ]; then
                         lscpu_data="$(lscpu 2>&1)"
 			printf "${lscpu_data}" | grep -iq "Xen" 2> /dev/null && vm="Xen"
-			printf "${lscpu_data}" | grep -iq "KVM" 2> /dev/null && vm="KVM"
 			printf "${lscpu_data}" | grep -iq "Microsoft" 2> /dev/null && vm="MS Hyper-V"
 			[ -n "${vm}" ] && vm_from="lscpu"
 		fi
@@ -1414,21 +1459,22 @@ if [ "$DEBUG" = "1" ]; then
 			/bin/sh --version
 		fi
 	fi
-	if [ -n "$SHELL" ]; then
-		if $SHELL --version > /dev/null 2>&1
-		then
-			printf "\nSHELL is $($SHELL --version)\n\n"
-		else
-			printf "\nSHELL is $SHELL\n\n"
-		fi
-	fi
 fi
 if [ "$VERBOSE" = "1" ]; then
 	if [ -n "$(command -v lsb_release 2> /dev/null)" ]; then
-		lsb_release -a
+		lsb_release -a | grep -iv 'n/a'
 		printf "\n"
 	fi
 	uname -a
+	printf "\n"
+	if iw reg get | grep -q 'country 00:'; then
+		printf "Regulatory Domain appears to be unset, please consider setting it with 'iw reg set XX'\n"
+		printf "https://wireless.wiki.kernel.org/en/users/documentation/iw#updating_your_regulatory_domain\n"
+	else
+		for regdomain in $(iw reg get | awk '/country/ {print substr($2,1,length($2)-1)}' | sort -u); do
+			printf "Regulatory Domain set to ${regdomain}, see 'iw reg get' for details\n"
+		done
+	fi
 
 	checkvm
 	if [ -n "${vm}" ]; then

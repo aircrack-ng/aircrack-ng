@@ -83,7 +83,8 @@ handle(int s, unsigned char * data, int len, struct sockaddr_in * s_in)
 		memcpy(cmd + 1, addr, 4);
 		memcpy(cmd + 1 + 2, id, 2);
 
-		printf("Inet check by %s %d\n", inet_ntoa(*addr), ntohs(*id));
+		char * netip = inet_ntoa(*addr);
+		printf("Inet check by %s %d\n", netip ? netip : "", ntohs(*id));
 		if (send(s, buf, x, 0) != x) return (1);
 
 		return (0);
@@ -282,7 +283,8 @@ int main(int argc, char * argv[])
 		dude = accept(s, (struct sockaddr *) &dude_sin, (socklen_t *) &len);
 		if (dude == -1) err(1, "accept()");
 
-		printf("Got connection from %s\n", inet_ntoa(dude_sin.sin_addr));
+		char * netip = inet_ntoa(dude_sin.sin_addr);
+		printf("Got connection from %s\n", netip ? netip : "<unknown>");
 		handle_dude(dude, udp);
 		printf("That was it\n");
 	}

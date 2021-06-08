@@ -31,9 +31,9 @@
  * So, we force a bit of hacks to ensure we do link against it.
  */
 #ifdef USE_GCRYPT
-void * keep_libgcrypt_ = &gcry_md_open;
+void * keep_libgcrypt_ = (void *) ((uintptr_t) &gcry_md_open);
 #else
-void * keep_libcrypto_ = &HMAC;
+void * keep_libcrypto_ = (void *) ((uintptr_t) &HMAC);
 #endif
 
 void perform_unit_testing(void ** state)
@@ -204,7 +204,7 @@ int main(int argc, char * argv[])
 			cmocka_unit_test(test_crypto_engine_ppc_altivec),
 			cmocka_unit_test(test_crypto_engine_ppc_power8),
 #else
-#warning "SIMD not available."
+/* warning "SIMD not available." */
 #endif
 		  };
 	return cmocka_run_group_tests(tests, group_setup, NULL);

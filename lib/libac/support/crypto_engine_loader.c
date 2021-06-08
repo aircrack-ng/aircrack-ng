@@ -202,7 +202,7 @@ void (*dso_ac_crypto_engine_calc_mic)(ac_crypto_engine_t * engine,
 	= NULL;
 #endif
 
-#if defined(CYGWIN)
+#if defined(WIN32_PORTABLE)
 /*
 	This is merely a hack until code refactoring can occur.
 
@@ -251,9 +251,7 @@ EXPORT int ac_crypto_engine_loader_get_available(void)
 #endif
 
 	if (strncmp(working_directory, ABS_TOP_BUILDDIR, strlen(ABS_TOP_BUILDDIR))
-			== 0
-		|| strncmp(working_directory, ABS_TOP_SRCDIR, strlen(ABS_TOP_SRCDIR))
-			   == 0)
+		== 0)
 	{
 		// use development paths
 		snprintf(library_path,
@@ -355,10 +353,7 @@ EXPORT char * ac_crypto_engine_loader_best_library_for(int simd_features)
 
 	if (strncmp(
 			working_directory, ABS_TOP_BUILDDIR, sizeof(ABS_TOP_BUILDDIR) - 1)
-			== 0
-		|| strncmp(
-			   working_directory, ABS_TOP_SRCDIR, sizeof(ABS_TOP_SRCDIR) - 1)
-			   == 0)
+		== 0)
 	{
 		// use development paths
 		snprintf(library_path,
@@ -374,32 +369,36 @@ EXPORT char * ac_crypto_engine_loader_best_library_for(int simd_features)
 	}
 	free(working_directory);
 
-	snprintf(module_filename,
-			 sizeof(module_filename) - 1,
 #if defined(WIN32_PORTABLE)
-			 "%s%s%s",
+#define LIB_FMT "%s%s%s"
 #else
-			 "%s/%s%s%s",
-			 library_path,
+#define LIB_FMT "%s/%s%s%s", library_path
 #endif
+
 #if defined(WIN32) || defined(_WIN32) || defined(CYGWIN)
 #if defined(MSYS2)
-			 "msys-",
+#define LIB_PREFIX "msys-"
 #else
-			 "cyg",
+#define LIB_PREFIX "cyg"
 #endif
 #else
-			 "lib",
+#define LIB_PREFIX "lib"
 #endif
-			 buffer,
+
 #if defined(WIN32) || defined(_WIN32) || defined(CYGWIN)
-			 LT_CYGWIN_VER
+#define LIB_SUFFIX LT_CYGWIN_VER
 #elif defined(__APPLE__)
-			 ".dylib"
+#define LIB_SUFFIX ".dylib"
 #else
-			 ".so"
+#define LIB_SUFFIX ".so"
 #endif
-			 )
+
+	snprintf(module_filename,
+			 sizeof(module_filename) - 1,
+			 LIB_FMT,
+			 LIB_PREFIX,
+			 buffer,
+			 LIB_SUFFIX)
 			< 0
 		? abort()
 		: (void) 0;
@@ -459,6 +458,7 @@ EXPORT int ac_crypto_engine_loader_load(int flags)
 	if (flags == -1) flags = ac_crypto_engine_loader_get_available();
 
 	char * module_filename = ac_crypto_engine_loader_best_library_for(flags);
+	REQUIRE(module_filename != NULL);
 
 	module = dlopen(module_filename, RTLD_LAZY);
 	if (!module)
@@ -523,6 +523,8 @@ EXPORT int ac_crypto_engine_loader_load(int flags)
 	}
 
 	free(module_filename);
+#else
+	(void) flags;
 #endif
 
 	return 0;

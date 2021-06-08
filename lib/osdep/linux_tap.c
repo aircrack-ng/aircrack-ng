@@ -46,7 +46,7 @@ struct tip_linux
 	int tl_fd;
 	struct ifreq tl_ifr;
 	int tl_ioctls;
-	char tl_name[MAX_IFACE_NAME];
+	char tl_name[IFNAMSIZ];
 };
 
 static int ti_do_open_linux(struct tif * ti, char * name)
@@ -73,10 +73,8 @@ static int ti_do_open_linux(struct tif * ti, char * name)
 		return -1;
 	}
 
-	strncpy(priv->tl_name, if_request.ifr_name, MAX_IFACE_NAME);
-	strncpy(priv->tl_ifr.ifr_name,
-			priv->tl_name,
-			sizeof(priv->tl_ifr.ifr_name) - 1);
+	memcpy(priv->tl_name, if_request.ifr_name, IFNAMSIZ);
+	memcpy(priv->tl_ifr.ifr_name, priv->tl_name, IFNAMSIZ);
 
 	if ((priv->tl_ioctls = socket(PF_INET, SOCK_DGRAM, 0)) == -1)
 	{

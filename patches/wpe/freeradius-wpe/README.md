@@ -1,6 +1,6 @@
 # FreeRadius Wireless Pawn Edition
 
-Updated patch for FreeRadius 3.0.20
+Updated patch for FreeRadius 3.0.21
 
 More information about WPE can be found:
 http://www.willhackforsushi.com/?page_id=37
@@ -24,7 +24,7 @@ apt-get install libssl-dev build-essential libtalloc-dev libpcre3-dev
 ### Optional dependencies
 
 ```
-apt-get install libsqlite3-dev libhiredis-dev libykclient-dev libyubikey-dev default-libmysqlclient-dev libcurl4-openssl-dev libperl-dev libpam0g-dev libcap-dev libmemcached-dev libgdbm-dev libiodbc2-dev libpq-dev libwbclient-dev libkrb5-dev libjson-c-dev freetds-dev libwbclient-sssd-dev samba-dev libiodbc2-dev
+apt-get install libsqlite3-dev libhiredis-dev libykclient-dev libyubikey-dev default-libmysqlclient-dev libcurl4-openssl-dev libperl-dev libpam0g-dev libcap-dev libmemcached-dev libgdbm-dev unixodbc-dev libpq-dev libwbclient-dev libkrb5-dev libjson-c-dev freetds-dev libwbclient-sssd-dev samba-dev libcollectdclient-dev
 ```
 
 ### Compilation
@@ -32,9 +32,9 @@ apt-get install libsqlite3-dev libhiredis-dev libykclient-dev libyubikey-dev def
 Run the following commands:
 
 ```
-wget ftp://ftp.freeradius.org/pub/freeradius/freeradius-server-3.0.20.tar.bz2
-tar -xjf freeradius-server-3.0.20.tar.bz2
-cd freeradius-server-3.0.20/
+wget ftp://ftp.freeradius.org/pub/freeradius/freeradius-server-3.0.21.tar.bz2
+tar -xjf freeradius-server-3.0.21.tar.bz2
+cd freeradius-server-3.0.21/
 wget https://raw.githubusercontent.com/aircrack-ng/aircrack-ng/master/patches/wpe/freeradius-wpe/freeradius-wpe.patch
 patch -Np1 -i freeradius-wpe.patch
 ./configure

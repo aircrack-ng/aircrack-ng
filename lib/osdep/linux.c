@@ -617,10 +617,11 @@ static int linux_read(struct wif * wi,
 
 	if ((unsigned) count > sizeof(tmpbuf)) return (-1);
 
-	if ((caplen = read(dev->fd_in, tmpbuf, count)) < 0)
+	caplen = read(dev->fd_in, tmpbuf, count);
+	if (caplen < 0 && errno == EAGAIN)
+		return (-1);
+	else if (caplen < 0)
 	{
-		if (errno == EAGAIN) return (0);
-
 		perror("read failed");
 		return (-1);
 	}
@@ -633,11 +634,6 @@ static int linux_read(struct wif * wi,
 		default:
 			break;
 	}
-
-	memset(buf, 0, count);
-
-	/* XXX */
-	if (ri) memset(ri, 0, sizeof(*ri));
 
 	if (dlt)
 	{
@@ -660,7 +656,7 @@ static int linux_read(struct wif * wi,
 			{
 				ri->ri_power = (int32_t) load32_le(tmpbuf + 0x33);
 				ri->ri_noise = (int32_t) load32_le(tmpbuf + 0x33 + 12);
-				ri->ri_rate = load32_le(buf + 0x33 + 24) * 500000;
+				ri->ri_rate = load32_le(tmpbuf + 0x33 + 24) * 500000;
 
 				got_signal = 1;
 				got_noise = 1;
@@ -720,17 +716,6 @@ static int linux_read(struct wif * wi,
 					break;
 
 				case IEEE80211_RADIOTAP_DBM_ANTSIGNAL:
-					if (!got_signal)
-					{
-						if (*iterator.this_arg < 127)
-							ri->ri_power = *iterator.this_arg;
-						else
-							ri->ri_power = *iterator.this_arg - 255;
-
-						got_signal = 1;
-					}
-					break;
-
 				case IEEE80211_RADIOTAP_DB_ANTSIGNAL:
 					if (!got_signal)
 					{
@@ -744,17 +729,6 @@ static int linux_read(struct wif * wi,
 					break;
 
 				case IEEE80211_RADIOTAP_DBM_ANTNOISE:
-					if (!got_noise)
-					{
-						if (*iterator.this_arg < 127)
-							ri->ri_noise = *iterator.this_arg;
-						else
-							ri->ri_noise = *iterator.this_arg - 255;
-
-						got_noise = 1;
-					}
-					break;
-
 				case IEEE80211_RADIOTAP_DB_ANTNOISE:
 					if (!got_noise)
 					{
@@ -915,7 +889,7 @@ static int linux_write(struct wif * wi,
 
 				buf = tmpbuf;
 			}
-		/* fall through */
+			fallthrough;
 		case DT_HOSTAP:
 			if ((((unsigned char *) buf)[1] & 3) == 2)
 			{
@@ -947,19 +921,6 @@ static int linux_write(struct wif * wi,
 
 	/* radiotap header length is stored little endian on all systems */
 	if (usedrtap) ret -= letoh16(*p_rtlen);
-
-	if (ret < 0)
-	{
-		if (errno == EAGAIN || errno == EWOULDBLOCK || errno == ENOBUFS
-			|| errno == ENOMEM)
-		{
-			usleep(10000);
-			return (0);
-		}
-
-		perror("write failed");
-		return (-1);
-	}
 
 	return (ret);
 }
@@ -1826,7 +1787,6 @@ static int do_linux_open(struct wif * wi, char * iface)
 	int kver;
 	struct utsname checklinuxversion;
 	struct priv_linux * dev = wi_priv(wi);
-	char * iwpriv = NULL;
 	char strbuf[512];
 	FILE * f;
 	char athXraw[] = "athXraw";
@@ -1839,6 +1799,7 @@ static int do_linux_open(struct wif * wi, char * iface)
 	char * r_file = NULL;
 	struct ifreq ifr;
 	int iface_malloced = 0;
+	size_t iface_len = 0;
 
 	if (iface == NULL || strlen(iface) >= IFNAMSIZ)
 	{
@@ -1865,15 +1826,12 @@ static int do_linux_open(struct wif * wi, char * iface)
 		return (1);
 	}
 
-	/* Check iwpriv existence */
-	iwpriv = wiToolsPath("iwpriv");
-
 #ifndef CONFIG_LIBNL
-	dev->iwpriv = iwpriv;
+	dev->iwpriv = wiToolsPath("iwpriv");
 	dev->iwconfig = wiToolsPath("iwconfig");
 	dev->ifconfig = wiToolsPath("ifconfig");
 
-	if (!iwpriv)
+	if (!(dev->iwpriv))
 	{
 		fprintf(stderr,
 				"Required wireless tools when compiled without libnl "
@@ -1884,7 +1842,7 @@ static int do_linux_open(struct wif * wi, char * iface)
 
 	/* Exit if ndiswrapper : check iwpriv ndis_reset */
 
-	if (is_ndiswrapper(iface, iwpriv))
+	if (is_ndiswrapper(iface, dev->iwpriv))
 	{
 		fprintf(stderr, "Ndiswrapper doesn't support monitor mode.\n");
 		goto close_in;
@@ -2060,10 +2018,10 @@ static int do_linux_open(struct wif * wi, char * iface)
 		}
 	}
 
-	/* test if orinoco */
-
 	if (memcmp(iface, "eth", 3) == 0)
 	{
+		/* test if orinoco */
+
 		if ((pid = fork()) == 0)
 		{
 			close(0);
@@ -2086,12 +2044,9 @@ static int do_linux_open(struct wif * wi, char * iface)
 				 iface);
 
 		if (system(strbuf) == 0) dev->drivertype = DT_AT76USB;
-	}
 
-	/* test if zd1211rw */
+		/* test if zd1211rw */
 
-	if (memcmp(iface, "eth", 3) == 0)
-	{
 		if ((pid = fork()) == 0)
 		{
 			close(0);
@@ -2139,16 +2094,18 @@ static int do_linux_open(struct wif * wi, char * iface)
 		acpi = NULL;
 
 		// use name in buf as new iface and set original iface as main iface
-		dev->main_if = (char *) malloc(strlen(iface) + 1);
+		iface_len = strlen(iface) + 1;
+		dev->main_if = (char *) malloc(iface_len);
 		if (dev->main_if == NULL) goto close_out;
-		memset(dev->main_if, 0, strlen(iface) + 1);
-		strncpy(dev->main_if, iface, strlen(iface));
+		memset(dev->main_if, 0, iface_len);
+		memcpy(dev->main_if, iface, iface_len);
 
-		iface = (char *) malloc(strlen(buf) + 1);
+		iface_len = strlen(buf) + 1;
+		iface = (char *) malloc(iface_len);
 		if (iface == NULL) goto close_out;
 		iface_malloced = 1;
-		memset(iface, 0, strlen(buf) + 1);
-		strncpy(iface, buf, strlen(buf));
+		memset(iface, 0, iface_len);
+		memcpy(iface, buf, iface_len);
 	}
 
 	/* test if rtap interface and try to find real interface */
@@ -2259,7 +2216,6 @@ static int do_linux_open(struct wif * wi, char * iface)
 	dev->arptype_in = dev->arptype_out;
 
 	if (iface_malloced) free(iface);
-	if (iwpriv) free(iwpriv);
 	if (r_file)
 	{
 		free(r_file);
@@ -2275,7 +2231,6 @@ close_in:
 	close(dev->fd_in);
 	if (acpi) fclose(acpi);
 	if (iface_malloced) free(iface);
-	if (iwpriv) free(iwpriv);
 	return 1;
 }
 
@@ -2534,7 +2489,6 @@ EXPORT int get_battery_state(void)
 		int batno = 0;
 		static int info_timer = 0;
 		int batt_full_capacity[3];
-		linux_apm = 0;
 		linux_acpi = 1;
 		ac_adapters = opendir("/proc/acpi/ac_adapter");
 		if (ac_adapters == NULL) return 0;
@@ -2626,7 +2580,8 @@ EXPORT int get_battery_state(void)
 			}
 			total_cap += batt_full_capacity[batno];
 			fclose(acpi);
-			batteryTime += (int) ((((float) remain) / rate) * 3600);
+			if (rate != 0)
+				batteryTime += (int) ((((float) remain) / rate) * 3600);
 			batno++;
 		}
 		info_timer++;

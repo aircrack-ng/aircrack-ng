@@ -25,13 +25,13 @@ __data__ = 'a class for dealing with the oui txt file'
 import re
 import sys
 if sys.version_info[0] >= 3:
-	import urllib.request, urllib.parse, urllib.error
+	import requests
 else:
 	import urllib
 import os
 import pdb
 #this lib is crap and needs to be rewritten -Textile 
-print(os.getenv('AIRGRAPH_HOME'))
+
 if os.getenv('AIRGRAPH_HOME') is not None and os.path.isdir(os.getenv('AIRGRAPH_HOME')):
     path=os.getenv('AIRGRAPH_HOME') + '/support/'
     if not os.path.isdir(path):
@@ -178,7 +178,12 @@ class macOUI_lookup:
         """
         try:
             print(("Getting OUI file from %s to %s" %(self.ouiTxtUrl, path)))
-            urllib.request.urlretrieve(self.ouiTxtUrl, path + "oui.txt")
+            if sys.version_info[0] == 2:
+                urllib.request.urlretrieve(self.ouiTxtUrl, path + "oui.txt")
+            else:
+                response = requests.get(self.ouiTxtUrl)
+                with open(path + "oui.txt", "wb") as file:
+                    bytes_written = file.write(response.content)
             print("Completed Successfully")
         except Exception as error:
             print(("Could not download file:\n %s\n Exiting airgraph-ng" %(error)))

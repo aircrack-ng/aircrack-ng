@@ -80,15 +80,6 @@ case "$host_os" in
         ;;
 esac
 
-AS_IF([test $OPENBSD -eq 0], [
-    AC_LANG_CASE([C++], [
-        AX_CHECK_COMPILE_FLAG([-masm=intel], [
-            AX_APPEND_FLAG(-masm=intel, [opt_cxxflags])
-            AC_DEFINE([INTEL_ASM], [1], [Define if Intel assembly style is supported])
-        ])
-    ])
-])
-
 if test $IS_ARM -eq 1
 then
     AX_CHECK_COMPILE_FLAG([-Werror -mfpu=neon], [

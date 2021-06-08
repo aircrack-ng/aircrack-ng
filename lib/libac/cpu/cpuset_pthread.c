@@ -44,6 +44,11 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
+#if defined(__DragonFly__)
+#include <pthread_np.h>
+#endif
+
+#include "aircrack-ng/defs.h"
 #include "aircrack-ng/cpu/cpuset.h"
 
 struct ac_cpuset
@@ -83,5 +88,8 @@ void ac_cpuset_bind_thread_at(ac_cpuset_t * cpuset, pthread_t tid, size_t idx)
 	CPU_ZERO(&set);
 	CPU_SET(idx, &set);
 	pthread_setaffinity_np(tid, sizeof(cpu_set_t), &set);
+#else
+	UNUSED_PARAM(tid);
+	UNUSED_PARAM(idx);
 #endif
 }

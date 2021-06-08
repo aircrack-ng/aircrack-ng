@@ -173,7 +173,7 @@ static struct local_options
 } lopt;
 
 struct devices dev;
-struct wif *_wi_in, *_wi_out;
+extern struct wif *_wi_in, *_wi_out;
 
 struct ARP_req
 {
@@ -195,8 +195,8 @@ struct APt
 };
 
 unsigned long nb_pkt_sent;
-u_int8_t h80211[4096];
-static u_int8_t tmpbuf[4096];
+extern u_int8_t h80211[4096];
+extern u_int8_t tmpbuf[4096];
 
 static int tcp_test(const char * ip_str, const short port)
 {
@@ -519,102 +519,65 @@ static void hexDump(char * desc, void * addr, int len)
 /* calcsum - used to calculate IP and ICMP header checksums using
  * one's compliment of the one's compliment sum of 16 bit words of the header
  */
-static u_int16_t calcsum(u_int16_t * buffer, u_int32_t length)
+static u_int16_t calcsum(char * buffer, size_t length)
 {
-	u_int32_t sum;
+	u_int32_t sum = 0;
 
-	// initialize sum to zero and loop until length (in words) is 0
-	for (sum = 0; length > 1; length -= 2) // sizeof() returns number of bytes,
-		// we're interested in number of
-		// words
-		sum += *buffer++; // add 1 word of buffer to sum and proceed to the next
+	for (size_t i = 0; i < length - 1; i += 2)
+		sum += (buffer[i] << 8) + buffer[i + 1];
 
-	// we may have an extra byte
-	if (length == 1) sum += (u_int8_t) *buffer;
+	if (length % 2) sum += buffer[length - 1];
 
-	sum = (sum >> 16) + (sum & 0xFFFF); // add high 16 to low 16
-	sum += (sum >> 16); // add carry
-	return (~sum);
+	while (sum >> 16) sum = (sum & 0xFFFF) + (sum >> 16);
+
+	return ((u_int16_t)(~sum));
 }
+
+static u_int16_t calcsum_for_protocol(u_int16_t protocol,
+									  char * buf,
+									  size_t length,
+									  u_int32_t src_addr,
+									  u_int32_t dest_addr)
+{
+	u_int32_t chksum = 0;
+	u_int16_t * ip_src = (u_int16_t *) &src_addr;
+	u_int16_t * ip_dst = (u_int16_t *) &dest_addr;
+
+	// Calculate the chksum
+	for (size_t i = 0; i < length - 1; i += 2)
+		chksum += (buf[i] << 8) + buf[i + 1];
+
+	if (length % 2) chksum += buf[length - 1];
+
+	// Add the pseudo-header
+	chksum += *(ip_src++);
+	chksum += *ip_src;
+
+	chksum += *(ip_dst++);
+	chksum += *ip_dst;
+
+	chksum += htons(protocol);
+	chksum += htons(length);
+
+	while (chksum >> 16) chksum = (chksum & 0xFFFF) + (chksum >> 16);
+
+	// Return the one's complement of chksum
+	return ((u_int16_t)(~chksum));
+}
+
 // This needs to be cleaned up so that we can do UDP/TCP in one function. Don't
 // want to do that now and risk
 // breaking UDP checksums right now
-static u_int16_t calcsum_tcp(u_int16_t * buf,
-							 u_int32_t len,
-							 u_int32_t src_addr,
-							 u_int32_t dest_addr)
+static u_int16_t
+calcsum_tcp(char * buf, size_t length, u_int32_t src_addr, u_int32_t dest_addr)
 {
-	u_int32_t chksum;
-	u_int32_t length = len;
-	u_int16_t * ip_src = (u_int16_t *) &src_addr;
-	u_int16_t * ip_dst = (u_int16_t *) &dest_addr;
-
-	// Calculate the chksum
-	chksum = 0;
-	while (len > 1)
-	{
-		chksum += *buf++;
-		if (chksum & 0x80000000) chksum = (chksum & 0xFFFF) + (chksum >> 16);
-		len -= 2;
-	}
-
-	if (len & 1)
-		// Add the padding if the packet length is odd
-		chksum += *((u_int8_t *) buf);
-
-	// Add the pseudo-header
-	chksum += *(ip_src++);
-	chksum += *ip_src;
-
-	chksum += *(ip_dst++);
-	chksum += *ip_dst;
-
-	chksum += htons(IPPROTO_TCP);
-	chksum += htons(length);
-
-	while (chksum >> 16) chksum = (chksum & 0xFFFF) + (chksum >> 16);
-
-	// Return the one's complement of chksum
-	return ((u_int16_t)(~chksum));
+	return calcsum_for_protocol(IPPROTO_TCP, buf, length, src_addr, dest_addr);
 }
 
-static u_int16_t calcsum_udp(u_int16_t * buf,
-							 u_int32_t len,
-							 u_int32_t src_addr,
-							 u_int32_t dest_addr)
+static u_int16_t
+calcsum_udp(char * buf, size_t length, u_int32_t src_addr, u_int32_t dest_addr)
 {
-	u_int32_t chksum;
-	u_int32_t length = len;
-	u_int16_t * ip_src = (u_int16_t *) &src_addr;
-	u_int16_t * ip_dst = (u_int16_t *) &dest_addr;
-
-	// Calculate the chksum
-	chksum = 0;
-	while (len > 1)
-	{
-		chksum += *buf++;
-		if (chksum & 0x80000000) chksum = (chksum & 0xFFFF) + (chksum >> 16);
-		len -= 2;
-	}
-
-	if (len & 1)
-		// Add the padding if the packet length is odd
-		chksum += *((u_int8_t *) buf);
-
-	// Add the pseudo-header
-	chksum += *(ip_src++);
-	chksum += *ip_src;
-
-	chksum += *(ip_dst++);
-	chksum += *ip_dst;
-
-	chksum += htons(IPPROTO_UDP);
-	chksum += htons(length);
-
-	while (chksum >> 16) chksum = (chksum & 0xFFFF) + (chksum >> 16);
-
-	// Return the one's complement of chksum
-	return ((u_int16_t)(~chksum));
+	return calcsum_for_protocol(IPPROTO_UDP, buf, length, src_addr, dest_addr);
 }
 
 static inline u_int8_t * packet_get_sta_80211(u_int8_t * pkt)
@@ -1090,9 +1053,8 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 						p_resip_ack->tot_len
 							= htons(hdr_size + sizeof(struct ip_frame));
 						p_resip_ack->check = 0;
-						p_resip_ack->check
-							= calcsum((unsigned short *) p_resip_ack,
-									  sizeof(struct ip_frame));
+						p_resip_ack->check = calcsum((void *) p_resip_ack,
+													 sizeof(struct ip_frame));
 
 						// We could try some stuff with tcp reset
 						p_restcp_ack->rst = 1;
@@ -1152,7 +1114,7 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 						p_resip->tot_len = htons(l_http + hdr_size
 												 + sizeof(struct ip_frame));
 						p_resip->check = 0;
-						p_resip->check = calcsum((unsigned short *) p_resip,
+						p_resip->check = calcsum((void *) p_resip,
 												 sizeof(struct ip_frame));
 
 						// Lets calculate the TCP checksum
@@ -1186,7 +1148,7 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 							printf("Error Sending Packet\n");
 						printf("\n");
 						// Uncomment to send RST packet to the server
-						// if (send_packet(_wi_out, tmpbuf, tmpbuf_len, true) != 0)
+						// if (send_packet(_wi_out, tmpbuf, tmpbuf_len, kRewriteSequenceNumber) != 0)
 						//    printf("ERROR: couldn't send Ack\n");
 						return;
 					}
@@ -1246,8 +1208,8 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 								+ sizeof(struct ip_frame));
 					// Set checksum to zero before calculating...
 					p_resip->check = 0;
-					p_resip->check = calcsum((unsigned short *) p_resip,
-											 sizeof(struct ip_frame));
+					p_resip->check
+						= calcsum((void *) p_resip, sizeof(struct ip_frame));
 
 					p_resudp->len = htons(dns_resplen + sizeof(struct udp_hdr));
 					p_resudp->checksum = 0;
@@ -1303,8 +1265,8 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 						= (struct ip_frame *) (pkt + offset_ip);
 					// Set checksum to zero before calculating checksum...
 					p_resip->check = 0;
-					p_resip->check = calcsum((unsigned short *) p_resip,
-											 sizeof(struct ip_frame));
+					p_resip->check
+						= calcsum((void *) p_resip, sizeof(struct ip_frame));
 
 					struct icmp * p_resicmp
 						= (struct icmp *) (pkt + size_80211hdr
@@ -1328,7 +1290,7 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 					}
 					p_resicmp->icmp_cksum = 0;
 					p_resicmp->icmp_cksum
-						= calcsum((unsigned short *) p_resicmp, icmp_length);
+						= calcsum((void *) p_resicmp, icmp_length);
 
 					if (IEEE80211_FC1_WEP & wfrm->i_fc[1])
 					{
@@ -1871,6 +1833,7 @@ int main(int argc, char * argv[])
 				break;
 
 			case 'n':
+			{
 				printf("DNS IP: %s\n", optarg);
 				int retval = inet_pton(AF_INET, optarg, &lopt.p_dnsspoof_ip);
 				if (1 != retval)
@@ -1882,7 +1845,8 @@ int main(int argc, char * argv[])
 					return (EXIT_FAILURE);
 				}
 				lopt.flag_dnsspoof = 1;
-				break;
+			}
+			break;
 
 			case 's':
 				printf("Hijack search term: %s\n", optarg);
@@ -1923,9 +1887,9 @@ int main(int argc, char * argv[])
 				free(progname);
 				return (EXIT_SUCCESS);
 
-			default:
-			// intentional fall through
 			case ':':
+				fallthrough;
+			default:
 				printf("\"%s --help\" for help.\n", argv[0]);
 		}
 	}

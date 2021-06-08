@@ -92,8 +92,6 @@
 #include "radiotap/radiotap_iter.h"
 
 struct devices dev;
-uint8_t h80211[4096] __attribute__((aligned(16)));
-uint8_t tmpbuf[4096] __attribute__((aligned(16)));
 
 static const unsigned char llcnull[] = {0, 0, 0, 0};
 
@@ -113,17 +111,16 @@ static const char * OUI_PATHS[]
 
 static int read_pkts = 0;
 
-static const int abg_chans[]
+static int abg_chans[]
 	= {1,   7,   13,  2,   8,   3,   14,  9,   4,   10,  5,   11,  6,
 	   12,  36,  38,  40,  42,  44,  46,  48,  50,  52,  54,  56,  58,
 	   60,  62,  64,  100, 102, 104, 106, 108, 110, 112, 114, 116, 118,
 	   120, 122, 124, 126, 128, 132, 134, 136, 138, 140, 142, 144, 149,
 	   151, 153, 155, 157, 159, 161, 165, 169, 173, 0};
 
-static const int bg_chans[]
-	= {1, 7, 13, 2, 8, 3, 14, 9, 4, 10, 5, 11, 6, 12, 0};
+static int bg_chans[] = {1, 7, 13, 2, 8, 3, 14, 9, 4, 10, 5, 11, 6, 12, 0};
 
-static const int a_chans[]
+static int a_chans[]
 	= {36,  38,  40,  42,  44,  46,  48,  50,  52,  54,  56,  58,
 	   60,  62,  64,  100, 102, 104, 106, 108, 110, 112, 114, 116,
 	   118, 120, 122, 124, 126, 128, 132, 134, 136, 138, 140, 142,
@@ -186,10 +183,6 @@ static struct local_options
 	int * own_frequencies; /* custom frequency list  */
 
 	int asso_client; /* only show associated clients */
-
-	char * iwpriv;
-	char * iwconfig;
-	char * wlanctlng;
 
 	unsigned char wpa_bssid[6]; /* the wpa handshake bssid   */
 	char message[512];
@@ -284,7 +277,7 @@ static struct local_options
 
 static void resetSelection(void)
 {
-	lopt.sort_by = SORT_BY_POWER;
+	lopt.sort_by = SORT_BY_NOTHING;
 	lopt.sort_inv = 1;
 
 	lopt.relative_time = 0;
@@ -383,7 +376,7 @@ static void color_on(void)
 	}
 }
 
-static void input_thread(void * arg)
+static THREAD_ENTRY(input_thread)
 {
 	UNUSED_PARAM(arg);
 
@@ -397,7 +390,7 @@ static void input_thread(void * arg)
 		{
 			quitting_event_ts = time(NULL);
 
-			if (++quitting > 1)
+			if (++quitting > 1) //-V1051
 				lopt.do_exit = 1;
 			else
 				snprintf(
@@ -527,7 +520,10 @@ static void input_thread(void * arg)
 
 		if (keycode == KEY_m)
 		{
-			lopt.mark_cur_ap = 1;
+			if (lopt.p_selected_ap != NULL)
+			{
+				lopt.mark_cur_ap = 1;
+			}
 		}
 
 		if (keycode == KEY_ARROW_DOWN)
@@ -587,8 +583,6 @@ static void input_thread(void * arg)
 		{
 			if (lopt.show_ap == 1 && lopt.show_sta == 1 && lopt.show_ack == 0)
 			{
-				lopt.show_ap = 1;
-				lopt.show_sta = 1;
 				lopt.show_ack = 1;
 				snprintf(lopt.message,
 						 sizeof(lopt.message),
@@ -597,7 +591,6 @@ static void input_thread(void * arg)
 			else if (lopt.show_ap == 1 && lopt.show_sta == 1
 					 && lopt.show_ack == 1)
 			{
-				lopt.show_ap = 1;
 				lopt.show_sta = 0;
 				lopt.show_ack = 0;
 				snprintf(
@@ -608,7 +601,6 @@ static void input_thread(void * arg)
 			{
 				lopt.show_ap = 0;
 				lopt.show_sta = 1;
-				lopt.show_ack = 0;
 				snprintf(
 					lopt.message, sizeof(lopt.message), "][ display sta only");
 			}
@@ -616,8 +608,6 @@ static void input_thread(void * arg)
 					 && lopt.show_ack == 0)
 			{
 				lopt.show_ap = 1;
-				lopt.show_sta = 1;
-				lopt.show_ack = 0;
 				snprintf(
 					lopt.message, sizeof(lopt.message), "][ display ap+sta");
 			}
@@ -640,6 +630,8 @@ static void input_thread(void * arg)
 			ALLEGE(pthread_mutex_unlock(&(lopt.mx_print)) == 0);
 		}
 	}
+
+	return (NULL);
 }
 
 static FILE * open_oui_file(void)
@@ -1257,7 +1249,8 @@ static int dump_add_packet(unsigned char * h80211,
 
 	/* if it's a LLC null packet, just forget it (may change in the future) */
 
-	if (caplen > 28)
+	if (((h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_DATA)
+		&& (caplen > 28))
 		if (memcmp(h80211 + 24, llcnull, 4) == 0) return (0);
 
 	/* grab the sequence number */
@@ -1274,8 +1267,6 @@ static int dump_add_packet(unsigned char * h80211,
 			memcpy(bssid, h80211 + 4, 6);
 			break; // ToDS
 		case IEEE80211_FC1_DIR_FROMDS:
-			memcpy(bssid, h80211 + 10, 6);
-			break; // FromDS
 		case IEEE80211_FC1_DIR_DSTODS:
 			memcpy(bssid, h80211 + 10, 6);
 			break; // WDS -> Transmitter taken as BSSID
@@ -1917,7 +1908,7 @@ skip_probe:
 				 *
 				 * For now, just figure out the highest MCS rate.
 				 */
-				if (ap_cur->n_channel.mcs_index == -1)
+				if ((unsigned char) ap_cur->n_channel.mcs_index == 0xff)
 				{
 					uint32_t rx_mcs_bitmask = 0;
 					memcpy(&rx_mcs_bitmask, p + 5, sizeof(uint32_t));
@@ -1940,7 +1931,7 @@ skip_probe:
 				ap_cur->ac_channel.short_gi_80 = (uint8_t)((p[3] / 32) % 2);
 				ap_cur->ac_channel.short_gi_160 = (uint8_t)((p[3] / 64) % 2);
 
-				ap_cur->ac_channel.mu_mimo = (uint8_t)((p[4] & 0b11000) % 2);
+				ap_cur->ac_channel.mu_mimo = (uint8_t)((p[4] & 0x18) % 2);
 
 				// A few things indicate Wave 2: MU-MIMO, 80+80 Channels
 				ap_cur->ac_channel.wave_2
@@ -2896,7 +2887,8 @@ write_packet:
 		if (h80211[0] & 0x04)
 		{
 			p = h80211 + 4;
-			while (p <= h80211 + 16 && p <= h80211 + caplen)
+			while ((uintptr_t) p <= adds_uptr((uintptr_t) h80211, 16)
+				   && (uintptr_t) p <= adds_uptr((uintptr_t) h80211, caplen))
 			{
 				memcpy(namac, p, 6);
 
@@ -3040,7 +3032,7 @@ write_packet:
 		gettimeofday(&tv, NULL);
 
 		pkh.tv_sec = (int32_t) tv.tv_sec;
-		pkh.tv_usec = (int32_t)((tv.tv_usec & ~0x1ff) + ri->ri_power + 64);
+		pkh.tv_usec = (int32_t) tv.tv_usec;
 
 		n = sizeof(pkh);
 
@@ -3417,15 +3409,14 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	time_t tt;
 	struct tm * lt;
 	int nlines, i, n;
-	char strbuf[512];
-	char buffer[512];
+	char strbuf[1024];
+	char buffer[1024];
 	char ssid_list[512];
 	struct AP_info * ap_cur;
 	struct ST_info * st_cur;
 	struct NA_info * na_cur;
 	int columns_ap = 83;
 	int columns_sta = 74;
-	int columns_na = 68;
 	ssize_t len;
 
 	int num_ap;
@@ -3488,7 +3479,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 		{
 			memset(buffer, '\0', sizeof(buffer));
 			snprintf(buffer, sizeof(buffer), ",%4d", lopt.frequency[i]);
-			strncat(strbuf, buffer, sizeof(strbuf) - strlen(strbuf) - 1);
+			strlcat(strbuf, buffer, sizeof(strbuf));
 		}
 	}
 	else
@@ -3497,8 +3488,8 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 		for (i = 1; i < if_num; i++)
 		{
 			memset(buffer, '\0', sizeof(buffer));
-			snprintf(buffer, sizeof(buffer), ",%2d", lopt.channel[i]);
-			strncat(strbuf, buffer, sizeof(strbuf) - strlen(strbuf) - 1);
+			snprintf(buffer, sizeof(buffer) - 1, ",%2d", lopt.channel[i]);
+			strlcat(strbuf, buffer, sizeof(strbuf));
 		}
 	}
 	memset(buffer, '\0', sizeof(buffer));
@@ -3556,8 +3547,8 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				 lt->tm_min);
 	}
 
-	strncat(strbuf, buffer, (512 - strlen(strbuf) - 1));
-	memset(buffer, '\0', 512);
+	strlcat(strbuf, buffer, sizeof(strbuf));
+	memset(buffer, '\0', sizeof(buffer));
 
 	if (lopt.is_berlin)
 	{
@@ -3569,12 +3560,12 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				 lopt.maxaps);
 	}
 
-	strncat(strbuf, buffer, (512 - strlen(strbuf) - 1));
-	memset(buffer, '\0', 512);
+	strlcat(strbuf, buffer, sizeof(strbuf));
+	memset(buffer, '\0', sizeof(buffer));
 
 	if (strlen(lopt.message) > 0)
 	{
-		strncat(strbuf, lopt.message, (512 - strlen(strbuf) - 1));
+		strlcat(strbuf, lopt.message, sizeof(strbuf));
 	}
 
 	strbuf[ws_col - 1] = '\0';
@@ -3592,17 +3583,20 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	if (lopt.show_ap)
 	{
 		strbuf[0] = 0;
-		strcat(strbuf, " BSSID              PWR ");
+		strlcat(strbuf, " BSSID              PWR ", sizeof(strbuf));
 
-		if (lopt.singlechan) strcat(strbuf, "RXQ ");
+		if (lopt.singlechan) strlcat(strbuf, "RXQ ", sizeof(strbuf));
 
-		strcat(strbuf, " Beacons    #Data, #/s  CH   MB   ENC CIPHER  AUTH ");
+		strlcat(strbuf,
+				" Beacons    #Data, #/s  CH   MB   ENC CIPHER  AUTH ",
+				sizeof(strbuf));
 
-		if (lopt.show_uptime) strcat(strbuf, "        UPTIME ");
+		if (lopt.show_uptime)
+			strlcat(strbuf, "        UPTIME ", sizeof(strbuf));
 
 		if (lopt.show_wps)
 		{
-			strcat(strbuf, "WPS   ");
+			strlcat(strbuf, "WPS   ", sizeof(strbuf));
 			if (ws_col > (columns_ap - 4))
 			{
 				memset(strbuf + strlen(strbuf),
@@ -3629,7 +3623,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 		}
 		else
 		{
-			strcat(strbuf, "ESSID");
+			strlcat(strbuf, "ESSID", sizeof(strbuf));
 
 			if (lopt.show_manufacturer && (ws_col > (columns_ap - 4)))
 			{
@@ -3803,7 +3797,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 					snprintf(strbuf + len, sizeof(strbuf) - len, "OPN ");
 			}
 
-			strncat(strbuf, " ", sizeof(strbuf) - strlen(strbuf) - 1);
+			strlcat(strbuf, " ", sizeof(strbuf));
 
 			len = strlen(strbuf);
 
@@ -3920,9 +3914,9 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	{                                                                          \
 		if (ap_cur->wps.meth & (1u << (bit)))                                  \
 		{                                                                      \
-			if (sep) strcat(tbuf, ",");                                        \
+			if (sep) strlcat(tbuf, ",", sizeof(tbuf));                         \
 			sep = 1;                                                           \
-			strncat(tbuf, (name), (64 - strlen(tbuf) - 1));                    \
+			strlcat(tbuf, (name), sizeof(tbuf));                               \
 		}                                                                      \
 	} while (0)
 								T(0u, "USB"); // USB method
@@ -3993,7 +3987,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 				if (lopt.show_manufacturer)
 				{
-					if (lopt.maxsize_essid_seen <= len - essid_len)
+					if (lopt.maxsize_essid_seen <= (u_int)(len - essid_len))
 						lopt.maxsize_essid_seen
 							= (u_int) MAX(len - essid_len, 5);
 					else
@@ -4019,7 +4013,12 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			len = strlen(strbuf);
 
 			// write spaces (32) until the end of column
-			memset(strbuf + len, 32, (size_t) ws_col - 1);
+			int len_remaining = ws_col - len;
+			if (len_remaining > 0)
+			{
+				ALLEGE((size_t) len + len_remaining <= sizeof(strbuf));
+				memset(strbuf + len, 32, len_remaining);
+			}
 
 			strbuf[ws_col - 1] = '\0';
 			console_puts(strbuf);
@@ -4042,9 +4041,10 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 	if (lopt.show_sta)
 	{
-		strcpy(strbuf,
-			   " BSSID              STATION "
-			   "           PWR   Rate    Lost    Frames  Notes  Probes");
+		strlcpy(strbuf,
+				" BSSID              STATION "
+				"           PWR   Rate    Lost    Frames  Notes  Probes",
+				sizeof(strbuf));
 		strbuf[ws_col - 1] = '\0';
 		console_puts(strbuf);
 		CHECK_END_OF_SCREEN();
@@ -4202,10 +4202,10 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 		move(CURSOR_DOWN, 1);
 		CHECK_END_OF_SCREEN();
 
-		memcpy(strbuf,
-			   " MAC       "
-			   "          CH PWR    ACK ACK/s    CTS RTS_RX RTS_TX  OTHER",
-			   (size_t) columns_na);
+		strlcpy(strbuf,
+				" MAC       "
+				"          CH PWR    ACK ACK/s    CTS RTS_RX RTS_TX  OTHER",
+				sizeof(strbuf));
 		strbuf[ws_col - 1] = '\0';
 		console_puts(strbuf);
 		CHECK_END_OF_SCREEN();
@@ -4515,9 +4515,9 @@ json_get_value_for_name(const char * buffer, const char * name, char * value)
 	return (ret);
 }
 
-static void * gps_tracker_thread(void * arg)
+static THREAD_ENTRY(gps_tracker_thread)
 {
-	int gpsd_sock;
+	int gpsd_sock = -1;
 	char line[1537], buffer[1537], data[1537];
 	char * temp;
 	struct sockaddr_in gpsd_addr;
@@ -4554,6 +4554,10 @@ static void * gps_tracker_thread(void * arg)
 
 		/* attempt to connect to localhost, port 2947 */
 		pos = 0;
+		if (gpsd_sock >= 0)
+		{
+			close(gpsd_sock);
+		}
 		gpsd_sock = socket(AF_INET, SOCK_STREAM, 0);
 		if (gpsd_sock < 0) continue;
 
@@ -4892,11 +4896,7 @@ static void sighandler(int signum)
 
 	if (signum == SIGALRM)
 	{
-#if defined(__sun__)
 		fprintf(stdout,
-#else
-		dprintf(STDERR_FILENO,
-#endif
 				"Caught signal 14 (SIGALRM). Please"
 				" contact the author!\n\n");
 		show_cursor();
@@ -5240,11 +5240,11 @@ static int getchannels(const char * optarg)
 	chan_remain = chan_max;
 
 	// create a writable string
-	optc = optchan = (char *) malloc(strlen(optarg) + 1);
+	const size_t optchan_len = strlen(optarg) + 1;
+	optc = optchan = (char *) malloc(optchan_len);
 	ALLEGE(optc != NULL);
 	ALLEGE(optchan != NULL);
-	strncpy(optchan, optarg, strlen(optarg));
-	optchan[strlen(optarg)] = '\0';
+	strlcpy(optchan, optarg, optchan_len);
 
 	tmp_channels = (int *) malloc(sizeof(int) * (chan_max + 1));
 	ALLEGE(tmp_channels != NULL);
@@ -5368,11 +5368,11 @@ static int getfrequencies(const char * optarg)
 	freq_remain = freq_max;
 
 	// create a writable string
-	optc = optfreq = (char *) malloc(strlen(optarg) + 1);
+	const size_t optfreq_len = strlen(optarg) + 1;
+	optc = optfreq = (char *) malloc(optfreq_len);
 	ALLEGE(optc != NULL);
 	ALLEGE(optfreq != NULL);
-	strncpy(optfreq, optarg, strlen(optarg));
-	optfreq[strlen(optarg)] = '\0';
+	strlcpy(optfreq, optarg, optfreq_len);
 
 	tmp_frequencies = (int *) malloc(sizeof(int) * (freq_max + 1));
 	ALLEGE(tmp_frequencies != NULL);
@@ -5527,8 +5527,8 @@ static int init_cards(const char * cardstr, char * iface[], struct wif ** wi)
 		return (-1);
 	}
 
-	while (((iface[if_count] = strsep(&buffer, ",")) != NULL)
-		   && (if_count < MAX_CARDS))
+	while ((if_count < MAX_CARDS)
+		   && ((iface[if_count] = strsep(&buffer, ",")) != NULL))
 	{
 		again = 0;
 		for (i = 0; i < if_count; i++)
@@ -5593,8 +5593,7 @@ static int check_monitor(struct wif * wi[], int * fd_raw, int * fdh, int cards)
 					 wi_get_ifname(wi[i]));
 			// reopen in monitor mode
 
-			strncpy(ifname, wi_get_ifname(wi[i]), sizeof(ifname) - 1);
-			ifname[sizeof(ifname) - 1] = 0;
+			strlcpy(ifname, wi_get_ifname(wi[i]), sizeof(ifname));
 
 			wi_close(wi[i]);
 			wi[i] = wi_open(ifname);
@@ -5773,7 +5772,7 @@ int main(int argc, char * argv[])
 	long time_slept, cycle_time, cycle_time2;
 	char * output_format_string;
 	int caplen = 0, i, j, fdh, chan_count, freq_count;
-	int fd_raw[MAX_CARDS], arptype[MAX_CARDS];
+	int fd_raw[MAX_CARDS];
 	int ivs_only, found;
 	int freq[2];
 	int num_opts = 0;
@@ -5968,7 +5967,6 @@ int main(int argc, char * argv[])
 
 	for (i = 0; i < MAX_CARDS; i++)
 	{
-		arptype[i] = 0;
 		fd_raw[i] = -1;
 		lopt.channel[i] = 0;
 	}
@@ -6048,10 +6046,6 @@ int main(int argc, char * argv[])
 				break;
 
 			case ':':
-
-				printf("\"%s --help\" for help.\n", argv[0]);
-				return (EXIT_FAILURE);
-
 			case '?':
 
 				printf("\"%s --help\" for help.\n", argv[0]);
@@ -6385,7 +6379,7 @@ int main(int argc, char * argv[])
 					exit(EXIT_FAILURE);
 				}
 #else
-				printf("Error: Airodump-ng wasn't compiled with pcre support; "
+				printf("Error: Airodump-ng wasn't compiled with PCRE support; "
 					   "aborting\n");
 #endif
 
@@ -6655,8 +6649,7 @@ int main(int argc, char * argv[])
 					*/
 					for (i = 0; i < lopt.num_cards; i++)
 					{
-						strncpy(ifnam, wi_get_ifname(wi[i]), sizeof(ifnam) - 1);
-						ifnam[sizeof(ifnam) - 1] = 0;
+						strlcpy(ifnam, wi_get_ifname(wi[i]), sizeof(ifnam));
 
 						wi_close(wi[i]);
 						wi[i] = wi_open(ifnam);
@@ -6716,8 +6709,7 @@ int main(int argc, char * argv[])
 					*/
 					for (i = 0; i < lopt.num_cards; i++)
 					{
-						strncpy(ifnam, wi_get_ifname(wi[i]), sizeof(ifnam) - 1);
-						ifnam[sizeof(ifnam) - 1] = 0;
+						strlcpy(ifnam, wi_get_ifname(wi[i]), sizeof(ifnam));
 
 						wi_close(wi[i]);
 						wi[i] = wi_open(ifnam);
@@ -6856,13 +6848,12 @@ int main(int argc, char * argv[])
 		perror("Error allocating memory");
 		return (EXIT_FAILURE);
 	}
-	strncpy(lopt.elapsed_time, "0 s", 4);
-	lopt.elapsed_time[3] = '\0';
+	strlcpy(lopt.elapsed_time, "0 s", 4);
 
 	/* Create start time string for kismet netxml file */
 	lopt.airodump_start_time = (char *) calloc(1, 1000 * sizeof(char));
 	ALLEGE(lopt.airodump_start_time != NULL);
-	strncpy(lopt.airodump_start_time, ctime(&start_time), 1000 - 1);
+	strlcpy(lopt.airodump_start_time, ctime(&start_time), 1000);
 	lopt.airodump_start_time[strlen(lopt.airodump_start_time) - 1]
 		= 0; // remove new line
 	lopt.airodump_start_time = (char *) realloc( //-V701
@@ -6875,8 +6866,7 @@ int main(int argc, char * argv[])
 	if (lopt.background_mode == -1) lopt.background_mode = is_background();
 
 	if (!lopt.background_mode
-		&& pthread_create(&(lopt.input_tid), NULL, (void *) input_thread, NULL)
-			   != 0)
+		&& pthread_create(&(lopt.input_tid), NULL, &input_thread, NULL) != 0)
 	{
 		perror("pthread_create failed");
 		return (EXIT_FAILURE);
@@ -7072,17 +7062,6 @@ int main(int argc, char * argv[])
 							break;
 
 						case IEEE80211_RADIOTAP_DBM_ANTSIGNAL:
-							if (!got_signal)
-							{
-								if (*iterator.this_arg < 127)
-									ri.ri_power = *iterator.this_arg;
-								else
-									ri.ri_power = *iterator.this_arg - 255;
-
-								got_signal = 1;
-							}
-							break;
-
 						case IEEE80211_RADIOTAP_DB_ANTSIGNAL:
 							if (!got_signal)
 							{
@@ -7096,17 +7075,6 @@ int main(int argc, char * argv[])
 							break;
 
 						case IEEE80211_RADIOTAP_DBM_ANTNOISE:
-							if (!got_noise)
-							{
-								if (*iterator.this_arg < 127)
-									ri.ri_noise = *iterator.this_arg;
-								else
-									ri.ri_noise = *iterator.this_arg - 255;
-
-								got_noise = 1;
-							}
-							break;
-
 						case IEEE80211_RADIOTAP_DB_ANTNOISE:
 							if (!got_noise)
 							{
@@ -7275,8 +7243,7 @@ int main(int argc, char * argv[])
 
 						// reopen in monitor mode
 
-						strncpy(ifnam, wi_get_ifname(wi[i]), sizeof(ifnam) - 1);
-						ifnam[sizeof(ifnam) - 1] = 0;
+						strlcpy(ifnam, wi_get_ifname(wi[i]), sizeof(ifnam));
 
 						wi_close(wi[i]);
 						wi[i] = wi_open(ifnam);

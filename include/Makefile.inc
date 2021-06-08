@@ -52,7 +52,6 @@ nobase_aircrack_HEADERS = 	%D%/aircrack-ng/adt/avl_tree.h \
                             %D%/aircrack-ng/ce-wpa/memory.h \
                             %D%/aircrack-ng/ce-wpa/aligned.h \
                             %D%/aircrack-ng/ce-wpa/johnswap.h \
-                            %D%/aircrack-ng/ce-wpa/memdbg.h \
                             %D%/aircrack-ng/ce-wpa/jcommon.h \
                             %D%/aircrack-ng/ce-wpa/crypto_engine.h \
                             %D%/aircrack-ng/cowpatty/cowpatty.h \
@@ -64,6 +63,7 @@ nobase_aircrack_HEADERS = 	%D%/aircrack-ng/adt/avl_tree.h \
                             %D%/aircrack-ng/crypto/gcrypt-openssl-wrapper.h \
                             %D%/aircrack-ng/crypto/sha1-git.h \
                             %D%/aircrack-ng/crypto/sha1-sse2.h \
+                            %D%/aircrack-ng/compat.h \
                             %D%/aircrack-ng/defs.h \
                             %D%/aircrack-ng/osdep/byteorder.h \
                             %D%/aircrack-ng/osdep/channel.h \

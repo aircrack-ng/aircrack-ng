@@ -16,7 +16,7 @@ clone_depth: 500
 
 environment:
   global:
-    # APPVEYOR_SAVE_CACHE_ON_ERROR: true
+    APPVEYOR_SAVE_CACHE_ON_ERROR: true
     AIRCRACK_CI_CACHE: C:\aircrack_ci_cache
     CYG_CACHE: '%AIRCRACK_CI_CACHE%\cygwin'
     MSYS2_CACHE: '%AIRCRACK_CI_CACHE%\msys2'
@@ -32,7 +32,7 @@ environment:
     COMPILER: clang
   - TARGET: cygwin64
     COMPILER: clang
-  - TARGET: msys64
+  # - TARGET: msys64
   - TARGET: pkg
 
 matrix:
@@ -42,8 +42,12 @@ matrix:
       COMPILER: clang
     - TARGET: cygwin64
       COMPILER: clang
+    # - TARGET: msys64
 
-# cache:
+cache:
+  - 'c:\cygwin\home'
+  - 'c:\cygwin64\home'
+  - 'c:\msys64\home'
 # - '%AIRCRACK_CI_CACHE%'
 
 # Uncomment to enable debugging on AppVeyor equipment
@@ -76,7 +80,7 @@ install:
 - ps: |
     function updateCygwin($cygwinexe, $installFolder, $cacheFolder) {
       Write-Host "Update Cygwin: $cygwinexe"
-      Exec-External {& cmd /c $cygwinexe -gqnNdO -R $installFolder -s http://mirrors.kernel.org/sourceware/cygwin/ -l $cacheFolder -P autoconf -P automake -P bison -P clang -P gcc-core -P gcc-g++ -P mingw-runtime -P mingw-binutils -P mingw-gcc-core -P mingw-gcc-g++ -P mingw-pthreads -P mingw-w32api -P libtool -P make -P python -P gettext-devel -P gettext -P intltool -P libiconv -P libiconv-devel -P pkg-config -P git -P wget -P curl -P libcurl4 -P libpcre-devel -P libssl-devel -P libsqlite3-devel -P zlib-devel -P cmocka -P unzip -P zip -P rsync -P expect -P libhwloc-devel}
+      Exec-External {& cmd /c $cygwinexe -gqnNdO -R $installFolder -s http://mirrors.kernel.org/sourceware/cygwin/ -l $cacheFolder -P autoconf -P automake -P bison -P clang -P gcc-core -P gcc-g++ -P mingw-runtime -P mingw-binutils -P mingw-gcc-core -P mingw-gcc-g++ -P mingw-pthreads -P mingw-w32api -P libtool -P make -P python -P gettext-devel -P gettext -P intltool -P libiconv -P libiconv-devel -P pkg-config -P git -P wget -P curl -P libcurl4 -P libpcre-devel -P libssl-devel -P libsqlite3-devel -P zlib-devel -P cmocka -P unzip -P zip -P rsync -P expect -P libhwloc-devel -P ccache}
       Write-Host "Update Cygwin: $cygwinexe " -NoNewLine
       Write-Host "[ OK ]" -ForegroundColor Green
     }
@@ -86,7 +90,7 @@ install:
       New-Item -Force -Type Directory $env:CYG_CACHE
 
       downloadIfOlderThanDays "https://cygwin.com/setup-x86.exe" "${env:AIRCRACK_CI_CACHE}\setup-x86.exe" 7
-      
+
       updateCygwin "${env:AIRCRACK_CI_CACHE}\setup-x86.exe" C:/cygwin $env:CYG_CACHE
     }
 
@@ -95,7 +99,7 @@ install:
       New-Item -Force -Type Directory $env:CYG_CACHE
 
       downloadIfOlderThanDays "https://cygwin.com/setup-x86_64.exe" "${env:AIRCRACK_CI_CACHE}\setup-x86_64.exe" 7
-      
+
       updateCygwin "${env:AIRCRACK_CI_CACHE}\setup-x86_64.exe" C:/cygwin64 $env:CYG_CACHE
     }
 
@@ -114,7 +118,7 @@ install:
       # update core packages
       bash "pacman -Syu --noconfirm --cache `"$unix_msys2_cache`""
       # install Aircrack-ng build dependencies
-      bash "pacman --sync --noconfirm --cache `"$unix_msys2_cache`" autoconf automake1.15 libtool msys2-w32api-headers msys2-w32api-runtime pkg-config git python openssl-devel openssl libopenssl msys2-runtime-devel binutils make pcre-devel libsqlite-devel zlib-devel"
+      bash "pacman --sync --noconfirm --cache `"$unix_msys2_cache`" autoconf automake1.15 libtool msys2-w32api-headers msys2-w32api-runtime pkg-config git python openssl-devel openssl libopenssl msys2-runtime-devel binutils make pcre-devel libsqlite-devel zlib-devel ccache"
     }
 
 build_script:
@@ -134,10 +138,10 @@ build_script:
       Exec-External {& C:\cygwin\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll /cygdrive/c/Windows/System32"}
       Exec-External {& C:\cygwin\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x86/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x86/libairpcap.dll.a"}
       if ($env:COMPILER -eq "gcc") {
-        Exec-External {& C:\cygwin\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental --with-airpcap=/cygdrive/c/projects/aircrack-ng"}
-        Exec-External {& C:\cygwin\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental"}
+        Exec-External {& C:\cygwin\bin\bash -e -l -c "./build/cygwin.sh gcc --enable-maintainer-mode --with-experimental --with-airpcap=/cygdrive/c/projects/aircrack-ng"}
+        Exec-External {& C:\cygwin\bin\bash -e -l -c "./build/cygwin.sh gcc --enable-maintainer-mode --with-experimental"}
       } else {
-        Exec-External {& C:\cygwin\bin\bash -e -l -c "./build/cygwin.sh clang --with-experimental --with-airpcap=/cygdrive/c/projects/aircrack-ng"}
+        Exec-External {& C:\cygwin\bin\bash -e -l -c "./build/cygwin.sh clang --enable-maintainer-mode --with-experimental --with-airpcap=/cygdrive/c/projects/aircrack-ng"}
       }
     }
 - ps: |
@@ -145,35 +149,35 @@ build_script:
       Exec-External {& C:\cygwin64\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll /cygdrive/c/Windows/System"}
       Exec-External {& C:\cygwin64\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x64/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x64/libairpcap.dll.a"}
       if ($env:COMPILER -eq "gcc") {
-        Exec-External {& C:\cygwin64\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental --with-airpcap=/cygdrive/c/projects/aircrack-ng"}
-        Exec-External {& C:\cygwin64\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental"}
+        Exec-External {& C:\cygwin64\bin\bash -e -l -c "./build/cygwin.sh gcc --enable-maintainer-mode --with-experimental --with-airpcap=/cygdrive/c/projects/aircrack-ng"}
+        Exec-External {& C:\cygwin64\bin\bash -e -l -c "./build/cygwin.sh gcc --enable-maintainer-mode --with-experimental"}
       } else {
-        Exec-External {& C:\cygwin64\bin\bash -e -l -c "./build/cygwin.sh clang --with-experimental --with-airpcap=/cygdrive/c/projects/aircrack-ng"}
+        Exec-External {& C:\cygwin64\bin\bash -e -l -c "./build/cygwin.sh clang --enable-maintainer-mode --with-experimental --with-airpcap=/cygdrive/c/projects/aircrack-ng"}
       }
     }
 - ps: |
     if ($env:TARGET -eq "msys64") {
       Exec-External {& C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll /c/Windows/System"}
       Exec-External {& C:\msys64\usr\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x64/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x64/libairpcap.dll.a"}
-      Exec-External {& C:\msys64\usr\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental --with-airpcap=/c/projects/aircrack-ng"}
-      Exec-External {& C:\msys64\usr\bin\bash -e -l -c "./build/cygwin.sh gcc --with-experimental"}
+      Exec-External {& C:\msys64\usr\bin\bash -e -l -c "./build/cygwin.sh gcc --enable-maintainer-mode --with-experimental --with-airpcap=/c/projects/aircrack-ng"}
+      Exec-External {& C:\msys64\usr\bin\bash -e -l -c "./build/cygwin.sh gcc --enable-maintainer-mode --with-experimental"}
     }
 - ps: |
-    if ($env:TARGET -eq "pkg") {
+    if ($env:TARGET -eq "pkg" -and -not $env:APPVEYOR_PULL_REQUEST_NUMBER) {
       Exec-External {& C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x64/airpcap.dll /c/Windows/System"}
       Exec-External {& C:\msys64\usr\bin\bash -e -l -c "cp -vfp Airpcap_Devpack/bin/x86/airpcap.dll /c/Windows/System32"}
       Exec-External {& C:\msys64\usr\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x64/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x64/libairpcap.dll.a"}
       Exec-External {& C:\cygwin\bin\bash -e -l -c "dlltool -D Airpcap_Devpack/bin/x86/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x86/libairpcap.dll.a"}
       .\build\package-win32.ps1 2>&1 | %{ "$_" }
     }
-    
+
 artifacts:
   - path: 'aircrack-ng-*.zip'
 
 deploy:
   - provider: FTP
     host: secure.thrallingpenguin.com
-    protocol: ftps
+    protocol: ftp
     username: appveyor
     password:
       secure: TMwjjDnIFGZclF9TbbgBprDa1kRweHrh6Gw4vnDW/QegdmR4CT/LUiDf9L+OdNVZ

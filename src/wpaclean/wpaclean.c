@@ -376,7 +376,6 @@ static void process_beacon(struct timespec * ts,
 	int wpa = 0;
 	int rc;
 	int ssids = 0;
-	int hidden = 0;
 	struct network * n;
 
 	totlen -= sizeof(*wh);
@@ -404,9 +403,7 @@ static void process_beacon(struct timespec * ts,
 			case IEEE80211_ELEMID_SSID:
 				if (++ssids > 1) break;
 
-				if (l == 0 || p[0] == 0)
-					hidden = 1;
-				else
+				if (!(l == 0 || p[0] == 0))
 				{
 					memcpy(ssid, p, l);
 					ssid[l] = 0;

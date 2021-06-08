@@ -257,14 +257,22 @@
                   - debian/jessie
                   - debian/stretch
                   - debian/buster
+                  - debian/bullseye
+                  - debian/bookworm
                   - elementaryos/loki
+                  - elementaryos/juno
                   - linuxmint/sylvia
                   - linuxmint/tara
                   - linuxmint/tessa
+                  - linuxmint/tina
+                  - linuxmint/tricia
                   - raspbian/buster
                   - ubuntu/xenial
                   - ubuntu/bionic
                   - ubuntu/cosmic
+                  - ubuntu/disco
+                  - ubuntu/eoan
+                  - ubuntu/focal
                 tasks:
                   - command: "package_cloud push --yes aircrack-ng/git/{{ matrix_tag }} {{ item.pkg }}"
                     with_items: "{{ pkg | selectattr('pkg_type', 'equalto', 'deb') | list }}"
@@ -278,9 +286,13 @@
               matrix:
                 tags:
                   - el/7
+                  - el/8
                   - fedora/27
                   - fedora/28
                   - fedora/29
+                  - fedora/30
+                  - fedora/31
+                  - fedora/32
                   - opensuse/42.1
                   - opensuse/42.2
                   - opensuse/42.3
@@ -288,7 +300,10 @@
                   - sles/12.1
                   - sles/12.2
                   - sles/12.3
+                  - sles/12.4
+                  - sles/12.5
                   - sles/15.0
+                  - sles/15.1
                 tasks:
                   - command: "package_cloud push --yes aircrack-ng/git/{{ matrix_tag }} {{ item.pkg }}"
                     with_items: "{{ pkg | selectattr('pkg_type', 'equalto', 'rpm') | list }}"

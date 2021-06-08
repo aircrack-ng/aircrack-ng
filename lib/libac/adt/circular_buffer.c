@@ -73,6 +73,10 @@ struct circular_buffer_t
 
 static inline void check_invariants(cbuf_handle_t cbuf)
 {
+#ifdef NDEBUG
+	(void) cbuf;
+#endif
+
 	// All writes to structure are always ahead of the reads, unless empty.
 	INVARIANT(cbuf->write_pos >= cbuf->read_pos);
 

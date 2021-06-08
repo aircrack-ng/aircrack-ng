@@ -31,6 +31,12 @@
 #include <string.h>
 #include <assert.h>
 
+// PVS-Studio warning opt-outs:
+//-V:ALLEGE:547
+//-V:REQUIRE:547
+//-V:ENSURE:547
+//-V:INVARIANT:547
+
 // NOTE(jbenden): These macros violates MISRA C:2012. 20.10 - The #
 // and ## preprocessor operators should not be used.
 #define ALLEGE(c)                                                              \
@@ -111,6 +117,27 @@
 #define unlikely(x) (x)
 #endif
 
+#if defined(HAS_ATTRIBUTE)
+#undef HAS_ATTRIBUTE
+#endif
+#if defined(__has_attribute)
+#define HAS_ATTRIBUTE(attribute) __has_attribute(attribute)
+#else
+#define HAS_ATTRIBUTE(attribute) (0)
+#endif
+
+#if defined(fallthrough)
+#undef fallthrough
+#endif
+#if HAS_ATTRIBUTE(fallthrough)                                                 \
+	|| (defined(__GNUC__) && __GNUC__ >= 7 && !defined(__INTEL_COMPILER)       \
+		&& !defined(__llvm__)                                                  \
+		&& !defined(__clang__))
+#define fallthrough __attribute__((__fallthrough__))
+#else
+#define fallthrough
+#endif
+
 #define UNUSED_PARAM(x) (void) x
 
 #ifdef UNUSED
@@ -123,6 +150,8 @@
 #endif
 
 #define ArrayCount(a) (sizeof((a)) / sizeof((a)[0]))
+
+#define THREAD_ENTRY(fn) void * __attribute__((noinline)) fn(void * arg)
 
 #define IGNORE_LTZ(c)                                                          \
 	do                                                                         \
@@ -171,7 +200,7 @@
 	} while (0)
 
 #if __STDC_VERSION__ >= 199901L
-#define DO_PRAGMA(x) _Pragma (#x)
+#define DO_PRAGMA(x) _Pragma(#x)
 #else
 #define DO_PRAGMA(x)
 #endif
@@ -184,6 +213,8 @@
 #define UNROLL_LOOP_N_TIME(n)
 #endif
 
+#include <aircrack-ng/compat.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -194,7 +225,7 @@ static inline size_t ustrlen(const uint8_t * s1)
 }
 
 #define destroy(var, fn)                                                       \
-	({                                                                         \
+	__extension__({                                                            \
 		if ((var) != NULL)                                                     \
 		{                                                                      \
 			fn((__typeof__(var))(var));                                        \

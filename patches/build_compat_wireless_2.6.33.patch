@@ -1,0 +1,19 @@
+See http://marc.info/?l=linux-wireless&m=126909721011922&w=2
+Index: compat-wireless-2010-03-19/scripts/gen-compat-autoconf.sh
+===================================================================
+--- compat-wireless-2010-03-19.orig/scripts/gen-compat-autoconf.sh	2010-03-20
+15:26:22.604720545 +0100
++++ compat-wireless-2010-03-19/scripts/gen-compat-autoconf.sh	2010-03-20
+15:27:49.212236531 +0100
+@@ -145,7 +145,11 @@
+ kernel_version_req $OLDEST_KERNEL_SUPPORTED
+
+ # Handle core kernel wireless depenencies here
++echo '#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33)'
++define_config_req CONFIG_CFG80211_WEXT
++echo '#else'
+ define_config_req CONFIG_WIRELESS_EXT
++echo '#endif'
+
+ # For each CONFIG_FOO=x option
+ for i in $(grep '^CONFIG_' $COMPAT_CONFIG); do

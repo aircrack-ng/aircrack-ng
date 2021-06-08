@@ -2,7 +2,6 @@
 
 [![Linux/Mac Build Status](https://travis-ci.org/aircrack-ng/aircrack-ng.svg?branch=master)](https://travis-ci.org/aircrack-ng/aircrack-ng)
 [![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/aircrack-ng/aircrack-ng?branch=master&svg=true)](https://ci.appveyor.com/project/aircrack-ng/aircrack-ng)
-[![Intel Compiler Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng.svg?left_text=Intel%20Compiler%20Build)](https://buildbot.aircrack-ng.org/)
 [![Alpine Linux Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng-alpine.svg?left_text=Alpine%20Linux%20Build)](https://buildbot.aircrack-ng.org/)
 [![Kali Linux Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng-kali.svg?left_text=Kali%20Linux%20Build)](https://buildbot.aircrack-ng.org/)
 [![Armel Kali Linux Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng-armel.svg?left_text=Armel%20Kali%20Linux%20Build)](https://buildbot.aircrack-ng.org/)
@@ -24,7 +23,7 @@ It focuses on different areas of WiFi security:
  * Testing: Checking WiFi cards and driver capabilities (capture and injection).
  * Cracking: WEP and WPA PSK (WPA 1 and 2).
 
-All tools are command line which allows for heavy scripting. A lot of GUIs have taken advantage of this feature. It works primarily Linux but also Windows, OS X, FreeBSD, OpenBSD, NetBSD, as well as Solaris and even eComStation 2. 
+All tools are command line which allows for heavy scripting. A lot of GUIs have taken advantage of this feature. It works primarily on Linux but also Windows, macOS, FreeBSD, OpenBSD, NetBSD, as well as Solaris and even eComStation 2. 
 
 # Building
 
@@ -35,13 +34,17 @@ All tools are command line which allows for heavy scripting. A lot of GUIs have 
  * Libtool
  * shtool
  * OpenSSL development package or libgcrypt development package.
- * Airmon-ng (Linux) requires ethtool.
+ * Airmon-ng (Linux) requires ethtool, usbutils, and often pciutils.
  * On windows, cygwin has to be used and it also requires w32api package.
  * On Windows, if using clang, libiconv and libiconv-devel
  * Linux: LibNetlink 1 or 3. It can be disabled by passing --disable-libnl to configure.
  * pkg-config (pkgconf on FreeBSD)
  * FreeBSD, OpenBSD, NetBSD, Solaris and OS X with macports: gmake
  * Linux/Cygwin: make and Standard C++ Library development package (Debian: libstdc++-dev)
+
+Note: Airmon-ng only requires pciutils if the system has a PCI/PCIe bus and it is populated.
+      Such bus can be present even if not physically visible. For example, it is present,
+      and populated on the Raspberry Pi 4, therefore pciutils is required on that device.
 
 ## Optional stuff
 
@@ -52,12 +55,11 @@ All tools are command line which allows for heavy scripting. A lot of GUIs have 
  * If you want to use Airpcap, the 'developer' directory from the CD/ISO/SDK is required.
  * In order to build `besside-ng`, `besside-ng-crawler`, `easside-ng`, `tkiptun-ng` and `wesside-ng`,
    libpcap development package is required (on Cygwin, use the Aircap SDK instead; see above)
- * For best performance on FreeBSD (50-70% more), install gcc5 (or better) via: pkg install gcc9
  * rfkill
  * If you want Airodump-ng to log GPS coordinates, gpsd is needed
  * For best performance on SMP machines, ensure the hwloc library and headers are installed. It is strongly recommended on high core count systems, it may give a serious speed boost
  * CMocka for unit testing
- * For intergation testing on Linux only: tcpdump, HostAPd, WPA Supplicant and screen
+ * For integration testing on Linux only: tcpdump, HostAPd, WPA Supplicant and screen
 
 ## Installing required and optional dependencies
 
@@ -68,19 +70,37 @@ Below are instructions for installing the basic requirements to build
 
 ### Linux
 
+#### Arch Linux
+
+    sudo pacman -Sy base-devel libnl openssl ethtool util-linux zlib libpcap sqlite pcre hwloc cmocka hostapd wpa_supplicant tcpdump screen iw usbutils pciutils`
+
 #### Debian/Ubuntu
 
     sudo apt-get install build-essential autoconf automake libtool pkg-config libnl-3-dev libnl-genl-3-dev libssl-dev ethtool shtool rfkill zlib1g-dev libpcap-dev libsqlite3-dev libpcre3-dev libhwloc-dev libcmocka-dev hostapd wpasupplicant tcpdump screen iw usbutils
 
-#### Fedora/CentOS/RHEL
+#### Fedora
 
-    sudo yum install libtool pkgconfig sqlite-devel autoconf automake openssl-devel libpcap-devel pcre-devel rfkill libnl3-devel gcc gcc-c++ ethtool hwloc-devel libcmocka-devel git make file expect hostapd wpa_supplicant iw usbutils tcpdump screen
+    sudo yum install libtool pkgconfig sqlite-devel autoconf automake openssl-devel libpcap-devel pcre-devel rfkill libnl3-devel gcc gcc-c++ ethtool hwloc-devel libcmocka-devel make file expect hostapd wpa_supplicant iw usbutils tcpdump screen zlib-devel
 
-**Note**: on CentOS and RedHat, HostAPd requires 'epel' repository to be enabled: sudo yum install epel-release
+#### CentOS/RHEL 7
+
+    sudo yum install epel-release
+    sudo ./centos_autotools.sh
+    # Remove older installation of automake/autoconf
+    sudo yum remove autoconf automake
+    sudo yum install sqlite-devel openssl-devel libpcap-devel pcre-devel rfkill libnl3-devel ethtool hwloc-devel libcmocka-devel make file expect hostapd wpa_supplicant iw usbutils tcpdump screen zlib-devel
+
+**Note**: autoconf, automake, libtool, and pkgconfig in the repositories are too old. The script centos_autotools.sh automatically installs dependencies to compile then install the tools.
+
+#### CentOS/RHEL 8
+
+    sudo yum config-manager --set-enabled powertools
+    sudo yum install epel-release
+    sudo yum install libtool pkgconfig sqlite-devel autoconf automake openssl-devel libpcap-devel pcre-devel rfkill libnl3-devel gcc gcc-c++ ethtool hwloc-devel libcmocka-devel make file expect hostapd wpa_supplicant iw usbutils tcpdump screen zlib-devel
 
 #### openSUSE
 
-    sudo zypper install autoconf automake libtool pkg-config libnl3-devel libopenssl-1_1-devel zlib-devel libpcap-devel sqlite3-devel pcre-devel hwloc-devel libcmocka-devel hostapd wpa_supplicant tcpdump screen iw gcc-c++ gcc
+    sudo zypper install autoconf automake libtool pkg-config libnl3-devel libopenssl-1_1-devel zlib-devel libpcap-devel sqlite3-devel pcre-devel hwloc-devel libcmocka-devel hostapd wpa_supplicant tcpdump screen iw gcc-c++ gcc ethtool pciutils usbutils
 
 #### Mageia
 
@@ -88,7 +108,15 @@ Below are instructions for installing the basic requirements to build
 
 #### Alpine
 
-    sudo apk add gcc g++ make autoconf automake libtool libnl3-dev openssl-dev ethtool libpcap-dev cmocka-dev hostapd wpa_supplicant tcpdump screen iw pkgconf util-linux sqlite-dev pcre-dev linux-headers zlib-dev
+    sudo apk add gcc g++ make autoconf automake libtool libnl3-dev openssl-dev ethtool libpcap-dev cmocka-dev hostapd wpa_supplicant tcpdump screen iw pkgconf util-linux sqlite-dev pcre-dev linux-headers zlib-dev pciutils usbutils
+
+**Note**: Community repository needs to be enabled for iw
+
+#### Clear Linux
+
+    sudo swupd bundle-add c-basic devpkg-openssl devpkg-libgcrypt devpkg-libnl devpkg-hwloc devpkg-libpcap devpkg-pcre devpkg-sqlite-autoconf ethtool wget network-basic software-testing sysadmin-basic wpa_supplicant
+
+**Note**: hostapd must be compiled manually, it is not present in the repository
 
 ### BSD
 
@@ -222,6 +250,8 @@ to your choosing:
                     is to compile the generic optimization in the binary. --with-static-simd merely allows
                     to choose another one.
 
+* **enable-maintainer-mode**: It is important to enable this flag when developing with Aircrack-ng. This flag enables additional compile warnings and safety features.
+
 #### Examples:
 
   * Configure and compiling:
@@ -338,7 +368,7 @@ to your choosing:
    ```
    export CFLAGS='-O0 -g'
    export CXXFLAGS='-O0 -g'
-   ./configure    
+   ./configure --with-experimental --enable-maintainer-mode --without-opt
    make
    LD_LIBRARY_PATH=.libs gdb --args ./aircrack-ng [PARAMETERS]
    ```
@@ -358,23 +388,53 @@ the additional flag `--without-opt` to the `./configure` line:
 # Using precompiled binaries
 
 ## Linux/BSD
- * Use your package manager to download aircrack-ng
- * In most cases, they have an old version.
+
+Aircrack-ng is available in most distributions repositories. However, it is not always up to date.
+
+We provide up to date versions via PackageCloud for a number of Linux distrubutions:
+
+- development (each commit in this repo): https://packagecloud.io/aircrack-ng/git
+- stable releases: https://packagecloud.io/aircrack-ng/release
 
 ## Windows
- * Install the appropriate "monitor" driver for your card (standard drivers doesn't work for capturing data).
- * aircrack-ng suite is command line tools. So, you have to open a commandline
+ * Install the appropriate "monitor" driver for your card; standard drivers doesn't work for capturing data.
+ * Aircrack-ng suite is command line tools. So, you have to open a commandline
    `Start menu -> Run... -> cmd.exe` then use them
  * Run the executables without any parameters to have help
 
+# Continous integration
+
+- Travis (Linux/Mac): https://travis-ci.org/aircrack-ng/aircrack-ng
+- AppVeyor: https://ci.appveyor.com/project/aircrack-ng/aircrack-ng
+- Coverity Scan: https://scan.coverity.com/projects/aircrack-ng
+
+## Buildbots
+
+URL: https://buildbot.aircrack-ng.org/
+
+Linux buildbots:
+- CentOS
+- AArch64
+- Kali Linux
+- Armel Kali Linux
+- Armhf Kali Linux
+- Alpine Linux
+
+BSD buildbots:
+- OpenBSD
+- FreeBSD
+- NetBSD
+- DragonflyBSD
+
 # Documentation
 
+Some more information is present in the [README](README) file.
 
 Documentation, tutorials, ... can be found on https://aircrack-ng.org
 
-See also manpages and the forum.
+Support is available in the [forum](https://forum.aircrack-ng.org) and on IRC (in the channel #aircrack-ng in Freenode).
 
-For further information check the [README](README) file
+Every tool has its own manpage. For aircrack-ng, `man aircrack-ng`
 
 # Infrastructure sponsors
 

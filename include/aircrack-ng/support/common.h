@@ -42,6 +42,8 @@
 #if defined(__CYGWIN32__) && !defined(__CYGWIN64__)
 int fseeko64(FILE * fp, int64_t offset, int whence);
 int64_t ftello64(FILE * fp);
+//-V:fseek:1059
+//-V:ftello:1059
 #undef fseek
 #define fseek fseeko64
 #undef ftello
@@ -49,6 +51,8 @@ int64_t ftello64(FILE * fp);
 #endif
 
 #if defined(__FreeBSD__) || defined(__OpenBSD__)
+//-V:rand:1059
+//-V:srand:1059
 #undef rand
 #define rand lrand48
 #undef srand
@@ -315,7 +319,7 @@ get_line_from_buffer(char * buffer, size_t size, char * line)
 	{
 		*cursor = '\0';
 		cursor++;
-		strcpy(line, buffer);
+		strlcpy(line, buffer, size);
 		memmove(buffer, cursor, size - (strlen(line) + 1));
 
 		return (size - (strlen(line) + 1));
@@ -376,6 +380,15 @@ static inline float rand_f32(void)
 static inline uint32_t adds_u32(uint32_t a, uint32_t b)
 {
 	uint32_t c = a + b;
+	if (unlikely(c < a)) /* can only happen due to overflow */
+		c = -1;
+	return (c);
+}
+
+/// Saturated add for unsigned, machine word integers.
+static inline uintptr_t adds_uptr(uintptr_t a, uintptr_t b)
+{
+	uintptr_t c = a + b;
 	if (unlikely(c < a)) /* can only happen due to overflow */
 		c = -1;
 	return (c);

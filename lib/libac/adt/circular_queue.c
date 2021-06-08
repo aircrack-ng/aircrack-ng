@@ -21,7 +21,9 @@ struct circular_queue_t
 {
 	cbuf_handle_t cbuf; /// Circular buffer.
 	pthread_mutex_t lock; /// Lock protecting whole structure.
+	char padding1[CACHELINE_SIZE - sizeof(pthread_mutex_t)];
 	pthread_cond_t full_cv; /// Signals upon no longer full.
+	char padding2[CACHELINE_SIZE - sizeof(pthread_cond_t)];
 	pthread_cond_t empty_cv; /// Signals upon no longer empty.
 };
 

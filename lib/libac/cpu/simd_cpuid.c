@@ -334,8 +334,7 @@ static int cpuid_findcpusensorpath(const char * path)
 		}
 		else if (!strncmp(dp->d_name, "temp", 4))
 		{
-			strncpy(tbuf[cnt], dp->d_name, 31);
-			tbuf[cnt][31] = '\0'; // ensure NULL termination
+			ALLEGE(strlcpy(tbuf[cnt], dp->d_name, 32) < 32);
 			if (cnt < (MAX_SENSOR_PATHS - 1)) ++cnt; //-V547
 		}
 	}
@@ -370,16 +369,13 @@ static int cpuid_findcpusensorpath(const char * path)
 static int cpuid_readsysfs(const char * file)
 {
 	int fd, ival = 0;
-	struct stat sf;
 	char buf[16] = {0};
-
-	if (stat(file, &sf)) return -1;
 
 	fd = open(file, O_RDONLY);
 
 	if (fd == -1) return -1;
 
-	if (read(fd, &buf, sizeof(buf)))
+	if (read(fd, &buf, sizeof(buf)) > 0)
 	{
 		ival = atoi(buf);
 	}
@@ -395,18 +391,15 @@ static int cpuid_readsysfs(const char * file)
 static int cpuid_getfreq(int type)
 {
 	int fd, ifreq = 0;
-	struct stat sf;
 	char freq[16] = {0}, *fptr;
 
 	fptr = (type == 1 ? CPUFREQ_CPU0C : CPUFREQ_CPU0M);
-
-	if (stat(fptr, &sf)) return 0;
 
 	fd = open(fptr, O_RDONLY);
 
 	if (fd == -1) return 0;
 
-	if (read(fd, &freq, sizeof(freq))) ifreq = atoi(freq) / 1000;
+	if (read(fd, &freq, sizeof(freq)) > 0) ifreq = atoi(freq) / 1000;
 
 	close(fd);
 
@@ -712,7 +705,7 @@ int cpuid_getinfo()
 	printf("Logical CPUs    = %d\n", cpuinfo.maxlogic);
 
 #ifdef _X86
-	printf("Threads per core= %d\n", cpuid_x86_threads_per_core());
+	printf("Threads per core= %u\n", cpuid_x86_threads_per_core());
 #endif
 
 	if (cpuinfo.cores > 0)

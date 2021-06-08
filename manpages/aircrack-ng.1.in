@@ -117,7 +117,7 @@ Path to a dictionary file for wpa cracking. Separate filenames with comma when u
 In order to use a dictionary with hexadecimal values, prefix the dictionary with "h:". Each byte in each key must be separated by ':'. When using with WEP, key length should be specified using -n.
 .TP
 .I -N <file> or --new-session <file>
-Create a new cracking session. It allows one to interrupt cracking session and restart at a later time (using -R or --restore-session). Status files are saved every 5 minutes. It does not overwrite existing session file.
+Create a new cracking session. It allows one to interrupt cracking session and restart at a later time (using -R or --restore-session). Status files are saved every 10 minutes. It does not overwrite existing session file.
 .TP
 .I -R <file> or --restore-session <file>
 Restore and continue a previously saved cracking session. This parameter is to be used alone, no other parameter should be specified when starting aircrack-ng (all the required information is in the session file).

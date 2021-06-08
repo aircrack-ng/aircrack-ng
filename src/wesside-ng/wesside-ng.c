@@ -187,8 +187,7 @@ void show_wep_stats(int B,
 					PTW_tableentry table[PTW_KEYHSBYTES][PTW_n],
 					int choices[KEYHSBYTES],
 					int depth[KEYHSBYTES],
-					int prod,
-					int keylimit);
+					int prod);
 
 /* display the current votes */
 
@@ -197,8 +196,7 @@ void show_wep_stats(int B,
 					PTW_tableentry table[PTW_KEYHSBYTES][PTW_n],
 					int choices[KEYHSBYTES],
 					int depth[KEYHSBYTES],
-					int prod,
-					int keylimit)
+					int prod)
 {
 	UNUSED_PARAM(B);
 	UNUSED_PARAM(force);
@@ -206,7 +204,6 @@ void show_wep_stats(int B,
 	UNUSED_PARAM(choices);
 	UNUSED_PARAM(depth);
 	UNUSED_PARAM(prod);
-	UNUSED_PARAM(keylimit);
 }
 
 static inline struct wstate * get_ws(void) { return &_wstate; }
@@ -459,7 +456,7 @@ static void send_assoc(struct wstate * ws)
 {
 	REQUIRE(ws != NULL);
 
-	unsigned char buf[128];
+	unsigned char buf[sizeof(struct ieee80211_frame) * 32];
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	unsigned char * body;
 	int ssidlen;
@@ -531,7 +528,8 @@ static void send_auth(struct wstate * ws)
 {
 	REQUIRE(ws != NULL);
 
-	unsigned char buf[128] __attribute__((aligned(8)));
+	unsigned char buf[sizeof(struct ieee80211_frame) * 16]
+		__attribute__((aligned(8)));
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	unsigned short * n;
 
@@ -953,7 +951,7 @@ decrypt_arpreq(struct wstate * ws, struct ieee80211_frame * wh, int rd)
 
 	unsigned char * body;
 	int bodylen;
-	unsigned char clear[36];
+	unsigned char clear[sizeof(struct arphdr) * 32];
 	unsigned char * ptr;
 	struct arphdr * h;
 	int i;
@@ -1090,11 +1088,12 @@ static void got_ip(struct wstate * ws)
 	}
 
 	memset(ws->ws_netip, 0, 16);
-	strncpy(ws->ws_netip, inet_ntoa(*in), 16 - 1);
+	char * netip = inet_ntoa(*in);
+	strlcpy(ws->ws_netip, netip ? netip : "", 16);
 
 	time_print("Got IP=(%s)\n", ws->ws_netip);
 	memset(ws->ws_myip, 0, sizeof(ws->ws_myip));
-	strncpy(ws->ws_myip, ws->ws_netip, sizeof(ws->ws_myip) - 1);
+	strlcpy(ws->ws_myip, ws->ws_netip, sizeof(ws->ws_myip));
 
 	ptr = strchr(ws->ws_myip, '.');
 	ALLEGE(ptr);
@@ -1402,7 +1401,8 @@ send_fragment(struct wstate * ws, struct frag_state * fs, struct prga_info * pi)
 	REQUIRE(fs != NULL);
 	REQUIRE(pi != NULL);
 
-	unsigned char buf[4096] __attribute__((aligned(8)));
+	unsigned char buf[sizeof(struct ieee80211_frame) * 16]
+		__attribute__((aligned(8)));
 	struct ieee80211_frame * wh;
 	unsigned char * body;
 	int fragsize;
@@ -1413,7 +1413,7 @@ send_fragment(struct wstate * ws, struct frag_state * fs, struct prga_info * pi)
 	unsigned short sn, fn;
 
 	wh = (struct ieee80211_frame *) buf;
-	memcpy(wh, &fs->fs_wh, sizeof(*wh));
+	memcpy(wh, &fs->fs_wh, sizeof(*wh)); //-V512
 
 	body = (unsigned char *) wh + sizeof(*wh);
 	memcpy(body, &pi->pi_iv, 3);
@@ -1442,8 +1442,9 @@ send_fragment(struct wstate * ws, struct frag_state * fs, struct prga_info * pi)
 	pcrc = (unsigned int *) (body + fragsize); //-V1032
 	*pcrc = htole32(crc);
 
-	for (i = 0; fragsize < (INT_MAX - 4) && i < (fragsize + 4)
-				&& i < (sizeof(buf) - sizeof(*wh));
+	ALLEGE(fragsize < INT_MAX - 4);
+	for (i = 0;
+		 i < (fragsize + 4) && (size_t) i < (sizeof(buf) - sizeof(*wh) - 1);
 		 i++)
 		body[i] ^= pi->pi_prga[i];
 
@@ -1570,7 +1571,7 @@ static void send_arp(struct wstate * ws,
 					 char * dstip,
 					 unsigned char * dstmac)
 {
-	static unsigned char arp_pkt[128];
+	static unsigned char arp_pkt[sizeof(struct ieee80211_frame) * 16];
 	unsigned char * body;
 	unsigned char * ptr;
 	struct ieee80211_frame * wh;
@@ -1596,7 +1597,7 @@ static void send_arp(struct wstate * ws,
 
 	wepify(ws, body, 8 + 8 + 20);
 	arp_len = sizeof(*wh) + 4 + 8 + 8 + 20 + 4;
-	assert(arp_len < (int) sizeof(arp_pkt));
+	assert(arp_len < (int) sizeof(arp_pkt)); //-V547
 
 	send_frame(ws, arp_pkt, arp_len);
 }
@@ -1696,7 +1697,7 @@ static void save_key(unsigned char * key, int len)
 	while (len--)
 	{
 		snprintf(tmp, 3, "%.2X", *key++);
-		strncat(k, tmp, 2);
+		strlcat(k, tmp, sizeof(k));
 		if (len) strncat(k, ":", 2);
 	}
 

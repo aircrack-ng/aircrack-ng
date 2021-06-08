@@ -41,7 +41,7 @@ struct tip_nbsd
 	int tn_fd;
 	int tn_ioctls;
 	struct ifreq tn_ifr;
-	char tn_name[MAX_IFACE_NAME];
+	char tn_name[IFNAMSIZ];
 	int tn_destroy;
 };
 
@@ -79,7 +79,7 @@ static int ti_do_open_nbsd(struct tif * ti, char * name)
 	/* get flags */
 	ifr = &priv->tn_ifr;
 	memset(ifr, 0, sizeof(*ifr));
-	snprintf(ifr->ifr_name, sizeof(ifr->ifr_name) - 1, "%s", priv->tn_name);
+	snprintf(ifr->ifr_name, sizeof(ifr->ifr_name), "%s", priv->tn_name);
 	if (ioctl(s, SIOCGIFFLAGS, ifr) == -1) goto err2;
 	flags = ifr->ifr_flags;
 

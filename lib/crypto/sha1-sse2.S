@@ -20,6 +20,8 @@
 //  version. *  If you delete this exception statement from all source
 //  files in the program, then also delete it here.
 
+.att_syntax
+
 #if defined(__x86_64__)
 #if defined(__APPLE__) || defined(__CYGWIN__)
 #define USE_PIC 1

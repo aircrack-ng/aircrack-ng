@@ -51,6 +51,11 @@
 #include <aircrack-ng/support/common.h>
 #include <aircrack-ng/third-party/ieee80211.h>
 
+/* Tagged parameters in beacon-frames */
+#define MGNT_PAR_SSID 0x00
+#define MGNT_PAR_CHANNEL 0x03
+#define MGNT_PAR_HT_INFO 0x3d
+
 #define RATE_1M 1000000
 #define RATE_2M 2000000
 #define RATE_5_5M 5500000
@@ -234,15 +239,12 @@ static inline int get_ip_port(char * iface, char * ip, const int ip_size)
 	if (!inet_aton(host, (struct in_addr *) &addr))
 		goto out; /* XXX resolve hostname */
 
-	if (strlen(host) > 15)
-	{
-		port = -1;
-		goto out;
-	}
+	if (strlen(host) > 15) goto out;
 
 	strncpy(ip, host, (size_t) ip_size);
+
 	port = (int) strtol(ptr, NULL, 10);
-	if (port <= 0) port = -1;
+	if (port <= 0 || port > 65535) port = -1;
 
 out:
 	free(host);
@@ -300,9 +302,9 @@ extern unsigned long nb_pkt_sent;
 
 enum Send_Packet_Option
 {
-	kNoChange,
-	kRewriteSequenceNumber,
-	kRewriteDuration,
+	kNoChange = 1 << 0,
+	kRewriteSequenceNumber = 1 << 1,
+	kRewriteDuration = 1 << 2,
 };
 
 static inline int send_packet(struct wif * wi,
@@ -334,19 +336,20 @@ static inline int send_packet(struct wif * wi,
 		pkt[1] = (uint8_t)(pkt[1] & ~0x4);
 	}
 
-	if (wi_write(wi, NULL, LINKTYPE_IEEE802_11, buf, (int) count, NULL) == -1)
+	int rc;
+	do
 	{
-		switch (errno)
+		rc = wi_write(wi, NULL, LINKTYPE_IEEE802_11, buf, (int) count, NULL);
+		if (rc == -1 && errno == ENOBUFS)
 		{
-			case EAGAIN:
-			case ENOBUFS:
-				usleep(10000);
-				return (0); /* XXX not sure I like this... -sorbo */
-
-			default:
-				perror("wi_write()");
-				return (-1);
+			usleep(10000);
 		}
+	} while (rc == -1 && (errno == EAGAIN || errno == ENOBUFS));
+
+	if (rc == -1)
+	{
+		perror("wi_write()");
+		return (-1);
 	}
 
 	++nb_pkt_sent;

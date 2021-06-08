@@ -153,7 +153,7 @@ struct options
 	int nbdict; /* current dict number  */
 	int no_stdin; /* if dict == stdin     */
 	int hexdict[MAX_DICTS]; /* if dict in hex       */
-	long long int wordcount; /* Total wordcount for all dicts*/
+	size_t wordcount; /* Total wordcount for all dicts*/
 	struct dictfiles dictidx[MAX_DICTS]; /* Dictionary structure		*/
 	int totaldicts; /* total loaded dictionaries	*/
 	int dictfinish; /* finished processing all dicts*/

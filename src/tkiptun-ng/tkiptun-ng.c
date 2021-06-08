@@ -267,7 +267,7 @@ static struct local_options
 
 // unused, but needed for link
 struct devices dev;
-struct wif *_wi_in, *_wi_out;
+extern struct wif *_wi_in, *_wi_out;
 
 struct ARP_req
 {
@@ -289,7 +289,7 @@ struct APt
 };
 
 unsigned long nb_pkt_sent;
-unsigned char h80211[4096];
+extern unsigned char h80211[4096];
 static unsigned char srcbuf[4096];
 static char strbuf[512];
 static int alarmed;
@@ -585,14 +585,14 @@ static int build_arp_request(unsigned char * packet, int * length, int toDS)
 
 	if (toDS)
 	{
-		if (lopt.chopped_to_prga_len - 8 < *length - 26 - 8) return (1);
+		if (lopt.chopped_to_prga_len < *length - 26) return (1);
 
 		for (i = 0; i < *length - 26 - 8; i++)
 			packet[26 + 8 + i] ^= lopt.chopped_to_prga[8 + i];
 	}
 	else
 	{
-		if (lopt.chopped_from_prga_len - 8 < *length - 26 - 8) return (1);
+		if (lopt.chopped_from_prga_len < *length - 26) return (1);
 
 		INVARIANT(*length < (INT_MAX - 26 - 8 - 1));
 
@@ -674,7 +674,7 @@ static int guess_packet(unsigned char * srcbuf,
 	int i, j, k, l, z, len;
 	unsigned char smac[6], dmac[6], bssid[6];
 
-	unsigned char *ptr, *psmac, *psip, *pdmac, *pdip;
+	unsigned char *ptr, *psip, *pdmac, *pdip;
 	unsigned char arp[4096];
 
 	z = ((srcbuf[1] & 3) != 3) ? 24 : 30;
@@ -711,7 +711,6 @@ static int guess_packet(unsigned char * srcbuf,
 	}
 
 	ptr = arp;
-	psmac = arp + 16;
 	pdmac = arp + 26;
 	psip = arp + 22;
 	pdip = arp + 32;
@@ -1253,7 +1252,7 @@ static int guess_packet(unsigned char * srcbuf,
 
 		printf("Checking 10.x.y.z\n");
 		/* check 10.i.j.1-254 */
-		psip[0] = 10;
+		psip[0] = 10; //-V519
 
 		if (check_guess(srcbuf,
 						chopped,
@@ -1294,8 +1293,8 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 	REQUIRE(src_packet != NULL);
 
 	float f, ticks[4];
-	int i, j, n, z, caplen, srcz, srclen;
-	int data_start, data_end, srcdiff, diff;
+	int i, j, n, z, caplen, srclen;
+	int data_start, data_end;
 	int guess, is_deauth_mode;
 	int nb_bad_pkt;
 	int tried_header_rec = 0;
@@ -1345,7 +1344,6 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 	z = ((h80211[1] & 3) != 3) ? 24 : 30;
 	if ((h80211[0] & 0x80) == 0x80) /* QoS */
 		z += 2;
-	srcz = z;
 
 	if ((unsigned) caplen > sizeof(srcbuf)
 		|| (unsigned) caplen > sizeof(h80211))
@@ -1443,7 +1441,6 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 
 	data_start = 26 + 8;
 	srclen = data_end = n;
-	srcdiff = z - 24;
 
 	chopped[24] ^= 0x01;
 	chopped[25] = 0x00;
@@ -1553,7 +1550,7 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 				   "RTL8180.\n"
 				   "    * The wireless interface isn't setup on the correct "
 				   "channel.\n");
-			if (is_deauth_mode)
+			if (is_deauth_mode) //-V547
 				printf("    * The AP isn't vulnerable when operating in "
 					   "non-authenticated mode.\n"
 					   "      Run aireplay-ng in authenticated mode instead "
@@ -1641,8 +1638,6 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 			if ((h80211[0] & 0x80) == 0x80) /* QoS */
 				z += 2;
 
-			diff = z - 24;
-
 			if ((chopped[data_end + 0] ^ srcbuf[data_end + 0]) == 0x06
 				&& (chopped[data_end + 1] ^ srcbuf[data_end + 1]) == 0x04
 				&& (chopped[data_end + 2] ^ srcbuf[data_end + 2]) == 0x00)
@@ -1717,7 +1712,7 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 			 * AP properly drops frames with an invalid ICV *
 			 * so this guess always has its bit 8 set to 0  */
 
-			if (is_deauth_mode)
+			if (is_deauth_mode) //-V547
 			{
 				opt.r_smac[1] |= (guess < 256);
 				opt.r_smac[5] = guess & 0xFF;
@@ -1823,7 +1818,7 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 			if (h80211[7] != opt.r_smac[3]) continue;
 			if (h80211[8] != opt.r_smac[4]) continue;
 
-			if (data_end < 41) goto header_rec;
+			if (data_end < 41) goto header_rec; //-V547
 
 			printf("\n\nFailure: the access point does not properly "
 				   "discard frames with an\ninvalid ICV - try running "
@@ -1904,7 +1899,7 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 			   nb_pkt_sent,
 			   ticks[3]);
 
-		if (is_deauth_mode)
+		if (is_deauth_mode) //-V547
 		{
 			opt.r_smac[1] = rand_u8() & 0x3E;
 			opt.r_smac[2] = rand_u8();
@@ -1955,7 +1950,6 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 	z = ((h80211[1] & 3) != 3) ? 24 : 30;
 	if ((h80211[0] & 0x80) == 0x80) /* QoS */
 		z += 2;
-	diff = z - 24;
 
 	chopped[26 + 8 + 0] = srcbuf[26 + 8 + 0] ^ b1;
 	chopped[26 + 8 + 1] = srcbuf[26 + 8 + 1] ^ b2;
@@ -2153,8 +2147,8 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 	fclose(f_cap_out);
 
 	PCT;
-	printf("\nCompleted in %lds (%0.2f bytes/s)\n\n",
-		   (long) time(NULL) - tt,
+	printf("\nCompleted in %llds (%0.2f bytes/s)\n\n",
+		   (long long) time(NULL) - tt,
 		   (float) (pkh.caplen - 6 - 26) / (float) (time(NULL) - tt));
 
 	free(chopped);
@@ -2164,12 +2158,10 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 
 static int getHDSK(void)
 {
-	int i, n;
+	int i;
 	int aacks, sacks, caplen;
 	struct timeval tv;
 	fd_set rfds;
-
-	n = 0;
 
 	/* deauthenticate the target */
 
@@ -2263,7 +2255,8 @@ static int getHDSK(void)
 
 int main(int argc, char * argv[])
 {
-	int i, j, n, ret, got_hdsk;
+	int i, ret, got_hdsk;
+	unsigned int n;
 	char *s, buf[128];
 	int caplen = 0;
 	unsigned char packet1[4096];
@@ -2324,10 +2317,6 @@ int main(int argc, char * argv[])
 				break;
 
 			case ':':
-
-				printf("\"%s --help\" for help.\n", argv[0]);
-				return (1);
-
 			case '?':
 
 				printf("\"%s --help\" for help.\n", argv[0]);
@@ -2541,10 +2530,9 @@ int main(int argc, char * argv[])
 				buf[1] = s[1];
 				buf[2] = '\0';
 				i = 0;
-				j = 0;
 				while (sscanf(buf, "%x", &n) == 1)
 				{
-					if (n < 0 || n > 255)
+					if (n > 255)
 					{
 						printf("Invalid keystream.\n");
 						printf("\"%s --help\" for help.\n", argv[0]);
@@ -2823,7 +2811,7 @@ int main(int argc, char * argv[])
 	/* DO MICHAEL TEST */
 
 	memset(buf, 0, 128);
-	memcpy(buf, "M", 1);
+	buf[0] = 'M';
 	i = michael_test((unsigned char *) "\x82\x92\x5c\x1c\xa1\xd1\x30\xb8",
 					 (unsigned char *) buf,
 					 strlen(buf),

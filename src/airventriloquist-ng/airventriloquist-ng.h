@@ -49,7 +49,7 @@ struct net_hdr
 {
 	uint8_t nh_type;
 	uint32_t nh_len;
-	uint8_t nh_data[0];
+	uint8_t nh_data[];
 } __packed;
 
 struct llc_frame
@@ -282,14 +282,14 @@ struct radius_hdr
 	"\x00\x04"                                                                 \
 	"\xC0\xA8\x01\x66"
 
-#define COL_RED "\e[31m"
-#define COL_RED_BOLD "\e[1;31m"
-#define COL_GREEN "\e[32m"
-#define COL_BLUE "\e[34m"
-#define COL_PURPLE "\e[35m"
-#define COL_GRAY "\e[36m"
-#define COL_GRAY_LIGHT "\e[37m"
-#define COL_REST "\e[m"
+#define COL_RED "\033[31m"
+#define COL_RED_BOLD "\033[1;31m"
+#define COL_GREEN "\033[32m"
+#define COL_BLUE "\033[34m"
+#define COL_PURPLE "\033[35m"
+#define COL_GRAY "\033[36m"
+#define COL_GRAY_LIGHT "\033[37m"
+#define COL_REST "\033[m"
 
 #define COL_4WAYHS COL_GRAY
 #define COL_4WAYKEY COL_PURPLE

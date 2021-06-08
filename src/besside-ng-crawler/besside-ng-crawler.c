@@ -332,8 +332,6 @@ static void process_directory(const char * dir, time_t begin)
 	DIR * curdir;
 	struct dirent * curent;
 	struct stat curstat;
-	char * fullname = NULL;
-	size_t fullname_size = 0;
 
 	stats_dirs++;
 
@@ -356,13 +354,13 @@ static void process_directory(const char * dir, time_t begin)
 			continue;
 		}
 
-		fullname_size = strlen(dir) + strlen(curent->d_name) + 2;
-		ALLEGE(fullname == NULL);
-		fullname = malloc(fullname_size);
+		size_t fullname_size = strlen(dir) + strlen(curent->d_name) + 2;
+		char * fullname = malloc(fullname_size);
 		ALLEGE(fullname != NULL);
-		strncpy(fullname, dir, strlen(dir) + 1);
-		strncat(fullname, "/", fullname_size - 1);
-		strncat(fullname, curent->d_name, fullname_size - 1);
+		ALLEGE(strlcpy(fullname, dir, fullname_size) < fullname_size);
+		ALLEGE(strlcat(fullname, "/", fullname_size) < fullname_size);
+		ALLEGE(strlcat(fullname, curent->d_name, fullname_size)
+			   < fullname_size);
 
 		if (stat(fullname, &curstat))
 		{
@@ -396,11 +394,8 @@ static void process_directory(const char * dir, time_t begin)
 		}
 
 		free(fullname);
-		fullname = NULL;
 		curent = readdir(curdir);
 	}
-
-	ALLEGE(fullname == NULL);
 
 	if (errno) perror("Reading directory failed");
 

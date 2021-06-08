@@ -17,6 +17,8 @@ struct WPA_hdsk
 	uint8_t found;
 	uint8_t eapol_source;
 	uint64_t replay;
+	int32_t tv_sec;
+	int32_t tv_usec;
 };
 
 #endif // _NET_EAPOL_H_

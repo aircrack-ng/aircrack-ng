@@ -37,6 +37,8 @@
 # If you delete this exception statement from all source files in the
 # program, then also delete it here.
 
+AM_MAKEFLAGS = --no-print-directory
+
 ACLOCAL_AMFLAGS = -I build/m4/stubs -I build/m4
 
 SUBDIRS =	manpages \

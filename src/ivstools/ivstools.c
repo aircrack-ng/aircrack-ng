@@ -208,7 +208,7 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 {
 	REQUIRE(h80211 != NULL);
 
-	int seq, clen;
+	int clen;
 	size_t dlen;
 	size_t i;
 	size_t n;
@@ -235,9 +235,6 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 	if ((h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_CTL)
 		return (FAILURE);
 
-	/* grab the sequence number */
-	seq = ((h80211[22] >> 4) + (h80211[23] << 4));
-
 	/* locate the access point's MAC address */
 
 	switch (h80211[1] & IEEE80211_FC1_DIR_MASK)
@@ -249,11 +246,9 @@ static int dump_add_packet(unsigned char * h80211, unsigned caplen)
 			memcpy(bssid, h80211 + 4, 6);
 			break; // ToDS
 		case IEEE80211_FC1_DIR_FROMDS:
-			memcpy(bssid, h80211 + 10, 6);
-			break; // FromDS
 		case IEEE80211_FC1_DIR_DSTODS:
 			memcpy(bssid, h80211 + 10, 6);
-			break; // WDS -> Transmitter taken as BSSID
+			break;
 	}
 
 	/* update our chained list of access points */
