@@ -1,0 +1,115 @@
+name: Linux CI
+
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+  workflow_run:
+    workflows: ["Style & Consistency"]
+    types:
+      - completed
+
+env:
+  LANG: en_US.UTF-8
+  TZ: UTC
+
+jobs:
+  ubuntu_20_04:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+
+    runs-on: ubuntu-20.04
+
+    strategy:
+      matrix:
+        # gcc: 7.5.0, 8.4.0, 9.3.0, 10.2.0
+        # clang: 8.0.1, 9.0.1, 10.0.0
+        compiler:
+          - cc:  gcc-10
+            cxx: g++-10
+          - cc:  gcc-9
+            cxx: g++-9
+          - cc:  gcc-8
+            cxx: g++-8
+          - cc:  gcc-7
+            cxx: g++-7
+          - cc:  clang-10
+            cxx: clang++-10
+          - cc:  clang-9
+            cxx: clang++-9
+          - cc:  clang-8
+            cxx: clang++-8
+        flags:
+          - name: Gcrypt
+            flags: "--with-gcrypt"
+          - name: OpenSSL
+            flags: ""
+
+    name: Ubuntu 20.04 ${{ matrix.compiler.cc }} using ${{ matrix.flags.name }}
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 750
+          submodules: 'recursive'
+
+      - uses: actions/cache@v2
+        id: cache
+        with:
+          path: |
+            /home/runner/.ccache
+          key: ${{ runner.os }}-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}-${{ hashFiles('.github/workflows/linux.yml') }}
+          restore-keys: ${{ runner.os }}-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get install autoconf automake build-essential ccache ethtool expect hostapd iw lcov libcmocka-dev libgcrypt20-dev libhwloc-dev libnl-3-dev libnl-genl-3-dev libpcap-dev libpcre3-dev libsqlite3-dev libssl-dev libtool pkg-config rfkill screen shtool tcpdump usbutils wpasupplicant zlib1g-dev
+
+      - name: Ccache stats before builds
+        run: |
+          ccache -s
+
+      - name: Build with ${{ matrix.compiler.cc }} using ${{ matrix.flags.name }}
+        env:
+          AM_COLOR_TESTS: always
+        run: |
+          CPUS=$(nproc)
+          export CC="ccache ${{ matrix.compiler.cc }}"
+          export CXX="ccache ${{ matrix.compiler.cxx }}"
+          echo "::group::make distclean"
+          make distclean || :
+          echo "::endgroup::"
+          echo "::group::autoreconf"
+          autoreconf -vif
+          echo "::endgroup::"
+          echo "::group::configure"
+          mkdir linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}
+          cd linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}
+          echo ">> Configure with $CC, $CXX, and ${{ matrix.flags.flags }}"
+          ../configure --without-opt --with-experimental --enable-maintainer-mode ${{ matrix.flags.flags }} || { cat config.log; exit 1; }
+          echo "::endgroup::"
+          echo "::group::build"
+          echo ">> Build using ${CPUS} jobs"
+          make -j ${CPUS}
+          echo "::endgroup::"
+          echo "::group::run tests"
+          make -j ${CPUS} check || { find . -name 'test-suite.log' -exec cat {} ';' && exit 1; }
+          echo "::endgroup::"
+          cd ..
+
+      - name: Ccache stats after builds
+        run: |
+          ccache -s
+
+      - name: Archive artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}
+          path: |
+            linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}
+            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/.deps
+            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/.dirstamp
+            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.a
+            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.la
+            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.lai
+            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.o
+            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.lo
