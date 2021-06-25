@@ -44,14 +44,14 @@ struct tip_darwin
 	int tf_fd;
 	int tf_ioctls;
 	struct ifreq tf_ifr;
-	char tf_name[MAX_IFACE_NAME];
+	char tf_name[IFNAMSIZ - 1];
 	int tf_destroy;
 };
 
 static int ti_do_open_darwin(struct tif * ti, char * name)
 {
 	int fd = -1;
-	char iface[12];
+	char iface[IFNAMSIZ];
 	struct stat st;
 	struct tip_darwin * priv = ti_priv(ti);
 	int s;
