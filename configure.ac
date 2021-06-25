@@ -37,6 +37,7 @@
 # If you delete this exception statement from all source files in the
 # program, then also delete it here.
 
+m4_pattern_allow([AC_VERSION])
 m4_define([version_date], "January 2020")
 m4_define([version_major], 1)
 m4_define([version_minor], 6)
@@ -230,7 +231,7 @@ LIBS="$opt_libs $LIBS"
 #
 AC_CONFIG_FILES([
 Makefile
-VERSION
+AC_VERSION
 
 include/aircrack-ng/version.h
 

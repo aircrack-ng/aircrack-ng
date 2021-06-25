@@ -65,7 +65,7 @@ bin_PROGRAMS =
 sbin_PROGRAMS =
 noinst_LTLIBRARIES =
 lib_LTLIBRARIES =
-EXTRA_DIST = VERSION
+EXTRA_DIST = AC_VERSION
 check_PROGRAMS =
 TESTS =
 INTEGRATION_TESTS =
@@ -104,4 +104,4 @@ clean-local: code-coverage-clean
 distclean-local: code-coverage-dist-clean
 
 dist-hook:
-	$(AM_V_GEN)echo $(VERSION) > $(distdir)/VERSION
+	$(AM_V_GEN)echo $(VERSION) > $(distdir)/AC_VERSION

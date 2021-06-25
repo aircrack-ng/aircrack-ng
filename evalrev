@@ -49,7 +49,7 @@ elif test -d "${DIR}/.svn"; then
         SCM="_r1"
     fi
 else
-    REVISION="$(cat ${DIR}/VERSION)"
+    REVISION="$(cat ${DIR}/AC_VERSION)"
 fi
 
 if test "x$CMD" = "xscm"; then
