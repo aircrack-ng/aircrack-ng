@@ -299,6 +299,15 @@ to your choosing:
     gmake
     ```
 
+  * Compiling on macOS running on M1/AARCH64 and Homebrew:
+
+    ```
+    autoreconf -vif
+    env CPPFLAGS="-Wno-deprecated-declarations" ./configure --with-experimental
+    make
+    make check
+    ```
+
   * Compiling on OS X 10.10 with XCode 7.1 and Homebrew:
 
     ```
