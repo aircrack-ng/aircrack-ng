@@ -22,12 +22,12 @@ jobs:
     strategy:
       matrix:
         compiler:
+          - cc:  gcc-11
+            cxx: g++-11
           - cc:  gcc-10
             cxx: g++-10
           - cc:  gcc-9
             cxx: g++-9
-          - cc:  gcc-8
-            cxx: g++-8
           #- cc:  clang-11     broken handling with version.h
           #  cxx: clang++-11
           - cc:  clang-12
