@@ -75,12 +75,14 @@ getRegister(const unsigned int val, const char from, const char to)
 	return (val & mask) >> from;
 }
 
+#ifdef _X86
 static void sprintcat(char * dest, const char * src, size_t len)
 {
 	if (strlen(dest) > 0) (void) strncat(dest, ",", len - strlen(dest) - 1);
 
 	(void) strncat(dest, src, len - strlen(dest) - 1);
 }
+#endif
 
 int is_dir(const char * dir)
 {
