@@ -75,7 +75,7 @@ getRegister(const unsigned int val, const char from, const char to)
 	return (val & mask) >> from;
 }
 
-#ifdef _X86
+#if defined(_X86) || (defined(__aarch64__) && !defined(HAS_AUXV))
 static void sprintcat(char * dest, const char * src, size_t len)
 {
 	if (strlen(dest) > 0) (void) strncat(dest, ",", len - strlen(dest) - 1);
@@ -144,6 +144,8 @@ int cpuid_simdsize(int viewmax)
 	if (hwcaps & (1 << 1)) // ASIMD
 		return 4;
 #endif
+#elif defined(__aarch64__) && !defined(HAS_AUXV)
+	return 4; // ASIMD is required on AARCH64
 #endif
 	(void) viewmax;
 
@@ -273,6 +275,8 @@ static char * cpuid_featureflags(void)
 	if ((hwcaps & (1 << 17)) || (hwcaps & (1 << 18)))
 		sprintcat((char *) &flags, "IDIV", sizeof(flags));
 #endif
+#elif defined(__aarch64__) && !defined(HAS_AUXV)
+	sprintcat((char *) &flags, "ASIMD", sizeof(flags));
 #endif
 	return strdup(flags);
 }
@@ -486,6 +490,8 @@ static char * cpuid_modelinfo(void)
 		snprintf(modelbuf, sizeof(modelbuf), "Unknown");
 
 	pm = modelbuf;
+#elif defined(__APPLE__) && defined(__aarch64__)
+	pm = "Apple M1";
 #endif
 
 	// Clean up the empty spaces in the model name on some intel's because they
