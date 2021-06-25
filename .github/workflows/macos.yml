@@ -20,6 +20,7 @@ jobs:
     runs-on: macos-latest
 
     strategy:
+      fail-fast: false
       matrix:
         compiler:
           - cc:  gcc-11
