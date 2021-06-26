@@ -129,7 +129,10 @@
 #if defined(fallthrough)
 #undef fallthrough
 #endif
-#if HAS_ATTRIBUTE(fallthrough)                                                 \
+#if defined(__GNUC__) && __GNUC__ >= 11 && !defined(__INTEL_COMPILER)       \
+		&& !defined(__llvm__) && !defined(__clang__)
+#define fallthrough __attribute__((fallthrough))
+#elif HAS_ATTRIBUTE(fallthrough)                                                 \
 	|| (defined(__GNUC__) && __GNUC__ >= 7 && !defined(__INTEL_COMPILER)       \
 		&& !defined(__llvm__)                                                  \
 		&& !defined(__clang__))
