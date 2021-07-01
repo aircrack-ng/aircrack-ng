@@ -444,5 +444,3 @@ Support is available in the [forum](https://forum.aircrack-ng.org) and on IRC (i
 Every tool has its own manpage. For aircrack-ng, `man aircrack-ng`
 
 # Infrastructure sponsors
-
-<img src="https://uploads-ssl.webflow.com/5ac3c046c82724970fc60918/5c019d917bba312af7553b49_MacStadium-developerlogo.png" alt="MacStadium" width="150" height="61">
