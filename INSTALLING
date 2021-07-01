@@ -371,9 +371,12 @@ We provide up to date versions via PackageCloud for a number of distrubutions:
 
 == Continous integration ==
 
-Travis (Linux/Mac): https://travis-ci.org/aircrack-ng/aircrack-ng
-AppVeyor: https://ci.appveyor.com/project/aircrack-ng/aircrack-ng
-Coverity Scan: https://scan.coverity.com/projects/aircrack-ng
+- Linux CI (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/linux.yml
+- Windows CI (Github actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/windows.yml
+- macOS CI (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/macos.yml
+- Code style and consistency (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/style.yml
+- PVS-Studio static analysis (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/pvs-studio.yml
+- Coverity Scan static analysis: https://scan.coverity.com/projects/aircrack-ng
 
 === Buildbots ===
 
