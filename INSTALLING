@@ -364,7 +364,7 @@ We provide up to date versions via PackageCloud for a number of distrubutions:
 
 === Windows ===
 
- * Install the appropriate "monitor" driver for your card; standard drivers doesn't work for capturing data.
+ * Install the appropriate "monitor" driver for your card; standard drivers don't work for capturing data.
  * Aircrack-ng suite is command line tools. So, you have to open a commandline
    `Start menu -> Run... -> cmd.exe` then use them
  * Run the executables without any parameters to have help
