@@ -277,7 +277,7 @@ static struct local_options
 
 static void resetSelection(void)
 {
-	lopt.sort_by = SORT_BY_POWER;
+	lopt.sort_by = SORT_BY_NOTHING;
 	lopt.sort_inv = 1;
 
 	lopt.relative_time = 0;
@@ -522,7 +522,10 @@ static THREAD_ENTRY(input_thread)
 
 		if (keycode == KEY_m)
 		{
-			lopt.mark_cur_ap = 1;
+			if (lopt.p_selected_ap != NULL)
+			{
+				lopt.mark_cur_ap = 1;
+			}
 		}
 
 		if (keycode == KEY_ARROW_DOWN)
@@ -1248,7 +1251,8 @@ static int dump_add_packet(unsigned char * h80211,
 
 	/* if it's a LLC null packet, just forget it (may change in the future) */
 
-	if (caplen > 28)
+	if (((h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_DATA)
+		&& (caplen > 28))
 		if (memcmp(h80211 + 24, llcnull, 4) == 0) return (0);
 
 	/* grab the sequence number */

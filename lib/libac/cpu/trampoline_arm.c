@@ -54,6 +54,8 @@ int simd_get_supported_features(void)
 		result |= SIMD_SUPPORTS_NEON;
 	}
 #endif
+#elif defined(__aarch64__) && !defined(HAS_AUXV)
+	result |= SIMD_SUPPORTS_ASIMD;
 #endif
 
 	return (result);

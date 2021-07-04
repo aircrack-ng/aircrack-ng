@@ -1,0 +1,130 @@
+name: PVS-Studio Analysis
+
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+  workflow_run:
+    workflows: ["Style & Consistency"]
+    types:
+      - completed
+
+env:
+  LANG: en_US.UTF-8
+  TZ: UTC
+
+jobs:
+  pvs_studio_analyzer:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+
+    name: PVS-Studio Static Analyzer
+
+    runs-on: ubuntu-20.04
+
+    env:
+      debfile: pvs-studio-7.13.48133.129-amd64.deb
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+
+      - name: Log and setup environment
+        run: |
+          mkdir -p pvs-package
+
+      - uses: actions/cache@v2
+        id: cache-pvs
+        with:
+          path: pvs-package
+          key: ${{ env.debfile }}
+
+      - name: Fetch PVS-Studio package
+        if: steps.cache-pvs.outputs.cache-hit != 'true'
+        run: wget "https://files.viva64.com/${debfile}" -O "pvs-package/pvs.deb"
+
+      - name: Install packages
+        run: |
+          set -xeu
+          sudo apt update -yqq
+          sudo apt-get -y --no-install-recommends install autoconf automake \
+            build-essential ccache ethtool expect hostapd iw lcov           \
+            libcmocka-dev libgcrypt20-dev libhwloc-dev libnl-3-dev          \
+            libnl-genl-3-dev libpcap-dev libpcre3-dev libsqlite3-dev        \
+            libssl-dev libtool pkg-config rfkill screen shtool strace       \
+            tcpdump usbutils wpasupplicant zlib1g-dev
+          sudo dpkg -i "pvs-package/pvs.deb"
+          pvs-studio-analyzer credentials                                   \
+            "${{ secrets.PvsStudioName }}" "${{ secrets.PvsStudioKey }}"
+
+      - name: Build
+        env:
+          AM_COLOR_TESTS: always
+        run: |
+          set -eu
+          CPUS=$(nproc)
+          export CC="gcc"
+          export CXX="g++"
+          echo "::group::make distclean"
+          make distclean || :
+          echo "::endgroup::"
+          echo "::group::autoreconf"
+          autoreconf -vif
+          echo "::endgroup::"
+          echo "::group::configure"
+          ./configure --without-opt       \
+                      --with-experimental \
+                      --enable-maintainer-mode || { cat config.log; exit 1; }
+          echo "::endgroup::"
+          echo "::group::build"
+          pvs-studio-analyzer trace -- make -j ${CPUS}
+          echo "::endgroup::"
+
+      - name: Analyze
+        run: |
+          set -xeu
+          log="pvs-analysis.log"
+          general_criteria="GA:1,2,3;64:1,2,3;OP:1,2,3"
+          stamp="$(date +'%Y-%m-%d_T%H%M')-${GITHUB_SHA:0:8}"
+          reportdir="pvs-report/pvs-report-${stamp}"
+          disable_warnings="V1032,V1042,V597"
+          mkdir -p "${reportdir}"
+          pvs-studio-analyzer analyze \
+            --ignore-ccache           \
+            -a "GA;OP;CS"             \
+            -s .pvs-suppress          \
+            -j "$(nproc)"             \
+            -o "${log}"
+          plog-converter              \
+            -p aircrack-ng            \
+            -v "${GITHUB_SHA:0:8}"    \
+            -a "${general_criteria}"  \
+            -d "${disable_warnings}"  \
+            -t fullhtml               \
+            -o "${reportdir}"         \
+            "${log}"
+          mv "${reportdir}/fullhtml" "${reportdir}/general"
+          plog-converter              \
+            -a "${general_criteria}"  \
+            -d "${disable_warnings}"  \
+            -t csv                    \
+            -o pvs-report.csv         \
+            "${log}"
+          cp -l pvs-report.csv "${reportdir}/general/"
+          pvs-studio-analyzer suppress                      \
+            -a "${general_criteria}"                        \
+            -o "${reportdir}/general/supressible-list.json" \
+            "${log}"
+
+      - name: Upload report
+        if: env.ACT != 'true'
+        uses: actions/upload-artifact@v2
+        with:
+          name: pvs-analysis-report
+          path: pvs-report
+
+      - name: Summarize report
+        env:
+          MAX_BUGS: 98
+        run: |
+          ./build/count-pvs-bugs.py pvs-report.csv "${MAX_BUGS}"

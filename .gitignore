@@ -118,3 +118,4 @@ coverage*.info
 /r*tr
 /r*tr-bad
 *~
+*.pidb

@@ -1888,7 +1888,6 @@ int main(int argc, char * argv[])
 				return (EXIT_SUCCESS);
 
 			case ':':
-				fallthrough;
 			default:
 				printf("\"%s --help\" for help.\n", argv[0]);
 		}

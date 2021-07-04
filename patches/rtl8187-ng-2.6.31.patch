@@ -1,0 +1,95 @@
+diff -ur rtl8187_linux_26.1010.0622.2006/beta-8187/r8187_core.c rtl8187_linux_26.1010.0622.2006.netdev/beta-8187/r8187_core.c
+--- rtl8187_linux_26.1010.0622.2006/beta-8187/r8187_core.c	2009-11-02 17:37:33.944878408 +0100
++++ rtl8187_linux_26.1010.0622.2006.netdev/beta-8187/r8187_core.c	2009-11-02 17:50:23.252287868 +0100
+@@ -1892,8 +1892,10 @@
+ 		priv->epromtype=EPROM_93c46;
+ 		DMESG("Reported EEPROM chip is a 93c46 (1Kbit)");
+ 	}
+-
+-	dev->get_stats = rtl8180_stats;
++
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,31)
++	dev->get_stats = rtl8180_stats;
++#endif
+ 
+ 	dev->dev_addr[0]=eprom_read(dev,MAC_ADR) & 0xff;
+ 	dev->dev_addr[1]=(eprom_read(dev,MAC_ADR) & 0xff00)>>8;
+@@ -2596,7 +2598,19 @@
+ /****************************************************************************
+      ---------------------------- USB_STUFF---------------------------
+ *****************************************************************************/
+-
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,31)
++static const struct net_device_ops rtl8180_netdev_ops = {
++	.ndo_open		= rtl8180_open,
++	.ndo_stop		= rtl8180_close,
++	.ndo_get_stats		= rtl8180_stats,
++	.ndo_tx_timeout		= tx_timeout,
++	.ndo_do_ioctl		= rtl8180_ioctl,
++	.ndo_set_multicast_list	= r8180_set_multicast,
++	.ndo_set_mac_address	= r8180_set_mac_adr,
++	//.ndo_start_xmit		= rtl8180_8023_hard_start_xmit,
++};
++#endif
+ 
+ static int __devinit rtl8187_usb_probe(struct usb_interface *intf,
+ 			 const struct usb_device_id *id)
+@@ -2620,16 +2634,20 @@
+ 	priv = ieee80211_priv_rtl7(dev);
+ 	priv->ieee80211 = netdev_priv(dev);
+ 
+-	priv->udev=udev;
+-
+-	dev->open = rtl8180_open;
+-	dev->stop = rtl8180_close;
+-	//dev->hard_start_xmit = rtl8180_8023_hard_start_xmit;
+-	dev->tx_timeout = tx_timeout;
+-	dev->wireless_handlers = &r8180_wx_handlers_def;
+-	dev->do_ioctl = rtl8180_ioctl;
+-	dev->set_multicast_list = r8180_set_multicast;
+-	dev->set_mac_address = r8180_set_mac_adr;
++	priv->udev=udev;
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,31)
++    dev->netdev_ops = &rtl8180_netdev_ops;
++#else
++	dev->open = rtl8180_open;
++	dev->stop = rtl8180_close;
++	//dev->hard_start_xmit = rtl8180_8023_hard_start_xmit;
++	dev->tx_timeout = tx_timeout;
++	dev->wireless_handlers = &r8180_wx_handlers_def;
++	dev->do_ioctl = rtl8180_ioctl;
++	dev->set_multicast_list = r8180_set_multicast;
++	dev->set_mac_address = r8180_set_mac_adr;
++#endif
+ #if WIRELESS_EXT >= 12
+ #if WIRELESS_EXT < 17
+ 	dev->get_wireless_stats = r8180_get_wireless_stats;
+diff -ur rtl8187_linux_26.1010.0622.2006/ieee80211/ieee80211_module.c rtl8187_linux_26.1010.0622.2006.netdev/ieee80211/ieee80211_module.c
+--- rtl8187_linux_26.1010.0622.2006/ieee80211/ieee80211_module.c	2009-11-02 17:37:33.954872206 +0100
++++ rtl8187_linux_26.1010.0622.2006.netdev/ieee80211/ieee80211_module.c	2009-11-02 17:39:50.322350883 +0100
+@@ -103,6 +103,11 @@
+ 		list_add_tail(&ieee->networks[i].list, &ieee->network_free_list);
+ }
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,31)
++static struct net_device_ops ieee80211_netdev_ops = {
++    .ndo_start_xmit = ieee80211_xmit_rtl7,
++};
++#endif
+ 
+ struct net_device *alloc_ieee80211_rtl7(int sizeof_priv)
+ {
+@@ -118,7 +123,11 @@
+ 		goto failed;
+ 	}
+ 	ieee = netdev_priv(dev);
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,31)
++    dev->netdev_ops = &ieee80211_netdev_ops;
++#else
+ 	dev->hard_start_xmit = ieee80211_xmit_rtl7;
++#endif
+ 
+ 	ieee->dev = dev;
+ 

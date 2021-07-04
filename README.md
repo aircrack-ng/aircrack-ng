@@ -1,7 +1,5 @@
 # Aircrack-ng
 
-[![Linux/Mac Build Status](https://travis-ci.org/aircrack-ng/aircrack-ng.svg?branch=master)](https://travis-ci.org/aircrack-ng/aircrack-ng)
-[![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/aircrack-ng/aircrack-ng?branch=master&svg=true)](https://ci.appveyor.com/project/aircrack-ng/aircrack-ng)
 [![Alpine Linux Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng-alpine.svg?left_text=Alpine%20Linux%20Build)](https://buildbot.aircrack-ng.org/)
 [![Kali Linux Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng-kali.svg?left_text=Kali%20Linux%20Build)](https://buildbot.aircrack-ng.org/)
 [![Armel Kali Linux Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng-armel.svg?left_text=Armel%20Kali%20Linux%20Build)](https://buildbot.aircrack-ng.org/)
@@ -23,7 +21,7 @@ It focuses on different areas of WiFi security:
  * Testing: Checking WiFi cards and driver capabilities (capture and injection).
  * Cracking: WEP and WPA PSK (WPA 1 and 2).
 
-All tools are command line which allows for heavy scripting. A lot of GUIs have taken advantage of this feature. It works primarily Linux but also Windows, OS X, FreeBSD, OpenBSD, NetBSD, as well as Solaris and even eComStation 2. 
+All tools are command line which allows for heavy scripting. A lot of GUIs have taken advantage of this feature. It works primarily on Linux but also Windows, macOS, FreeBSD, OpenBSD, NetBSD, as well as Solaris and even eComStation 2. 
 
 # Building
 
@@ -70,6 +68,10 @@ Below are instructions for installing the basic requirements to build
 
 ### Linux
 
+#### Arch Linux
+
+    sudo pacman -Sy base-devel libnl openssl ethtool util-linux zlib libpcap sqlite pcre hwloc cmocka hostapd wpa_supplicant tcpdump screen iw usbutils pciutils`
+
 #### Debian/Ubuntu
 
     sudo apt-get install build-essential autoconf automake libtool pkg-config libnl-3-dev libnl-genl-3-dev libssl-dev ethtool shtool rfkill zlib1g-dev libpcap-dev libsqlite3-dev libpcre3-dev libhwloc-dev libcmocka-dev hostapd wpasupplicant tcpdump screen iw usbutils
@@ -107,6 +109,12 @@ Below are instructions for installing the basic requirements to build
     sudo apk add gcc g++ make autoconf automake libtool libnl3-dev openssl-dev ethtool libpcap-dev cmocka-dev hostapd wpa_supplicant tcpdump screen iw pkgconf util-linux sqlite-dev pcre-dev linux-headers zlib-dev pciutils usbutils
 
 **Note**: Community repository needs to be enabled for iw
+
+#### Clear Linux
+
+    sudo swupd bundle-add c-basic devpkg-openssl devpkg-libgcrypt devpkg-libnl devpkg-hwloc devpkg-libpcap devpkg-pcre devpkg-sqlite-autoconf ethtool wget network-basic software-testing sysadmin-basic wpa_supplicant
+
+**Note**: hostapd must be compiled manually, it is not present in the repository
 
 ### BSD
 
@@ -289,6 +297,15 @@ to your choosing:
     gmake
     ```
 
+  * Compiling on macOS running on M1/AARCH64 and Homebrew:
+
+    ```
+    autoreconf -vif
+    env CPPFLAGS="-Wno-deprecated-declarations" ./configure --with-experimental
+    make
+    make check
+    ```
+
   * Compiling on OS X 10.10 with XCode 7.1 and Homebrew:
 
     ```
@@ -412,24 +429,55 @@ the additional flag `--without-opt` to the `./configure` line:
 # Using pre-compiled binaries
 
 ## Linux/BSD
- * Use your package manager to download aircrack-ng
- * In most cases, they have an old version.
+
+Aircrack-ng is available in most distributions repositories. However, it is not always up to date.
+
+We provide up to date versions via PackageCloud for a number of Linux distrubutions:
+
+- development (each commit in this repo): https://packagecloud.io/aircrack-ng/git
+- stable releases: https://packagecloud.io/aircrack-ng/release
 
 ## Windows
- * Install the appropriate "monitor" driver for your card (standard drivers doesn't work for capturing data).
- * aircrack-ng suite is command line tools. So, you have to open a command-line
+ * Install the appropriate "monitor" driver for your card; standard drivers don't work for capturing data.
+ * Aircrack-ng suite is command line tools. So, you have to open a command-line
    `Start menu -> Run... -> cmd.exe` then use them
  * Run the executables without any parameters to have help
 
+# Continous integration
+
+- Linux CI (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/linux.yml
+- Windows CI (Github actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/windows.yml
+- macOS CI (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/macos.yml
+- Code style and consistency (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/style.yml
+- PVS-Studio static analysis (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/pvs-studio.yml
+- Coverity Scan static analysis: https://scan.coverity.com/projects/aircrack-ng
+
+## Buildbots
+
+URL: https://buildbot.aircrack-ng.org/
+
+Linux buildbots:
+- CentOS
+- AArch64
+- Kali Linux
+- Armel Kali Linux
+- Armhf Kali Linux
+- Alpine Linux
+
+BSD buildbots:
+- OpenBSD
+- FreeBSD
+- NetBSD
+- DragonflyBSD
+
 # Documentation
 
+Some more information is present in the [README](README) file.
 
 Documentation, tutorials, ... can be found on https://aircrack-ng.org
 
-See also manpages and the forum.
+Support is available in the [forum](https://forum.aircrack-ng.org) and on IRC (in the channel #aircrack-ng in Freenode).
 
-For further information check the [README](README) file
+Every tool has its own manpage. For aircrack-ng, `man aircrack-ng`
 
 # Infrastructure sponsors
-
-<img src="https://uploads-ssl.webflow.com/5ac3c046c82724970fc60918/5c019d917bba312af7553b49_MacStadium-developerlogo.png" alt="MacStadium" width="150" height="61">

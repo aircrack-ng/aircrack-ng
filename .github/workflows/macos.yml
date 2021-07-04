@@ -1,0 +1,132 @@
+name: macOS CI
+
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+  workflow_run:
+    workflows: ["Style & Consistency"]
+    types:
+      - completed
+
+env:
+  LANG: en_US.UTF-8
+  TZ: UTC
+
+jobs:
+  macos:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+
+    runs-on: macos-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler:
+          - cc:  gcc-11
+            cxx: g++-11
+          - cc:  gcc-10
+            cxx: g++-10
+          - cc:  gcc-9
+            cxx: g++-9
+          #- cc:  clang-11     broken handling with version.h
+          #  cxx: clang++-11
+          - cc:  clang-12
+            cxx: clang++-12
+        flags:
+          - name: Gcrypt
+            flags: "--with-gcrypt"
+          - name: OpenSSL
+            flags: ""
+
+    name: macOS ${{ matrix.compiler.cc }} using ${{ matrix.flags.name }}
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 750
+          submodules: 'recursive'
+
+      - uses: actions/cache@v2
+        id: cache
+        with:
+          path: |
+            /Users/runner/Library/Caches/ccache
+            /Users/runner/Library/Preferences/ccache/ccache.conf
+          key: ${{ runner.os }}-macos-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}-${{ hashFiles('.github/workflows/macos.yml') }}
+          restore-keys: ${{ runner.os }}-macos-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}
+
+      - name: Install dependencies
+        run: |
+          brew install autoconf automake ccache cmocka expect hwloc libpcap libtool openssl pcre pkg-config sqlite3 shtool
+
+      - name: Ccache stats before builds
+        run: |
+          ccache -s
+
+      - name: Build with ${{ matrix.compiler.cc }} using ${{ matrix.flags.name }}
+        env:
+          AM_COLOR_TESTS: always
+        run: |
+          CPUS=$(($(sysctl -a | grep machdep.cpu.cores_per_package | awk '{ print $2 }') * 3 / 2))
+          export PATH="/usr/local/opt/ccache/libexec:$PATH"
+          case "${{ matrix.compiler.cc }}" in
+            clang-12)
+              CC=clang
+              CXX=clang++
+              export CFLAGS="-Wno-zero-length-array"
+              export CXXFLAGS="-Wno-zero-length-array"
+              ;;
+            clang-11)
+              CC=$(brew --prefix llvm)/bin/clang
+              CXX=$(brew --prefix llvm)/bin/clang++
+              export CFLAGS="-Wno-zero-length-array"
+              export CXXFLAGS="-Wno-zero-length-array"
+              ;;
+            *)
+              CC=${{ matrix.compiler.cc }}
+              CXX=${{ matrix.compiler.cxx }}
+              export CFLAGS="-Werror -Wno-unused-result -Wno-incompatible-library-redeclaration"
+              export CXXFLAGS="-Werror -Wno-unused-result -Wno-incompatible-library-redeclaration"
+              ;;
+          esac
+          export CC="ccache $CC"
+          export CXX="ccache $CXX"
+          echo "::group::make distclean"
+          make distclean || :
+          echo "::endgroup::"
+          echo "::group::autoreconf"
+          autoreconf -vif
+          echo "::endgroup::"
+          echo "::group::configure"
+          mkdir macos-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}
+          cd macos-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}
+          echo ">> Configure with $CC, $CXX, and ${{ matrix.flags.flags }}"
+          ../configure --without-opt --with-experimental --enable-maintainer-mode ${{ matrix.flags.flags }} || { cat config.log; exit 1; }
+          echo "::endgroup::"
+          echo "::group::build"
+          echo ">> Build using ${CPUS} jobs"
+          make -j ${CPUS}
+          echo "::endgroup::"
+          echo "::group::run tests"
+          make -j ${CPUS} check || { find . -name 'test-suite.log' -exec cat {} ';' && exit 1; }
+          echo "::endgroup::"
+          cd ..
+
+      - name: Ccache stats after builds
+        run: |
+          ccache -s
+
+      - name: Archive artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: macos-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}
+          path: |
+            macos-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}
+            !macos-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/.deps
+            !macos-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/.dirstamp
+            !macos-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.a
+            !macos-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.la
+            !macos-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.lai
+            !macos-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.o
+            !macos-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.lo

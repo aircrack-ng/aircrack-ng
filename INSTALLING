@@ -43,6 +43,10 @@ Note: CMocka, tcpdump, screen, HostAPd and WPA Supplicant should not be dependen
 
 ==== Linux ====
 
+===== Arch Linux =====
+
+    `sudo pacman -Sy base-devel libnl openssl ethtool util-linux zlib libpcap sqlite pcre hwloc cmocka hostapd wpa_supplicant tcpdump screen iw usbutils pciutils`
+
 ===== Debian/Ubuntu =====
 
     `sudo apt-get install build-essential autoconf automake libtool pkg-config libnl-3-dev libnl-genl-3-dev libssl-dev ethtool shtool rfkill zlib1g-dev libpcap-dev libsqlite3-dev libpcre3-dev libhwloc-dev libcmocka-dev hostapd wpasupplicant tcpdump screen iw usbutils`
@@ -80,6 +84,12 @@ Note: autoconf, automake, libtool, and pkgconfig in the repositories are too old
     `sudo apk add gcc g++ make autoconf automake libtool libnl3-dev openssl-dev ethtool libpcap-dev cmocka-dev hostapd wpa_supplicant tcpdump screen iw pkgconf util-linux sqlite-dev pcre-dev linux-headers zlib-dev pciutils usbutils`
 
 Note: Community repository needs to be enabled for iw
+
+==== Clear Linux ====
+
+    `sudo swupd bundle-add c-basic devpkg-openssl devpkg-libnl devpkg-hwloc devpkg-libpcap devpkg-pcre devpkg-sqlite-autoconf ethtool wget network-basic software-testing sysadmin-basic wpa_supplicant`
+
+Note: hostapd must be compiled manually, it is not present in the repository
 
 ==== BSD ====
 
@@ -255,6 +265,13 @@ to your choosing:
     `./configure --with-experimental`
     `gmake`
 
+  * Compiling on macOS running on M1/AARCH64 and Homebrew:
+
+    `autoreconf -vif`
+    `env CPPFLAGS="-Wno-deprecated-declarations" ./configure --with-experimental`
+    `make`
+    `make check`
+
   * Compiling on OS X 10.10 with XCode 7.1 and Homebrew:
 
     `env CC=gcc-4.9 CXX=g++-4.9 ./configure`
@@ -338,37 +355,53 @@ the additional flag `--without-opt` to the `./configure` line:
 
 === Linux/BSD ===
 
-* Use your package manager to download aircrack-ng
-* In most cases, they have an old version.
-* Packages (DEB and RPM) built from current git master are available on PackageCloud: https://packagecloud.io/aircrack-ng/git
+Aircrack-ng is available in most distributions repositories. However, it is not always up to date.
+
+We provide up to date versions via PackageCloud for a number of distrubutions:
+
+- development (each commit in this repo): https://packagecloud.io/aircrack-ng/git
+- stable releases: https://packagecloud.io/aircrack-ng/release
 
 === Windows ===
 
- * Install the appropriate "monitor" driver for your card (standard drivers doesn't work for capturing data).
- * aircrack-ng suite is command line tools. So, you have to open a commandline
+ * Install the appropriate "monitor" driver for your card; standard drivers don't work for capturing data.
+ * Aircrack-ng suite is command line tools. So, you have to open a commandline
    `Start menu -> Run... -> cmd.exe` then use them
  * Run the executables without any parameters to have help
 
 == Continous integration ==
 
-Travis (Linux/Mac): https://travis-ci.org/aircrack-ng/aircrack-ng
-AppVeyor: https://ci.appveyor.com/project/aircrack-ng/aircrack-ng
-Coverity Scan: https://scan.coverity.com/projects/aircrack-ng
+- Linux CI (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/linux.yml
+- Windows CI (Github actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/windows.yml
+- macOS CI (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/macos.yml
+- Code style and consistency (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/style.yml
+- PVS-Studio static analysis (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/pvs-studio.yml
+- Coverity Scan static analysis: https://scan.coverity.com/projects/aircrack-ng
 
 === Buildbots ===
 
 URL: https://buildbot.aircrack-ng.org/
 
-Current buildbots:
-- Intel Compiler
-- Alpine Linux
+Linux buildbots:
+- CentOS
+- AArch64
 - Kali Linux
 - Armel Kali Linux
 - Armhf Kali Linux
+- Alpine Linux
+
+BSD buildbots:
+- OpenBSD
 - FreeBSD
+- NetBSD
+- DragonflyBSD
 
 == Documentation ==
 
-Documentation, tutorials, ... can be found on https://www.aircrack-ng.org
+Some more information is present in the README file.
 
-See also manpages and the forum.
+Documentation, tutorials, ... can be found on https://aircrack-ng.org
+
+Support is available in the forum (https://forum.aircrack-ng.org) and on IRC (in the channel #aircrack-ng in Freenode).
+
+Every tool has its own manpage. For aircrack-ng, `man aircrack-ng`

@@ -94,8 +94,8 @@ typedef uint64x2_t vtype64;
 #define vor vorrq_u32
 #define vorn vornq_u32
 #define vroti_epi32(x, i)                                                      \
-	(i > 0 ? vsliq_n_u32(vshrq_n_u32(x, 32 - (i)), x, i)                       \
-		   : vsriq_n_u32(vshlq_n_u32(x, 32 + (i)), x, -(i)))
+	(i > 0 ? vsliq_n_u32(vshrq_n_u32(x, (32 - ((i)&31))&31), x, (i)&31)        \
+	       : vsriq_n_u32(vshlq_n_u32(x, (32 + ((i)&31))&31), x, -(i)&31))
 #define vroti_epi64(x, i)                                                      \
 	(i > 0 ? (vtype) vsliq_n_u64(                                              \
 				 vshrq_n_u64((vtype64)(x), 64 - (i)), (vtype64)(x), i)         \

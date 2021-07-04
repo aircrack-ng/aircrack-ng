@@ -1,0 +1,71 @@
+name: "Style & Consistency"
+
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+  push:
+    branches: [ master ]
+    paths-ignore:
+      - contrib/**
+      - manpages/**
+      - patches/**
+
+  pull_request:
+    branches: [ master ]
+    paths-ignore:
+      - contrib/**
+      - manpages/**
+      - patches/**
+
+env:
+  LANG: en_US.UTF-8
+  TZ: UTC
+
+jobs:
+  clang_format:
+    runs-on: ubuntu-18.04
+
+    name: Clang-Format
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install dependencies
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          CLANGURL: "https://releases.llvm.org/3.8.1/"
+          CLANGFILE: "clang+llvm-3.8.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz"
+        run: |
+          sudo apt-get install -y --no-install-recommends libtinfo5
+          wget "${CLANGURL}/${CLANGFILE}"
+          sudo tar -x --strip-components=1 -C /usr/local -J -f ${CLANGFILE}
+          rm -f ${CLANGFILE}
+
+      - name: Check source code formatting
+        run: |
+          # ensure our clang-format is first found
+          export PATH="/usr/local/bin:$PATH"
+
+          echo "::group::Process all source files with clang-format"
+          # check formatting matches clang-format-3.8. Since newer versions can
+          # have changes in formatting even without any rule changes, we have
+          # to fix on a single version.
+          . ./build/clang_format_all.sh
+
+          git clean -f
+          echo "::endgroup::"
+
+          # Print any diff here, so the error message below is the last thing
+          git diff
+
+          set -e && git diff --quiet || (
+            echo "***************************************************";
+            echo "*** The code is not clean against clang-format  ***";
+            echo "*** Please run clang-format-3.8 and fix the     ***";
+            echo "*** differences then rebase/squash them into    ***";
+            echo "*** the relevant commits. Do not add a commit   ***";
+            echo "*** for just formatting fixes. Thanks!          ***";
+            echo "***************************************************";
+            exit 1;
+          )

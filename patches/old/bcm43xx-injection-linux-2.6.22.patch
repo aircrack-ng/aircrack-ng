@@ -1,0 +1,100 @@
+--- linux-source-2.6.22/drivers/net/wireless/bcm43xx/bcm43xx_main.c	2007-10-08 10:14:25.000000000 +1300
++++ linux-source-2.6.22-bcm43xx-patch/drivers/net/wireless/bcm43xx/bcm43xx_main.c	2007-10-08 10:13:12.000000000 +1300
+@@ -3324,9 +3324,17 @@
+ }
+ 
+ /* This is the opposite of bcm43xx_init_board() */
++
++static ssize_t bcm43xx_inject_nofcs(struct device *dev,
++                                    struct device_attribute *attr,
++                                    const char *buf,
++                                    size_t cnt);
++static DEVICE_ATTR(inject_nofcs, 0200,
++                   NULL, bcm43xx_inject_nofcs);
+ static void bcm43xx_free_board(struct bcm43xx_private *bcm)
+ {
+ 	bcm43xx_rng_exit(bcm);
++	device_remove_file(&bcm->pci_dev->dev, &dev_attr_inject_nofcs);
+ 	bcm43xx_sysfs_unregister(bcm);
+ 
+ 	mutex_lock(&(bcm)->mutex);
+@@ -3581,6 +3589,9 @@
+ 	return err;
+ }
+ 
++
++
++
+ static int bcm43xx_init_board(struct bcm43xx_private *bcm)
+ {
+ 	int err;
+@@ -3603,6 +3614,9 @@
+ 	err = bcm43xx_rng_init(bcm);
+ 	if (err)
+ 		goto err_sysfs_unreg;
++	err = device_create_file(&bcm->pci_dev->dev, &dev_attr_inject_nofcs);
++	if (err)
++		goto err_inject_if;
+ 	bcm43xx_periodic_tasks_setup(bcm);
+ 
+ 	/*FIXME: This should be handled by softmac instead. */
+@@ -3613,6 +3627,9 @@
+ 
+ 	return err;
+ 
++err_inject_if:
++	device_remove_file(&bcm->pci_dev->dev, &dev_attr_inject_nofcs);
++
+ err_sysfs_unreg:
+ 	bcm43xx_sysfs_unregister(bcm);
+ err_wlshutdown:
+@@ -3866,6 +3883,49 @@
+ 	return err;
+ }
+ 
++static ssize_t bcm43xx_inject_nofcs(struct device *dev,
++                                    struct device_attribute *attr,
++                                    const char *buf,
++                                    size_t cnt)
++{
++        struct bcm43xx_private *bcm = dev_to_bcm(dev);
++        struct ieee80211_txb *faketxb;
++        struct sk_buff *skb;
++        unsigned long flags;
++        int err = -ENODEV;
++
++        faketxb = kzalloc(sizeof(struct ieee80211_txb) + sizeof(void *), GFP_KERNEL);
++        if (!faketxb)
++                return -ENOMEM;
++        faketxb->nr_frags = 1;
++        faketxb->frag_size = cnt;
++        faketxb->payload_size = cnt;
++        skb = __dev_alloc_skb(cnt + bcm->ieee->tx_headroom, GFP_KERNEL);
++        if (!skb) {
++                kfree(faketxb);
++                return -ENOMEM;
++        }
++        skb_reserve(skb, bcm->ieee->tx_headroom);
++        memcpy(skb_put(skb, cnt), buf, cnt);
++        faketxb->fragments[0] = skb;
++	
++	spin_lock_irqsave(&bcm->irq_lock, flags);
++	
++	if (likely(bcm43xx_status(bcm) == BCM43xx_STAT_INITIALIZED))
++		err = bcm43xx_tx(bcm, faketxb);
++	
++	spin_unlock_irqrestore(&bcm->irq_lock, flags);
++
++	if (unlikely(err)) {
++                dev_kfree_skb(skb);
++                kfree(faketxb);
++                return err;
++        }
++
++        return cnt;
++}
++
++
+ static void bcm43xx_ieee80211_set_chan(struct net_device *net_dev,
+ 				       u8 channel)
+ {
