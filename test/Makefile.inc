@@ -216,8 +216,3 @@ if CMOCKA
 include %D%/unit/Makefile.inc
 endif
 include %D%/cryptounittest/Makefile.inc
-
-
-VALGRIND_SUPPRESSIONS_FILES = $(abs_srcdir)/build/valgrind.supp
-EXTRA_DIST += %D%/../build/valgrind.supp
-@VALGRIND_CHECK_RULES@

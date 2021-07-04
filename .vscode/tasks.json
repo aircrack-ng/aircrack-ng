@@ -1,0 +1,59 @@
+{
+	// See https://go.microsoft.com/fwlink/?LinkId=733558
+	// for the documentation about the tasks.json format
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build Incremental",
+			"type": "shell",
+			"command": "make -j6 && make -j6 check",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": "$gcc",
+			"promptOnClose": false,
+			"presentation": {
+				"echo": true,
+				"reveal": "silent",
+				"focus": false,
+				"panel": "dedicated",
+				"showReuseMessage": false,
+				"clear": false
+			}
+		},{
+			"label": "Build Full",
+			"type": "shell",
+			"command": "autoreconf -vif && env CC=clang-10 CXX=clang++-10 CPP=clang-cpp-10 CFLAGS=\"-Og -g\" CXXFLAGS=\"-Og -g\" ./configure --enable-maintainer-mode --with-experimental --without-opt && bear make -j6 && bear -a make -j6 check",
+			"group": "build",
+			"problemMatcher": "$gcc",
+			"promptOnClose": false,
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": true,
+				"panel": "dedicated",
+				"showReuseMessage": false,
+				"clear": true
+			}
+		},{
+			"label": "Test",
+			"type": "shell",
+			"command": "make -j6 check",
+			"group":{
+				"kind": "test",
+				"isDefault": true
+			},
+			"problemMatcher": "$gcc",
+			"promptOnClose": false,
+			"presentation": {
+				"echo": true,
+				"reveal": "silent",
+				"focus": false,
+				"panel": "dedicated",
+				"showReuseMessage": false,
+				"clear": false
+			}
+		}
+	]
+}
