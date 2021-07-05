@@ -1591,12 +1591,15 @@ skip_station:
 
 		st_cur->wpa.replay = replay_counter;
 
-		if (h80211[z + 99] == 0xdd) // RSN
+		if (h80211[z + 99] == IEEE80211_ELEMID_VENDOR)
 		{
-			if (h80211[z + 101] == 0x00 && h80211[z + 102] == 0x0f
-				&& h80211[z + 103] == 0xac) // OUI: IEEE8021
+			const uint8_t rsn_oui[] = {
+				RSN_OUI & 0xff, (RSN_OUI >> 8) & 0xff, (RSN_OUI >> 16) & 0xff};
+
+			if (memcmp(rsn_oui, &h80211[z + 101], 3) == 0
+				&& h80211[z + 104] == RSN_CSE_CCMP)
 			{
-				if (h80211[z + 104] == 0x04) // OUI SUBTYPE
+				if (memcmp(ZERO, &h80211[z + 105], 16) != 0)
 				{
 					// Got a PMKID value?!
 					memcpy(st_cur->wpa.pmkid, &h80211[z + 105], 16);
