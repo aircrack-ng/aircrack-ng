@@ -33,7 +33,7 @@ All tools are command line which allows for heavy scripting. A lot of GUIs have 
  * shtool
  * OpenSSL development package or libgcrypt development package.
  * Airmon-ng (Linux) requires ethtool, usbutils, and often pciutils.
- * On windows, cygwin has to be used and it also requires w32api package.
+ * On Windows, cygwin has to be used and it also requires w32api package.
  * On Windows, if using clang, libiconv and libiconv-devel
  * Linux: LibNetlink 1 or 3. It can be disabled by passing --disable-libnl to configure.
  * pkg-config (pkgconf on FreeBSD)
@@ -130,7 +130,7 @@ Below are instructions for installing the basic requirements to build
 
     pkg_add pkgconf shtool libtool gcc automake autoconf pcre sqlite3 openssl gmake cmocka
 
-### OSX
+### macOS
 
 XCode, Xcode command line tools and HomeBrew are required.
 
@@ -432,7 +432,7 @@ the additional flag `--without-opt` to the `./configure` line:
 
 Aircrack-ng is available in most distributions repositories. However, it is not always up to date.
 
-We provide up to date versions via PackageCloud for a number of Linux distrubutions:
+We provide up to date versions via PackageCloud for a number of Linux distributions:
 
 - development (each commit in this repo): https://packagecloud.io/aircrack-ng/git
 - stable releases: https://packagecloud.io/aircrack-ng/release
@@ -443,7 +443,7 @@ We provide up to date versions via PackageCloud for a number of Linux distrubuti
    `Start menu -> Run... -> cmd.exe` then use them
  * Run the executables without any parameters to have help
 
-# Continous integration
+# Continuous integration
 
 - Linux CI (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/linux.yml
 - Windows CI (Github actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/windows.yml
