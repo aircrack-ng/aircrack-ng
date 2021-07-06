@@ -112,6 +112,16 @@ static char * db = NULL; ///-V707
 #define H16800_BSSID_LEN 12
 #define H16800_STMAC_LEN 12
 
+#define SECOND_TO_MICROSEC 1e6
+
+/** Maximum duration over all four messages used in EAPOL 802.1x
+ *  authentication. Value must be in microseconds.
+ */
+static const uint64_t eapol_max_fourway_timeout = 5 * SECOND_TO_MICROSEC;
+/** Maximum duration between each of the four messages used in
+ *  EAPOL 802.1x authentication. Value must be in microseconds.
+ */
+static const uint64_t eapol_interframe_timeout = SECOND_TO_MICROSEC;
 /* stats global data */
 
 static volatile int wpa_cracked = 0;
@@ -1570,8 +1580,16 @@ skip_station:
 		return (1);
 	}
 
-	uint64_t replay_counter
+	const uint64_t now_us = pkh->tv_sec * SECOND_TO_MICROSEC + pkh->tv_usec;
+	const uint64_t replay_counter
 		= be64_to_cpu(get_unaligned((uint64_t *) (&h80211[z + 9])));
+
+	if (st_cur->wpa.timestamp_start_us > 0
+		&& now_us - st_cur->wpa.timestamp_start_us > eapol_max_fourway_timeout)
+	{
+		fprintf(stderr, "Resetting EAPOL Handshake decoder state.\n");
+		memset(&st_cur->wpa, 0, sizeof(struct WPA_hdsk));
+	}
 
 	/* frame 1: Pairwise == 1, Install == 0, Ack == 1, MIC == 0 */
 
@@ -1579,13 +1597,25 @@ skip_station:
 		&& (h80211[z + 6] & 0x80) != 0
 		&& (h80211[z + 5] & 0x01) == 0)
 	{
-		memcpy(st_cur->wpa.anonce, &h80211[z + 17], sizeof(st_cur->wpa.anonce));
-
-		st_cur->wpa.tv_sec = pkh->tv_sec;
-		st_cur->wpa.tv_usec = pkh->tv_usec;
+		if (st_cur->wpa.timestamp_start_us == 0)
+		{
+			st_cur->wpa.timestamp_start_us = now_us;
+			st_cur->wpa.timestamp_last_us = now_us;
+		}
+		INVARIANT(st_cur->wpa.timestamp_last_us
+				  >= st_cur->wpa.timestamp_start_us);
+		if (now_us - st_cur->wpa.timestamp_last_us > eapol_interframe_timeout)
+		{
+			// exceeds the inter-frame timeout period
+			memset(&st_cur->wpa, 0, sizeof(struct WPA_hdsk));
+			st_cur->wpa.timestamp_start_us = now_us;
+		}
+		// update last recv time.
+		st_cur->wpa.timestamp_last_us = now_us;
 
 		/* authenticator nonce set */
 		st_cur->wpa.state = 1;
+		memcpy(st_cur->wpa.anonce, &h80211[z + 17], sizeof(st_cur->wpa.anonce));
 
 		st_cur->wpa.found |= 1 << 1;
 
@@ -1617,18 +1647,25 @@ skip_station:
 		&& (h80211[z + 6] & 0x80) == 0
 		&& (h80211[z + 5] & 0x01) != 0)
 	{
-		if ((st_cur->wpa.found & (1 << 1)) == (1 << 1))
+		if (st_cur->wpa.timestamp_start_us == 0)
 		{
-			if (st_cur->wpa.tv_sec != 0
-				&& (pkh->tv_sec - st_cur->wpa.tv_sec) >= 5)
-			{
-				st_cur->wpa.state &= ~1;
-				st_cur->wpa.found &= ~(1 << 1);
-			}
+			st_cur->wpa.timestamp_start_us = now_us;
+			st_cur->wpa.timestamp_last_us = now_us;
 		}
-
-		st_cur->wpa.tv_sec = pkh->tv_sec;
-		st_cur->wpa.tv_usec = pkh->tv_usec;
+		INVARIANT(now_us > 0);
+		INVARIANT(st_cur->wpa.timestamp_start_us != 0);
+		INVARIANT(st_cur->wpa.timestamp_last_us != 0);
+		INVARIANT(st_cur->wpa.timestamp_last_us
+				  >= st_cur->wpa.timestamp_start_us);
+		if (now_us - st_cur->wpa.timestamp_last_us > eapol_interframe_timeout)
+		{
+			// exceeds the inter-frame timeout period
+			st_cur->wpa.found &= ~((1 << 4) | (1 << 2)); // unset M2 and M4
+			fprintf(stderr, "Inter-frame timeout period exceeded.\n");
+			return (1);
+		}
+		// update last recv time.
+		st_cur->wpa.timestamp_last_us = now_us;
 
 		if (st_cur->wpa.state == 0)
 		{
@@ -1709,17 +1746,24 @@ skip_station:
 		&& (h80211[z + 5] & 0x01) != 0
 		&& st_cur->wpa.replay < replay_counter)
 	{
-		if ((st_cur->wpa.found & (1 << 1 | 1 << 2)) != 0)
+		if (st_cur->wpa.timestamp_start_us == 0)
 		{
-			if (st_cur->wpa.tv_sec != 0
-				&& (pkh->tv_sec - st_cur->wpa.tv_sec) >= 5)
-			{
-				st_cur->wpa.state &= ~(1 | 2);
-				st_cur->wpa.found &= ~(1 << 1 | 1 << 2);
-			}
+			st_cur->wpa.timestamp_start_us = now_us;
+			st_cur->wpa.timestamp_last_us = now_us;
 		}
-		st_cur->wpa.tv_sec = pkh->tv_sec;
-		st_cur->wpa.tv_usec = pkh->tv_usec;
+		INVARIANT(st_cur->wpa.timestamp_start_us != 0);
+		INVARIANT(st_cur->wpa.timestamp_last_us != 0);
+		INVARIANT(st_cur->wpa.timestamp_last_us
+				  >= st_cur->wpa.timestamp_start_us);
+		if (now_us - st_cur->wpa.timestamp_last_us > eapol_interframe_timeout)
+		{
+			// exceeds the inter-frame timeout period
+			st_cur->wpa.found &= ~(1 << 3); // unset M3
+			fprintf(stderr, "Inter-frame timeout period exceeded.\n");
+			return (1);
+		}
+		// update last recv time.
+		st_cur->wpa.timestamp_last_us = now_us;
 
 		st_cur->wpa.found |= 1 << 3;
 		// Store M3 for comparison with M4.
@@ -6936,6 +6980,7 @@ int main(int argc, char * argv[])
 		fflush(stdout);
 	}
 
+	// NOTE: Reset internal logic used from CHECK, prior to full READ/PROCESS...
 	if (ap_cur != NULL)
 	{
 		if (ap_cur->uiv_root != NULL)
@@ -6948,6 +6993,20 @@ int main(int argc, char * argv[])
 		ap_cur->ivbuf_size = 0;
 
 		destroy(ap_cur->ivbuf, free);
+
+		// Destroy WPA struct in all stations of the selected AP
+		if (ap_cur->stations != NULL)
+		{
+			void * key = NULL;
+			struct ST_info * st_tmp = NULL;
+
+			while (c_avl_pick(ap_cur->stations, &key, (void **) &st_tmp) == 0)
+			{
+				INVARIANT(st_tmp != NULL);
+
+				memset(&st_tmp->wpa, 0, sizeof(struct WPA_hdsk));
+			}
+		}
 	}
 
 	do
