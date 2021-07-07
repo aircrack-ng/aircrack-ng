@@ -4,10 +4,19 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-  workflow_run:
-    workflows: ["Style & Consistency"]
-    types:
-      - completed
+  push:
+    branches: [ master ]
+    paths-ignore:
+      - contrib/**
+      - manpages/**
+      - patches/**
+
+  pull_request:
+    branches: [ master ]
+    paths-ignore:
+      - contrib/**
+      - manpages/**
+      - patches/**
 
 env:
   LANG: en_US.UTF-8
@@ -15,8 +24,6 @@ env:
 
 jobs:
   pvs_studio_analyzer:
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
-
     name: PVS-Studio Static Analyzer
 
     runs-on: ubuntu-20.04

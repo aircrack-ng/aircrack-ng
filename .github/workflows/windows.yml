@@ -4,10 +4,19 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-  workflow_run:
-    workflows: ["Style & Consistency"]
-    types:
-      - completed
+  push:
+    branches: [ master ]
+    paths-ignore:
+      - contrib/**
+      - manpages/**
+      - patches/**
+
+  pull_request:
+    branches: [ master ]
+    paths-ignore:
+      - contrib/**
+      - manpages/**
+      - patches/**
 
 env:
   CHERE_INVOKING: 1
@@ -16,8 +25,6 @@ env:
 
 jobs:
   cygwin_32bit:
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
-
     runs-on: windows-latest
 
     steps:
@@ -189,8 +196,6 @@ jobs:
             !32bit/**/*.obj
 
   cygwin_64bit:
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
-
     runs-on: windows-latest
 
     steps:
@@ -362,8 +367,6 @@ jobs:
             !64bit/**/*.obj
 
   gui:
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
-
     runs-on: windows-latest
 
     steps:
@@ -400,8 +403,6 @@ jobs:
             !gui/**/obj
 
   package:
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
-
     runs-on: windows-latest
     needs: [cygwin_32bit, cygwin_64bit, gui]
 
