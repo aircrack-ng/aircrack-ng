@@ -1629,7 +1629,7 @@ skip_station:
 			if (memcmp(rsn_oui, &h80211[z + 101], 3) == 0
 				&& h80211[z + 104] == RSN_CSE_CCMP)
 			{
-				if (memcmp(ZERO, &h80211[z + 105], 16) != 0)
+				if (memcmp(ZERO, &h80211[z + 105], 16) != 0) //-V512
 				{
 					// Got a PMKID value?!
 					memcpy(st_cur->wpa.pmkid, &h80211[z + 105], 16);
