@@ -394,6 +394,16 @@ static inline uintptr_t adds_uptr(uintptr_t a, uintptr_t b)
 	return (c);
 }
 
+/// Saturated subtraction for unsigned, 64-bit integers.
+static inline uint64_t subs_u64(uint64_t x, uint64_t y)
+{
+	uint64_t res = x - y;
+
+	res &= -(res <= x); //-V732
+
+	return (res);
+}
+
 #ifdef __cplusplus
 };
 #endif

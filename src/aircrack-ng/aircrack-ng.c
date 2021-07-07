@@ -1585,7 +1585,8 @@ skip_station:
 		= be64_to_cpu(get_unaligned((uint64_t *) (&h80211[z + 9])));
 
 	if (st_cur->wpa.timestamp_start_us > 0
-		&& now_us - st_cur->wpa.timestamp_start_us > eapol_max_fourway_timeout)
+		&& subs_u64(now_us, st_cur->wpa.timestamp_start_us)
+			   > eapol_max_fourway_timeout)
 	{
 		fprintf(stderr, "Resetting EAPOL Handshake decoder state.\n");
 		memset(&st_cur->wpa, 0, sizeof(struct WPA_hdsk));
@@ -1602,9 +1603,8 @@ skip_station:
 			st_cur->wpa.timestamp_start_us = now_us;
 			st_cur->wpa.timestamp_last_us = now_us;
 		}
-		INVARIANT(st_cur->wpa.timestamp_last_us
-				  >= st_cur->wpa.timestamp_start_us);
-		if (now_us - st_cur->wpa.timestamp_last_us > eapol_interframe_timeout)
+		if (subs_u64(now_us, st_cur->wpa.timestamp_last_us)
+			> eapol_interframe_timeout)
 		{
 			// exceeds the inter-frame timeout period
 			memset(&st_cur->wpa, 0, sizeof(struct WPA_hdsk));
@@ -1655,9 +1655,8 @@ skip_station:
 		INVARIANT(now_us > 0);
 		INVARIANT(st_cur->wpa.timestamp_start_us != 0);
 		INVARIANT(st_cur->wpa.timestamp_last_us != 0);
-		INVARIANT(st_cur->wpa.timestamp_last_us
-				  >= st_cur->wpa.timestamp_start_us);
-		if (now_us - st_cur->wpa.timestamp_last_us > eapol_interframe_timeout)
+		if (subs_u64(now_us, st_cur->wpa.timestamp_last_us)
+			> eapol_interframe_timeout)
 		{
 			// exceeds the inter-frame timeout period
 			st_cur->wpa.found &= ~((1 << 4) | (1 << 2)); // unset M2 and M4
@@ -1751,11 +1750,9 @@ skip_station:
 			st_cur->wpa.timestamp_start_us = now_us;
 			st_cur->wpa.timestamp_last_us = now_us;
 		}
-		INVARIANT(st_cur->wpa.timestamp_start_us != 0);
 		INVARIANT(st_cur->wpa.timestamp_last_us != 0);
-		INVARIANT(st_cur->wpa.timestamp_last_us
-				  >= st_cur->wpa.timestamp_start_us);
-		if (now_us - st_cur->wpa.timestamp_last_us > eapol_interframe_timeout)
+		if (subs_u64(now_us, st_cur->wpa.timestamp_last_us)
+			> eapol_interframe_timeout)
 		{
 			// exceeds the inter-frame timeout period
 			st_cur->wpa.found &= ~(1 << 3); // unset M3
