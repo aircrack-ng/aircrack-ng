@@ -4983,7 +4983,8 @@ static int next_key(char ** key, int keysize)
 
 			while (i < keysize && hex != NULL)
 			{
-				if (strlen(hex) > 2 || strlen(hex) == 0)
+				const size_t hex_len = strlen(hex);
+				if (hex_len == 0 || hex_len > 2)
 				{
 					rtn = 1;
 					break;
