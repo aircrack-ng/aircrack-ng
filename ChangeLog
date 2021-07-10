@@ -4,6 +4,10 @@ Version 1.7 (changes from aircrack-ng 1.6) - Released XX XXX 2021:
 * Airodump-ng: Fixed blank encryption field when APs have TKIP (and/or CCMP) with WPA2
 * Airodump-ng: Updated encryption filter (-t/--encrypt) for WPA3 and OWE
 * Airodump-ng: Fixed out-of-order timestamp captures
+* Airodump-ng: Ignore NULL PMKID
+* Airodump-ng: Fixed dropping management frames with zeroed timestamp
+* Airodump-ng: Fixed sorting where sometimes it started with a different field
+* Airodump-ng: Allow setting colors only in AP selection mode
 * Airgraph-ng: Fixed graphviz package conflict
 * Airgraph-ng: Fixed downloading OUI with python3
 * Airgraph-ng: Ensure support/ directory is created when installing
@@ -12,6 +16,8 @@ Version 1.7 (changes from aircrack-ng 1.6) - Released XX XXX 2021:
 * Aircrack-ng: Handle timeout when parsing EAPOL
 * Aircrack-ng: Fixed WEP display
 * Aircrack-ng: Fixed spurious EXIT messages
+* Aircrack-ng: Improved handshake selection by fixing EAPOL timing and clearing state
+* Aircrack-ng: Ignore NULL PMKID
 * Airmon-ng: Fix avahi killing
 * Airmon-ng: rewrite service stopping entirely
 * Airmon-ng: Codestyle fixes and code cleanup
@@ -21,21 +27,27 @@ Version 1.7 (changes from aircrack-ng 1.6) - Released XX XXX 2021:
 * Airmon-ng: Remove broken KVM detection
 * Airmon-ng: Show regdomain in verbose mode
 * OSdep: Search additional IE for channel information
+* Patches: Add missing patches that were on https://patches.aircrack-ng.org but not in repo
 * Autotools: make dist now creates VERSION file
 * Autotools: Added maintainer mode
 * Autotools: Initial support for Link Time Optimization (LTO) builds 
 * Integration tests: Added a new test, and improved some existing ones
-* Travis CI: Updates and fixes
-* AppVeyor (CI): Updates and fixes
 * Manpages: Fixes (typos, tools name, etc.) and improvements
+* README: Updated dependencies and their installation on various distros in README.md and INSTALLING
+* README: Fixed typos and spelling in README.md and INSTALLING
+* General: Updated buildbots
+* General: Compilation fixes on macOS with the Apple M1 CPU
+* General: Removed TravisCI and AppVeyor
+* General: Use Github Actions for CI (Linux, Win, macOS, code style, and PVS-Studio)
+* General: Added vscode devcontainer and documentation
 * General: Fix warnings from PVS-Studio and build with pedantic (See PR2174)
 * General: Shell script fixes thanks to shellcheck
-* General: Fixes for a clean GCC 10 build
+* General: Fixes for GCC 10 and 11
 * General: Fixed cross-compilation
 * General: Code refactoring, deduplication, cleanup, and misc code improvements
 * General: Coverity Scan fixes, which includes memory leaks, race conditions, division by 0, and other issues
 * General: Code formatting/style fixes
-* General: Updated dependencies and their installation on various distros in README.md and INSTALLING
+* General: Various fixes and improvements (code, CI, integration tests, coverity)
 
 Version 1.6 (changes from aircrack-ng 1.5.2) - Released 25 Jan 2020:
 * Aircrack-ng: Added support for MidnightBSD
