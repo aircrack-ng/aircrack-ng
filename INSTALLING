@@ -197,7 +197,7 @@ to your choosing:
 
 * with-ext-scripts: needed to build `airoscript-ng`, `versuck-ng`, `airgraph-ng` and 
                    `airdrop-ng`. 
-                   Note: Each script has its own dependencies.
+                   Note: Each script has its own dependencies. For example you can use airoscript-ng for external plugins like thc-hydra (http://www.thc.org/thc-hydra/) or john the ripper (https://www.openwall.com/john/).
 
 * with-gcrypt:   Use libgcrypt crypto library instead of the default OpenSSL.
                 And also use internal fast sha1 implementation (borrowed from GIT)
