@@ -80,6 +80,11 @@ typedef uint16_t u_int16_t; //-V677
 typedef uint8_t u_int8_t; //-V677
 #endif
 
+#if defined(__UCLIBC__)
+#include <asm/byteorder.h>
+
+#define AIRCRACK_NG_BYTE_ORDER_DEFINED
+#endif
 #endif
 
 /*
