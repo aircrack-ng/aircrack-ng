@@ -5910,7 +5910,10 @@ int main(int argc, char * argv[])
 	int old = 0;
 	char essid[ESSID_LENGTH + 1];
 	int restore_session = 0;
+#if defined(__i386__) || defined(__x86_64__) || defined(__arm__)               \
+	|| defined(__aarch64__)
 	int in_use_simdsize = 0;
+#endif
 	int nbarg = argc;
 	access_points = c_avl_create(station_compare);
 	targets = c_avl_create(station_compare);
