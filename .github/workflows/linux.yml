@@ -66,6 +66,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          sudo apt update
           sudo apt-get install autoconf automake build-essential ccache ethtool expect hostapd iw lcov libcmocka-dev libgcrypt20-dev libhwloc-dev libnl-3-dev libnl-genl-3-dev libpcap-dev libpcre3-dev libsqlite3-dev libssl-dev libtool pkg-config rfkill screen shtool tcpdump usbutils wpasupplicant zlib1g-dev
 
       - name: Ccache stats before builds
