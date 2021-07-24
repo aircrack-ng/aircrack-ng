@@ -116,11 +116,11 @@ if !HAVE_HWLOC
 CPUSET = %D%/libac/cpu/cpuset_pthread.c
 endif
 
-if !HAVE_STRLCAT
+if INCLUDE_COMPAT_STRLCAT
 SRC_LIBAC += %D%/libac/support/strlcat.c
 endif
 
-if !HAVE_STRLCPY
+if INCLUDE_COMPAT_STRLCPY
 SRC_LIBAC += %D%/libac/support/strlcpy.c
 endif
 
