@@ -48,6 +48,8 @@
  * There's ABSOLUTELY NO WARRANTY, express or implied.
  */
 
+#define _POSIX_C_SOURCE 200112L
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
