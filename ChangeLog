@@ -8,24 +8,31 @@ Version 1.7 (changes from aircrack-ng 1.6) - Released XX XXX 2021:
 * Airodump-ng: Fixed dropping management frames with zeroed timestamp
 * Airodump-ng: Fixed sorting where sometimes it started with a different field
 * Airodump-ng: Allow setting colors only in AP selection mode
+* Airodump-ng: Fix crash on 4K Linux console 
 * Airgraph-ng: Fixed graphviz package conflict
 * Airgraph-ng: Fixed downloading OUI with python3
 * Airgraph-ng: Ensure support/ directory is created when installing
 * Aircrack-ng: Fixed static compilation
-* Aircrack-ng: Fix replay counter logic
+* Aircrack-ng: Fix handshake replay counter logic
 * Aircrack-ng: Handle timeout when parsing EAPOL
 * Aircrack-ng: Fixed WEP display
 * Aircrack-ng: Fixed spurious EXIT messages
 * Aircrack-ng: Improved handshake selection by fixing EAPOL timing and clearing state
 * Aircrack-ng: Ignore NULL PMKID
+* Aircrack-ng: Added Apple M1 detection
+* Aireplay-ng: In test mode, detect tampering of sequence number by firmware/driver
+* Aireplay-ng: Fixed incorrectly rewritten loops affecting fragmentation attack, and in some cases, SKA fake auth
+* Aireplay-ng: Fixed a bunch of instances where packets had their duration updated instead of the sequence number
 * Airmon-ng: Fix avahi killing
 * Airmon-ng: rewrite service stopping entirely
 * Airmon-ng: Codestyle fixes and code cleanup
-* Airmon-ng: Added a few Raspberry Pi hardware revisions 
+* Airmon-ng: Added a few Raspberry Pi hardware revisions
 * Airmon-ng: Fixes for 8812au driver
 * Airmon-ng: Fix iwlwifi firmware formatting
 * Airmon-ng: Remove broken KVM detection
 * Airmon-ng: Show regdomain in verbose mode
+* Airmon-ng: Updated Raspberry Pi hardware revisions
+* Besside-ng: Support and detect all channels in 5GHz in Auto-Channel mode
 * OSdep: Search additional IE for channel information
 * Patches: Add missing patches that were on https://patches.aircrack-ng.org but not in repo
 * Autotools: make dist now creates VERSION file
@@ -36,6 +43,7 @@ Version 1.7 (changes from aircrack-ng 1.6) - Released XX XXX 2021:
 * README: Updated dependencies and their installation on various distros in README.md and INSTALLING
 * README: Fixed typos and spelling in README.md and INSTALLING
 * General: Updated buildbots
+* General: Add Linux uclibc support
 * General: Compilation fixes on macOS with the Apple M1 CPU
 * General: Removed TravisCI and AppVeyor
 * General: Use Github Actions for CI (Linux, Win, macOS, code style, and PVS-Studio)
@@ -48,6 +56,7 @@ Version 1.7 (changes from aircrack-ng 1.6) - Released XX XXX 2021:
 * General: Coverity Scan fixes, which includes memory leaks, race conditions, division by 0, and other issues
 * General: Code formatting/style fixes
 * General: Various fixes and improvements (code, CI, integration tests, coverity)
+* General: Updated Linux distro list for PackageCloud.io
 
 Version 1.6 (changes from aircrack-ng 1.5.2) - Released 25 Jan 2020:
 * Aircrack-ng: Added support for MidnightBSD
