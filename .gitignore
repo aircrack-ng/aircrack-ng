@@ -101,6 +101,7 @@ coverage*.info
 /GSYMS
 /GTAGS
 /VERSION
+/AC_VERSION
 /aminclude_static.am
 /config.h
 /config.h.in
