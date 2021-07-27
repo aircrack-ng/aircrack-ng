@@ -944,7 +944,8 @@ static int packet_xmit_external(unsigned char * packet,
  * @param[in,out] length Length of the 'flags' buffer. It gets updated if the tag is removed
  * @return 0 on success, 1 on error/failure
  */
-static int remove_tag(unsigned char * flags, unsigned char type, int * length)
+static int
+remove_tag(unsigned char * flags, const unsigned char type, int * length)
 {
 	REQUIRE(length != NULL);
 
@@ -1009,8 +1010,8 @@ static int remove_tag(unsigned char * flags, unsigned char type, int * length)
  * are typically ordered by tag
  */
 static unsigned char * parse_tags(unsigned char * flags,
-								  unsigned char type,
-								  int length,
+								  const unsigned char type,
+								  const int length,
 								  size_t * taglen)
 {
 	int cur_type = 0, cur_len = 0, len = 0;
@@ -1053,7 +1054,7 @@ static unsigned char * parse_tags(unsigned char * flags,
  * @return 0 on success, 1 on error/failure
  */
 static int
-wpa_client(struct ST_info * st_cur, const unsigned char * tag, int length)
+wpa_client(struct ST_info * st_cur, const unsigned char * tag, const int length)
 {
 	if (tag == NULL) return (1);
 
