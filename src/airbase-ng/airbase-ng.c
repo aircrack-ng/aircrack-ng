@@ -1060,6 +1060,8 @@ wpa_client(struct ST_info * st_cur, const unsigned char * tag, const int length)
 
 	if (st_cur == NULL) return (1);
 
+	if (length <= 0) return (1);
+
 	if (tag[0] != IEEE80211_ELEMID_VENDOR
 		&& tag[0] != IEEE80211_ELEMID_RSN) // wpa1 or wpa2
 		return (1);
