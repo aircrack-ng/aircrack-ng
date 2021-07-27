@@ -2072,7 +2072,7 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 	else if ((packet[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_MGT)
 	{
 		// react on management frames
-		// probe request -> send probe response if essid matches. if brodcast
+		// probe request -> send probe response if essid matches. if broadcast
 		// probe, ignore it.
 		if ((packet[0] & IEEE80211_FC0_SUBTYPE_MASK)
 			== IEEE80211_FC0_SUBTYPE_PROBE_REQ)
