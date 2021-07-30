@@ -1459,6 +1459,8 @@ int decrypt_ccmp(unsigned char * h80211,
 	unsigned char PN[6], AAD[32];
 	AES_KEY aes_ctx;
 
+	memset(&aes_ctx, 0, sizeof(aes_ctx));
+
 	is_a4 = (h80211[1] & 3) == 3;
 	is_qos = (h80211[0] & 0x8C) == 0x88;
 	z = 24 + 6 * is_a4;
