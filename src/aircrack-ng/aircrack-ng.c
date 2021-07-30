@@ -2461,7 +2461,8 @@ static THREAD_ENTRY(crack_wep_thread)
 
 		q = (uint8_t)(3 + B);
 
-		memcpy(K + 3, wep.key, (size_t) B);
+		if (B > 0 && (size_t) B < sizeof(wep.key) - 3)
+			memcpy(K + 3, wep.key, (size_t) B);
 		memset(votes, 0, sizeof(votes));
 
 		/* START: KoreK attacks */
