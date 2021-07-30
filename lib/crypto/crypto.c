@@ -83,6 +83,7 @@ encrypt_wep(unsigned char * data, int len, unsigned char * key, int keylen)
 {
 	RC4_KEY S;
 
+	memset(&S, 0, sizeof(S));
 	RC4_set_key(&S, keylen, key);
 	RC4(&S, (size_t) len, data, data);
 
