@@ -36,6 +36,8 @@
 #include "config.h"
 #endif
 
+#define _GNU_SOURCE
+#include <err.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -252,39 +254,44 @@ char * getVersion(const char * progname,
 	{
 		len += strlen(rev);
 	}
-	char * ret = (char *) calloc(1, len);
-	if (ret == NULL)
-	{
-		perror("calloc()");
-		exit(1);
-	}
+	char *ret = NULL, *tmp = NULL;
 
 	// Major, minor version
-	snprintf(ret, len, "%s %u.%u", progname, maj, min);
+	int res = asprintf(&ret, "%s %u.%u", progname, maj, min);
+	if (res < 0) errx(EXIT_FAILURE, "asprintf failed to allocate");
 
 	// Sub-minor
 	if (submin > 0)
 	{
-		snprintf(ret + strlen(ret), len - strlen(ret), ".%u", submin);
+		res = asprintf(&tmp, "%s.%u", ret, submin);
+		if (res < 0) errx(EXIT_FAILURE, "asprintf failed to allocate");
+		free(ret); // free previous
+		ret = tmp; // keep new
 	}
 
 	// Release candidate ...
 	if (rc > 0)
 	{
-		snprintf(ret + strlen(ret), len - strlen(ret), " rc%u", rc);
+		res = asprintf(&tmp, "%s rc%u", ret, rc);
+		if (res < 0) errx(EXIT_FAILURE, "asprintf failed to allocate");
+		free(ret); // free previous
+		ret = tmp; // keep new
 	}
 	else if (beta > 0)
 	{ // ... Or beta
-		snprintf(ret + strlen(ret), len - strlen(ret), " beta%u", beta);
+		res = asprintf(&tmp, "%s beta%u", ret, beta);
+		if (res < 0) errx(EXIT_FAILURE, "asprintf failed to allocate");
+		free(ret); // free previous
+		ret = tmp; // keep new
 	}
 
 	// Add revision if it comes from subversion or git
 	if (rev)
 	{
-		char * tmp = strdup(rev);
-		ALLEGE(tmp != NULL);
+		char * rev_tmp = strdup(rev);
+		ALLEGE(rev_tmp != NULL);
 
-		char * sep = strstr(tmp, "_");
+		char * sep = strchr(rev_tmp, '_');
 		if (sep)
 		{
 			++sep;
@@ -300,14 +307,14 @@ char * getVersion(const char * progname,
 			search[3] = ' ';
 		}
 
-		snprintf(
-			ret + strlen(ret), len - strlen(ret), " %s", search ? search : sep);
-		free(tmp);
+		res = asprintf(&tmp, "%s %s", ret, search ? search : sep);
+		if (res < 0) errx(EXIT_FAILURE, "asprintf failed to allocate");
+		free(ret); // free previous
+		ret = tmp; // keep new
+		free(rev_tmp); // free buffer modified for display to end-user
 	}
 
-	// Shorten buffer if possible
-	char * r_ret = realloc(ret, strlen(ret) + 1);
-	return (r_ret) ? r_ret : ret;
+	return (ret);
 }
 
 // Return the number of cpu. If detection fails, it will return -1;
