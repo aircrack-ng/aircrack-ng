@@ -2482,11 +2482,11 @@ static THREAD_ENTRY(crack_wep_thread)
 
 			memcpy(K, &wep.ivbuf[xv], 3); //-V512
 
-			INVARIANT(q < sizeof(K));
+			INVARIANT((size_t) q < sizeof(K));
 			for (i = j = 0; i < q; i++)
 			{
-				INVARIANT(i < sizeof(K));
-				INVARIANT(i < sizeof(S));
+				INVARIANT((size_t) i < sizeof(K));
+				INVARIANT((size_t) i < sizeof(S));
 
 				jj[i] = (uint8_t)((j + S[i] + K[i]) & 0xFF);
 				j = (j + S[i] + K[i]) & 0xFF;
