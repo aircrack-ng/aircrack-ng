@@ -848,7 +848,9 @@ int michael_test(unsigned char key[static 8],
 	return (memcmp(mic.mic, out, 8) == 0);
 }
 
-int calc_tkip_mic_key(unsigned char * packet, int length, unsigned char key[static 8])
+int calc_tkip_mic_key(unsigned char * packet,
+					  int length,
+					  unsigned char key[static 8])
 {
 	REQUIRE(packet != NULL);
 
@@ -1220,7 +1222,9 @@ static int calc_tkip_mic_skip_eiv(unsigned char * packet,
 	return (0);
 }
 
-void encrypt_tkip(unsigned char * h80211, int caplen, unsigned char ptk[static 80])
+void encrypt_tkip(unsigned char * h80211,
+				  int caplen,
+				  unsigned char ptk[static 80])
 {
 	REQUIRE(h80211 != NULL);
 
@@ -1255,7 +1259,9 @@ void encrypt_tkip(unsigned char * h80211, int caplen, unsigned char ptk[static 8
 	decrypt_wep(h80211 + z + 8, caplen - z - 8, K, 16);
 }
 
-int decrypt_tkip(unsigned char * h80211, int caplen, unsigned char TK1[static 16])
+int decrypt_tkip(unsigned char * h80211,
+				 int caplen,
+				 unsigned char TK1[static 16])
 {
 	REQUIRE(h80211 != NULL);
 
@@ -1438,7 +1444,9 @@ int encrypt_ccmp(unsigned char * h80211,
 	return (z + 8 + data_len + 8);
 }
 
-int decrypt_ccmp(unsigned char * h80211, int caplen, unsigned char TK1[static 16])
+int decrypt_ccmp(unsigned char * h80211,
+				 int caplen,
+				 unsigned char TK1[static 16])
 {
 	REQUIRE(h80211 != NULL);
 
