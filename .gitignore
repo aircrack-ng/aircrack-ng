@@ -120,3 +120,4 @@ coverage*.info
 /r*tr-bad
 *~
 *.pidb
+/.vscode/settings.json
