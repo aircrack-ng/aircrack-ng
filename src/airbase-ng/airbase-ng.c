@@ -938,53 +938,66 @@ static int packet_xmit_external(unsigned char * packet,
 }
 
 /**
- * @brief Remove a certain Information Element (aka tag) from a frame
- * @param[in,out] flags Buffer containing IEs, starting at an IE
- * @param[in] type tag number to remove. See enum containing IEEE80211_ELEMID_ items in ieee80211.h
- * @param[in,out] length Length of the 'flags' buffer. It gets updated if the tag is removed
+ * @brief Remove specific Information Element(s) (aka tag) from a frame.
+ *        Handle when multiple tags with the same number exist.
+ * @param[in,out] tagged_params Buffer containing IEs, starting at an IE
+ * @param[in] exclude_tag_id tag number to remove. See enum containing IEEE80211_ELEMID_ items in ieee80211.h
+ * @param[in,out] tp_length Length of the 'flags' buffer. It gets updated if the tag is removed
  * @return 0 on success, 1 on error/failure
  */
-static int
-remove_tag(unsigned char * flags, const unsigned char type, int * length)
+static int remove_tag(uint8_t * tagged_params, const uint8_t exclude_tag_id, size_t * tp_length)
 {
-	REQUIRE(length != NULL);
+	REQUIRE(tagged_params != NULL);
+	REQUIRE(tp_length != NULL);
 
-	int cur_type = 0, cur_len = 0, len = 0;
-	unsigned char * pos;
-	unsigned char buffer[4096];
+	size_t dst_pos = 0, src_pos = 0;
+	uint8_t cur_tag_id;
+	uint8_t cur_tag_length;
+	size_t cur_tag_total_len;
 
-	if (*length < 2) return (1);
+	if (tagged_params == NULL) return (1);
 
-	if (flags == NULL) return (1);
+	if (*tp_length == 0) return (1);
 
-	pos = flags;
-
-	do
+	while (src_pos < *tp_length)
 	{
-		cur_type = pos[0];
-		cur_len = pos[1];
+		// Handle the case when frame is malformed ...
+		if (src_pos + 2 > *tp_length) break;
 
-		if (len + 2 + cur_len > *length) return (1);
+		// Grab tag id and its length
+		cur_tag_id = tagged_params[src_pos];
+		cur_tag_length = tagged_params[src_pos + 1];
 
-		if (cur_type == type)
-		{
-			if (cur_len > 0 && (pos - flags + cur_len + 2) <= *length)
-			{
-				memcpy(buffer,
-					   pos + 2 + cur_len,
-					   *length - ((pos + 2 + cur_len) - flags));
-				memcpy(pos, buffer, *length - ((pos + 2 + cur_len) - flags));
-				*length = *length - 2 - cur_len;
-				return (0);
-			}
-			else
-				return (1);
+		cur_tag_total_len = cur_tag_length + 2;
+
+		// Now validate the frame is still valid and we have enough buffer
+		if (src_pos + cur_tag_total_len > *tp_length) break;
+
+		// If we skipped 1+ tag, then we need to move this tag
+		if (src_pos != dst_pos) {
+			// memmove tag by tag, there might be multiple instances of the tag to exclude
+			memmove(tagged_params + dst_pos, tagged_params + src_pos, cur_tag_total_len);
 		}
-		pos += cur_len + 2;
-		len += cur_len + 2;
-	} while (len + 2 <= *length);
 
-	return (0);
+		// Compute new positions
+		src_pos += cur_tag_total_len;
+		if (cur_tag_id != exclude_tag_id) {
+			dst_pos += cur_tag_total_len;
+		}
+	}
+
+	// In case something goes wrong in the parsing of a tag, move what's
+	// available so we don't leave frame in unknown state
+	const size_t avail_length = (*tp_length) - src_pos;
+	if (avail_length && tagged_params[src_pos] != exclude_tag_id && src_pos != dst_pos) {
+		memmove(tagged_params + dst_pos, tagged_params + src_pos, avail_length);
+		dst_pos += avail_length;
+	}
+
+	// Update length
+	*tp_length = dst_pos;
+
+	return (avail_length == 0);
 }
 
 /**
@@ -2590,7 +2603,7 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 
 			len = length - z - 6;
 			// Remove SSID
-			remove_tag(packet + z + 6, IEEE80211_ELEMID_SSID, (int *) &len);
+			remove_tag(packet + z + 6, IEEE80211_ELEMID_SSID, &len);
 			length = len + z + 6;
 
 			my_send_packet(packet, length);
