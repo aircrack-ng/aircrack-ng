@@ -2564,10 +2564,10 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 			// Set type/subtype depending on the frame received
 			if (!reasso)
 				packet[0]
-					= IEEE80211_FC0_TYPE_MGT | IEEE80211_FC0_SUBTYPE_ASSOC_REQ;
+					= IEEE80211_FC0_TYPE_MGT | IEEE80211_FC0_SUBTYPE_ASSOC_RESP;
 			else
 				packet[0] = IEEE80211_FC0_TYPE_MGT
-							| IEEE80211_FC0_SUBTYPE_REASSOC_REQ;
+							| IEEE80211_FC0_SUBTYPE_REASSOC_RESP;
 
 			// Add the addresses
 			memcpy(packet + 4, smac, 6);
