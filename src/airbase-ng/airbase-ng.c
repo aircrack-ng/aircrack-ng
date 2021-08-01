@@ -945,7 +945,9 @@ static int packet_xmit_external(unsigned char * packet,
  * @param[in,out] tp_length Length of the 'flags' buffer. It gets updated if the tag is removed
  * @return 0 on success, 1 on error/failure
  */
-static int remove_tag(uint8_t * tagged_params, const uint8_t exclude_tag_id, size_t * tp_length)
+static int remove_tag(uint8_t * tagged_params,
+					  const uint8_t exclude_tag_id,
+					  size_t * tp_length)
 {
 	REQUIRE(tagged_params != NULL);
 	REQUIRE(tp_length != NULL);
@@ -974,14 +976,18 @@ static int remove_tag(uint8_t * tagged_params, const uint8_t exclude_tag_id, siz
 		if (src_pos + cur_tag_total_len > *tp_length) break;
 
 		// If we skipped 1+ tag, then we need to move this tag
-		if (src_pos != dst_pos) {
+		if (src_pos != dst_pos)
+		{
 			// memmove tag by tag, there might be multiple instances of the tag to exclude
-			memmove(tagged_params + dst_pos, tagged_params + src_pos, cur_tag_total_len);
+			memmove(tagged_params + dst_pos,
+					tagged_params + src_pos,
+					cur_tag_total_len);
 		}
 
 		// Compute new positions
 		src_pos += cur_tag_total_len;
-		if (cur_tag_id != exclude_tag_id) {
+		if (cur_tag_id != exclude_tag_id)
+		{
 			dst_pos += cur_tag_total_len;
 		}
 	}
@@ -989,7 +995,9 @@ static int remove_tag(uint8_t * tagged_params, const uint8_t exclude_tag_id, siz
 	// In case something goes wrong in the parsing of a tag, move what's
 	// available so we don't leave frame in unknown state
 	const size_t avail_length = (*tp_length) - src_pos;
-	if (avail_length && tagged_params[src_pos] != exclude_tag_id && src_pos != dst_pos) {
+	if (avail_length && tagged_params[src_pos] != exclude_tag_id
+		&& src_pos != dst_pos)
+	{
 		memmove(tagged_params + dst_pos, tagged_params + src_pos, avail_length);
 		dst_pos += avail_length;
 	}
