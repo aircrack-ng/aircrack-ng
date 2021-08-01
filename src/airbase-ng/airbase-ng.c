@@ -2602,8 +2602,20 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 			buffer = NULL;
 
 			len = length - z - 6;
+
 			// Remove SSID
 			remove_tag(packet + z + 6, IEEE80211_ELEMID_SSID, &len);
+
+			// Remove Supported Operating Classes (59)
+			remove_tag(packet + z + 6, 59, &len);
+
+			// Remove WPA tag (Vendor Specific) - It will also remove other vendor tags which aren't needed
+			remove_tag(packet + z + 6, IEEE80211_ELEMID_VENDOR, &len);
+
+			// Remove RSN tag
+			remove_tag(packet + z + 6, IEEE80211_ELEMID_RSN, &len);
+
+			// Recalculate length
 			length = len + z + 6;
 
 			my_send_packet(packet, length);
