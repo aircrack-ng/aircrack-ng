@@ -35,6 +35,7 @@ Version 1.7 (changes from aircrack-ng 1.6) - Released XX XXX 2021:
 * Besside-ng: Support and detect all channels in 5GHz in Auto-Channel mode
 * OSdep: Search additional IE for channel information
 * Patches: Add missing patches that were on https://patches.aircrack-ng.org but not in repo
+* Patches: Updated freeradius-wpe patch for v3.0.23
 * Autotools: make dist now creates VERSION file
 * Autotools: Added maintainer mode
 * Autotools: Initial support for Link Time Optimization (LTO) builds 

@@ -32,11 +32,11 @@ apt-get install libsqlite3-dev libhiredis-dev libykclient-dev libyubikey-dev def
 Run the following commands:
 
 ```
-wget ftp://ftp.freeradius.org/pub/freeradius/freeradius-server-3.0.21.tar.bz2
-tar -xjf freeradius-server-3.0.21.tar.bz2
-cd freeradius-server-3.0.21/
-wget https://raw.githubusercontent.com/aircrack-ng/aircrack-ng/master/patches/wpe/freeradius-wpe/freeradius-wpe.patch
-patch -Np1 -i freeradius-wpe.patch
+wget ftp://ftp.freeradius.org/pub/freeradius/freeradius-server-3.0.23.tar.bz2
+tar -xjf freeradius-server-3.0.23.tar.bz2
+cd freeradius-server-3.0.23/
+wget https://raw.githubusercontent.com/aircrack-ng/aircrack-ng/master/patches/wpe/freeradius-wpe/freeradius-server-3.0.23-wpe.diff
+patch -Np1 -i freeradius-server-3.0.23-wpe.diff
 ./configure
 make
 make install
