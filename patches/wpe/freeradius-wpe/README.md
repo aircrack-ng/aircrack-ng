@@ -3,7 +3,7 @@
 Updated patch for FreeRadius 3.0.23
 
 More information about WPE can be found:
-http://www.willhackforsushi.com/?page_id=37
+https://www.willhackforsushi.com/?page_id=37
 
 Supported and tested EAP Types/Inner Authentication Methods (others may also work):
 * PEAP/PAP (OTP)
