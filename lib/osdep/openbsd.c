@@ -364,19 +364,19 @@ static int do_obsd_open(struct wif * wi, char * iface)
 
 	/* set iface up and promisc */
 	memset(&ifr, 0, sizeof(ifr));
-	strncpy(ifr.ifr_name, iface, IFNAMSIZ);
+	memcpy(ifr.ifr_name, iface, IFNAMSIZ);
 	if (ioctl(s, SIOCGIFFLAGS, &ifr) == -1) goto close_sock;
 
 	flags = ifr.ifr_flags;
 	flags |= IFF_UP | IFF_PROMISC;
 	memset(&ifr, 0, sizeof(ifr));
-	strncpy(ifr.ifr_name, iface, IFNAMSIZ);
+	memcpy(ifr.ifr_name, iface, IFNAMSIZ);
 	ifr.ifr_flags = flags & 0xffff;
 	if (ioctl(s, SIOCSIFFLAGS, &ifr) == -1) goto close_sock;
 
 	/* monitor mode */
 	memset(&ifmr, 0, sizeof(ifmr));
-	strncpy(ifmr.ifm_name, iface, IFNAMSIZ);
+	memcpy(ifmr.ifm_name, iface, IFNAMSIZ);
 	if (ioctl(s, SIOCGIFMEDIA, &ifmr) == -1) goto close_sock;
 
 	assert(ifmr.ifm_count != 0);
@@ -392,15 +392,15 @@ static int do_obsd_open(struct wif * wi, char * iface)
 	free(mwords);
 
 	memset(&ifr, 0, sizeof(ifr));
-	strncpy(ifr.ifr_name, iface, IFNAMSIZ);
+	memcpy(ifr.ifr_name, iface, IFNAMSIZ);
 	ifr.ifr_media = ifmr.ifm_current | IFM_IEEE80211_MONITOR;
 	if (ioctl(s, SIOCSIFMEDIA, &ifr) == -1) goto close_sock;
 
 	/* setup ifreq for chan that may be used in future */
-	strncpy(po->po_ireq.i_name, iface, IFNAMSIZ);
+	memcpy(po->po_ireq.i_name, iface, IFNAMSIZ);
 
 	/* same for ifreq [mac addr] */
-	strncpy(po->po_ifr.ifr_name, iface, IFNAMSIZ);
+	memcpy(po->po_ifr.ifr_name, iface, IFNAMSIZ);
 
 	/* open bpf */
 	for (i = 0; i < 256; i++)
@@ -421,7 +421,7 @@ static int do_obsd_open(struct wif * wi, char * iface)
 
 	if (ioctl(fd, BIOCSBLEN, &size) < 0) goto close_bpf;
 
-	strncpy(ifr.ifr_name, iface, IFNAMSIZ);
+	memcpy(ifr.ifr_name, iface, IFNAMSIZ);
 
 	if (ioctl(fd, BIOCSETIF, &ifr) < 0) goto close_bpf;
 
