@@ -2844,7 +2844,7 @@ static THREAD_ENTRY(beacon_thread)
 			if (!essid_len)
 			{
 				strncpy((char *) essid, "default", sizeof(essid) - 1);
-				essid_len = strlen("default");
+				essid_len = strlen("default"); //-V814
 			}
 
 			beacon_len = 0;

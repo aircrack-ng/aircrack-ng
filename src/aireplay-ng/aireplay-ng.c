@@ -61,6 +61,7 @@
 #include <time.h>
 #include <getopt.h>
 #include <assert.h>
+#include <math.h>
 
 #include <fcntl.h>
 #include <ctype.h>
@@ -574,7 +575,7 @@ static int do_attack_deauth(void)
 static int do_attack_fake_auth(void)
 {
 	time_t tt, tr;
-	struct timeval tv, tv2, tv3;
+	struct timeval tv, tv2 = {0}, tv3;
 
 	fd_set rfds;
 	int i, n, state, caplen, z;
@@ -4033,7 +4034,9 @@ static int do_attack_chopchop(void)
 	float const delta_tt = (float) (time(NULL) - tt);
 	printf("\nCompleted in %lds (%0.2f bytes/s)\n\n",
 		   (long) delta_tt,
-		   (delta_tt != 0 ? (float) ((pkh.caplen - 6 - 24) / delta_tt) : 0.f));
+		   (fabsf(delta_tt) >= __FLT_EPSILON__
+				? (float) ((pkh.caplen - 6 - 24) / delta_tt)
+				: 0.f));
 
 	return (0);
 }

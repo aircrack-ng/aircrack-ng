@@ -1958,7 +1958,7 @@ static int do_linux_open(struct wif * wi, char * iface)
 
 	/* check if newer athXraw interface available */
 
-	if ((strlen(iface) >= 4 && strlen(iface) <= 6)
+	if ((strlen(iface) >= 4 && strlen(iface) <= 6) //-V804
 		&& memcmp(iface, "ath", 3) == 0)
 	{
 		dev->drivertype = DT_MADWIFI;

@@ -604,9 +604,11 @@ static void batch_process(sqlite3 * db)
 
 // Verify an ESSID. Returns 1 if ESSID is invalid.
 // TODO More things to verify? Invalid chars?
-static int verify_essid(char * essid)
+static int verify_essid(char * const essid)
 {
-	return (essid == NULL || strlen(essid) < 1 || strlen(essid) > 32);
+	const size_t essid_len = strlen(essid);
+
+	return (essid == NULL || essid_len < 1 || essid_len > 32);
 }
 
 // sql function which checks a given ESSID
@@ -623,9 +625,11 @@ sql_verify_essid(sqlite3_context * context, int argc, sqlite3_value ** values)
 	sqlite3_result_int(context, verify_essid(essid));
 }
 
-static int verify_passwd(char * passwd)
+static int verify_passwd(char * const passwd)
 {
-	return (passwd == NULL || strlen(passwd) < 8 || strlen(passwd) > 63);
+	const size_t passwd_len = strlen(passwd);
+
+	return (passwd == NULL || passwd_len < 8 || passwd_len > 63);
 }
 
 static void

@@ -4278,6 +4278,7 @@ get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2)
 	unsigned char b[2];
 	unsigned char c[2];
 	int found = 0;
+	size_t oui_len;
 
 	if ((manuf = (char *) calloc(1, MANUF_SIZE * sizeof(char))) == NULL)
 	{
@@ -4286,6 +4287,7 @@ get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2)
 	}
 
 	snprintf(oui, sizeof(oui), "%02X:%02X:%02X", mac0, mac1, mac2);
+	oui_len = strlen(oui);
 
 	if (lopt.manufList != NULL)
 	{
@@ -4338,7 +4340,7 @@ get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2)
 							 b[1],
 							 c[0],
 							 c[1]);
-					found = !memcmp(temp, oui, strlen(oui));
+					found = !memcmp(temp, oui, oui_len);
 					if (found)
 					{
 						manuf_str = get_manufacturer_from_string(buffer);
@@ -5234,8 +5236,8 @@ static inline int invalid_frequency(int freq)
 
 static int getchannels(const char * optarg)
 {
-	unsigned int i = 0, chan_cur = 0, chan_first = 0, chan_last = 0,
-				 chan_max = 128, chan_remain = 0;
+	size_t i = 0, chan_cur = 0, chan_first = 0, chan_last = 0, chan_max = 128,
+		   chan_remain = 0;
 	char *optchan = NULL, *optc;
 	char * token = NULL;
 	int * tmp_channels;
@@ -5258,6 +5260,8 @@ static int getchannels(const char * optarg)
 	// split string in tokens, separated by ','
 	while ((token = strsep(&optchan, ",")) != NULL)
 	{
+		const size_t token_len = strlen(token);
+
 		// range defined?
 		if (strchr(token, '-') != NULL)
 		{
@@ -5265,7 +5269,7 @@ static int getchannels(const char * optarg)
 			if (strchr(token, '-') == strrchr(token, '-'))
 			{
 				// are there any illegal characters?
-				for (i = 0; i < strlen(token); i++)
+				for (i = 0; i < token_len; i++)
 				{
 					if (((token[i] < '0') || (token[i] > '9'))
 						&& (token[i] != '-'))
@@ -5276,7 +5280,7 @@ static int getchannels(const char * optarg)
 					}
 				}
 
-				if (sscanf(token, "%u-%u", &chan_first, &chan_last) != EOF)
+				if (sscanf(token, "%zu-%zu", &chan_first, &chan_last) != EOF)
 				{
 					if (chan_first > chan_last)
 					{
@@ -5310,7 +5314,7 @@ static int getchannels(const char * optarg)
 		else
 		{
 			// are there any illegal characters?
-			for (i = 0; i < strlen(token); i++)
+			for (i = 0; i < token_len; i++)
 			{
 				if ((token[i] < '0') || (token[i] > '9'))
 				{
@@ -5320,7 +5324,7 @@ static int getchannels(const char * optarg)
 				}
 			}
 
-			if (sscanf(token, "%u", &chan_cur) != EOF)
+			if (sscanf(token, "%zu", &chan_cur) != EOF)
 			{
 				if ((!invalid_channel(chan_cur)) && (chan_remain > 0))
 				{
@@ -5362,8 +5366,8 @@ static int getchannels(const char * optarg)
 
 static int getfrequencies(const char * optarg)
 {
-	unsigned int i = 0, freq_cur = 0, freq_first = 0, freq_last = 0,
-				 freq_max = 10000, freq_remain = 0;
+	size_t i = 0, freq_cur = 0, freq_first = 0, freq_last = 0, freq_max = 10000,
+		   freq_remain = 0;
 	char *optfreq = NULL, *optc;
 	char * token = NULL;
 	int * tmp_frequencies;
@@ -5386,6 +5390,8 @@ static int getfrequencies(const char * optarg)
 	// split string in tokens, separated by ','
 	while ((token = strsep(&optfreq, ",")) != NULL)
 	{
+		const size_t token_len = strlen(token);
+
 		// range defined?
 		if (strchr(token, '-') != NULL)
 		{
@@ -5393,7 +5399,7 @@ static int getfrequencies(const char * optarg)
 			if (strchr(token, '-') == strrchr(token, '-'))
 			{
 				// are there any illegal characters?
-				for (i = 0; i < strlen(token); i++)
+				for (i = 0; i < token_len; i++)
 				{
 					if ((token[i] < '0' || token[i] > '9') && (token[i] != '-'))
 					{
@@ -5403,7 +5409,7 @@ static int getfrequencies(const char * optarg)
 					}
 				}
 
-				if (sscanf(token, "%u-%u", &freq_first, &freq_last) != EOF)
+				if (sscanf(token, "%zu-%zu", &freq_first, &freq_last) != EOF)
 				{
 					if (freq_first > freq_last)
 					{
@@ -5437,7 +5443,7 @@ static int getfrequencies(const char * optarg)
 		else
 		{
 			// are there any illegal characters?
-			for (i = 0; i < strlen(token); i++)
+			for (i = 0; i < token_len; i++)
 			{
 				if ((token[i] < '0') || (token[i] > '9'))
 				{
@@ -5447,7 +5453,7 @@ static int getfrequencies(const char * optarg)
 				}
 			}
 
-			if (sscanf(token, "%u", &freq_cur) != EOF)
+			if (sscanf(token, "%zu", &freq_cur) != EOF)
 			{
 				if ((!invalid_frequency(freq_cur)) && (freq_remain > 0))
 				{
@@ -6199,7 +6205,7 @@ int main(int argc, char * argv[])
 				}
 				freq[0] = freq[1] = 0;
 
-				for (i = 0; i < (int) strlen(optarg); i++)
+				for (i = 0; i < (int) strlen(optarg); i++) //-V814
 				{
 					if (optarg[i] == 'a')
 						freq[1] = 1;

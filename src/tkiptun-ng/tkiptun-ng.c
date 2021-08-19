@@ -2135,7 +2135,7 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 		return (1);
 	}
 
-	n = pkh.caplen + 8 - 26 - 8;
+	n = pkh.caplen - 26;
 
 	if (fwrite(chopped + 26 + 8, n, 1, f_cap_out) != 1)
 	{
@@ -2562,7 +2562,7 @@ int main(int argc, char * argv[])
 			case 'p':
 
 				memset(lopt.psk, 0, sizeof(lopt.psk));
-				if (strlen(optarg) < 8 || strlen(optarg) > 63)
+				if (strlen(optarg) < 8 || strlen(optarg) > 63) //-V804
 				{
 					printf("PSK with invalid length specified [8-64].\n");
 					printf("\"%s --help\" for help.\n", argv[0]);

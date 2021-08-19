@@ -286,11 +286,12 @@ int dump_write_csv(struct AP_info * ap_1st,
 
 		if (ap_cur->key != NULL)
 		{
-			for (i = 0; i < (int) strlen(ap_cur->key); i++)
+			const int key_len = strlen(ap_cur->key);
+
+			for (i = 0; i < key_len; i++)
 			{
 				fprintf(opt.f_txt, "%02X", ap_cur->key[i]);
-				if (i < (int) (strlen(ap_cur->key) - 1))
-					fprintf(opt.f_txt, ":");
+				if (i < (key_len - 1)) fprintf(opt.f_txt, ":");
 			}
 		}
 
@@ -623,17 +624,18 @@ char * get_manufacturer_from_string(char * buffer)
 			// Did we stop at the manufacturer
 			if (*buffer_manuf != '\0')
 			{
+				const int buffer_manuf_len_minus_1 = strlen(buffer_manuf);
 
 				// First make sure there's no end of line
-				if (buffer_manuf[strlen(buffer_manuf) - 1] == '\n'
-					|| buffer_manuf[strlen(buffer_manuf) - 1] == '\r')
+				if (buffer_manuf[buffer_manuf_len_minus_1] == '\n'
+					|| buffer_manuf[buffer_manuf_len_minus_1] == '\r')
 				{
-					buffer_manuf[strlen(buffer_manuf) - 1] = '\0';
-					if (*buffer_manuf != '\0'
-						&& (buffer_manuf[strlen(buffer_manuf) - 1] == '\n'
-							|| buffer[strlen(buffer_manuf) - 1] == '\r'))
+					buffer_manuf[buffer_manuf_len_minus_1] = '\0';
+					if (buffer_manuf_len_minus_1 >= 1
+						&& (buffer_manuf[buffer_manuf_len_minus_1 - 1] == '\n'
+							|| buffer[buffer_manuf_len_minus_1 - 1] == '\r'))
 					{
-						buffer_manuf[strlen(buffer_manuf) - 1] = '\0';
+						buffer_manuf[buffer_manuf_len_minus_1 - 1] = '\0';
 					}
 				}
 				if (*buffer_manuf != '\0')
@@ -684,9 +686,11 @@ static int dump_write_kismet_netxml_client_info(struct ST_info * client,
 					   || memcmp(client->base->bssid, BROADCAST, 6) == 0);
 
 	strncpy(first_time, ctime(&client->tinit), TIME_STR_LENGTH - 1);
+	ENSURE(strlen(first_time) >= 1);
 	first_time[strlen(first_time) - 1] = 0; // remove new line
 
 	strncpy(last_time, ctime(&client->tlast), TIME_STR_LENGTH - 1);
+	ENSURE(strlen(last_time) >= 1);
 	last_time[strlen(last_time) - 1] = 0; // remove new line
 
 	fprintf(opt.f_kis_xml,
@@ -920,9 +924,11 @@ int dump_write_kismet_netxml(struct AP_info * ap_1st,
 
 		++network_number; // Network Number
 		strncpy(first_time, ctime(&ap_cur->tinit), TIME_STR_LENGTH - 1);
+		ENSURE(strlen(first_time) >= 1);
 		first_time[strlen(first_time) - 1] = 0; // remove new line
 
 		strncpy(last_time, ctime(&ap_cur->tlast), TIME_STR_LENGTH - 1);
+		ENSURE(strlen(last_time) >= 1);
 		last_time[strlen(last_time) - 1] = 0; // remove new line
 
 		fprintf(opt.f_kis_xml,
@@ -1184,9 +1190,11 @@ int dump_write_kismet_netxml(struct AP_info * ap_1st,
 
 			/* Write new network information */
 			strncpy(first_time, ctime(&st_cur->tinit), TIME_STR_LENGTH - 1);
+			ENSURE(strlen(first_time) >= 1);
 			first_time[strlen(first_time) - 1] = 0; // remove new line
 
 			strncpy(last_time, ctime(&st_cur->tlast), TIME_STR_LENGTH - 1);
+			ENSURE(strlen(last_time) >= 1);
 			last_time[strlen(last_time) - 1] = 0; // remove new line
 
 			fprintf(opt.f_kis_xml,

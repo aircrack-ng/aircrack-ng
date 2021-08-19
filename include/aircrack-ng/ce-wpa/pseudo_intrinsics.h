@@ -94,8 +94,8 @@ typedef uint64x2_t vtype64;
 #define vor vorrq_u32
 #define vorn vornq_u32
 #define vroti_epi32(x, i)                                                      \
-	(i > 0 ? vsliq_n_u32(vshrq_n_u32(x, (32 - ((i)&31))&31), x, (i)&31)        \
-	       : vsriq_n_u32(vshlq_n_u32(x, (32 + ((i)&31))&31), x, -(i)&31))
+	(i > 0 ? vsliq_n_u32(vshrq_n_u32(x, (32 - ((i) &31)) & 31), x, (i) &31)    \
+		   : vsriq_n_u32(vshlq_n_u32(x, (32 + ((i) &31)) & 31), x, -(i) &31))
 #define vroti_epi64(x, i)                                                      \
 	(i > 0 ? (vtype) vsliq_n_u64(                                              \
 				 vshrq_n_u64((vtype64)(x), 64 - (i)), (vtype64)(x), i)         \
@@ -370,7 +370,8 @@ typedef __m512i vtype;
 
 /* MIC lacks some intrinsics in AVX512F, thus needing emulation. */
 #if __MIC__
-#define _mm512_set1_epi8(x) _mm512_set1_epi32(x | x << 8 | x << 16 | x << 24)
+#define _mm512_set1_epi8(x)                                                    \
+	_mm512_set1_epi32((x) | (x) << 8 | (x) << 16 | (x) << 24)
 
 static inline __m512i _mm512_loadu_si512(void const * addr)
 {
