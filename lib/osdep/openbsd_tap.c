@@ -41,7 +41,7 @@ struct tip_obsd
 	int to_fd;
 	int to_ioctls;
 	struct ifreq to_ifr;
-	char to_name[MAX_IFACE_NAME];
+	char to_name[IFNAMSIZ];
 	int to_destroy;
 };
 
