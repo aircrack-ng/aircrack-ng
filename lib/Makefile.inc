@@ -64,10 +64,6 @@ if LIBGCRYPT
 SRC_CRYPTO	+=	%D%/crypto/sha1-git.c
 endif
 
-if X86
-SRC_CRYPTO	+=	%D%/crypto/sha1-sse2.S
-endif
-
 libaccrypto_la_SOURCES	= $(SRC_CRYPTO)
 libaccrypto_la_CFLAGS		= $(COMMON_CFLAGS) $(PCRE_CFLAGS)
 libaccrypto_la_LIBADD		= $(PCRE_LIBS) $(LIBAIRCRACK_OSDEP_LIBS) $(CRYPTO_LIBS)
@@ -259,7 +255,6 @@ EXTRA_DIST +=	%D%/ce-wep/uniqueiv.c \
 							%D%/cowpatty/cowpatty.c \
 							%D%/crypto/crypto.c \
 							%D%/crypto/sha1-git.c \
-							%D%/crypto/sha1-sse2.S \
 							%D%/libac/adt/avl_tree.c \
 							%D%/libac/adt/circular_buffer.c \
 							%D%/libac/adt/circular_queue.c \
