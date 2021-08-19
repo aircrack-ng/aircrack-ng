@@ -366,7 +366,7 @@ to your choosing:
    export AUTOCONF_VERSION=2.69
    export AUTOMAKE_VERSION=1.16
    autoreconf -i
-   env MAKE=gmake ./configure
+   env MAKE=gmake CC=cc CXX=c++ ./configure
    gmake
    ```
 
