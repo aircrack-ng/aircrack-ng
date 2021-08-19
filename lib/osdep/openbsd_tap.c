@@ -79,7 +79,7 @@ static int ti_do_open_obsd(struct tif * ti, char * name)
 	/* get flags */
 	ifr = &priv->to_ifr;
 	memset(ifr, 0, sizeof(*ifr));
-	snprintf(ifr->ifr_name, sizeof(ifr->ifr_name), "%s", priv->to_name);
+	memcpy(ifr->ifr_name, priv->to_name, sizeof(ifr->ifr_name));
 	if (ioctl(s, SIOCGIFFLAGS, ifr) == -1) goto err2;
 	flags = ifr->ifr_flags;
 
