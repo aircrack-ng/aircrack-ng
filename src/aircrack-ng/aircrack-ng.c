@@ -4262,6 +4262,8 @@ static __attribute__((noinline)) int next_dict(int nb)
 {
 	size_t tmpword = 0;
 
+	ALLEGE(nb >= 0);
+
 	ALLEGE(pthread_mutex_lock(&mx_dic) == 0);
 	if (opt.dict != NULL)
 	{
@@ -4269,11 +4271,6 @@ static __attribute__((noinline)) int next_dict(int nb)
 		opt.dict = NULL;
 	}
 	opt.nbdict = nb;
-	if (opt.dicts[opt.nbdict] == NULL)
-	{
-		ALLEGE(pthread_mutex_unlock(&mx_dic) == 0);
-		return (FAILURE);
-	}
 
 	while (opt.nbdict < MAX_DICTS && opt.dicts[opt.nbdict] != NULL)
 	{
@@ -5936,9 +5933,9 @@ int main(int argc, char * argv[])
 
 	rand_init();
 
-	memset(&mc_pipe[0][0], -1, sizeof(mc_pipe));
-	memset(&cm_pipe[0][0], -1, sizeof(cm_pipe));
-	memset(&bf_pipe[0][0], -1, sizeof(bf_pipe));
+	memset(mc_pipe, -1, sizeof(mc_pipe));
+	memset(cm_pipe, -1, sizeof(cm_pipe));
+	memset(bf_pipe, -1, sizeof(bf_pipe));
 
 #if DYNAMIC
 	// Load the best available shared library, or the user specified one.
