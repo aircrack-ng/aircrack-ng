@@ -42,7 +42,6 @@
 #include <net80211/ieee80211_crypto.h>
 #include <frame.h>
 #include <sys/timeout.h>
-#include <machine/intr.h>
 #undef _KERNEL
 #include <net80211/ieee80211_node.h>
 #include <net80211/ieee80211_ioctl.h>
