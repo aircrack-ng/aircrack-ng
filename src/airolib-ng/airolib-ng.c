@@ -606,9 +606,9 @@ static void batch_process(sqlite3 * db)
 // TODO More things to verify? Invalid chars?
 static int verify_essid(char * const essid)
 {
-	const size_t essid_len = strlen(essid);
+	const size_t essid_len = essid ? strlen(essid) : 0;
 
-	return (essid == NULL || essid_len < 1 || essid_len > 32);
+	return (essid_len < 1 || essid_len > 32);
 }
 
 // sql function which checks a given ESSID
