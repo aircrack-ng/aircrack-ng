@@ -627,9 +627,9 @@ sql_verify_essid(sqlite3_context * context, int argc, sqlite3_value ** values)
 
 static int verify_passwd(char * const passwd)
 {
-	const size_t passwd_len = strlen(passwd);
+	const size_t passwd_len = passwd ? strlen(passwd) : 0;
 
-	return (passwd == NULL || passwd_len < 8 || passwd_len > 63);
+	return (passwd_len < 8 || passwd_len > 63);
 }
 
 static void
