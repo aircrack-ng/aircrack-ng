@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-20.04
 
     env:
-      debfile: pvs-studio-7.14.50353.142-amd64.deb
+      debfile: pvs-studio-7.15.53134.163-amd64.deb
 
     steps:
       - uses: actions/checkout@v2
@@ -132,6 +132,6 @@ jobs:
 
       - name: Summarize report
         env:
-          MAX_BUGS: 98
+          MAX_BUGS: 69
         run: |
           ./build/count-pvs-bugs.py pvs-report.csv "${MAX_BUGS}"
