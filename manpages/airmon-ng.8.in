@@ -17,6 +17,9 @@ It can also list/kill programs that can interfere with the wireless card operati
 .I start <interface> [channel]
 Enable monitor mode on an interface (and specify a channel). Note: Madwifi-ng is a special case, \(aqstart\(aq has to be used on wifi interfaces and \(aqstop\(aq on ath interfaces.
 .TP
+.I start <interface> [frequency]
+Enable monitor mode on an interface (and specify a frequency in MHz). Note: Madwifi-ng is a special case, \(aqstart\(aq has to be used on wifi interfaces and \(aqstop\(aq on ath interfaces.
+.TP
 .I stop <interface>
 Disable monitor mode and go back to managed mode (except for madwifi-ng where it kills the ath VAP).
 .TP
