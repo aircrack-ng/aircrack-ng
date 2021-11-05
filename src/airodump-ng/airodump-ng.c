@@ -5701,9 +5701,9 @@ static int detect_frequencies(struct wif * wi)
 		}
 	}
 
-	// again for 5GHz channels
+	// again for 5GHz & 6GHz channels
 	start_freq = 4800;
-	end_freq = 6000;
+	end_freq = 7115;
 	for (freq = start_freq; freq <= end_freq; freq += 5)
 	{
 		if (wi_set_freq(wi, freq) == 0)
