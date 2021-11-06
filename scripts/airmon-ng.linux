@@ -718,6 +718,10 @@ stopMac80211Iface() {
 				if [ "${need_sta}" = "1" ]; then
 					IW_ERROR="$(iw phy ${PHYDEV} interface add ${1%mon} type station 2>&1)"
 					if [ -z "${IW_ERROR}" ]; then
+						# The sleep below is to deal with when udev renames the interface we just created
+						# except it does it just slow enough that this check was passing before it did it.
+						# I don't want to add long sleeps here, but there isn't another way to deal with it.
+						sleep 1
 						interface="${1%mon}"
 						if [ -d /sys/class/ieee80211/${PHYDEV}/device/net ]; then
 							for i in $(ls /sys/class/ieee80211/${PHYDEV}/device/net/); do
