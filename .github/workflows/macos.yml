@@ -81,20 +81,20 @@ jobs:
             clang-12)
               CC=clang
               CXX=clang++
-              export CFLAGS="-Wno-zero-length-array -Wno-deprecated-declarations"
-              export CXXFLAGS="-Wno-zero-length-array -Wno-deprecated-declarations"
+              export CFLAGS="-Wno-zero-length-array -Wno-error=deprecated-declarations"
+              export CXXFLAGS="-Wno-zero-length-array -Wno-error=deprecated-declarations"
               ;;
             clang-11)
               CC=$(brew --prefix llvm)/bin/clang
               CXX=$(brew --prefix llvm)/bin/clang++
-              export CFLAGS="-Wno-zero-length-array -Wno-deprecated-declarations"
-              export CXXFLAGS="-Wno-zero-length-array -Wno-deprecated-declarations"
+              export CFLAGS="-Wno-zero-length-array -Wno-error=deprecated-declarations"
+              export CXXFLAGS="-Wno-zero-length-array -Wno-error=deprecated-declarations"
               ;;
             *)
               CC=${{ matrix.compiler.cc }}
               CXX=${{ matrix.compiler.cxx }}
-              export CFLAGS="-Werror -Wno-unused-result -Wno-incompatible-library-redeclaration -Wno-deprecated-declarations"
-              export CXXFLAGS="-Werror -Wno-unused-result -Wno-incompatible-library-redeclaration -Wno-deprecated-declarations"
+              export CFLAGS="-Werror -Wno-unused-result -Wno-incompatible-library-redeclaration -Wno-error=deprecated-declarations"
+              export CXXFLAGS="-Werror -Wno-unused-result -Wno-incompatible-library-redeclaration -Wno-error=deprecated-declarations"
               ;;
           esac
           export CC="ccache $CC"
