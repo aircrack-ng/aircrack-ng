@@ -81,14 +81,14 @@ jobs:
             clang-12)
               CC=clang
               CXX=clang++
-              export CFLAGS="-Wno-zero-length-array"
-              export CXXFLAGS="-Wno-zero-length-array"
+              export CFLAGS="-Wno-zero-length-array -Wno-deprecated-declarations"
+              export CXXFLAGS="-Wno-zero-length-array -Wno-deprecated-declarations"
               ;;
             clang-11)
               CC=$(brew --prefix llvm)/bin/clang
               CXX=$(brew --prefix llvm)/bin/clang++
-              export CFLAGS="-Wno-zero-length-array"
-              export CXXFLAGS="-Wno-zero-length-array"
+              export CFLAGS="-Wno-zero-length-array -Wno-deprecated-declarations"
+              export CXXFLAGS="-Wno-zero-length-array -Wno-deprecated-declarations"
               ;;
             *)
               CC=${{ matrix.compiler.cc }}
