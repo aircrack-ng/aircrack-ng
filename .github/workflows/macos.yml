@@ -93,8 +93,8 @@ jobs:
             *)
               CC=${{ matrix.compiler.cc }}
               CXX=${{ matrix.compiler.cxx }}
-              export CFLAGS="-Werror -Wno-unused-result -Wno-incompatible-library-redeclaration"
-              export CXXFLAGS="-Werror -Wno-unused-result -Wno-incompatible-library-redeclaration"
+              export CFLAGS="-Werror -Wno-unused-result -Wno-incompatible-library-redeclaration -Wno-deprecated-declarations"
+              export CXXFLAGS="-Werror -Wno-unused-result -Wno-incompatible-library-redeclaration -Wno-deprecated-declarations"
               ;;
           esac
           export CC="ccache $CC"
