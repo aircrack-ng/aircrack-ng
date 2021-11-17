@@ -13,7 +13,7 @@ fail_fast: false
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.4.0
+    rev: v4.0.1
     hooks:
       - id: trailing-whitespace
         exclude_types: [asm]
@@ -25,13 +25,13 @@ repos:
       - id: check-merge-conflict
 
   - repo: https://github.com/pocc/pre-commit-hooks
-    rev: python
+    rev: v1.3.4
     hooks:
       - id: clang-format
         args: ["--version=3.8", "--style=file", "-i"]
 
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.7.1.1
+    rev: v0.7.2.1
     hooks:
       - id: shellcheck
         files: 'test/|scripts/|build/'
