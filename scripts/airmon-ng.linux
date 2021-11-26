@@ -1408,8 +1408,31 @@ checkvm() {
 	checkvm_status="run"
 }
 
+checkbrokenrtap() {
+       # Kernel 5.15 has broken radiotap headers due to commit 8c89f7b3d3f2. They are fixed in 5.15.5
+       # See https://lore.kernel.org/all/20211109100203.c61007433ed6.I1dade57aba7de9c4f48d68249adbae62636fd98c@changeid/
+       KERNEL_VERSION="$(uname -r)"
+       if [ -n "$(uname -v | grep Debian)" ]; then
+               # Some Debian-based distros have their kernel version in uname -v
+               KERNEL_VERSION="$(uname -v | cut -d ' ' -f 4)"
+       fi
+
+       if [ -n "$(echo ${KERNEL_VERSION} | grep -E '^((5.15)|(5.15.[0-4]))-')" ]; then
+               echo "WARNING: This kernel likely has broken radiotap headers"
+               echo "         therefore breaking tools relying on packet capture."
+               echo "         This is fixed in kernel 5.15.5 and later versions."
+               echo ""
+       fi
+       unset KERNEL_VERSION
+}
+
 #end function definitions
 #begin execution
+
+# Check kernel version for broken radiotap header
+if [ "$1" = "start" ] || [ "$1" = "stop" ] || [ "$1" = "check" ] || [ "x$1" = "x" ]; then
+       checkbrokenrtap
+fi
 
 #here we check for any phys that have no interfaces to pick up The Lost Phys
 handleLostPhys
