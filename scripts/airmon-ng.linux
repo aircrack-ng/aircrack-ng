@@ -1079,10 +1079,6 @@ getExtendedInfo() {
 	fi
 
 	#lastly we detect all the broken drivers which have working alternatives
-	KV="$(uname -r | awk -F'-' '{print $1}')"
-	KVMAJOR="$(printf ${KV} | awk -F'.' '{print $1$2}')"
-	KVMINOR="$(printf ${KV} | awk -F'.' '{print $3}')"
-
 	if [ $KVMAJOR -lt 26 ]; then
 		printf "You are running a kernel older than 2.6, I'm surprised it didn't error before now."
 	        if [ "$DEBUG" = "1" ]; then
@@ -1408,31 +1404,20 @@ checkvm() {
 	checkvm_status="run"
 }
 
-checkbrokenrtap() {
-       # Kernel 5.15 has broken radiotap headers due to commit 8c89f7b3d3f2. They are fixed in 5.15.5
-       # See https://lore.kernel.org/all/20211109100203.c61007433ed6.I1dade57aba7de9c4f48d68249adbae62636fd98c@changeid/
-       KERNEL_VERSION="$(uname -r)"
-       if [ -n "$(uname -v | grep Debian)" ]; then
-               # Some Debian-based distros have their kernel version in uname -v
-               KERNEL_VERSION="$(uname -v | cut -d ' ' -f 4)"
-       fi
+kernel_breakage_check() {
+  KV="$(uname -r | awk -F'-' '{print $1}')"
+  KVMAJOR="$(printf ${KV} | awk -F'.' '{print $1$2}')"
+  KVMINOR="$(printf ${KV} | awk -F'.' '{print $3}')"
 
-       if [ -n "$(echo ${KERNEL_VERSION} | grep -E '^((5.15)|(5.15.[0-4]))-')" ]; then
-               echo "WARNING: This kernel likely has broken radiotap headers"
-               echo "         therefore breaking tools relying on packet capture."
-               echo "         This is fixed in kernel 5.15.5 and later versions."
-               echo ""
-       fi
-       unset KERNEL_VERSION
+  if [ "${KVMAJOR}" = "515" ] && [ "${KVMINOR}" -lt "5" ]; then
+    printf "WARNING: This kernel likely has broken radiotap headers\n"
+    printf "\ttherefore breaking tools relying on packet capture.\n"
+    printf "\tThis is fixed in kernel 5.15.5 and later versions.\n\n"
+  fi
 }
 
 #end function definitions
 #begin execution
-
-# Check kernel version for broken radiotap header
-if [ "$1" = "start" ] || [ "$1" = "stop" ] || [ "$1" = "check" ] || [ "x$1" = "x" ]; then
-       checkbrokenrtap
-fi
 
 #here we check for any phys that have no interfaces to pick up The Lost Phys
 handleLostPhys
@@ -1440,6 +1425,11 @@ handleLostPhys
 listInterfaces
 
 if [ "${1}" = "check" ] || [ "${1}" = "start" ]; then
+	if [ "${VERBOSE}" = "0" ]; then
+		# if verbose is set this was already run
+		# but it's important so run it for everyone
+		kernel_breakage_check
+	fi
 	if [ "${2}" = "kill" ]; then
 		#if we are killing, tell scanProcesses that
 		scanProcesses "${2}"
@@ -1497,7 +1487,8 @@ if [ "$VERBOSE" = "1" ]; then
 		printf "\n"
 	fi
 	uname -a
-	printf "\n"
+	kernel_breakage_check
+
 	if iw reg get | grep -q 'country 00:'; then
 		printf "Regulatory Domain appears to be unset, please consider setting it with 'iw reg set XX'\n"
 		printf "https://wireless.wiki.kernel.org/en/users/documentation/iw#updating_your_regulatory_domain\n"
