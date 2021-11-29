@@ -38,7 +38,7 @@ if [ -n "${3}" ];then
 	if [ "${3}" -gt 0 ] > /dev/null 2>&1; then
 		CH="${3}"
 	else
-		printf "\nYou have entered an invalid channel \"${3}\" which will be ignored\n"
+		printf "\nYou have entered an invalid channel \"%s\" which will be ignored\n" "${3}"
 		CH=3
 	fi
 else
@@ -70,9 +70,6 @@ if [ ! -x "$(command -v uname 2>&1)" ]; then
 	printf "How in the world do you not have uname installed?\n"
 	printf "Please select a linux distro which has at least basic functionality (or install uname).\n"
 	exit 1
-else
-        OS=$(uname -s)
-	#Recognized values are Linux and Darwin
 fi
 
 if [ ! -x "$(command -v ip 2>&1)" ] && [ ! -x "$(command -v ifconfig 2>&1)" ]; then
@@ -84,7 +81,7 @@ fi
 if [ ! -x "$(command -v iw 2>&1)" ]; then
 	printf "You don't have iw installed, please install it from your distro's package manager.\n"
 	printf "If your distro doesn't have a recent version you can download it from this link:\n"
-	printf "${IW_SOURCE}\n"
+	printf "%s\n" "${IW_SOURCE}"
 	exit 1
 fi
 
@@ -172,30 +169,30 @@ fi
 #done checking for binaries
 
 usage() {
-	printf "usage: $(basename $0) <start|stop|check> <interface> [channel or frequency]\n\n"
+  printf "usage: %s <start|stop|check> <interface> [channel or frequency]\n\n" "$(basename $0)"
 	exit 0
 }
 
 handleLostPhys() {
-	MISSING_INTERFACE=""
-        if [ -d /sys/class/ieee80211 ]; then
-		for i in $(ls /sys/class/ieee80211/); do
-			if [ ! -d /sys/class/ieee80211/${i}/device/net ]; then
-				MISSING_INTERFACE="${i}"
-				printf "\nFound ${MISSING_INTERFACE} with no interfaces assigned, would you like to assign one to it? [y/n] "
-				yesorno
-				retcode=$?
-	               		if [ "${retcode}" = "1" ]; then
-					printf "PHY ${MISSING_INTERFACE} will remain lost.\n"
-				elif [ "${retcode}" = "0" ]; then
-					PHYDEV=${MISSING_INTERFACE}
-					findFreeInterface monitor
-	               		fi
-			fi
-		done
-	fi
-				#add some spacing so this doesn't make the display hard to read
-				printf "\n"
+  MISSING_INTERFACE=""
+  if [ -d /sys/class/ieee80211 ]; then
+    for i in $(ls /sys/class/ieee80211/); do
+      if [ ! -d "/sys/class/ieee80211/${i}/device/net" ]; then
+        MISSING_INTERFACE="${i}"
+        printf "\nFound %s with no interfaces assigned, would you like to assign one to it? [y/n] " "${MISSING_INTERFACE}"
+        yesorno
+        retcode=$?
+        if [ "${retcode}" = "1" ]; then
+          printf "PHY %s will remain lost.\n" "${MISSING_INTERFACE}"
+        elif [ "${retcode}" = "0" ]; then
+          PHYDEV=${MISSING_INTERFACE}
+          findFreeInterface monitor
+        fi
+      fi
+    done
+  fi
+  #add some spacing so this doesn't make the display hard to read
+  printf "\n"
 }
 
 findFreeInterface() {
@@ -221,20 +218,20 @@ findFreeInterface() {
 			return 1
 		fi
 		if [ "$DEBUG" = "1" ]; then
-			printf "\nChecking candidate wlan${i}\n"
+			printf "\nChecking candidate wlan%s\n" "${i}"
 		fi
-		if [ ! -e /sys/class/net/wlan${i} ]; then
-			if [ "$DEBUG" = "1" ]; then
-				printf "\nCandidate wlan${i} is not in use\n"
+		if [ ! -e "/sys/class/net/wlan${i}" ]; then
+			if [ "${DEBUG}" = "1" ]; then
+				printf "\nCandidate wlan%s is not in use\n" "${i}"
 			fi
-			if [ ! -e /sys/class/net/wlan${i}mon ]; then
+			if [ ! -e "/sys/class/net/wlan${i}mon" ]; then
 				if [ "$DEBUG" = "1" ]; then
-					printf "\nCandidate wlan${i} and wlan${i}mon are both clear, creating wlan${i}${target_suffix}\n"
+					printf "\nCandidate wlan%s and wlan%smon are both clear, creating wlan%s%s\n" "${i}" "${i}" "${i}" "${target_suffix}"
 				fi
 				IW_ERROR="$(iw phy ${PHYDEV} interface add wlan${i}${target_suffix} type ${target_mode} 2>&1)"
 				if [ -z "${IW_ERROR}" ]; then
-					if [ -d /sys/class/ieee80211/${PHYDEV}/device/net ]; then
-						for j in $(ls /sys/class/ieee80211/${PHYDEV}/device/net/); do
+					if [ -d "/sys/class/ieee80211/${PHYDEV}/device/net" ]; then
+						for j in $(ls "/sys/class/ieee80211/${PHYDEV}/device/net/"); do
 							if [ "$(cat /sys/class/ieee80211/${PHYDEV}/device/net/${j}/type)" = "${target_type}" ]; then
 								#here is where we catch udev renaming our interface
 								k=${j#wlan}
@@ -242,24 +239,24 @@ findFreeInterface() {
 							fi
 						done
 					else
-						printf "Unable to create wlan${i}${target_suffix} and no error received.\n"
+						printf "Unable to create wlan%s%s and no error received.\n" "${i}" "${target_suffix}"
 						return 1
 					fi
-					printf "\n\t\t(mac80211 ${target_mode} mode vif enabled on [${PHYDEV}]wlan${i}${target_suffix}\n"
+					printf "\n\t\t(mac80211 %s mode vif enabled on [%s]wlan%s%s\n" "${target_mode}" "${PHYDEV}" "${i}" "${target_suffix}"
 					unset IW_ERROR
 					break
 				else
-					printf "\n\n ERROR adding ${target_mode} mode interface: ${IW_ERROR}\n"
+					printf "\n\n ERROR adding %s mode interface: %s\n" "${target_mode}" "${IW_ERROR}"
 					break
 				fi
 			else
 				if [ "$DEBUG" = "1" ]; then
-					printf "\nCandidate wlan${i} does not exist, but wlan${i}mon does, skipping...\n"
+					printf "\nCandidate wlan%s does not exist, but wlan%smon does, skipping...\n" "${i}" "${i}"
 				fi
 			fi
 		else
 			if [ "$DEBUG" = "1" ]; then
-				printf "\nCandidate wlan${i} is in use already.\n"
+				printf "\nCandidate wlan%s is in use already.\n" "${i}"
 			fi
 		fi
 	done
@@ -315,7 +312,7 @@ rfkill_unblock() {
       if [ $(echo "${rfkill_status}" | grep -c "Usage") -eq 1 ]; then
 				printf "Missing parameters in rfkill! Report this"
 			else
-				printf "rfkill error: ${rfkill_status}\n"
+				printf "rfkill error: %s\n" "${rfkill_status}"
 			fi
 			printf "Unable to unblock.\n"
 			return 1
@@ -328,9 +325,9 @@ rfkill_unblock() {
 
 setLink() {
 	if [ -x "$(command -v ip 2>&1)" ]; then
-		ip link set dev ${1} ${2} > /dev/null 2>&1 || printf "\nFailed to set ${1} ${2} using ip\n"
+		ip link set dev "${1}" "${2}" > /dev/null 2>&1 || printf "\nFailed to set %s %s using ip\n" "${1}" "${2}"
 	elif [ -x "$(command -v ifconfig 2>&1)" ]; then
-		ifconfig ${1} ${2} > /dev/null 2>&1 || printf "\nFailed to set ${1} ${2} using ifconfig\n"
+		ifconfig "${1}" "${2}" > /dev/null 2>&1 || printf "\nFailed to set %s %s using ifconfig\n" "${1}" "${2}"
 	fi
 	return
 }
@@ -341,7 +338,7 @@ ifaceIsUp() {
 	elif [ -x "$(command -v ifconfig 2>&1)" ]; then
 		ifaceIsUpCmd="ifconfig"
 	fi
-	if ${ifaceIsUpCmd} ${1} 2>&1 | grep -q UP
+	if ${ifaceIsUpCmd} "${1}" 2>&1 | grep -q UP
 	then
 		return
 	else
@@ -355,7 +352,7 @@ ifaceExists() {
 	elif [ -x "$(command -v ifconfig 2>&1)" ]; then
 		ifaceExistsCmd="ifconfig"
 	fi
-	if ${ifaceExistsCmd} ${1} > /dev/null 2>&1
+	if ${ifaceExistsCmd} "${1}" > /dev/null 2>&1
 	then
 		return
 	else
@@ -363,45 +360,37 @@ ifaceExists() {
 	fi
 }
 
-#listIfaceUnspec() {
-#	if [ -x "$(command -v ip 2>&1)" ]; then
-#		ip link 2>/dev/null | awk -F"[: ]+" '/UNSPEC/ {print $2}'
-#	elif [ -x "$(command -v ifconfig 2>&1)" ]; then
-#		ifconfig -a 2>/dev/null | awk -F"[: ]+" '/UNSPEC/ {print $1}'
-#	fi
-#}
-
 startDeprecatedIface() {
-	iwconfig ${1} mode monitor > /dev/null 2>&1
+	iwconfig "${1}" mode monitor > /dev/null 2>&1
 	if [ -n "${2}" ]; then
-		if [ ${2} -lt 1000 ]; then
-			iwconfig ${1} channel ${2} > /dev/null 2>&1
+		if [ "${2}" -lt 1000 ]; then
+			iwconfig "${1}" channel "${2}" > /dev/null 2>&1
 		else
-			iwconfig ${1} freq ${2}000000 > /dev/null 2>&1
+			iwconfig "${1}" freq "${2}000000" > /dev/null 2>&1
 		fi
 	else
-		iwconfig ${1} channel ${CH} > /dev/null 2>&1
+		iwconfig "${1}" channel "${CH}" > /dev/null 2>&1
 	fi
-	iwconfig ${1} key off > /dev/null 2>&1
-	setLink ${1} up
+	iwconfig "${1}" key off > /dev/null 2>&1
+	setLink "${1}" up
 	printf "\t\t(monitor mode enabled)\n"
 }
 
 changeMac80211IfaceTypeMonitor() {
-  iw dev ${1} set type monitor > /dev/null 2>&1
-  setLink ${1} up
+  iw dev "${1}" set type monitor > /dev/null 2>&1
+  setLink "${1}" up
   printf "\t\t(monitor mode enabled)\n"
 }
 
 qcaldSafetyCheck() {
   icnss_file="/sys/module/wlan/parameters/con_mode"
   if [ ! -f "${icnss_file}" ]; then
-    printf "Unable to find ${icnss_file} which is needed to control mode.\n"
+    printf "Unable to find %s which is needed to control mode.\n" "${icnss_file}"
     printf "Is /sys mounted correctly?\n"
     exit 1
   fi
   if [ ! -w "${icnss_file}" ]; then
-    printf "${icnss_file} is present but we do not have write permission\n"
+    printf "%s is present but we do not have write permission\n" "${icnss_file}"
     printf "Unable to control mode, giving up\n"
     exit 1
   fi
@@ -413,7 +402,7 @@ changeQcacldIfaceTypeMonitor() {
   #hopefully that never happens
   qcaldSafetyCheck
   echo 4 > /sys/module/wlan/parameters/con_mode
-  setLink ${1} up
+  setLink "${1}" up
   printf "\t\t(monitor mode enabled)\n"
 }
 
@@ -431,107 +420,107 @@ yesorno() {
 
 startMac80211Iface() {
 	#check if rfkill is set and cry if it is
-	rfkill_check ${PHYDEV}
+	rfkill_check "${PHYDEV}"
 	rfkill_retcode="$?"
 	case ${rfkill_retcode} in
-		1) printf "\t${1} is soft blocked, please run \"rfkill unblock ${index}\" to use this interface.\n" ;;
-		2) printf "\t${1} is hard blocked, please flip the hardware wifi switch (or in BIOS) to on.\n"
-		   printf "\tIt may also be possible to unblock with \"rfkill unblock ${index}\"\n"
+		1) printf "\t%s is soft blocked, please run \"rfkill unblock %s\" to use this interface.\n" "${1}" "${index}" ;;
+		2) printf "\t%s is hard blocked, please flip the hardware wifi switch (or in BIOS) to on.\n"a "${1}"
+		   printf "\tIt may also be possible to unblock with \"rfkill unblock %s\"\n" "${index}"
 		   if [ "${checkvm_status}" != "run" ]; then
 		   	checkvm
 		   fi
 		   if [ -n "${vm}" ]; then
-		   	printf "Detected VM using ${vm_from}\n"
-		   	printf "This appears to be a ${vm} Virtual Machine\n"
+		   	printf "Detected VM using %s\n" "${vm_from}"
+		   	printf "This appears to be a %s Virtual Machine\n" "${vm}"
 		   	printf "Some distributions have bugs causing rfkill hard block to be forced on in a VM.\n"
-		   	printf "If toggling the rfkill hardware switch and \"rfkill unblock ${index}\" both fail\n"
+		   	printf "If toggling the rfkill hardware switch and \"rfkill unblock %s\" both fail\n" "${index}"
 		   	printf "to fix this, please try not running in a VM.\n"
 		   fi
 		   ;;
-		3) printf "\t${1} is hard and soft blocked, please flip the hardware wifi switch to on.\n"
-		   printf "\tIt may also be needed to unblock with \"rfkill unblock ${index}\"\n" ;;
+		3) printf "\t%s is hard and soft blocked, please flip the hardware wifi switch to on.\n" "${1}"
+		   printf "\tIt may also be needed to unblock with \"rfkill unblock %s\"\n" "${index}" ;;
 	esac
 	if [ "${rfkill_retcode}" != 0 ]; then
-		printf "rfkill error, unable to start ${1}\n\n"
+		printf "rfkill error, unable to start %s\n\n" "${1}"
 		printf "Would you like to try and automatically resolve this? [y/n] "
 		yesorno
 		retcode="$?"
 		if [ "${retcode}" = "1" ]; then
 			return 1
 		elif [ "${retcode}" = "0" ]; then
-			rfkill_unblock ${PHYDEV}
+			rfkill_unblock "${PHYDEV}"
 		fi
 	fi
 	#check if $1 already has a mon interface on the same phy and bail if it does
-	if [ -d /sys/class/ieee80211/${PHYDEV}/device/net ]; then
-		for i in $(ls /sys/class/ieee80211/${PHYDEV}/device/net/); do
+	if [ -d "/sys/class/ieee80211/${PHYDEV}/device/net" ]; then
+		for i in $(ls "/sys/class/ieee80211/${PHYDEV}/device/net/"); do
 			if [ "$(cat /sys/class/ieee80211/${PHYDEV}/device/net/${i}/type)" = "803" ]; then
-				setChannelMac80211 ${i}
-				printf "\t\t(mac80211 monitor mode already enabled for [${PHYDEV}]${1} on [${PHYDEV}]${i})\n"
+				setChannelMac80211 "${i}"
+				printf "\t\t(mac80211 monitor mode already enabled for [%s]%s on [%s]%s)\n" "${PHYDEV}" "${1}" "${PHYDEV}" "${i}"
 				exit
 			fi
 		done
 	fi
   #handle Qualcomm qcacld
   if [ "${DRIVER}" = "icnss" ]; then
-    setLink ${1} down
-    changeQcacldIfaceTypeMonitor ${1}
-    setChannelMac80211 ${1}
+    setLink "${1}" down
+    changeQcacldIfaceTypeMonitor "${1}"
+    setChannelMac80211 "${1}"
     return
   fi
   #check if chipset has driver not under mac80211 stack
-  if [ "${DRIVER}" = "88XXau" ] || iw phy ${PHYDEV} info | grep -q 'interface combinations are not supported'; then
+  if [ "${DRIVER}" = "88XXau" ] || iw phy "${PHYDEV}" info | grep -q 'interface combinations are not supported'; then
     #grumble grumble, seriously crap vendor driver
-    setLink ${1} down
-    changeMac80211IfaceTypeMonitor ${1}
-    setChannelMac80211 ${1}
+    setLink "${1}" down
+    changeMac80211IfaceTypeMonitor "${1}"
+    setChannelMac80211 "${1}"
     return
   fi
 	#we didn't bail means we need a monitor interface
 	if [ ${#1} -gt 12 ]; then
-		printf "Interface ${1}mon is too long for linux so it will be renamed to the old style (wlan#) name.\n"
+		printf "Interface %smon is too long for linux so it will be renamed to the old style (wlan#) name.\n" "${1}"
 		findFreeInterface monitor
 	else
-		if [ -e /sys/class/net/${1}mon ]; then
-			printf "\nYou already have a ${1}mon device but it is NOT in monitor mode."
+		if [ -e "/sys/class/net/${1}mon" ]; then
+			printf "\nYou already have a %smon device but it is NOT in monitor mode." "${1}"
 			printf "\nWhatever you did, don't do it again."
-			printf "\nPlease run \"iw ${1}mon del\" before attempting to continue\n"
+			printf "\nPlease run \"iw %smon del\" before attempting to continue\n" "${1}"
 			exit 1
 		fi
 		#we didn't bail means our target interface is available
-		setLink ${1} down
+		setLink "${1}" down
 		IW_ERROR="$(iw phy ${PHYDEV} interface add ${1}mon type monitor 2>&1)"
 		if [ -z "${IW_ERROR}" ]; then
 			sleep 1
 			if [ -r "/sys/class/ieee80211/${PHYDEV}/device/net/${1}mon/type" ] && [ "$(cat /sys/class/ieee80211/${PHYDEV}/device/net/${1}mon/type)" = "803" ]; then
-				setChannelMac80211 ${1}mon
+				setChannelMac80211 "${1}mon"
 			else
-				printf "\nNewly created monitor mode interface ${1}mon is *NOT* in monitor mode.\n"
-				printf "Removing non-monitor ${1}mon interface...\n"
-				stopMac80211Iface ${1}mon abort
+				printf "\nNewly created monitor mode interface %smon is *NOT* in monitor mode.\n" "${1}"
+				printf "Removing non-monitor %smon interface...\n" "${1}"
+				stopMac80211Iface "${1}mon" abort
 				exit 1
 			fi
-			printf "\t\t(mac80211 monitor mode vif enabled for [${PHYDEV}]${1} on [${PHYDEV}]${1}mon)\n"
+			printf "\t\t(mac80211 monitor mode vif enabled for [%s]%s on [%s]%smon)\n" "${PHYDEV}" "${1}" "${PHYDEV}" "${1}"
 		else
-			printf "\nERROR adding monitor mode interface: ${IW_ERROR}\n"
+			printf "\nERROR adding monitor mode interface: %s\n" "${IW_ERROR}"
 			exit 1
 		fi
 	fi
 	if [ "${ELITE}" = "1" ]; then
 		#check if $1 is still down, warn if not
-		if ifaceIsUp ${1}
+		if ifaceIsUp "${1}"
 		then
-			printf "\nInterface ${1} is up, but it should be down. Something is interfering."
+			printf "\nInterface %s is up, but it should be down. Something is interfering." "${1}"
 			printf "\nPlease run \"airmon-ng check kill\" and/or kill your network manager."
 		fi
 	else
-		isRPiWireless && iw ${1} del
-		printf "\t\t(mac80211 station mode vif disabled for [${PHYDEV}]${1})\n"
+		isRPiWireless && iw "${1}" del
+		printf "\t\t(mac80211 station mode vif disabled for [%s]%s)\n" "${PHYDEV}" "${1}"
 	fi
 }
 
 isRPiWireless() {
-	local HW_REV=$(grep Revision /proc/cpuinfo | awk '{print $3}')
+	HW_REV="$(grep Revision /proc/cpuinfo | awk '{print $3}')"
 	[ -z "${HW_REV}" ] && return 0
 	# http://www.raspberrypi-spy.co.uk/2012/09/checking-your-raspberry-pi-board-version/
 	# https://www.raspberrypi.org/documentation/hardware/raspberrypi/revision-codes/README.md
@@ -566,17 +555,17 @@ isRPiWireless() {
 startwlIface() {
 	if [ -f "/proc/brcm_monitor0" ]; then
 		if [ -r "/proc/brcm_monitor0" ]; then
-			local brcm_monitor="$(cat /proc/brcm_monitor0)"
+			brcm_monitor="$(cat /proc/brcm_monitor0)"
 			if [ "$brcm_monitor" = "1" ]; then
-				printf "\n\t\t(experimental wl monitor mode vif already enabled for [${PHYDEV}]${1} on [${PHYDEV}]prism0)\n"
+				printf "\n\t\t(experimental wl monitor mode vif already enabled for [%s]%s on [%s]prism0)\n" "${PHYDEV}" "${1}" "${PHYDEV}"
 				return 0
 			fi
 		fi
 		if [ -w "/proc/brcm_monitor0" ]; then
 			if printf "1" > /proc/brcm_monitor0; then
-				printf "\n\t\t(experimental wl monitor mode vif enabled for [${PHYDEV}]${1} on [${PHYDEV}]prism0)\n"
+				printf "\n\t\t(experimental wl monitor mode vif enabled for [%s]%s on [%s]prism0)\n" "${PHYDEV}" "${1}" "${PHYDEV}"
 			else
-				printf "\n\t\t(failed to enable experimental wl monitor mode for [${PHYDEV}${1})\n"
+				printf "\n\t\t(failed to enable experimental wl monitor mode for [%s]%s)\n" "${PHYDEV}" "${1}"
 			fi
 		else
 			printf "\n\tUnable to write to /proc/brcm_monitor0, cannot enable monitor mode.\n"
@@ -597,13 +586,13 @@ startwlIface() {
 #}
 
 setChannelMac80211() {
-	setLink ${1} up
-	local i=0
+	setLink "${1}" up
+	i=0
 	if [ -n "${CH}" ]; then
 		if [ ${CH} -lt 1000 ]; then
 			if [ -r "/sys/class/net/$1/phy80211/name" ]; then
 		                channel_list="$(iw phy $(cat /sys/class/net/$1/phy80211/name) info 2>&1 | awk -F'[][]' '$2{print $2}')"
-				local hardware_valid_channel=1
+				hardware_valid_channel=1
 	        	        for i in $channel_list; do
 	                	        if [ "${CH}" = "${i}" ]; then
 	                        	        hardware_valid_channel=0
@@ -611,7 +600,7 @@ setChannelMac80211() {
 		                        fi
 		                done
 				if [ "${hardware_valid_channel}" = "1" ]; then
-	        	                printf "Channel ${CH} does not appear to be supported by ${1} hardware, defaulting to channel 3.\n\n"
+	        	                printf "Channel %s does not appear to be supported by %s hardware, defaulting to channel 3.\n\n" "${CH}" "${1}"
 					CH=3
 				fi
 			fi
@@ -619,7 +608,7 @@ setChannelMac80211() {
 		else
 			if [ -r "/sys/class/net/$1/phy80211/name" ]; then
 				frequency_list="$(iw phy $(cat /sys/class/net/$1/phy80211/name) info 2>&1 | sed -nr 's/.*( |^)([0-9]+) MHz .*/\2/p')"
-				local hardware_valid_freq=1
+				hardware_valid_freq=1
 				for i in $frequency_list; do
 					if [ "${CH}" = "${i}" ]; then
 						hardware_valid_freq=0
@@ -628,7 +617,7 @@ setChannelMac80211() {
 					print
 				done
 				if [ "${hardware_valid_freq}" = "1" ]; then
-					printf "Frequency ${CH} does not appear to be supported by ${1} hardware, defaulting to 2422 Mhz.\n\n"
+					printf "Frequency %s does not appear to be supported by %s hardware, defaulting to 2422 Mhz.\n\n" "${CH}" "${1}"
 					CH="2422"
 				fi
 			fi
@@ -639,29 +628,29 @@ setChannelMac80211() {
 		exit 1
 	fi
 	if [ -n "${IW_ERROR}" ]; then
-		printf "\nError setting channel: ${IW_ERROR}\n"
-		if printf "${IW_ERROR}" | grep -q "(-16)"; then
+		printf "\nError setting channel: %s\n" "${IW_ERROR}"
+		if printf "%s" "${IW_ERROR}" | grep -q '(-16)'; then
 			printf "Error -16 likely means your card was set back to station mode by something.\n"
-			printf "Removing non-monitor ${1} interface...\n"
+			printf "Removing non-monitor %s interface...\n" "${1}"
 			stopMac80211Iface "${1}" abort
 			exit 1
 		fi
-		if printf "${IW_ERROR}" | grep -q "(-22)"; then
-			printf "Unable to set channel/frequency ${CH}, most likely it is outside of regulatory domain\n\n"
+		if printf "%s" "${IW_ERROR}" | grep -q '(-22)'; then
+			printf "Unable to set channel/frequency %s, most likely it is outside of regulatory domain\n\n" "${CH}"
 		fi
 	fi
 }
 
 stopDeprecatedIface() {
-	setLink $1 down
-	iwconfig $1 mode Managed > /dev/null 2>&1
-	setLink $1 up
+	setLink "${1}" down
+	iwconfig "${1}" mode Managed > /dev/null 2>&1
+	setLink "${1}" up
 	printf "\t\t(monitor mode disabled)\n"
 }
 
 changeMac80211IfaceTypeManaged() {
-  iw dev ${1} set type managed > /dev/null 2>&1
-  setLink ${1} up
+  iw dev "${1}" set type managed > /dev/null 2>&1
+  setLink "${1}" up
   printf "\t\t(monitor mode disabled)\n"
 }
 
@@ -669,48 +658,48 @@ changeQcacldIfaceTypeManaged() {
   #stupidly unsafe with more than one card, oh well
   qcaldSafetyCheck
   echo 0 > /sys/module/wlan/parameters/con_mode
-  setLink ${1} up
+  setLink "${1}" up
   printf "\t\t(monitor mode disabled)\n"
 }
 
 stopMac80211Iface() {
-	if [ -f /sys/class/net/${1}/type ]; then
+	if [ -f "/sys/class/net/${1}/type" ]; then
 		if [ "${2}" != "abort" ] && [ "$(cat /sys/class/net/${1}/type)" != "803" ]; then
 			printf "\nYou are trying to stop a device that isn't in monitor mode.\n"
 			printf "Doing so is a terrible idea, if you really want to do it then you\n"
-			printf "need to type 'iw ${1} del' yourself since it is a terrible idea.\n"
+			printf "need to type 'iw %s del' yourself since it is a terrible idea.\n" "${1}"
 			printf "Most likely you want to remove an interface called wlan[0-9]mon\n"
 			printf "If you feel you have reached this warning in error,\n"
 			printf "please report it.\n"
 			exit 1
 		else
 			if [ "${DRIVER}" = "icnss" ]; then
-				changeQcacldIfaceTypeManaged ${1}
+				changeQcacldIfaceTypeManaged "${1}"
 				return
 			fi
-			if [ "${DRIVER}" = "88XXau" ] || iw phy ${PHYDEV} info | grep -q 'interface combinations are not supported'; then
+			if [ "${DRIVER}" = "88XXau" ] || iw phy "${PHYDEV}" info | grep -q 'interface combinations are not supported'; then
 				#grumble grumble, seriously crap vendor driver
-				changeMac80211IfaceTypeManaged ${1}
+				changeMac80211IfaceTypeManaged "${1}"
 				return
 			fi
 			if [ "${ELITE}" = "0" ]; then
-				local need_sta=1
-				if [ -d /sys/class/ieee80211/${PHYDEV}/device/net ]; then
-					for i in $(ls /sys/class/ieee80211/${PHYDEV}/device/net/); do
-						if [ -r /sys/class/ieee80211/${PHYDEV}/device/net/${i}/type ] && [ "$(cat /sys/class/ieee80211/${PHYDEV}/device/net/${i}/type)" = "1" ]; then
-							[ "${2}" != "abort" ] && printf "\n\t\t(mac80211 station mode vif already available for [${PHYDEV}]${1} on [${PHYDEV}]${i})\n"
+				need_sta=1
+				if [ -d "/sys/class/ieee80211/${PHYDEV}/device/net" ]; then
+					for i in $(ls "/sys/class/ieee80211/${PHYDEV}/device/net/"); do
+						if [ -r "/sys/class/ieee80211/${PHYDEV}/device/net/${i}/type" ] && [ "$(cat /sys/class/ieee80211/${PHYDEV}/device/net/${i}/type)" = "1" ]; then
+							[ "${2}" != "abort" ] && printf "\n\t\t(mac80211 station mode vif already available for [%s]%s on [%s]%s)\n" "${PHYDEV}" "${1}" "${PHYDEV}" "${i}"
 							need_sta=0
 						fi
 					done
 				fi
-				if [ "${need_sta}" = "1" ] && [ -e /sys/class/net/${1%mon}/phy80211/name ]; then
+				if [ "${need_sta}" = "1" ] && [ -e "/sys/class/net/${1%mon}/phy80211/name" ]; then
 					if [ "$(cat /sys/class/net/${1%mon}/phy80211/name)" = "${PHYDEV}" ]; then
-						printf "\nYou already have a ${1%mon} device but it is NOT in station mode."
+						printf "\nYou already have a %s device but it is NOT in station mode." "${1%mon}"
 						printf "\nWhatever you did, don't do it again."
-						printf "\nPlease run \"iw ${1%mon} del\" before attempting to continue\n"
+						printf "\nPlease run \"iw %s del\" before attempting to continue\n" "${1%mon}"
 						exit 1
 					else
-						printf "\nYou already have a ${1%mon} device, but it is not on the same phy as ${1}.\n"
+						printf "\nYou already have a %s device, but it is not on the same phy as %s.\n" "${1%mon}" "${1}"
 						printf "\nAttemping to pick a new name...\n"
 						findFreeInterface station
 					fi
@@ -723,34 +712,35 @@ stopMac80211Iface() {
 						# I don't want to add long sleeps here, but there isn't another way to deal with it.
 						sleep 1
 						interface="${1%mon}"
-						if [ -d /sys/class/ieee80211/${PHYDEV}/device/net ]; then
-							for i in $(ls /sys/class/ieee80211/${PHYDEV}/device/net/); do
+						if [ -d "/sys/class/ieee80211/${PHYDEV}/device/net" ]; then
+							for i in $(ls "/sys/class/ieee80211/${PHYDEV}/device/net/"); do
 								if [ "$(cat /sys/class/ieee80211/${PHYDEV}/device/net/${i}/type)" = "1" ]; then
 									#here is where we catch udev renaming our interface
 									interface="${i}"
 								fi
 							done
 						fi
-						printf "\t\t(mac80211 station mode vif enabled on [${PHYDEV}]${interface})\n"
+						printf "\t\t(mac80211 station mode vif enabled on [%s]%s)\n" "${PHYDEV}" "${interface}"
 					else
-						printf "\n ERROR adding station mode interface: ${IW_ERROR}\n"
+						printf "\n ERROR adding station mode interface: %s\n" "${IW_ERROR}"
 					fi
 				fi
 			fi
-			setLink ${1} down
+			setLink "${1}" down
 			IW_ERROR="$(iw dev "${1}" del 2>&1 | grep "nl80211 not found")"
 			if [ -z "$IW_ERROR" ]; then
 				if [ "${2}" != "abort" ]; then
-					printf "\t\t(mac80211 monitor mode vif disabled for [${PHYDEV}]${1})\n"
+					printf "\t\t(mac80211 monitor mode vif disabled for [%s]%s)\n" "${PHYDEV}" "${1}"
 				elif [ "${2}" = "abort" ]; then
 					printf "\nWARNING: unable to start monitor mode, please run \"airmon-ng check kill\"\n"
 				fi
 			else
-				if [ -f /sys/class/ieee80211/${PHYDEV}/remove_iface ]; then
-					printf "${1}" > /sys/class/ieee80211/${PHYDEV}/remove_iface
-					printf "\t\t(mac80211 monitor mode vif disabled for [${PHYDEV}]${1})\n"
+				if [ -f "/sys/class/ieee80211/${PHYDEV}/remove_iface" ]; then
+					printf "%s" "${1}" > "/sys/class/ieee80211/${PHYDEV}/remove_iface"
+					printf "\t\t(mac80211 monitor mode vif disabled for [%s]%s)\n" "${PHYDEV}" "${1}"
 				else
-					printf "\n\nERROR: Neither the sysfs interface links nor the iw command is available.\nPlease download and install iw from\n$IW_SOURCE\n"
+					printf "\n\nERROR: Neither the sysfs interface links nor the iw command is available.\n"
+          printf "Please install the iw package from your distro, or download and install iw from\n%s\n" "${IW_SOURCE}"
 				fi
 			fi
 		fi
@@ -760,18 +750,17 @@ stopMac80211Iface() {
 stopwlIface() {
 	if [ -f "/proc/brcm_monitor0" ]; then
 		if [ -r "/proc/brcm_monitor0" ]; then
-			local brcm_monitor="$(cat /proc/brcm_monitor0)"
+			brcm_monitor="$(cat /proc/brcm_monitor0)"
 			if [ "$brcm_monitor" = "0" ]; then
-				printf "\n\t\t(experimental wl monitor mode vif already disabled for [${PHYDEV}]${1})\n"
+				printf "\n\t\t(experimental wl monitor mode vif already disabled for [%s]%s)\n" "${PHYDEV}" "${1}"
 				return 0
 			fi
 		fi
 		if [ -w "/proc/brcm_monitor0" ]; then
-			printf "0" > /proc/brcm_monitor0
-			if [ "$?" = "0" ]; then
-				printf "\n\t\t(experimental wl monitor mode vif disabled for [${PHYDEV}]${1})\n"
+			if printf "0" > /proc/brcm_monitor0; then
+				printf "\n\t\t(experimental wl monitor mode vif disabled for [%s]%s)\n" "${PHYDEV}" "${1}"
 			else
-				printf "\n\t\t(failed to disable experimental wl monitor mode for [${PHYDEV}${1})\n"
+				printf "\n\t\t(failed to disable experimental wl monitor mode for [%s]%s)\n" "${PHYDEV}" "${1}"
 			fi
 		else
 			printf "\n\tUnable to write to /proc/brcm_monitor0, cannot disable monitor mode.\n"
@@ -795,23 +784,23 @@ getDriver() {
 
 	#if [ "$DRIVER" = "" ]
 	#then
-		if [ -f /sys/class/net/$1/device/uevent ]; then
+		if [ -f "/sys/class/net/$1/device/uevent" ]; then
 			DRIVER="$(awk -F'=' '$1 == "DRIVER" {print $2}' /sys/class/net/$1/device/uevent)"
 		fi
 	#fi
 
 	#here we test for driver usb, ath9k_htc,rt2870, possibly others show this
 	if [ "$DRIVER" = "usb" ]; then
-		BUSADDR="$(printf "$ethtool_output" | awk '/bus-info/ {print $2}'):1.0"
+		BUSADDR="$(printf "%s" "${ethtool_output}" | awk '/bus-info/ {print $2}'):1.0"
 
 		if [ "$DEBUG" = "1" ]; 	then
 			printf "Warn ON: USB\n"
-			printf "${BUSADDR}\n"
+			printf "%s\n" "${BUSADDR}"
 		fi
 
 		if [ -n "$BUSADDR" ]; then
-			if [ -f /sys/class/net/$1/device/"$BUSADDR"/uevent ]; then
-				DRIVER="$(awk -F'=' '$1 == "DRIVER" {print $2}' /sys/class/net/$1/device/$BUSADDR/uevent)"
+			if [ -f "/sys/class/net/${1}/device/${BUSADDR}/uevent" ]; then
+				DRIVER="$(awk -F'=' '$1 == "DRIVER" {print $2}' /sys/class/net/${1}/device/${BUSADDR}/uevent)"
 			fi
 		fi
 
@@ -819,8 +808,8 @@ getDriver() {
 		if [ "$DRIVER" = "rt2870" ]; then
 			DRIVER="rt2870sta"
 		fi
-		if [ -f /sys/class/net/$1/device/idProduct ]; then
-			if [ "$(cat /sys/class/net/$1/device/idProduct)" = "3070" ]; then
+		if [ -f "/sys/class/net/${1}/device/idProduct" ]; then
+			if [ "$(cat /sys/class/net/${1}/device/idProduct)" = "3070" ]; then
 				DRIVER="rt3070sta"
 			fi
 		fi
@@ -863,7 +852,7 @@ getDriver() {
 		DRIVER="??????"
 	fi
 	if [ "${DEBUG}" = "1" ]; then
-		printf "getdriver() ${DRIVER}\n"
+		printf "getdriver() %s\n" "${DRIVER}"
 	fi
 }
 
@@ -871,7 +860,7 @@ getFrom() {
 	#from detection
 	FROM="K"
 	if [ "${MODINFO}" = "1" ] && [ -f /proc/modules ]; then
-		if modinfo -F filename $DRIVER 2>&1 | grep -q 'kernel/drivers'
+		if modinfo -F filename "${DRIVER}" 2>&1 | grep -q 'kernel/drivers'
 		then
 			FROM="K"
 			#we add special handling here because we hate the vendor drivers AND they install in the wrong place
@@ -884,13 +873,13 @@ getFrom() {
 			elif [ "${DRIVER}" = "8812au" ] || [ "${DRIVER}" = "8814au" ]; then
 				FROM="V"
 			fi
-		elif modinfo -F filename $DRIVER 2>&1 | grep -q 'updates/drivers'
+		elif modinfo -F filename "${DRIVER}" 2>&1 | grep -q 'updates/drivers'
 		then
 			FROM="C"
-		elif modinfo -F filename $DRIVER 2>&1 | grep -q misc
+		elif modinfo -F filename "${DRIVER}" 2>&1 | grep -q 'misc'
 		then
 			FROM="V"
-		elif modinfo -F filename $DRIVER 2>&1 | grep -q staging
+		elif modinfo -F filename "${DRIVER}" 2>&1 | grep -q 'staging'
 		then
 			FROM="S"
 		else
@@ -901,12 +890,12 @@ getFrom() {
 	fi
   #maybe add an 'intree' check?
 	if [ "$DEBUG" = "1" ]; then
-		printf "getFrom() $FROM\n"
+		printf "getFrom() %s\n" "${FROM}"
 	fi
 }
 
 getFirmware() {
-	FIRMWARE="$(printf "$ethtool_output" | awk '/firmware-version/ {print $2}')"
+	FIRMWARE="$(printf "${ethtool_output}" | awk '/firmware-version/ {print $2}')"
 	#ath9k_htc and intel firmware is a shorter version number than most so trap and make it pretty
 	if [ "${DRIVER}" = "ath9k_htc" ] || [ "${DRIVER}" = "iwlwifi" ]; then
 		FIRMWARE="$FIRMWARE\t"
@@ -919,14 +908,14 @@ getFirmware() {
 	fi
 
 	if [ "$DEBUG" = "1" ]; then
-		printf "getFirmware $FIRMWARE\n"
+		printf "getFirmware %s\n" "${FIRMWARE}"
 	fi
 }
 
 getChipset() {
 	#this needs cleanup, we shouldn't have multiple lines assigning chipset per bus
 	#fix this to be one line per bus
-	if [ -f /sys/class/net/${1}/device/modalias ]; then
+	if [ -f "/sys/class/net/${1}/device/modalias" ]; then
 		if [ "${BUS}" = "usb" ]; then
 			if [ "${LSUSB}" = "1" ]; then
 				BUSINFO="$(cut -d ":" -f 2 /sys/class/net/${1}/device/modalias | cut -b 1-10 | sed 's/^.//;s/p/:/')"
@@ -937,16 +926,16 @@ getChipset() {
 			fi
 		#yes the below line looks insane, but broadcom appears to define all the internal buses so we have to detect them here
 		elif [ "${BUS}" = "pci" -o "${BUS}" = "pcmcia" ] && [ "${LSPCI}" = "1" ]; then
-			if [ -f /sys/class/net/$1/device/vendor ] && [ -f /sys/class/net/$1/device/device ]; then
-				DEVICEID="$(cat /sys/class/net/$1/device/vendor):$(cat /sys/class/net/$1/device/device)"
+			if [ -f "/sys/class/net/${1}/device/vendor" ] && [ -f "/sys/class/net/${1}/device/device" ]; then
+				DEVICEID="$(cat /sys/class/net/${1}/device/vendor):$(cat /sys/class/net/${1}/device/device)"
 				CHIPSET="$(lspci -d ${DEVICEID} | head -n1 - | cut -f3- -d ":" | sed 's/Wireless LAN Controller //g;s/ Network Connection//g;s/ Wireless Adapter//;s/^ //')"
 			else
-				BUSINFO="$(printf "${ethtool_output}" | grep bus-info | cut -d ":" -f "3-" | sed 's/^ //')"
+				BUSINFO="$(printf "%s" "${ethtool_output}" | grep bus-info | cut -d ":" -f "3-" | sed 's/^ //')"
 				CHIPSET="$(lspci | grep "${BUSINFO}" | head -n1 - | cut -f3- -d ":" | sed 's/Wireless LAN Controller //g;s/ Network Connection//g;s/ Wireless Adapter//;s/^ //')"
 				DEVICEID="$(lspci -nn | grep "${BUSINFO}" | grep '[[0-9][0-9][0-9][0-9]:[0-9][0-9][0-9][0-9]' -o)"
 			fi
 		elif [ "${BUS}" = "sdio" ]; then
-			if [ -f /sys/class/net/${1}/device/vendor ] && [ -f /sys/class/net/${1}/device/device ]; then
+			if [ -f "/sys/class/net/${1}/device/vendor" ] && [ -f "/sys/class/net/${1}/device/device" ]; then
 				DEVICEID="$(cat /sys/class/net/${1}/device/vendor):$(cat /sys/class/net/${1}/device/device)"
 			fi
 			if [ "${DEVICEID}" = '0x02d0:0x4330' ]; then
@@ -980,7 +969,7 @@ getChipset() {
 			CHIPSET="Not pci, usb, or sdio"
 		fi
 	#we don't do a check for usb here but it is obviously only going to work for usb
-	elif [ -f /sys/class/net/${1}/device/idVendor ] && [ -f /sys/class/net/${1}/device/idProduct ]; then
+	elif [ -f "/sys/class/net/${1}/device/idVendor" ] && [ -f "/sys/class/net/${1}/device/idProduct" ]; then
 		DEVICEID="$(cat /sys/class/net/${1}/device/idVendor):$(cat /sys/class/net/${1}/device/idProduct)"
 		if [ "${LSUSB}" = "1" ]; then
 			CHIPSET="$(lsusb | grep -i "${DEVICEID}" | head -n1 - | cut -f3- -d ":" | sed 's/^....//;s/ Network Connection//g;s/ Wireless Adapter//g;s/^ //')"
@@ -989,8 +978,7 @@ getChipset() {
 		fi
 	elif [ "${DRIVER}" = "mac80211_hwsim" ]; then
 		CHIPSET="Software simulator of 802.11 radio(s) for mac80211"
-	elif $(printf "${ethtool_output}" | awk '/bus-info/ {print $2}' | grep -q bcma)
-	then
+	elif printf "%s" "${ethtool_output}" | awk '/bus-info/ {print $2}' | grep -q bcma; then
 		BUS="bcma"
 
 		if [ "${DRIVER}" = "brcmsmac" ] || [ "${DRIVER}" = "brcmfmac" ] || [ "${DRIVER}" = "b43" ]; then
@@ -1003,19 +991,19 @@ getChipset() {
 	fi
 
 	if [ "${DEBUG}" = "1" ]; then
-		printf "getchipset() ${CHIPSET}\n"
-		printf "BUS = ${BUS}\n"
-		printf "BUSINFO = ${BUSINFO}\n"
-		printf "DEVICEID = ${DEVICEID}\n"
+		printf "getchipset() %s\n" "${CHIPSET}"
+		printf "BUS = %s\n" "${BUS}"
+		printf "BUSINFO = %s\n" "${BUSINFO}"
+		printf "DEVICEID = %s\n" "${DEVICEID}"
 	fi
 }
 
 getBus() {
-	if [ -f /sys/class/net/$1/device/modalias ]; then
-		BUS="$(cut -d ":" -f 1 /sys/class/net/$1/device/modalias)"
+	if [ -f "/sys/class/net/${1}/device/modalias" ]; then
+		BUS="$(cut -d ":" -f 1 /sys/class/net/${1}/device/modalias)"
 	fi
-	if [ "$DEBUG" = "1" ]; then
-		printf "getBus $BUS\n"
+	if [ "${DEBUG}" = "1" ]; then
+		printf "getBus %s\n" "${BUS}"
 	fi
 }
 
@@ -1024,7 +1012,7 @@ getStack() {
 		return
 	fi
 
-	if [ -d /sys/class/net/$1/phy80211/ ]; then
+	if [ -d "/sys/class/net/${1}/phy80211/" ]; then
 		MAC80211="1"
 		STACK="mac80211"
 	else
@@ -1032,19 +1020,19 @@ getStack() {
 		STACK="ieee80211"
 	fi
 
-	if [ -e /proc/sys/dev/$1/fftxqmin ]; then
+	if [ -e "/proc/sys/dev/${1}/fftxqmin" ]; then
 		MAC80211="0"
 		STACK="net80211"
 	fi
 
-	if [ "$DEBUG" = "1" ]; then
-		printf "getStack $STACK\n"
+	if [ "${DEBUG}" = "1" ]; then
+		printf "getStack %s\n" "${STACK}"
 	fi
 }
 
 getExtendedInfo() {
 	#stuff rfkill info into extended if nothing else is there
-	rfkill_check ${PHYDEV}
+	rfkill_check "${PHYDEV}"
 	rfkill_retcode="$?"
 	if [ "${rfkill_retcode}" = "1" ]; then
 		EXTENDED="rfkill soft blocked"
@@ -1059,8 +1047,8 @@ getExtendedInfo() {
 	fi
 
 	#first we set all the real (useful) info we can find
-	if [ -f /sys/class/net/$1/device/product ]; then
-		EXTENDED="\t$(cat /sys/class/net/$1/device/product)"
+	if [ -f "/sys/class/net/${1}/device/product" ]; then
+		EXTENDED="\t$(cat /sys/class/net/${1}/device/product)"
 	fi
 
 	#then we sweep for known broken drivers with no available better drivers
@@ -1079,14 +1067,10 @@ getExtendedInfo() {
 	fi
 
 	#lastly we detect all the broken drivers which have working alternatives
-	KV="$(uname -r | awk -F'-' '{print $1}')"
-	KVMAJOR="$(printf ${KV} | awk -F'.' '{print $1$2}')"
-	KVMINOR="$(printf ${KV} | awk -F'.' '{print $3}')"
-
-	if [ $KVMAJOR -lt 26 ]; then
+	if [ "${KVMAJOR}" -lt 26 ]; then
 		printf "You are running a kernel older than 2.6, I'm surprised it didn't error before now."
 	        if [ "$DEBUG" = "1" ]; then
-			printf "${KVMAJOR} ${KVMINOR}\n"
+			printf "%s %s\n" "${KVMAJOR}" "${KVMINOR}"
 		fi
 		exit 1
 	fi
@@ -1188,7 +1172,7 @@ scanProcesses() {
 				until "${servicecmd}" "${service}" stop 2> /dev/null > /dev/null; do
 					killservice=$((killservice + 1))
 					if [ ${killservice} -gt 5 ]; then
-						printf "Failed to stop ${service}, please stop it on your own.\n"
+						printf "Failed to stop %s, please stop it on your own.\n" "${service}"
 						break
 					fi
 				done
@@ -1203,8 +1187,8 @@ scanProcesses() {
 		#openwrt busybox grep hits on itself so we -v it out
 		match="$(ps ${psopts} | grep ${PROCESSES} | grep -v grep | wc -l)"
 	fi
-	if [ ${match} -gt 0 ] && [ "${1}" != "kill" ]; then
-		printf "Found $match processes that could cause trouble.\n"
+	if [ "${match}" -gt 0 ] && [ "${1}" != "kill" ]; then
+		printf "Found %s processes that could cause trouble.\n" "${match}"
 		printf "Kill them using 'airmon-ng check kill' before putting\n"
 		printf "the card in monitor mode, they will interfere by changing channels\n"
 		printf "and sometimes putting the interface back in managed mode\n\n"
@@ -1215,7 +1199,7 @@ scanProcesses() {
 		fi
 	fi
 
-	if [ ${match} -gt 0 ]; then
+	if [ "${match}" -gt 0 ]; then
 		if [ "${1}" = "kill" ]; then
 			printf "Killing these processes:\n\n"
 		fi
@@ -1229,84 +1213,58 @@ scanProcesses() {
 			#we have to use signal 9 because things like nm actually respawn wpa_supplicant too quickly
 			if [ "${pso}" = "1" ]; then
 				for pid in $(ps ${psopts} -o pid= -o comm= | grep ${PROCESSES} | awk '{print $1}'); do
-					kill -9 ${pid}
+					kill -9 "${pid}"
 				done
 			else
 				#openwrt busybox grep hits on itself so we -v it out
 				for pid in $(ps ${psopts} | grep ${PROCESSES} | grep -v grep | awk '{print $1}'); do
-					kill -9 ${pid}
+					kill -9 "${pid}"
 				done
 			fi
 		fi
 	fi
 
-	#i=1
-	#while [ $i -le $match ]
-	#do
-	#	pid=$(ps ${psopts} -o pid= -o comm= | grep $PROCESSES | head -n $i | tail -n 1 | awk '{print $1}')
-	#	pname=$(ps ${psopts} -o pid= -o comm= | grep $PROCESSES | head -n $i | tail -n 1 | awk '{print $2}')
-	#	if [ x"$1" != "xkill" ]
-	#	then
-	#		printf "${pid}\t${pname}\n"
-	#	else
-	#		kill ${pid}
-	#	fi
-	#	i=$(($i+1))
-	#done
 
 	printf "\n"
 
-	#this stub is for checking against the interface name, but since it almost never hits why bother?
-	#if [ x"${1}" != "x" -a x"${1}" != "xkill" ]
-	#then
-	#	#the next line doesn't work on busybox ps because -p is unimplimented
-	#	match2=$(ps -o comm= -p 1 2>&1 | grep $PS_ERROR -c)
-	#	if [ ${match2} -gt 0 ]
-	#	then
-	#		return
-	#	fi
-	#
-	#	for i in $(ps auxw | grep ${1} | grep -v "grep" | grep -v "airmon-ng" | awk '{print $2}')
-	#	do
-	#		pname=$(ps -o comm= -p ${i})
-	#		printf "Process with PID ${i} ($pname) is running on interface ${1}\n"
-	#	done
-	#fi
 }
 
 listInterfaces() {
-	unset iface_list
-	for iface in $(ls -1 /sys/class/net)
-	do
-		if [ -f "/sys/class/net/${iface}/uevent" ]; then
-			if grep -q 'DEVTYPE=wlan' "/sys/class/net/${iface}/uevent"
-			then
-				iface_list="${iface_list}\n ${iface}"
-			fi
-		fi
-	done
-	if [ -x "$(command -v iwconfig 2>&1)" ] && [ -x "$(command -v sort 2>&1)" ]; then
-		for iface in $(iwconfig 2> /dev/null | sed -e 's/^\(\w*\)\s.*/\1/' -e '/^$/d'); do
-			iface_list="${iface_list}\n ${iface}"
-		done
-		iface_list="$(printf "${iface_list}" | sort -bu)"
-	fi
+  unset iface_list
+  for iface in $(ls -1 /sys/class/net)
+  do
+    if [ -f "/sys/class/net/${iface}/uevent" ]; then
+      if grep -q 'DEVTYPE=wlan' "/sys/class/net/${iface}/uevent"
+      then
+        iface_list="${iface_list}\n ${iface}"
+      fi
+    fi
+  done
+  if [ -x "$(command -v iwconfig 2>&1)" ] && [ -x "$(command -v sort 2>&1)" ]; then
+    for iface in $(iwconfig 2> /dev/null | sed -e 's/^\(\w*\)\s.*/\1/' -e '/^$/d'); do
+      iface_list="${iface_list}\n ${iface}"
+    done
+    # This breaks if you fix SC2059 and I am not sure why
+    # This should probably be space separated instead of newline
+    # shellcheck disable=SC2059
+    iface_list="$(printf "${iface_list}" | sort -bu)"
+  fi
 }
 
 getPhy() {
-	if [ -z "$1" ];	then
+	if [ -z "${1}" ];	then
 		return
 	fi
 
-	if [ $MAC80211 = "0" ]; then
+	if [ "${MAC80211}" = "0" ]; then
 		PHYDEV="null"
 		return
 	fi
 
-	if [ -r /sys/class/net/$1/phy80211/name ]; then
-		PHYDEV="$(cat /sys/class/net/$1/phy80211/name)"
+	if [ -r "/sys/class/net/${1}/phy80211/name" ]; then
+		PHYDEV="$(cat /sys/class/net/${1}/phy80211/name)"
 	fi
-	if [ -d /sys/class/net/$1/phy80211/ ] && [ -z "${PHYDEV}" ]; then
+	if [ -d "/sys/class/net/${1}/phy80211/" ] && [ -z "${PHYDEV}" ]; then
 
 		PHYDEV="$(ls -l "/sys/class/net/$1/phy80211" | sed 's/^.*\/\([a-zA-Z0-9_-]*\)$/\1/')"
 	fi
@@ -1318,11 +1276,11 @@ checkvm() {
 	if [ -x "$(command -v lsmod 2>&1)" ]; then
 		lsmod_data="$(lsmod 2>&1 | awk '{print $1}')"
 		if [ -n "${lsmod}" ]; then
-			printf "${lsmod_data}" | grep -iqE "vboxsf|vboxguest" 2> /dev/null && vm="VirtualBox"
-			printf "${lsmod_data}" | grep -iqE "vmw_ballon|vmxnet|vmw" 2> /dev/null && vm="VMware"
-			printf "${lsmod_data}" | grep -iqE "xen-vbd|xen-vnif" 2> /dev/null && vm="Xen"
-			printf "${lsmod_data}" | grep -iqE "virtio_pci|virtio_net" 2> /dev/null && vm="Qemu/KVM"
-			printf "${lsmod_data}" | grep -iqE "hv_vmbus|hv_blkvsc|hv_netvsc|hv_utils|hv_storvsc" && vm="MS Hyper-V"
+			printf "%s" "${lsmod_data}" | grep -iqE "vboxsf|vboxguest" 2> /dev/null && vm="VirtualBox"
+			printf "%s" "${lsmod_data}" | grep -iqE "vmw_ballon|vmxnet|vmw" 2> /dev/null && vm="VMware"
+			printf "%s" "${lsmod_data}" | grep -iqE "xen-vbd|xen-vnif" 2> /dev/null && vm="Xen"
+			printf "%s" "${lsmod_data}" | grep -iqE "virtio_pci|virtio_net" 2> /dev/null && vm="Qemu/KVM"
+			printf "%s" "${lsmod_data}" | grep -iqE "hv_vmbus|hv_blkvsc|hv_netvsc|hv_utils|hv_storvsc" && vm="MS Hyper-V"
 			[ -n "${vm}" ] && vm_from="lsmod"
 		fi
 	fi
@@ -1340,10 +1298,10 @@ checkvm() {
 	if [ -z "${vm_from}" ];	then
 		if [ -d /proc/ide ]; then
 			ide_model="$(cat /proc/ide/hd*/model)"
-			printf "${ide_model}" | grep -iq "vbox" 2> /dev/null && vm="VirtualBox"
-			printf "${ide_model}" | grep -iq "vmware" 2> /dev/null && vm="VMware"
-			printf "${ide_model}" | grep -iq "qemu" 2> /dev/null && vm="Qemu/KVM"
-			printf "${ide_model}" | grep -iqE "virtual (hd|cd)" 2> /dev/null && vm="Hyper-V/Virtual PC"
+			printf "%s" "${ide_model}" | grep -iq "vbox" 2> /dev/null && vm="VirtualBox"
+			printf "%s" "${ide_model}" | grep -iq "vmware" 2> /dev/null && vm="VMware"
+			printf "%s" "${ide_model}" | grep -iq "qemu" 2> /dev/null && vm="Qemu/KVM"
+			printf "%s" "${ide_model}" | grep -iqE "virtual (hd|cd)" 2> /dev/null && vm="Hyper-V/Virtual PC"
 			[ -n "${vm}" ] && vm_from="ide_model"
 		fi
 	fi
@@ -1351,26 +1309,21 @@ checkvm() {
 	# Check using lspci
 	if [ -z "${vm_from}" ] && [ "${LSPCI}" = "1" ]; then
 			lspci_data="$(lspci 2>&1)"
-			printf "${lspci_data}" | grep -iq "vmware" 2> /dev/null && vm="VMware"
-			printf "${lspci_data}" | grep -iq "virtualbox" 2> /dev/null && vm="VirtualBox"
+			printf "%s" "${lspci_data}" | grep -iq "vmware" 2> /dev/null && vm="VMware"
+			printf "%s" "${lspci_data}" | grep -iq "virtualbox" 2> /dev/null && vm="VirtualBox"
 			[ -n "${vm}" ] && vm_from="lspci"
 	fi
 
 	# Xen bus check
 	## XXX: Removing unsafe check
 	# this check triggers if CONFIG_XEN_PRIVILEGED_GUEST=y et al are set in kconfig (debian default) even in not actually a guest
-	#if [ -z ${vm} ]
-	#then
-	#	ls -1 /sys/bus | grep -iq "xen" 2> /dev/null && vm="Xen"
-	#	vm_from="/sys/bus/xen"
-	#fi
 
 	# Check using lscpu
 	if [ -z "${vm_from}" ]; then
 		if [ -x "$(command -v lscpu 2>&1)" ]; then
                         lscpu_data="$(lscpu 2>&1)"
-			printf "${lscpu_data}" | grep -iq "Xen" 2> /dev/null && vm="Xen"
-			printf "${lscpu_data}" | grep -iq "Microsoft" 2> /dev/null && vm="MS Hyper-V"
+			printf "%s" "${lscpu_data}" | grep -iq "Xen" 2> /dev/null && vm="Xen"
+			printf "%s" "${lscpu_data}" | grep -iq "Microsoft" 2> /dev/null && vm="MS Hyper-V"
 			[ -n "${vm}" ] && vm_from="lscpu"
 		fi
 	fi
@@ -1408,6 +1361,18 @@ checkvm() {
 	checkvm_status="run"
 }
 
+kernel_breakage_check() {
+  KV="$(uname -r | awk -F'-' '{print $1}')"
+  KVMAJOR="$(printf ${KV} | awk -F'.' '{print $1$2}')"
+  KVMINOR="$(printf ${KV} | awk -F'.' '{print $3}')"
+
+  if [ "${KVMAJOR}" = "515" ] && [ "${KVMINOR}" -lt "5" ]; then
+    printf "WARNING: This kernel likely has broken radiotap headers\n"
+    printf "\ttherefore breaking tools relying on packet capture.\n"
+    printf "\tThis is fixed in kernel 5.15.5 and later versions.\n\n"
+  fi
+}
+
 #end function definitions
 #begin execution
 
@@ -1417,14 +1382,16 @@ handleLostPhys
 listInterfaces
 
 if [ "${1}" = "check" ] || [ "${1}" = "start" ]; then
+	if [ "${VERBOSE}" = "0" ]; then
+		# if verbose is set this was already run
+		# but it's important so run it for everyone
+		kernel_breakage_check
+	fi
 	if [ "${2}" = "kill" ]; then
 		#if we are killing, tell scanProcesses that
 		scanProcesses "${2}"
 		exit
 	elif [ "${1}" = "start" ]; then
-		#this stub can send scanProcesses the interface name
-		#but this seems entirely unreliable so just run generic
-		#scanProcesses "${2}"
 		scanProcesses
 	else
 		scanProcesses
@@ -1433,11 +1400,11 @@ if [ "${1}" = "check" ] || [ "${1}" = "start" ]; then
 fi
 
 if [ "$#" != "0" ]; then
-	if [ "$1" != "start" ] && [ "$1" != "stop" ]; then
+	if [ "${1}" != "start" ] && [ "${1}" != "stop" ]; then
 		usage
 	fi
 
-	if [ -z "$2" ]; then
+	if [ -z "${2}" ]; then
 		usage
 	fi
 fi
@@ -1445,8 +1412,8 @@ fi
 #start/stop interface existance check
 if [ "$1" = "start" ] || [ "$1" = "stop" ]; then
   if ! ifaceExists "${2}"; then
-    printf "Requested device \"${2}\" does not exist.\n"
-    printf "Run ${0} without any arguments to see available interfaces\n"
+    printf "Requested device \"%s\" does not exist.\n" "${2}"
+    printf "Run %s without any arguments to see available interfaces\n" "${0}"
     exit 1
   fi
 fi
@@ -1455,7 +1422,7 @@ fi
 
 if [ "$DEBUG" = "1" ]; then
 	if [ -x "$(command -v readlink 2>&1)" ]; then
-		printf "/bin/sh -> $(readlink -f /bin/sh)\n"
+		printf "/bin/sh -> %s\n" "$(readlink -f /bin/sh)"
 		if $(readlink -f /bin/sh) --version > /dev/null 2>&1
 		then
 			printf "$($(readlink -f /bin/sh) --version)\n"
@@ -1474,30 +1441,31 @@ if [ "$VERBOSE" = "1" ]; then
 		printf "\n"
 	fi
 	uname -a
-	printf "\n"
+	kernel_breakage_check
+
 	if iw reg get | grep -q 'country 00:'; then
 		printf "Regulatory Domain appears to be unset, please consider setting it with 'iw reg set XX'\n"
 		printf "https://wireless.wiki.kernel.org/en/users/documentation/iw#updating_your_regulatory_domain\n"
 	else
 		for regdomain in $(iw reg get | awk '/country/ {print substr($2,1,length($2)-1)}' | sort -u); do
-			printf "Regulatory Domain set to ${regdomain}, see 'iw reg get' for details\n"
+			printf "Regulatory Domain set to %s, see 'iw reg get' for details\n" "${regdomain}"
 		done
 	fi
 
 	checkvm
 	if [ -n "${vm}" ]; then
-		printf "Detected VM using ${vm_from}\n"
-		printf "This appears to be a ${vm} Virtual Machine\n"
+		printf "Detected VM using %s\n" "${vm_from}"
+		printf "This appears to be a %s Virtual Machine\n" "${vm}"
 		printf "If your system supports VT-d, it may be possible to use PCI devices\n"
 		printf "If your system does not support VT-d, you can only use USB wifi cards\n"
 	fi
 
-	printf "\nK indicates driver is from $(uname -r)\n"
+  printf "\nK indicates driver is from %s\n" "$(uname -r)"
 	if [ "${MODPROBE}" = "1" ]; then
 		modprobe compat > /dev/null 2>&1
 
 		if [ -r /sys/module/compat/parameters/compat_version ]; then
-			printf "C indicates driver is from $(cat /sys/module/compat/parameters/compat_version)\n"
+			printf "C indicates driver is from %s\n" "$(cat /sys/module/compat/parameters/compat_version)"
 		fi
 	fi
 	printf "V indicates driver comes directly from the vendor, almost certainly a bad thing\n"
@@ -1511,20 +1479,20 @@ else
 	printf "PHY\tInterface\tDriver\t\tChipset\n\n"
 fi
 
-for iface in $(printf "${iface_list}"); do
+for iface in $(printf "%s" "${iface_list}"); do
 	unset ethtool_output DRIVER FROM FIRMWARE STACK MADWIFI MAC80211 BUS BUSADDR BUSINFO DEVICEID CHIPSET EXTENDED NET_TYPE PHYDEV ifacet DRIVERt FIELD1 FIELD1t FIELD2 FIELD2t CHIPSETt
 	#add a RUNNING check here and up the device if it isn't already
-	ethtool_output="$(ethtool -i $iface 2>&1)"
+	ethtool_output="$(ethtool -i ${iface} 2>&1)"
 	if [ "$ethtool_output" != "Cannot get driver information: Operation not supported" ]; then
-		getStack  ${iface}
-		getBus ${iface}
-		getPhy     ${iface}
-		getDriver   ${iface}
-		getChipset ${iface}
+		getStack  "${iface}"
+		getBus "${iface}"
+		getPhy "${iface}"
+		getDriver "${iface}"
+		getChipset "${iface}"
 		if [ "${VERBOSE}" = "1" ]; then
-			getFrom ${iface}
-			getFirmware ${iface}
-			getExtendedInfo ${iface}
+			getFrom "${iface}"
+			getFirmware "${iface}"
+			getExtendedInfo "${iface}"
 		fi
 	else
  		CHIPSET="ethtool failed... driver is broken"
@@ -1587,20 +1555,20 @@ for iface in $(printf "${iface_list}"); do
 		printf "${PHYDEV}\t${iface}${ifacet}${DRIVER}${DRIVERt}${CHIPSET}\n"
 	fi
 
-	if [ "$DRIVER" = "wl" ]; then
-		if [ "$1" = "start" ] && [ "$2" = "$iface" ]; then
-			startwlIface $iface
+	if [ "${DRIVER}" = "wl" ]; then
+		if [ "${1}" = "start" ] && [ "${2}" = "${iface}" ]; then
+			startwlIface "${iface}"
 		fi
-		if [ "$1" = "stop" ] && [ "$2" = "$iface" ]; then
-			stopwlIface $iface
+		if [ "${1}" = "stop" ] && [ "${2}" = "${iface}" ]; then
+			stopwlIface "${iface}"
 		fi
-	elif [ "$MAC80211" = "1" ]; then
-		if [ "$1" = "start" ] && [ "$2" = "$iface" ]; then
-			startMac80211Iface $iface
+	elif [ "${MAC80211}" = "1" ]; then
+		if [ "${1}" = "start" ] && [ "${2}" = "${iface}" ]; then
+			startMac80211Iface "${iface}"
 		fi
 
-		if [ "$1" = "stop" ] && [ "$2" = "$iface" ]; then
-			stopMac80211Iface $iface
+		if [ "${1}" = "stop" ] && [ "${2}" = "${iface}" ]; then
+			stopMac80211Iface "${iface}"
 		fi
 	fi
 done

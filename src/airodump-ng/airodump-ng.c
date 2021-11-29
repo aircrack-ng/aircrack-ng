@@ -102,6 +102,7 @@ static const char * OUI_PATHS[]
 	   "/usr/share/aircrack-ng/airodump-ng-oui.txt",
 	   "/var/lib/misc/oui.txt",
 	   "/usr/share/misc/oui.txt",
+	   "/usr/share/hwdata/oui.txt",
 	   "/var/lib/ieee-data/oui.txt",
 	   "/usr/share/ieee-data/oui.txt",
 	   "/etc/manuf/oui.txt",
