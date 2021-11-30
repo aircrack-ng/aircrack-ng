@@ -1379,6 +1379,16 @@ handleLostPhys
 
 listInterfaces
 
+# Kernel version checks are used unconditionally so just set it during main
+KV="$(uname -r | awk -F'-' '{print $1}')"
+KVMAJOR="$(printf "%s" "${KV}" | awk -F'.' '{print $1$2}')"
+KVMINOR="$(printf "%s" "${KV}" | awk -F'.' '{print $3}')"
+if [ "${KVMINOR}" = "0" ]; then
+  # debian and kids always have 0 in minor for uname -r
+  KV="$(uname -v | awk '{sub(/-.*/, "", $4); print $4}')"
+  KVMINOR="$(printf "%s" "${KV}" | awk -F'.' '{print $3}')"
+fi
+
 if [ "${1}" = "check" ] || [ "${1}" = "start" ]; then
 	if [ "${VERBOSE}" = "0" ]; then
 		# if verbose is set this was already run
@@ -1432,16 +1442,6 @@ if [ "$DEBUG" = "1" ]; then
 			/bin/sh --version
 		fi
 	fi
-fi
-
-# Kernel version checks are used unconditionally so just set it during main
-KV="$(uname -r | awk -F'-' '{print $1}')"
-KVMAJOR="$(printf "%s" "${KV}" | awk -F'.' '{print $1$2}')"
-KVMINOR="$(printf "%s" "${KV}" | awk -F'.' '{print $3}')"
-if [ "${KVMINOR}" = "0" ]; then
-  # debian and kids always have 0 in minor for uname -r
-  KV="$(uname -v | awk '{sub(/-.*/, "", $4); print $4}')"
-  KVMINOR="$(printf "%s" "${KV}" | awk -F'.' '{print $3}')"
 fi
 
 if [ "$VERBOSE" = "1" ]; then
