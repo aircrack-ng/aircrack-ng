@@ -28,9 +28,6 @@ jobs:
 
     runs-on: ubuntu-20.04
 
-    env:
-      debfile: pvs-studio-7.15.53844.171-amd64.deb
-
     steps:
       - uses: actions/checkout@v2
         with:
@@ -40,15 +37,15 @@ jobs:
         run: |
           mkdir -p pvs-package
 
-      - uses: actions/cache@v2
-        id: cache-pvs
-        with:
-          path: pvs-package
-          key: ${{ env.debfile }}
+      - name: Find latest PVS-Studio release
+        id: pvs_version
+        run: |
+          p=$(curl -sRL "https://pvs-studio.com/en/pvs-studio/download-all/" |\
+              grep -oE 'https?://cdn.pvs-studio.com/pvs-studio-[0-9.]+(-amd64\.deb)')
+          echo "::set-output name=debfile::$p"
 
       - name: Fetch PVS-Studio package
-        if: steps.cache-pvs.outputs.cache-hit != 'true'
-        run: wget "https://files.viva64.com/${debfile}" -O "pvs-package/pvs.deb"
+        run: wget "${{ steps.pvs_version.outputs.debfile }}" -O "pvs-package/pvs.deb"
 
       - name: Install packages
         run: |
