@@ -275,38 +275,39 @@ static void reset(struct east_state * es)
 	printf_time("Restarting");
 }
 
-/********** RIPPED
-************/
-static unsigned short in_cksum(unsigned short * ptr, int nbytes)
+static uint16_t in_cksum(const uint8_t * restrict ptr, size_t nbytes)
 {
+	long sum = 0;
+	uint16_t oddbyte = 0;
+	uint16_t answer;
+
 	REQUIRE(ptr != NULL);
 
-	register long sum;
-	u_short oddbyte;
-	register u_short answer;
-
-	sum = 0;
+	// sum of data stream
 	while (nbytes > 1)
 	{
-		sum += *ptr++;
+		const uint16_t v = load16((uint8_t *) ptr);
+		sum += v;
+		ptr += 2;
 		nbytes -= 2;
 	}
 
 	if (nbytes == 1)
 	{
-		oddbyte = 0;
-		*((u_char *) &oddbyte) = *(u_char *) ptr;
+		*((uint8_t *) &oddbyte) = *ptr;
 		sum += oddbyte;
 	}
 
+	// reduce sum to uint16_t
 	sum = (sum >> 16) + (sum & 0xffff);
+	// add any carry bits
 	sum += (sum >> 16);
+
+	// one's complement
 	answer = ~sum;
 
 	return (answer);
 }
-/**************
-************/
 
 static void open_wifi(struct east_state * es)
 {
@@ -2026,7 +2027,7 @@ static void check_inet(struct east_state * es, struct timeval * tv)
 	iph->ip_p = IPPROTO_UDP;
 	iph->ip_src = es->es_myip;
 	iph->ip_dst = es->es_srvip;
-	iph->ip_sum = in_cksum((unsigned short *) iph, 20);
+	iph->ip_sum = in_cksum((uint8_t *) iph, 20);
 
 	/* udp */
 	uh = (struct udphdr *) (iph + 1); //-V1027
@@ -2096,7 +2097,7 @@ static void redirect_sendip(struct east_state * es, struct rpacket * rp)
 	iph->ip_p = IPPROTO_UDP;
 	iph->ip_src = es->es_myip;
 	iph->ip_dst = es->es_srvip;
-	iph->ip_sum = in_cksum((unsigned short *) iph, 20);
+	iph->ip_sum = in_cksum((uint8_t *) iph, 20);
 
 	/* udp */
 	uh = (struct udphdr *) (iph + 1); //-V1027
