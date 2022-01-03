@@ -1362,10 +1362,8 @@ checkvm() {
 }
 
 kernel_breakage_check() {
-  KV="$(uname -r | awk -F'-' '{print $1}')"
-  KVMAJOR="$(printf ${KV} | awk -F'.' '{print $1$2}')"
-  KVMINOR="$(printf ${KV} | awk -F'.' '{print $3}')"
-
+  # Kernel 5.15 has broken radiotap headers due to commit 8c89f7b3d3f2. They are fixed in 5.15.5
+  # See https://lore.kernel.org/all/20211109100203.c61007433ed6.I1dade57aba7de9c4f48d68249adbae62636fd98c@changeid/
   if [ "${KVMAJOR}" = "515" ] && [ "${KVMINOR}" -lt "5" ]; then
     printf "WARNING: This kernel likely has broken radiotap headers\n"
     printf "\ttherefore breaking tools relying on packet capture.\n"
@@ -1380,6 +1378,16 @@ kernel_breakage_check() {
 handleLostPhys
 
 listInterfaces
+
+# Kernel version checks are used unconditionally so just set it during main
+KV="$(uname -r | awk -F'-' '{print $1}')"
+KVMAJOR="$(printf "%s" "${KV}" | awk -F'.' '{print $1$2}')"
+KVMINOR="$(printf "%s" "${KV}" | awk -F'.' '{print $3}')"
+if [ "${KVMINOR}" = "0" ]; then
+  # debian and kids always have 0 in minor for uname -r
+  KV="$(uname -v | awk '{sub(/-.*/, "", $4); print $4}')"
+  KVMINOR="$(printf "%s" "${KV}" | awk -F'.' '{print $3}')"
+fi
 
 if [ "${1}" = "check" ] || [ "${1}" = "start" ]; then
 	if [ "${VERBOSE}" = "0" ]; then
@@ -1435,6 +1443,7 @@ if [ "$DEBUG" = "1" ]; then
 		fi
 	fi
 fi
+
 if [ "$VERBOSE" = "1" ]; then
 	if [ -n "$(command -v lsb_release 2> /dev/null)" ]; then
 		lsb_release -a | grep -iv 'n/a'
