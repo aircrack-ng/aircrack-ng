@@ -1160,24 +1160,40 @@ scanProcesses() {
 	#PS_ERROR="invalid\|illegal"
 
 	if [ "${1}" = "kill" ]; then
+    if [ -x "$(command -v systemctl 2>&1)" ]; then
+		  for service in network-manager NetworkManager avahi-daemon wicd; do
+        if systemctl status "${service}" > /dev/null 2>&1; then
+          killservice=1
+          until systemctl stop "${service}" 2> /dev/null > /dev/null; do
+            killservice=$((killservice + 1))
+            if [ ${killservice} -gt 5 ]; then
+              printf "Failed to stop %s, please stop it on your own.\n" "${service}"
+              break
+            fi
+          done
+        fi
+      done
+    fi
 		servicecmd=""
 		if [ -x "$(command -v service 2>&1)" ]; then
 			servicecmd="service"
 		elif [ -x "$(command -v rc-service 2>&1)" ]; then
 			servicecmd="rc-service"
 		fi
-		for service in network-manager NetworkManager avahi-daemon wicd; do
-			if "${servicecmd}" "${service}" status 2> /dev/null > /dev/null; then
-				killservice=1
-				until "${servicecmd}" "${service}" stop 2> /dev/null > /dev/null; do
-					killservice=$((killservice + 1))
-					if [ ${killservice} -gt 5 ]; then
-						printf "Failed to stop %s, please stop it on your own.\n" "${service}"
-						break
-					fi
-				done
-			fi
-		done
+    if [ -n "${servicecmd}" ]; then
+      for service in network-manager NetworkManager avahi-daemon wicd; do
+        if "${servicecmd}" "${service}" status 2> /dev/null > /dev/null; then
+          killservice=1
+          until "${servicecmd}" "${service}" stop 2> /dev/null > /dev/null; do
+            killservice=$((killservice + 1))
+            if [ ${killservice} -gt 5 ]; then
+              printf "Failed to stop %s, please stop it on your own.\n" "${service}"
+              break
+            fi
+          done
+        fi
+      done
+    fi
 	fi
 
 	unset match
