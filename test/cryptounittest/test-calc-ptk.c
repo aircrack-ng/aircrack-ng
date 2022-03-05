@@ -92,9 +92,8 @@ int main(int argc, char ** argv)
 	unsigned char pmk[32];
 	memcpy(&pmk, &opmk, 32);
 
-	struct WPA_ST_info * wpa;
-	wpa = (struct WPA_ST_info *) malloc(sizeof(struct WPA_ST_info));
-	ALLEGE(wpa != NULL);
+	struct WPA_ST_info l_wpa;
+	struct WPA_ST_info * wpa = &l_wpa;
 	// default to zero
 	bzero(wpa, sizeof(struct WPA_ST_info));
 
@@ -118,8 +117,6 @@ int main(int argc, char ** argv)
 	if ((1 == 1) != (calc_ptk(wpa, pmk))) error++;
 	error += test(pmk, opmk, 32, argv[0]);
 	error += test(wpa->ptk, eptk, 80, argv[0]);
-
-	free(wpa);
 
 	return error;
 }

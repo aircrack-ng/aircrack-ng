@@ -675,12 +675,13 @@ static int read_prga_xor_ivs2(unsigned char ** dest, const char * file)
 	FILE * f;
 	int size;
 	struct ivs2_filehdr fivs2;
+	size_t file_sz = file != NULL ? strlen(file) : 0;
 
 	if (file == NULL) return (1);
 	if (*dest == NULL) *dest = (unsigned char *) malloc(1501);
 
-	if (memcmp(file + (strlen(file) - 4), ".xor", 4) != 0
-		&& memcmp(file + (strlen(file) - 4), "." IVS2_EXTENSION, 4) != 0)
+	if (memcmp(file + (file_sz - 4), ".xor", 4) != 0
+		&& memcmp(file + (file_sz - 4), "." IVS2_EXTENSION, 4) != 0)
 	{
 		printf("Is this really a PRGA file: %s?\n", file);
 	}

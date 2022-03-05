@@ -354,7 +354,7 @@ static void process_directory(const char * dir, time_t begin)
 			continue;
 		}
 
-		size_t fullname_size = strlen(dir) + strlen(curent->d_name) + 2;
+		size_t fullname_size = strlen(dir) + strlen(curent->d_name) + 2; //-V814
 		char * fullname = malloc(fullname_size);
 		ALLEGE(fullname != NULL);
 		ALLEGE(strlcpy(fullname, dir, fullname_size) < fullname_size);

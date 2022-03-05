@@ -72,9 +72,8 @@ int main(int argc, char ** argv)
 		= "\x9c\xc3\xfa\xa0\xc6\x85\x96\x1d\x84\x06\xbb\x65\x77\x45\x13\x5d"
 		  "\x30\x9d\xd3\x01";
 	// AP structure
-	struct AP_info * ap;
-	ap = (struct AP_info *) malloc(sizeof(struct AP_info));
-	ALLEGE(ap != NULL);
+	struct AP_info l_ap;
+	struct AP_info * ap = &l_ap;
 	bzero(ap, sizeof(struct AP_info));
 
 	unsigned char stmac[6] = "\x00\x13\x46\xfe\x32\x0c";
@@ -139,8 +138,6 @@ int main(int argc, char ** argv)
 	error += test(pmk, opmk, 32, argv[0]);
 	error += test(ptk, eptk, 80, argv[0]);
 	error += test(mic, emic2, 20, argv[0]);
-
-	free(ap);
 
 	return error;
 }

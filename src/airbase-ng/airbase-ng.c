@@ -949,7 +949,6 @@ static int remove_tag(uint8_t * tagged_params,
 					  const uint8_t exclude_tag_id,
 					  size_t * tp_length)
 {
-	REQUIRE(tagged_params != NULL);
 	REQUIRE(tp_length != NULL);
 
 	size_t dst_pos = 0, src_pos = 0;

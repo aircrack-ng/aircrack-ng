@@ -761,7 +761,7 @@ int main(int argc, char * argv[])
 
 		/* check minimum size */
 
-		z = ((h80211[1] & 3) != 3) ? 24 : 30;
+		z = ((*(h80211 + 1) & 3) != 3) ? 24 : 30;
 
 		if (z + 16 > pkh.caplen) continue;
 
@@ -773,7 +773,7 @@ int main(int argc, char * argv[])
 
 		/* check the BSSID */
 
-		switch (h80211[1] & 3)
+		switch (*(h80211 + 1) & 3)
 		{
 			case 0:
 				memcpy(bssid, h80211 + 16, sizeof(bssid)); //-V525
@@ -811,7 +811,7 @@ int main(int argc, char * argv[])
 
 		/* locate the station's MAC address */
 
-		switch (h80211[1] & 3)
+		switch (*(h80211 + 1) & 3)
 		{
 			case 1:
 				memcpy(stmac, h80211 + 10, sizeof(stmac)); //-V525
@@ -862,7 +862,7 @@ int main(int argc, char * argv[])
 
 		crc = calc_crc_buf(h80211 + z, pkh.caplen - z);
 
-		if ((h80211[1] & 3) == 2)
+		if ((*(h80211 + 1) & 3) == 2)
 		{
 			if (st_cur->t_crc == crc) continue;
 
@@ -918,7 +918,7 @@ int main(int argc, char * argv[])
 
 				stats.nb_unwep++;
 
-				h80211[1] &= 0xBF;
+				*(h80211 + 1) &= 0xBF;
 
 				if (write_packet(f_out, &pkh, h80211) != 0) break;
 			}
@@ -976,7 +976,7 @@ int main(int argc, char * argv[])
 
 				stats.nb_unwpa++;
 
-				h80211[1] &= 0xBF;
+				*(h80211 + 1) &= 0xBF;
 
 				if (write_packet(f_out, &pkh, h80211) != 0) break;
 			}

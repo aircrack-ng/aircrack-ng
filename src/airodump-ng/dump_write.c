@@ -608,7 +608,7 @@ char * get_manufacturer_from_string(char * buffer)
 {
 	char * manuf = NULL;
 	char * buffer_manuf;
-	if (buffer != NULL && strlen(buffer) > 0)
+	if (buffer != NULL && *buffer != '\0')
 	{
 		buffer_manuf = strstr(buffer, "(hex)");
 		if (buffer_manuf != NULL)

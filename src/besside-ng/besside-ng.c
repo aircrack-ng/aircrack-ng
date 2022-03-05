@@ -836,9 +836,11 @@ static void wpa_upload(void)
 			 boundary,
 			 (int) (strlen(h1) + strlen(form) + tot));
 
-	if (write(s, buf, strlen(buf)) != (int) strlen(buf)) goto __fail;
+	const size_t buf_sz = strlen(buf);
+	if (write(s, buf, buf_sz) != (int) buf_sz) goto __fail;
 
-	if (write(s, h1, strlen(h1)) != (int) strlen(h1)) goto __fail;
+	const size_t h1_sz = strlen(h1);
+	if (write(s, h1, h1_sz) != (int) h1_sz) goto __fail;
 
 	if ((off = lseek(_state.s_wpafd, 0, SEEK_CUR)) == (off_t) -1)
 		err(1, "lseek()");
@@ -858,7 +860,8 @@ static void wpa_upload(void)
 		tot -= l;
 	}
 
-	if (write(s, form, strlen(form)) != (int) strlen(form)) goto __fail;
+	const size_t form_sz = strlen(form);
+	if (write(s, form, form_sz) != (int) form_sz) goto __fail;
 
 	if (lseek(_state.s_wpafd, off, SEEK_SET) == (off_t) -1) err(1, "lseek()");
 
@@ -1862,6 +1865,7 @@ wifi_beacon(struct network * n, struct ieee80211_frame * wh, int totlen)
 				break;
 
 			case IEEE80211_ELEMID_DSPARMS:
+			case IEEE80211_ELEMID_HTINFO:
 				n->n_chan = *p;
 				break;
 
@@ -1871,10 +1875,6 @@ wifi_beacon(struct network * n, struct ieee80211_frame * wh, int totlen)
 
 			case IEEE80211_ELEMID_RSN:
 				if (parse_rsn(n, p, l, 1) == -1) goto __bad;
-				break;
-
-			case IEEE80211_ELEMID_HTINFO:
-				n->n_chan = *p;
 				break;
 
 			default:
@@ -2612,13 +2612,15 @@ static void wifi_read(void)
 	struct state * s = &_state;
 	unsigned char buf[sizeof(struct ieee80211_frame) * 8];
 	int rd;
-	struct rx_info ri;
+	struct rx_info * ri = calloc(1, sizeof(*ri));
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
 	struct network * n;
 
+	REQUIRE(ri != NULL);
+
 	memset(buf, 0, sizeof(buf));
 
-	rd = wi_read(s->s_wi, NULL, NULL, buf, sizeof(buf), &ri);
+	rd = wi_read(s->s_wi, NULL, NULL, buf, sizeof(buf), ri);
 	if (rd < 0) err(1, "wi_read()");
 
 	if (rd < (int) sizeof(struct ieee80211_frame))
@@ -2626,7 +2628,7 @@ static void wifi_read(void)
 		return;
 	}
 
-	s->s_ri = &ri;
+	s->s_ri = ri;
 
 	n = network_update(wh);
 
@@ -3005,6 +3007,10 @@ static void cleanup(int UNUSED(x))
 
 	print_work();
 
+#ifdef HAVE_PCRE
+	if (_conf.cf_essid_regex) pcre_free(_conf.cf_essid_regex);
+#endif
+
 	exit(EXIT_SUCCESS);
 }
 
@@ -3118,13 +3124,15 @@ static void autodetect_channels(void)
 {
 	time_printf(V_NORMAL, "Autodetecting supported channels...\n");
 
+	// clang-format off
 	// autodetect 2ghz channels
-	autodetect_freq(2412, 2472, 5); // 1-13
-	autodetect_freq(2484, 2484, 1); // 14
-	autodetect_freq(5180, 5320, 10); // 36-64
-	autodetect_freq(5500, 5720, 10); // 100-144
-	autodetect_freq(5745, 5805, 10); // 149-161
-	autodetect_freq(5825, 5825, 1); // 165
+	autodetect_freq(2412, 2472, 5);  //-V525  CH: 1-13
+	autodetect_freq(2484, 2484, 1);  //-V525  CH: 14
+	autodetect_freq(5180, 5320, 10); //-V525  CH: 36-64
+	autodetect_freq(5500, 5720, 10); //-V525  CH: 100-144
+	autodetect_freq(5745, 5805, 10); //-V525  CH: 149-161
+	autodetect_freq(5825, 5825, 1);  //-V525  CH: 165
+	// clang-format on
 }
 
 static void init_conf(void)
@@ -3389,9 +3397,5 @@ int main(int argc, char * argv[])
 
 	pwn();
 
-#ifdef HAVE_PCRE
-	if (_conf.cf_essid_regex) pcre_free(_conf.cf_essid_regex);
-#endif
-
-	exit(EXIT_SUCCESS);
+	/* UNREACHED */
 }

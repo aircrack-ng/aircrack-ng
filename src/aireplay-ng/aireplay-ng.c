@@ -325,7 +325,7 @@ xor_keystream(unsigned char * ph80211, unsigned char * keystream, int len)
 
 static void my_read_sleep_cb(void)
 {
-	read_packet(_wi_in, h80211, sizeof(h80211), NULL);
+	(void) read_packet(_wi_in, h80211, sizeof(h80211), NULL);
 }
 
 static void send_fragments(unsigned char * packet,
@@ -2259,7 +2259,6 @@ static int do_attack_caffe_latte(void)
 				fclose(f_cap_out);
 				return (1);
 			}
-
 			if (caplen == 0) continue;
 		}
 		else
@@ -4242,6 +4241,11 @@ static int do_attack_fragment(void)
 			while (!gotit) // waiting for relayed packet
 			{
 				caplen = read_packet(_wi_in, packet, sizeof(packet), NULL);
+				if (caplen < 0 && errno == EINTR)
+					continue;
+				else if (caplen < 0)
+					break;
+
 				z = ((packet[1] & 3) != 3) ? 24 : 30;
 				if ((packet[0] & 0x80) == 0x80) /* QoS */
 					z += 2;
@@ -4427,6 +4431,11 @@ static int do_attack_fragment(void)
 			while (!gotit) // waiting for relayed packet
 			{
 				caplen = read_packet(_wi_in, packet, sizeof(packet), NULL);
+				if (caplen < 0 && errno == EINTR)
+					continue;
+				else if (caplen < 0)
+					break;
+
 				z = ((packet[1] & 3) != 3) ? 24 : 30;
 				if ((packet[0] & 0x80) == 0x80) /* QoS */
 					z += 2;
@@ -4586,6 +4595,11 @@ static int do_attack_fragment(void)
 			while (!gotit) // waiting for relayed packet
 			{
 				caplen = read_packet(_wi_in, packet, sizeof(packet), NULL);
+				if (caplen < 0 && errno == EINTR)
+					continue;
+				else if (caplen < 0)
+					break;
+
 				z = ((packet[1] & 3) != 3) ? 24 : 30;
 				if ((packet[0] & 0x80) == 0x80) /* QoS */
 					z += 2;
@@ -5205,6 +5219,10 @@ static int do_attack_test(void)
 		while (1) // waiting for relayed packet
 		{
 			caplen = read_packet(_wi_in, packet, sizeof(packet), &ri);
+			if (caplen < 0 && errno == EINTR)
+				continue;
+			else if (caplen < 0)
+				break;
 
 			if (packet[0] == 0x50) // Is probe response
 			{
@@ -5357,7 +5375,10 @@ static int do_attack_test(void)
 			while (1) // waiting for relayed packet
 			{
 				caplen = read_packet(_wi_in, packet, sizeof(packet), &ri);
-				ALLEGE(caplen >= 0);
+				if (caplen < 0 && errno == EINTR)
+					continue;
+				else if (caplen < 0)
+					break;
 
 				if (packet[0] == 0x50) // Is probe response
 				{

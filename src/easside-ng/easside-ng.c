@@ -1111,7 +1111,7 @@ check_decrypt_ip(struct east_state * es, struct ieee80211_frame * wh, int len)
 	{
 		printf("\nGot checksum [could use to help bforce addr]\n");
 	}
-	else if ((es->es_prga_dlen >= off_s_addr)
+	else if ((es->es_prga_dlen >= off_s_addr) //-V695
 			 && (es->es_prga_dlen <= (off_s_addr + 4)))
 	{
 		unsigned char ip[4];
@@ -1129,7 +1129,7 @@ check_decrypt_ip(struct east_state * es, struct ieee80211_frame * wh, int len)
 
 		if (es->es_have_src && iplen == 3) found_net_addr(es, ip);
 	}
-	else if ((es->es_prga_dlen >= off_d_addr)
+	else if ((es->es_prga_dlen >= off_d_addr) //-V695
 			 && (es->es_prga_dlen <= (off_d_addr + 4)))
 	{
 		unsigned char dip[4];

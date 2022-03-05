@@ -1929,6 +1929,7 @@ int main(int argc, char * argv[])
 
 			printf("We have a redirect specified\n");
 			char * p_url = strstr(packet302_redirect, REDIRECT_PLACEHOLDER);
+			ALLEGE(p_url != NULL);
 
 			int total_len = strlen(packet302_redirect)
 							- strlen(REDIRECT_PLACEHOLDER)

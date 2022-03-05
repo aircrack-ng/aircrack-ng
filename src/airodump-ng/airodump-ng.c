@@ -3568,7 +3568,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	strlcat(strbuf, buffer, sizeof(strbuf));
 	memset(buffer, '\0', sizeof(buffer));
 
-	if (strlen(lopt.message) > 0)
+	if (*lopt.message != '\0')
 	{
 		strlcat(strbuf, lopt.message, sizeof(strbuf));
 	}
@@ -3604,9 +3604,8 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			strlcat(strbuf, "WPS   ", sizeof(strbuf));
 			if (ws_col > (columns_ap - 4))
 			{
-				memset(strbuf + strlen(strbuf),
-					   32,
-					   sizeof(strbuf) - strlen(strbuf) - 1);
+				const size_t n_strbuf = strlen(strbuf);
+				memset(strbuf + n_strbuf, 32, sizeof(strbuf) - n_strbuf - 1);
 				snprintf(strbuf + columns_ap + lopt.maxsize_wps_seen - 5,
 						 8,
 						 "%s",
@@ -4430,8 +4429,7 @@ json_get_value_for_name(const char * buffer, const char * name, char * value)
 	char * vcursor = value;
 	int ret = 0;
 
-	if (buffer == NULL || strlen(buffer) == 0 || name == NULL
-		|| strlen(name) == 0
+	if (buffer == NULL || *buffer == '\0' || name == NULL || *name != '\0'
 		|| value == NULL)
 	{
 		return (0);
@@ -4555,9 +4553,9 @@ static THREAD_ENTRY(gps_tracker_thread)
 		gpsd_tried_connection = 1;
 
 		time_t updateTime = time(NULL);
-		memset(line, 0, 1537);
-		memset(buffer, 0, 1537);
-		memset(data, 0, 1537);
+		memset(line, 0, sizeof(line));
+		memset(buffer, 0, sizeof(buffer));
+		memset(data, 0, sizeof(data));
 
 		/* attempt to connect to localhost, port 2947 */
 		pos = 0;
@@ -4787,7 +4785,7 @@ static THREAD_ENTRY(gps_tracker_thread)
 
 				memset(line, 0, sizeof(line));
 
-				snprintf(line, sizeof(line) - 1, "PVTAD\r\n");
+				strcat(line, "PVTAD\r\n");
 				if (send(gpsd_sock, line, 7, 0) != 7)
 				{
 					free(return_success);
@@ -5239,7 +5237,7 @@ static int getchannels(const char * optarg)
 		   chan_remain = 0;
 	char *optchan = NULL, *optc;
 	char * token = NULL;
-	int * tmp_channels;
+	int tmp_channels[chan_max + 1];
 
 	// got a NULL pointer?
 	if (optarg == NULL) return (-1);
@@ -5252,9 +5250,6 @@ static int getchannels(const char * optarg)
 	ALLEGE(optc != NULL);
 	ALLEGE(optchan != NULL);
 	strlcpy(optchan, optarg, optchan_len);
-
-	tmp_channels = (int *) malloc(sizeof(int) * (chan_max + 1));
-	ALLEGE(tmp_channels != NULL);
 
 	// split string in tokens, separated by ','
 	while ((token = strsep(&optchan, ",")) != NULL)
@@ -5273,7 +5268,6 @@ static int getchannels(const char * optarg)
 					if (((token[i] < '0') || (token[i] > '9'))
 						&& (token[i] != '-'))
 					{
-						free(tmp_channels);
 						free(optc);
 						return (-1);
 					}
@@ -5283,7 +5277,6 @@ static int getchannels(const char * optarg)
 				{
 					if (chan_first > chan_last)
 					{
-						free(tmp_channels);
 						free(optc);
 						return (-1);
 					}
@@ -5298,14 +5291,12 @@ static int getchannels(const char * optarg)
 				}
 				else
 				{
-					free(tmp_channels);
 					free(optc);
 					return (-1);
 				}
 			}
 			else
 			{
-				free(tmp_channels);
 				free(optc);
 				return (-1);
 			}
@@ -5317,7 +5308,6 @@ static int getchannels(const char * optarg)
 			{
 				if ((token[i] < '0') || (token[i] > '9'))
 				{
-					free(tmp_channels);
 					free(optc);
 					return (-1);
 				}
@@ -5333,7 +5323,6 @@ static int getchannels(const char * optarg)
 			}
 			else
 			{
-				free(tmp_channels);
 				free(optc);
 				return (-1);
 			}
@@ -5354,7 +5343,6 @@ static int getchannels(const char * optarg)
 
 	lopt.own_channels[i] = 0;
 
-	free(tmp_channels);
 	free(optc);
 	if (i == 1) return (lopt.own_channels[0]);
 	if (i == 0) return (-1);
@@ -6425,7 +6413,7 @@ int main(int argc, char * argv[])
 				output_format_string = strtok(optarg, ",");
 				while (output_format_string != NULL)
 				{
-					if (strlen(output_format_string) != 0)
+					if (*output_format_string != '\0')
 					{
 						if (strncasecmp(output_format_string, "csv", 3) == 0
 							|| strncasecmp(output_format_string, "txt", 3) == 0)

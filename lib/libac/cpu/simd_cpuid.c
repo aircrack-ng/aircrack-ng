@@ -76,9 +76,9 @@ getRegister(const unsigned int val, const char from, const char to)
 }
 
 #if defined(_X86) || defined(__arm__) || defined(__aarch64__)
-static void sprintcat(char * dest, const char * src, size_t len)
+static void sprintcat(char * restrict dest, const char * restrict src, size_t len)
 {
-	if (strlen(dest) > 0) (void) strncat(dest, ",", len - strlen(dest) - 1);
+	if (*dest != '\0') (void) strncat(dest, ",", len - strlen(dest) - 1);
 
 	(void) strncat(dest, src, len - strlen(dest) - 1);
 }

@@ -104,11 +104,11 @@ extern struct wif *_wi_in, *_wi_out;
 struct frag_state
 {
 	struct ieee80211_frame fs_wh;
-	unsigned char * fs_data;
-	int fs_len;
-	unsigned char * fs_ptr;
-	int fs_waiting_relay;
 	struct timeval fs_last;
+	int fs_len;
+	int fs_waiting_relay;
+	unsigned char * fs_data;
+	unsigned char * fs_ptr;
 };
 
 struct prga_info

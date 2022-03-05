@@ -244,7 +244,7 @@ int wait_for_beacon(struct wif * wi,
 
 		/* if bssid is given, copy essid */
 		if (bssid != NULL && memcmp(bssid, pkt_sniff + 10, ETHER_ADDR_LEN) == 0
-			&& strlen(essid) == 0)
+			&& *essid == '\0')
 		{
 			memset(essid, 0, 33);
 			memcpy(essid, data, taglen);
@@ -274,7 +274,7 @@ int wait_for_beacon(struct wif * wi,
 
 		/* if essid and bssid are given, check both */
 		if (bssid != NULL && memcmp(bssid, pkt_sniff + 10, ETHER_ADDR_LEN) == 0
-			&& strlen(essid) > 0)
+			&& *essid != '\0')
 		{
 			memset(essid2, 0, 33);
 			memcpy(essid2, data, taglen);
@@ -386,7 +386,7 @@ int getnet(struct wif * wi,
 			   bssid[5],
 			   wi_get_channel(wi));
 	}
-	else if (strlen((const char *) r_essid) > 0)
+	else if (*r_essid != '\0')
 	{
 		PCT;
 		printf("Waiting for beacon frame (ESSID: %s) on channel %d\n",
@@ -422,7 +422,7 @@ int getnet(struct wif * wi,
 		}
 		else
 		{
-			if (strlen((const char *) r_essid) > 0)
+			if (*r_essid != '\0')
 			{
 				printf("Please specify a BSSID (-a).\n");
 			}
@@ -957,7 +957,7 @@ static const char * f_ext[] = {AIRODUMP_NG_CSV_EXT,
 int dump_initialize_multi_format(char * prefix, int ivs_only)
 {
 	REQUIRE(prefix != NULL);
-	REQUIRE(strlen(prefix) > 0);
+	REQUIRE(*prefix != '\0');
 
 	const size_t ADDED_LENGTH = 17;
 	size_t i;

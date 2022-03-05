@@ -373,11 +373,17 @@ static void destroy_ap(struct AP_info * ap)
 
 	destroy(ap->uiv_root, uniqueiv_wipe);
 
-	if (ap->ptw_clean) destroy(ap->ptw_clean->allsessions, free);
-	destroy(ap->ptw_clean, free);
+	if (ap->ptw_clean)
+	{
+		destroy(ap->ptw_clean->allsessions, free);
+		free(ap->ptw_clean);
+	}
 
-	if (ap->ptw_vague) destroy(ap->ptw_vague->allsessions, free);
-	destroy(ap->ptw_vague, free);
+	if (ap->ptw_vague)
+	{
+		destroy(ap->ptw_vague->allsessions, free);
+		free(ap->ptw_vague);
+	}
 }
 
 static void ac_aplist_free(void)
@@ -6049,7 +6055,8 @@ int main(int argc, char * argv[])
 		// Load argc/argv either from the cracking session or from arguments
 		option = getopt_long(
 			nbarg,
-			((restore_session) ? cracking_session->argv : argv),
+			((restore_session && cracking_session) ? cracking_session->argv
+												   : argv),
 			"r:a:e:b:p:qcthd:l:E:J:m:n:i:f:k:x::XysZ:w:0HKC:M:DP:zV1Suj:N:R:I:",
 			long_options,
 			&option_index);
