@@ -8,7 +8,10 @@ Version 1.7 (changes from aircrack-ng 1.6) - Released XX XXX 2021:
 * Airodump-ng: Fixed dropping management frames with zeroed timestamp
 * Airodump-ng: Fixed sorting where sometimes it started with a different field
 * Airodump-ng: Allow setting colors only in AP selection mode
-* Airodump-ng: Fix crash on 4K Linux console 
+* Airodump-ng: Fix crash on 4K Linux console
+* Airodump-ng: Fixed issue where existing clients not linked to an AP become hidden when hitting 'o'
+* Airodump-ng: Allow use of WiFi 6E 6GHz frequencies
+* Airodump-ng: Look for oui.txt in /usr/share/hwdata
 * Airgraph-ng: Fixed graphviz package conflict
 * Airgraph-ng: Fixed downloading OUI with python3
 * Airgraph-ng: Ensure support/ directory is created when installing
@@ -32,14 +35,25 @@ Version 1.7 (changes from aircrack-ng 1.6) - Released XX XXX 2021:
 * Airmon-ng: Remove broken KVM detection
 * Airmon-ng: Show regdomain in verbose mode
 * Airmon-ng: Updated Raspberry Pi hardware revisions
+* Airmon-ng: Document frequency usage
+* Airmon-ng: Add a sleep to help predictable names due to udev sometimes renaming interface
+* Airmon-ng: Added warning for broken radiotap headers in kernel 5.15 to 5.15.4
+* Airmon-ng: shellcheck fixes
+* Airmon-ng: support systemctl as some systems don't support 'service' anymore
+* Airbase-ng: use enum for frame type/subtype
+* Airbase-ng: remove a few IE in association responses
 * Besside-ng: Support and detect all channels in 5GHz in Auto-Channel mode
 * OSdep: Search additional IE for channel information
+* OSdep: Android macro fixes
 * Patches: Add missing patches that were on https://patches.aircrack-ng.org but not in repo
-* Patches: Updated freeradius-wpe patch for v3.0.23
+* Patches: Updated freeradius-wpe patch for v3.0.25
+* Patches: Updated hostapd-wpe patch for v2.10
+* Patches: Added docker containers to test WPE patches
 * Autotools: make dist now creates VERSION file
 * Autotools: Added maintainer mode
 * Autotools: Initial support for Link Time Optimization (LTO) builds 
 * Integration tests: Added a new test, and improved some existing ones
+* Airgraph-ng: switch airodump-join to Python 3
 * Manpages: Fixes (typos, tools name, etc.) and improvements
 * README: Updated dependencies and their installation on various distros in README.md and INSTALLING
 * README: Fixed typos and spelling in README.md and INSTALLING
@@ -55,9 +69,11 @@ Version 1.7 (changes from aircrack-ng 1.6) - Released XX XXX 2021:
 * General: Fixed cross-compilation
 * General: Code refactoring, deduplication, cleanup, and misc code improvements
 * General: Coverity Scan fixes, which includes memory leaks, race conditions, division by 0, and other issues
+* General: PVS Studio improvements,fixes and updates
 * General: Code formatting/style fixes
 * General: Various fixes and improvements (code, CI, integration tests, coverity)
 * General: Updated Linux distro list for PackageCloud.io
+* General: Update bug reporting template and update the process
 
 Version 1.6 (changes from aircrack-ng 1.5.2) - Released 25 Jan 2020:
 * Aircrack-ng: Added support for MidnightBSD
