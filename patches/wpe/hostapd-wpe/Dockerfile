@@ -2,7 +2,6 @@
 # Build args:
 # - OLD_VERSION: old hostapd version
 # - NEW_VERSION: new hostapd version
-# - Output directory (optional): /output
 
 FROM kalilinux/kali-rolling
 
@@ -41,15 +40,18 @@ RUN cp -R hostapd-${NEW_VERSION} hostapd-${NEW_VERSION}-wpe
 # Download and apply patch
 RUN wget https://github.com/aircrack-ng/aircrack-ng/raw/master/patches/wpe/hostapd-wpe/hostapd-${OLD_VERSION}-wpe.patch
 WORKDIR /tmp/hostapd-${NEW_VERSION}-wpe
-RUN patch -p1 < ../hostapd-${OLD_VERSION}-wpe.patch
+RUN patch  --no-backup-if-mismatch -p1 < ../hostapd-${OLD_VERSION}-wpe.patch
 
 # Create updated patch
 WORKDIR /tmp/
-RUN diff -rupN hostapd-${NEW_VERSION} hostapd-${NEW_VERSION}-wpe/ > hostapd-${NEW_VERSION}-wpe.patch
+RUN if [ $(diff -rupN hostapd-${NEW_VERSION} hostapd-${NEW_VERSION}-wpe/ > hostapd-${NEW_VERSION}-wpe.patch) -eq 2 ]; then \
+		echo "diff failed"; \
+		ext 1; \
+	fi
 
 # Ensure it compiles
 WORKDIR /tmp/hostapd-${NEW_VERSION}-wpe/hostapd
 RUN cd hostapd-${NEW_VERSION}/hostapd && make
 
 # Then copy patch to /output
-RUN mv hostapd-${NEW_VERSION}-wpe.patch /output/hostapd-${NEW_VERSION}-wpe.patch
+RUN mkdir /output && mv hostapd-${NEW_VERSION}-wpe.patch /output/hostapd-${NEW_VERSION}-wpe.patch
