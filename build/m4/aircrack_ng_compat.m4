@@ -52,7 +52,7 @@ then
 	#include <string.h>
 	],[
 	#if defined(__APPLE__) && defined(__MACH__)
-	exit(1); /* Apple has these as macros */
+	exit(0); /* Apple has these as macros */
 	#endif
 	#ifndef strlcpy
 	exit(1);
