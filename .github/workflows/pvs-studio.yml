@@ -129,6 +129,6 @@ jobs:
 
       - name: Summarize report
         env:
-          MAX_BUGS: 69
+          MAX_BUGS: 0
         run: |
           ./build/count-pvs-bugs.py pvs-report.csv "${MAX_BUGS}"
