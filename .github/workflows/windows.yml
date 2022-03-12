@@ -367,7 +367,7 @@ jobs:
             !64bit/**/*.obj
 
   gui:
-    runs-on: windows-latest
+    runs-on: windows-2019
 
     steps:
       - run: git config --global core.autocrlf input
