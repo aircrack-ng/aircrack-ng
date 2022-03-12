@@ -6234,11 +6234,13 @@ int main(int argc, char * argv[])
 				{
 					fprintf(stderr,
 							"Specifying more processes (%d) than available "
-							"CPUs (%d) will cause performance degradation.\n",
+							"CPUs (%d) would cause performance degradation.\n",
 							nbcpu,
 							cpu_count);
+					opt.nbcpu = cpu_count;
 				}
-				opt.nbcpu = nbcpu;
+				else
+					opt.nbcpu = nbcpu;
 
 				break;
 			}
