@@ -70,7 +70,7 @@ Below are instructions for installing the basic requirements to build
 
 #### Arch Linux
 
-    sudo pacman -Sy base-devel libnl openssl ethtool util-linux zlib libpcap sqlite pcre hwloc cmocka hostapd wpa_supplicant tcpdump screen iw usbutils pciutils`
+    sudo pacman -Sy base-devel libnl openssl ethtool util-linux zlib libpcap sqlite pcre hwloc cmocka hostapd wpa_supplicant tcpdump screen iw usbutils pciutils
 
 #### Debian/Ubuntu
 
