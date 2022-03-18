@@ -3947,6 +3947,7 @@ static int do_attack_chopchop(void)
 	pkh.len = caplen;
 
 	lt = localtime((const time_t *) &tv.tv_sec);
+	REQUIRE(lt != NULL);
 
 	memset(strbuf, 0, sizeof(strbuf));
 	snprintf(strbuf,
@@ -4740,6 +4741,7 @@ static int do_attack_fragment(void)
 		}
 
 		lt = localtime((const time_t *) &tv.tv_sec);
+		REQUIRE(lt != NULL);
 
 		memset(strbuf, 0, sizeof(strbuf));
 		snprintf(strbuf,
