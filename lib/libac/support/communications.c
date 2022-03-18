@@ -881,6 +881,7 @@ int capture_ask_packet(int * caplen, int just_grab)
 		pfh_out.linktype = LINKTYPE_IEEE802_11;
 
 		lt = localtime((const time_t *) &tv.tv_sec);
+		REQUIRE(lt != NULL);
 
 		memset(strbuf, 0, sizeof(strbuf));
 		snprintf(strbuf,
