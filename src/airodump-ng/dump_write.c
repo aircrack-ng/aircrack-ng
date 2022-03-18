@@ -328,6 +328,7 @@ int dump_write_csv(struct AP_info * ap_1st,
 				st_cur->stmac[5]);
 
 		ltime = localtime(&st_cur->tinit);
+		REQUIRE(ltime != NULL);
 
 		fprintf(opt.f_txt,
 				"%04d-%02d-%02d %02d:%02d:%02d, ",
@@ -339,6 +340,7 @@ int dump_write_csv(struct AP_info * ap_1st,
 				ltime->tm_sec);
 
 		ltime = localtime(&st_cur->tlast);
+		REQUIRE(ltime != NULL);
 
 		fprintf(opt.f_txt,
 				"%04d-%02d-%02d %02d:%02d:%02d, ",
