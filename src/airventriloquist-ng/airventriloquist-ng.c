@@ -204,7 +204,7 @@ static int tcp_test(const char * ip_str, const short port)
 	struct sockaddr_in s_in;
 	int packetsize = 1024;
 	u_int8_t packet[packetsize];
-	struct timeval tv, tv2 = {0}, tv3 = {0};
+	struct timeval tv, tv2 = {0}, tv3;
 	int caplen = 0;
 	int times[REQUESTS] = {0};
 	int min, avg, max, len;
