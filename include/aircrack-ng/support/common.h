@@ -76,6 +76,7 @@ int64_t ftello64(FILE * fp);
 		struct tm * lt;                                                        \
 		time_t tc = time(NULL);                                                \
 		lt = localtime(&tc);                                                   \
+		REQUIRE(lt != NULL);                                                   \
 		printf("%02d:%02d:%02d  ", lt->tm_hour, lt->tm_min, lt->tm_sec);       \
 	}
 
@@ -158,7 +159,7 @@ static inline int str2mac(uint8_t * mac, const char * str)
 	REQUIRE(mac != NULL);
 	REQUIRE(str != NULL);
 
-	unsigned int macf[6];
+	unsigned int macf[6] = {0};
 
 	if (sscanf(str,
 			   "%x:%x:%x:%x:%x:%x",

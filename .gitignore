@@ -121,3 +121,4 @@ coverage*.info
 *~
 *.pidb
 /.vscode/settings.json
+/infer-out/

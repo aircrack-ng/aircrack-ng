@@ -238,7 +238,7 @@ static int net_get_nopacket(struct priv_net * pn, void * arg, int * len)
 	memcpy(arg, buf, l);
 	*len = l;
 
-	return c;
+	return NET_RC;
 }
 
 static int net_cmd(struct priv_net * pn, int command, void * arg, int alen)

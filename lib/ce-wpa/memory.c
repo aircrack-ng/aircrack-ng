@@ -83,9 +83,12 @@ static struct rm_list * mem_alloc_tiny_memory;
 static void add_memory_link(void * v)
 {
 	struct rm_list * p = (struct rm_list *) mem_alloc(sizeof(struct rm_list));
-	p->next = mem_alloc_tiny_memory;
-	p->mem = v;
-	mem_alloc_tiny_memory = p;
+	if (p)
+	{
+		p->next = mem_alloc_tiny_memory;
+		p->mem = v;
+		mem_alloc_tiny_memory = p;
+	}
 }
 // call at program exit.
 void cleanup_tiny_memory(void)

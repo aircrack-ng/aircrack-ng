@@ -48,7 +48,7 @@ static void calc_votes(unsigned char * ivbuf,
 
 	int i, j;
 	long xv;
-	unsigned char R[256], jj[256];
+	unsigned char R[256], jj[256] = {0};
 	unsigned char S[256], Si[256];
 	unsigned char K[64];
 

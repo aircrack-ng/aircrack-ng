@@ -180,6 +180,7 @@ int dump_write_csv(struct AP_info * ap_1st,
 				ap_cur->bssid[5]);
 
 		ltime = localtime(&ap_cur->tinit);
+		REQUIRE(ltime != NULL);
 
 		fprintf(opt.f_txt,
 				"%04d-%02d-%02d %02d:%02d:%02d, ",
@@ -191,6 +192,7 @@ int dump_write_csv(struct AP_info * ap_1st,
 				ltime->tm_sec);
 
 		ltime = localtime(&ap_cur->tlast);
+		REQUIRE(ltime != NULL);
 
 		fprintf(opt.f_txt,
 				"%04d-%02d-%02d %02d:%02d:%02d, ",
@@ -416,6 +418,7 @@ int dump_write_airodump_ng_logcsv_add_ap(const struct AP_info * ap_cur,
 
 	// Local computer time
 	const struct tm * ltime = localtime(&ap_cur->tlast);
+	REQUIRE(ltime != NULL);
 	fprintf(opt.f_logcsv,
 			"%04d-%02d-%02d %02d:%02d:%02d,",
 			1900 + ltime->tm_year,
@@ -488,6 +491,7 @@ int dump_write_airodump_ng_logcsv_add_client(const struct AP_info * ap_cur,
 
 	// Local computer time
 	struct tm * ltime = localtime(&ap_cur->tlast);
+	REQUIRE(ltime != NULL);
 	fprintf(opt.f_logcsv,
 			"%04d-%02d-%02d %02d:%02d:%02d,",
 			1900 + ltime->tm_year,

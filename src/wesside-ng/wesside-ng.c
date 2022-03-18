@@ -376,7 +376,7 @@ static void send_frame(struct wstate * ws, unsigned char * buf, int len)
 {
 	REQUIRE(ws != NULL);
 
-	static unsigned char * lame = 0;
+	static unsigned char * lame = NULL;
 	static int lamelen = 0;
 	static int lastlen = 0;
 
@@ -417,6 +417,7 @@ static void send_frame(struct wstate * ws, unsigned char * buf, int len)
 			lamelen = len;
 		}
 
+		REQUIRE(lame != NULL);
 		memcpy(lame, buf, len);
 		ws->ws_retries = 0;
 		lastlen = len;
@@ -951,7 +952,7 @@ decrypt_arpreq(struct wstate * ws, struct ieee80211_frame * wh, int rd)
 
 	unsigned char * body;
 	int bodylen;
-	unsigned char clear[sizeof(struct arphdr) * 32];
+	unsigned char clear[sizeof(struct arphdr) * 32] = {0};
 	unsigned char * ptr;
 	struct arphdr * h;
 	int i;

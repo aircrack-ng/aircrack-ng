@@ -249,6 +249,7 @@ EXPORT int ac_crypto_engine_loader_get_available(void)
 	// are we inside of the build path?
 	char * working_directory = get_current_working_directory();
 #endif
+	REQUIRE(working_directory != NULL);
 
 	if (strncmp(working_directory, ABS_TOP_BUILDDIR, strlen(ABS_TOP_BUILDDIR))
 		== 0)
@@ -350,6 +351,7 @@ EXPORT char * ac_crypto_engine_loader_best_library_for(int simd_features)
 
 	char * working_directory
 		= get_current_working_directory(); // or the binary's path?
+	REQUIRE(working_directory != NULL);
 
 	if (strncmp(
 			working_directory, ABS_TOP_BUILDDIR, sizeof(ABS_TOP_BUILDDIR) - 1)

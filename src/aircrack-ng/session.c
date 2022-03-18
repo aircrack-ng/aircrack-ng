@@ -145,7 +145,7 @@ int ac_session_set_bssid(struct session * session, const char * str)
 	}
 
 	// Parse BSSID
-	unsigned int bssid[6];
+	unsigned int bssid[6] = {0};
 	int count = sscanf(str,
 					   "%02X:%02X:%02X:%02X:%02X:%02X",
 					   &bssid[0],

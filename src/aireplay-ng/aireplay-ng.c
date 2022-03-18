@@ -584,7 +584,7 @@ static int do_attack_fake_auth(void)
 	int kas;
 	int tries;
 	int retry = 0;
-	int abort;
+	int should_abort;
 	int gotack = 0;
 	unsigned char capa[2];
 	int deauth_wait = 3;
@@ -636,7 +636,7 @@ static int do_attack_fake_auth(void)
 	memcpy(ctsbuf + 4, opt.r_bssid, 6);
 
 	tries = 0;
-	abort = 0;
+	should_abort = 0;
 	state = 0;
 	x_send = opt.npackets;
 	if (opt.npackets == 0) x_send = 4;
@@ -754,7 +754,7 @@ static int do_attack_fake_auth(void)
 
 						if (tries > 15)
 						{
-							abort = 1;
+							should_abort = 1;
 						}
 					}
 					else
@@ -765,11 +765,11 @@ static int do_attack_fake_auth(void)
 						}
 						else
 						{
-							abort = 1;
+							should_abort = 1;
 						}
 					}
 
-					if (abort)
+					if (should_abort)
 					{
 						printf(
 							"\nAttack was unsuccessful. Possible reasons:\n\n"
@@ -1640,6 +1640,7 @@ static int do_attack_arp_resend(void)
 	pfh_out.linktype = LINKTYPE_IEEE802_11;
 
 	lt = localtime((const time_t *) &tv.tv_sec);
+	REQUIRE(lt != NULL);
 
 	memset(strbuf, 0, sizeof(strbuf));
 	snprintf(strbuf,
@@ -2104,6 +2105,7 @@ static int do_attack_caffe_latte(void)
 	pfh_out.linktype = LINKTYPE_IEEE802_11;
 
 	lt = localtime((const time_t *) &tv.tv_sec);
+	REQUIRE(lt != NULL);
 
 	memset(strbuf, 0, sizeof(strbuf));
 	snprintf(strbuf,
@@ -2589,6 +2591,7 @@ static int do_attack_migmode(void)
 	pfh_out.linktype = LINKTYPE_IEEE802_11;
 
 	lt = localtime((const time_t *) &tv.tv_sec);
+	REQUIRE(lt != NULL);
 
 	memset(strbuf, 0, sizeof(strbuf));
 	snprintf(strbuf,
@@ -4846,9 +4849,9 @@ static int tcp_test(const char * ip_str, const short port)
 	struct sockaddr_in s_in;
 	int packetsize = 1024;
 	unsigned char packet[packetsize];
-	struct timeval tv, tv2, tv3;
+	struct timeval tv, tv2 = {0}, tv3 = {0};
 	int caplen = 0;
-	int times[REQUESTS];
+	int times[REQUESTS] = {0};
 	int min, avg, max, len;
 	struct net_hdr nh;
 

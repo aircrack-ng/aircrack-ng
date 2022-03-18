@@ -678,7 +678,11 @@ static int read_prga_xor_ivs2(unsigned char ** dest, const char * file)
 	size_t file_sz = file != NULL ? strlen(file) : 0;
 
 	if (file == NULL) return (1);
-	if (*dest == NULL) *dest = (unsigned char *) malloc(1501);
+	if (*dest == NULL)
+	{
+		*dest = (unsigned char *) malloc(1501);
+		REQUIRE(*dest != NULL);
+	}
 
 	if (memcmp(file + (file_sz - 4), ".xor", 4) != 0
 		&& memcmp(file + (file_sz - 4), "." IVS2_EXTENSION, 4) != 0)

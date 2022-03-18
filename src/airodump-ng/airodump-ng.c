@@ -5233,11 +5233,12 @@ static inline int invalid_frequency(int freq)
 
 static int getchannels(const char * optarg)
 {
-	size_t i = 0, chan_cur = 0, chan_first = 0, chan_last = 0, chan_max = 128,
+#define GETCHANNELS_CHAN_MAX 128u
+	size_t i = 0, chan_cur = 0, chan_first = 0, chan_last = 0, chan_max = GETCHANNELS_CHAN_MAX,
 		   chan_remain = 0;
 	char *optchan = NULL, *optc;
 	char * token = NULL;
-	int tmp_channels[chan_max + 1];
+	int tmp_channels[GETCHANNELS_CHAN_MAX + 1] = {0};
 
 	// got a NULL pointer?
 	if (optarg == NULL) return (-1);

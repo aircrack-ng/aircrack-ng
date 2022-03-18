@@ -182,7 +182,7 @@ int wait_for_beacon(struct wif * wi,
 	size_t len = 0;
 	ssize_t read_len = 0;
 	uint8_t taglen = 0;
-	uint8_t pkt_sniff[4096] __attribute__((aligned(16)));
+	uint8_t pkt_sniff[4096] __attribute__((aligned(16))) = {0};
 	struct timeval tv, tv2;
 	char essid2[33];
 	uint8_t * data = NULL;
@@ -553,7 +553,7 @@ int capture_ask_packet(int * caplen, int just_grab)
 	REQUIRE(caplen != NULL);
 
 	time_t tr;
-	struct timeval tv;
+	struct timeval tv = {0};
 	struct tm * lt;
 
 	fd_set rfds;
