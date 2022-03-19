@@ -73,9 +73,9 @@ case "$host_os" in
 					AC_MSG_RESULT([no])
 				], [
 					dnl AC_MSG_RESULT([yes])
-					CFLAGS="-I$($BREW --prefix openssl@3)/include"
-					CXXFLAGS="-I$($BREW --prefix openssl@3)/include"
-					CPPFLAGS="-I$($BREW --prefix openssl@3)/include"
+					CFLAGS="-Wno-deprecated-declarations -I$($BREW --prefix openssl@3)/include"
+					CXXFLAGS="-Wno-deprecated-declarations -I$($BREW --prefix openssl@3)/include"
+					CPPFLAGS="-Wno-deprecated-declarations -I$($BREW --prefix openssl@3)/include"
 					LDFLAGS="-L$($BREW --prefix openssl@3)/lib"
 				])
 			], [
@@ -87,9 +87,9 @@ case "$host_os" in
 			])
 		], [
 			dnl AC_MSG_RESULT([yes])
-			CFLAGS="-I$($BREW --prefix openssl)/include"
-			CXXFLAGS="-I$($BREW --prefix openssl)/include"
-			CPPFLAGS="-I$($BREW --prefix openssl)/include"
+			CFLAGS="-Wno-deprecated-declarations -I$($BREW --prefix openssl)/include"
+			CXXFLAGS="-Wno-deprecated-declarations -I$($BREW --prefix openssl)/include"
+			CPPFLAGS="-Wno-deprecated-declarations -I$($BREW --prefix openssl)/include"
 			LDFLAGS="-L$($BREW --prefix openssl)/lib"
 		])
 	])
