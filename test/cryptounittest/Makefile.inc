@@ -49,6 +49,7 @@ test_encrypt_wep_CFLAGS  = $(PTHREAD_CFLAGS) \
 						   $(CRYPTO_CFLAGS)
 test_encrypt_wep_LDADD   = $(LIBACCRYPTO_LIBS) $(LIBAIRCRACK_LIBS) \
 						   $(PTHREAD_LIBS) \
+						   $(CRYPTO_LDFLAGS) \
 						   $(CRYPTO_LIBS) \
 						   $(ZLIB_LIBS)
 
@@ -58,6 +59,7 @@ test_calc_pmk_CFLAGS  = $(PTHREAD_CFLAGS) \
 test_calc_pmk_LDADD   = $(LIBACCRYPTO_LIBS) $(LIBAIRCRACK_LIBS) \
 						$(LIBAIRCRACK_CE_WPA_LIBS) \
 						$(PTHREAD_LIBS) \
+						$(CRYPTO_LDFLAGS) \
 						$(CRYPTO_LIBS) \
 						$(ZLIB_LIBS)
 
@@ -65,6 +67,7 @@ test_calc_mic_SOURCES = $(SRCS_TEST_CMIC)
 test_calc_mic_CFLAGS  = $(PTHREAD_CFLAGS) $(CRYPTO_CFLAGS)
 test_calc_mic_LDADD   = $(LIBACCRYPTO_LIBS) $(LIBAIRCRACK_LIBS) \
 						$(PTHREAD_LIBS) \
+						$(CRYPTO_LDFLAGS) \
 						$(CRYPTO_LIBS) \
 						$(ZLIB_LIBS)
 
@@ -73,6 +76,7 @@ test_calc_ptk_CFLAGS  = $(PTHREAD_CFLAGS) \
 						$(CRYPTO_CFLAGS)
 test_calc_ptk_LDADD   = $(LIBACCRYPTO_LIBS) $(LIBAIRCRACK_LIBS) \
 						$(PTHREAD_LIBS) \
+						$(CRYPTO_LDFLAGS) \
 						$(CRYPTO_LIBS) \
 						$(ZLIB_LIBS)
 
@@ -81,6 +85,7 @@ test_encrypt_ccmp_CFLAGS  = $(PTHREAD_CFLAGS) \
 							$(CRYPTO_CFLAGS)
 test_encrypt_ccmp_LDADD   = $(LIBACCRYPTO_LIBS) $(LIBAIRCRACK_LIBS) \
 							$(PTHREAD_LIBS) \
+							$(CRYPTO_LDFLAGS) \
 							$(CRYPTO_LIBS) \
 							$(ZLIB_LIBS)
 
@@ -89,6 +94,7 @@ test_decrypt_ccmp_CFLAGS  = $(PTHREAD_CFLAGS) \
 							$(CRYPTO_CFLAGS)
 test_decrypt_ccmp_LDADD   = $(LIBACCRYPTO_LIBS) $(LIBAIRCRACK_LIBS) \
 							$(PTHREAD_LIBS) \
+							$(CRYPTO_LDFLAGS) \
 							$(CRYPTO_LIBS) \
 							$(ZLIB_LIBS)
 
