@@ -40,10 +40,10 @@ dnl program, then also delete it here.
 AC_DEFUN([AIRCRACK_NG_EXPERIMENTAL], [
 
 AC_ARG_WITH(experimental,
-    [AS_HELP_STRING([--with-experimental=[[yes|no]]], [use experimental features of Aircrack-ng, [default=no]])])
+    [AS_HELP_STRING([--with-experimental=[[yes|no]]], [use experimental features of Aircrack-ng, [default=yes]])])
 
 case $with_experimental in
-    yes)
+    yes|y|"" )
         EXPERIMENTAL=yes
         ;;
     *)
