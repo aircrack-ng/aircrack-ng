@@ -7,8 +7,15 @@ checkvm_status=""
 MAC80211=0
 IW_SOURCE="https://mirrors.edge.kernel.org/pub/software/network/iw/iw-5.9.tar.xz"
 IW_ERROR=""
-if [ ! -d /sys/ ]; then
-	printf "CONFIG_SYSFS is disabled in your kernel, this program will almost certainly not work.\n"
+if [ ! -d '/sys/' ]; then
+	printf "CONFIG_SYSFS is disabled in your kernel, this program will not work.\n"
+  exit 1
+fi
+if ! mountpoint -q -- /sys; then
+  printf "/sys is not mounted, you can probably mount is with:\n"
+  printf "mount -t sysfs sysfs /sys\n"
+  printf "This program cannot continue without a working sysfs.\n"
+  exit 1
 fi
 
 if [ "${1}" = "--elite" ]; then
