@@ -12,7 +12,7 @@ if [ ! -d '/sys/' ]; then
   exit 1
 fi
 if ! mountpoint -q -- /sys; then
-  printf "/sys is not mounted, you can probably mount is with:\n"
+  printf "/sys is not mounted, you can probably mount it with:\n"
   printf "mount -t sysfs sysfs /sys\n"
   printf "This program cannot continue without a working sysfs.\n"
   exit 1
