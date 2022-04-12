@@ -161,9 +161,9 @@ static struct local_options
 	int decap_no_convert;
 	char essid[36];
 	char passphrase[65];
-	u_int8_t decap_bssid[6];
-	u_int8_t pmk[40];
-	u_int8_t decap_wepkey[64];
+	uint8_t decap_bssid[6];
+	uint8_t pmk[40];
+	uint8_t decap_wepkey[64];
 	int decap_weplen, crypt;
 	int decap_store_bad;
 
@@ -177,33 +177,33 @@ extern struct wif *_wi_in, *_wi_out;
 
 struct ARP_req
 {
-	u_int8_t * buf;
+	uint8_t * buf;
 	int hdrlen;
 	int len;
 };
 
 struct APt
 {
-	u_int8_t set;
-	u_int8_t found;
-	u_int8_t len;
-	u_int8_t essid[255];
-	u_int8_t bssid[6];
-	u_int8_t chan;
+	uint8_t set;
+	uint8_t found;
+	uint8_t len;
+	uint8_t essid[255];
+	uint8_t bssid[6];
+	uint8_t chan;
 	unsigned int ping[REQUESTS];
 	int pwr[REQUESTS];
 };
 
 unsigned long nb_pkt_sent;
-extern u_int8_t h80211[4096];
-extern u_int8_t tmpbuf[4096];
+extern uint8_t h80211[4096];
+extern uint8_t tmpbuf[4096];
 
 static int tcp_test(const char * ip_str, const short port)
 {
 	int sock, i;
 	struct sockaddr_in s_in;
 	int packetsize = 1024;
-	u_int8_t packet[packetsize];
+	uint8_t packet[packetsize];
 	struct timeval tv, tv2 = {0}, tv3;
 	int caplen = 0;
 	int times[REQUESTS] = {0};
@@ -475,8 +475,8 @@ static int deauth_station(struct WPA_ST_info * st_cur)
 static void hexDump(char * desc, void * addr, int len)
 {
 	int i;
-	u_int8_t buff[17];
-	u_int8_t * pc = (u_int8_t *) addr;
+	uint8_t buff[17];
+	uint8_t * pc = (uint8_t *) addr;
 
 	// Output description if given.
 	if (desc != NULL) printf("%s:\n", desc);
@@ -519,9 +519,9 @@ static void hexDump(char * desc, void * addr, int len)
 /* calcsum - used to calculate IP and ICMP header checksums using
  * one's compliment of the one's compliment sum of 16 bit words of the header
  */
-static u_int16_t calcsum(char * buffer, size_t length)
+static uint16_t calcsum(char * buffer, size_t length)
 {
-	u_int32_t sum = 0;
+	uint32_t sum = 0;
 
 	for (size_t i = 0; i < length - 1; i += 2)
 		sum += (buffer[i] << 8) + buffer[i + 1];
@@ -530,18 +530,18 @@ static u_int16_t calcsum(char * buffer, size_t length)
 
 	while (sum >> 16) sum = (sum & 0xFFFF) + (sum >> 16);
 
-	return ((u_int16_t)(~sum));
+	return ((uint16_t)(~sum));
 }
 
-static u_int16_t calcsum_for_protocol(u_int16_t protocol,
-									  char * buf,
-									  size_t length,
-									  u_int32_t src_addr,
-									  u_int32_t dest_addr)
+static uint16_t calcsum_for_protocol(uint16_t protocol,
+									 char * buf,
+									 size_t length,
+									 uint32_t src_addr,
+									 uint32_t dest_addr)
 {
-	u_int32_t chksum = 0;
-	u_int16_t * ip_src = (u_int16_t *) &src_addr;
-	u_int16_t * ip_dst = (u_int16_t *) &dest_addr;
+	uint32_t chksum = 0;
+	uint16_t * ip_src = (uint16_t *) &src_addr;
+	uint16_t * ip_dst = (uint16_t *) &dest_addr;
 
 	// Calculate the chksum
 	for (size_t i = 0; i < length - 1; i += 2)
@@ -562,25 +562,25 @@ static u_int16_t calcsum_for_protocol(u_int16_t protocol,
 	while (chksum >> 16) chksum = (chksum & 0xFFFF) + (chksum >> 16);
 
 	// Return the one's complement of chksum
-	return ((u_int16_t)(~chksum));
+	return ((uint16_t)(~chksum));
 }
 
 // This needs to be cleaned up so that we can do UDP/TCP in one function. Don't
 // want to do that now and risk
 // breaking UDP checksums right now
-static u_int16_t
-calcsum_tcp(char * buf, size_t length, u_int32_t src_addr, u_int32_t dest_addr)
+static uint16_t
+calcsum_tcp(char * buf, size_t length, uint32_t src_addr, uint32_t dest_addr)
 {
 	return calcsum_for_protocol(IPPROTO_TCP, buf, length, src_addr, dest_addr);
 }
 
-static u_int16_t
-calcsum_udp(char * buf, size_t length, u_int32_t src_addr, u_int32_t dest_addr)
+static uint16_t
+calcsum_udp(char * buf, size_t length, uint32_t src_addr, uint32_t dest_addr)
 {
 	return calcsum_for_protocol(IPPROTO_UDP, buf, length, src_addr, dest_addr);
 }
 
-static inline u_int8_t * packet_get_sta_80211(u_int8_t * pkt)
+static inline uint8_t * packet_get_sta_80211(uint8_t * pkt)
 {
 	REQUIRE(pkt != NULL);
 
@@ -589,18 +589,18 @@ static inline u_int8_t * packet_get_sta_80211(u_int8_t * pkt)
 	// IF TODS
 	if (p_res802->i_fc[1] & IEEE80211_FC1_DIR_TODS)
 	{
-		return ((u_int8_t *) &p_res802->i_addr2);
+		return ((uint8_t *) &p_res802->i_addr2);
 	}
 	// IF FROMDS
 	else if (p_res802->i_fc[1] & IEEE80211_FC1_DIR_FROMDS)
 	{
-		return ((u_int8_t *) &p_res802->i_addr1);
+		return ((uint8_t *) &p_res802->i_addr1);
 	}
 
 	return (NULL);
 }
 
-static inline u_int8_t * packet_get_bssid_80211(u_int8_t * pkt)
+static inline uint8_t * packet_get_bssid_80211(uint8_t * pkt)
 {
 	REQUIRE(pkt != NULL);
 
@@ -609,23 +609,23 @@ static inline u_int8_t * packet_get_bssid_80211(u_int8_t * pkt)
 	// IF TODS
 	if (p_res802->i_fc[1] & IEEE80211_FC1_DIR_TODS)
 	{
-		return ((u_int8_t *) &p_res802->i_addr1);
+		return ((uint8_t *) &p_res802->i_addr1);
 	}
 	// IF FROMDS
 	else if (p_res802->i_fc[1] & IEEE80211_FC1_DIR_FROMDS)
 	{
-		return ((u_int8_t *) &p_res802->i_addr2);
+		return ((uint8_t *) &p_res802->i_addr2);
 	}
 
 	return (NULL);
 }
 
-static void packet_turnaround_80211(u_int8_t * pkt)
+static void packet_turnaround_80211(uint8_t * pkt)
 {
 	REQUIRE(pkt != NULL);
 
 	struct ieee80211_frame * p_res802 = (struct ieee80211_frame *) pkt;
-	u_int8_t tmp_mac[IEEE80211_ADDR_LEN] = {0};
+	uint8_t tmp_mac[IEEE80211_ADDR_LEN] = {0};
 
 	// IF TODS, flip to FROMDS
 	if (p_res802->i_fc[1] & IEEE80211_FC1_DIR_TODS)
@@ -650,7 +650,7 @@ static void packet_turnaround_ip(struct ip_frame * p_resip)
 	REQUIRE(p_resip != NULL);
 
 	// Switch the IP source and destination addresses
-	u_int32_t tmp_addr = p_resip->saddr;
+	uint32_t tmp_addr = p_resip->saddr;
 	p_resip->saddr = p_resip->daddr;
 	p_resip->daddr = tmp_addr;
 	p_resip->ttl = 63;
@@ -661,22 +661,22 @@ static void packet_turnaround_ip_udp(struct udp_hdr * p_resudp)
 	REQUIRE(p_resudp != NULL);
 
 	// Switch the UDP source and destination Ports
-	u_int16_t tmp_port = p_resudp->sport;
+	uint16_t tmp_port = p_resudp->sport;
 	p_resudp->sport = p_resudp->dport;
 	p_resudp->dport = tmp_port;
 }
 
 static void packet_turnaround_ip_tcp(struct tcp_hdr * p_restcp,
-									 u_int32_t next_seq_hint)
+									 uint32_t next_seq_hint)
 {
 	REQUIRE(p_restcp != NULL);
 
 	// Switch the TCP source and destination Ports
-	u_int16_t tmp_port = p_restcp->sport;
+	uint16_t tmp_port = p_restcp->sport;
 	p_restcp->sport = p_restcp->dport;
 	p_restcp->dport = tmp_port;
 
-	u_int32_t tmp_num = p_restcp->seqnu;
+	uint32_t tmp_num = p_restcp->seqnu;
 	p_restcp->seqnu = p_restcp->ack_seq;
 	p_restcp->ack_seq = tmp_num;
 
@@ -686,13 +686,13 @@ static void packet_turnaround_ip_tcp(struct tcp_hdr * p_restcp,
 	p_restcp->ack_seq = htonl(tmp_num);
 }
 
-static u_int16_t dns_name_end(u_int8_t * buff, u_int16_t maxlen)
+static uint16_t dns_name_end(uint8_t * buff, uint16_t maxlen)
 {
 	REQUIRE(buff != NULL);
 
-	u_int8_t * ptr = buff;
-	u_int8_t count = 0;
-	u_int16_t offset = 0;
+	uint8_t * ptr = buff;
+	uint8_t count = 0;
+	uint16_t offset = 0;
 
 	while (offset < maxlen)
 	{
@@ -706,7 +706,7 @@ static u_int16_t dns_name_end(u_int8_t * buff, u_int16_t maxlen)
 	return (offset);
 }
 
-static int strip_ccmp_header(u_int8_t * h80211, int caplen, unsigned char PN[6])
+static int strip_ccmp_header(uint8_t * h80211, int caplen, unsigned char PN[6])
 {
 	REQUIRE(h80211 != NULL);
 
@@ -733,7 +733,7 @@ static int strip_ccmp_header(u_int8_t * h80211, int caplen, unsigned char PN[6])
 }
 
 static void
-encrypt_data_packet(u_int8_t * packet, int length, struct WPA_ST_info * sta_cur)
+encrypt_data_packet(uint8_t * packet, int length, struct WPA_ST_info * sta_cur)
 {
 	if ((NULL == sta_cur) || (!sta_cur->valid_ptk))
 	{
@@ -762,13 +762,13 @@ encrypt_data_packet(u_int8_t * packet, int length, struct WPA_ST_info * sta_cur)
 // Global packet buffer for use in building response packets
 static uint8_t pkt[2048] = {0};
 
-static void process_unencrypted_data_packet(u_int8_t * packet,
-											u_int32_t length,
-											u_int32_t debug)
+static void process_unencrypted_data_packet(uint8_t * packet,
+											uint32_t length,
+											uint32_t debug)
 {
 	if (debug) hexDump("full", packet, length);
 
-	u_int8_t * packet_start = packet;
+	uint8_t * packet_start = packet;
 	int packet_start_length = length;
 	char extra_enc_length = 0;
 
@@ -987,9 +987,9 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 					length += extra_enc_length;
 					// TCP header size = first 4bits * 32 / 8, same as first
 					// 4bits *4
-					u_int32_t hdr_size = p_tcp->doff * 4;
-					u_int8_t * p_http = packet + hdr_size;
-					u_int32_t l_http = length - hdr_size;
+					uint32_t hdr_size = p_tcp->doff * 4;
+					uint8_t * p_http = packet + hdr_size;
+					uint32_t l_http = length - hdr_size;
 					// Find a GET
 					if ((1 == lopt.flag_http_hijack)
 						&& (p_http[0] == 0x47 && p_http[1] == 0x45
@@ -1033,7 +1033,7 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 							= (struct tcp_hdr *) (pkt + offset_proto);
 						struct ip_frame * p_resip
 							= (struct ip_frame *) (pkt + offset_ip);
-						u_int32_t res_length
+						uint32_t res_length
 							= packet_start_length; // This only initially until
 						// we replace content
 
@@ -1172,13 +1172,13 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 						= (struct udp_hdr *) (pkt + offset_proto);
 
 					int dns_offset = offset_proto + sizeof(struct udp_hdr);
-					u_int8_t * p_dns = packet_start + dns_offset;
-					u_int8_t * p_resdns = pkt + dns_offset;
+					uint8_t * p_dns = packet_start + dns_offset;
+					uint8_t * p_resdns = pkt + dns_offset;
 
 					// Copy the beginning part of the packet
 					memcpy(p_resdns, DNS_RESP_PCKT_1, sizeof(DNS_RESP_PCKT_1));
 					struct dns_query * p_dnsq = (struct dns_query *) p_dns;
-					int dns_qlen = dns_name_end((u_int8_t *) &p_dnsq->qdata,
+					int dns_qlen = dns_name_end((uint8_t *) &p_dnsq->qdata,
 												packet_start_length);
 
 					// Copy the request DNS name into the response
@@ -1313,9 +1313,9 @@ static void process_unencrypted_data_packet(u_int8_t * packet,
 	}
 }
 
-static bool is_adhoc_frame(u_int8_t * packet)
+static bool is_adhoc_frame(uint8_t * packet)
 {
-	u_int8_t * p_stmac = packet_get_sta_80211(packet);
+	uint8_t * p_stmac = packet_get_sta_80211(packet);
 
 	if (NULL == p_stmac)
 	{
@@ -1327,7 +1327,7 @@ static bool is_adhoc_frame(u_int8_t * packet)
 	}
 }
 
-static bool find_station_in_db(u_int8_t * p_stmac)
+static bool find_station_in_db(uint8_t * p_stmac)
 {
 	lopt.st_prv = NULL;
 	lopt.st_cur = lopt.st_1st;
@@ -1381,15 +1381,15 @@ static inline bool mac_is_multi_broadcast(unsigned char stmac[6])
 	return (FALSE);
 }
 
-static void process_station_data(u_int8_t * packet, int length)
+static void process_station_data(uint8_t * packet, int length)
 {
 	if (is_length_lt_wfrm(length)) return;
 
 	struct ieee80211_frame * wfrm = (struct ieee80211_frame *) packet;
 
-	u_int8_t * p_stmac = packet_get_sta_80211(packet);
+	uint8_t * p_stmac = packet_get_sta_80211(packet);
 	ALLEGE(p_stmac != NULL);
-	u_int8_t * p_bssid = packet_get_bssid_80211(packet);
+	uint8_t * p_bssid = packet_get_bssid_80211(packet);
 	ALLEGE(p_bssid != NULL);
 
 	if (!find_station_in_db(p_stmac))
@@ -1453,13 +1453,13 @@ static inline bool is_wfrm_qos(struct ieee80211_frame * wfrm)
 	return (IEEE80211_FC0_SUBTYPE_QOS & wfrm->i_fc[0]);
 }
 
-static bool is_wfrm_already_processed(u_int8_t * packet, int length)
+static bool is_wfrm_already_processed(uint8_t * packet, int length)
 {
 	struct ieee80211_frame * wfrm = (struct ieee80211_frame *) packet;
 
 	// check if we haven't already processed this packet
 	// If we have, just return, don't process packet twice
-	u_int32_t crc = calc_crc_buf(packet, length);
+	uint32_t crc = calc_crc_buf(packet, length);
 
 	// IF TODS
 	if (wfrm_is_tods(wfrm))
@@ -1483,7 +1483,7 @@ static bool is_wfrm_already_processed(u_int8_t * packet, int length)
 	return (FALSE);
 }
 
-static struct llc_frame * find_llc_frm_ptr(u_int8_t * packet, int length)
+static struct llc_frame * find_llc_frm_ptr(uint8_t * packet, int length)
 {
 	if (is_length_lt_wfrm(length)) return (NULL);
 
@@ -1497,9 +1497,9 @@ static struct llc_frame * find_llc_frm_ptr(u_int8_t * packet, int length)
 	return (p_llc);
 }
 
-static void process_wireless_data_packet(u_int8_t * packet, int length)
+static void process_wireless_data_packet(uint8_t * packet, int length)
 {
-	u_int8_t * packet_start = packet;
+	uint8_t * packet_start = packet;
 	int packet_start_length = length;
 
 	struct ieee80211_frame * wfrm = (struct ieee80211_frame *) packet;
@@ -1595,7 +1595,7 @@ static void process_wireless_data_packet(u_int8_t * packet, int length)
 	}
 }
 
-static void process_wireless_packet(u_int8_t * packet, int length)
+static void process_wireless_packet(uint8_t * packet, int length)
 {
 	REQUIRE(packet != NULL);
 

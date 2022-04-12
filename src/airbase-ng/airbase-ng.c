@@ -1591,7 +1591,7 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 	uint8_t * buffer;
 	uint8_t essid[256];
 	struct timeval tv1;
-	u_int64_t timestamp;
+	uint64_t timestamp;
 	char fessid[MAX_IE_ELEMENT_SIZE + 1];
 	int seqnum, fragnum, morefrag;
 	int gotsource, gotbssid;

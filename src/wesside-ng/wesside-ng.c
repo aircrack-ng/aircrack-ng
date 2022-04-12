@@ -1558,8 +1558,8 @@ static void decrypt(struct wstate * ws)
 		ws->ws_dfs.fs_ptr = ws->ws_dfs.fs_data;
 
 		seq = fnseq(0, ws->ws_psent);
-		ws->ws_dfs.fs_wh.i_seq[0] = (u_int8_t)(seq >> 8);
-		ws->ws_dfs.fs_wh.i_seq[1] = (u_int8_t)(seq % 256);
+		ws->ws_dfs.fs_wh.i_seq[0] = (uint8_t)(seq >> 8);
+		ws->ws_dfs.fs_wh.i_seq[1] = (uint8_t)(seq % 256);
 	}
 
 	send_fragment(ws, &ws->ws_dfs, &ws->ws_dpi);

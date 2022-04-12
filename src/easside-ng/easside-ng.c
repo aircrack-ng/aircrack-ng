@@ -413,7 +413,7 @@ read_beacon(struct east_state * es, struct ieee80211_frame * wh, int len)
 	REQUIRE(wh != NULL);
 
 	ieee80211_mgt_beacon_t b = (ieee80211_mgt_beacon_t)(wh + 1);
-	u_int16_t capa;
+	uint16_t capa;
 	int bhlen = 12;
 	int got_ssid = 0, got_channel = 0;
 	struct owned * own = es->es_owned;
