@@ -25,10 +25,10 @@ repos:
       - id: check-merge-conflict
 
   - repo: https://github.com/pocc/pre-commit-hooks
-    rev: v1.3.4
+    rev: v1.3.5
     hooks:
       - id: clang-format
-        args: ["--style=file", "-i"]
+        args: ["--version=3.8", "--style=file", "-i"]
 
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.7.2.1
