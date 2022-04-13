@@ -1403,13 +1403,22 @@ handleLostPhys
 listInterfaces
 
 # Kernel version checks are used unconditionally so just set it during main
-KV="$(uname -r | awk -F'-' '{print $1}')"
+if [ -r '/proc/version_signature' ]; then
+  #ubuntu and derivatives put the real kernel version here
+  KV="$(awk '{print $3}' /proc/version_signature)"
+else
+  KV="$(uname -r | awk -F'-' '{print $1}')"
+fi
 KVMAJOR="$(printf "%s" "${KV}" | awk -F'.' '{print $1$2}')"
 KVMINOR="$(printf "%s" "${KV}" | awk -F'.' '{print $3}')"
 if [ "${KVMINOR}" = "0" ]; then
-  # debian and kids always have 0 in minor for uname -r
+  # debian and derivatives always have 0 in minor for uname -r so we extract from uname -v
   KV="$(uname -v | awk '{sub(/-.*/, "", $4); print $4}')"
   KVMINOR="$(printf "%s" "${KV}" | awk -F'.' '{print $3}')"
+  #make sure we extracted a number
+  if ! printf "%s" "${KVMINOR}" | grep -q '[[:digit:]]*'; then
+    KVMINOR='0'
+  fi
 fi
 
 if [ "${1}" = "check" ] || [ "${1}" = "start" ]; then
