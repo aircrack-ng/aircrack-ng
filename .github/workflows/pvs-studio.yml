@@ -28,6 +28,8 @@ jobs:
 
     runs-on: ubuntu-20.04
 
+    if: ${{ secrets.PvsStudioName != '' }}
+
     steps:
       - uses: actions/checkout@v2
         with:
