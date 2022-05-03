@@ -28,18 +28,28 @@ jobs:
 
     runs-on: ubuntu-20.04
 
-    if: ${{ secrets.PvsStudioName != '' }}
-
     steps:
       - uses: actions/checkout@v2
+        env:
+          PVS_STUDIO_NAME: ${{ secrets.PvsStudioName }}
+          PVS_STUDIO_KEY: ${{ secrets.PvsStudioKey }}
+        if: ${{ env.PVS_STUDIO_NAME != null && env.PVS_STUDIO_KEY != null }}
         with:
           submodules: 'recursive'
 
       - name: Log and setup environment
+        env:
+          PVS_STUDIO_NAME: ${{ secrets.PvsStudioName }}
+          PVS_STUDIO_KEY: ${{ secrets.PvsStudioKey }}
+        if: ${{ env.PVS_STUDIO_NAME != null && env.PVS_STUDIO_KEY != null }}
         run: |
           mkdir -p pvs-package
 
       - name: Find latest PVS-Studio release
+        env:
+          PVS_STUDIO_NAME: ${{ secrets.PvsStudioName }}
+          PVS_STUDIO_KEY: ${{ secrets.PvsStudioKey }}
+        if: ${{ env.PVS_STUDIO_NAME != null && env.PVS_STUDIO_KEY != null }}
         id: pvs_version
         run: |
           p=$(curl -sRL "https://pvs-studio.com/en/pvs-studio/download-all/" |\
@@ -47,9 +57,17 @@ jobs:
           echo "::set-output name=debfile::$p"
 
       - name: Fetch PVS-Studio package
+        env:
+          PVS_STUDIO_NAME: ${{ secrets.PvsStudioName }}
+          PVS_STUDIO_KEY: ${{ secrets.PvsStudioKey }}
+        if: ${{ env.PVS_STUDIO_NAME != null && env.PVS_STUDIO_KEY != null }}
         run: wget "${{ steps.pvs_version.outputs.debfile }}" -O "pvs-package/pvs.deb"
 
       - name: Install packages
+        env:
+          PVS_STUDIO_NAME: ${{ secrets.PvsStudioName }}
+          PVS_STUDIO_KEY: ${{ secrets.PvsStudioKey }}
+        if: ${{ env.PVS_STUDIO_NAME != null && env.PVS_STUDIO_KEY != null }}
         run: |
           set -xeu
           sudo apt update -yqq
@@ -66,6 +84,9 @@ jobs:
       - name: Build
         env:
           AM_COLOR_TESTS: always
+          PVS_STUDIO_NAME: ${{ secrets.PvsStudioName }}
+          PVS_STUDIO_KEY: ${{ secrets.PvsStudioKey }}
+        if: ${{ env.PVS_STUDIO_NAME != null && env.PVS_STUDIO_KEY != null }}
         run: |
           set -eu
           CPUS=$(nproc)
@@ -87,6 +108,10 @@ jobs:
           echo "::endgroup::"
 
       - name: Analyze
+        env:
+          PVS_STUDIO_NAME: ${{ secrets.PvsStudioName }}
+          PVS_STUDIO_KEY: ${{ secrets.PvsStudioKey }}
+        if: ${{ env.PVS_STUDIO_NAME != null && env.PVS_STUDIO_KEY != null }}
         run: |
           set -xeu
           log="pvs-analysis.log"
@@ -123,7 +148,10 @@ jobs:
             "${log}"
 
       - name: Upload report
-        if: env.ACT != 'true'
+        env:
+          PVS_STUDIO_NAME: ${{ secrets.PvsStudioName }}
+          PVS_STUDIO_KEY: ${{ secrets.PvsStudioKey }}
+        if: ${{ env.ACT != 'true' && env.PVS_STUDIO_NAME != null && env.PVS_STUDIO_KEY != null }}
         uses: actions/upload-artifact@v2
         with:
           name: pvs-analysis-report
@@ -132,5 +160,8 @@ jobs:
       - name: Summarize report
         env:
           MAX_BUGS: 0
+          PVS_STUDIO_NAME: ${{ secrets.PvsStudioName }}
+          PVS_STUDIO_KEY: ${{ secrets.PvsStudioKey }}
+        if: ${{ env.PVS_STUDIO_NAME != null && env.PVS_STUDIO_KEY != null }}
         run: |
           ./build/count-pvs-bugs.py pvs-report.csv "${MAX_BUGS}"
