@@ -46,7 +46,7 @@ Version 1.7 (changes from aircrack-ng 1.6) - Released XX XXX 2021:
 * OSdep: Search additional IE for channel information
 * OSdep: Android macro fixes
 * Patches: Add missing patches that were on https://patches.aircrack-ng.org but not in repo
-* Patches: Updated freeradius-wpe patch for v3.0.25
+* Patches: Updated freeradius-wpe patch for v3.2.0
 * Patches: Updated hostapd-wpe patch for v2.10
 * Patches: Added docker containers to test WPE patches
 * Autotools: make dist now creates VERSION file
@@ -57,6 +57,9 @@ Version 1.7 (changes from aircrack-ng 1.6) - Released XX XXX 2021:
 * Manpages: Fixes (typos, tools name, etc.) and improvements
 * README: Updated dependencies and their installation on various distros in README.md and INSTALLING
 * README: Fixed typos and spelling in README.md and INSTALLING
+* Packages: Packages on PackageCloud now support any distro using .deb and .rpm, however, it requires reinstalling repo (BREAKING CHANGE)
+* General: Fix compilation with LibreSSL 3.5
+* General: Fix issues reported by Infer
 * General: Updated buildbots
 * General: Add Linux uclibc support
 * General: Compilation fixes on macOS with the Apple M1 CPU
