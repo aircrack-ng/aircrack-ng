@@ -31,7 +31,7 @@ RUN apt update && apt dist-upgrade -y && \
 		libhiredis-dev libykclient-dev libyubikey-dev default-libmysqlclient-dev \
 		libcurl4-openssl-dev libperl-dev libpam0g-dev libcap-dev libmemcached-dev \
 		libgdbm-dev unixodbc-dev libpq-dev libwbclient-dev libkrb5-dev libjson-c-dev \
-		freetds-dev samba-dev libcollectdclient-dev && \
+		freetds-dev samba-dev libcollectdclient-dev libldap-dev && \
 	apt autoclean && \
 	rm -rf /var/lib/apt/lists/*
 

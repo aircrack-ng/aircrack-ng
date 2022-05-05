@@ -24,7 +24,7 @@ apt install libssl-dev build-essential libtalloc-dev libpcre3-dev
 ### Optional dependencies
 
 ```
-apt install libsqlite3-dev libhiredis-dev libykclient-dev libyubikey-dev default-libmysqlclient-dev libcurl4-openssl-dev libperl-dev libpam0g-dev libcap-dev libmemcached-dev libgdbm-dev unixodbc-dev libpq-dev libwbclient-dev libkrb5-dev libjson-c-dev freetds-dev libwbclient-sssd-dev samba-dev libcollectdclient-dev
+apt install libsqlite3-dev libhiredis-dev libykclient-dev libyubikey-dev default-libmysqlclient-dev libcurl4-openssl-dev libperl-dev libpam0g-dev libcap-dev libmemcached-dev libgdbm-dev unixodbc-dev libpq-dev libwbclient-dev libkrb5-dev libjson-c-dev freetds-dev libwbclient-sssd-dev samba-dev libcollectdclient-dev libldap-dev
 ```
 
 ### Compilation
