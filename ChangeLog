@@ -40,6 +40,7 @@ Version 1.7 (changes from aircrack-ng 1.6) - Released XX XXX 2021:
 * Airmon-ng: Added warning for broken radiotap headers in kernel 5.15 to 5.15.4
 * Airmon-ng: shellcheck fixes
 * Airmon-ng: support systemctl as some systems don't support 'service' anymore
+* Airmon-ng: Fixes for pciutils 3.8, backward compatible
 * Airbase-ng: use enum for frame type/subtype
 * Airbase-ng: remove a few IE in association responses
 * Besside-ng: Support and detect all channels in 5GHz in Auto-Channel mode
@@ -75,7 +76,6 @@ Version 1.7 (changes from aircrack-ng 1.6) - Released XX XXX 2021:
 * General: PVS Studio improvements,fixes and updates
 * General: Code formatting/style fixes
 * General: Various fixes and improvements (code, CI, integration tests, coverity)
-* General: Updated Linux distro list for PackageCloud.io
 * General: Update bug reporting template and update the process
 
 Version 1.6 (changes from aircrack-ng 1.5.2) - Released 25 Jan 2020:
