@@ -40,7 +40,7 @@
 m4_pattern_allow([AC_VERSION])
 m4_define([version_date], "May 2022")
 m4_define([version_major], 1)
-m4_define([version_minor], 6)
+m4_define([version_minor], 7)
 m4_define([version_micro], 0)
 m4_define([version_beta],  0)
 m4_define([version_rc],    0)
