@@ -1,7 +1,7 @@
 /*
  *  802.11 to Ethernet pcap translator
  *
- *  Copyright (C) 2006-2020 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+ *  Copyright (C) 2006-2022 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *  Copyright (C) 2004, 2005  Christophe Devine
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -56,7 +56,7 @@
 static const char usage[] =
 
 	"\n"
-	"  %s - (C) 2006-2020 Thomas d\'Otreppe\n"
+	"  %s - (C) 2006-2022 Thomas d\'Otreppe\n"
 	"  https://www.aircrack-ng.org\n"
 	"\n"
 	"  usage: airdecap-ng [options] <pcap file>\n"

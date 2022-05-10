@@ -1,6 +1,6 @@
 # Aircrack-ng
 #
-# Copyright (C) 2017-2020 Joseph Benden <joe@benden.us>
+# Copyright (C) 2017-2022 Joseph Benden <joe@benden.us>
 #
 # Autotool support was written by: Joseph Benden <joe@benden.us>
 #
@@ -38,7 +38,7 @@
 # program, then also delete it here.
 
 m4_pattern_allow([AC_VERSION])
-m4_define([version_date], "January 2020")
+m4_define([version_date], "May 2022")
 m4_define([version_major], 1)
 m4_define([version_minor], 6)
 m4_define([version_micro], 0)

@@ -1,6 +1,6 @@
 dnl Aircrack-ng
 dnl
-dnl Copyright (C) 2020 Joseph Benden <joe@benden.us>
+dnl Copyright (C) 2020-2022 Joseph Benden <joe@benden.us>
 dnl
 dnl Autotool support was written by: Joseph Benden <joe@benden.us>
 dnl

@@ -1,0 +1,3 @@
+adt/circular_buffer.h adt/circular_queue.h ce-wpa/crypto_engine.h compat.h cowpatty/cowpatty.h cpu/cpuset.h cpu/trampoline.h defs.h osdep/byteorder.h osdep/channel.h osdep/common.h 
+support/mcs_index_rates.h support/station.h support/station.h support/crypto_engine_loader.h support/fragments.h support/communications.h support/communications.h third-party/hashcat.h 
+version.h.in

@@ -133,7 +133,7 @@
 static const char usage[] =
 
 	"\n"
-	"  %s - (C) 2008-2020 Thomas d\'Otreppe\n"
+	"  %s - (C) 2008-2022 Thomas d\'Otreppe\n"
 	"  https://www.aircrack-ng.org\n"
 	"\n"
 	"  usage: tkiptun-ng <options> <replay interface>\n"
