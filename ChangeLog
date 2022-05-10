@@ -1,4 +1,4 @@
-Version 1.7 (changes from aircrack-ng 1.6) - Released XX XXX 2021:
+Version 1.7 (changes from aircrack-ng 1.6) - Released 10 May 2022:
 * Airdecap-ng: Endianness fixes
 * Airdecap-ng: Output PCAP as little endian
 * Airodump-ng: Fixed blank encryption field when APs have TKIP (and/or CCMP) with WPA2
