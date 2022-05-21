@@ -454,6 +454,7 @@ jobs:
         shell: pwsh
         run: |
           New-Variable bash -Value "C:\tools\cygwin\bin\bash.exe" -Option Constant
+          & $bash -e -l -c "git config --global --add safe.directory /cygdrive/d/a/aircrack-ng/aircrack-ng"
           $REV = (& $bash -e -l -c "./evalrev")
           $env:DIST = "aircrack-ng-$REV-win"
           & $bash -e -l -c "git archive --format=tar --prefix=`"$env:DIST/`" HEAD | /bin/tar xf -"
