@@ -4429,7 +4429,7 @@ json_get_value_for_name(const char * buffer, const char * name, char * value)
 	char * vcursor = value;
 	int ret = 0;
 
-	if (buffer == NULL || *buffer == '\0' || name == NULL || *name != '\0'
+	if (buffer == NULL || *buffer == '\0' || name == NULL || *name == '\0'
 		|| value == NULL)
 	{
 		return (0);
