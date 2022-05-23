@@ -210,7 +210,7 @@ int cygwin_init(char *param)
 	if (param)
 	{
 		// if it's empty, use the default adapter
-		if (strlen(param) > 0)
+		if (*param != 0)
 		{
 			// Make sure the adapter name contains the '\\.\' at its beginning
 			memset(iface, 0, strlen(param) + strlen(DEVICE_HEADER) +1);

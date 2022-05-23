@@ -341,7 +341,7 @@ int airpcap_init(char * param)
 	if (param)
 	{
 		// if it's empty, use the default adapter
-		if (strlen(param) > 0)
+		if (*param != 0)
 		{
 			if (strstr(param, DEVICE_PREFIX) == NULL)
 			{

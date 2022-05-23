@@ -136,7 +136,7 @@ static int do_cygwin_open(struct wif * wi, char * iface)
 	int rc = -1;
 
 	if (!iface) return -1;
-	if (strlen(iface) == 0) return -1;
+	if (*iface == 0) return -1;
 
 	priv->useDll = 0;
 
