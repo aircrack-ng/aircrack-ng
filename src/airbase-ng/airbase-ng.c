@@ -2775,7 +2775,7 @@ static THREAD_ENTRY(beacon_thread)
 
 	struct AP_conf apc;
 	struct timeval tv, tv1, tv2;
-	u_int64_t timestamp;
+	uint64_t timestamp;
 	uint8_t beacon[512];
 	size_t beacon_len = 0;
 	int seq = 0, i = 0, n = 0;

@@ -54,55 +54,55 @@ struct net_hdr
 
 struct llc_frame
 {
-	u_int8_t i_dsap;
-	u_int8_t i_ssap;
-	u_int8_t i_ctrl;
-	u_int8_t i_org[3];
-	u_int16_t i_ethtype;
+	uint8_t i_dsap;
+	uint8_t i_ssap;
+	uint8_t i_ctrl;
+	uint8_t i_org[3];
+	uint16_t i_ethtype;
 } __attribute__((packed));
 
 struct wep_frame
 {
-	u_int8_t iv1;
-	u_int8_t iv2;
-	u_int8_t iv3;
-	u_int8_t keyid;
+	uint8_t iv1;
+	uint8_t iv2;
+	uint8_t iv3;
+	uint8_t keyid;
 } __attribute__((packed));
 
 struct ip_frame
 {
-	u_int8_t ver;
-	u_int8_t tos;
-	u_int16_t tot_len;
-	u_int16_t id;
-	u_int16_t frag_off;
-	u_int8_t ttl;
-	u_int8_t protocol;
-	u_int16_t check;
-	u_int32_t saddr;
-	u_int32_t daddr;
+	uint8_t ver;
+	uint8_t tos;
+	uint16_t tot_len;
+	uint16_t id;
+	uint16_t frag_off;
+	uint8_t ttl;
+	uint8_t protocol;
+	uint16_t check;
+	uint32_t saddr;
+	uint32_t daddr;
 } __attribute__((packed));
 
 struct udp_hdr
 {
-	u_int16_t sport;
-	u_int16_t dport;
-	u_int16_t len;
-	u_int16_t checksum;
+	uint16_t sport;
+	uint16_t dport;
+	uint16_t len;
+	uint16_t checksum;
 } __attribute__((packed));
 
 struct tcp_hdr
 {
-	u_int16_t sport;
-	u_int16_t dport;
-	u_int32_t seqnu;
-	u_int32_t ack_seq;
+	uint16_t sport;
+	uint16_t dport;
+	uint32_t seqnu;
+	uint32_t ack_seq;
 	// u_int16_t len_flags;
-	u_int16_t res1 : 4, doff : 4, fin : 1, syn : 1, rst : 1, psh : 1, ack : 1,
+	uint16_t res1 : 4, doff : 4, fin : 1, syn : 1, rst : 1, psh : 1, ack : 1,
 		urg : 1, ece : 1, cwr : 1;
-	u_int16_t window;
-	u_int16_t checksum;
-	u_int16_t urg_ptr;
+	uint16_t window;
+	uint16_t checksum;
+	uint16_t urg_ptr;
 } __attribute__((packed));
 
 /*
@@ -110,37 +110,37 @@ struct tcp_hdr
  */
 struct icmp_ra_addr
 {
-	u_int32_t ira_addr;
-	u_int32_t ira_preference;
+	uint32_t ira_addr;
+	uint32_t ira_preference;
 };
 
 struct icmp
 {
-	u_int8_t icmp_type; /* type of message, see below */
-	u_int8_t icmp_code; /* type sub code */
-	u_int16_t icmp_cksum; /* ones complement checksum of struct */
+	uint8_t icmp_type; /* type of message, see below */
+	uint8_t icmp_code; /* type sub code */
+	uint16_t icmp_cksum; /* ones complement checksum of struct */
 	union {
 		u_char ih_pptr; /* ICMP_PARAMPROB */
 		struct in_addr ih_gwaddr; /* gateway address */
 		struct ih_idseq /* echo datagram */
 		{
-			u_int16_t icd_id;
-			u_int16_t icd_seq;
+			uint16_t icd_id;
+			uint16_t icd_seq;
 		} ih_idseq;
-		u_int32_t ih_void;
+		uint32_t ih_void;
 
 		/* ICMP_UNREACH_NEEDFRAG -- Path MTU Discovery (RFC1191) */
 		struct ih_pmtu
 		{
-			u_int16_t ipm_void;
-			u_int16_t ipm_nextmtu;
+			uint16_t ipm_void;
+			uint16_t ipm_nextmtu;
 		} ih_pmtu;
 
 		struct ih_rtradv
 		{
-			u_int8_t irt_num_addrs;
-			u_int8_t irt_wpa;
-			u_int16_t irt_lifetime;
+			uint8_t irt_num_addrs;
+			uint8_t irt_wpa;
+			uint16_t irt_lifetime;
 		} ih_rtradv;
 	} icmp_hun;
 
@@ -157,9 +157,9 @@ struct icmp
 	union {
 		struct
 		{
-			u_int32_t its_otime;
-			u_int32_t its_rtime;
-			u_int32_t its_ttime;
+			uint32_t its_otime;
+			uint32_t its_rtime;
+			uint32_t its_ttime;
 		} id_ts;
 		struct
 		{
@@ -167,8 +167,8 @@ struct icmp
 			/* options and then 64 bits of data */
 		} id_ip;
 		struct icmp_ra_addr id_radv;
-		u_int32_t id_mask;
-		u_int8_t id_data[1];
+		uint32_t id_mask;
+		uint8_t id_data[1];
 	} icmp_dun;
 #define icmp_otime icmp_dun.id_ts.its_otime
 #define icmp_rtime icmp_dun.id_ts.its_rtime
@@ -181,20 +181,20 @@ struct icmp
 
 struct dns_query
 {
-	u_int16_t tid;
-	u_int16_t flags;
-	u_int16_t questions;
-	u_int16_t rrs; // answer RRs
-	u_int16_t arrs; // authority RRs
-	u_int16_t xrrs; // additional RRs
-	u_int8_t qdata;
+	uint16_t tid;
+	uint16_t flags;
+	uint16_t questions;
+	uint16_t rrs; // answer RRs
+	uint16_t arrs; // authority RRs
+	uint16_t xrrs; // additional RRs
+	uint8_t qdata;
 };
 
 struct dot1x_hdr
 {
-	u_int8_t code;
-	u_int8_t idtype;
-	u_int16_t length;
+	uint8_t code;
+	uint8_t idtype;
+	uint16_t length;
 };
 
 #define DOT1X_CODE_REQ 0x1
@@ -209,20 +209,20 @@ struct dot1x_hdr
 
 struct radius_hdr
 {
-	u_int8_t code;
-	u_int8_t key_mic : 1, key_secure : 1, key_error : 1, key_request : 1,
+	uint8_t code;
+	uint8_t key_mic : 1, key_secure : 1, key_error : 1, key_request : 1,
 		key_enc : 1, resv : 3;
-	u_int8_t key_ver : 3, key_type : 1, key_index : 2, key_install : 1,
+	uint8_t key_ver : 3, key_type : 1, key_index : 2, key_install : 1,
 		key_ack : 1;
-	u_int16_t length;
-	u_int8_t replaycnt[8];
-	u_int8_t wpa_nonce[32];
-	u_int8_t wpa_key_iv[16];
-	u_int8_t wpa_key_rsc[8];
-	u_int8_t wpa_key_id[8];
-	u_int8_t wpa_key_mic[16];
-	u_int16_t wpa_key_len;
-	u_int8_t wpa_key_datap; // data starts here
+	uint16_t length;
+	uint8_t replaycnt[8];
+	uint8_t wpa_nonce[32];
+	uint8_t wpa_key_iv[16];
+	uint8_t wpa_key_rsc[8];
+	uint8_t wpa_key_id[8];
+	uint8_t wpa_key_mic[16];
+	uint16_t wpa_key_len;
+	uint8_t wpa_key_datap; // data starts here
 } __attribute__((packed));
 
 #define ETHTYPE_IP 0x08
