@@ -249,7 +249,7 @@ findFreeInterface() {
 						printf "Unable to create wlan%s%s and no error received.\n" "${i}" "${target_suffix}"
 						return 1
 					fi
-					printf "\n\t\t(mac80211 %s mode vif enabled on [%s]wlan%s%s\n" "${target_mode}" "${PHYDEV}" "${i}" "${target_suffix}"
+                    printf "\n\t\t(mac80211 %s mode vif enabled on [%s]wlan%s%s)\n" "${target_mode}" "${PHYDEV}" "${i}" "${target_suffix}"
 					unset IW_ERROR
 					break
 				else
