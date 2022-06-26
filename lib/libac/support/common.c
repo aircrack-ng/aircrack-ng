@@ -364,7 +364,7 @@ int get_nb_cpus(void)
 					if (pos != NULL)
 					{
 						int tmp_number = atoi(pos + 1);
-						if (tmp_number > 0 && tmp_number <= 1024)
+						if (tmp_number >= 0 && tmp_number <= 1024)
 							number = tmp_number;
 					}
 				}
