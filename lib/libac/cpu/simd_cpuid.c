@@ -47,6 +47,9 @@
 #include <sys/user.h>
 #include <sys/sysctl.h>
 #endif
+#if defined(__APPLE__) && defined(__aarch64__)
+#include <sys/sysctl.h>
+#endif
 #include <dirent.h>
 
 #include "aircrack-ng/cpu/simd_cpuid.h"
@@ -428,6 +431,9 @@ static char * cpuid_modelinfo(void)
 	int mib[] = {CTL_HW, HW_MODEL};
 	char modelbuf[64];
 	size_t len = sizeof(modelbuf);
+#elif defined(__APPLE__) && defined(__aarch64__)
+	char modelbuf[128];
+	size_t modelbuf_len = sizeof(modelbuf);
 #endif
 	char *pm = NULL, *model = NULL;
 
@@ -491,7 +497,10 @@ static char * cpuid_modelinfo(void)
 
 	pm = modelbuf;
 #elif defined(__APPLE__) && defined(__aarch64__)
-	pm = "Apple M1";
+	if (sysctlbyname("machdep.cpu.brand_string", &modelbuf, &modelbuf_len, NULL, 0))
+		snprintf(modelbuf, sizeof(modelbuf), "Unknown Apple AARCH64");
+
+	pm = modelbuf;
 #endif
 
 	// Clean up the empty spaces in the model name on some intel's because they
