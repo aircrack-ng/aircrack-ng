@@ -1253,6 +1253,7 @@ scanProcesses() {
 
 listInterfaces() {
   unset iface_list
+  sort_command="cat"
   for iface in $(ls -1 /sys/class/net)
   do
     if [ -f "/sys/class/net/${iface}/uevent" ]; then
@@ -1263,14 +1264,15 @@ listInterfaces() {
     fi
   done
   if [ -x "$(command -v iwconfig 2>&1)" ] && [ -x "$(command -v sort 2>&1)" ]; then
+    sort_command="sort -bu"
     for iface in $(iwconfig 2> /dev/null | sed -e 's/^\(\w*\)\s.*/\1/' -e '/^$/d'); do
       iface_list="${iface_list}\n ${iface}"
     done
-    # This breaks if you fix SC2059 and I am not sure why
-    # This should probably be space separated instead of newline
-    # shellcheck disable=SC2059
-    iface_list="$(printf "${iface_list}" | sort -bu)"
   fi
+  # This breaks if you fix SC2059 and I am not sure why
+  # This should probably be space separated instead of newline
+  # shellcheck disable=SC2059
+  iface_list="$(printf "${iface_list}" | ${sort_command})"
 }
 
 getPhy() {
