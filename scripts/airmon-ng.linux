@@ -1168,10 +1168,11 @@ scanProcesses() {
 
 	if [ "${1}" = "kill" ]; then
     if [ -x "$(command -v systemctl 2>&1)" ]; then
+        systemctlcmd="$(command -v systemctl 2>&1)"
 		  for service in network-manager NetworkManager avahi-daemon wicd; do
-        if systemctl status "${service}" > /dev/null 2>&1; then
+        if ${systemctlcmd} status "${service}" > /dev/null 2>&1; then
           killservice=1
-          until systemctl stop "${service}" 2> /dev/null > /dev/null; do
+          until ${systemctlcmd} stop "${service}" 2> /dev/null > /dev/null; do
             killservice=$((killservice + 1))
             if [ ${killservice} -gt 5 ]; then
               printf "Failed to stop %s, please stop it on your own.\n" "${service}"
