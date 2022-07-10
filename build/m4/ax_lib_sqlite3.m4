@@ -161,7 +161,7 @@ AC_DEFUN([AX_LIB_SQLITE3],
                 ac_sqlite3_version=`cat $ac_sqlite3_header_path \
                     | grep '#define.*SQLITE_VERSION.*\"' | sed -e 's/.* "//' \
                         | sed -e 's/"//'`
-                if test $ac_sqlite3_version != ""; then
+                if test "$ac_sqlite3_version" != ""; then
                     SQLITE3_VERSION=$ac_sqlite3_version
                 else
                     AC_MSG_WARN([Cannot find SQLITE_VERSION macro in sqlite3.h header to retrieve SQLite version!])
