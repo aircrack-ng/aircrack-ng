@@ -1321,7 +1321,7 @@ int main(int argc, char ** argv)
 	signal(SIGTERM, sighandler);
 
 	option = getopt_long(
-		argc, argv, "bc:d:e:hi:s:t:v:", long_options, &option_index);
+		argc-1, argv+1, "bc:d:e:hi:s:t:v:", long_options, &option_index);
 
 	if (option > 0)
 	{
