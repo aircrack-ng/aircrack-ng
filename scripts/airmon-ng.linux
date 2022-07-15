@@ -1266,7 +1266,8 @@ listInterfaces() {
     for iface in $(iwconfig 2> /dev/null | sed -e 's/^\(\w*\)\s.*/\1/' -e '/^$/d'); do
       iface_list="${iface_list} ${iface}"
     done
-    iface_list="$(printf "%s" "${iface_list}" | sort -bu)"
+    #                                           sort needs newline separated,   convert back after
+    iface_list="$(printf "%s" "${iface_list}" | sed 's/ /\n/g' | sort -bu | sed ':a;N;$!ba;s/\n/ /g')"
   fi
 }
 
