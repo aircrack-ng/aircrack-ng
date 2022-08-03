@@ -48,10 +48,8 @@ m4_define([version_scm],[m4_translit(m4_esyscmd([$(pwd)/evalrev . scm || echo]),
 m4_define([version_triplet],version_major.version_minor.version_micro)
 m4_append([version_triplet],version_scm)
 
-AC_PREREQ([2.52])
-AC_INIT([aircrack-ng],
-    [version_triplet],
-    [https://forum.aircrack-ng.org])
+AC_PREREQ([2.59])
+AC_INIT([aircrack-ng],[version_triplet],[https://forum.aircrack-ng.org])
 
 #
 # Cross-Compilation
@@ -97,7 +95,8 @@ AM_PROG_AS
 PKG_PROG_PKG_CONFIG
 AM_PROG_CC_C_O
 AC_C_CONST
-AC_HEADER_STDC
+AC_PROG_EGREP
+
 AC_CHECK_HEADERS([locale.h stdio.h stdarg.h fcntl.h malloc.h stdlib.h string.h strings.h unistd.h sys/stat.h getopt.h sys/time.h sys/types.h dirent.h])
 
 #

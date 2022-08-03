@@ -38,7 +38,7 @@ dnl If you delete this exception statement from all source files in the
 dnl program, then also delete it here.
 
 AC_DEFUN([AIRCRACK_NG_HWLOC], [
-AC_ARG_ENABLE([hwloc],[AC_HELP_STRING([--enable-hwloc], [include hwloc library, [default=yes]])])
+AC_ARG_ENABLE([hwloc],[AS_HELP_STRING([--enable-hwloc], [include hwloc library, [default=yes]])])
 
 HAVE_HWLOC=no
 
