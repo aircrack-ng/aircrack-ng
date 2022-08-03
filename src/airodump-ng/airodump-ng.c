@@ -2671,41 +2671,83 @@ skip_probe:
 
 				st_cur->wpa.state = 1;
 
-				if (h80211[z + 99] == IEEE80211_ELEMID_VENDOR)
+				uint8_t key_descriptor_version = (uint8_t)(h80211[z + 6] & 7);
+
+				p = h80211 + z + 99;
+
+				while (p < h80211 + caplen)
 				{
-					const uint8_t rsn_oui[] = {RSN_OUI & 0xff,
-											   (RSN_OUI >> 8) & 0xff,
-											   (RSN_OUI >> 16) & 0xff};
-
-					if (memcmp(rsn_oui, &h80211[z + 101], 3) == 0
-						&& h80211[z + 104] == RSN_CSE_CCMP)
+					if (p + 2 + p[1] > h80211 + caplen) break;
+#ifdef XDEBUG
+					fprintf(stderr, "IE element: %d\n", p[0]);
+					fprintf(stderr, "IE length: %d\n", p[1]);
+#endif
+					if (p[0] == IEEE80211_ELEMID_VENDOR)
 					{
-						if (memcmp(ZERO, &h80211[z + 105], 16) != 0) //-V512
+						size_t rsn_len = p[1];
+						size_t pos = 2;
+						const uint8_t rsn_oui[] = {RSN_OUI & 0xff,
+												   (RSN_OUI >> 8) & 0xff,
+												   (RSN_OUI >> 16) & 0xff};
+#ifdef XDEBUG
+						fprintf(stderr, "RSN length: %zd\n", rsn_len);
+						fprintf(stderr,
+								"OUI is %02x:%02x:%02x\n",
+								p[pos],
+								p[pos + 1],
+								p[pos + 2]);
+#endif
+						if (memcmp(rsn_oui, &p[pos], 3) == 0)
 						{
-							// Got a PMKID value?!
-							memcpy(st_cur->wpa.pmkid, &h80211[z + 105], 16);
+							if (pos + 3 > rsn_len) goto rsn_out;
+							pos += 3; // advance over RSN OUI
 
-							/* copy the key descriptor version */
-							st_cur->wpa.keyver = (uint8_t)(h80211[z + 6] & 7);
+#ifdef XDEBUG
+							fprintf(stderr,
+									"The cipher tag value '%d' is used with "
+									"the key descriptor version '%d'\n",
+									p[pos],
+									key_descriptor_version);
+#endif
+							if (pos + 1 > rsn_len) goto rsn_out;
+							pos += 1; // advance over tag value
 
-							memcpy(st_cur->wpa.stmac, st_cur->stmac, 6);
-							memcpy(lopt.wpa_bssid, ap_cur->bssid, 6);
-							memset(lopt.message, '\x00', sizeof(lopt.message));
-							snprintf(lopt.message,
-									 sizeof(lopt.message) - 1,
-									 "][ PMKID found: "
-									 "%02X:%02X:%02X:%02X:%02X:%02X ",
-									 lopt.wpa_bssid[0],
-									 lopt.wpa_bssid[1],
-									 lopt.wpa_bssid[2],
-									 lopt.wpa_bssid[3],
-									 lopt.wpa_bssid[4],
-									 lopt.wpa_bssid[5]);
+							if (key_descriptor_version > 0
+								&& memcmp(ZERO, &p[pos], 16) //-V512
+									   != 0)
+							{
+#ifdef XDEBUG
+								fprintf(stderr, "FOUND valid CCM PMKID\n");
+#endif
+								// Got a PMKID value?!
+								memcpy(st_cur->wpa.pmkid, &p[pos], 16);
 
-							goto write_packet;
+								/* copy the key descriptor version */
+								st_cur->wpa.keyver = key_descriptor_version;
+
+								memcpy(st_cur->wpa.stmac, st_cur->stmac, 6);
+								memcpy(lopt.wpa_bssid, ap_cur->bssid, 6);
+								memset(
+									lopt.message, '\x00', sizeof(lopt.message));
+								snprintf(lopt.message,
+										 sizeof(lopt.message) - 1,
+										 "][ PMKID found: "
+										 "%02X:%02X:%02X:%02X:%02X:%02X ",
+										 lopt.wpa_bssid[0],
+										 lopt.wpa_bssid[1],
+										 lopt.wpa_bssid[2],
+										 lopt.wpa_bssid[3],
+										 lopt.wpa_bssid[4],
+										 lopt.wpa_bssid[5]);
+
+								goto write_packet;
+							}
 						}
 					}
+
+					p += 2 + p[1];
 				}
+			rsn_out:;
 			}
 
 			/* frame 2 or 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1 */
