@@ -46,19 +46,19 @@ typedef struct ac_cpuset ac_cpuset_t;
 ac_cpuset_t * ac_cpuset_new(void);
 
 /// Deallocate a cpuset module handle.
-void ac_cpuset_free(ac_cpuset_t * cpuset);
+void ac_cpuset_free(ac_cpuset_t * cset);
 
 /// Initialize the cpuset module handle.
-void ac_cpuset_init(ac_cpuset_t * cpuset);
+void ac_cpuset_init(ac_cpuset_t * cset);
 
 /// Destroy the cpuset module handle.
-void ac_cpuset_destroy(ac_cpuset_t * cpuset);
+void ac_cpuset_destroy(ac_cpuset_t * cset);
 
 /// Distribute \a count threads over all available CPUs.
-void ac_cpuset_distribute(ac_cpuset_t * cpuset, size_t count);
+void ac_cpuset_distribute(ac_cpuset_t * cset, size_t count);
 
 /// Bind \a tid to the CPU stored at the \a idx index position.
-void ac_cpuset_bind_thread_at(ac_cpuset_t * cpuset, pthread_t tid, size_t idx);
+void ac_cpuset_bind_thread_at(ac_cpuset_t * cset, pthread_t tid, size_t idx);
 
 #ifdef __cplusplus
 }

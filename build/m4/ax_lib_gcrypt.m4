@@ -40,6 +40,7 @@ AC_DEFUN([AX_CHECK_GCRYPT_ALGO],[
   AC_MSG_CHECKING([for $1 in gcrypt])
   if echo $gcrypt_algos | $EGREP -i ":.*( $1 | $1$)" > /dev/null ; then
     AC_DEFINE([GCRYPT_WITH_$1],[1],[Algorithm $1 in gcrypt library])
+    AC_SUBST([GCRYPT_WITH_$1], [1])
     AC_MSG_RESULT([yes])
   else
     AC_MSG_RESULT([no])
@@ -101,6 +102,7 @@ int ok = GCRY_MAC_CMAC_AES;
       ]])],[
         AC_MSG_RESULT([yes])
         AC_DEFINE([GCRYPT_WITH_CMAC_AES],[1],[Algorithm CMAC_AES in gcrypt library])
+        AC_SUBST([GCRYPT_WITH_CMAC_AES], [1])
         HAVE_CMAC=yes
       ], [
         AC_MSG_RESULT([no])

@@ -58,29 +58,29 @@ struct ac_cpuset
 
 ac_cpuset_t * ac_cpuset_new(void) { return malloc(sizeof(struct ac_cpuset)); }
 
-void ac_cpuset_free(ac_cpuset_t * cpuset) { free(cpuset); }
+void ac_cpuset_free(ac_cpuset_t * cset) { free(cset); }
 
-void ac_cpuset_init(ac_cpuset_t * cpuset)
+void ac_cpuset_init(ac_cpuset_t * cset)
 {
-	assert(cpuset != NULL);
+	assert(cset != NULL);
 
-	cpuset->nbThreads = 0;
+	cset->nbThreads = 0;
 }
 
-void ac_cpuset_destroy(ac_cpuset_t * cpuset) { assert(cpuset != NULL); }
+void ac_cpuset_destroy(ac_cpuset_t * cset) { assert(cset != NULL); }
 
-void ac_cpuset_distribute(ac_cpuset_t * cpuset, size_t count)
+void ac_cpuset_distribute(ac_cpuset_t * cset, size_t count)
 {
-	assert(cpuset != NULL);
+	assert(cset != NULL);
 
-	cpuset->nbThreads = count;
+	cset->nbThreads = count;
 }
 
-void ac_cpuset_bind_thread_at(ac_cpuset_t * cpuset, pthread_t tid, size_t idx)
+void ac_cpuset_bind_thread_at(ac_cpuset_t * cset, pthread_t tid, size_t idx)
 {
-	assert(cpuset != NULL);
+	assert(cset != NULL);
 
-	if (idx > cpuset->nbThreads) return;
+	if (idx > cset->nbThreads) return;
 
 #if defined(HAVE_PTHREAD_AFFINITY_NP) && HAVE_PTHREAD_AFFINITY_NP
 	// set affinity to a specific processor, for the specified thread.

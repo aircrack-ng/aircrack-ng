@@ -262,7 +262,7 @@ int main(int argc, char * argv[])
 	(void) argc;
 	(void) argv;
 
-#if defined(HAVE_OPENSSL_CMAC_H) || defined(GCRYPT_WITH_CMAC_AES)
+#if defined(OPENSSL_WITH_CMAC) || defined(GCRYPT_WITH_CMAC_AES)
 
 	const struct CMUnitTest tests[]
 		= { cmocka_unit_test(test_crypto_engine_generic),

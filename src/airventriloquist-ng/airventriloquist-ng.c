@@ -1613,13 +1613,11 @@ static int do_active_injection(void)
 	struct timeval tv;
 	fd_set rfds;
 	int caplen, ret;
-	int atime = 200;
 	memset(tmpbuf, 0, 4096);
 
 	printf("opt.port_out = %d, opt.s_face = %s\n", opt.port_out, opt.s_face);
 	if (opt.port_out > 0)
 	{
-		atime += 200;
 		PCT;
 		printf("Testing connection to injection device %s\n", opt.iface_out);
 		ret = tcp_test(opt.ip_out, opt.port_out);
@@ -1648,7 +1646,6 @@ static int do_active_injection(void)
 
 	if (opt.s_face && opt.port_in > 0)
 	{
-		atime += 200;
 		PCT;
 		printf("Testing connection to capture device %s\n", opt.s_face);
 		ret = tcp_test(opt.ip_in, opt.port_in);
@@ -1907,7 +1904,8 @@ int main(int argc, char * argv[])
 				return (EXIT_FAILURE);
 			}
 
-			calc_pmk(lopt.passphrase, lopt.essid, lopt.pmk);
+			calc_pmk(
+				(uint8_t *) lopt.passphrase, (uint8_t *) lopt.essid, lopt.pmk);
 		}
 	}
 

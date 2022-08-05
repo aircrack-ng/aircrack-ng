@@ -512,7 +512,8 @@ int main(int argc, char * argv[])
 				return (EXIT_FAILURE);
 			}
 
-			calc_pmk(opt.passphrase, opt.essid, opt.pmk);
+			calc_pmk(
+				(uint8_t *) opt.passphrase, (uint8_t *) opt.essid, opt.pmk);
 		}
 	}
 

@@ -1,6 +1,6 @@
 # Aircrack-ng
 #
-# Copyright (C) 2017 Joseph Benden <joe@benden.us>
+# Copyright (C) 2017-2022 Joseph Benden <joe@benden.us>
 #
 # Autotool support was written by: Joseph Benden <joe@benden.us>
 #
@@ -80,6 +80,69 @@ test_calc_ptk_LDADD   = $(LIBACCRYPTO_LIBS) $(LIBAIRCRACK_LIBS) \
 						$(CRYPTO_LIBS) \
 						$(ZLIB_LIBS)
 
+test_cipher_arcfour_SOURCES = %D%/test-cipher-arcfour.c
+test_cipher_arcfour_CFLAGS  = $(PTHREAD_CFLAGS) \
+							$(CRYPTO_CFLAGS)
+test_cipher_arcfour_LDADD   = $(LIBACCRYPTO_LIBS) $(LIBAIRCRACK_LIBS) \
+							$(PTHREAD_LIBS) \
+							$(CRYPTO_LDFLAGS) \
+							$(CRYPTO_LIBS) \
+							$(ZLIB_LIBS)
+
+test_digest_md5_SOURCES = %D%/test-digest-md5.c
+test_digest_md5_CFLAGS  = $(PTHREAD_CFLAGS) \
+							$(CRYPTO_CFLAGS)
+test_digest_md5_LDADD   = $(LIBACCRYPTO_LIBS) $(LIBAIRCRACK_LIBS) \
+							$(PTHREAD_LIBS) \
+							$(CRYPTO_LDFLAGS) \
+							$(CRYPTO_LIBS) \
+							$(ZLIB_LIBS)
+
+test_mac_hmac_md5_SOURCES = %D%/test-mac-hmac-md5.c
+test_mac_hmac_md5_CFLAGS  = $(PTHREAD_CFLAGS) \
+							$(CRYPTO_CFLAGS)
+test_mac_hmac_md5_LDADD   = $(LIBACCRYPTO_LIBS) $(LIBAIRCRACK_LIBS) \
+							$(PTHREAD_LIBS) \
+							$(CRYPTO_LDFLAGS) \
+							$(CRYPTO_LIBS) \
+							$(ZLIB_LIBS)
+
+test_mac_hmac_sha1_SOURCES = %D%/test-mac-hmac-sha1.c
+test_mac_hmac_sha1_CFLAGS  = $(PTHREAD_CFLAGS) \
+							$(CRYPTO_CFLAGS)
+test_mac_hmac_sha1_LDADD   = $(LIBACCRYPTO_LIBS) $(LIBAIRCRACK_LIBS) \
+							$(PTHREAD_LIBS) \
+							$(CRYPTO_LDFLAGS) \
+							$(CRYPTO_LIBS) \
+							$(ZLIB_LIBS)
+
+test_mac_hmac_sha256_SOURCES = %D%/test-mac-hmac-sha256.c
+test_mac_hmac_sha256_CFLAGS  = $(PTHREAD_CFLAGS) \
+							$(CRYPTO_CFLAGS)
+test_mac_hmac_sha256_LDADD   = $(LIBACCRYPTO_LIBS) $(LIBAIRCRACK_LIBS) \
+							$(PTHREAD_LIBS) \
+							$(CRYPTO_LDFLAGS) \
+							$(CRYPTO_LIBS) \
+							$(ZLIB_LIBS)
+
+test_digest_sha1_SOURCES = %D%/test-digest-sha1.c
+test_digest_sha1_CFLAGS  = $(PTHREAD_CFLAGS) \
+							$(CRYPTO_CFLAGS)
+test_digest_sha1_LDADD   = $(LIBACCRYPTO_LIBS) $(LIBAIRCRACK_LIBS) \
+							$(PTHREAD_LIBS) \
+							$(CRYPTO_LDFLAGS) \
+							$(CRYPTO_LIBS) \
+							$(ZLIB_LIBS)
+
+test_kdf_pbkdf2_hmac_sha1_SOURCES = %D%/test-kdf-pbkdf2-hmac-sha1.c
+test_kdf_pbkdf2_hmac_sha1_CFLAGS  = $(PTHREAD_CFLAGS) \
+							$(CRYPTO_CFLAGS)
+test_kdf_pbkdf2_hmac_sha1_LDADD   = $(LIBACCRYPTO_LIBS) $(LIBAIRCRACK_LIBS) \
+							$(PTHREAD_LIBS) \
+							$(CRYPTO_LDFLAGS) \
+							$(CRYPTO_LIBS) \
+							$(ZLIB_LIBS)
+
 test_encrypt_ccmp_SOURCES = $(SRCS_TEST_ECMP)
 test_encrypt_ccmp_CFLAGS  = $(PTHREAD_CFLAGS) \
 							$(CRYPTO_CFLAGS)
@@ -103,14 +166,28 @@ TESTS +=	test-encrypt-wep \
 			test-calc-pmk \
 			test-calc-mic \
 			test-calc-ptk \
+			test-cipher-arcfour \
+			test-digest-md5 \
+			test-digest-sha1 \
 			test-encrypt-ccmp \
-			test-decrypt-ccmp
+			test-decrypt-ccmp \
+			test-mac-hmac-md5 \
+			test-mac-hmac-sha1 \
+			test-mac-hmac-sha256 \
+			test-kdf-pbkdf2-hmac-sha1
 
 check_PROGRAMS +=	test-encrypt-wep \
 					test-calc-pmk \
 					test-calc-mic \
 					test-calc-ptk \
+					test-cipher-arcfour \
+					test-digest-md5 \
+					test-digest-sha1 \
 					test-encrypt-ccmp \
-					test-decrypt-ccmp
+					test-decrypt-ccmp \
+					test-mac-hmac-md5 \
+					test-mac-hmac-sha1 \
+					test-mac-hmac-sha256 \
+					test-kdf-pbkdf2-hmac-sha1
 
 EXTRA_DIST += %D%/tests.h

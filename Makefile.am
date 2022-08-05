@@ -71,7 +71,7 @@ TESTS =
 INTEGRATION_TESTS =
 
 LIBACCRYPTO_LIBS = libaccrypto.la
-LIBAIRCRACK_CE_WEP_LIBS = libaircrack-ce-wep.la
+LIBAIRCRACK_CE_WEP_LIBS = $(LIBACCRYPTO_LIBS) libaircrack-ce-wep.la
 LIBAIRCRACK_LIBS = libaircrack.la
 LIBAIRCRACK_OSDEP_LIBS= libaircrack-osdep.la
 if CYGWIN
@@ -81,14 +81,14 @@ LIBCOWPATTY_LIBS = libcowpatty.la
 LIBPTW_LIBS = libptw.la
 LIBRADIOTAP_LIBS = libradiotap.la
 
-LIBAIRCRACK_CE_WPA_LIBS = libaircrack-ce-wpa.la
-LIBAIRCRACK_CE_WPA_X86_AVX512_LIBS = libaircrack-ce-wpa-x86-avx512.la
-LIBAIRCRACK_CE_WPA_X86_AVX2_LIBS = libaircrack-ce-wpa-x86-avx2.la
-LIBAIRCRACK_CE_WPA_X86_AVX_LIBS = libaircrack-ce-wpa-x86-avx.la
-LIBAIRCRACK_CE_WPA_X86_SSE2_LIBS = libaircrack-ce-wpa-x86-sse2.la
-LIBAIRCRACK_CE_WPA_ARM_NEON_LIBS = libaircrack-ce-wpa-arm-neon.la
-LIBAIRCRACK_CE_WPA_PPC_ALTIVEC_LIBS = libaircrack-ce-wpa-ppc-altivec.la
-LIBAIRCRACK_CE_WPA_PPC_POWER8_LIBS = libaircrack-ce-wpa-ppc-power8.la
+LIBAIRCRACK_CE_WPA_LIBS = $(LIBACCRYPTO_LIBS) libaircrack-ce-wpa.la
+LIBAIRCRACK_CE_WPA_X86_AVX512_LIBS = $(LIBACCRYPTO_LIBS) libaircrack-ce-wpa-x86-avx512.la
+LIBAIRCRACK_CE_WPA_X86_AVX2_LIBS = $(LIBACCRYPTO_LIBS) libaircrack-ce-wpa-x86-avx2.la
+LIBAIRCRACK_CE_WPA_X86_AVX_LIBS = $(LIBACCRYPTO_LIBS) libaircrack-ce-wpa-x86-avx.la
+LIBAIRCRACK_CE_WPA_X86_SSE2_LIBS = $(LIBACCRYPTO_LIBS) libaircrack-ce-wpa-x86-sse2.la
+LIBAIRCRACK_CE_WPA_ARM_NEON_LIBS = $(LIBACCRYPTO_LIBS) libaircrack-ce-wpa-arm-neon.la
+LIBAIRCRACK_CE_WPA_PPC_ALTIVEC_LIBS = $(LIBACCRYPTO_LIBS) libaircrack-ce-wpa-ppc-altivec.la
+LIBAIRCRACK_CE_WPA_PPC_POWER8_LIBS = $(LIBACCRYPTO_LIBS) libaircrack-ce-wpa-ppc-power8.la
 
 LIBAIRCRACK_CE_WPA_PATH = $(abs_top_builddir)/
 

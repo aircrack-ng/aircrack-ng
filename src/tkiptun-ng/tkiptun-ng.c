@@ -2854,7 +2854,7 @@ int main(int argc, char * argv[])
 
 	if (!lopt.got_pmk && lopt.got_psk && strlen(opt.r_essid) > 1)
 	{
-		calc_pmk(lopt.psk, opt.r_essid, lopt.pmk);
+		calc_pmk((uint8_t *) lopt.psk, (uint8_t *) opt.r_essid, lopt.pmk);
 		PCT;
 		printf("PSK: %s\n", lopt.psk);
 		PCT;
