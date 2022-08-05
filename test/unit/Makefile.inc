@@ -52,7 +52,7 @@ UNIT_COMMON_LDADD  =	$(PTHREAD_LIBS) \
 test_calc_one_pmk_SOURCES = %D%/test-calc-one-pmk.c
 test_calc_one_pmk_CFLAGS  = $(UNIT_COMMON_CFLAGS)
 test_calc_one_pmk_LDFLAGS = -rdynamic
-test_calc_one_pmk_LDADD   = $(LIBAIRCRACK_CE_WPA_LIBS) \
+test_calc_one_pmk_LDADD   = libaccrypto.la $(LIBAIRCRACK_CE_WPA_LIBS) \
 														$(UNIT_COMMON_LDADD)
 
 test_circular_buffer_SOURCES = %D%/test-circular-buffer.c
@@ -77,7 +77,7 @@ test_wpapsk_CFLAGS  = "-DLIBAIRCRACK_CE_WPA_PATH=\"$(LIBAIRCRACK_CE_WPA_PATH)\""
 											"-DLIBDIR=\"$(libdir)\"" \
 											$(UNIT_COMMON_CFLAGS)
 test_wpapsk_LDFLAGS = -rdynamic
-test_wpapsk_LDADD   = $(LIBAIRCRACK_CE_WPA_LIBS) \
+test_wpapsk_LDADD   = libaccrypto.la $(LIBAIRCRACK_CE_WPA_LIBS) \
 											$(LIBAIRCRACK_LIBS) \
 											$(UNIT_COMMON_LDADD)
 

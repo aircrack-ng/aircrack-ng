@@ -56,17 +56,17 @@ AC_LINK_IFELSE([
 		#define _GNU_SOURCE
    		#include <pthread.h>
    	], [
-   		cpu_set_t cpuset;
+   		cpu_set_t g_cpuset;
    		pthread_attr_t attr;
-   		pthread_getaffinity_np (pthread_self (), sizeof (cpu_set_t), &cpuset);
-   		if (CPU_ISSET (0, &cpuset))
-     		CPU_SET (1, &cpuset);
+   		pthread_getaffinity_np (pthread_self (), sizeof (cpu_set_t), &g_cpuset);
+   		if (CPU_ISSET (0, &g_cpuset))
+     		CPU_SET (1, &g_cpuset);
    		else
-     		CPU_ZERO (&cpuset);
-   		pthread_setaffinity_np (pthread_self (), sizeof (cpu_set_t), &cpuset);
+     		CPU_ZERO (&g_cpuset);
+   		pthread_setaffinity_np (pthread_self (), sizeof (cpu_set_t), &g_cpuset);
    		pthread_attr_init (&attr);
-   		pthread_attr_getaffinity_np (&attr, sizeof (cpu_set_t), &cpuset);
-   		pthread_attr_setaffinity_np (&attr, sizeof (cpu_set_t), &cpuset);
+   		pthread_attr_getaffinity_np (&attr, sizeof (cpu_set_t), &g_cpuset);
+   		pthread_attr_setaffinity_np (&attr, sizeof (cpu_set_t), &g_cpuset);
    	])
 ], [
 	AC_MSG_RESULT([yes])

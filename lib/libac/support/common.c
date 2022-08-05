@@ -255,12 +255,6 @@ char * getVersion(const char * progname,
 		exit(1);
 	}
 
-	// Calculate and allocate buffer
-	size_t len = 100 + strlen(progname);
-	if (rev)
-	{
-		len += strlen(rev);
-	}
 	char *ret = NULL, *tmp = NULL;
 
 	// Major, minor version
@@ -671,6 +665,7 @@ char * get_current_working_directory(void)
 			if (ret) free(ret);
 			return (NULL);
 		}
+		memset(wd_realloc, 0, wd_size);
 		ret = wd_realloc;
 		wd_realloc = getcwd(ret, wd_size);
 		if (wd_realloc == NULL && errno != ERANGE)

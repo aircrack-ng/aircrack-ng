@@ -1233,7 +1233,8 @@ int main(int argc, char * argv[])
 				return (EXIT_FAILURE);
 			}
 
-			calc_pmk(lopt.passphrase, lopt.essid, lopt.pmk);
+			calc_pmk(
+				(uint8_t *) lopt.passphrase, (uint8_t *) lopt.essid, lopt.pmk);
 		}
 	}
 

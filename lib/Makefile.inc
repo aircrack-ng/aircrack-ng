@@ -1,6 +1,6 @@
 # Aircrack-ng
 #
-# Copyright (C) 2019 Joseph Benden <joe@benden.us>
+# Copyright (C) 2022 Joseph Benden <joe@benden.us>
 #
 # Autotool support was written by: Joseph Benden <joe@benden.us>
 #
@@ -60,8 +60,93 @@ SRC_LIBAC		= %D%/libac/adt/avl_tree.c \
 							%D%/libac/utf8/verifyssid.c
 SRC_RADIOTAP = %D%/radiotap/radiotap.c
 
-if LIBGCRYPT
+SRC_CRYPTO	+=	%D%/crypto/md5.c
+SRC_CRYPTO	+=	%D%/crypto/mac-hmac-md5-generic.c
+
+SRC_CRYPTO	+=	%D%/crypto/sha1.c
 SRC_CRYPTO	+=	%D%/crypto/sha1-git.c
+SRC_CRYPTO	+=	%D%/crypto/mac-hmac-sha1-generic.c
+
+SRC_CRYPTO	+=	%D%/crypto/sha256.c
+SRC_CRYPTO	+=	%D%/crypto/mac-hmac-sha256-generic.c
+
+if LIBGCRYPT
+if !GCRYPT_WITH_ARCFOUR
+SRC_CRYPTO	+=	%D%/crypto/arcfour-generic.c
+endif
+if  GCRYPT_WITH_ARCFOUR
+SRC_CRYPTO	+=	%D%/crypto/arcfour-gcrypt.c
+endif
+
+if !GCRYPT_WITH_MD5
+SRC_CRYPTO	+=	%D%/crypto/md5-generic.c
+endif
+if  GCRYPT_WITH_MD5
+SRC_CRYPTO	+=	%D%/crypto/md5-gcrypt.c
+endif
+
+if !GCRYPT_WITH_SHA1
+SRC_CRYPTO	+=	%D%/crypto/sha1-generic.c
+endif
+if  GCRYPT_WITH_SHA1
+SRC_CRYPTO	+=	%D%/crypto/sha1-gcrypt.c
+endif
+
+if  GCRYPT_WITH_SHA256
+SRC_CRYPTO	+=	%D%/crypto/sha256-gcrypt.c
+endif
+
+if  GCRYPT_WITH_CMAC
+SRC_CRYPTO	+=	%D%/crypto/mac-omac1-gcrypt.c
+endif
+
+if  GCRYPT_WITH_AES
+SRC_CRYPTO	+=	%D%/crypto/aes-128-cbc-gcrypt.c
+endif
+endif
+
+if !LIBGCRYPT
+if !OPENSSL_WITH_ARCFOUR
+SRC_CRYPTO	+=	%D%/crypto/arcfour-generic.c
+else
+SRC_CRYPTO	+=	%D%/crypto/arcfour-openssl.c
+endif
+
+if OPENSSL_WITH_MD5
+SRC_CRYPTO	+=	%D%/crypto/md5-openssl.c
+else
+SRC_CRYPTO	+=	%D%/crypto/md5-generic.c
+endif
+
+if OPENSSL_WITH_SHA1
+SRC_CRYPTO	+=	%D%/crypto/sha1-openssl.c
+else
+SRC_CRYPTO	+=	%D%/crypto/sha1-generic.c
+endif
+
+if OPENSSL_WITH_SHA256
+SRC_CRYPTO	+=	%D%/crypto/sha256-openssl.c
+endif
+
+if OPENSSL_WITH_CMAC
+SRC_CRYPTO	+=	%D%/crypto/mac-omac1-openssl.c
+endif
+
+if OPENSSL_WITH_AES
+SRC_CRYPTO	+=	%D%/crypto/aes-128-cbc-openssl.c
+endif
+endif
+
+if !OPENSSL_WITH_CMAC
+if !GCRYPT_WITH_CMAC
+SRC_CRYPTO	+=	%D%/crypto/mac-omac1-generic.c
+endif
+endif
+
+if !OPENSSL_WITH_AES
+if !GCRYPT_WITH_AES
+SRC_CRYPTO	+=	%D%/crypto/aes-128-cbc-generic.c
+endif
 endif
 
 libaccrypto_la_SOURCES	= $(SRC_CRYPTO)
@@ -253,8 +338,29 @@ EXTRA_DIST +=	%D%/ce-wep/uniqueiv.c \
 							%D%/ce-wpa/simd-intrinsics.c \
 							%D%/ce-wpa/wpapsk.c \
 							%D%/cowpatty/cowpatty.c \
+							%D%/crypto/aes-128-cbc-gcrypt.c \
+							%D%/crypto/aes-128-cbc-openssl.c \
+							%D%/crypto/arcfour-gcrypt.c \
+							%D%/crypto/arcfour-generic.c \
 							%D%/crypto/crypto.c \
+							%D%/crypto/md5.c \
+							%D%/crypto/md5-gcrypt.c \
+							%D%/crypto/md5-generic.c \
+							%D%/crypto/md5-openssl.c \
+							%D%/crypto/mac-hmac-md5-generic.c \
+							%D%/crypto/mac-hmac-sha1-generic.c \
+							%D%/crypto/mac-hmac-sha256-generic.c \
+							%D%/crypto/mac-omac1-gcrypt.c \
+							%D%/crypto/mac-omac1-generic.c \
+							%D%/crypto/mac-omac1-openssl.c \
+							%D%/crypto/sha1.c \
 							%D%/crypto/sha1-git.c \
+							%D%/crypto/sha1-gcrypt.c \
+							%D%/crypto/sha1-generic.c \
+							%D%/crypto/sha1-openssl.c \
+							%D%/crypto/sha256.c \
+							%D%/crypto/sha256-openssl.c \
+							%D%/crypto/sha256-gcrypt.c \
 							%D%/libac/adt/avl_tree.c \
 							%D%/libac/adt/circular_buffer.c \
 							%D%/libac/adt/circular_queue.c \
