@@ -22,40 +22,49 @@
  *
  */
 
-int ntest=1;
+int ntest = 1;
 
-void hexdump (unsigned char *buffer, int length)
- {
-  int i,x;
-  x=1;
-  for (i=0; i<length; i++)
-        {
-        printf("%02x ",buffer[i]);
-        if (x>15) { x=0; printf("\n"); }
-        x++;
-        }
-  printf("\n");
- }
-
-int test (unsigned char *computed, unsigned char *expected, int length, char* name)
+void hexdump(const unsigned char * buffer, int length)
 {
-        int z;
-        int error=0;
+	int i, x = 1;
 
-        for (z=0; z< length; z++)
-                if  ( computed[z] != expected[z] )
-                        error = 1;
+	for (i = 0; i < length; i++)
+	{
+		printf("%02x ", buffer[i]);
+		if (x > 15)
+		{
+			x = 0;
+			printf("\n");
+		}
+		x++;
+	}
+	printf("\n");
+}
 
-        if (error == 1)
-                {
-                printf ("[%s][Test %d] ERROR: The output don't match. I got:\n",name,ntest++);
-                hexdump (computed,length);
-                printf ("And I was expecting:\n");
-                hexdump (expected,length);
-                }
-        else
-                {
-                printf("[%s][Test %d] OK: Output matches :)\n",name,ntest++);
-                }
-        return error;
+int test(const unsigned char * computed,
+		 const unsigned char * expected,
+		 int length,
+		 const char * name)
+{
+	int z;
+	int error = 0;
+
+	for (z = 0; z < length; z++)
+		if (computed[z] != expected[z]) error = 1;
+
+	if (error == 1)
+	{
+		printf("[%s][Test %d] ERROR: The output don't match. I got:\n",
+			   name,
+			   ntest++);
+		hexdump(computed, length);
+		printf("And I was expecting:\n");
+		hexdump(expected, length);
+	}
+	else
+	{
+		printf("[%s][Test %d] OK: Output matches :)\n", name, ntest++);
+	}
+
+	return error;
 }
