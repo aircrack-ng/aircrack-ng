@@ -1669,7 +1669,8 @@ skip_station:
 					pos += 1; // advance over tag value
 
 					if (key_descriptor_version > 0
-						&& memcmp(ZERO, &p[pos], 16) != 0)
+						&& memcmp(ZERO, &p[pos], 16) //-V512
+							!= 0)
 					{
 #ifdef XDEBUG
 						fprintf(stderr, "FOUND valid CCM PMKID\n");
