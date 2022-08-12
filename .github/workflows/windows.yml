@@ -24,177 +24,6 @@ env:
   TZ: UTC
 
 jobs:
-  cygwin_32bit:
-    runs-on: windows-latest
-
-    steps:
-      - run: git config --global core.autocrlf input
-      - run: git config --global core.eol lf
-      - uses: actions/checkout@v2
-
-      # Caching Cygwin fails due to /dev files and symlinks, sad :(
-      - uses: actions/cache@v2
-        id: cache
-        with:
-          path: |
-            /cygdrive/c/tools/cygwin/home/**/.ccache
-            /cygdrive/c/tools/cygwin/home/**/AirPcap_Devpack_4_1_1_1838.zip
-          key: ${{ runner.os }}-cygwin-32bit-${{ hashFiles('.github/workflows/windows.yml') }}
-          restore-keys: ${{ runner.os }}-cygwin-32bit-
-
-      - name: Set up Cygwin
-        uses: egor-tensin/setup-cygwin@v3
-        with:
-          platform: x86
-          install-dir: C:\tools\cygwin
-          hardlinks: 1
-          packages: >-
-            autoconf automake bison gcc-core gcc-g++ mingw-runtime mingw-binutils mingw-gcc-core
-            mingw-gcc-g++ mingw-pthreads mingw-w32api libtool make python gettext-devel gettext
-            intltool libiconv pkg-config git wget curl libpcre-devel libssl-devel libsqlite3-devel
-            zlib-devel unzip zip rsync expect libhwloc-devel ccache cmocka
-
-      - name: Create home dir
-        run: |
-          C:\tools\cygwin\bin\bash.exe --login -c 'env'
-
-      - name: Find Cygwin path to workspace
-        id: cygwin
-        run: |
-          New-Variable bash -Value "C:\tools\cygwin\bin\bash.exe" -Option Constant
-          $unix_path = (& $bash --login -e -c "cygpath '${env:GITHUB_WORKSPACE}'")
-          Write-Host "::set-output name=unix_path::${unix_path}"
-
-      - name: Ccache stats before builds
-        run: |
-          C:\tools\cygwin\bin\bash.exe -e -l -c "ccache -s"
-
-      - name: Download AirPcap sources
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: |
-          C:\tools\cygwin\bin\bash.exe -e -l -c "cd ~ && curl -RLO https://dl.aircrack-ng.org/AirPcap_Devpack_4_1_1_1838.zip"
-
-      - name: Copy cached AirPcap sources
-        run: |
-          C:\tools\cygwin\bin\bash.exe -e -l -c "cp -vfp ~/AirPcap_Devpack_4_1_1_1838.zip ."
-
-      - name: Verify digest of AirPcap sources
-        shell: pwsh
-        run: |
-          $hashFromFile = Get-FileHash -Path "AirPcap_Devpack_4_1_1_1838.zip" -Algorithm SHA256
-          if ($hashFromFile.Hash -ne "86dcde46603cd1229245263499ef9cb4e43ee66cd7219605d30095562888da14") {
-            Write-Host "AirPcap failed digest check." -ForegroundColor Red
-            $hashFromFile | Format-List
-            Break
-          }
-
-      - name: Decompress AirPcap sources
-        run: |
-          C:\tools\cygwin\bin\bash.exe -e -l -c "7z -y x AirPcap_Devpack_4_1_1_1838.zip"
-
-      - name: Generating 32-bit AirPcap linker files
-        run: |
-          C:\tools\cygwin\bin\bash.exe -e -l -c "cp -vf Airpcap_Devpack/bin/x86/airpcap.dll /cygdrive/c/Windows/System32"
-          C:\tools\cygwin\bin\bash.exe -e -l -c "dlltool -D Airpcap_Devpack/bin/x86/airpcap.dll -d build/airpcap.dll.def -l Airpcap_Devpack/bin/x86/libairpcap.dll.a"
-
-      - name: Build 32-bit w/o AirPcap
-        env:
-          CFLAGS: "-O3 -mtune=i686 -DNDEBUG"
-          LDFLAGS: "-Wl,--enable-auto-image-base"
-        run: |
-          New-Variable bash -Value "C:\tools\cygwin\bin\bash.exe" -Option Constant
-          echo @"
-            CPUS=`$((`$(grep -c processor /proc/cpuinfo) * 3 / 2))
-            export PATH="/usr/lib/ccache:`$PATH"
-            export CC="ccache gcc"
-            export CXX="ccache g++"
-            echo "::group::make distclean"
-            make distclean || :
-            echo "::endgroup::"
-            echo "::group::autoreconf"
-            autoreconf -vi
-            echo "::endgroup::"
-            echo "::group::configure"
-            mkdir 32bit-no-airpcap
-            cd 32bit-no-airpcap
-            ../configure --host=i686-pc-cygwin --target=i686-pc-cygwin --without-opt --with-experimental --enable-win32-portable --enable-maintainer-mode
-            echo "::endgroup::"
-            echo "::group::build"
-            make -j `${CPUS}
-            echo "::endgroup::"
-            echo "::group::run tests"
-            make -j `${CPUS} check || { find . -name 'test-suite.log' -exec cat {} ';' && exit 1; }
-            echo "::endgroup::"
-            cd ..
-          "@ | & $bash --login -o errexit -o nounset -o pipefail -o igncr
-        shell: pwsh
-
-      - name: Build 32-bit w/AirPcap
-        env:
-          CFLAGS: "-O3 -mtune=i686 -DNDEBUG"
-          LDFLAGS: "-Wl,--enable-auto-image-base"
-        run: |
-          New-Variable bash -Value "C:\tools\cygwin\bin\bash.exe" -Option Constant
-          echo @"
-            CPUS=`$((`$(grep -c processor /proc/cpuinfo) * 3 / 2))
-            export PATH="/usr/lib/ccache:`$PATH"
-            export CC="ccache gcc"
-            export CXX="ccache g++"
-            echo "::group::make distclean"
-            make distclean || :
-            echo "::endgroup::"
-            echo "::group::autoreconf"
-            autoreconf -vi
-            echo "::endgroup::"
-            echo "::group::configure"
-            mkdir 32bit
-            cd 32bit
-            ../configure --host=i686-pc-cygwin --target=i686-pc-cygwin --without-opt --with-experimental --enable-win32-portable --enable-maintainer-mode --with-airpcap=${{ steps.cygwin.outputs.unix_path }}
-            echo "::endgroup::"
-            echo "::group::build"
-            make -j `${CPUS}
-            echo "::endgroup::"
-            echo "::group::run tests"
-            make -j `${CPUS} check || { find . -name 'test-suite.log' -exec cat {} ';' && exit 1; }
-            echo "::endgroup::"
-            echo "::group::gather packaging components"
-            echo '>> Removing symbolic links that break Windows zip/tar'
-            find . -type l -print -delete
-            echo '>> Create deployment folder'
-            mkdir -p dist/bin/32bit
-            echo '>> Resolving run-time items for deployment'
-            find . -path "*/.libs" -print0 | xargs -0I [] -n 1 find [] \( -name "*.exe" -o -name "*.dll" \) -exec cp -p {} "dist/bin/32bit" ';'
-            # AirPcap DLLs
-            cp -vfp "../Airpcap_Devpack/bin/x86/airpcap.dll" "dist/bin/32bit"
-            # Cygwin License
-            cp -vfp /usr/share/doc/Cygwin/CYGWIN_LICENSE "dist/LICENSE.Cygwin"
-            # gather dependencies of Cygwin
-            FILES="cygcrypto-1.1.dll cyghwloc-15.dll cyggcc_s-1.dll cyggcc_s-seh-1.dll cygpcre-1.dll cygsqlite3-0.dll cygstdc++-6.dll cygwin1.dll cygz.dll cygxml2-2.dll cyglzma-5.dll cygiconv-2.dll"
-            for FILE in `$FILES; do
-              cp -vfp "/cygdrive/c/tools/cygwin/bin/`$FILE" "dist/bin/32bit" || :
-            done
-            echo "::endgroup::"
-            cd ..
-          "@ | & $bash --login -o errexit -o nounset -o pipefail -o igncr
-        shell: pwsh
-
-      - name: Ccache stats after builds
-        run: |
-          C:\tools\cygwin\bin\bash.exe -e -l -c "ccache -s"
-
-      - name: Archive 32-bit artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: 32bit
-          path: |
-            32bit
-            !32bit/**/*.a
-            !32bit/**/*.la
-            !32bit/**/*.lib
-            !32bit/**/*.o
-            !32bit/**/*.lo
-            !32bit/**/*.obj
-
   cygwin_64bit:
     runs-on: windows-latest
 
@@ -367,7 +196,7 @@ jobs:
             !64bit/**/*.obj
 
   gui:
-    runs-on: windows-latest
+    runs-on: windows-2022
 
     steps:
       - run: git config --global core.autocrlf input
@@ -404,7 +233,7 @@ jobs:
 
   package:
     runs-on: windows-latest
-    needs: [cygwin_32bit, cygwin_64bit, gui]
+    needs: [cygwin_64bit, gui]
 
     steps:
       - run: git config --global core.autocrlf input
@@ -415,7 +244,7 @@ jobs:
       - name: Set up Cygwin
         uses: egor-tensin/setup-cygwin@v3
         with:
-          platform: x86
+          platform: x64
           install-dir: C:\tools\cygwin
           hardlinks: 1
           packages: >-
@@ -431,12 +260,6 @@ jobs:
           New-Variable bash -Value "C:\tools\cygwin\bin\bash.exe" -Option Constant
           $unix_path = (& $bash --login -e -c "cygpath '${env:GITHUB_WORKSPACE}'")
           Write-Host "::set-output name=unix_path::${unix_path}"
-
-      - name: Download Cygwin 32-bit artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: 32bit
-          path: 32bit
 
       - name: Download Cygwin 64-bit artifacts
         uses: actions/download-artifact@v2
@@ -454,6 +277,7 @@ jobs:
         shell: pwsh
         run: |
           New-Variable bash -Value "C:\tools\cygwin\bin\bash.exe" -Option Constant
+          & $bash -e -l -c "git config --global --add safe.directory /cygdrive/d/a/aircrack-ng/aircrack-ng"
           $REV = (& $bash -e -l -c "./evalrev")
           $env:DIST = "aircrack-ng-$REV-win"
           & $bash -e -l -c "git archive --format=tar --prefix=`"$env:DIST/`" HEAD | /bin/tar xf -"
@@ -463,13 +287,11 @@ jobs:
           }
           echo @"
             mkdir -p "$env:DIST/bin"
-            mkdir -p "$env:DIST/bin/32bit"
             mkdir -p "$env:DIST/bin/64bit"
 
             cp -pr "gui/GUI/Aircrack-ng/bin/Release/Aircrack-ng GUI.exe" $env:DIST/bin || ls -laR
             rm -fr "gui/GUI/Aircrack-ng/bin" "gui/GUI/Aircrack-ng/obj"
             rsync -a gui/ "$env:DIST/src"
-            rsync -a 32bit/dist/ "$env:DIST"
             rsync -a 64bit/dist/ "$env:DIST"
 
             find "$env:DIST" -name "test-*.exe" -print -delete

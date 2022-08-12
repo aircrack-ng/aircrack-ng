@@ -82,7 +82,7 @@ void perform_unit_testing(void ** state)
 
 	for (int i = 0; i < nparallel; ++i)
 	{
-		int rc = -1;
+		int rc;
 
 		memset(key, 0, sizeof(key));
 

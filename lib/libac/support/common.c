@@ -54,10 +54,12 @@
 
 #include <aircrack-ng/support/common.h>
 
-#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__)     \
-	|| defined(__MidnightBSD__)
+#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)    \
+	|| defined(__DragonFly__) || defined(__MidnightBSD__)
 #include <sys/sysctl.h>
+#ifndef __NetBSD__
 #include <sys/user.h>
+#endif
 #endif
 #if (defined(_WIN32) || defined(_WIN64)) || defined(__CYGWIN32__)
 #include <io.h>
@@ -185,10 +187,15 @@ int is_string_number(const char * str)
 int get_ram_size(void)
 {
 	int ret = -1;
-#if defined(__FreeBSD__) || defined(__MidnightBSD__)
+#if defined (CTL_HW) && (defined(HW_PHYSMEM) || defined(HW_PHYSMEM64))
+#ifdef HW_PHYSMEM64
+	int mib[] = {CTL_HW, HW_PHYSMEM64};
+	uint64_t physmem;
+#else
 	int mib[] = {CTL_HW, HW_PHYSMEM};
+	size_t physmem;
+#endif
 	size_t len;
-	unsigned long physmem;
 
 	len = sizeof(physmem);
 
@@ -357,7 +364,7 @@ int get_nb_cpus(void)
 					if (pos != NULL)
 					{
 						int tmp_number = atoi(pos + 1);
-						if (tmp_number > 0 && tmp_number <= 1024)
+						if (tmp_number >= 0 && tmp_number <= 1024)
 							number = tmp_number;
 					}
 				}
@@ -369,11 +376,13 @@ int get_nb_cpus(void)
 
 		fclose(f);
 	}
-#elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__)   \
-	|| defined(__MidnightBSD__)
-	// Not sure about defined(__DragonFly__) || defined(__NetBSD__) ||
-	// defined(__OpenBSD__) || defined(__APPLE__)
+
+#elif defined (CTL_HW) && (defined(HW_NCPU) || defined(HW_NCPUONLINE))
+#ifdef HW_NCPUONLINE
+	int mib[] = {CTL_HW, HW_NCPUONLINE};
+#else
 	int mib[] = {CTL_HW, HW_NCPU};
+#endif
 	size_t len;
 	unsigned long nbcpu;
 
@@ -383,9 +392,7 @@ int get_nb_cpus(void)
 	{
 		number = (int) nbcpu;
 	}
-#endif
-
-#ifdef _SC_NPROCESSORS_ONLN
+#elif defined(_SC_NPROCESSORS_ONLN)
 	// Try the usual method if _SC_NPROCESSORS_ONLN exist
 	if (number == -1)
 	{

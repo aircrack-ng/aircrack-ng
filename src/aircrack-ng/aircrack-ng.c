@@ -1,7 +1,7 @@
 /*
  *  802.11 WEP / WPA-PSK Key Cracker
  *
- *  Copyright (C) 2006-2020 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+ *  Copyright (C) 2006-2022 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *  Copyright (C) 2004, 2005 Christophe Devine
  *
  *  Advanced WEP attacks developed by KoreK
@@ -220,7 +220,7 @@ static const unsigned char R[256] = {
 
 static const char usage[]
 	= "\n"
-	  "  %s - (C) 2006-2020 Thomas d\'Otreppe\n"
+	  "  %s - (C) 2006-2022 Thomas d\'Otreppe\n"
 	  "  https://www.aircrack-ng.org\n"
 	  "\n"
 	  "  usage: aircrack-ng [options] <input file(s)>\n"
@@ -373,11 +373,17 @@ static void destroy_ap(struct AP_info * ap)
 
 	destroy(ap->uiv_root, uniqueiv_wipe);
 
-	if (ap->ptw_clean) destroy(ap->ptw_clean->allsessions, free);
-	destroy(ap->ptw_clean, free);
+	if (ap->ptw_clean)
+	{
+		destroy(ap->ptw_clean->allsessions, free);
+		free(ap->ptw_clean);
+	}
 
-	if (ap->ptw_vague) destroy(ap->ptw_vague->allsessions, free);
-	destroy(ap->ptw_vague, free);
+	if (ap->ptw_vague)
+	{
+		destroy(ap->ptw_vague->allsessions, free);
+		free(ap->ptw_vague);
+	}
 }
 
 static void ac_aplist_free(void)
@@ -1621,24 +1627,66 @@ skip_station:
 
 		st_cur->wpa.replay = replay_counter;
 
-		if (h80211[z + 99] == IEEE80211_ELEMID_VENDOR)
+		uint8_t key_descriptor_version = (uint8_t)(h80211[z + 6] & 7);
+
+		p = h80211 + z + 99;
+
+		while (p < h80211 + pkh->caplen)
 		{
-			const uint8_t rsn_oui[] = {
-				RSN_OUI & 0xff, (RSN_OUI >> 8) & 0xff, (RSN_OUI >> 16) & 0xff};
-
-			if (memcmp(rsn_oui, &h80211[z + 101], 3) == 0
-				&& h80211[z + 104] == RSN_CSE_CCMP)
+			if (p + 2 + p[1] > h80211 + pkh->caplen) break;
+#ifdef XDEBUG
+			fprintf(stderr, "IE element: %d\n", p[0]);
+			fprintf(stderr, "IE length: %d\n", p[1]);
+#endif
+			if (p[0] == IEEE80211_ELEMID_VENDOR)
 			{
-				if (memcmp(ZERO, &h80211[z + 105], 16) != 0) //-V512
+				size_t rsn_len = p[1];
+				size_t pos = 2;
+				const uint8_t rsn_oui[] = {RSN_OUI & 0xff,
+										   (RSN_OUI >> 8) & 0xff,
+										   (RSN_OUI >> 16) & 0xff};
+#ifdef XDEBUG
+				fprintf(stderr, "RSN length: %zd\n", rsn_len);
+				fprintf(stderr,
+						"OUI is %02x:%02x:%02x\n",
+						p[pos],
+						p[pos + 1],
+						p[pos + 2]);
+#endif
+				if (memcmp(rsn_oui, &p[pos], 3) == 0)
 				{
-					// Got a PMKID value?!
-					memcpy(st_cur->wpa.pmkid, &h80211[z + 105], 16);
+					if (pos + 3 > rsn_len) goto rsn_out;
+					pos += 3; // advance over RSN OUI
 
-					/* copy the key descriptor version */
-					st_cur->wpa.keyver = (uint8_t)(h80211[z + 6] & 7);
+#ifdef XDEBUG
+					fprintf(stderr,
+							"The cipher tag value '%d' is used with the key "
+							"descriptor version '%d'\n",
+							p[pos],
+							key_descriptor_version);
+#endif
+					if (pos + 1 > rsn_len) goto rsn_out;
+					pos += 1; // advance over tag value
+
+					if (key_descriptor_version > 0
+						&& memcmp(ZERO, &p[pos], 16) //-V512
+							   != 0)
+					{
+#ifdef XDEBUG
+						fprintf(stderr, "FOUND valid CCM PMKID\n");
+#endif
+						// Got a PMKID value?!
+						memcpy(st_cur->wpa.pmkid, &p[pos], 16);
+
+						/* copy the key descriptor version */
+						st_cur->wpa.keyver = key_descriptor_version;
+					}
 				}
 			}
+
+			p += 2 + p[1];
 		}
+	rsn_out:;
 	}
 
 	/* frame 2 or 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1 */
@@ -6049,7 +6097,8 @@ int main(int argc, char * argv[])
 		// Load argc/argv either from the cracking session or from arguments
 		option = getopt_long(
 			nbarg,
-			((restore_session) ? cracking_session->argv : argv),
+			((restore_session && cracking_session) ? cracking_session->argv
+												   : argv),
 			"r:a:e:b:p:qcthd:l:E:J:m:n:i:f:k:x::XysZ:w:0HKC:M:DP:zV1Suj:N:R:I:",
 			long_options,
 			&option_index);
@@ -6227,11 +6276,13 @@ int main(int argc, char * argv[])
 				{
 					fprintf(stderr,
 							"Specifying more processes (%d) than available "
-							"CPUs (%d) will cause performance degradation.\n",
+							"CPUs (%d) would cause performance degradation.\n",
 							nbcpu,
 							cpu_count);
+					opt.nbcpu = cpu_count;
 				}
-				opt.nbcpu = nbcpu;
+				else
+					opt.nbcpu = nbcpu;
 
 				break;
 			}

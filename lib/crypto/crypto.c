@@ -196,7 +196,7 @@ void calc_mic(struct AP_info * ap,
 	int i;
 	unsigned char pke[100];
 #if defined(USE_GCRYPT) || OPENSSL_VERSION_NUMBER < 0x10100000L                \
-	|| defined(LIBRESSL_VERSION_NUMBER)
+	|| (defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x30500000L)
 #define HMAC_USE_NO_PTR
 #endif
 

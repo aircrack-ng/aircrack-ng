@@ -1,7 +1,7 @@
 /*
  *  Kstat: displays the votes of the korek attack for each keybyte
  *
- *  Copyright (C) 2006-2020 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+ *  Copyright (C) 2006-2022 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *  Copyright (C) 2004, 2005  Christophe Devine
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -48,7 +48,7 @@ static void calc_votes(unsigned char * ivbuf,
 
 	int i, j;
 	long xv;
-	unsigned char R[256], jj[256];
+	unsigned char R[256], jj[256] = {0};
 	unsigned char S[256], Si[256];
 	unsigned char K[64];
 

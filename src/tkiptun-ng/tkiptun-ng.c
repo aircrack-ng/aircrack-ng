@@ -133,7 +133,7 @@
 static const char usage[] =
 
 	"\n"
-	"  %s - (C) 2008-2020 Thomas d\'Otreppe\n"
+	"  %s - (C) 2008-2022 Thomas d\'Otreppe\n"
 	"  https://www.aircrack-ng.org\n"
 	"\n"
 	"  usage: tkiptun-ng <options> <replay interface>\n"
@@ -565,7 +565,7 @@ static int build_arp_request(unsigned char * packet, int * length, int toDS)
 	*length += 8;
 
 	memcpy(buf, packet + 26, (*length) - 26);
-	memcpy(packet + 26 + 8, buf, (*length) - 26);
+	memcpy(packet + 26 + 8, buf, (*length) - 26); //-V512
 
 	if (toDS)
 		memcpy(packet + 26,

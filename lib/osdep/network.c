@@ -221,7 +221,7 @@ static int net_get_nopacket(struct priv_net * pn, void * arg, int * len)
 {
 	unsigned char buf[2048];
 	int l = sizeof(buf);
-	int c;
+	int c = 0;
 
 	while (1)
 	{
@@ -258,7 +258,7 @@ static int net_cmd(struct priv_net * pn, int command, void * arg, int alen)
 	{
 		return -1;
 	}
-	assert(cmd == NET_RC);
+	assert(cmd == NET_RC); //-V547
 	assert(len == sizeof(rc));
 
 	return ntohl(rc);
@@ -358,7 +358,7 @@ static int net_get_mac(struct wif * wi, unsigned char * mac)
 
 	cmd = net_get_nopacket(pn, buf, &sz);
 	if (cmd == -1) return -1;
-	if (cmd == NET_RC) return ntohl(buf[0]);
+	if (cmd == NET_RC) return ntohl(buf[0]); //-V547
 	assert(cmd == NET_MAC);
 	assert(sz == 6);
 

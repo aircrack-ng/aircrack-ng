@@ -104,11 +104,11 @@ extern struct wif *_wi_in, *_wi_out;
 struct frag_state
 {
 	struct ieee80211_frame fs_wh;
-	unsigned char * fs_data;
-	int fs_len;
-	unsigned char * fs_ptr;
-	int fs_waiting_relay;
 	struct timeval fs_last;
+	int fs_len;
+	int fs_waiting_relay;
+	unsigned char * fs_data;
+	unsigned char * fs_ptr;
 };
 
 struct prga_info
@@ -376,7 +376,7 @@ static void send_frame(struct wstate * ws, unsigned char * buf, int len)
 {
 	REQUIRE(ws != NULL);
 
-	static unsigned char * lame = 0;
+	static unsigned char * lame = NULL;
 	static int lamelen = 0;
 	static int lastlen = 0;
 
@@ -417,6 +417,7 @@ static void send_frame(struct wstate * ws, unsigned char * buf, int len)
 			lamelen = len;
 		}
 
+		REQUIRE(lame != NULL);
 		memcpy(lame, buf, len);
 		ws->ws_retries = 0;
 		lastlen = len;
@@ -951,7 +952,7 @@ decrypt_arpreq(struct wstate * ws, struct ieee80211_frame * wh, int rd)
 
 	unsigned char * body;
 	int bodylen;
-	unsigned char clear[sizeof(struct arphdr) * 32];
+	unsigned char clear[sizeof(struct arphdr) * 32] = {0};
 	unsigned char * ptr;
 	struct arphdr * h;
 	int i;
@@ -1557,8 +1558,8 @@ static void decrypt(struct wstate * ws)
 		ws->ws_dfs.fs_ptr = ws->ws_dfs.fs_data;
 
 		seq = fnseq(0, ws->ws_psent);
-		ws->ws_dfs.fs_wh.i_seq[0] = (u_int8_t)(seq >> 8);
-		ws->ws_dfs.fs_wh.i_seq[1] = (u_int8_t)(seq % 256);
+		ws->ws_dfs.fs_wh.i_seq[0] = (uint8_t)(seq >> 8);
+		ws->ws_dfs.fs_wh.i_seq[1] = (uint8_t)(seq % 256);
 	}
 
 	send_fragment(ws, &ws->ws_dfs, &ws->ws_dpi);

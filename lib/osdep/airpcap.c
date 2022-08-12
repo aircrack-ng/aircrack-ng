@@ -55,32 +55,32 @@
 #include "osdep.h"
 
 //------------------ PPI ---------------------
-#define PPH_PH_VERSION ((u_int8_t) 0x00)
-#define PPI_FIELD_TYPE_802_11_COMMON ((u_int16_t) 0x02)
+#define PPH_PH_VERSION ((uint8_t) 0x00)
+#define PPI_FIELD_TYPE_802_11_COMMON ((uint16_t) 0x02)
 
 typedef struct _PPI_PACKET_HEADER
 {
-	u_int8_t PphVersion;
-	u_int8_t PphFlags;
-	u_int16_t PphLength;
-	u_int32_t PphDlt;
+	uint8_t PphVersion;
+	uint8_t PphFlags;
+	uint16_t PphLength;
+	uint32_t PphDlt;
 } PPI_PACKET_HEADER, *PPPI_PACKET_HEADER;
 
 typedef struct _PPI_FIELD_HEADER
 {
-	u_int16_t PfhType;
-	u_int16_t PfhLength;
+	uint16_t PfhType;
+	uint16_t PfhLength;
 } PPI_FIELD_HEADER, *PPPI_FIELD_HEADER;
 
 typedef struct _PPI_FIELD_802_11_COMMON
 {
-	u_int64_t TsfTimer;
-	u_int16_t Flags;
-	u_int16_t Rate;
-	u_int16_t ChannelFrequency;
-	u_int16_t ChannelFlags;
-	u_int8_t FhssHopset;
-	u_int8_t FhssPattern;
+	uint64_t TsfTimer;
+	uint16_t Flags;
+	uint16_t Rate;
+	uint16_t ChannelFrequency;
+	uint16_t ChannelFlags;
+	uint8_t FhssHopset;
+	uint8_t FhssPattern;
 	int8_t DbmAntSignal;
 	int8_t DbmAntNoise;
 } PPI_FIELD_802_11_COMMON, *PPPI_FIELD_802_11_COMMON;
@@ -341,7 +341,7 @@ int airpcap_init(char * param)
 	if (param)
 	{
 		// if it's empty, use the default adapter
-		if (strlen(param) > 0)
+		if (*param != 0)
 		{
 			if (strstr(param, DEVICE_PREFIX) == NULL)
 			{

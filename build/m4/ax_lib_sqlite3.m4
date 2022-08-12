@@ -88,7 +88,7 @@ AC_DEFUN([AX_LIB_SQLITE3],
             ac_sqlite3_cppflags="-I$ac_sqlite3_path/include"
             AC_MSG_RESULT([explicitly set; $ac_sqlite3_path])
         else
-            for ac_sqlite3_path_tmp in /usr /usr/local /opt ; do
+            for ac_sqlite3_path_tmp in /usr /usr/local /opt $lt_sysroot ; do
                 if test -f "$ac_sqlite3_path_tmp/include/$ac_sqlite3_header" \
                     && test -r "$ac_sqlite3_path_tmp/include/$ac_sqlite3_header"; then
                     ac_sqlite3_path=$ac_sqlite3_path_tmp
@@ -161,7 +161,7 @@ AC_DEFUN([AX_LIB_SQLITE3],
                 ac_sqlite3_version=`cat $ac_sqlite3_header_path \
                     | grep '#define.*SQLITE_VERSION.*\"' | sed -e 's/.* "//' \
                         | sed -e 's/"//'`
-                if test $ac_sqlite3_version != ""; then
+                if test "$ac_sqlite3_version" != ""; then
                     SQLITE3_VERSION=$ac_sqlite3_version
                 else
                     AC_MSG_WARN([Cannot find SQLITE_VERSION macro in sqlite3.h header to retrieve SQLite version!])

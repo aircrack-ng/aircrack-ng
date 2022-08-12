@@ -49,23 +49,50 @@ case "$host_os" in
     	dnl
         dnl Homebrew
         dnl
-		AC_ARG_VAR([BREW],[Use this brew for macOS dependencies.])
-		dnl Allow env override but do not be fooled by 'BREW=t'.
-		test t = "$BREW" && unset BREW
-		AC_CHECK_PROG([BREW], [brew], [$as_dir/$ac_word$ac_exec_ext], [], [$BREW_PATH$PATH_SEPARATOR$PATH$PATH_SEPARATOR/bin$PATH_SEPARATOR/usr/bin$PATH_SEPARATOR/usr/local/bin])
-		AS_IF([test "x$BREW" = "x"],[
-			AC_MSG_WARN([Homebrew not found])
-			BREW_FOUND=no
-		], [
-			BREW_FOUND=yes
-		])
 
-		if test "x$BREW_FOUND" = xyes; then
-			CFLAGS="$CFLAGS -I$(brew --prefix openssl)/include"
-			CXXFLAGS="$CXXFLAGS -I$(brew --prefix openssl)/include"
-			CPPFLAGS="$CPPFLAGS -I$(brew --prefix openssl)/include"
-			LDFLAGS="$LDFLAGS -L$(brew --prefix openssl)/lib"
-		fi
+	AC_ARG_VAR([BREW],[Use this brew for macOS dependencies.])
+	dnl Allow env override but do not be fooled by 'BREW=t'.
+	test t = "$BREW" && unset BREW
+	AC_CHECK_PROG([BREW], [brew], [$as_dir/$ac_word$ac_exec_ext], [], [$BREW_PATH$PATH_SEPARATOR$PATH$PATH_SEPARATOR/bin$PATH_SEPARATOR/usr/bin$PATH_SEPARATOR/usr/local/bin])
+	AS_IF([test "x$BREW" = "x"],[
+		AC_MSG_WARN([Homebrew not found])
+		BREW_FOUND=no
+	], [
+		BREW_FOUND=yes
+
+		AC_MSG_CHECKING([for openssl availability within Brew])
+		AS_IF([! $BREW --prefix --installed openssl 2>/dev/null], [
+			AC_MSG_RESULT([no])
+
+			AC_MSG_CHECKING([for openssl@1.1 availability within Brew])
+			AS_IF([! $BREW --prefix --installed openssl@1.1 2>/dev/null], [
+				AC_MSG_RESULT([no])
+
+				AC_MSG_CHECKING([for openssl@3 availability within Brew])
+				AS_IF([! $BREW --prefix --installed openssl@3 2>/dev/null], [
+					AC_MSG_RESULT([no])
+				], [
+					dnl AC_MSG_RESULT([yes])
+					CFLAGS="-Wno-deprecated-declarations -I$($BREW --prefix openssl@3)/include"
+					CXXFLAGS="-Wno-deprecated-declarations -I$($BREW --prefix openssl@3)/include"
+					CPPFLAGS="-Wno-deprecated-declarations -I$($BREW --prefix openssl@3)/include"
+					LDFLAGS="-L$($BREW --prefix openssl@3)/lib"
+				])
+			], [
+				dnl AC_MSG_RESULT([yes])
+				CFLAGS="-I$($BREW --prefix openssl@1.1)/include"
+				CXXFLAGS="-I$($BREW --prefix openssl@1.1)/include"
+				CPPFLAGS="-I$($BREW --prefix openssl@1.1)/include"
+				LDFLAGS="-L$($BREW --prefix openssl@1.1)/lib"
+			])
+		], [
+			dnl AC_MSG_RESULT([yes])
+			CFLAGS="-Wno-deprecated-declarations -I$($BREW --prefix openssl)/include"
+			CXXFLAGS="-Wno-deprecated-declarations -I$($BREW --prefix openssl)/include"
+			CPPFLAGS="-Wno-deprecated-declarations -I$($BREW --prefix openssl)/include"
+			LDFLAGS="-L$($BREW --prefix openssl)/lib"
+		])
+	])
 
         AC_CHECK_FILE(/usr/local/Homebrew, [ CPPFLAGS="$CPPFLAGS -I/usr/local/include" ])
 

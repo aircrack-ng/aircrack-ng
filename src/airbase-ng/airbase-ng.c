@@ -2,7 +2,7 @@
  *  802.11 monitor AP
  *  based on airtun-ng
  *
- *  Copyright (C) 2008-2020 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+ *  Copyright (C) 2008-2022 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *  Copyright (C) 2008, 2009 Martin Beck <martin.beck2@gmx.de>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -142,7 +142,7 @@
 
 static const char usage[]
 	= "\n"
-	  "  %s - (C) 2008-2020 Thomas d'Otreppe\n"
+	  "  %s - (C) 2008-2022 Thomas d'Otreppe\n"
 	  "  Original work: Martin Beck\n"
 	  "  https://www.aircrack-ng.org\n"
 	  "\n"
@@ -949,7 +949,6 @@ static int remove_tag(uint8_t * tagged_params,
 					  const uint8_t exclude_tag_id,
 					  size_t * tp_length)
 {
-	REQUIRE(tagged_params != NULL);
 	REQUIRE(tp_length != NULL);
 
 	size_t dst_pos = 0, src_pos = 0;
@@ -1592,7 +1591,7 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 	uint8_t * buffer;
 	uint8_t essid[256];
 	struct timeval tv1;
-	u_int64_t timestamp;
+	uint64_t timestamp;
 	char fessid[MAX_IE_ELEMENT_SIZE + 1];
 	int seqnum, fragnum, morefrag;
 	int gotsource, gotbssid;
@@ -2776,7 +2775,7 @@ static THREAD_ENTRY(beacon_thread)
 
 	struct AP_conf apc;
 	struct timeval tv, tv1, tv2;
-	u_int64_t timestamp;
+	uint64_t timestamp;
 	uint8_t beacon[512];
 	size_t beacon_len = 0;
 	int seq = 0, i = 0, n = 0;

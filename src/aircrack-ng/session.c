@@ -1,7 +1,7 @@
 /*
  *  Aircrack-ng session (load/restore).
  *
- *  Copyright (C) 2018-2020 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+ *  Copyright (C) 2018-2022 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -145,7 +145,7 @@ int ac_session_set_bssid(struct session * session, const char * str)
 	}
 
 	// Parse BSSID
-	unsigned int bssid[6];
+	unsigned int bssid[6] = {0};
 	int count = sscanf(str,
 					   "%02X:%02X:%02X:%02X:%02X:%02X",
 					   &bssid[0],

@@ -1,7 +1,7 @@
 /*
  *  Airodump-ng text files output
  *
- *  Copyright (C) 2018-2020 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+ *  Copyright (C) 2018-2022 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -180,6 +180,7 @@ int dump_write_csv(struct AP_info * ap_1st,
 				ap_cur->bssid[5]);
 
 		ltime = localtime(&ap_cur->tinit);
+		REQUIRE(ltime != NULL);
 
 		fprintf(opt.f_txt,
 				"%04d-%02d-%02d %02d:%02d:%02d, ",
@@ -191,6 +192,7 @@ int dump_write_csv(struct AP_info * ap_1st,
 				ltime->tm_sec);
 
 		ltime = localtime(&ap_cur->tlast);
+		REQUIRE(ltime != NULL);
 
 		fprintf(opt.f_txt,
 				"%04d-%02d-%02d %02d:%02d:%02d, ",
@@ -326,6 +328,7 @@ int dump_write_csv(struct AP_info * ap_1st,
 				st_cur->stmac[5]);
 
 		ltime = localtime(&st_cur->tinit);
+		REQUIRE(ltime != NULL);
 
 		fprintf(opt.f_txt,
 				"%04d-%02d-%02d %02d:%02d:%02d, ",
@@ -337,6 +340,7 @@ int dump_write_csv(struct AP_info * ap_1st,
 				ltime->tm_sec);
 
 		ltime = localtime(&st_cur->tlast);
+		REQUIRE(ltime != NULL);
 
 		fprintf(opt.f_txt,
 				"%04d-%02d-%02d %02d:%02d:%02d, ",
@@ -416,6 +420,7 @@ int dump_write_airodump_ng_logcsv_add_ap(const struct AP_info * ap_cur,
 
 	// Local computer time
 	const struct tm * ltime = localtime(&ap_cur->tlast);
+	REQUIRE(ltime != NULL);
 	fprintf(opt.f_logcsv,
 			"%04d-%02d-%02d %02d:%02d:%02d,",
 			1900 + ltime->tm_year,
@@ -488,6 +493,7 @@ int dump_write_airodump_ng_logcsv_add_client(const struct AP_info * ap_cur,
 
 	// Local computer time
 	struct tm * ltime = localtime(&ap_cur->tlast);
+	REQUIRE(ltime != NULL);
 	fprintf(opt.f_logcsv,
 			"%04d-%02d-%02d %02d:%02d:%02d,",
 			1900 + ltime->tm_year,
@@ -608,7 +614,7 @@ char * get_manufacturer_from_string(char * buffer)
 {
 	char * manuf = NULL;
 	char * buffer_manuf;
-	if (buffer != NULL && strlen(buffer) > 0)
+	if (buffer != NULL && *buffer != '\0')
 	{
 		buffer_manuf = strstr(buffer, "(hex)");
 		if (buffer_manuf != NULL)

@@ -39,20 +39,14 @@ dnl program, then also delete it here.
 
 AC_DEFUN([AIRCRACK_NG_EXT_SCRIPTS], [
 
-if test "$cross_compiling" = no;
-then
-	AC_CHECK_PROGS([PYTHON], [python python3 python2])
-	if test $PYTHON = no; then
-		AC_MSG_FAILURE(failed to find Python)
-	fi
-
-    if test "x$PYTHON" != "x"; then
-        pc_cv_python_site_dir=`$PYTHON -c 'import site; print(site.getsitepackages()[[-1]])'`
-        dnl AC_SUBST([pythondir], [\${prefix}/$pc_cv_python_site_dir])
-        AC_SUBST([pythondir], [$pc_cv_python_site_dir])
-        AC_SUBST([pkgpythondir], [\${pythondir}/$PACKAGE_NAME])
-    fi
-fi
+AC_CHECK_PROGS([PYTHON], [python python3 python2])
+AS_IF([test x"$PYTHON" = x], [
+    AC_MSG_RESULT(failed to find Python)
+], [
+    pc_cv_python_site_dir=`$PYTHON -c 'import site; print(site.getsitepackages()[[-1]])'`
+    AC_SUBST([pythondir], [$pc_cv_python_site_dir])
+    AC_SUBST([pkgpythondir], [\${pythondir}/$PACKAGE_NAME])
+])
 
 AC_CHECK_PROGS([READLINK], [greadlink readlink])
 
@@ -62,12 +56,11 @@ AC_ARG_WITH(ext-scripts,
 case "$with_ext_scripts" in
     yes)
         AC_MSG_CHECKING([for Python requirement for ext-scripts])
-        if test "x$PYTHON" = x ; then
+        AS_IF([test "x$PYTHON" = x], [
            AC_MSG_FAILURE([not found])
-        else
+        ], [
            AC_MSG_RESULT([found; $PYTHON])
-        fi
-
+        ])
         EXT_SCRIPTS=yes
         ;;
     *)

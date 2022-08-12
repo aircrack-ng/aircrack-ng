@@ -109,7 +109,7 @@ static void print_help(const char * msg)
 		   EXPORT_ESSID);
 	free(version_info);
 
-	if (msg && strlen(msg) > 0)
+	if (msg && *msg != '\0')
 	{
 		printf("%s", msg);
 		puts("");
@@ -752,7 +752,7 @@ static void export_cowpatty(sqlite3 * db, char * essid, char * filename)
 		return;
 	}
 
-	if (filename == NULL || strlen(filename) == 0)
+	if (filename == NULL || *filename == '\0')
 	{
 		printf("Invalid filename (NULL)");
 		return;
@@ -1321,7 +1321,7 @@ int main(int argc, char ** argv)
 	signal(SIGTERM, sighandler);
 
 	option = getopt_long(
-		argc, argv, "bc:d:e:hi:s:t:v:", long_options, &option_index);
+		argc - 1, argv + 1, "bc:d:e:hi:s:t:v:", long_options, &option_index);
 
 	if (option > 0)
 	{

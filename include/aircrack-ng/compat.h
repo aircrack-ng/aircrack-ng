@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2020 Joseph Benden <joe@benden.us>
+ * Copyright (C) 2020-2022 Joseph Benden <joe@benden.us>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -33,7 +33,7 @@ extern "C" {
 #include <bsd/string.h>
 #endif
 
-#ifndef HAVE_STRLCAT
+#if !defined(HAVE_STRLCAT) && !defined(__APPLE__) && !defined(__MACH__)
 /**
  * Appends src to string dst of size dsize (unlike strncat, dsize is the
  * full size of dst, not space left).  At most dsize-1 characters
@@ -46,7 +46,7 @@ API_IMPORT size_t strlcat(char * restrict dst,
 						  size_t dsize);
 #endif
 
-#ifndef HAVE_STRLCPY
+#if !defined(HAVE_STRLCPY) && !defined(__APPLE__) && !defined(__MACH__)
 /**
  * Copy string src to buffer dst of size dsize.  At most dsize-1
  * chars will be copied.  Always NUL terminates (unless dsize == 0).

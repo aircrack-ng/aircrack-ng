@@ -1,7 +1,7 @@
 /*
  *  pcap-compatible 802.11 packet sniffer
  *
- *  Copyright (C) 2006-2020 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+ *  Copyright (C) 2006-2022 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *  Copyright (C) 2004, 2005 Christophe Devine
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -741,7 +741,7 @@ static struct oui * load_oui_file(void)
 static const char usage[] =
 
 	"\n"
-	"  %s - (C) 2006-2020 Thomas d\'Otreppe\n"
+	"  %s - (C) 2006-2022 Thomas d\'Otreppe\n"
 	"  https://www.aircrack-ng.org\n"
 	"\n"
 	"  usage: airodump-ng <options> <interface>[,<interface>,...]\n"
@@ -2671,41 +2671,83 @@ skip_probe:
 
 				st_cur->wpa.state = 1;
 
-				if (h80211[z + 99] == IEEE80211_ELEMID_VENDOR)
+				uint8_t key_descriptor_version = (uint8_t)(h80211[z + 6] & 7);
+
+				p = h80211 + z + 99;
+
+				while (p < h80211 + caplen)
 				{
-					const uint8_t rsn_oui[] = {RSN_OUI & 0xff,
-											   (RSN_OUI >> 8) & 0xff,
-											   (RSN_OUI >> 16) & 0xff};
-
-					if (memcmp(rsn_oui, &h80211[z + 101], 3) == 0
-						&& h80211[z + 104] == RSN_CSE_CCMP)
+					if (p + 2 + p[1] > h80211 + caplen) break;
+#ifdef XDEBUG
+					fprintf(stderr, "IE element: %d\n", p[0]);
+					fprintf(stderr, "IE length: %d\n", p[1]);
+#endif
+					if (p[0] == IEEE80211_ELEMID_VENDOR)
 					{
-						if (memcmp(ZERO, &h80211[z + 105], 16) != 0) //-V512
+						size_t rsn_len = p[1];
+						size_t pos = 2;
+						const uint8_t rsn_oui[] = {RSN_OUI & 0xff,
+												   (RSN_OUI >> 8) & 0xff,
+												   (RSN_OUI >> 16) & 0xff};
+#ifdef XDEBUG
+						fprintf(stderr, "RSN length: %zd\n", rsn_len);
+						fprintf(stderr,
+								"OUI is %02x:%02x:%02x\n",
+								p[pos],
+								p[pos + 1],
+								p[pos + 2]);
+#endif
+						if (memcmp(rsn_oui, &p[pos], 3) == 0)
 						{
-							// Got a PMKID value?!
-							memcpy(st_cur->wpa.pmkid, &h80211[z + 105], 16);
+							if (pos + 3 > rsn_len) goto rsn_out;
+							pos += 3; // advance over RSN OUI
 
-							/* copy the key descriptor version */
-							st_cur->wpa.keyver = (uint8_t)(h80211[z + 6] & 7);
+#ifdef XDEBUG
+							fprintf(stderr,
+									"The cipher tag value '%d' is used with "
+									"the key descriptor version '%d'\n",
+									p[pos],
+									key_descriptor_version);
+#endif
+							if (pos + 1 > rsn_len) goto rsn_out;
+							pos += 1; // advance over tag value
 
-							memcpy(st_cur->wpa.stmac, st_cur->stmac, 6);
-							memcpy(lopt.wpa_bssid, ap_cur->bssid, 6);
-							memset(lopt.message, '\x00', sizeof(lopt.message));
-							snprintf(lopt.message,
-									 sizeof(lopt.message) - 1,
-									 "][ PMKID found: "
-									 "%02X:%02X:%02X:%02X:%02X:%02X ",
-									 lopt.wpa_bssid[0],
-									 lopt.wpa_bssid[1],
-									 lopt.wpa_bssid[2],
-									 lopt.wpa_bssid[3],
-									 lopt.wpa_bssid[4],
-									 lopt.wpa_bssid[5]);
+							if (key_descriptor_version > 0
+								&& memcmp(ZERO, &p[pos], 16) //-V512
+									   != 0)
+							{
+#ifdef XDEBUG
+								fprintf(stderr, "FOUND valid CCM PMKID\n");
+#endif
+								// Got a PMKID value?!
+								memcpy(st_cur->wpa.pmkid, &p[pos], 16);
 
-							goto write_packet;
+								/* copy the key descriptor version */
+								st_cur->wpa.keyver = key_descriptor_version;
+
+								memcpy(st_cur->wpa.stmac, st_cur->stmac, 6);
+								memcpy(lopt.wpa_bssid, ap_cur->bssid, 6);
+								memset(
+									lopt.message, '\x00', sizeof(lopt.message));
+								snprintf(lopt.message,
+										 sizeof(lopt.message) - 1,
+										 "][ PMKID found: "
+										 "%02X:%02X:%02X:%02X:%02X:%02X ",
+										 lopt.wpa_bssid[0],
+										 lopt.wpa_bssid[1],
+										 lopt.wpa_bssid[2],
+										 lopt.wpa_bssid[3],
+										 lopt.wpa_bssid[4],
+										 lopt.wpa_bssid[5]);
+
+								goto write_packet;
+							}
 						}
 					}
+
+					p += 2 + p[1];
 				}
+			rsn_out:;
 			}
 
 			/* frame 2 or 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1 */
@@ -3568,7 +3610,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	strlcat(strbuf, buffer, sizeof(strbuf));
 	memset(buffer, '\0', sizeof(buffer));
 
-	if (strlen(lopt.message) > 0)
+	if (*lopt.message != '\0')
 	{
 		strlcat(strbuf, lopt.message, sizeof(strbuf));
 	}
@@ -3604,9 +3646,8 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			strlcat(strbuf, "WPS   ", sizeof(strbuf));
 			if (ws_col > (columns_ap - 4))
 			{
-				memset(strbuf + strlen(strbuf),
-					   32,
-					   sizeof(strbuf) - strlen(strbuf) - 1);
+				const size_t n_strbuf = strlen(strbuf);
+				memset(strbuf + n_strbuf, 32, sizeof(strbuf) - n_strbuf - 1);
 				snprintf(strbuf + columns_ap + lopt.maxsize_wps_seen - 5,
 						 8,
 						 "%s",
@@ -4430,8 +4471,7 @@ json_get_value_for_name(const char * buffer, const char * name, char * value)
 	char * vcursor = value;
 	int ret = 0;
 
-	if (buffer == NULL || strlen(buffer) == 0 || name == NULL
-		|| strlen(name) == 0
+	if (buffer == NULL || *buffer == '\0' || name == NULL || *name == '\0'
 		|| value == NULL)
 	{
 		return (0);
@@ -4555,9 +4595,9 @@ static THREAD_ENTRY(gps_tracker_thread)
 		gpsd_tried_connection = 1;
 
 		time_t updateTime = time(NULL);
-		memset(line, 0, 1537);
-		memset(buffer, 0, 1537);
-		memset(data, 0, 1537);
+		memset(line, 0, sizeof(line));
+		memset(buffer, 0, sizeof(buffer));
+		memset(data, 0, sizeof(data));
 
 		/* attempt to connect to localhost, port 2947 */
 		pos = 0;
@@ -4787,7 +4827,7 @@ static THREAD_ENTRY(gps_tracker_thread)
 
 				memset(line, 0, sizeof(line));
 
-				snprintf(line, sizeof(line) - 1, "PVTAD\r\n");
+				strcat(line, "PVTAD\r\n");
 				if (send(gpsd_sock, line, 7, 0) != 7)
 				{
 					free(return_success);
@@ -5235,11 +5275,12 @@ static inline int invalid_frequency(int freq)
 
 static int getchannels(const char * optarg)
 {
-	size_t i = 0, chan_cur = 0, chan_first = 0, chan_last = 0, chan_max = 128,
-		   chan_remain = 0;
+#define GETCHANNELS_CHAN_MAX 128u
+	size_t i = 0, chan_cur = 0, chan_first = 0, chan_last = 0,
+		   chan_max = GETCHANNELS_CHAN_MAX, chan_remain = 0;
 	char *optchan = NULL, *optc;
 	char * token = NULL;
-	int * tmp_channels;
+	int tmp_channels[GETCHANNELS_CHAN_MAX + 1] = {0};
 
 	// got a NULL pointer?
 	if (optarg == NULL) return (-1);
@@ -5252,9 +5293,6 @@ static int getchannels(const char * optarg)
 	ALLEGE(optc != NULL);
 	ALLEGE(optchan != NULL);
 	strlcpy(optchan, optarg, optchan_len);
-
-	tmp_channels = (int *) malloc(sizeof(int) * (chan_max + 1));
-	ALLEGE(tmp_channels != NULL);
 
 	// split string in tokens, separated by ','
 	while ((token = strsep(&optchan, ",")) != NULL)
@@ -5273,7 +5311,6 @@ static int getchannels(const char * optarg)
 					if (((token[i] < '0') || (token[i] > '9'))
 						&& (token[i] != '-'))
 					{
-						free(tmp_channels);
 						free(optc);
 						return (-1);
 					}
@@ -5283,7 +5320,6 @@ static int getchannels(const char * optarg)
 				{
 					if (chan_first > chan_last)
 					{
-						free(tmp_channels);
 						free(optc);
 						return (-1);
 					}
@@ -5298,14 +5334,12 @@ static int getchannels(const char * optarg)
 				}
 				else
 				{
-					free(tmp_channels);
 					free(optc);
 					return (-1);
 				}
 			}
 			else
 			{
-				free(tmp_channels);
 				free(optc);
 				return (-1);
 			}
@@ -5317,7 +5351,6 @@ static int getchannels(const char * optarg)
 			{
 				if ((token[i] < '0') || (token[i] > '9'))
 				{
-					free(tmp_channels);
 					free(optc);
 					return (-1);
 				}
@@ -5333,7 +5366,6 @@ static int getchannels(const char * optarg)
 			}
 			else
 			{
-				free(tmp_channels);
 				free(optc);
 				return (-1);
 			}
@@ -5354,7 +5386,6 @@ static int getchannels(const char * optarg)
 
 	lopt.own_channels[i] = 0;
 
-	free(tmp_channels);
 	free(optc);
 	if (i == 1) return (lopt.own_channels[0]);
 	if (i == 0) return (-1);
@@ -6425,7 +6456,7 @@ int main(int argc, char * argv[])
 				output_format_string = strtok(optarg, ",");
 				while (output_format_string != NULL)
 				{
-					if (strlen(output_format_string) != 0)
+					if (*output_format_string != '\0')
 					{
 						if (strncasecmp(output_format_string, "csv", 3) == 0
 							|| strncasecmp(output_format_string, "txt", 3) == 0)

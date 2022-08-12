@@ -1,6 +1,6 @@
 dnl Aircrack-ng
 dnl
-dnl Copyright (C) 2020 Joseph Benden <joe@benden.us>
+dnl Copyright (C) 2020-2022 Joseph Benden <joe@benden.us>
 dnl
 dnl Autotool support was written by: Joseph Benden <joe@benden.us>
 dnl
@@ -51,6 +51,9 @@ then
 	#include <stdlib.h>
 	#include <string.h>
 	],[
+	#if defined(__APPLE__) && defined(__MACH__)
+	exit(0); /* Apple has these as macros */
+	#endif
 	#ifndef strlcpy
 	exit(1);
 	#endif

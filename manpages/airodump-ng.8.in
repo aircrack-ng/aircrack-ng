@@ -36,7 +36,7 @@ Prints ACK/CTS/RTS statistics. Helps in debugging and general injection optimiza
 Hides known stations for \-\-showack.
 .TP
 .I --berlin <secs>
-Time before removing the AP/client from the screen when no more packets are received (Default: 120 seconds). See airodump-ng source for the history behind this option ;).
+Time before removing the AP/client from the screen when no more frames are received (Default: 120 seconds). See airodump-ng source for the history behind this option ;).
 .TP
 .I -c <channel>[,<channel>[,...]], --channel <channel>[,<channel>[,...]]
 Indicate the channel(s) to listen to. By default airodump-ng hops on all 2.4GHz channels.
@@ -63,7 +63,7 @@ Set the channel to be in HT40- (802.11n). It requires the frequency 20MHz below 
 Reads packet from a file.
 .TP
 .I -T, --real-time
-While reading packets from a file specified with \(aq-r <file>\(aq, simulate the arrival rate of them, as if they were "live".
+While reading frames from a file specified with \(aq-r <file>\(aq, simulate the arrival rate of them, as if they were "live".
 .TP
 .I -x <msecs>
 Active Scanning Simulation (send probe requests and parse the probe responses).
@@ -199,10 +199,10 @@ BSSID              STATION            PWR   Rate   Lost   Frames  Notes  Probes
 MAC address of the access point. In the Client section, a BSSID of "(not associated)" means that the client is not associated with any AP. In this unassociated state, it is searching for an AP to connect with.
 .TP
 .I PWR
-Signal level reported by the card. Its signification depends on the driver, but as the signal gets higher you get closer to the AP or the station. If the BSSID PWR is -1, then the driver doesn\(aqt support signal level reporting. If the PWR is -1 for a limited number of stations then this is for a packet which came from the AP to the client but the client transmissions are out of range for your card. Meaning you are hearing only 1/2 of the communication. If all clients have PWR as -1 then the driver doesn\(aqt support signal level reporting.
+Signal level reported by the Wi-Fi adapter. Its signification depends on the driver, but as you get closer to the AP or the station, the signal gets higher. It usually is the RSSI (https://en.wikipedia.org/wiki/Received_signal_strength_indication). If the BSSID PWR is -1, then the driver doesn\(aqt support signal level reporting. If PWR is -1 for some access points, it means the access point is out of range, however airodump-ng got at least a frame sent to it. If the PWR is -1 for a limited number of stations then this is for a packet which came from the AP to the client but the client transmissions are out of range for your Wi-Fi adapter. Meaning you are hearing only 1/2 of the communication. If all clients have PWR as -1 then it is likely that the driver doesn\(aqt support signal level reporting. A strong signal is around -40. An average one is around -55, and a weak one starts around -70. Wi-Fi adapters lower limit (aka receive sensitivity) is often around -80/-90.
 .TP
 .I RXQ
-Only shown when on a fixed channel. Receive Quality as measured by the percentage of packets (management and data frames) successfully received over the last 10 seconds. It\(aqs measured over all management and data frames. That\(aqs the clue, this allows you to read more things out of this value. Lets say you got 100 percent RXQ and all 10 (or whatever the rate) beacons per second coming in. Now all of a sudden the RXQ drops below 90, but you still capture all sent beacons. Thus you know that the AP is sending frames to a client but you can\(aqt hear the client nor the AP sending to the client (need to get closer). Another thing would be, that you got a 11MB card to monitor and capture frames (say a prism2.5) and you have a very good position to the AP. The AP is set to 54MBit and then again the RXQ drops, so you know that there is at least one 54MBit client connected to the AP.
+Only shown when on a fixed channel. Receive Quality as measured by the percentage of frames (management and data frames) successfully received over the last 10 seconds. It\(aqs measured over all management and data frames. That\(aqs the clue, this allows you to read more things out of this value. Lets say you got 100 percent RXQ and all 10 (or whatever the rate) beacons per second coming in. Now all of a sudden the RXQ drops below 90, but you still capture all sent beacons. Thus you know that the AP is sending frames to a client but you can\(aqt hear the client nor the AP sending to the client (need to get closer). Another thing would be, that you got a 11MB card to monitor and capture frames (say a prism2.5) and you have a very good position to the AP. The AP is set to 54MBit and then again the RXQ drops, so you know that there is at least one 54MBit client connected to the AP.
 .TP
 .I Beacons
 Number of beacons sent by the AP. Each access point sends about ten beacons per second at the lowest rate (1M), so they can usually be picked up from very far.
@@ -214,7 +214,7 @@ Number of captured data packets (if WEP, unique IV count), including data broadc
 Number of data packets per second measure over the last 10 seconds.
 .TP
 .I CH
-Channel number (taken from beacon packets). Note: sometimes packets from other channels are captured even if airodump-ng is not hopping, because of radio interference.
+Channel number (taken from beacon frames). Note: sometimes frames from other channels are captured even if airodump-ng is not hopping, because of radio interference.
 .TP
 .I MB
 Maximum speed supported by the AP. If MB = 11, it\(aqs 802.11b, if MB = 22 it\(aqs 802.11b+ and higher rates are 802.11g. The dot (after 54 above) indicates short preamble is supported. \(aqe\(aq indicates that the network has QoS (802.11e) enabled.
@@ -241,7 +241,7 @@ MAC address of each associated station or stations searching for an AP to connec
 This is only displayed when using a single channel. The first number is the last data rate from the AP (BSSID) to the Client (STATION). The second number is the last data rate from Client (STATION) to the AP (BSSID).
 .TP
 .I Lost
-It means lost packets coming from the client. To determine the number of packets lost, there is a sequence field on every non-control frame, so you can subtract the second last sequence number from the last sequence number and you know how many packets you have lost.
+It means lost frames coming from the client. To determine the number of frames lost, there is a sequence field on every non-control frame, so you can subtract the second last sequence number from the last sequence number and you know how many frames you have lost.
 .TP
 .I Notes
 Additional information about the client, such as captured EAPOL or PMKID.

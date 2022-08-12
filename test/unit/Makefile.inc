@@ -43,6 +43,7 @@ UNIT_COMMON_CFLAGS =	$(PTHREAD_CFLAGS) \
 											$(CMOCKA_CFLAGS)
 
 UNIT_COMMON_LDADD  =	$(PTHREAD_LIBS) \
+											$(CRYPTO_LDFLAGS) \
 											$(CRYPTO_LIBS) \
 											$(ZLIB_LIBS) \
 											$(LIBAIRCRACK_LIBS) \

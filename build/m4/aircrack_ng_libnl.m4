@@ -38,7 +38,7 @@ dnl If you delete this exception statement from all source files in the
 dnl program, then also delete it here.
 
 AC_DEFUN([AIRCRACK_NG_LIBNL], [
-AC_ARG_ENABLE([libnl],[AC_HELP_STRING([--enable-libnl], [include netlink library, [default=yes on Linux]])])
+AC_ARG_ENABLE([libnl],[AS_HELP_STRING([--enable-libnl], [include netlink library, [default=yes on Linux]])])
 _aircrack_ng_enable_libnl=no
 
 case "$host_os" in

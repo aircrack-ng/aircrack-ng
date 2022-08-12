@@ -191,37 +191,6 @@ AS_IF([test "x$enable_maintainer_mode" = "xyes"], [
         ;;
     esac
 ])
-
-dnl
-dnl Enable compiler flags that meet the required minimum version
-dnl
-case "$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor" in
-    gnu|clang)
-        case "$host_os" in
-            CYGWIN*|MSYS*|cygwin*|msys*)
-                ;;
-            *)
-                case $with_opt in
-                    yes | "")
-                        AS_IF([test "x$gcc_over49" = "xno"], [
-                            AS_IF([test "x$gcc_over41" = "xyes"], [
-                                AX_CHECK_COMPILE_FLAG([-fstack-protector], [
-                                    AX_APPEND_FLAG(-fstack-protector, [opt_[]_AC_LANG_ABBREV[]flags])
-                                ])
-                            ], [])
-                        ], [])
-
-                        AS_IF([test "x$gcc_over49" = "xyes"], [
-                            AX_CHECK_COMPILE_FLAG([-fstack-protector-strong], [
-                                AX_APPEND_FLAG(-fstack-protector-strong, [opt_[]_AC_LANG_ABBREV[]flags])
-                            ])
-                        ], [])
-                        ;;
-                esac
-                ;;
-        esac
-        ;;
-esac
 ])
 
 AC_DEFUN([AIRCRACK_NG_COMPILER_C], [
