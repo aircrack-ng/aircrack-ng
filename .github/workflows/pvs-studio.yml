@@ -120,6 +120,7 @@ jobs:
           reportdir="pvs-report/pvs-report-${stamp}"
           disable_warnings="V1032,V1042,V597,V809,V802"
           # mkdir -p "${reportdir}"
+          mkdir -p pvs-report
           pvs-studio-analyzer analyze \
             --ignore-ccache           \
             -a "GA;OP;CS"             \
