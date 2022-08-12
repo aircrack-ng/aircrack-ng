@@ -1670,7 +1670,7 @@ skip_station:
 
 					if (key_descriptor_version > 0
 						&& memcmp(ZERO, &p[pos], 16) //-V512
-							!= 0)
+							   != 0)
 					{
 #ifdef XDEBUG
 						fprintf(stderr, "FOUND valid CCM PMKID\n");
