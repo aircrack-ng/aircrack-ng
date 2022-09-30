@@ -2278,6 +2278,8 @@ static THREAD_ENTRY(packet_reader_thread)
 			{
 				pkh.caplen = ___my_swab32(pkh.caplen);
 				pkh.len = ___my_swab32(pkh.len);
+				pkh.tv_sec = ___my_swab32(pkh.tv_sec);
+				pkh.tv_usec = ___my_swab32(pkh.tv_usec);
 			}
 
 			if (pkh.caplen <= 0 || pkh.caplen > 65535)
