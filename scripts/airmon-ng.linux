@@ -368,6 +368,12 @@ ifaceExists() {
 }
 
 startDeprecatedIface() {
+	if iwconfig "${1}" | grep -q 'Monitor'
+	then
+		printf "\t\t(Monitor mode already enabled for [%s]%s)\n" "${PHYDEV}" "${1}"
+		return
+	fi
+	setLink "${1}" down
 	iwconfig "${1}" mode monitor > /dev/null 2>&1
 	if [ -n "${2}" ]; then
 		if [ "${2}" -lt 1000 ]; then
@@ -649,6 +655,11 @@ setChannelMac80211() {
 }
 
 stopDeprecatedIface() {
+	if iwconfig "${1}" | grep -q 'Managed'
+	then
+		printf "\t\t(Monitor mode already disabled for [%s]%s)\n" "${PHYDEV}" "${1}"
+		return
+	fi
 	setLink "${1}" down
 	iwconfig "${1}" mode Managed > /dev/null 2>&1
 	setLink "${1}" up
@@ -833,6 +844,9 @@ getDriver() {
 	if [ "$DRIVER" = "rtl8812au" ]; then
 		DRIVER="8812au"
 	fi
+	if [ "$DRIVER" = "rtl8723cs" ]; then
+		DRIVER="8723cs"
+	fi
 
 	#Here we will catch the broken lying drivers not caught above
 	#currently this only functions for pci devices and not usb since lsusb has no -k option
@@ -969,6 +983,8 @@ getChipset() {
 				CHIPSET='Broadcom 4354'
 			elif [ "${DEVICEID}" = '0x02d0:0xa887' ]; then
 				CHIPSET='Broadcom 43143'
+			elif [ "${DEVICEID}" = '0x024c:0xb703' ]; then
+				CHIPSET='Realtek RTL8723CS'
 			else
 				CHIPSET="unable to detect for sdio ${DEVICEID}"
 			fi
@@ -1599,6 +1615,13 @@ for iface in $(printf "%s" "${iface_list}"); do
 		fi
 		if [ "${1}" = "stop" ] && [ "${2}" = "${iface}" ]; then
 			stopwlIface "${iface}"
+		fi
+	elif [ "${DRIVER}" = "8723cs" ]; then
+		if [ "${1}" = "start" ] && [ "${2}" = "${iface}" ]; then
+			startDeprecatedIface "${iface}"
+		fi
+		if [ "${1}" = "stop" ] && [ "${2}" = "${iface}" ]; then
+			stopDeprecatedIface "${iface}"
 		fi
 	elif [ "${MAC80211}" = "1" ]; then
 		if [ "${1}" = "start" ] && [ "${2}" = "${iface}" ]; then
