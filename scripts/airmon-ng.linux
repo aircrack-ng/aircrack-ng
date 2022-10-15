@@ -5,6 +5,7 @@ ELITE="0"
 USERID=""
 checkvm_status=""
 MAC80211=0
+DEPRECATED=0
 IW_SOURCE="https://mirrors.edge.kernel.org/pub/software/network/iw/iw-5.9.tar.xz"
 IW_ERROR=""
 if [ ! -d '/sys/' ]; then
@@ -49,7 +50,7 @@ if [ -n "${3}" ];then
 		CH=3
 	fi
 else
-	CH=10
+	CH=3
 fi
 
 #TODO LIST
@@ -846,6 +847,7 @@ getDriver() {
 	fi
 	if [ "$DRIVER" = "rtl8723cs" ]; then
 		DRIVER="8723cs"
+		DEPRECATED=1
 	fi
 
 	#Here we will catch the broken lying drivers not caught above
@@ -1616,7 +1618,7 @@ for iface in $(printf "%s" "${iface_list}"); do
 		if [ "${1}" = "stop" ] && [ "${2}" = "${iface}" ]; then
 			stopwlIface "${iface}"
 		fi
-	elif [ "${DRIVER}" = "8723cs" ]; then
+	elif [ "${DEPRECATED}" = "1" ]; then
 		if [ "${1}" = "start" ] && [ "${2}" = "${iface}" ]; then
 			startDeprecatedIface "${iface}"
 		fi
