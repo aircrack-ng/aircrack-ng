@@ -53,8 +53,6 @@ Digest_SHA1_CTX * Digest_SHA1_Create(void) { return EVP_MD_CTX_new(); }
 
 void Digest_SHA1_Destroy(Digest_SHA1_CTX * ctx)
 {
-	REQUIRE(ctx != NULL);
-
 	if (ctx) EVP_MD_CTX_free(ctx);
 }
 
