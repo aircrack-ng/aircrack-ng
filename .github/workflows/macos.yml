@@ -65,7 +65,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          brew install autoconf automake ccache cmocka expect hwloc libpcap libtool openssl pcre pkg-config sqlite3 shtool
+          brew install autoconf automake ccache cmocka expect hwloc libpcap libtool openssl pcre pkg-config sqlite3 shtool md5sha1sum
 
       - name: Ccache stats before builds
         run: |

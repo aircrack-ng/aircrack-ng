@@ -56,10 +56,17 @@ src/Makefile.in
 /test-calc-mic
 /test-calc-pmk
 /test-calc-ptk
+/test-cipher-arcfour
 /test-decrypt-ccmp
+/test-digest-md5
+/test-digest-sha1
 /test-encrypt-ccmp
 /test-encrypt-wep
 /test-hex_string_to_array
+/test-kdf-pbkdf2-hmac-sha1
+/test-mac-hmac-md5
+/test-mac-hmac-sha1
+/test-mac-hmac-sha256
 /build/m4/stubs/*
 !/build/m4/stubs/.gitkeep
 /test/test-env.sh

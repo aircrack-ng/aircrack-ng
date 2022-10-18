@@ -255,12 +255,6 @@ char * getVersion(const char * progname,
 		exit(1);
 	}
 
-	// Calculate and allocate buffer
-	size_t len = 100 + strlen(progname);
-	if (rev)
-	{
-		len += strlen(rev);
-	}
 	char *ret = NULL, *tmp = NULL;
 
 	// Major, minor version
@@ -338,9 +332,7 @@ int get_nb_cpus(void)
 #elif defined(__linux__)
 	char *s, *pos;
 	FILE * f;
-	// Reading /proc/cpuinfo is more reliable on current CPUs,
-	// so put it first and try the old method if this one fails
-	f = fopen("/proc/cpuinfo", "r");
+	f = fopen("/proc/stat", "r");
 
 	if (f != NULL)
 	{
@@ -348,29 +340,17 @@ int get_nb_cpus(void)
 
 		if (s != NULL)
 		{
-			// Get the latest value of "processor" element
-			// and increment it by 1 and it that value
-			// will be the number of CPU.
-			number = -2;
+			number = 0;
 
 			while (fgets(s, 80, f) != NULL)
 			{
-				pos = strstr(s, "processor");
-
-				if (pos == s)
+				pos = strstr(s, "cpu");
+				if (pos != NULL && pos + 3 <= s + 81)
 				{
-					pos = strchr(s, ':');
-
-					if (pos != NULL)
-					{
-						int tmp_number = atoi(pos + 1);
-						if (tmp_number >= 0 && tmp_number <= 1024)
-							number = tmp_number;
-					}
+					if (isdigit(*(pos + 3)) != 0) ++number;
 				}
 			}
 
-			++number;
 			free(s);
 		}
 
@@ -671,6 +651,7 @@ char * get_current_working_directory(void)
 			if (ret) free(ret);
 			return (NULL);
 		}
+		memset(wd_realloc, 0, wd_size);
 		ret = wd_realloc;
 		wd_realloc = getcwd(ret, wd_size);
 		if (wd_realloc == NULL && errno != ERANGE)

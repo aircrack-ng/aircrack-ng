@@ -51,56 +51,56 @@ struct ac_cpuset
 
 ac_cpuset_t * ac_cpuset_new(void) { return malloc(sizeof(struct ac_cpuset)); }
 
-void ac_cpuset_free(ac_cpuset_t * cpuset) { free(cpuset); }
+void ac_cpuset_free(ac_cpuset_t * cset) { free(cset); }
 
-void ac_cpuset_init(ac_cpuset_t * cpuset)
+void ac_cpuset_init(ac_cpuset_t * cset)
 {
-	assert(cpuset != NULL);
+	assert(cset != NULL);
 
-	cpuset->nbThreads = 0;
-	cpuset->hwloc_cpusets = NULL;
+	cset->nbThreads = 0;
+	cset->hwloc_cpusets = NULL;
 
-	hwloc_topology_init(&cpuset->topology);
-	hwloc_topology_load(cpuset->topology);
+	hwloc_topology_init(&cset->topology);
+	hwloc_topology_load(cset->topology);
 }
 
-void ac_cpuset_destroy(ac_cpuset_t * cpuset)
+void ac_cpuset_destroy(ac_cpuset_t * cset)
 {
-	assert(cpuset != NULL);
+	assert(cset != NULL);
 
-	if (cpuset->hwloc_cpusets != NULL)
+	if (cset->hwloc_cpusets != NULL)
 	{
-		free(cpuset->hwloc_cpusets);
-		cpuset->hwloc_cpusets = NULL;
+		free(cset->hwloc_cpusets);
+		cset->hwloc_cpusets = NULL;
 	}
 
-	hwloc_topology_destroy(cpuset->topology);
+	hwloc_topology_destroy(cset->topology);
 }
 
-void ac_cpuset_distribute(ac_cpuset_t * cpuset, size_t count)
+void ac_cpuset_distribute(ac_cpuset_t * cset, size_t count)
 {
-	assert(cpuset != NULL);
+	assert(cset != NULL);
 
-	cpuset->nbThreads = count;
-	cpuset->hwloc_cpusets = calloc(count, sizeof(hwloc_cpuset_t));
+	cset->nbThreads = count;
+	cset->hwloc_cpusets = calloc(count, sizeof(hwloc_cpuset_t));
 
-	if (!cpuset->hwloc_cpusets) return;
+	if (!cset->hwloc_cpusets) return;
 
-	hwloc_obj_t root = hwloc_get_root_obj(cpuset->topology);
+	hwloc_obj_t root = hwloc_get_root_obj(cset->topology);
 
 #if defined(HWLOC_API_VERSION) && HWLOC_API_VERSION > 0x00010800
-	hwloc_distrib(cpuset->topology,
+	hwloc_distrib(cset->topology,
 				  &root,
 				  1u,
-				  cpuset->hwloc_cpusets,
+				  cset->hwloc_cpusets,
 				  (unsigned int) count,
 				  INT_MAX,
 				  0u);
 #else
-	hwloc_distributev(cpuset->topology,
+	hwloc_distributev(cset->topology,
 					  &root,
 					  1u,
-					  cpuset->hwloc_cpusets,
+					  cset->hwloc_cpusets,
 					  (unsigned int) count,
 					  INT_MAX);
 #endif
@@ -115,28 +115,28 @@ struct tid_to_handle
 };
 #endif
 
-void ac_cpuset_bind_thread_at(ac_cpuset_t * cpuset, pthread_t tid, size_t idx)
+void ac_cpuset_bind_thread_at(ac_cpuset_t * cset, pthread_t tid, size_t idx)
 {
-	assert(cpuset != NULL);
+	assert(cset != NULL);
 
-	if (idx > cpuset->nbThreads) return;
+	if (idx > cset->nbThreads) return;
 
-	hwloc_bitmap_singlify(cpuset->hwloc_cpusets[idx]);
+	hwloc_bitmap_singlify(cset->hwloc_cpusets[idx]);
 
 	if (hwloc_set_thread_cpubind(
-			cpuset->topology,
+			cset->topology,
 #ifdef CYGWIN
 			// WARNING: This is a HACK into `class pthread` of Cygwin.
 			*((HANDLE *) ((char *) tid + offsetof(struct tid_to_handle, h))),
 #else
 			tid,
 #endif
-			cpuset->hwloc_cpusets[idx],
+			cset->hwloc_cpusets[idx],
 			HWLOC_CPUBIND_THREAD))
 	{
 		char * str;
 		int error = errno;
-		hwloc_bitmap_asprintf(&str, cpuset->hwloc_cpusets[idx]);
+		hwloc_bitmap_asprintf(&str, cset->hwloc_cpusets[idx]);
 		fprintf(stderr,
 				"Couldn't bind thread to cpuset %s: %s\n",
 				str,

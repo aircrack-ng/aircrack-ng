@@ -1052,8 +1052,8 @@ sql_calcpmk(sqlite3_context * context, int argc, sqlite3_value ** values)
 	REQUIRE(values != NULL);
 
 	unsigned char pmk[40];
-	char * passwd = (char *) sqlite3_value_blob(values[1]);
-	char * essid = (char *) sqlite3_value_blob(values[0]);
+	const uint8_t * passwd = (const uint8_t *) sqlite3_value_blob(values[1]);
+	const uint8_t * essid = (const uint8_t *) sqlite3_value_blob(values[0]);
 	if (argc < 2 || passwd == 0 || essid == 0)
 	{
 		sqlite3_result_error(

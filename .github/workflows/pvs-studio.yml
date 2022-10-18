@@ -146,6 +146,7 @@ jobs:
             -a "${general_criteria}"                        \
             -o "${reportdir}/general/supressible-list.json" \
             "${log}"
+          cat pvs-report.csv || echo
 
       - name: Upload report
         env:

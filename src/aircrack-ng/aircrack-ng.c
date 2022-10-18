@@ -69,7 +69,6 @@
 
 #include "aircrack-ng/defs.h"
 #include "aircrack-ng/ce-wpa/crypto_engine.h"
-#include "aircrack-ng/crypto/sha1-sse2.h"
 #include "aircrack-ng/ce-wpa/wpapsk.h"
 #include "aircrack-ng/aircrack-ng.h"
 #include "aircrack-ng/osdep/byteorder.h"
@@ -170,7 +169,7 @@ static struct WPA_data wpa_data[MAX_THREADS];
 static volatile int wpa_wordlists_done = 0;
 static pthread_mutex_t mx_nb = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t mx_wpastats = PTHREAD_MUTEX_INITIALIZER;
-static ac_cpuset_t * cpuset = NULL;
+static ac_cpuset_t * g_cpuset = NULL;
 
 typedef struct
 {
@@ -711,10 +710,10 @@ static __attribute__((noinline)) void clean_exit(int ret)
 	dso_ac_crypto_engine_destroy(&engine);
 	ac_crypto_engine_loader_unload();
 
-	if (cpuset != NULL)
+	if (g_cpuset != NULL)
 	{
-		ac_cpuset_destroy(cpuset);
-		ac_cpuset_free(cpuset);
+		ac_cpuset_destroy(g_cpuset);
+		ac_cpuset_free(g_cpuset);
 	}
 
 	if (opt.totaldicts)
@@ -2278,6 +2277,8 @@ static THREAD_ENTRY(packet_reader_thread)
 			{
 				pkh.caplen = ___my_swab32(pkh.caplen);
 				pkh.len = ___my_swab32(pkh.len);
+				pkh.tv_sec = ___my_swab32(pkh.tv_sec);
+				pkh.tv_usec = ___my_swab32(pkh.tv_usec);
 			}
 
 			if (pkh.caplen <= 0 || pkh.caplen > 65535)
@@ -3819,8 +3820,9 @@ static void show_wpa_stats(char * key,
 
 		if (_speed_test_length > 0 && delta >= (float) _speed_test_length)
 		{
-			printf("\n");
-			exit(EXIT_SUCCESS);
+			close_aircrack = 1;
+			close_aircrack_fast = 1;
+			goto __out;
 		}
 
 		goto __out;
@@ -5671,10 +5673,10 @@ static int perform_wpa_crack(struct AP_info * ap_cur)
 		return (missing_wordlist_dictionary(ap_cur));
 	}
 
-	cpuset = ac_cpuset_new();
-	ALLEGE(cpuset);
-	ac_cpuset_init(cpuset);
-	ac_cpuset_distribute(cpuset, (size_t) opt.nbcpu);
+	g_cpuset = ac_cpuset_new();
+	ALLEGE(g_cpuset);
+	ac_cpuset_init(g_cpuset);
+	ac_cpuset_distribute(g_cpuset, (size_t) opt.nbcpu);
 
 	ap_cur = get_first_target();
 
@@ -5761,7 +5763,7 @@ static int perform_wpa_crack(struct AP_info * ap_cur)
 				return (FAILURE);
 			}
 
-			ac_cpuset_bind_thread_at(cpuset, tid[id], (size_t) i);
+			ac_cpuset_bind_thread_at(g_cpuset, tid[id], (size_t) i);
 
 			id++;
 		}
