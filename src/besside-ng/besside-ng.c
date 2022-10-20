@@ -2610,7 +2610,7 @@ static struct network * network_update(struct ieee80211_frame * wh)
 static void wifi_read(void)
 {
 	struct state * s = &_state;
-	unsigned char buf[sizeof(struct ieee80211_frame) * 8];
+	unsigned char buf[sizeof(struct ieee80211_frame) * 32];
 	int rd;
 	struct rx_info * ri = calloc(1, sizeof(*ri));
 	struct ieee80211_frame * wh = (struct ieee80211_frame *) buf;
