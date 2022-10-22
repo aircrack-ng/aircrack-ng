@@ -453,7 +453,7 @@ diff '--color=auto' -rupN hostapd-2.10/hostapd/Makefile hostapd-2.10-wpe/hostapd
  
 -hostapd: $(OBJS)
 +hostapd-wpe: $(OBJS)
- 	$(Q)$(CC) $(LDFLAGS) -o hostapd $(OBJS) $(LIBS)
+ 	$(Q)$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
  	@$(E) "  LD " $@
  
 @@ -1291,7 +1301,7 @@ endif
@@ -462,7 +462,7 @@ diff '--color=auto' -rupN hostapd-2.10/hostapd/Makefile hostapd-2.10-wpe/hostapd
  
 -hostapd_cli: $(OBJS_c)
 +hostapd_cli-wpe: $(OBJS_c)
- 	$(Q)$(CC) $(LDFLAGS) -o hostapd_cli $(OBJS_c) $(LIBS_c)
+ 	$(Q)$(CC) $(LDFLAGS) -o $@ $(OBJS_c) $(LIBS_c)
  	@$(E) "  LD " $@
  
 diff '--color=auto' -rupN hostapd-2.10/hostapd/certs/Makefile hostapd-2.10-wpe/hostapd/certs/Makefile
