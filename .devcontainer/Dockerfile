@@ -1,7 +1,8 @@
 # See here for image contents: https://github.com/microsoft/vscode-dev-containers/tree/v0.154.2/containers/cpp/.devcontainer/base.Dockerfile
 
 # [Choice] Debian / Ubuntu version: debian-10, debian-9, ubuntu-20.04, ubuntu-18.04
-ARG VARIANT="buster"
+ARG VARIANT
+
 FROM mcr.microsoft.com/vscode/devcontainers/cpp:0-${VARIANT}
 
 ARG CLANGURL="https://releases.llvm.org/3.8.1/"
@@ -14,8 +15,8 @@ RUN apt-get update \
 	  ethtool shtool rfkill zlib1g-dev libpcap-dev libsqlite3-dev libpcre3-dev libhwloc-dev \
 	  libcmocka-dev hostapd wpasupplicant tcpdump screen iw usbutils expect gawk bear \
 	  libtinfo5 \
-	  clangd-10 \
-	  clang-format-10 \
+	  clangd-12 \
+	  clang-format-12 \
 	  python3-pip \
  && rm -rf /var/lib/apt/lists/* \
  && /usr/bin/pip3 install pre-commit \

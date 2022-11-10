@@ -24,7 +24,7 @@
 		},{
 			"label": "Build Full",
 			"type": "shell",
-			"command": "autoreconf -vif && env CC=clang-10 CXX=clang++-10 CPP=clang-cpp-10 CFLAGS=\"-Og -g\" CXXFLAGS=\"-Og -g\" ./configure --enable-maintainer-mode --with-experimental --without-opt && bear make -j6 && bear -a make -j6 check",
+			"command": "autoreconf -vif && env CC=clang-14 CXX=clang++-14 CPP=clang-cpp-14 CFLAGS=\"-Og -g\" CXXFLAGS=\"-Og -g\" ./configure --enable-maintainer-mode --with-experimental --without-opt && bear -- make -j6 && bear -- make -j6 check",
 			"group": "build",
 			"problemMatcher": "$gcc",
 			"promptOnClose": false,
