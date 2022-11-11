@@ -23,7 +23,7 @@
 		"clang-format.assumeFilename": "${file}",
 		"clang-format.style": "file",
 		"editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
-		"clangd.path": "/usr/bin/clangd-12",
+		"clangd.path": "/usr/bin/clangd-14",
 		"C_Cpp.clang_format_fallbackStyle": "none",
 		"C_Cpp.clang_format_path": "/usr/local/bin/clang-format",
 		"C_Cpp.clang_format_style": "file",

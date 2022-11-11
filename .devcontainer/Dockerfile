@@ -15,8 +15,8 @@ RUN apt-get update \
 	  ethtool shtool rfkill zlib1g-dev libpcap-dev libsqlite3-dev libpcre3-dev libhwloc-dev \
 	  libcmocka-dev hostapd wpasupplicant tcpdump screen iw usbutils expect gawk bear \
 	  libtinfo5 \
-	  clangd-12 \
-	  clang-format-12 \
+	  clangd-14 \
+	  clang-format-14 \
 	  python3-pip \
  && rm -rf /var/lib/apt/lists/* \
  && /usr/bin/pip3 install pre-commit \
