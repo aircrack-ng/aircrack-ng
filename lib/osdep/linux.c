@@ -2485,7 +2485,6 @@ EXPORT int get_battery_state(void)
 		char battery_state[28 + sizeof(this_adapter->d_name) + 1];
 		char battery_info[24 + sizeof(this_battery->d_name) + 1];
 		int rate = 1, remain = 0;
-		static int total_remain = 0, total_cap = 0;
 		int batno = 0;
 		static int info_timer = 0;
 		int batt_full_capacity[3];
@@ -2575,10 +2574,8 @@ EXPORT int get_battery_state(void)
 				else if (strncmp(buf, "remaining capacity:", 19) == 0)
 				{
 					remain = atoi(buf + 25);
-					total_remain += remain;
 				}
 			}
-			total_cap += batt_full_capacity[batno];
 			fclose(acpi);
 			if (rate != 0)
 				batteryTime += (int) ((((float) remain) / rate) * 3600);
