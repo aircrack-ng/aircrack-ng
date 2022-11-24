@@ -201,7 +201,8 @@ int ac_session_set_amount_arguments(struct session * session, const char * str)
 
 	// Parse amount of arguments
 	int nb_input_scanned = sscanf(str, "%d", &(session->argc));
-	if (nb_input_scanned != 1 || session->argc < SESSION_MIN_NBARG || session->argc > sysconf(_SC_ARG_MAX))
+	if (nb_input_scanned != 1 || session->argc < SESSION_MIN_NBARG
+		|| session->argc > sysconf(_SC_ARG_MAX))
 	{
 		// There should be at least 4 arguments:
 		// - Executable path (argv[0])
