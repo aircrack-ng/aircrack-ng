@@ -201,7 +201,7 @@ int ac_session_set_amount_arguments(struct session * session, const char * str)
 
 	// Parse amount of arguments
 	int nb_input_scanned = sscanf(str, "%d", &(session->argc));
-	if (nb_input_scanned != 1 || session->argc < SESSION_MIN_NBARG)
+	if (nb_input_scanned != 1 || session->argc < SESSION_MIN_NBARG || session->argc > sysconf(_SC_ARG_MAX))
 	{
 		// There should be at least 4 arguments:
 		// - Executable path (argv[0])
@@ -305,7 +305,8 @@ struct session * ac_session_load(const char * filename)
 
 	char * line;
 	int line_nr = 0;
-	while (1)
+	int arg_nr = -1;
+	while (arg_nr != ret->argc)
 	{
 		line = ac_session_getline(f);
 
@@ -341,7 +342,7 @@ struct session * ac_session_load(const char * filename)
 			}
 			default: // All the arguments
 			{
-				ret->argv[line_nr - SESSION_ARGUMENTS_LINE] = line;
+				ret->argv[arg_nr] = line;
 				temp = EXIT_SUCCESS;
 				break;
 			}
@@ -362,6 +363,7 @@ struct session * ac_session_load(const char * filename)
 		}
 
 		++line_nr;
+		arg_nr = line_nr - SESSION_ARGUMENTS_LINE;
 	}
 
 	fclose(f);
@@ -370,6 +372,8 @@ struct session * ac_session_load(const char * filename)
 		ac_session_free(&ret);
 		return (NULL);
 	}
+
+	ENSURE(arg_nr == ret->argc);
 
 	return (ret);
 }
