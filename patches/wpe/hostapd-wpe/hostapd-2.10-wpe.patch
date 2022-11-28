@@ -435,7 +435,7 @@ diff '--color=auto' -rupN hostapd-2.10/hostapd/Makefile hostapd-2.10-wpe/hostapd
  
  OBJS_c = hostapd_cli.o
  OBJS_c += ../src/common/wpa_ctrl.o
-@@ -1277,10 +1278,19 @@ $(DESTDIR)$(BINDIR)/%: %
+@@ -1277,11 +1278,20 @@ $(DESTDIR)$(BINDIR)/%: %
  
  install: $(addprefix $(DESTDIR)$(BINDIR)/,$(ALL))
  
@@ -452,19 +452,24 @@ diff '--color=auto' -rupN hostapd-2.10/hostapd/Makefile hostapd-2.10-wpe/hostapd
  include ../src/objs.mk
  
 -hostapd: $(OBJS)
+-	$(Q)$(CC) $(LDFLAGS) -o hostapd $(OBJS) $(LIBS)
 +hostapd-wpe: $(OBJS)
- 	$(Q)$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
++	$(Q)$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
  	@$(E) "  LD " $@
  
-@@ -1291,7 +1301,7 @@ endif
+ ifdef CONFIG_WPA_TRACE
+@@ -1291,8 +1301,8 @@ endif
  _OBJS_VAR := OBJS_c
  include ../src/objs.mk
  
 -hostapd_cli: $(OBJS_c)
+-	$(Q)$(CC) $(LDFLAGS) -o hostapd_cli $(OBJS_c) $(LIBS_c)
 +hostapd_cli-wpe: $(OBJS_c)
- 	$(Q)$(CC) $(LDFLAGS) -o $@ $(OBJS_c) $(LIBS_c)
++	$(Q)$(CC) $(LDFLAGS) -o $@ $(OBJS_c) $(LIBS_c)
  	@$(E) "  LD " $@
  
+ NOBJS = nt_password_hash.o ../src/crypto/ms_funcs.o $(SHA1OBJS)
+
 diff '--color=auto' -rupN hostapd-2.10/hostapd/certs/Makefile hostapd-2.10-wpe/hostapd/certs/Makefile
 --- hostapd-2.10/hostapd/certs/Makefile	1970-01-01 00:00:00.000000000 +0000
 +++ hostapd-2.10-wpe/hostapd/certs/Makefile	2022-02-21 23:29:30.100000000 +0000
