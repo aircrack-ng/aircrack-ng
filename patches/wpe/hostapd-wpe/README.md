@@ -53,13 +53,7 @@ Note: If libssl 1.1 is used, Heartbleed is not present due to issue #2122 in ope
 ## Debian-based distro
 
 ```
-apt-get install libssl1.0-dev libnl-genl-3-dev libnl-3-dev pkg-config libsqlite3-dev
-``` 
-
-### Ubuntu
-
-```
-apt-get install libssl-dev libnl-genl-3-dev libnl-3-dev pkg-config libsqlite3-dev
+apt-get install libssl-dev libnl-genl-3-dev libnl-3-dev pkg-config libsqlite3-dev build-essential wget --no-install-recommends
 ```
 
 ## General
