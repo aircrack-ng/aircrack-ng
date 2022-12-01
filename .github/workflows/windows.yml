@@ -43,11 +43,10 @@ jobs:
           restore-keys: ${{ runner.os }}-cygwin-64bit-
 
       - name: Set up Cygwin
-        uses: egor-tensin/setup-cygwin@v3
+        uses: cygwin/cygwin-install-action@v3
         with:
           platform: x64
           install-dir: C:\tools\cygwin
-          hardlinks: 1
           packages: >-
             autoconf automake bison gcc-core gcc-g++ mingw-runtime mingw-binutils mingw-gcc-core
             mingw-gcc-g++ mingw-pthreads mingw-w32api libtool make python gettext-devel gettext
@@ -242,11 +241,10 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Set up Cygwin
-        uses: egor-tensin/setup-cygwin@v3
+        uses: cygwin/cygwin-install-action@v3
         with:
           platform: x64
           install-dir: C:\tools\cygwin
-          hardlinks: 1
           packages: >-
             git unzip zip rsync
 
