@@ -1,7 +1,7 @@
 ---
 name: Bug report
-about: Used to report a defect in the source code, scripts, etc... Post questions
-  in the GitHub discussions at https://github.com/aircrack-ng/aircrack-ng/discussions - Read our
+about: Used to report a defect in the source code, scripts, website, documentation, etc... Post questions
+  in the GitHub Discussions tab - Read our
   documentation at https://aircrack-ng.org
 ---
 
