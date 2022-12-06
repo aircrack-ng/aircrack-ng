@@ -1,12 +1,12 @@
 ---
 name: Bug report
 about: Used to report a defect in the source code, scripts, etc... Post questions
-  in the Aircrack-ng forum at https://forum.aircrack-ng.org - Read our
+  in the GitHub discussions at https://github.com/aircrack-ng/aircrack-ng/discussions - Read our
   documentation at https://aircrack-ng.org
 ---
 
 <!--
-**Bug reports will only be accepted against the current tip of the master git branch. Anything else will be rejected. Questions must be posted in the discussion board at <https://forum.aircrack-ng.org>.**
+**Bug reports will only be accepted against the current tip of the master git branch. Anything else will be rejected. Questions must be posted in the discussion board at <https://github.com/aircrack-ng/aircrack-ng/discussions>.**
 
 For any security-related issues such as exploits, buffer overflows, and such, refer to our security policy: <https://github.com/aircrack-ng/aircrack-ng/security/policy>
 
@@ -16,7 +16,7 @@ Please read the following before reporting the issue:
 - Unless bugs are linked, one bug per ticket.
 - Don't worry about any of the items on the right panel (Assignee, Labels or Milestone), we will take care of them.
 
-The following must be taken to the forum first, as in these cases, it often turns out to be a technique issue or the issue is out of our control:
+The following must be taken to the GitHub Discussions first, as in these cases, it often turns out to be a technique issue or the issue is out of our control:
 
 - Not receiving any packets with airodump-ng or any other tool.
 - Can't crack a network.
@@ -39,7 +39,7 @@ Please select from one of the following software defect descriptions. Pick the o
 - [ ] Defect - Compilation or `make check` issue - Attach `config.log` and provide relevant system information such as `lscpu` - Make sure dependencies are installed
 - [ ] Defect - Crash
 - [ ] Defect - Incorrect value displayed/received/stored
-- [ ] Defect - Unexpected behavior (obvious or confirmed in the forum)
+- [ ] Defect - Unexpected behavior (obvious or confirmed in the GitHub Discussions)
 
 ## System information
 
