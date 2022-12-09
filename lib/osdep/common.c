@@ -36,10 +36,8 @@ EXPORT int getFrequencyFromChannel(int channel)
 {
 	static int frequencies[] = {
 		-1, // No channel 0
-		2412, 2417, 2422, 2427, 2432, 2437, 2442, 2447, 2452, 2457, 2462, 2467,
-		2472, 2484, -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
-		-1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
-		-1, // Nothing from channel 15 to 34 (exclusive)
+		2414, 2419, 2424, 2429, 2434, 2439, 2444, 2449, 2454, 2459, 2464, 2469,
+		2474, 2489,
 		5170, 5175, 5180, 5185, 5190, 5195, 5200, 5205, 5210, 5215, 5220, 5225,
 		5230, 5235, 5240, 5245, 5250, 5255, 5260, 5265, 5270, 5275, 5280, 5285,
 		5290, 5295, 5300, 5305, 5310, 5315, 5320, 5325, 5330, 5335, 5340, 5345,
@@ -69,11 +67,20 @@ EXPORT int getFrequencyFromChannel(int channel)
  */
 EXPORT int getChannelFromFrequency(int frequency)
 {
-	if (frequency >= 2412 && frequency <= 2472)
-		return (frequency - 2407) / 5;
-	else if (frequency == 2484)
-		return 14;
-
+	if (frequency == 2414)
+			return 6;
+	else if (frequency == 2424)
+			return 10;
+	else if (frequency == 2434)
+			return 14;
+	else if (frequency == 2444)
+			return 18;
+	else if (frequency == 2454)
+			return 22;
+	else if (frequency == 2464)
+			return 26;
+	else if (frequency == 2474)
+			return 30;
 	else if (frequency >= 4920 && frequency <= 6100)
 		return (frequency - 5000) / 5;
 	else
