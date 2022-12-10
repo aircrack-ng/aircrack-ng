@@ -1,0 +1,18 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Website
+    url: https://aircrack-ng.org
+  - name: Support
+    url: https://github.com/aircrack-ng/aircrack-ng/discussions
+    about: We provide support in Discussion section.
+  - name: Documentation
+    url: https://aircrack-ng.org/doku.php
+    about: Comprehensive documentation (for each tool, as well as tutorials, and other resources)
+  - name: Frequently Asked Questions
+    url: https://aircrack-ng.org/doku.php?id=faq
+  - name: GitHub Markdown guide
+    url: https://guides.github.com/features/mastering-markdown/
+    about: Proper formatting is important to distinguish the explanation in the bug report from the commands and their output
+  - name: How to Report Bugs Effectively
+    url: https://www.chiark.greenend.org.uk/~sgtatham/bugs.html
+    about: By Simon Tatham
