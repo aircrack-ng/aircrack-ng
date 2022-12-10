@@ -33,7 +33,7 @@ Make sure to check our documentation at <https://aircrack-ng.org/doku.php> as we
 ## Issue type
 
 <!--
-Please select from one of the following software defect descriptions. Pick the one that best reflects the issue you are experiencing.
+Please select from one of the following software defect descriptions. Pick the one(s) that best reflects the issue you are experiencing. Erase the others.
 -->
 
 - [ ] Defect - Compilation or `make check` issue - Attach `config.log` and provide relevant system information such as `lscpu` - Make sure dependencies are installed
@@ -43,15 +43,41 @@ Please select from one of the following software defect descriptions. Pick the o
 
 ## System information
 
+<!--
+On Linux, OS version can often be found in /etc/os-release. On Debian-based you may use `lsb_release -i` for "OS Name", `lsb_release -r` for "OS version".
+
+Copy and paste the output of `uname -a` in Kernel version.
+
+CPU information can be gathered with `lscpu`, or `cat /proc/cpuinfo`
+
+Wireless card and chipset information is displayed with `airmon-ng`. If it doesn't display anything, add information from `lspci`, `lsusb`, and `sudo lshw -c network -sanitize`. The wireless adapter can also be found in dmesg.
+-->
+
 - OS Name:
 - OS Version:
+- Kernel version:
 - CPU:
 - Wireless card and chipset (if relevant):
 
 ## Aircrack-ng version
 
+<!--
+For the aircrack-ng version, run `aircrack-ng | head`, it will be displayed right after 'Aircrack-ng'.
+When compiled from git, the short SHAsum (7 characters long) will be shown right after the version number.
+
+Don't say 'Latest' for the version, this is not helpful as it changes over time.
+-->
+
 - Version:
 - Commit Revision hash:
+
+## Airmon-ng debug information
+
+<!--
+If the issue is related to packet capture or injection, run `airmon-ng --debug` and post the output here.
+
+Please make sure to enclose with backticks for readability.
+-->
 
 ## Defect
 
@@ -59,6 +85,10 @@ Please select from one of the following software defect descriptions. Pick the o
 
 <!--
 Summarize the issue in a paragraph or two.
+
+If you need to provide output of the different tools, or commands, file content, etc, use the backticks to enclose the text.
+
+Only post pictures if the issues when it cannot be avoided.
 -->
 
 ### How to reproduce the issue
