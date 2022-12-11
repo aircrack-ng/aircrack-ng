@@ -13,14 +13,23 @@ RUN apt-get update \
 RUN mkdir -p /aircrack-ng /output
 COPY . /aircrack-ng
 RUN set -x \
- && cd /aircrack-ng && \
-	make distclean || : && \
-	autoreconf -vif && \
-	set -e; \
-		./configure --with-experimental --with-ext-scripts --enable-maintainer-mode --without-opt --prefix=/usr && \
-		make -j3 && \
-		make check -j3 && \
-		make install DESTDIR=/output
+	&& cd /aircrack-ng && \
+		make distclean || : && \
+		autoreconf -vif && \
+		set -e; \
+			./configure --with-experimental --with-ext-scripts --enable-maintainer-mode --without-opt --prefix=/usr && \
+			make -j3 && \
+		set +e && \
+			if ! make check -j3; then \
+				echo "Processor: $(uname -m)"; \
+				for file in `grep -l "(exit status: [1-9]" test/*.log`; do \
+					echo "[*] Test ${file}:"; \
+					cat "${file}"; \
+				done; \
+				exit 1; \
+			fi && \
+		set -e && \
+			make install DESTDIR=/output
 
 # Stage 2
 FROM kalilinux/kali-rolling
