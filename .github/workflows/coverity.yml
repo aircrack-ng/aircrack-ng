@@ -1,0 +1,50 @@
+name: Coverity Scan
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "* */12 * * *"
+
+jobs:
+  coverity:
+    runs-on: ubuntu-latest
+    steps:
+      - 
+        name: Git Checkout
+        uses: actions/checkout@v3
+      -
+        name: Check for changes in the source code
+        uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            code:
+              - 'build/**'
+              - 'include/**'
+              - 'lib/**'
+              - 'src/**'
+              - 'test/**'
+              - 'AC_VERSION.in'
+              - 'Makefile.am'
+              - 'Makefile.integration.mk'
+              - 'autogen.sh'
+              - 'configure.ac'
+              - 'evalrev'
+      -
+        name: Prepare build
+        if: steps.changes.outputs.code == 'true'
+        run: |
+          autoreconf -vi
+          ./configure --with-experimental --enable-maintainer-mode
+          make clean
+      -
+        name: Build and upload to Coverity Scan
+        uses: vapier/coverity-scan-action@v1
+        if: steps.changes.outputs.code == 'true'
+        with:
+          project: Aircrack-ng
+          command: make check
+          email: ${{ secrets.COVERITY_SCAN_EMAIL }}
+          token: ${{ secrets.COVERITY_SCAN_TOKEN }}
+          version: ${{ github.sha }}
+          description: "Git revision: ${{ github.sha }}"
