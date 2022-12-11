@@ -34,7 +34,7 @@ jobs:
         name: Prepare build
         if: steps.changes.outputs.code == 'true'
         run: |
-          autoreconf -vi
+          autoreconf -vif
           ./configure --with-experimental --enable-maintainer-mode
           make clean
       -
