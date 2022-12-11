@@ -12,10 +12,10 @@ hex_failing_test() {
 	./test-hex_string_to_array "${1}" >/dev/null 2>/dev/null
 	RET=$?
 	if [ ${RET} -ne 2 ]; then
-	echo "Hex string failed. Expected return value of 2 (failure), got ${RET} with ${failure}."
+	echo "Hex string failed. Expected return value of 2 (failure), got ${RET} with ${1}."
 		exit 1
 	fi
-	echo "Test Hex string to array with ${failure}: failure - Test successful"
+	echo "Test Hex string to array with ${1}: failure - Test successful"
 }
 
 # sh does not support arrays, so we have to do it this way
@@ -36,10 +36,10 @@ hex_success_test() {
 	./test-hex_string_to_array "${1}" >/dev/null 2>/dev/null
 	RET=$?
 	if [ ${RET} -ne 0 ]; then
-		echo "Hex string test failed. Expected return value of 0 (success), got ${RET} with ${success}"
+		echo "Hex string test failed. Expected return value of 0 (success), got ${RET} with ${1}"
 		exit 1
 	fi
-	echo "Test Hex string to array with ${success}: success - Test successful"
+	echo "Test Hex string to array with ${1}: success - Test successful"
 }
 
 hex_success_test 'FF'
