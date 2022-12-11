@@ -65,6 +65,14 @@ jobs:
   docker-git:
     runs-on: ubuntu-latest
     steps:
+      - 
+        name: Git Checkout
+        uses: actions/checkout@v3
+      - 
+        name: Shorten git revision
+        uses: rlespinasse/shortify-git-revision@v1
+        with:
+          name: GITHUB_SHA
       -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -86,4 +94,4 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
             aircrackng/git:latest
-            aircrackng/git:${{ github.sha }}
+            aircrackng/git:${{ env.GITHUB_SHA_SHORT }}
