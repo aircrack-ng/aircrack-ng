@@ -40,6 +40,7 @@ FROM kalilinux/kali-rolling:latest
 COPY --from=builder /output/usr /usr
 
 # Install dependencies
+# hadolint ignore=DL3008
 RUN set -x \
  && apt-get update && \
 	apt-get -y install --no-install-recommends \
