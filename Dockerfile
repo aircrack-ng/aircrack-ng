@@ -1,6 +1,7 @@
 FROM kalilinux/kali-rolling:latest AS builder
 
 # Install dependencies for building
+# hadolint ignore=DL3008
 RUN apt-get update \
  && export DEBIAN_FRONTEND=noninteractive \
  && apt-get -y install --no-install-recommends \
@@ -13,9 +14,10 @@ RUN apt-get update \
 # Build Aircrack-ng
 RUN mkdir -p /aircrack-ng /output
 COPY . /aircrack-ng
+WORKDIR /aircrack-ng
+# hadolint ignore=SC2006
 RUN set -x \
-	&& cd /aircrack-ng && \
-		make distclean || : && \
+	&& make distclean || : && \
 		autoreconf -vif && \
 		set -e; \
 			./configure --with-experimental --with-ext-scripts --enable-maintainer-mode --without-opt --prefix=/usr && \
@@ -33,14 +35,15 @@ RUN set -x \
 			make install DESTDIR=/output
 
 # Stage 2
+# hadolint ignore=DL3007
 FROM kalilinux/kali-rolling:latest
 
 COPY --from=builder /output/usr /usr
 
 # Install dependencies
 RUN set -x \
- && apt update && \
-	apt -y install --no-install-recommends \
+ && apt-get update && \
+	apt-get -y install --no-install-recommends \
 		libsqlite3-0 libssl3 hwloc libpcre3 libnl-3-200 libnl-genl-3-200 iw usbutils pciutils \
 		iproute2 ethtool kmod wget ieee-data python3 python3-graphviz rfkill && \
 	rm -rf /var/lib/apt/lists/* && \
