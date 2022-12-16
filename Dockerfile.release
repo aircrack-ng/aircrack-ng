@@ -20,6 +20,7 @@ RUN apt-get update \
 RUN mkdir -p /aircrack-ng/git /aircrack-ng/archive /output
 COPY . /aircrack-ng/git
 WORKDIR /aircrack-ng/git
+# hadolint ignore=DL4006,SC3040
 RUN set -o pipefail && \
 	git archive --format=tar ${GITHUB_REF_NAME} \
         | tar -xf - --directory /aircrack-ng/archive
