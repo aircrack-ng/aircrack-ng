@@ -75,11 +75,15 @@ jobs:
         uses: luke142367/Docker-Lint-Action@v1.1.1
         with:
           target: './Dockerfile'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - 
         name: Lint Release Dockerfile
         uses: luke142367/Docker-Lint-Action@v1.1.1
         with:
           target: './Dockerfile.release'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - 
         name: Shorten git revision
         uses: rlespinasse/shortify-git-revision@v1
