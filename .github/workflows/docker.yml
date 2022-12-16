@@ -1,4 +1,4 @@
-name: Docker build git and push to DockerHub
+name: Docker (git) push to DockerHub
 
 on:
   push:
