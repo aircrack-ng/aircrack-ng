@@ -1,4 +1,4 @@
-FROM kalilinux/kali-rolling AS builder
+FROM kalilinux/kali-rolling:latest AS builder
 
 # Install dependencies for building
 RUN apt-get update \
@@ -7,7 +7,8 @@ RUN apt-get update \
       build-essential autoconf automake libtool pkg-config libnl-3-dev libnl-genl-3-dev libssl-dev \
 	  ethtool shtool rfkill zlib1g-dev libpcap-dev libsqlite3-dev libpcre3-dev libhwloc-dev \
 	  libcmocka-dev hostapd wpasupplicant tcpdump screen iw usbutils expect gawk bear \
-	  libtinfo5 python3-pip git
+	  libtinfo5 python3-pip git && \
+	  	rm -rf /var/lib/apt/lists/*
 
 # Build Aircrack-ng
 RUN mkdir -p /aircrack-ng /output
@@ -32,7 +33,7 @@ RUN set -x \
 			make install DESTDIR=/output
 
 # Stage 2
-FROM kalilinux/kali-rolling
+FROM kalilinux/kali-rolling:latest
 
 COPY --from=builder /output/usr /usr
 
