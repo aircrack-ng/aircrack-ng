@@ -1,3 +1,4 @@
+# hadolint ignore=DL3007
 FROM kalilinux/kali-rolling:latest AS builder
 
 # Install dependencies for building

@@ -1,3 +1,4 @@
+# hadolint ignore=DL3007
 FROM kalilinux/kali-rolling:latest AS builder
 
 # https://docs.github.com/en/actions/learn-github-actions/environment-variables#default-environment-variables
