@@ -35,3 +35,9 @@ repos:
     hooks:
       - id: shellcheck
         files: 'test/|scripts/|build/'
+
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.12.0
+    hooks:
+      - id: hadolint
+        files: 'Dockerfile|Dockerfile.release'
