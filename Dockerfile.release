@@ -20,7 +20,8 @@ RUN apt-get update \
 RUN mkdir -p /aircrack-ng/git /aircrack-ng/archive /output
 COPY . /aircrack-ng/git
 WORKDIR /aircrack-ng/git
-RUN git archive --format=tar ${GITHUB_REF_NAME} \
+RUN set -o pipefail && \
+	git archive --format=tar ${GITHUB_REF_NAME} \
         | tar -xf - --directory /aircrack-ng/archive
 
 # Build Aircrack-ng
