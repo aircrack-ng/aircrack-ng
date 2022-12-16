@@ -72,14 +72,14 @@ jobs:
         uses: actions/checkout@v3
       - 
         name: Lint Dockerfile
-        uses: ghe-actions/dockerfile-validator@v2
+        uses: luke142367/Docker-Lint-Action@v1.1.1
         with:
-          dockerfile: './Dockerfile'
+          target: './Dockerfile'
       - 
         name: Lint Release Dockerfile
-        uses: ghe-actions/dockerfile-validator@v2
+        uses: luke142367/Docker-Lint-Action@v1.1.1
         with:
-          dockerfile: './Dockerfile.release'
+          target: './Dockerfile.release'
       - 
         name: Shorten git revision
         uses: rlespinasse/shortify-git-revision@v1
