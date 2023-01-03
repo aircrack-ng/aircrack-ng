@@ -1253,15 +1253,17 @@ scanProcesses() {
 
 listInterfaces() {
   unset iface_list
-  for iface in $(ls -1 /sys/class/net)
-  do
-    if [ -f "/sys/class/net/${iface}/uevent" ]; then
-      if grep -q 'DEVTYPE=wlan' "/sys/class/net/${iface}/uevent"
-      then
-        iface_list="${iface_list} ${iface}"
+  if [ -d '/sys/class/net' ]; then
+    for iface in $(ls -1 /sys/class/net)
+    do
+      if [ -f "/sys/class/net/${iface}/uevent" ]; then
+        if grep -q 'DEVTYPE=wlan' "/sys/class/net/${iface}/uevent"
+        then
+          iface_list="${iface_list} ${iface}"
+        fi
       fi
-    fi
-  done
+    done
+  fi
   if [ -x "$(command -v iwconfig 2>&1)" ] && [ -x "$(command -v sort 2>&1)" ]; then
     for iface in $(iwconfig 2> /dev/null | sed -e 's/^\(\w*\)\s.*/\1/' -e '/^$/d'); do
       iface_list="${iface_list} ${iface}"
