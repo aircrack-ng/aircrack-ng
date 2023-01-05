@@ -379,6 +379,11 @@ ifaceExists() {
 
 startDeprecatedIface() {
   if [ "${WIRELESS_TOOLS}" = "1" ];then
+    if iwconfig "${1}" | grep -q 'Monitor'
+    then
+      printf "\t\t(Monitor mode already enabled for [%s]%s)\n" "${PHYDEV}" "${1}"
+      return
+    fi
     setLink "${1}" down
     iwconfig "${1}" mode monitor > /dev/null 2>&1
     if [ -n "${2}" ]; then
@@ -665,6 +670,11 @@ setChannelMac80211() {
 
 stopDeprecatedIface() {
   if [ "${WIRELESS_TOOLS}" = "1" ];then
+    if iwconfig "${1}" | grep -q 'Managed'
+    then
+      printf "\t\t(Monitor mode already disabled for [%s]%s)\n" "${PHYDEV}" "${1}"
+      return
+    fi
     setLink "${1}" down
     iwconfig "${1}" mode Managed > /dev/null 2>&1
     setLink "${1}" up
