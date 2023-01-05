@@ -5,6 +5,7 @@ ELITE="0"
 USERID=""
 checkvm_status=""
 MAC80211=0
+WIRELESS_TOOLS="0"
 IW_SOURCE="https://mirrors.edge.kernel.org/pub/software/network/iw/iw-5.9.tar.xz"
 IW_ERROR=""
 if [ ! -d '/sys/' ]; then
@@ -107,6 +108,15 @@ if [ -d /sys/bus/usb ]; then
 else
 	LSUSB=0
 fi
+
+if [ -x "$(command -v iwconfig 2>&1)" ]; then
+  WIRELESS_TOOLS="1"
+fi
+wireless_tools_whine() {
+  printf "This function requires deprecated wireless-tools to support your hardware/driver but it is not installed\n"
+  printf "Please install the wireless-tools package for your distro, or use different hardware.\n"
+  exit 1
+}
 
 if [ -d /sys/bus/pci ] || [ -d /sys/bus/pci_express ] || [ -d /proc/bus/pci ]; then
 	PCI_DEVICES=0
@@ -368,19 +378,23 @@ ifaceExists() {
 }
 
 startDeprecatedIface() {
-	iwconfig "${1}" mode monitor > /dev/null 2>&1
-	if [ -n "${2}" ]; then
-		if [ "${2}" -lt 1000 ]; then
-			iwconfig "${1}" channel "${2}" > /dev/null 2>&1
-		else
-			iwconfig "${1}" freq "${2}000000" > /dev/null 2>&1
-		fi
-	else
-		iwconfig "${1}" channel "${CH}" > /dev/null 2>&1
-	fi
-	iwconfig "${1}" key off > /dev/null 2>&1
-	setLink "${1}" up
-	printf "\t\t(monitor mode enabled)\n"
+  if [ "${WIRELESS_TOOLS}" = "1" ];then
+    iwconfig "${1}" mode monitor > /dev/null 2>&1
+    if [ -n "${2}" ]; then
+      if [ "${2}" -lt 1000 ]; then
+        iwconfig "${1}" channel "${2}" > /dev/null 2>&1
+      else
+        iwconfig "${1}" freq "${2}000000" > /dev/null 2>&1
+      fi
+    else
+      iwconfig "${1}" channel "${CH}" > /dev/null 2>&1
+    fi
+    iwconfig "${1}" key off > /dev/null 2>&1
+    setLink "${1}" up
+    printf "\t\t(monitor mode enabled)\n"
+  else
+    wireless_tools_whine
+  fi
 }
 
 changeMac80211IfaceTypeMonitor() {
@@ -649,10 +663,14 @@ setChannelMac80211() {
 }
 
 stopDeprecatedIface() {
-	setLink "${1}" down
-	iwconfig "${1}" mode Managed > /dev/null 2>&1
-	setLink "${1}" up
-	printf "\t\t(monitor mode disabled)\n"
+  if [ "${WIRELESS_TOOLS}" = "1" ];then
+    setLink "${1}" down
+    iwconfig "${1}" mode Managed > /dev/null 2>&1
+    setLink "${1}" up
+    printf "\t\t(monitor mode disabled)\n"
+  else
+    wireless_tools_whine
+  fi
 }
 
 changeMac80211IfaceTypeManaged() {
@@ -1264,7 +1282,7 @@ listInterfaces() {
       fi
     done
   fi
-  if [ -x "$(command -v iwconfig 2>&1)" ] && [ -x "$(command -v sort 2>&1)" ]; then
+  if [ "${WIRELESS_TOOLS}" = "1" ] && [ -x "$(command -v sort 2>&1)" ]; then
     for iface in $(iwconfig 2> /dev/null | sed -e 's/^\(\w*\)\s.*/\1/' -e '/^$/d'); do
       iface_list="${iface_list} ${iface}"
     done
