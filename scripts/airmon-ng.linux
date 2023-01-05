@@ -379,6 +379,7 @@ ifaceExists() {
 
 startDeprecatedIface() {
   if [ "${WIRELESS_TOOLS}" = "1" ];then
+    setLink "${1}" down
     iwconfig "${1}" mode monitor > /dev/null 2>&1
     if [ -n "${2}" ]; then
       if [ "${2}" -lt 1000 ]; then
