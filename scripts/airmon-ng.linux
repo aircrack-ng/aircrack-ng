@@ -378,6 +378,8 @@ ifaceExists() {
 }
 
 startDeprecatedIface() {
+  # This function is here only for emergency.  If a driver calls it, add it to the list.
+  # This function is currently called by: NOTHING
   if [ "${WIRELESS_TOOLS}" = "1" ];then
     if iwconfig "${1}" | grep -q 'Monitor'
     then
@@ -669,6 +671,8 @@ setChannelMac80211() {
 }
 
 stopDeprecatedIface() {
+  # This function is here only for emergency.  If a driver calls it, add it to the list.
+  # This function is currently called by: NOTHING
   if [ "${WIRELESS_TOOLS}" = "1" ];then
     if iwconfig "${1}" | grep -q 'Managed'
     then
