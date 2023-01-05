@@ -1002,6 +1002,8 @@ getChipset() {
 				CHIPSET='Broadcom 4354'
 			elif [ "${DEVICEID}" = '0x02d0:0xa887' ]; then
 				CHIPSET='Broadcom 43143'
+			elif [ "${DEVICEID}" = '0x024c:0xb703' ]; then
+				CHIPSET='Realtek RTL8723CS'
 			else
 				CHIPSET="unable to detect for sdio ${DEVICEID}"
 			fi
