@@ -1532,17 +1532,17 @@ static void usage(void)
 		"and\n"
 		"                                 consecutive sequence number "
 		"(filtering is\n"
-		"                                  much more precise than using all "
+		"                                 much more precise than using all "
 		"these\n"
-		"                                  filters one by one).\n"
+		"                                 filters one by one).\n"
 		"     --null-packets        : Assume that null packets can be "
 		"cloaked.\n"
-		"     --disable-base_filter : Do not apply base filter.\n"
+		"     --disable-base-filter : Do not apply base filter.\n"
 		//"     --disable-retry       : Disable retry check, don't care about
 		// retry bit.\n"
-		"     --drop-frag           : Drop fragmented packets\n"
+		"     --drop-frag           : Drop fragmented packets.\n"
 		"\n"
-		"     --help                : Displays this usage screen\n"
+		"     --help                : Displays this usage screen.\n"
 		"\n",
 		version_info);
 	free(version_info);
