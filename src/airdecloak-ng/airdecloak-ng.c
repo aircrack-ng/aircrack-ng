@@ -1715,6 +1715,9 @@ int main(int argc, char * argv[])
 			case 'h':
 				usage();
 				exit(EXIT_SUCCESS);
+			default:
+				usage();
+				exit(EXIT_FAILURE);
 		}
 	}
 
