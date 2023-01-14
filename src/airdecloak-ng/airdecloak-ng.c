@@ -1709,15 +1709,12 @@ int main(int argc, char * argv[])
 				_options_disable_retry = 1;
 				printf("'%c' option not yet implemented\n", option);
 				exit(EXIT_SUCCESS);
-				break;
 			case 'e':
 				printf("'%c' option not yet implemented\n", option);
 				exit(EXIT_SUCCESS);
-				break;
 			case 'h':
 				usage();
 				exit(EXIT_SUCCESS);
-				break;
 		}
 	}
 
