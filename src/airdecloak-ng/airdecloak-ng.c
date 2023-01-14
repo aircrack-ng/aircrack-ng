@@ -467,7 +467,7 @@ static BOOLEAN read_packets(void)
 		if (_packet_elt_head->current->frame_type != FRAME_TYPE_DATA
 			&& _packet_elt_head->current->frame_type != FRAME_TYPE_MANAGEMENT)
 		{
-			// Don't care about the frame if it's a control or unknown frame).
+			// Don't care about the frame (if it's a control or unknown frame).
 			if (_packet_elt_head->current->frame_type != FRAME_TYPE_CONTROL)
 			{
 				// Unknown frame type, log it
@@ -667,7 +667,7 @@ static BOOLEAN read_packets(void)
 #endif
 		}
 		else
-		{ // Management packet (control packets were filtered out.
+		{ // Management packet (control packets were filtered out).
 			_packet_elt_head->current->iv[0] = _packet_elt_head->current->iv[1]
 				= _packet_elt_head->current->iv[2] = 0;
 			_packet_elt_head->current->key_index = 0;
@@ -1214,7 +1214,7 @@ static int CFC_filter_duplicate_iv(void)
 	{
 		if (_packet_elt_head->current->frame_type == FRAME_TYPE_DATA)
 		{
-			// In the array, there's as much elements as the number of possible
+			// In the array, there's as many elements as the number of possible
 			// IVs
 			// For each IV, increase by 1 the value of the IV position so that
 			// we can
