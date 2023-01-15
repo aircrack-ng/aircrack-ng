@@ -69,7 +69,7 @@ static int _is_wep;
 static unsigned char _bssid[6];
 
 static int _options_drop_fragments = 0;
-static int _options_disable_retry = 0;
+//static int _options_disable_retry = 0;
 static int _options_disable_base_filter = 0;
 static int _options_assume_null_packets_uncloaked = 0;
 
@@ -1704,10 +1704,10 @@ int main(int argc, char * argv[])
 			case 'n':
 				_options_assume_null_packets_uncloaked = 1;
 				break;
-			case 'r':
+			/*case 'r':
 				_options_disable_retry = 1;
 				printf("'%c' option not yet implemented\n", option);
-				exit(EXIT_SUCCESS);
+				exit(EXIT_SUCCESS);*/
 			case 'e':
 				printf("'%c' option not yet implemented\n", option);
 				exit(EXIT_SUCCESS);
