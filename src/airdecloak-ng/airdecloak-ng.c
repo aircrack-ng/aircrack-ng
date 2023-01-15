@@ -1502,6 +1502,7 @@ static void usage(void)
 		"   Mandatory:\n"
 		"     -i <file>             : Input capture file\n"
 		"     --ssid <ESSID>        : ESSID of the network to filter\n"
+		"                             (not yet implemented)\n"
 		"        or\n"
 		"     --bssid <BSSID>       : BSSID of the network to filter\n"
 		"\n"
@@ -1537,6 +1538,7 @@ static void usage(void)
 		"                                 filters one by one).\n"
 		"     --null-packets        : Assume that null packets can be "
 		"cloaked.\n"
+		"                             (not yet implemented)\n"
 		"     --disable-base-filter : Do not apply base filter.\n"
 		//"     --disable-retry       : Disable retry check, don't care about
 		// retry bit.\n"
