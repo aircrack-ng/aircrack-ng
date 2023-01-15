@@ -1583,6 +1583,7 @@ int main(int argc, char * argv[])
 			   {"help", 0, 0, 'h'},
 			   {"filter", 1, 0, 'f'},
 			   {"filters", 1, 0, 'f'},
+			   {"filtered", 1, 0, 'f'},
 			   {"null-packets", 0, 0, 'n'},
 			   {"null-packet", 0, 0, 'n'},
 			   {"null_packets", 0, 0, 'n'},
@@ -1593,7 +1594,6 @@ int main(int argc, char * argv[])
 			   {"drop-frag", 0, 0, 'd'},
 			   {"input", 1, 0, 'i'},
 			   {"cloaked", 1, 0, 'c'},
-			   {"filtered", 1, 0, 'f'},
 			   {0, 0, 0, 0}};
 
 		option = getopt_long(
