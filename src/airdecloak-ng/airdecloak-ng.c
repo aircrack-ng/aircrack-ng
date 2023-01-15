@@ -560,7 +560,7 @@ static BOOLEAN read_packets(void)
 		}
 
 #ifdef DEBUG
-		printf("From DS: %d - ToDS: %d\n",
+		printf("FromDS: %d - ToDS: %d\n",
 			   _packet_elt_head->current->fromDS,
 			   _packet_elt_head->current->toDS);
 		printf("BSSID: %02X:%02X:%02X:%02X:%02X:%02X\n",
@@ -829,7 +829,7 @@ current_packet_pointer_same_fromToDS_and_source(struct packet_elt * packet)
 	}
 	else if (packet->fromDS == 0 && packet->toDS == 0)
 	{
-		// Beacons (and some other packets) coming from the AP (both from and
+		// Beacons (and some other packets) coming from the AP (both fromDS and
 		// toDS are 0).
 		if (_packet_elt_head->current->fromDS == 1
 			&& _packet_elt_head->current->toDS == 0)
@@ -1101,7 +1101,7 @@ static int CFC_filter_signal(void)
 					// average signal
 					// We could play with POTENTIALLY_CLOAKED frame depending on
 					// the variation
-					// but currently, it's unloacked if inferior to the max
+					// but currently, it's uncloaked if inferior to the max
 					// allowed signal
 					_packet_elt_head->current->is_cloaked
 						= VALID_FRAME_UNCLOAKED;
@@ -1273,7 +1273,7 @@ static char * status_format(int status)
 	switch (status)
 	{
 		case VALID_FRAME_UNCLOAKED:
-			strncpy(ret, "uncloacked", len + 1);
+			strncpy(ret, "uncloaked", len + 1);
 			break;
 		case CLOAKED_FRAME:
 			strncpy(ret, "cloaked", len + 1);
