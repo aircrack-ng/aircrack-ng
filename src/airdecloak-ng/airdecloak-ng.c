@@ -1596,7 +1596,6 @@ int main(int argc, char * argv[])
 			   {"filtered", 1, 0, 'f'},
 			   {0, 0, 0, 0}};
 
-		// option = getopt_long( argc, argv, "e:b:hf:nbrdi:",
 		option = getopt_long(
 			argc, argv, "e:b:hf:nbdi:c:o:u:", long_options, &option_index);
 
@@ -1727,37 +1726,6 @@ int main(int argc, char * argv[])
 		puts("Missing input file");
 		exit(EXIT_FAILURE);
 	}
-
-	// Add options (some are mandatory, some are optional).
-	/*
-		Mandatory:
-			-i file: input file
-			--ssid ESSID (or --essid or --ssid) or -b BSSID (or --bssid or --ap)
-
-		Optional:
-			-o <file>             : Output packets (valid) file (default:
-	   <src>-filtered.pcap)
-			-c <file>             : Output packets (cloaked) file (default:
-	   <src>-cloaked.pcap)
-			-u <file>             : Output packets (unknown/ignored) file
-	   (default: invalid_status.pcap)
-			-f (--filters/--filter)
-				Available filters:
-					* signal: Tries to filter based on the signal (AP never/is
-	   not supposed to moves thus ...)
-					* duplicate_sn: remove all duplicate SN
-					* duplicate_sn_ap/duplicate_sn_client: remove all duplicate
-	   SN from the AP/Client
-					* consecutive_sn: filter based on the fact that IV should be
-	   consecutive (only for AP).
-				Several filters can be used and you can choose the order of
-	   application of these filters
-					(that will impact the results).
-			--null-packets: Do not assume that null packets are not cloaked.
-			--no-base_filter: do not apply base filter.
-			--disable-retry: disable retry check, don't care about retry bit.
-			--drop-frag: Drop fragmented packets
-	*/
 
 	printf("Input file: %s\n", input_filename);
 	printf("BSSID: %s\n", input_bssid);
