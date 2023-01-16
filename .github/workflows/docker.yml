@@ -32,36 +32,6 @@ on:
       - 'SECURITY.md'
       - 'centos_autotools.sh'
   workflow_dispatch:
-  pull_request:
-    branches:
-      - 'master'
-    paths-ignore:
-      - '.devcontainer/**'
-      - '.github/ISSUE_TEMPLATE/**'
-      - '.github/workflows/coverity.yml'
-      - '.github/workflows/docker-release.yml'
-      - '.github/workflows/linux.yml'
-      - '.github/workflows/macos.yml'
-      - '.github/workflows/pvs-studio.yml'
-      - '.github/workflows/style.yml'
-      - '.github/workflows/windows.yml'
-      - '.vscode/**'
-      - 'contrib/**'
-      - 'patches/**'
-      - '.clangformat'
-      - '.editorconfig'
-      - '.gitignore'
-      - '.pre-commit-config.yaml'
-      - 'AUTHORS'
-      - 'ChangeLog'
-      - 'Dockerfile.release'
-      - 'INSTALLING'
-      - 'LICENSE'
-      - 'LICENSE.OpenSSL'
-      - 'README'
-      - 'README.md'
-      - 'SECURITY.md'
-      - 'centos_autotools.sh'
 
 jobs:
   docker-git:
