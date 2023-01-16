@@ -66,6 +66,11 @@ on:
 jobs:
   docker-git:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ linux/amd64, linux/arm64, linux/armhf ]
+
     steps:
       - 
         name: Git Checkout
@@ -102,7 +107,7 @@ jobs:
         name: Build and push
         uses: docker/build-push-action@v3
         with:
-          platforms: linux/amd64,linux/arm64,linux/armhf
+          platforms: ${{ matrix.platform }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
             aircrackng/git:latest
