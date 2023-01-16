@@ -69,7 +69,7 @@ static int _is_wep;
 static unsigned char _bssid[6];
 
 static int _options_drop_fragments = 0;
-static int _options_disable_retry = 0;
+//static int _options_disable_retry = 0;
 static int _options_disable_base_filter = 0;
 static int _options_assume_null_packets_uncloaked = 0;
 
@@ -1502,6 +1502,7 @@ static void usage(void)
 		"   Mandatory:\n"
 		"     -i <file>             : Input capture file\n"
 		"     --ssid <ESSID>        : ESSID of the network to filter\n"
+		"                             (not yet implemented)\n"
 		"        or\n"
 		"     --bssid <BSSID>       : BSSID of the network to filter\n"
 		"\n"
@@ -1537,6 +1538,7 @@ static void usage(void)
 		"                                 filters one by one).\n"
 		"     --null-packets        : Assume that null packets can be "
 		"cloaked.\n"
+		"                             (not yet implemented)\n"
 		"     --disable-base-filter : Do not apply base filter.\n"
 		//"     --disable-retry       : Disable retry check, don't care about
 		// retry bit.\n"
@@ -1583,6 +1585,7 @@ int main(int argc, char * argv[])
 			   {"help", 0, 0, 'h'},
 			   {"filter", 1, 0, 'f'},
 			   {"filters", 1, 0, 'f'},
+			   {"filtered", 1, 0, 'f'},
 			   {"null-packets", 0, 0, 'n'},
 			   {"null-packet", 0, 0, 'n'},
 			   {"null_packets", 0, 0, 'n'},
@@ -1593,7 +1596,6 @@ int main(int argc, char * argv[])
 			   {"drop-frag", 0, 0, 'd'},
 			   {"input", 1, 0, 'i'},
 			   {"cloaked", 1, 0, 'c'},
-			   {"filtered", 1, 0, 'f'},
 			   {0, 0, 0, 0}};
 
 		option = getopt_long(
@@ -1703,11 +1705,12 @@ int main(int argc, char * argv[])
 				break;
 			case 'n':
 				_options_assume_null_packets_uncloaked = 1;
-				break;
-			case 'r':
-				_options_disable_retry = 1;
 				printf("'%c' option not yet implemented\n", option);
 				exit(EXIT_SUCCESS);
+			/*case 'r':
+				_options_disable_retry = 1;
+				printf("'%c' option not yet implemented\n", option);
+				exit(EXIT_SUCCESS);*/
 			case 'e':
 				printf("'%c' option not yet implemented\n", option);
 				exit(EXIT_SUCCESS);
