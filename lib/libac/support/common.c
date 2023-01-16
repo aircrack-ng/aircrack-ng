@@ -402,7 +402,7 @@ int maccmp(unsigned char * mac1, unsigned char * mac2)
 	return 0;
 }
 
-/* Return -1 if it's not an hex value and return its value when it's a hex value
+/* Return -1 if it's not a hex value and return its value when it's a hex value
  */
 int hexCharToInt(unsigned char c)
 {
