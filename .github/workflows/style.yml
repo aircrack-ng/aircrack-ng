@@ -10,6 +10,29 @@ on:
       - contrib/**
       - manpages/**
       - patches/**
+      - '.devcontainer/**'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/workflows/coverity.yml'
+      - '.github/workflows/docker-release.yml'
+      - '.github/workflows/linux.yml'
+      - '.github/workflows/macos.yml'
+      - '.github/workflows/pvs-studio.yml'
+      - '.github/workflows/docker.yml'
+      - '.github/workflows/windows.yml'
+      - '.vscode/**'
+      - '.gitignore'
+      - '.pre-commit-config.yaml'
+      - 'AUTHORS'
+      - 'ChangeLog'
+      - 'Dockerfile'
+      - 'Dockerfile.release'
+      - 'INSTALLING'
+      - 'LICENSE'
+      - 'LICENSE.OpenSSL'
+      - 'README'
+      - 'README.md'
+      - 'SECURITY.md'
+      - 'centos_autotools.sh'
 
   pull_request:
     branches: [ master ]
@@ -17,6 +40,29 @@ on:
       - contrib/**
       - manpages/**
       - patches/**
+      - '.devcontainer/**'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/workflows/coverity.yml'
+      - '.github/workflows/docker-release.yml'
+      - '.github/workflows/linux.yml'
+      - '.github/workflows/macos.yml'
+      - '.github/workflows/pvs-studio.yml'
+      - '.github/workflows/docker.yml'
+      - '.github/workflows/windows.yml'
+      - '.vscode/**'
+      - '.gitignore'
+      - '.pre-commit-config.yaml'
+      - 'AUTHORS'
+      - 'ChangeLog'
+      - 'Dockerfile'
+      - 'Dockerfile.release'
+      - 'INSTALLING'
+      - 'LICENSE'
+      - 'LICENSE.OpenSSL'
+      - 'README'
+      - 'README.md'
+      - 'SECURITY.md'
+      - 'centos_autotools.sh'
 
 env:
   LANG: en_US.UTF-8
