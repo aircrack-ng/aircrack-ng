@@ -13,26 +13,23 @@ jobs:
         name: Git Checkout
         uses: actions/checkout@v3
       -
-        name: Check for changes in the source code
-        uses: dorny/paths-filter@v2
-        id: changes
-        with:
-          filters: |
-            code:
-              - 'build/**'
-              - 'include/**'
-              - 'lib/**'
-              - 'src/**'
-              - 'test/**'
-              - 'AC_VERSION.in'
-              - 'Makefile.am'
-              - 'Makefile.integration.mk'
-              - 'autogen.sh'
-              - 'configure.ac'
-              - 'evalrev'
+        name: Compare revision on Coverity Scan and git
+        id: compare
+        run: |
+          wget https://scan.coverity.com/projects/aircrack-ng
+          COV_REV=$(grep '<p>Version:' aircrack-ng | awk '{print $2}' | cut -b 1-30)
+          echo "Coverity revision: ${COV_REV}"
+          [ -z "${COV_REV}" ] && exit 1
+
+          CUR_REV=$(git rev-parse HEAD | cut -b 1-30)
+          echo "Current git revision: ${CUR_REV}"
+          
+          SKIP=false
+          [ ${COV_REV} == ${CUR_REV} ] && SKIP=true
+          echo "skip=${SKIP}" >> $GITHUB_OUTPUT
       -
         name: Prepare build
-        if: steps.changes.outputs.code == 'true'
+        if: steps.compare.outputs.skip == 'false'
         run: |
           autoreconf -vif
           ./configure --with-experimental --enable-maintainer-mode
@@ -40,7 +37,7 @@ jobs:
       -
         name: Build and upload to Coverity Scan
         uses: vapier/coverity-scan-action@v1
-        if: steps.changes.outputs.code == 'true'
+        if: steps.compare.outputs.skip == 'false'
         with:
           project: Aircrack-ng
           command: make check
