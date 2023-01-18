@@ -5,12 +5,12 @@ __version__ = "2012.2.17.1.54.00"
 __licence__ = "GPL2"
 """
 Airdrop-ng A rule based wireless deauth tool
-a compoent of project lemonwedge
+a component of project lemonwedge
 Written by Thex1le and King_Tuna
 """
 import sys, optparse, re, time, random, os
 import pdb
-#update the path with sub directories
+#update the path with subdirectories
 #lib for the libraries and support for the oui.txt file
 
 # adds possible paths for support modules
@@ -148,7 +148,7 @@ class parseFiles:
         bssidList     = []
         essidList     = {}
         #build an essid to bssid lookup
-        #BUG may be here if a essid has multiple bssids
+        #BUG may be here if an essid has multiple bssids
         for ap in self.airoAP.values():
             essidList[ap["bssid"]] = ap["essid"]
         compTrue = ruleRaw[1:].find(';')
@@ -160,24 +160,24 @@ class parseFiles:
                 delim = ';'
             else: 
                 delim = ','
-        for postion in ruleRaw[pipe+1:].split(delim):
-            if postion.upper() == "ANY": #client any
+        for position in ruleRaw[pipe+1:].split(delim):
+            if position.upper() == "ANY": #client any
                 break
             else:
-                cmac = postion.upper().replace("-",":") 
+                cmac = position.upper().replace("-",":")
                 if self.validMacChk(cmac) == True: 
                     #build a list of clients
                     clientList.append(cmac)
-                elif ouiLookup.compKeyChk(postion) == True: #company oui lookup
+                elif ouiLookup.compKeyChk(position) == True: #company oui lookup
                     #check to see if it's a company name we can lookup
-                    clientOuiList.extend(ouiLookup.lookup_company(postion))
-                elif ouiLookup.ouiKeyChk(postion) == True: #oui match
+                    clientOuiList.extend(ouiLookup.lookup_company(position))
+                elif ouiLookup.ouiKeyChk(position) == True: #oui match
                     #check to see if it's an oui we can lookup
-                    clientOuiList = [postion] 
+                    clientOuiList = [position]
                 else:
                     message.printMessage([
                         "\nInvalid mac or company name",
-                        "at "+postion+" in "+ruleRaw," Moving on to next rule"])
+                        "at "+position+" in "+ruleRaw," Moving on to next rule"])
                     return False
 
         #translate ouis then append them to client list
@@ -196,7 +196,7 @@ class parseFiles:
             
             elif bssidMac in essidList.values():
                 #bssidMac is provided by the user and at this point is most
-                #likely a essid
+                #likely an essid
                 for bssid in essidList:
                     #bssid is a true bssid
                     if essidList[bssid] == bssidMac:
@@ -217,7 +217,7 @@ class parseFiles:
             else:
                 message.printMessage([
                     "\nInvalid mac or company name",
-                    "at "+postion+" in "+ruleRaw," Moving on to next rule"])
+                    "at "+position+" in "+ruleRaw," Moving on to next rule"])
                 return False
         else:
             bssidList = ["ANY"]
@@ -232,14 +232,14 @@ class parseFiles:
             #if we only have one bssid we don't want to nest the dict in a list
                 for bssid in bssidList:
                     
-                    if clientList == [] and postion.upper() != 'ANY':
+                    if clientList == [] and position.upper() != 'ANY':
                         ruleDict = {
                             "state":state,
                             "bssid":bssid,
-                            "clients":[postion],
+                            "clients":[position],
                             "raw":ruleRaw}
                     
-                    if clientList == [] and postion.upper() == 'ANY':
+                    if clientList == [] and position.upper() == 'ANY':
                         ruleDict = {
                             "state":state,
                             "bssid":bssid,
@@ -255,14 +255,14 @@ class parseFiles:
                 #if more than one bssid nest each rule dict in a list
                 ruleDict = []
                 for bssid in bssidList:
-                    if clientList == [] and postion.upper() != 'ANY':
+                    if clientList == [] and position.upper() != 'ANY':
                         ruleDict.append({
                             "state":state,
                             "bssid":bssid,
-                            "clients":[postion],
+                            "clients":[position],
                             "raw":ruleRaw
                             })
-                    elif clientList == [] and postion.upper() == 'ANY':
+                    elif clientList == [] and position.upper() == 'ANY':
                         ruleDict.append({
                             "state":state,
                             "bssid":bssid,
@@ -423,7 +423,7 @@ class ruleMatch:
                 #if this var doesn't get set it causes an error
             else:
                 message.printMessage([
-                    "\nInvaid bssid "+self.bssid+" not found in sniffed data",
+                    "\nInvalid bssid "+self.bssid+" not found in sniffed data",
                     "Rule number "+self.num,self.rule, 
                     "Moving to next rule\n"])
                 return
@@ -666,7 +666,7 @@ class packetGenerator:
                 "ipv6":'\x33\x33\x00\x00\x00\x16', #ipv6 broadcast
                 "stp":'\x01\x80\xc2\x00\x00\x00'   #Spanning Tree broadcast
                 } 
-                #note this also contains some multi cast addresses
+                #note this also contains some multicast addresses
         self.packetReason = [
                 '\x0a\x00', #Requested capability set is too broad 
                 '\x01\x00', #unspecified 
@@ -848,11 +848,11 @@ def lorconTX(pktNum=5,packet=None, channel=1 ,slept=0):
 
 def makeMagic(targets,slept = 0):
     """
-    function where the targes are looped though 
+    function where the targets are looped through
     and packets are sent to them
     """
     packetQue = []
-    packetCount = 1 #hard coded number of how many copys of each packet is sent
+    packetCount = 1 #hardcoded number of how many copys of each packet is sent
     for bssid in targets:
         for client in targets[bssid][1]:
             engine = packetGenerator(
@@ -879,7 +879,7 @@ def makeMagic(targets,slept = 0):
 
 def help():
     """
-    function for lemonwedge intigration
+    function for lemonwedge integration
     supports its show help call
     """
     print("<"+"~"*59+">\n")
@@ -1012,7 +1012,7 @@ if __name__ == "__main__":
                 "Interface %s does not exist" %(options.card)])
             sys.exit(-1)
         try:
-            #populate the oui lookup datatbases
+            #populate the oui lookup databases
             try:    
                 try:
                     ouiLookup = libOuiParse.macOUI_lookup("./support/oui.txt")
