@@ -9,7 +9,7 @@ key off the internal mac address of your router and
 some basic base 36 math. Sounds like a fine idea to me!
 """
 
-import optparse, sys
+import argparse, sys
 def createKey(essid,bssid):
 	actionOUI = ['0020E0', 
 		'000FB3', 
@@ -47,16 +47,16 @@ def banner():
 	print("#"*16)
 
 if __name__ == "__main__":
-	parser = optparse.OptionParser("usage: %prog options -m -e")
-	parser.add_option("-m", "--mac", dest="mac",nargs=1, help="Mac Address")
-	parser.add_option("-e", "--essid", dest="essid",nargs=1, help="essid")
+	parser = argparse.ArgumentParser(description="versuck-ng's purpose is to calculate the default WEP key for Verizon issued Actiontec wireless routers.")
+	parser.add_argument("-m", "--mac", dest="mac",nargs=1, help="Mac Address")
+	parser.add_argument("-e", "--essid", dest="essid",nargs=1, help="essid")
 
 	if len(sys.argv) <= 1:
 		banner()
 		parser.print_help()
 		sys.exit(0)
-	(options, args) = parser.parse_args()
-	data = createKey(options.essid,options.mac)
+	args = parser.parse_args()
+	data = createKey(args.essid[0],args.mac[0])
 	print("Key is most likely")
 	print(data["best"])
 	print("Key may also be one of these")
