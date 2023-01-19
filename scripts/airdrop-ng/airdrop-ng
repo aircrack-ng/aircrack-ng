@@ -8,7 +8,7 @@ Airdrop-ng A rule based wireless deauth tool
 a compoent of project lemonwedge
 Written by Thex1le and King_Tuna
 """
-import sys, optparse, re, time, random, os
+import sys, argparse, re, time, random, os
 import pdb
 #update the path with sub directories
 #lib for the libraries and support for the oui.txt file
@@ -940,22 +940,22 @@ if __name__ == "__main__":
     """
     usage()
     
-    parser = optparse.OptionParser("usage: %prog options [-i,-t,-r] -s -p -b -n")  #
-    parser.add_option("-i", "--interface",  dest="card",nargs=1, 
+    parser = argparse.ArgumentParser(description="airdrop-ng is a program used for targeted, rule-based deauthentication of users.")  #
+    parser.add_argument("-i", "--interface",  dest="card",nargs=1, 
                 help="Wireless card in monitor mode to inject from")
-    parser.add_option("-t", "--dump", dest="data", nargs=1 ,
+    parser.add_argument("-t", "--dump", dest="data", nargs=1 ,
                 help="Airodump txt file in CSV format NOT the pcap")
-    parser.add_option("-r", "--rule",dest="rule", nargs=1 ,help="Rule File for matched deauths")
-    parser.add_option("-s", "--sleep",dest="slept",default=0,nargs=1,type="int",help="Time to sleep between sending each packet")
-    parser.add_option("-b", "--debug",dest="debug",action="store_true",default=False,help="Turn on Rule Debugging")
-    parser.add_option("-l", "--logging",dest="log",action="store_true",default=False,help="Enable Logging to a file, if file path not provided airdrop will log to default location")
-    parser.add_option("-n", "--nap",dest="nap",default=0,nargs=1,help="Time to sleep between loops")
+    parser.add_argument("-r", "--rule",dest="rule", nargs=1 ,help="Rule File for matched deauths")
+    parser.add_argument("-s", "--sleep",dest="slept",default=0,nargs=1,type=int,help="Time to sleep between sending each packet")
+    parser.add_argument("-b", "--debug",dest="debug",action="store_true",default=False,help="Turn on Rule Debugging")
+    parser.add_argument("-l", "--logging",dest="log",nargs="?",action="store",default=False,const=True,help="Enable Logging to a file, if file path not provided airdrop will log to default location")
+    parser.add_argument("-n", "--nap",dest="nap",default=0,nargs=1,help="Time to sleep between loops")
 
     if len(sys.argv) <= 1: #check and show help if no arguments are provided at runtime
                 parser.print_help()
                 commandUsage()
                 sys.exit(0)
-    (options, args) = parser.parse_args()
+    args = parser.parse_args()
     #set the program loop value
     
     #************
@@ -970,10 +970,13 @@ if __name__ == "__main__":
     
     
     #start up printing
-    if args == []:
-        message = messages(options.log)
+    if args.log is True or args.log is False:
+        # if -l is supplied without a path --> args.log is True
+        # if -l is not supplied --> args.log is False
+        message = messages(args.log)
     else:
-        message = messages(options.log,args[0])
+        # if -l is supplied with a path --> args.log is the path
+        message = messages(True, args.log)
 
     
     TotalPacket = 0 #total packets tx'd
@@ -1001,15 +1004,15 @@ if __name__ == "__main__":
                 'Unable to find liborcon2.so in /usr/local/lib or /usr/lib , is lorcon2 installed?'])
                 sys.exit(-1)
             """
-            tx = PyLorcon2.Context(options.card)
+            tx = PyLorcon2.Context(args.card[0])
             tx.open_injmon()
         except PyLorcon2.Lorcon2Exception as e:
             message.printMessage(["\n",
-                e,"Interface %s does not exist" %(options.card)])
+                e,"Interface %s does not exist" %(args.card[0])])
             sys.exit(-1)
         except ValueError:
             message.printMessage(["\n",
-                "Interface %s does not exist" %(options.card)])
+                "Interface %s does not exist" %(args.card[0])])
             sys.exit(-1)
         try:
             #populate the oui lookup datatbases
@@ -1029,14 +1032,14 @@ if __name__ == "__main__":
             sys.exit(-1)
         
         #Start the main loop
-        napTime = float(options.nap)
-        Targeting = getTargets(options.rule,options.data,options.debug)
+        napTime = float(args.nap[0])
+        Targeting = getTargets(args.rule[0],args.data[0],args.debug)
         #set zero packet flag to false
         zp = False
         while True:
                 Targeting.run() 
                 if Targeting.targets != None:
-                    rtnPktCount = makeMagic(Targeting.targets,int(options.slept))
+                    rtnPktCount = makeMagic(Targeting.targets,int(args.slept[0]))
                     if rtnPktCount == 0:
                         message.printMessage("Zero Packets were to be sent, Napping for 5 sec to await changes in sniffed data\n")
                         zp = True
@@ -1051,5 +1054,5 @@ if __name__ == "__main__":
 
     except (KeyboardInterrupt, SystemExit):
         message.printMessage(["\nAirdrop-ng will now exit","Sent "+str(TotalPacket)+" Packets",
-            "\nExiting Program, Please take your card "+options.card+" out of monitor mode"])
+            "\nExiting Program, Please take your card "+args.card[0]+" out of monitor mode"])
         sys.exit(0)

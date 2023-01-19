@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # this script is a total hack it works and I'll clean it up later
-import sys,getopt, optparse, pdb, re
+import sys,getopt, argparse, pdb, re
 def raw_lines(file):
 	try:
 		raw_lines = open(file, "r")
@@ -72,13 +72,19 @@ if  __name__ == "__main__":
 		showBanner()
 		sys.exit(1)
 
-	parser = optparse.OptionParser("usage: %prog [options] arg1 arg2 arg3 .....")
-	parser.add_option("-o", "--output",  dest="output",nargs=1, help="output file to write to")
-	parser.add_option("-i", "--file", dest="filename", nargs=2 ,help="Input files to read data from requires at least two arguments")
+	parser = argparse.ArgumentParser(description="A support tool for airgraph-ng that allows you to join the airodump output files.")
+	parser.add_argument("-o", "--output",  dest="output",nargs=1, help="output file to write to")
+	parser.add_argument("-i", "--file", dest="filename", nargs="*" ,help="Input files to read data from requires at least two arguments")
 	
-	(options, args) = parser.parse_args()
-	filenames = options.filename
-	outfile = options.output
+	args = parser.parse_args()
+	# we need this manual check because argparse does not support requiring 2 or more nargs
+	# the closest we could do is nargs="+" which means 1 or more
+	if len(args.filename) < 2:
+		parser.print_usage()
+		print("airodump-join: error: argument -i/--file: expected at least two arguments")
+		sys.exit(1)
+	filenames = tuple(args.filename)
+	outfile = args.output[0]
 	if outfile == None:
 		print("You must provide a file name to write out to. IE... -o foo.csv\n")
 		showBanner()
@@ -87,8 +93,6 @@ if  __name__ == "__main__":
 		print("You must provide at least two file names to join. IE... -i foo1.csv foo2.csv\n")
 		showBanner()
 		sys.exit(1)
-	for file_name in args:
-		filenames += (file_name,)	
 	return_var = file_pool(filenames)
 	return_var = join_write(return_var,outfile)
 
