@@ -68,7 +68,10 @@
 
 #include <sys/wait.h>
 
-#ifdef HAVE_PCRE
+#ifdef HAVE_PCRE2
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
+#elif defined HAVE_PCRE
 #include <pcre.h>
 #endif
 
@@ -150,7 +153,10 @@ static struct local_options
 	unsigned char prev_bssid[6];
 	char ** f_essid;
 	int f_essid_count;
-#ifdef HAVE_PCRE
+#ifdef HAVE_PCRE2
+	pcre2_code * f_essid_regex;
+	pcre2_match_data * f_essid_match_data;
+#elif defined HAVE_PCRE
 	pcre * f_essid_regex;
 #endif
 	char * dump_prefix;
@@ -784,7 +790,7 @@ static const char usage[] =
 	"      --netmask <netmask>   : Filter APs by mask\n"
 	"      --bssid     <bssid>   : Filter APs by BSSID\n"
 	"      --essid     <essid>   : Filter APs by ESSID\n"
-#ifdef HAVE_PCRE
+#if defined HAVE_PCRE2 || defined HAVE_PCRE
 	"      --essid-regex <regex> : Filter APs by ESSID using a regular\n"
 	"                              expression\n"
 #endif
@@ -857,7 +863,22 @@ int is_filtered_essid(const uint8_t * essid)
 		ret = 1;
 	}
 
-#ifdef HAVE_PCRE
+#ifdef HAVE_PCRE2
+	if (lopt.f_essid_regex)
+	{
+		lopt.f_essid_match_data
+			= pcre2_match_data_create_from_pattern(lopt.f_essid_regex, NULL);
+
+		return pcre2_match(lopt.f_essid_regex,
+						   (PCRE2_SPTR) essid,
+						   (int) strnlen((char *) essid, ESSID_LENGTH),
+						   0,
+						   0,
+						   lopt.f_essid_match_data,
+						   0)
+			   < 0;
+	}
+#elif defined HAVE_PCRE
 	if (lopt.f_essid_regex)
 	{
 		return pcre_exec(lopt.f_essid_regex,
@@ -5824,7 +5845,10 @@ int main(int argc, char * argv[])
 	int wi_read_failed = 0;
 	int n = 0;
 	int output_format_first_time = 1;
-#ifdef HAVE_PCRE
+#ifdef HAVE_PCRE2
+	int pcreerror;
+	PCRE2_SIZE pcreerroffset;
+#elif defined HAVE_PCRE
 	const char * pcreerror;
 	int pcreerroffset;
 #endif
@@ -5980,7 +6004,9 @@ int main(int argc, char * argv[])
 #ifdef CONFIG_LIBNL
 	lopt.htval = CHANNEL_NO_HT;
 #endif
-#ifdef HAVE_PCRE
+#ifdef HAVE_PCRE2
+	lopt.f_essid_regex = NULL;
+#elif defined HAVE_PCRE
 	lopt.f_essid_regex = NULL;
 #endif
 
@@ -6401,7 +6427,34 @@ int main(int argc, char * argv[])
 
 			case 'R':
 
-#ifdef HAVE_PCRE
+#ifdef HAVE_PCRE2
+				if (lopt.f_essid_regex != NULL)
+				{
+					printf("Error: ESSID regular expression already given. "
+						   "Aborting\n");
+					exit(EXIT_FAILURE);
+				}
+
+				lopt.f_essid_regex = pcre2_compile((PCRE2_SPTR) optarg,
+												   PCRE2_ZERO_TERMINATED,
+												   0,
+												   &pcreerror,
+												   &pcreerroffset,
+												   NULL);
+
+				if (lopt.f_essid_regex == NULL)
+				{
+					PCRE2_UCHAR pcreerrbuffer[256];
+					pcre2_get_error_message(
+						pcreerror, pcreerrbuffer, sizeof(pcreerrbuffer));
+
+					printf("Error: regular expression compilation failed at "
+						   "offset %lu: %s; aborting\n",
+						   pcreerroffset,
+						   pcreerrbuffer);
+					exit(EXIT_FAILURE);
+				}
+#elif defined HAVE_PCRE
 				if (lopt.f_essid_regex != NULL)
 				{
 					printf("Error: ESSID regular expression already given. "
@@ -7339,7 +7392,13 @@ int main(int argc, char * argv[])
 
 	if (lopt.keyout) free(lopt.keyout);
 
-#ifdef HAVE_PCRE
+#ifdef HAVE_PCRE2
+	if (lopt.f_essid_regex)
+	{
+		pcre2_match_data_free(lopt.f_essid_match_data);
+		pcre2_code_free(lopt.f_essid_regex);
+	}
+#elif defined HAVE_PCRE
 	if (lopt.f_essid_regex) pcre_free(lopt.f_essid_regex);
 #endif
 
