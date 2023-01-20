@@ -1,5 +1,9 @@
 # Aircrack-ng
 
+## Badges
+
+### Buildbot
+
 [![Alpine Linux Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng-alpine.svg?left_text=Alpine%20Linux%20Build)](https://buildbot.aircrack-ng.org/)
 [![Kali Linux Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng-kali.svg?left_text=Kali%20Linux%20Build)](https://buildbot.aircrack-ng.org/)
 [![Armel Kali Linux Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng-armel.svg?left_text=Armel%20Kali%20Linux%20Build)](https://buildbot.aircrack-ng.org/)
@@ -10,8 +14,13 @@
 [![OpenBSD 6 Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng-obsd.svg?left_text=OpenBSD%20Build)](https://buildbot.aircrack-ng.org/)
 [![NetBSD 8.1 Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng-netbsd81.svg?left_text=NetBSD%20Build)](https://buildbot.aircrack-ng.org/)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/aircrack-ng/badge.svg)](https://scan.coverity.com/projects/aircrack-ng)
+
+### Packagecloud.io
+
 [![PackageCloud DEB](https://img.shields.io/badge/deb-packagecloud.io-844fec.svg)](https://packagecloud.io/aircrack-ng/git/install#bash-deb)
 [![PackageCloud RPM](https://img.shields.io/badge/rpm-packagecloud.io-844fec.svg)](https://packagecloud.io/aircrack-ng/git/install#bash-rpm)
+
+## Description
 
 Aircrack-ng is a complete suite of tools to assess WiFi network security.
 
