@@ -15,10 +15,23 @@
 [![NetBSD 8.1 Build Status](https://buildbot.aircrack-ng.org/badges/aircrack-ng-netbsd81.svg?left_text=NetBSD%20Build)](https://buildbot.aircrack-ng.org/)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/aircrack-ng/badge.svg)](https://scan.coverity.com/projects/aircrack-ng)
 
+### GitHub CI
+
+[![Linux CI](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/linux.yml/badge.svg?event=push)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/linux.yml)
+[![macOS CI](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/macos.yml/badge.svg?event=push)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/macos.yml)
+[![Windows CI](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/windows.yml/badge.svg?event=push)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/windows.yml)
+
 ### Packagecloud.io
 
 [![PackageCloud DEB](https://img.shields.io/badge/deb-packagecloud.io-844fec.svg)](https://packagecloud.io/aircrack-ng/git/install#bash-deb)
 [![PackageCloud RPM](https://img.shields.io/badge/rpm-packagecloud.io-844fec.svg)](https://packagecloud.io/aircrack-ng/git/install#bash-rpm)
+
+### Others
+
+[![Coverity Scan](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/coverity.yml/badge.svg?event=push)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/coverity.yml)
+[![Docker (git) push to DockerHub](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/docker.yml/badge.svg?event=push)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/docker.yml)
+[![PVS-Studio Analysis](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/pvs-studio.yml/badge.svg?event=push)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/pvs-studio.yml)
+[![Style & Consistency](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/style.yml/badge.svg?event=push)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/style.yml)
 
 ## Description
 
