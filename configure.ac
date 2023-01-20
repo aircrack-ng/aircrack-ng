@@ -143,6 +143,7 @@ AIRCRACK_NG_EXT_SCRIPTS
 AIRCRACK_NG_HWLOC
 AIRCRACK_NG_PCAP
 AIRCRACK_NG_PCRE
+AIRCRACK_NG_PCRE2
 AIRCRACK_NG_RFKILL
 AIRCRACK_NG_SQLITE
 AIRCRACK_NG_ZLIB
@@ -319,6 +320,7 @@ ${PACKAGE} ${VERSION}
     Jemalloc:                    ${JEMALLOC}
     Pcap:                        ${PCAP_FOUND}
     Pcre:                        ${HAVE_PCRE}
+    Pcre2:                       ${HAVE_PCRE2}
     Sqlite:                      ${HAVE_SQLITE3}
     Tcmalloc:                    ${TCMALLOC}
     Zlib:                        ${HAVE_ZLIB}
