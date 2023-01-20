@@ -57,7 +57,10 @@
 #include <unistd.h>
 #include <limits.h>
 
-#ifdef HAVE_PCRE
+#ifdef HAVE_PCRE2
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
+#elif defined HAVE_PCRE
 #include <pcre.h>
 #endif
 
@@ -155,7 +158,10 @@ static struct conf
 	int cf_do_wep;
 	int cf_do_wpa;
 	char * cf_wpa_server;
-#ifdef HAVE_PCRE
+#ifdef HAVE_PCRE2
+	pcre2_code * cf_essid_regex;
+	pcre2_match_data * cf_essid_match_data;
+#elif defined HAVE_PCRE
 	pcre * cf_essid_regex;
 #endif
 } _conf;
@@ -1116,7 +1122,31 @@ static void attack_ping(void * a)
 	timer_in(100 * 1000, attack_ping, n);
 }
 
-#ifdef HAVE_PCRE
+#ifdef HAVE_PCRE2
+static int is_filtered_essid(char * essid)
+{
+	REQUIRE(essid != NULL);
+
+	int ret = 0;
+
+	if (_conf.cf_essid_regex)
+	{
+		_conf.cf_essid_match_data
+			= pcre2_match_data_create_from_pattern(_conf.cf_essid_regex, NULL);
+
+		return pcre2_match(_conf.cf_essid_regex,
+						   (PCRE2_SPTR) essid,
+						   (int) strnlen((char *) essid, MAX_IE_ELEMENT_SIZE),
+						   0,
+						   0,
+						   _conf.cf_essid_match_data,
+						   0)
+			   < 0;
+	}
+
+	return (ret);
+}
+#elif defined HAVE_PCRE
 static int is_filtered_essid(char * essid)
 {
 	REQUIRE(essid != NULL);
@@ -1148,7 +1178,12 @@ static int should_attack(struct network * n)
 	if (_conf.cf_bssid && memcmp(_conf.cf_bssid, n->n_bssid, 6) != 0)
 		return (0);
 
-#ifdef HAVE_PCRE
+#ifdef HAVE_PCRE2
+	if (is_filtered_essid(n->n_ssid))
+	{
+		return (0);
+	}
+#elif defined HAVE_PCRE
 	if (is_filtered_essid(n->n_ssid))
 	{
 		return (0);
@@ -3007,7 +3042,13 @@ static void cleanup(int UNUSED(x))
 
 	print_work();
 
-#ifdef HAVE_PCRE
+#ifdef HAVE_PCRE2
+	if (_conf.cf_essid_regex)
+	{
+		pcre2_match_data_free(_conf.cf_essid_match_data);
+		pcre2_code_free(_conf.cf_essid_regex);
+	}
+#elif defined HAVE_PCRE
 	if (_conf.cf_essid_regex) pcre_free(_conf.cf_essid_regex);
 #endif
 
@@ -3295,7 +3336,10 @@ static void usage(char * prog)
 int main(int argc, char * argv[])
 {
 	int ch, temp;
-#ifdef HAVE_PCRE
+#ifdef HAVE_PCRE2
+	int pcreerror;
+	PCRE2_SIZE pcreerroffset;
+#elif defined HAVE_PCRE
 	const char * pcreerror;
 	int pcreerroffset;
 #endif
@@ -3349,7 +3393,35 @@ int main(int argc, char * argv[])
 				break;
 
 			case 'R':
-#ifdef HAVE_PCRE
+#ifdef HAVE_PCRE2
+				if (_conf.cf_essid_regex != NULL)
+				{
+					printf("Error: ESSID regular expression already given. "
+						   "Aborting\n");
+					exit(EXIT_FAILURE);
+				}
+
+				_conf.cf_essid_regex = pcre2_compile((PCRE2_SPTR) optarg,
+													 PCRE2_ZERO_TERMINATED,
+													 0,
+													 &pcreerror,
+													 &pcreerroffset,
+													 NULL);
+
+				if (_conf.cf_essid_regex == NULL)
+				{
+					PCRE2_UCHAR pcreerrbuffer[256];
+					pcre2_get_error_message(
+						pcreerror, pcreerrbuffer, sizeof(pcreerrbuffer));
+
+					printf("Error: regular expression compilation failed at "
+						   "offset %lu: %s; aborting\n",
+						   pcreerroffset,
+						   pcreerrbuffer);
+					exit(EXIT_FAILURE);
+				}
+				break;
+#elif defined HAVE_PCRE
 				if (_conf.cf_essid_regex != NULL)
 				{
 					printf("Error: ESSID regular expression already given. "
