@@ -28,7 +28,7 @@
 
 ### Others
 
-[![Coverity Scan](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/coverity.yml/badge.svg?event=push)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/coverity.yml)
+[![Coverity Scan](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/coverity.yml/badge.svg)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/coverity.yml)
 [![Docker (git) push to DockerHub](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/docker.yml/badge.svg?event=push)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/docker.yml)
 [![PVS-Studio Analysis](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/pvs-studio.yml/badge.svg?event=push)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/pvs-studio.yml)
 [![Style & Consistency](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/style.yml/badge.svg?event=push)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/style.yml)
