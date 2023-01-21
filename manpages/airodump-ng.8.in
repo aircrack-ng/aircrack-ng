@@ -4,7 +4,7 @@
 airodump-ng - a wireless packet capture tool for aircrack-ng
 .SH SYNOPSIS
 .B airodump-ng
-[options] <interface name>
+[options] <interface name>[,<interface name>,...]
 .SH DESCRIPTION
 .BI airodump-ng
 is used for packet capturing of raw 802.11 frames for the intent of using them with aircrack-ng. If you have a GPS receiver connected to the computer, airodump-ng is capable of logging the coordinates of the found access points. Additionally, airodump-ng writes out a text file containing the details of all access points and clients seen.
