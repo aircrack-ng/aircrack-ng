@@ -30,7 +30,7 @@ Essid of the network (not yet implemented) to filter.
 BSSID of the network to filter.
 .TP
 .I --null-packets
-Assume that null packets can be cloaked.
+Assume that null packets can be cloaked (not yet implemented).
 .TP
 .I --disable-base-filter
 Do not apply base filter.
