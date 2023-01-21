@@ -75,6 +75,7 @@ nobase_aircrack_HEADERS = 	%D%/aircrack-ng/adt/avl_tree.h \
                             %D%/aircrack-ng/osdep/network.h \
                             %D%/aircrack-ng/osdep/osdep.h \
                             %D%/aircrack-ng/osdep/packed.h \
+                            %D%/aircrack-ng/pcre/compat-pcre.h \
                             %D%/aircrack-ng/ptw/aircrack-ptw-lib.h \
                             %D%/aircrack-ng/support/common.h \
                             %D%/aircrack-ng/support/communications.h \
