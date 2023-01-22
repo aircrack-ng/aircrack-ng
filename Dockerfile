@@ -1,5 +1,4 @@
-# hadolint ignore=DL3007
-FROM kalilinux/kali-rolling:latest AS builder
+FROM ubuntu:22.04 AS builder
 
 # Install dependencies for building
 # hadolint ignore=DL3008
@@ -36,8 +35,7 @@ RUN set -x \
 			make install DESTDIR=/output
 
 # Stage 2
-# hadolint ignore=DL3007
-FROM kalilinux/kali-rolling:latest
+FROM ubuntu:22.04
 
 COPY --from=builder /output/usr /usr
 
