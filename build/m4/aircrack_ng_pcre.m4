@@ -55,7 +55,29 @@ else
 	PKG_CHECK_MODULES(PCRE, libpcre, HAVE_PCRE=yes, HAVE_PCRE=no)
 fi
 
-AS_IF([test "x$HAVE_PCRE" = "xyes"], [
+AC_ARG_ENABLE(static-pcre2,
+    AS_HELP_STRING([--enable-static-pcre2],
+		[Enable statically linked PCRE2 libpcre2-8.]),
+    [static_pcre2=$enableval], [static_pcre2=no])
+
+if test "x$static_pcre2" != "xno"; then
+	AC_REQUIRE([AX_EXT_HAVE_STATIC_LIB_DETECT])
+	AX_EXT_HAVE_STATIC_LIB(PCRE2, ${DEFAULT_STATIC_LIB_SEARCH_PATHS}, pcre2 libpcre2-8, pcre2_version)
+	if test "x$PCRE2_FOUND" = xyes; then
+		HAVE_PCRE2=yes
+	else
+		HAVE_PCRE2=no
+	fi
+else
+	PKG_CHECK_MODULES(PCRE2, libpcre2-8, HAVE_PCRE2=yes, HAVE_PCRE2=no)
+fi
+
+if test "x$HAVE_PCRE" = "xyes" && test "x$HAVE_PCRE2" = "xyes"; then
+    AC_DEFINE([HAVE_PCRE2], [1], [Define this if you have libpcre2-8 on your system])
+    PCRE2_NOTE="(Pcre and Pcre2 found, using Pcre2)"
+elif test "x$HAVE_PCRE" = "xyes"; then
     AC_DEFINE([HAVE_PCRE], [1], [Define this if you have libpcre on your system])
-])
+elif test "x$HAVE_PCRE2" = "xyes"; then
+    AC_DEFINE([HAVE_PCRE2], [1], [Define this if you have libpcre2-8 on your system])
+fi
 ])
