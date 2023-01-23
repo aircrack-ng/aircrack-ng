@@ -27,7 +27,7 @@ RUN if [ "${NEW_VERSION}" = "${OLD_VERSION}" ]; then \
 
 RUN apt update && apt dist-upgrade -y && \
 	apt install -y wget patch make gcc \
-		libssl-dev build-essential libtalloc-dev libpcre3-dev libsqlite3-dev \
+		libssl-dev build-essential libtalloc-dev libpcre2-dev libsqlite3-dev \
 		libhiredis-dev libykclient-dev libyubikey-dev default-libmysqlclient-dev \
 		libcurl4-openssl-dev libperl-dev libpam0g-dev libcap-dev libmemcached-dev \
 		libgdbm-dev unixodbc-dev libpq-dev libwbclient-dev libkrb5-dev libjson-c-dev \
