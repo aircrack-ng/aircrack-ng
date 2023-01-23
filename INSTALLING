@@ -412,6 +412,7 @@ We provide up to date versions via PackageCloud for a number of distributions:
 == Continuous integration ==
 
 - Linux CI (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/linux.yml
+- Linux PCRE CI (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/linux-pcre.yml
 - Windows CI (Github actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/windows.yml
 - macOS CI (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/macos.yml
 - Code style and consistency (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/style.yml
