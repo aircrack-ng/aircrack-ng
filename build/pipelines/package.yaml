@@ -145,7 +145,7 @@
                       --enable-static-crypto
                       --enable-static-hwloc
                       --enable-static-sqlite3
-                      --enable-static-pcre
+                      --enable-static-pcre2
                       --enable-static-pcap
 
       - name: Make clean
