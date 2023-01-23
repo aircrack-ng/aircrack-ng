@@ -7,16 +7,72 @@ on:
   push:
     branches: [ master ]
     paths-ignore:
+      - apparmor/**
       - contrib/**
       - manpages/**
       - patches/**
+      - test/**
+      - '.devcontainer/**'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/workflows/coverity.yml'
+      - '.github/workflows/docker-release.yml'
+      - '.github/workflows/linux.yml'
+      - '.github/workflows/macos.yml'
+      - '.github/workflows/pvs-studio.yml'
+      - '.github/workflows/docker.yml'
+      - '.github/workflows/windows.yml'
+      - '.vscode/**'
+      - '.clang-format'
+      - '.editorconfig'
+      - '.gitignore'
+      - '.pre-commit-config.yaml'
+      - 'AC_VERSION.in'
+      - 'AUTHORS'
+      - 'centos_autotools.sh'
+      - 'ChangeLog'
+      - 'Dockerfile'
+      - 'Dockerfile.release'
+      - 'INSTALLING'
+      - 'LICENSE'
+      - 'LICENSE.OpenSSL'
+      - 'README'
+      - 'README.md'
+      - 'SECURITY.md'
 
   pull_request:
     branches: [ master ]
     paths-ignore:
+      - apparmor/**
       - contrib/**
       - manpages/**
       - patches/**
+      - test/**
+      - '.devcontainer/**'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/workflows/coverity.yml'
+      - '.github/workflows/docker-release.yml'
+      - '.github/workflows/linux.yml'
+      - '.github/workflows/macos.yml'
+      - '.github/workflows/pvs-studio.yml'
+      - '.github/workflows/docker.yml'
+      - '.github/workflows/windows.yml'
+      - '.vscode/**'
+      - '.clang-format'
+      - '.editorconfig'
+      - '.gitignore'
+      - '.pre-commit-config.yaml'
+      - 'AC_VERSION.in'
+      - 'AUTHORS'
+      - 'centos_autotools.sh'
+      - 'ChangeLog'
+      - 'Dockerfile'
+      - 'Dockerfile.release'
+      - 'INSTALLING'
+      - 'LICENSE'
+      - 'LICENSE.OpenSSL'
+      - 'README'
+      - 'README.md'
+      - 'SECURITY.md'
 
 env:
   LANG: en_US.UTF-8
@@ -30,15 +86,11 @@ jobs:
       fail-fast: false
       matrix:
         compiler:
-          - cc:  gcc-10
-            cxx: g++-10
-          - cc:  gcc-9
-            cxx: g++-9
-          - cc:  clang-11
-            cxx: clang++-11
+          - cc:  gcc
+            cxx: g++
+          - cc:  clang
+            cxx: clang++
         flags:
-          - name: Gcrypt
-            flags: "--with-gcrypt"
           - name: OpenSSL
             flags: ""
 
@@ -63,7 +115,7 @@ jobs:
         run: |
           SUDO="$([ "$ACT" = "true" ] || echo sudo)"
           $SUDO apt update -q
-          $SUDO apt-get install -y git ${{ matrix.compiler.cc }} ${{ matrix.compiler.cxx }} autoconf automake build-essential ccache ethtool expect hostapd iw lcov libcmocka-dev libgcrypt20-dev libhwloc-dev libnl-3-dev libnl-genl-3-dev libpcap-dev libpcre3-dev libsqlite3-dev libssl-dev libtool pkg-config rfkill screen shtool tcpdump usbutils wpasupplicant zlib1g-dev
+          $SUDO apt-get install -y git ${{ matrix.compiler.cc }} ${{ matrix.compiler.cxx }} autoconf automake build-essential ccache ethtool expect hostapd iw lcov libcmocka-dev libhwloc-dev libnl-3-dev libnl-genl-3-dev libpcap-dev libpcre3-dev libsqlite3-dev libssl-dev libtool pkg-config rfkill screen shtool tcpdump usbutils wpasupplicant zlib1g-dev
 
       - name: Ccache stats before builds
         run: |
@@ -139,22 +191,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # gcc: 9.3.0, 10.2.0
-        # clang: 10.0.0, 11.0.0, 12.0.1
         compiler:
-          - cc:  gcc-10
-            cxx: g++-10
-          - cc:  gcc-9
-            cxx: g++-9
-          - cc:  clang-12
-            cxx: clang++-12
-          - cc:  clang-11
-            cxx: clang++-11
-          - cc:  clang-10
-            cxx: clang++-10
+          - cc:  gcc
+            cxx: g++
+          - cc:  clang
+            cxx: clang++
         flags:
-          - name: Gcrypt
-            flags: "--with-gcrypt"
           - name: OpenSSL
             flags: ""
 
@@ -178,7 +220,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update -q
-          sudo apt-get install -y autoconf automake build-essential ccache ethtool expect hostapd iw lcov libcmocka-dev libgcrypt20-dev libhwloc-dev libnl-3-dev libnl-genl-3-dev libpcap-dev libpcre3-dev libsqlite3-dev libssl-dev libtool pkg-config rfkill screen shtool tcpdump usbutils wpasupplicant zlib1g-dev
+          sudo apt-get install -y autoconf automake build-essential ccache ethtool expect hostapd iw lcov libcmocka-dev libhwloc-dev libnl-3-dev libnl-genl-3-dev libpcap-dev libpcre3-dev libsqlite3-dev libssl-dev libtool pkg-config rfkill screen shtool tcpdump usbutils wpasupplicant zlib1g-dev
 
       - name: Ccache stats before builds
         run: |
