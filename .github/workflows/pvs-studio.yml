@@ -74,7 +74,7 @@ jobs:
           sudo apt-get -y --no-install-recommends install autoconf automake \
             build-essential ccache ethtool expect hostapd iw lcov           \
             libcmocka-dev libgcrypt20-dev libhwloc-dev libnl-3-dev          \
-            libnl-genl-3-dev libpcap-dev libpcre3-dev libsqlite3-dev        \
+            libnl-genl-3-dev libpcap-dev libpcre2-dev libsqlite3-dev        \
             libssl-dev libtool pkg-config rfkill screen shtool strace       \
             tcpdump usbutils wpasupplicant zlib1g-dev
           sudo dpkg -i "pvs-package/pvs.deb"

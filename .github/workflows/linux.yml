@@ -63,7 +63,7 @@ jobs:
         run: |
           SUDO="$([ "$ACT" = "true" ] || echo sudo)"
           $SUDO apt update -q
-          $SUDO apt-get install -y git ${{ matrix.compiler.cc }} ${{ matrix.compiler.cxx }} autoconf automake build-essential ccache ethtool expect hostapd iw lcov libcmocka-dev libgcrypt20-dev libhwloc-dev libnl-3-dev libnl-genl-3-dev libpcap-dev libpcre3-dev libsqlite3-dev libssl-dev libtool pkg-config rfkill screen shtool tcpdump usbutils wpasupplicant zlib1g-dev
+          $SUDO apt-get install -y git ${{ matrix.compiler.cc }} ${{ matrix.compiler.cxx }} autoconf automake build-essential ccache ethtool expect hostapd iw lcov libcmocka-dev libgcrypt20-dev libhwloc-dev libnl-3-dev libnl-genl-3-dev libpcap-dev libpcre2-dev libsqlite3-dev libssl-dev libtool pkg-config rfkill screen shtool tcpdump usbutils wpasupplicant zlib1g-dev
 
       - name: Ccache stats before builds
         run: |
@@ -181,7 +181,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update -q
-          sudo apt-get install -y autoconf automake build-essential ccache ethtool expect hostapd iw lcov libcmocka-dev libgcrypt20-dev libhwloc-dev libnl-3-dev libnl-genl-3-dev libpcap-dev libpcre3-dev libsqlite3-dev libssl-dev libtool pkg-config rfkill screen shtool tcpdump usbutils wpasupplicant zlib1g-dev
+          sudo apt-get install -y autoconf automake build-essential ccache ethtool expect hostapd iw lcov libcmocka-dev libgcrypt20-dev libhwloc-dev libnl-3-dev libnl-genl-3-dev libpcap-dev libpcre2-dev libsqlite3-dev libssl-dev libtool pkg-config rfkill screen shtool tcpdump usbutils wpasupplicant zlib1g-dev
 
       - name: Ccache stats before builds
         run: |
