@@ -150,8 +150,8 @@ endif
 endif
 
 libaccrypto_la_SOURCES	= $(SRC_CRYPTO)
-libaccrypto_la_CFLAGS		= $(COMMON_CFLAGS) $(PCRE_CFLAGS)
-libaccrypto_la_LIBADD		= $(PCRE_LIBS) $(LIBAIRCRACK_OSDEP_LIBS) $(CRYPTO_LDFLAGS) $(CRYPTO_LIBS)
+libaccrypto_la_CFLAGS		= $(COMMON_CFLAGS) $(PCRE_CFLAGS) $(PCRE2_CFLAGS)
+libaccrypto_la_LIBADD		= $(PCRE_LIBS) $(PCRE2_LIBS) $(LIBAIRCRACK_OSDEP_LIBS) $(CRYPTO_LDFLAGS) $(CRYPTO_LIBS)
 
 libcowpatty_la_SOURCES = $(SRC_COW)
 libcowpatty_la_CFLAGS = $(COMMON_CFLAGS) $(LIBCOW_CFLAGS)
@@ -206,12 +206,12 @@ SRC_LIBAC += %D%/libac/support/strlcpy.c
 endif
 
 libaircrack_la_SOURCES	= $(SRC_LIBAC) $(TRAMPOLINE) $(CPUSET)
-libaircrack_la_CFLAGS		= $(COMMON_CFLAGS) $(PCRE_CFLAGS) \
+libaircrack_la_CFLAGS		= $(COMMON_CFLAGS) $(PCRE_CFLAGS) $(PCRE2_CFLAGS) \
 													"-DLIBAIRCRACK_CE_WPA_PATH=\"$(LIBAIRCRACK_CE_WPA_PATH)\"" \
 													"-DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"" \
 													"-DABS_TOP_BUILDDIR=\"$(abs_top_builddir)\"" \
 													"-DLIBDIR=\"$(libdir)\""
-libaircrack_la_LIBADD		= $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(PCRE_LIBS) $(CRYPTO_LDFLAGS) $(CRYPTO_LIBS)
+libaircrack_la_LIBADD		= $(COMMON_LDADD) $(LIBAIRCRACK_OSDEP_LIBS) $(PCRE_LIBS) $(PCRE2_LIBS) $(CRYPTO_LDFLAGS) $(CRYPTO_LIBS)
 
 if CYGWIN
 libaircrack_la_LIBADD += -lshlwapi
