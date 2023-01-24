@@ -1,4 +1,4 @@
-FROM ubuntu:22.04 AS builder
+FROM debian:unstable-slim AS builder
 
 # https://docs.github.com/en/actions/learn-github-actions/environment-variables#default-environment-variables
 # Tag name
@@ -36,7 +36,7 @@ RUN set -x \
 		make install DESTDIR=/output
 
 # Stage 2
-FROM ubuntu:22.04
+FROM debian:unstable-slim
 
 COPY --from=builder /output/usr /usr
 

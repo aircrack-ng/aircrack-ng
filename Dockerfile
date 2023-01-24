@@ -1,4 +1,4 @@
-FROM ubuntu:22.04 AS builder
+FROM debian:unstable-slim AS builder
 
 # Install dependencies for building
 # hadolint ignore=DL3008
@@ -35,7 +35,7 @@ RUN set -x \
 			make install DESTDIR=/output
 
 # Stage 2
-FROM ubuntu:22.04
+FROM debian:unstable-slim
 
 COPY --from=builder /output/usr /usr
 
