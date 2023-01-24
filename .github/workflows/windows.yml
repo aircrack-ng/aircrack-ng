@@ -50,7 +50,7 @@ jobs:
           packages: >-
             autoconf automake bison gcc-core gcc-g++ mingw-runtime mingw-binutils mingw-gcc-core
             mingw-gcc-g++ mingw-pthreads mingw-w32api libtool make python gettext-devel gettext
-            intltool libiconv pkg-config git wget curl libpcre-devel libssl-devel libsqlite3-devel
+            intltool libiconv pkg-config git wget curl libpcre2-devel libssl-devel libsqlite3-devel
             zlib-devel unzip zip rsync expect libhwloc-devel ccache cmocka
 
       - name: Create home dir
@@ -168,7 +168,7 @@ jobs:
             # Cygwin License
             cp -vfp /usr/share/doc/Cygwin/CYGWIN_LICENSE "dist/LICENSE.Cygwin"
             # gather dependencies of Cygwin
-            FILES="cygcrypto-1.1.dll cyghwloc-15.dll cyggcc_s-1.dll cyggcc_s-seh-1.dll cygpcre-1.dll cygsqlite3-0.dll cygstdc++-6.dll cygwin1.dll cygz.dll cygxml2-2.dll cyglzma-5.dll cygiconv-2.dll"
+            FILES="cygcrypto-1.1.dll cyghwloc-15.dll cyggcc_s-1.dll cyggcc_s-seh-1.dll cygpcre2-8-0.dll cygsqlite3-0.dll cygstdc++-6.dll cygwin1.dll cygz.dll cygxml2-2.dll cyglzma-5.dll cygiconv-2.dll"
             for FILE in `$FILES; do
               cp -vfp "/cygdrive/c/tools/cygwin/bin/`$FILE" "dist/bin/64bit" || :
             done

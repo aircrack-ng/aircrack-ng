@@ -1,4 +1,4 @@
-name: Linux CI
+name: Linux PCRE CI
 
 on:
   # Allows you to run this workflow manually from the Actions tab
@@ -7,16 +7,72 @@ on:
   push:
     branches: [ master ]
     paths-ignore:
+      - apparmor/**
       - contrib/**
       - manpages/**
       - patches/**
+      - test/**
+      - '.devcontainer/**'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/workflows/coverity.yml'
+      - '.github/workflows/docker-release.yml'
+      - '.github/workflows/linux.yml'
+      - '.github/workflows/macos.yml'
+      - '.github/workflows/pvs-studio.yml'
+      - '.github/workflows/docker.yml'
+      - '.github/workflows/windows.yml'
+      - '.vscode/**'
+      - '.clang-format'
+      - '.editorconfig'
+      - '.gitignore'
+      - '.pre-commit-config.yaml'
+      - 'AC_VERSION.in'
+      - 'AUTHORS'
+      - 'centos_autotools.sh'
+      - 'ChangeLog'
+      - 'Dockerfile'
+      - 'Dockerfile.release'
+      - 'INSTALLING'
+      - 'LICENSE'
+      - 'LICENSE.OpenSSL'
+      - 'README'
+      - 'README.md'
+      - 'SECURITY.md'
 
   pull_request:
     branches: [ master ]
     paths-ignore:
+      - apparmor/**
       - contrib/**
       - manpages/**
       - patches/**
+      - test/**
+      - '.devcontainer/**'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/workflows/coverity.yml'
+      - '.github/workflows/docker-release.yml'
+      - '.github/workflows/linux.yml'
+      - '.github/workflows/macos.yml'
+      - '.github/workflows/pvs-studio.yml'
+      - '.github/workflows/docker.yml'
+      - '.github/workflows/windows.yml'
+      - '.vscode/**'
+      - '.clang-format'
+      - '.editorconfig'
+      - '.gitignore'
+      - '.pre-commit-config.yaml'
+      - 'AC_VERSION.in'
+      - 'AUTHORS'
+      - 'centos_autotools.sh'
+      - 'ChangeLog'
+      - 'Dockerfile'
+      - 'Dockerfile.release'
+      - 'INSTALLING'
+      - 'LICENSE'
+      - 'LICENSE.OpenSSL'
+      - 'README'
+      - 'README.md'
+      - 'SECURITY.md'
 
 env:
   LANG: en_US.UTF-8
@@ -30,15 +86,11 @@ jobs:
       fail-fast: false
       matrix:
         compiler:
-          - cc:  gcc-10
-            cxx: g++-10
-          - cc:  gcc-9
-            cxx: g++-9
-          - cc:  clang-11
-            cxx: clang++-11
+          - cc:  gcc
+            cxx: g++
+          - cc:  clang
+            cxx: clang++
         flags:
-          - name: Gcrypt
-            flags: "--with-gcrypt"
           - name: OpenSSL
             flags: ""
 
@@ -56,14 +108,14 @@ jobs:
         with:
           path: |
             /home/runner/.ccache
-          key: ${{ runner.os }}-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}-${{ hashFiles('.github/workflows/linux.yml') }}
+          key: ${{ runner.os }}-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}-${{ hashFiles('.github/workflows/linux-pcre.yml') }}
           restore-keys: ${{ runner.os }}-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}
 
       - name: Install dependencies
         run: |
           SUDO="$([ "$ACT" = "true" ] || echo sudo)"
           $SUDO apt update -q
-          $SUDO apt-get install -y git ${{ matrix.compiler.cc }} ${{ matrix.compiler.cxx }} autoconf automake build-essential ccache ethtool expect hostapd iw lcov libcmocka-dev libgcrypt20-dev libhwloc-dev libnl-3-dev libnl-genl-3-dev libpcap-dev libpcre2-dev libsqlite3-dev libssl-dev libtool pkg-config rfkill screen shtool tcpdump usbutils wpasupplicant zlib1g-dev
+          $SUDO apt-get install -y git autoconf automake build-essential ccache ethtool expect hostapd iw lcov libcmocka-dev libhwloc-dev libnl-3-dev libnl-genl-3-dev libpcap-dev libpcre3-dev libsqlite3-dev libssl-dev libtool pkg-config rfkill screen shtool tcpdump usbutils wpasupplicant zlib1g-dev
 
       - name: Ccache stats before builds
         run: |
@@ -112,29 +164,11 @@ jobs:
           echo ">> Build using ${CPUS} jobs"
           make -j ${CPUS}
           echo "::endgroup::"
-          echo "::group::run tests"
-          make -j ${CPUS} check || { find . -name 'test-suite.log' -exec cat {} ';' && exit 1; }
-          echo "::endgroup::"
           cd ..
 
       - name: Ccache stats after builds
         run: |
           ccache -s
-
-      - name: Archive artifacts
-        if: ${{ env.ACT != 'true' }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}
-          path: |
-            linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/.deps
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/.dirstamp
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.a
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.la
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.lai
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.o
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.lo
 
   ubuntu_20_04:
     runs-on: ubuntu-20.04
@@ -142,22 +176,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # gcc: 9.3.0, 10.2.0
-        # clang: 10.0.0, 11.0.0, 12.0.1
         compiler:
-          - cc:  gcc-10
-            cxx: g++-10
-          - cc:  gcc-9
-            cxx: g++-9
-          - cc:  clang-12
-            cxx: clang++-12
-          - cc:  clang-11
-            cxx: clang++-11
-          - cc:  clang-10
-            cxx: clang++-10
+          - cc:  gcc
+            cxx: g++
+          - cc:  clang
+            cxx: clang++
         flags:
-          - name: Gcrypt
-            flags: "--with-gcrypt"
           - name: OpenSSL
             flags: ""
 
@@ -175,13 +199,13 @@ jobs:
         with:
           path: |
             /home/runner/.ccache
-          key: ${{ runner.os }}-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}-${{ hashFiles('.github/workflows/linux.yml') }}
+          key: ${{ runner.os }}-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}-${{ hashFiles('.github/workflows/linux-pcre.yml') }}
           restore-keys: ${{ runner.os }}-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}
 
       - name: Install dependencies
         run: |
           sudo apt update -q
-          sudo apt-get install -y autoconf automake build-essential ccache ethtool expect hostapd iw lcov libcmocka-dev libgcrypt20-dev libhwloc-dev libnl-3-dev libnl-genl-3-dev libpcap-dev libpcre2-dev libsqlite3-dev libssl-dev libtool pkg-config rfkill screen shtool tcpdump usbutils wpasupplicant zlib1g-dev
+          sudo apt-get install -y autoconf automake build-essential ccache ethtool expect hostapd iw lcov libcmocka-dev libhwloc-dev libnl-3-dev libnl-genl-3-dev libpcap-dev libpcre3-dev libsqlite3-dev libssl-dev libtool pkg-config rfkill screen shtool tcpdump usbutils wpasupplicant zlib1g-dev
 
       - name: Ccache stats before builds
         run: |
@@ -210,26 +234,8 @@ jobs:
           echo ">> Build using ${CPUS} jobs"
           make -j ${CPUS}
           echo "::endgroup::"
-          echo "::group::run tests"
-          make -j ${CPUS} check || { find . -name 'test-suite.log' -exec cat {} ';' && exit 1; }
-          echo "::endgroup::"
           cd ..
 
       - name: Ccache stats after builds
         run: |
           ccache -s
-
-      - name: Archive artifacts
-        uses: actions/upload-artifact@v2
-        if: ${{ env.ACT != 'true' }}
-        with:
-          name: linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}
-          path: |
-            linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/.deps
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/.dirstamp
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.a
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.la
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.lai
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.o
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.lo
