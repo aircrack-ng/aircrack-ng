@@ -170,21 +170,6 @@ jobs:
         run: |
           ccache -s
 
-      - name: Archive artifacts
-        if: ${{ env.ACT != 'true' }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}
-          path: |
-            linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/.deps
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/.dirstamp
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.a
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.la
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.lai
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.o
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.lo
-
   ubuntu_20_04:
     runs-on: ubuntu-20.04
 
@@ -254,18 +239,3 @@ jobs:
       - name: Ccache stats after builds
         run: |
           ccache -s
-
-      - name: Archive artifacts
-        uses: actions/upload-artifact@v2
-        if: ${{ env.ACT != 'true' }}
-        with:
-          name: linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}
-          path: |
-            linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/.deps
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/.dirstamp
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.a
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.la
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.lai
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.o
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.lo
