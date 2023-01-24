@@ -106,5 +106,5 @@ Last, but not least, if you aren't familiar with bug reporting, [this](https://w
 ## Related issues
 
 <!--
-Link to any related issue from within the project or outside. Such as GitHub, other bug trackers, relevant forum post, relevant documentation.
+Link to any related issue from within the project or outside. Such as GitHub, other bug trackers, relevant GitHub Discussion post, relevant documentation.
 -->

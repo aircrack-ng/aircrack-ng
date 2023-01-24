@@ -49,7 +49,7 @@ m4_define([version_triplet],version_major.version_minor.version_micro)
 m4_append([version_triplet],version_scm)
 
 AC_PREREQ([2.59])
-AC_INIT([aircrack-ng],[version_triplet],[https://forum.aircrack-ng.org])
+AC_INIT([aircrack-ng],[version_triplet],[https://github.com/aircrack-ng/aircrack-ng/discussions])
 
 #
 # Cross-Compilation

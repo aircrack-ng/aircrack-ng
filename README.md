@@ -514,7 +514,7 @@ Some more information is present in the [README](README) file.
 
 Documentation, tutorials, ... can be found on https://aircrack-ng.org
 
-Support is available in the [forum](https://forum.aircrack-ng.org) and on IRC (in #aircrack-ng on Libera Chat).
+Support is available in the [GitHub Discussions](https://github.com/aircrack-ng/aircrack-ng/discussions) and on IRC (in #aircrack-ng on Libera Chat).
 
 Every tool has its own manpage. For aircrack-ng, `man aircrack-ng`
 
