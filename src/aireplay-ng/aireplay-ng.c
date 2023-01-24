@@ -3323,7 +3323,7 @@ static int do_attack_chopchop(void)
 	unsigned char b2 = 0xAA;
 
 	FILE * f_cap_out;
-	long nb_pkt_read;
+	//long nb_pkt_read;
 	unsigned long crc_mask;
 	unsigned char * chopped;
 
@@ -3517,7 +3517,7 @@ static int do_attack_chopchop(void)
 
 	memset(ticks, 0, sizeof(ticks));
 
-	nb_pkt_read = 0;
+	//nb_pkt_read = 0;
 	nb_pkt_sent = 0;
 	nb_bad_pkt = 0;
 	guess = 256;
@@ -3765,7 +3765,7 @@ static int do_attack_chopchop(void)
 
 		if (n == 0) continue;
 
-		nb_pkt_read++;
+		//nb_pkt_read++;
 
 		/* check if it's a deauth packet */
 

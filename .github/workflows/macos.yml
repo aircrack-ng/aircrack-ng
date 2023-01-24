@@ -36,8 +36,8 @@ jobs:
             cxx: g++-10
           - cc:  gcc-9
             cxx: g++-9
-          #- cc:  clang-11     broken handling with version.h
-          #  cxx: clang++-11
+          - cc:  clang-11
+            cxx: clang++-11
           - cc:  clang-12
             cxx: clang++-12
         flags:

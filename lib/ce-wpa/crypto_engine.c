@@ -71,7 +71,7 @@ EXPORT int ac_crypto_engine_supported_features(void)
 #endif
 }
 
-EXPORT int ac_crypto_engine_simd_width()
+EXPORT int ac_crypto_engine_simd_width(void)
 {
 #ifdef SIMD_COEF_32
 	return SIMD_COEF_32;

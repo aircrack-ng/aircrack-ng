@@ -89,7 +89,7 @@ void textstyle(int attr)
 	fflush(channel);
 }
 
-void reset_term()
+void reset_term(void)
 {
 	struct termios oldt, newt;
 
