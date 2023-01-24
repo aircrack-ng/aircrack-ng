@@ -1,4 +1,5 @@
-FROM debian:unstable-slim AS builder
+ARG IMAGE_BASE=debian:unstable-slim
+FROM ${IMAGE_BASE} AS builder
 
 # Install dependencies for building
 # hadolint ignore=DL3008
@@ -35,7 +36,7 @@ RUN set -x \
 			make install DESTDIR=/output
 
 # Stage 2
-FROM debian:unstable-slim
+FROM ${IMAGE_BASE}
 
 COPY --from=builder /output/usr /usr
 

@@ -1,4 +1,5 @@
-FROM debian:unstable-slim AS builder
+ARG IMAGE_BASE=debian:unstable-slim
+FROM ${IMAGE_BASE} AS builder
 
 # https://docs.github.com/en/actions/learn-github-actions/environment-variables#default-environment-variables
 # Tag name
@@ -36,7 +37,7 @@ RUN set -x \
 		make install DESTDIR=/output
 
 # Stage 2
-FROM debian:unstable-slim
+FROM ${IMAGE_BASE}
 
 COPY --from=builder /output/usr /usr
 
