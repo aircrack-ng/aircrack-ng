@@ -10,6 +10,14 @@ on:
       - contrib/**
       - manpages/**
       - patches/**
+      - '.vscode/**'
+      - Dockerfile
+      - Dockerfile.release
+      - '.clangformat'
+      - '.editorconfig'
+      - '.gitignore'
+      - '.pre-commit-config.yaml'
+      - 'centos_autotools.sh'
 
   pull_request:
     branches: [ master ]
@@ -17,6 +25,14 @@ on:
       - contrib/**
       - manpages/**
       - patches/**
+      - '.vscode/**'
+      - Dockerfile
+      - Dockerfile.release
+      - '.clangformat'
+      - '.editorconfig'
+      - '.gitignore'
+      - '.pre-commit-config.yaml'
+      - 'centos_autotools.sh'
 
 env:
   LANG: en_US.UTF-8
