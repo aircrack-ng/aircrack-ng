@@ -144,6 +144,12 @@ static inline int vanyeq_epi32(vtype x, vtype y)
 #elif __ALTIVEC__
 #include <altivec.h>
 
+#if defined(__clang__)
+#pragma clang diagnostic ignored "-Wpedantic"
+#elif defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Wpedantic"
+#endif
+
 typedef vector unsigned int vtype32;
 typedef vector unsigned long vtype64;
 typedef union {
