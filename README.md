@@ -191,6 +191,28 @@ is as follows:
 
     pacman -Sy autoconf automake-wrapper libtool msys2-w32api-headers msys2-w32api-runtime gcc pkg-config git python openssl-devel openssl libopenssl msys2-runtime-devel gcc binutils make pcre2-devel libsqlite-devel
 
+## Docker containers
+
+We have two repositories on DockerHub:
+- [aircrackng/release](https://hub.docker.com/r/aircrackng/release): Each release
+- [aircrackng/git](https://hub.docker.com/r/aircrackng/git): every commit in the git repository
+
+Base command for the `git` version:
+
+`sudo docker run --rm -it aircrackng/git`
+
+Available platforms/CPU architectures:
+- linux/386 (base image: debian:unstable-slim)
+- linux/amd64 (base image: debian:unstable-slim)
+- linux/arm/v5 (base image: debian:unstable-slim)
+- linux/arm/v6 (base image: alpine:3)
+- linux/arm/v7 (base image: debian:unstable-slim)
+- linux/arm64/v8 (base image: debian:unstable-slim)
+- linux/mips64le (base image: debian:unstable-slim)
+- linux/ppc64le (base image: debian:unstable-slim)
+- linux/riscv64 (base image: debian:unstable-slim)
+- linux/s390x (base image: debian:unstable-slim)
+
 ## Compiling
 
 To build `aircrack-ng`, the Autotools build system is utilized. Autotools replaces
