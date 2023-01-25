@@ -46,11 +46,15 @@ jobs:
         uses: hadolint/hadolint-action@v3.0.0
         with:
           dockerfile: Dockerfile
+          verbose: true
+          failure-threshold: error
       - 
         name: Lint Release Dockerfile
         uses: hadolint/hadolint-action@v3.0.0
         with:
           dockerfile: './Dockerfile.release'
+          verbose: true
+          failure-threshold: error
       -
         name: Shellcheck package install script
         uses: sudo-bot/action-shellcheck@latest
