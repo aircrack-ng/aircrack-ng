@@ -27,6 +27,7 @@ on:
       - 'ChangeLog'
       - 'Dockerfile'
       - 'Dockerfile.release'
+      - 'docker_package_install.sh'
       - 'INSTALLING'
       - 'LICENSE'
       - 'LICENSE.OpenSSL'

@@ -22,6 +22,7 @@ on:
       - '.vscode/**'
       - Dockerfile
       - Dockerfile.release
+      - 'docker_package_install.sh'
       - '.clangformat'
       - '.editorconfig'
       - '.gitignore'

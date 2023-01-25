@@ -64,6 +64,7 @@ on:
       - 'AC_VERSION.in'
       - 'AUTHORS'
       - 'centos_autotools.sh'
+      - 'docker_package_install.sh'
       - 'ChangeLog'
       - 'Dockerfile'
       - 'Dockerfile.release'
