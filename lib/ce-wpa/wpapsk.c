@@ -325,7 +325,7 @@ static MAYBE_INLINE void wpapsk_sse(ac_crypto_engine_t * engine,
 }
 #endif
 
-void init_atoi()
+void init_atoi(void)
 {
 	memset(atoi64, 0x7F, sizeof(atoi64));
 	for (char const * pos = itoa64; pos != &itoa64[63]; pos++)

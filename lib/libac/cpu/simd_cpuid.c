@@ -679,7 +679,7 @@ static unsigned int cpuid_x86_physical_cores(void)
 }
 #endif
 
-int cpuid_getinfo()
+int cpuid_getinfo(void)
 {
 	int cpu_count = get_nb_cpus();
 	float cpu_temp;

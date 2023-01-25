@@ -1310,7 +1310,7 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 	unsigned char rc4key[16], keystream[4096];
 
 	FILE * f_cap_out;
-	long nb_pkt_read;
+	//long nb_pkt_read;
 	unsigned long crc_mask;
 	unsigned char * chopped;
 
@@ -1515,7 +1515,7 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 
 	memset(ticks, 0, sizeof(ticks));
 
-	nb_pkt_read = 0;
+	//nb_pkt_read = 0;
 	nb_pkt_sent = 0;
 	nb_bad_pkt = 0;
 	guess = 256;
@@ -1790,7 +1790,7 @@ static int do_attack_tkipchop(unsigned char * src_packet, int src_packet_len)
 		}
 		if (n == 0) continue;
 
-		nb_pkt_read++;
+		//nb_pkt_read++;
 
 		/* check if it's a deauth packet */
 
