@@ -32,10 +32,10 @@ jobs:
         compiler:
           - cc:  gcc-11
             cxx: g++-11
-          #- cc:  gcc-10
-          #  cxx: g++-10
-          #- cc:  gcc-9
-          #  cxx: g++-9
+          - cc:  gcc-10
+            cxx: g++-10
+          - cc:  gcc-9
+            cxx: g++-9
           #- cc:  clang-11     broken handling with version.h
           #  cxx: clang++-11
           - cc:  clang-12
@@ -65,7 +65,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          brew install autoconf automake ccache cmocka expect hwloc libpcap libtool openssl pcre2 pkg-config sqlite3 shtool md5sha1sum
+          brew install gcc@9 gcc@10 autoconf automake ccache cmocka expect hwloc libpcap libtool openssl pcre2 pkg-config sqlite3 shtool md5sha1sum
 
       - name: Ccache stats before builds
         run: |
