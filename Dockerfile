@@ -2,15 +2,8 @@ ARG IMAGE_BASE=debian:unstable-slim
 FROM ${IMAGE_BASE} AS builder
 
 # Install dependencies for building
-# hadolint ignore=DL3008
-RUN apt-get update \
- && export DEBIAN_FRONTEND=noninteractive \
- && apt-get -y install --no-install-recommends \
-      build-essential autoconf automake libtool pkg-config libnl-3-dev libnl-genl-3-dev libssl-dev \
-	  ethtool shtool rfkill zlib1g-dev libpcap-dev libsqlite3-dev libpcre2-dev libhwloc-dev \
-	  libcmocka-dev hostapd wpasupplicant tcpdump screen iw usbutils expect gawk bear \
-	  libtinfo5 python3-pip git && \
-	  	rm -rf /var/lib/apt/lists/*
+COPY docker_package_install.sh /opt
+RUN sh /opt/docker_package_install.sh builder
 
 # Build Aircrack-ng
 RUN mkdir -p /aircrack-ng /output
@@ -40,12 +33,11 @@ FROM ${IMAGE_BASE}
 
 COPY --from=builder /output/usr /usr
 
+COPY docker_package_install.sh /opt
+
 # Install dependencies
 # hadolint ignore=DL3008
 RUN set -x \
- && apt-get update && \
-	apt-get -y install --no-install-recommends \
-		libsqlite3-0 libssl3 hwloc libpcre2-posix3 libnl-3-200 libnl-genl-3-200 iw usbutils pciutils \
-		iproute2 ethtool kmod wget ieee-data python3 python3-graphviz rfkill && \
-	rm -rf /var/lib/apt/lists/* && \
-	aircrack-ng -u
+ && sh /opt/docker_package_install.sh stage2 \
+ && rm /opt/docker_package_install.sh \
+ && aircrack-ng -u

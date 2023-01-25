@@ -35,13 +35,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  docker-git:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        platform: [ linux/386, linux/amd64, linux/arm/v5, linux/arm/v7, linux/arm64/v8, linux/mips64le, linux/ppc64le, linux/riscv64, linux/s390x ]
-
+  lint:
+    runs-on: ubuntu-22.04
     steps:
       - 
         name: Git Checkout
@@ -56,6 +51,24 @@ jobs:
         uses: hadolint/hadolint-action@v3.0.0
         with:
           dockerfile: './Dockerfile.release'
+      -
+        name: Shellcheck package install script
+        uses: sudo-bot/action-shellcheck@latest
+        with:
+          cli-args: "docker_package_install.sh"
+
+
+  debian:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ linux/386, linux/amd64, linux/arm/v5, linux/arm/v7, linux/arm64/v8, linux/mips64le, linux/ppc64le, linux/riscv64, linux/s390x ]
+
+    steps:
+      - 
+        name: Git Checkout
+        uses: actions/checkout@v3
       - 
         name: Shorten git revision
         uses: rlespinasse/shortify-git-revision@v1
@@ -79,6 +92,42 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           platforms: ${{ matrix.platform }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: |
+            aircrackng/git:latest
+            aircrackng/git:${{ env.GITHUB_SHA_SHORT }}
+
+  alpine-arm-v6:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - 
+        name: Git Checkout
+        uses: actions/checkout@v3
+      - 
+        name: Shorten git revision
+        uses: rlespinasse/shortify-git-revision@v1
+        with:
+          name: GITHUB_SHA
+      -
+        name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      -
+        name: Login to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      -
+        name: Build and push
+        uses: docker/build-push-action@v3
+        with:
+          platforms: linux/arm/v6
+          build-args: IMAGE_BASE=alpine:3
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
             aircrackng/git:latest
