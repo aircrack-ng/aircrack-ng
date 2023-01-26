@@ -63,6 +63,7 @@ jobs:
 
   x86:
     runs-on: ubuntu-22.04
+    needs: lint
     steps:
       - 
         name: Git Checkout
@@ -108,6 +109,7 @@ jobs:
 
   arm:
     runs-on: ubuntu-22.04
+    needs: lint
     steps:
       - 
         name: Git Checkout
@@ -174,6 +176,7 @@ jobs:
 
   others:
     runs-on: ubuntu-22.04
+    needs: lint
     steps:
       - 
         name: Git Checkout
