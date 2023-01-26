@@ -66,16 +66,10 @@ jobs:
       fail-fast: false
       matrix:
         compiler:
-          - cc:  gcc-11
-            cxx: g++-11
-          - cc:  gcc-10
-            cxx: g++-10
-          - cc:  gcc-9
-            cxx: g++-9
-          - cc:  clang-11
-            cxx: clang++-11
-          - cc:  clang-12
-            cxx: clang++-12
+          - cc:  gcc
+            cxx: g++
+          - cc:  clang
+            cxx: clang++
         flags:
           - name: Gcrypt
             flags: "--with-gcrypt"
@@ -101,7 +95,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          brew install gcc@9 gcc@10 autoconf automake ccache cmocka expect hwloc libpcap libtool openssl pcre2 pkg-config sqlite3 shtool md5sha1sum
+          brew install autoconf automake ccache cmocka expect hwloc libpcap libtool openssl pcre2 pkg-config sqlite3 shtool md5sha1sum
 
       - name: Ccache stats before builds
         run: |
@@ -114,15 +108,9 @@ jobs:
           CPUS=$(($(sysctl -a | grep machdep.cpu.cores_per_package | awk '{ print $2 }') * 3 / 2))
           export PATH="/usr/local/opt/ccache/libexec:$PATH"
           case "${{ matrix.compiler.cc }}" in
-            clang-12)
+            clang)
               CC=clang
               CXX=clang++
-              export CFLAGS="-Werror -Wno-zero-length-array -Wno-deprecated-declarations"
-              export CXXFLAGS="-Werror -Wno-zero-length-array -Wno-deprecated-declarations"
-              ;;
-            clang-11)
-              CC=$(brew --prefix llvm)/bin/clang
-              CXX=$(brew --prefix llvm)/bin/clang++
               export CFLAGS="-Werror -Wno-zero-length-array -Wno-deprecated-declarations"
               export CXXFLAGS="-Werror -Wno-zero-length-array -Wno-deprecated-declarations"
               ;;
