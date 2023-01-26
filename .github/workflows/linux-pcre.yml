@@ -128,15 +128,9 @@ jobs:
         run: |
           CPUS=$(nproc)
           case "${{ matrix.compiler.cc }}" in
-            clang-12)
-              CC=clang-11
-              CXX=clang++-11
-              export CFLAGS="-Werror -Wno-zero-length-array -Wno-deprecated-declarations"
-              export CXXFLAGS="-Werror -Wno-zero-length-array -Wno-deprecated-declarations"
-              ;;
-            clang-11)
-              CC=clang-11
-              CXX=clang++-11
+            clang)
+              CC=clang
+              CXX=clang++
               export CFLAGS="-Werror -Wno-zero-length-array -Wno-deprecated-declarations"
               export CXXFLAGS="-Werror -Wno-zero-length-array -Wno-deprecated-declarations"
               ;;
