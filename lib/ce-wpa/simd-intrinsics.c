@@ -1392,12 +1392,21 @@ void SIMDSHA1body(vtype * _data,
 				  ARCH_WORD_32 * reload_state,
 				  unsigned SSEi_flags)
 {
+#if __ALTIVEC__
+	vtype w[16 * SIMD_PARA_SHA1] = {{{0}}};
+	vtype a[SIMD_PARA_SHA1] = {{{0}}};
+	vtype b[SIMD_PARA_SHA1] = {{{0}}};
+	vtype c[SIMD_PARA_SHA1] = {{{0}}};
+	vtype d[SIMD_PARA_SHA1] = {{{0}}};
+	vtype e[SIMD_PARA_SHA1] = {{{0}}};
+#else
 	vtype w[16 * SIMD_PARA_SHA1] = {(vtype){0}};
 	vtype a[SIMD_PARA_SHA1] = {(vtype){0}};
 	vtype b[SIMD_PARA_SHA1] = {(vtype){0}};
 	vtype c[SIMD_PARA_SHA1] = {(vtype){0}};
 	vtype d[SIMD_PARA_SHA1] = {(vtype){0}};
 	vtype e[SIMD_PARA_SHA1] = {(vtype){0}};
+#endif
 	vtype tmp[SIMD_PARA_SHA1];
 	vtype cst;
 	unsigned int i;
