@@ -23,7 +23,7 @@ on:
       - Dockerfile
       - Dockerfile.release
       - 'docker_package_install.sh'
-      - '.clangformat'
+      - '.clang-format'
       - '.editorconfig'
       - '.gitignore'
       - '.pre-commit-config.yaml'
@@ -38,7 +38,7 @@ on:
       - '.vscode/**'
       - Dockerfile
       - Dockerfile.release
-      - '.clangformat'
+      - '.clang-format'
       - '.editorconfig'
       - '.gitignore'
       - '.pre-commit-config.yaml'
