@@ -7,42 +7,72 @@ on:
   push:
     branches: [ master ]
     paths-ignore:
+      - apparmor/**
       - contrib/**
       - manpages/**
       - patches/**
       - '.github/ISSUE_TEMPLATE/**'
       - '.github/workflows/coverity.yml'
-      - '.github/workflows/docker-release.yml'
       - '.github/workflows/docker.yml'
+      - '.github/workflows/docker-release.yml'
       - '.github/workflows/linux-pcre.yml'
       - '.github/workflows/macos.yml'
       - '.github/workflows/pvs-studio.yml'
       - '.github/workflows/style.yml'
       - '.github/workflows/windows.yml'
       - '.vscode/**'
-      - Dockerfile
-      - Dockerfile.release
-      - 'docker_package_install.sh'
       - '.clang-format'
       - '.editorconfig'
       - '.gitignore'
       - '.pre-commit-config.yaml'
+      - 'AC_VERSION.in'
+      - 'AUTHORS'
       - 'centos_autotools.sh'
+      - 'ChangeLog'
+      - 'docker_package_install.sh'
+      - 'Dockerfile'
+      - 'Dockerfile.release'
+      - 'INSTALLING'
+      - 'LICENSE'
+      - 'LICENSE.OpenSSL'
+      - 'README'
+      - 'README.md'
+      - 'SECURITY.md'
 
   pull_request:
     branches: [ master ]
     paths-ignore:
+      - apparmor/**
       - contrib/**
       - manpages/**
       - patches/**
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/workflows/coverity.yml'
+      - '.github/workflows/docker.yml'
+      - '.github/workflows/docker-release.yml'
+      - '.github/workflows/linux-pcre.yml'
+      - '.github/workflows/macos.yml'
+      - '.github/workflows/pvs-studio.yml'
+      - '.github/workflows/style.yml'
+      - '.github/workflows/windows.yml'
       - '.vscode/**'
-      - Dockerfile
-      - Dockerfile.release
       - '.clang-format'
       - '.editorconfig'
       - '.gitignore'
       - '.pre-commit-config.yaml'
+      - 'AC_VERSION.in'
+      - 'AUTHORS'
       - 'centos_autotools.sh'
+      - 'ChangeLog'
+      - 'docker_package_install.sh'
+      - 'Dockerfile'
+      - 'Dockerfile.release'
+      - 'INSTALLING'
+      - 'LICENSE'
+      - 'LICENSE.OpenSSL'
+      - 'README'
+      - 'README.md'
+      - 'SECURITY.md'
 
 env:
   LANG: en_US.UTF-8
