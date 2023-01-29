@@ -1,6 +1,6 @@
 # Security Policy
 
-Altough we do our best to prevent vulnerabilities, and have tools to help
+Although we do our best to prevent vulnerabilities, and have tools to help
 catch most of them, we are humans after all, and there will be inevitably
 issues slipping through the cracks.
 
@@ -8,7 +8,7 @@ They can fall into two categories, either in any of the tools in the
 Aircrack-ng suite, or in our presence online (website, forum, emails,
 DNS, etc.).
 
-Depending which category they fall into, different information is needed. We
+Depending on which category they fall into, different information is needed. We
 do believe in coordinated disclosure, so in order to address them, and
 coordinate disclosure with you (and properly credit you for the discovery),
 report them to us. Do not open bug reports or pull requests.
@@ -55,7 +55,7 @@ firmwares.
 
 ### Public disclosure
 
-Altough it is essentially a bug, do not submit a bug report or a pull request,
+Although it is essentially a bug, do not submit a bug report or a pull request,
 but email us the data first, so we can coordinate fixing the issue and assist
 you in filing the bug reports, and if you provided a patch, the pull request; a
 patch may need to be broken down in multiple commits for clarity, for example.
