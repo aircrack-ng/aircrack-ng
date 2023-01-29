@@ -43,9 +43,7 @@
 #include <string.h>
 #include <sqlite3.h>
 #include <sys/time.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <getopt.h>
 #include <fcntl.h>
 #include <signal.h>

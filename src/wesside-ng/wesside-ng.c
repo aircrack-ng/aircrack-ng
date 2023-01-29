@@ -34,16 +34,8 @@
 #include "config.h"
 #endif
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <termios.h>
-#include <sys/ioctl.h>
 #include <sys/stat.h>
-#include <sys/wait.h>
-#include <sys/uio.h>
-#include <net/if.h>
 #include <netinet/in.h>
-#include <netinet/in_systm.h>
 #include <arpa/inet.h>
 #include <sys/time.h>
 #include <time.h>

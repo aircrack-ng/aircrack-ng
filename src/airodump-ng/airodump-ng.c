@@ -61,12 +61,8 @@
 #include <errno.h>
 #include <time.h>
 #include <getopt.h>
-#include <fcntl.h>
 #include <pthread.h>
-#include <termios.h>
 #include <limits.h>
-
-#include <sys/wait.h>
 
 #include "aircrack-ng/pcre/compat-pcre.h"
 #include "aircrack-ng/defs.h"

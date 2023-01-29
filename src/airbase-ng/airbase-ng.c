@@ -38,22 +38,11 @@
 #include "config.h"
 #endif
 
-#ifdef linux
-#include <linux/rtc.h>
-#endif
-
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <sys/wait.h>
 #include <sys/time.h>
 
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include <pthread.h>
 #include <unistd.h>
-#include <dirent.h>
-#include <signal.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -62,8 +51,6 @@
 #include <getopt.h>
 #include <sys/file.h>
 #include <fcntl.h>
-
-#include <ctype.h>
 
 #include "aircrack-ng/version.h"
 #include "aircrack-ng/support/pcap_local.h"
@@ -75,7 +62,6 @@
 #include "aircrack-ng/support/communications.h"
 #include "aircrack-ng/support/fragments.h"
 #include "aircrack-ng/osdep/osdep.h"
-#include "aircrack-ng/support/common.h"
 
 #define EXT_IN 0x01
 #define EXT_OUT 0x02
