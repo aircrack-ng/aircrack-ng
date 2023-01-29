@@ -76,6 +76,6 @@ jobs:
         name: Build and push on linux/amd64
         uses: docker/build-push-action@v3
         with:
-          platforms: [ linux/amd64, linux/386 ]
+          platforms: linux/amd64, linux/386
           build-args: IMAGE_BASE=alpine:3
           push: false
