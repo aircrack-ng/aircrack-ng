@@ -10,6 +10,7 @@ on:
       - '.github/workflows/alpine.yml'
       - '.github/workflows/coverity.yml'
       - '.github/workflows/docker-release.yml'
+      - '.github/workflows/dragonflybsd.yml'
       - '.github/workflows/linux.yml'
       - '.github/workflows/linux-pcre.yml'
       - '.github/workflows/macos.yml'

@@ -1,0 +1,137 @@
+name: DragonFlyBSD CI
+
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+  push:
+    branches: [ master ]
+    paths-ignore:
+      - apparmor/**
+      - contrib/**
+      - manpages/**
+      - patches/**
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/workflows/alpine.yml'
+      - '.github/workflows/coverity.yml'
+      - '.github/workflows/docker.yml'
+      - '.github/workflows/docker-release.yml'
+      - '.github/workflows/linux.yml'
+      - '.github/workflows/linux-pcre.yml'
+      - '.github/workflows/macos.yml'
+      - '.github/workflows/pvs-studio.yml'
+      - '.github/workflows/style.yml'
+      - '.github/workflows/windows.yml'
+      - '.vscode/**'
+      - '.clang-format'
+      - '.editorconfig'
+      - '.gitignore'
+      - '.pre-commit-config.yaml'
+      - 'AC_VERSION.in'
+      - 'AUTHORS'
+      - 'centos_autotools.sh'
+      - 'ChangeLog'
+      - 'docker_package_install.sh'
+      - 'Dockerfile'
+      - 'Dockerfile.release'
+      - 'INSTALLING'
+      - 'LICENSE'
+      - 'LICENSE.OpenSSL'
+      - 'README'
+      - 'README.md'
+      - 'SECURITY.md'
+
+  pull_request:
+    branches: [ master ]
+    paths-ignore:
+      - apparmor/**
+      - contrib/**
+      - manpages/**
+      - patches/**
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/workflows/alpine.yml'
+      - '.github/workflows/coverity.yml'
+      - '.github/workflows/docker.yml'
+      - '.github/workflows/docker-release.yml'
+      - '.github/workflows/linux.yml'
+      - '.github/workflows/linux-pcre.yml'
+      - '.github/workflows/macos.yml'
+      - '.github/workflows/pvs-studio.yml'
+      - '.github/workflows/style.yml'
+      - '.github/workflows/windows.yml'
+      - '.vscode/**'
+      - '.clang-format'
+      - '.editorconfig'
+      - '.gitignore'
+      - '.pre-commit-config.yaml'
+      - 'AC_VERSION.in'
+      - 'AUTHORS'
+      - 'centos_autotools.sh'
+      - 'ChangeLog'
+      - 'docker_package_install.sh'
+      - 'Dockerfile'
+      - 'Dockerfile.release'
+      - 'INSTALLING'
+      - 'LICENSE'
+      - 'LICENSE.OpenSSL'
+      - 'README'
+      - 'README.md'
+      - 'SECURITY.md'
+
+env:
+  LANG: en_US.UTF-8
+  TZ: UTC
+  MAKE: gmake
+
+jobs:
+  dragonflybsd:
+    runs-on: macos-12
+
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler:
+          - cc: gcc
+            cxx: g++
+        flags:
+          - name: OpenSSL
+            flags: ""
+
+    name: DragonFlyBSD ${{ matrix.compiler.cc }} using ${{ matrix.flags.name }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 750
+          submodules: 'recursive'
+
+      - name: Build with ${{ matrix.compiler.cc }} using ${{ matrix.flags.name }}
+        id: build
+        uses: vmactions/dragonflybsd-vm@v0
+        with:
+          envs: 'LANG TZ MAKE'
+          usesh: true
+          prepare: |
+            pkg install -y pkgconf shtool libtool ${{ matrix.compiler.cc }} automake autoconf pcre2 sqlite3 gmake cmocka
+          run: |
+            export CC="${{ matrix.compiler.cc }}"
+            export CXX="${{ matrix.compiler.cxx }}"
+            alias nproc='sysctl -n hw.ncpu'
+            CPUS=$(nproc)
+            git config --global --add safe.directory /Users/runner/work/aircrack-ng/aircrack-ng
+            echo "::group::make distclean"
+            make distclean || :
+            echo "::endgroup::"
+            echo "::group::autoreconf"
+            autoreconf -vif
+            echo "::endgroup::"
+            echo "::group::configure"
+            echo ">> Configure with $CC, $CXX, and ${{ matrix.flags.flags }}"
+            ./configure --enable-maintainer-mode --with-experimental --without-opt || { cat config.log; exit 1; }
+            echo "::endgroup::"
+            echo "::group::build"
+            echo ">> Build using ${CPUS} jobs"
+            gmake -j ${CPUS}
+            echo "::endgroup::"
+            echo "::group::run tests"
+            gmake -j ${CPUS} check || { find . -name 'test-suite.log' -exec cat {} ';' && exit 1; }
+            echo "::endgroup::"
