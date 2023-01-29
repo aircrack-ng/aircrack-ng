@@ -43,9 +43,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
-#include <sys/types.h>
-#include <time.h>
-#include <limits.h>
 #include <getopt.h>
 
 #include "aircrack-ng/defs.h"
@@ -53,10 +50,8 @@
 #include "aircrack-ng/support/pcap_local.h"
 #include "aircrack-ng/support/communications.h"
 #include "aircrack-ng/crypto/crypto.h"
-#include "aircrack-ng/osdep/byteorder.h"
 #include "aircrack-ng/third-party/ethernet.h"
 #include "aircrack-ng/support/common.h"
-#include "aircrack-ng/tui/console.h"
 
 #define ARP_REQ                                                                \
 	"\x08\x00\x02\x01\xBB\xBB\xBB\xBB\xBB\xBB\xCC\xCC\xCC\xCC\xCC\xCC"         \

@@ -35,21 +35,13 @@
 #include "config.h"
 #endif
 
-#if defined(linux)
-#include <linux/rtc.h>
-#endif
-
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <sys/wait.h>
 #include <sys/time.h>
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#include <dirent.h>
-#include <signal.h>
 #include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -59,27 +51,19 @@
 #include <getopt.h>
 
 #include <fcntl.h>
-#include <ctype.h>
 
 #include <limits.h>
-
-#include <netinet/in_systm.h>
-#include <netinet/ip.h>
-#include <netinet/tcp.h>
-#include <arpa/inet.h>
 
 #include <fnmatch.h>
 #include <stdbool.h>
 
 #include "aircrack-ng/defs.h"
 #include "aircrack-ng/version.h"
-#include "aircrack-ng/support/pcap_local.h"
 #include "aircrack-ng/osdep/osdep.h"
 #include "aircrack-ng/support/communications.h"
 #include "aircrack-ng/crypto/crypto.h"
 #include "aircrack-ng/support/common.h"
 #include "aircrack-ng/third-party/ieee80211.h"
-#include "radiotap/radiotap_iter.h"
 #include "airventriloquist-ng.h"
 
 #define RTC_RESOLUTION 8192

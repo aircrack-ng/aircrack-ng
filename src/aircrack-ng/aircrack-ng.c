@@ -59,17 +59,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
-#include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
-#include <sys/wait.h>
-#include <termios.h>
-#include <time.h>
 #include <unistd.h>
 
 #include "aircrack-ng/defs.h"
 #include "aircrack-ng/ce-wpa/crypto_engine.h"
-#include "aircrack-ng/ce-wpa/wpapsk.h"
 #include "aircrack-ng/aircrack-ng.h"
 #include "aircrack-ng/osdep/byteorder.h"
 #include "radiotap/platform.h"

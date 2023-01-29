@@ -38,21 +38,9 @@
 #include "config.h"
 #endif
 
-#if defined(linux)
-#include <linux/rtc.h>
-#endif
-
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <sys/wait.h>
 #include <sys/time.h>
 
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include <unistd.h>
-#include <dirent.h>
-#include <signal.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -61,13 +49,8 @@
 #include <getopt.h>
 
 #include <fcntl.h>
-#include <ctype.h>
 
 #include <limits.h>
-
-#include <netinet/in_systm.h>
-#include <netinet/ip.h>
-#include <netinet/tcp.h>
 
 #include "aircrack-ng/defs.h"
 #include "aircrack-ng/version.h"

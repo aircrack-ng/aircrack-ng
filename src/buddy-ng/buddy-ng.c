@@ -33,7 +33,6 @@
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
 #include <netinet/udp.h>
-#include <assert.h>
 #include <grp.h>
 #include <sys/utsname.h>
 
