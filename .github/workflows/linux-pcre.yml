@@ -49,6 +49,7 @@ on:
       - patches/**
       - test/**
       - '.github/ISSUE_TEMPLATE/**'
+      - '.github/workflows/alpine.yml'
       - '.github/workflows/coverity.yml'
       - '.github/workflows/docker.yml'
       - '.github/workflows/docker-release.yml'
