@@ -8,6 +8,7 @@ on:
       - '.devcontainer/**'
       - '.github/ISSUE_TEMPLATE/**'
       - '.github/workflows/coverity.yml'
+      - '.github/workflows/docker.yml'
       - '.github/workflows/docker-release.yml'
       - '.github/workflows/linux.yml'
       - '.github/workflows/linux-pcre.yml'
