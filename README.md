@@ -283,13 +283,13 @@ to your choosing:
                    Note: Each script has its own dependencies.
 
 * **with-gcrypt**:   Use libgcrypt crypto library instead of the default OpenSSL.
-                And also use internal fast sha1 implementation (borrowed from GIT)
+                And also use internal fast sha1 implementation (borrowed from GIT).
                 Dependency (Debian): libgcrypt20-dev
 
-* **with-duma**:	Compile with DUMA support. DUMA is a library to detect buffer overruns and under-runs.
-            	Dependencies (debian): duma
+* **with-duma**:	Compile with DUMA support. DUMA is a library to detect buffer overruns and underruns.
+            	Dependency (Debian): duma
 
-* **disable-libnl**:  Set-up the project to be compiled without libnl (1 or 3). Linux option only.
+* **disable-libnl**:  Set up the project to be compiled without libnl (1 or 3). Linux option only.
 
 * **without-opt**:  Do not enable stack protector (on GCC 4.9 and above).
 
@@ -379,7 +379,7 @@ to your choosing:
     from Homebrew.
 
     If you wish to use OpenSSL from Homebrew, you may need to specify the location
-    to its' installation. To figure out where OpenSSL lives, run:
+    to its installation. To figure out where OpenSSL lives, run:
 
     `brew --prefix openssl`
 
@@ -489,9 +489,9 @@ the additional flag `--without-opt` to the `./configure` line:
 
 ## Linux/BSD
 
-Aircrack-ng is available in most distributions repositories. However, it is not always up to date.
+Aircrack-ng is available in most distributions repositories. However, it is not always up-to-date.
 
-We provide up to date versions via PackageCloud for a number of Linux distributions:
+We provide up-to-date versions via PackageCloud for a number of Linux distributions:
 
 - development (each commit in this repo): https://packagecloud.io/aircrack-ng/git
 - stable releases: https://packagecloud.io/aircrack-ng/release
