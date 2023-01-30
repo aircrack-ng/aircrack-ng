@@ -21,6 +21,10 @@
 [![Linux PCRE CI](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/linux-pcre.yml/badge.svg?event=push)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/linux-pcre.yml)
 [![macOS CI](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/macos.yml/badge.svg?event=push)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/macos.yml)
 [![Windows CI](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/windows.yml/badge.svg?event=push)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/windows.yml)
+[![DragonFlyBSD CI](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/dragonflybsd.yml/badge.svg?event=push)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/dragonflybsd.yml)
+[![FreeBSD CI](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/freebsd.yml/badge.svg?event=push)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/freebsd.yml)
+[![NetBSD CI](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/netbsd.yml/badge.svg?event=push)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/netbsd.yml)
+[![OpenBSD CI](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/openbsd.yml/badge.svg?event=push)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/openbsd.yml)
 
 ### Packagecloud.io
 
@@ -508,6 +512,10 @@ We provide up-to-date versions via PackageCloud for a number of Linux distributi
 - Linux PCRE CI (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/linux-pcre.yml
 - Windows CI (Github actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/windows.yml
 - macOS CI (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/macos.yml
+- DragonFlyBSD CI (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/dragonflybsd.yml
+- FreeBSD CI (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/freebsd.yml
+- NetBSD CI (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/netbsd.yml
+- OpenBSD CI (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/openbsd.yml
 - Code style and consistency (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/style.yml
 - PVS-Studio static analysis (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/pvs-studio.yml
 - Coverity Scan static analysis: https://scan.coverity.com/projects/aircrack-ng
