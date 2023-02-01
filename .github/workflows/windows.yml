@@ -87,7 +87,7 @@ jobs:
     steps:
       - run: git config --global core.autocrlf input
       - run: git config --global core.eol lf
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       # Caching Cygwin fails due to /dev files and symlinks, sad :(
       - uses: actions/cache@v2
@@ -258,7 +258,7 @@ jobs:
       - run: git config --global core.autocrlf input
       - run: git config --global core.eol lf
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Checkout GUI source code
         shell: pwsh
@@ -295,7 +295,7 @@ jobs:
       - run: git config --global core.autocrlf input
       - run: git config --global core.eol lf
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Cygwin
         uses: cygwin/cygwin-install-action@v3
