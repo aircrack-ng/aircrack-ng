@@ -1,4 +1,4 @@
-name: "Style & Consistency"
+name: OpenBSD CI
 
 on:
   # Allows you to run this workflow manually from the Actions tab
@@ -11,7 +11,6 @@ on:
       - contrib/**
       - manpages/**
       - patches/**
-      - '.devcontainer/**'
       - '.github/ISSUE_TEMPLATE/**'
       - '.github/workflows/alpine.yml'
       - '.github/workflows/coverity.yml'
@@ -23,10 +22,12 @@ on:
       - '.github/workflows/linux-pcre.yml'
       - '.github/workflows/macos.yml'
       - '.github/workflows/netbsd.yml'
-      - '.github/workflows/openbsd.yml'
       - '.github/workflows/pvs-studio.yml'
+      - '.github/workflows/style.yml'
       - '.github/workflows/windows.yml'
       - '.vscode/**'
+      - '.clang-format'
+      - '.editorconfig'
       - '.gitignore'
       - '.pre-commit-config.yaml'
       - 'AC_VERSION.in'
@@ -50,8 +51,8 @@ on:
       - contrib/**
       - manpages/**
       - patches/**
-      - '.devcontainer/**'
       - '.github/ISSUE_TEMPLATE/**'
+      - '.github/workflows/alpine.yml'
       - '.github/workflows/coverity.yml'
       - '.github/workflows/docker.yml'
       - '.github/workflows/docker-release.yml'
@@ -61,10 +62,12 @@ on:
       - '.github/workflows/linux-pcre.yml'
       - '.github/workflows/macos.yml'
       - '.github/workflows/netbsd.yml'
-      - '.github/workflows/openbsd.yml'
       - '.github/workflows/pvs-studio.yml'
+      - '.github/workflows/style.yml'
       - '.github/workflows/windows.yml'
       - '.vscode/**'
+      - '.clang-format'
+      - '.editorconfig'
       - '.gitignore'
       - '.pre-commit-config.yaml'
       - 'AC_VERSION.in'
@@ -84,51 +87,59 @@ on:
 env:
   LANG: en_US.UTF-8
   TZ: UTC
+  MAKE: gmake
 
 jobs:
-  clang_format:
-    runs-on: ubuntu-18.04
+  openbsd:
+    runs-on: macos-12
 
-    name: Clang-Format
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler:
+          - cc: clang
+            cxx: clang++
+        flags:
+          - name: OpenSSL
+            flags: ""
 
+    name: OpenBSD ${{ matrix.compiler.cc }} using ${{ matrix.flags.name }}
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 750
+          submodules: 'recursive'
 
-      - name: Install dependencies
-        env:
-          DEBIAN_FRONTEND: noninteractive
-          CLANGURL: "https://releases.llvm.org/3.8.1/"
-          CLANGFILE: "clang+llvm-3.8.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz"
-        run: |
-          sudo apt-get install -y --no-install-recommends libtinfo5
-          wget "${CLANGURL}/${CLANGFILE}"
-          sudo tar -x --strip-components=1 -C /usr/local -J -f ${CLANGFILE}
-          rm -f ${CLANGFILE}
-
-      - name: Check source code formatting
-        run: |
-          # ensure our clang-format is first found
-          export PATH="/usr/local/bin:$PATH"
-
-          echo "::group::Process all source files with clang-format"
-          # check formatting matches clang-format-3.8. Since newer versions can
-          # have changes in formatting even without any rule changes, we have
-          # to fix on a single version.
-          . ./build/clang_format_all.sh
-
-          git clean -f
-          echo "::endgroup::"
-
-          # Print any diff here, so the error message below is the last thing
-          git diff
-
-          set -e && git diff --quiet || (
-            echo "***************************************************";
-            echo "*** The code is not clean against clang-format  ***";
-            echo "*** Please run clang-format-3.8 and fix the     ***";
-            echo "*** differences then rebase/squash them into    ***";
-            echo "*** the relevant commits. Do not add a commit   ***";
-            echo "*** for just formatting fixes. Thanks!          ***";
-            echo "***************************************************";
-            exit 1;
-          )
+      - name: Build with ${{ matrix.compiler.cc }} using ${{ matrix.flags.name }}
+        id: build
+        uses: vmactions/openbsd-vm@v0
+        with:
+          envs: 'LANG TZ MAKE'
+          usesh: true
+          prepare: |
+            pkg_add git pkgconf shtool libtool llvm automake-1.16.5 autoconf-2.71 pcre2 sqlite3 openssl gmake cmocka
+          run: |
+            export CC="clang"
+            export CXX="clang++"
+            alias nproc='sysctl -n hw.ncpu'
+            CPUS=$(nproc)
+            git config --global --add safe.directory /Users/runner/work/aircrack-ng/aircrack-ng
+            export AUTOCONF_VERSION=2.71
+            export AUTOMAKE_VERSION=1.16
+            echo "::group::make distclean"
+            make distclean || :
+            echo "::endgroup::"
+            echo "::group::autoreconf"
+            autoreconf -vif
+            echo "::endgroup::"
+            echo "::group::configure"
+            echo ">> Configure with $CC, $CXX, and ${{ matrix.flags.flags }}"
+            ./configure --enable-maintainer-mode --with-experimental --without-opt || { cat config.log; exit 1; }
+            echo "::endgroup::"
+            echo "::group::build"
+            echo ">> Build using ${CPUS} jobs"
+            gmake -j ${CPUS}
+            echo "::endgroup::"
+            echo "::group::run tests"
+            gmake -j ${CPUS} check || { find . -name 'test-suite.log' -exec cat {} ';' && exit 1; }
+            echo "::endgroup::"
