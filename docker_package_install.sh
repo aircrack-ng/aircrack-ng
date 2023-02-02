@@ -45,6 +45,17 @@ elif [ "${ID}" = 'alpine' ]; then
             libnl3 openssl ethtool libpcap util-linux sqlite-dev pcre2 zlib pciutils usbutils hwloc wget \
             iproute2 kmod python3 py3-graphviz urfkill iw 
     fi
+elif [ "${ID}" = 'fedora' ]; then
+    echo "[*] Detected Fedora (${VERSION_ID})"
+    if [ "${STEP}" = 'builder' ]; then
+        dnf install -y libtool pkgconfig sqlite-devel autoconf automake openssl-devel libpcap-devel \
+                        pcre2-devel rfkill libnl3-devel gcc gcc-c++ ethtool hwloc-devel libcmocka-devel \
+                        make file expect hostapd wpa_supplicant iw usbutils tcpdump screen zlib-devel \
+                        expect python3-pip python3-setuptools git
+    elif [ "${STEP}" = 'stage2' ]; then
+        dnf install -y libnl3 openssl-libs zlib libpcap sqlite-libs pcre2 hwloc iw ethtool pciutils \
+                        usbutils expect python3 python3-graphviz iw util-linux ethtool kmod
+    fi
 else
     echo "[!] Unsupported distro - PR welcome"
     exit 1
