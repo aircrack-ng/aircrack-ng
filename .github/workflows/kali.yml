@@ -116,6 +116,6 @@ jobs:
         name: Build and push on linux/amd64
         uses: docker/build-push-action@v3
         with:
-          platforms: linux/amd64, linux/386, linux/armv7, linux/arm64
+          platforms: linux/amd64
           build-args: IMAGE_BASE=kalilinux/kali-rolling:latest
           push: false
