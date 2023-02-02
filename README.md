@@ -25,6 +25,8 @@
 [![FreeBSD CI](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/freebsd.yml/badge.svg?event=push)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/freebsd.yml)
 [![NetBSD CI](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/netbsd.yml/badge.svg?event=push)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/netbsd.yml)
 [![OpenBSD CI](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/openbsd.yml/badge.svg?event=push)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/openbsd.yml)
+[![Kali Linux CI](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/kali.yml/badge.svg?event=push)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/kali.yml)
+[![Alpine Linux](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/alpine.yml/badge.svg?event=push)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/alpine.yml)
 
 ### Packagecloud.io
 
