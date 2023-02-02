@@ -1,4 +1,4 @@
-name: Kali Linux
+name: Kali Linux CI
 
 on:
   push:
