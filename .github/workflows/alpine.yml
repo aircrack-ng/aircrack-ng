@@ -1,4 +1,4 @@
-name: Alpine Linux
+name: Alpine Linux CI
 
 on:
   push:
