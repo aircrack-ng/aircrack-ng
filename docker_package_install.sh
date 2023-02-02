@@ -56,8 +56,19 @@ elif [ "${ID}" = 'fedora' ]; then
         dnf install -y libnl3 openssl-libs zlib libpcap sqlite-libs pcre2 hwloc iw ethtool pciutils \
                         usbutils expect python3 python3-graphviz iw util-linux ethtool kmod
     fi
+elif [ "${ID}" = 'opensuse-leap' ]; then
+    echo "[*] Detected openSUSE Leap"
+    if [ "${STEP}" = 'builder' ]; then
+        zypper install -y autoconf automake libtool pkg-config libnl3-devel libopenssl-1_1-devel zlib-devel \
+                        libpcap-devel sqlite3-devel pcre2-devel hwloc-devel libcmocka-devel hostapd screen \
+                        wpa_supplicant tcpdump iw gcc-c++ gcc ethtool pciutils usbutils expect python3-pip \
+                        python3-setuptools git
+    elif [ "${STEP}" = 'stage2' ]; then
+        zypper install -y libnl3-200 libopenssl1_1 zlib libpcap sqlite3 libpcre2-8-0 hwloc iw ethtool pciutils \
+                        usbutils expect python3 python3-graphviz iw util-linux ethtool kmod
+    fi
 else
-    echo "[!] Unsupported distro - PR welcome"
+    echo "[!] Unsupported distro: ${ID} - PR welcome"
     exit 1
 fi
 
