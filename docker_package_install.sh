@@ -45,11 +45,10 @@ elif [ "${ID}" = 'alpine' ]; then
             libnl3 openssl ethtool libpcap util-linux sqlite-dev pcre2 zlib pciutils usbutils hwloc wget \
             iproute2 kmod python3 py3-graphviz urfkill iw 
     fi
-elif [ "${ID}" = 'fedora' ] || [ "${ID}" = 'almalinux' ]; then
-    [ "${ID}" = 'almalinux' ] && echo "[*] Detected AlmaLinux (${VERSION_ID})"
-    [ "${ID}" = 'fedora' ] && echo "[*] Detected Fedora (${VERSION_ID})"
+elif [ "${ID}" = 'fedora' ] || [ "${ID}" = 'almalinux' ] || [ "${ID}" = 'rocky' ]; then
+    echo "[*] Distribution: ${NAME} (${VERSION_ID})"
     if [ "${STEP}" = 'builder' ]; then
-        if [ "${ID}" = 'almalinux' ]; then
+        if [ "${ID}" = 'almalinux' ] || [ "${ID}" = 'rocky' ]; then
             echo "[*] Install EPEL and enabling CRB"
             dnf install epel-release dnf-plugins-core -y
             dnf config-manager --set-enabled crb
@@ -61,7 +60,7 @@ elif [ "${ID}" = 'fedora' ] || [ "${ID}" = 'almalinux' ]; then
                         expect python3-pip python3-setuptools git
     elif [ "${STEP}" = 'stage2' ]; then
         GRAPHVIZ=python3-graphviz
-        [ "${ID}" = 'almalinux' ] && GRAPHVIZ=graphviz-python3
+        [ "${ID}" != 'fedora' ] && GRAPHVIZ=graphviz-python3
         dnf install -y libnl3 openssl-libs zlib libpcap sqlite-libs pcre2 hwloc iw ethtool pciutils \
                         usbutils expect python3 ${GRAPHVIZ} iw util-linux ethtool kmod
     fi
