@@ -81,4 +81,9 @@ else
     exit 1
 fi
 
+if [ $? -ne 0 ]; then
+    echo '[!] ERROR, aborting'
+    exit 1
+fi
+
 exit 0
