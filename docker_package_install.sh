@@ -33,6 +33,16 @@ if [ "${ID}" = 'debian' ] || [ "${ID_LIKE}" = 'debian' ]; then
             iproute2 ethtool kmod wget ieee-data python3 python3-graphviz rfkill && \
         rm -rf /var/lib/apt/lists/*
     fi
+elif [ "${ID}" = 'arch' ]; then
+    echo "[*] Detected Arch Linux"
+    if [ "${STEP}" = 'builder' ]; then
+        pacman -Sy --noconfirm base-devel libnl openssl ethtool util-linux zlib libpcap sqlite pcre2 hwloc \
+                                cmocka hostapd wpa_supplicant tcpdump screen iw usbutils pciutils expect git \
+                                python python-setuptools
+    elif [ "${STEP}" = 'stage2' ]; then
+        pacman -Sy --noconfirm libnl openssl ethtool util-linux zlib libpcap sqlite pcre2 hwloc iw usbutils \
+                                pciutils python-graphviz python
+    fi
 elif [ "${ID}" = 'alpine' ]; then
     echo "[*] Detected alpine"
     if [ "${STEP}" = 'builder' ]; then
