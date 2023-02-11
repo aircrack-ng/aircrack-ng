@@ -80,6 +80,7 @@ else
     exit 1
 fi
 
+# shellcheck disable=SC2181
 if [ $? -ne 0 ]; then
     echo '[!] ERROR, aborting'
     exit 1
