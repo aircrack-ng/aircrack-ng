@@ -13,6 +13,7 @@ on:
       - patches/**
       - test/**
       - '.github/ISSUE_TEMPLATE/**'
+      - '.github/workflows/check-release-ready.yml'
       - '.github/workflows/almalinux.yml'
       - '.github/workflows/coverity.yml'
       - '.github/workflows/docker.yml'
@@ -57,6 +58,7 @@ on:
       - '.github/ISSUE_TEMPLATE/**'
       - '.github/workflows/almalinux.yml'
       - '.github/workflows/alpine.yml'
+      - '.github/workflows/check-release-ready.yml'
       - '.github/workflows/coverity.yml'
       - '.github/workflows/docker.yml'
       - '.github/workflows/docker-release.yml'

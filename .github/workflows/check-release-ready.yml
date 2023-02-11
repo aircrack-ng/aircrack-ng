@@ -1,0 +1,80 @@
+name: Release readyness
+
+on:
+  workflow_dispatch:
+
+jobs:
+  coverity:
+    runs-on: ubuntu-22.04
+    steps:
+      - 
+        name: Git Checkout
+        uses: actions/checkout@v3
+      -
+        name: Get current tag
+        id: version
+        run: |
+          CUR_TAG=$(git tag -l --sort=version:refname "[0-9]*" | tail -n 1)
+          echo "LAST=${CUR_TAG}" >> $GITHUB_OUTPUT
+          TAG_DATE=$(git log -1 --format=%ai ${CUR_TAG})
+          echo "REL_DATE=\"${TAG_DATE}\"" >> $GITHUB_OUTPUT
+      -
+        name: Get Changelog information
+        id: changelog
+        run: |
+          LAST_VER=$(head -n 1 ChangeLog | awk '{print $2}')
+          echo "LAST_VER=${LAST_VER}" >> $GITHUB_OUTPUT
+          CHANGES_FROM=$(head -n 1 ChangeLog | awk '{print $6}' | awk -F\) '{print $1}')
+          echo "CHANGES_FROM=${CHANGES_FROM}" >> $GITHUB_OUTPUT
+          REL_DATE=$(head -n 1 ChangeLog | awk '{print $9 " " $10 " " $11}' | sed 's/.$//')
+          echo "REL_DATE=${REL_DATE}" >> $GITHUB_OUTPUT
+          ENTRIES=0
+          [ -n "$(head -n 2 ChangeLog | tail -n 1 | grep -E '^* ')" ] && ENTRIES=1
+          echo "ENTRIES=${ENTRIES}" >> $GITHUB_OUTPUT
+      - name: Get info from configure
+        id: configure
+        run: |
+          VERSION_MAJOR=$(grep 'm4_define(\[version_major\],' configure.ac | awk '{print $2}' | awk -F\) '{print $1}')
+          VERSION_MINOR=$(grep 'm4_define(\[version_minor\],' configure.ac | awk '{print $2}' | awk -F\) '{print $1}')
+          VERSION_MICRO=$(grep 'm4_define(\[version_micro\],' configure.ac | awk '{print $2}' | awk -F\) '{print $1}')
+          if [ "${VERSION_MICRO}" -gt 0 ]; then
+            echo "VERSION=${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_MICRO}" >> $GITHUB_OUTPUT
+          else
+            echo "VERSION=${VERSION_MAJOR}.${VERSION_MINOR}" >> $GITHUB_OUTPUT
+          fi
+          VERSION_DATE=$(grep 'm4_define(\[version_date\],' configure.ac | awk -F, '{print $2}' | awk -F\" '{print $2}'
+      -
+        name: Check all the things
+        run: |
+          ERROR=0
+          if [ "{{steps.changelog.outputs.LAST_VER}}" = "{{steps.version.outputs.LAST}}" ]; then
+            echo "[!] Changelog: missing new version"
+            ERROR=1
+          fi
+          if [ "{{steps.changelog.outputs.CHANGES_FROM}}" != "{{steps.version.outputs.LAST}}" ]; then
+            echo "[!] Changelog: Invalid 'changes from' version"
+            ERROR=1
+          fi
+          if [ "{{steps.changelog.outputs.ENTRIES}}" -eq 0 ]; then
+            echo '[!] Changelog: Missing entries'
+            ERROR=1
+          fi
+
+          date --date="{{steps.changelog.outputs.REL_DATE}}" 2>/dev/null
+          if [ $? -ne 0 ]; then
+            echo "[!] Changelog: Invalid release date"
+            ERROR=1
+          fi
+
+          date --date="1 {{steps.configure.outputs.VERSION_DATE}}"
+          if [ $? -ne 0 ]; then
+            echo "[!] Configure: Invalid release date"
+            ERROR=1
+          fi
+
+          if [ "{{steps.configure.outputs.VERSION }}" = "{{steps.version.outputs.LAST}}" ];
+            echo "[!] Version and date in configure.ac must be updated"
+            ERROR=1
+          fi
+          
+          [ ${ERROR} -eq 1 ] && exit 1
