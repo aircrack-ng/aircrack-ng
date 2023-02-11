@@ -12,6 +12,7 @@ on:
       - manpages/**
       - patches/**
       - '.github/ISSUE_TEMPLATE/**'
+      - '.github/workflows/almalinux.yml'
       - '.github/workflows/alpine.yml'
       - '.github/workflows/coverity.yml'
       - '.github/workflows/docker.yml'
@@ -53,6 +54,7 @@ on:
       - manpages/**
       - patches/**
       - '.github/ISSUE_TEMPLATE/**'
+      - '.github/workflows/almalinux.yml'
       - '.github/workflows/alpine.yml'
       - '.github/workflows/coverity.yml'
       - '.github/workflows/docker.yml'

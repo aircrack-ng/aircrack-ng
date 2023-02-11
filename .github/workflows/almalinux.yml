@@ -1,4 +1,4 @@
-name: Kali Linux CI
+name: Alma Linux CI
 
 on:
   push:
@@ -7,7 +7,6 @@ on:
     paths-ignore:
       - '.devcontainer/**'
       - '.github/ISSUE_TEMPLATE/**'
-      - '.github/workflows/almalinux.yml'
       - '.github/workflows/alpine.yml'
       - '.github/workflows/coverity.yml'
       - '.github/workflows/docker.yml'
@@ -16,6 +15,7 @@ on:
       - '.github/workflows/freebsd.yml'
       - '.github/workflows/linux.yml'
       - '.github/workflows/linux-pcre.yml'
+      - '.github/workflows/kali.yml'
       - '.github/workflows/macos.yml'
       - '.github/workflows/netbsd.yml'
       - '.github/workflows/openbsd.yml'
@@ -44,7 +44,6 @@ on:
     paths-ignore:
       - '.devcontainer/**'
       - '.github/ISSUE_TEMPLATE/**'
-      - '.github/workflows/almalinux.yml'
       - '.github/workflows/alpine.yml'
       - '.github/workflows/coverity.yml'
       - '.github/workflows/docker.yml'
@@ -119,5 +118,5 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           platforms: linux/amd64
-          build-args: IMAGE_BASE=kalilinux/kali-rolling:latest
+          build-args: IMAGE_BASE=almalinux:9
           push: false

@@ -7,6 +7,7 @@ on:
     paths-ignore:
       - '.devcontainer/**'
       - '.github/ISSUE_TEMPLATE/**'
+      - '.github/workflows/almalinux.yml'
       - '.github/workflows/coverity.yml'
       - '.github/workflows/docker.yml'
       - '.github/workflows/docker-release.yml'
@@ -44,6 +45,7 @@ on:
     paths-ignore:
       - '.devcontainer/**'
       - '.github/ISSUE_TEMPLATE/**'
+      - '.github/workflows/almalinux.yml'
       - '.github/workflows/coverity.yml'
       - '.github/workflows/docker.yml'
       - '.github/workflows/docker-release.yml'
