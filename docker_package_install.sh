@@ -16,7 +16,7 @@ fi
 . /etc/os-release
 
 if [ "${ID}" = 'debian' ] || [ "${ID_LIKE}" = 'debian' ]; then
-    echo "[*] Detected debian or debian-type distro"
+    echo "[*] Detected debian or debian-type distro: ${ID} (${VERSION_ID})"
     if [ "${STEP}" = 'builder' ]; then
         apt-get update \
         && export DEBIAN_FRONTEND=noninteractive \
