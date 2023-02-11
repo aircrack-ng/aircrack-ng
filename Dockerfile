@@ -2,8 +2,8 @@ ARG IMAGE_BASE=debian:unstable-slim
 FROM ${IMAGE_BASE} AS builder
 
 # Install dependencies for building
-COPY docker_package_install.sh /opt
-RUN sh /opt/docker_package_install.sh builder
+COPY docker_package_install.sh /
+RUN sh /docker_package_install.sh builder
 
 # Build Aircrack-ng
 RUN mkdir -p /aircrack-ng /output
@@ -33,11 +33,11 @@ FROM ${IMAGE_BASE}
 
 COPY --from=builder /output/usr /usr
 
-COPY docker_package_install.sh /opt
+COPY docker_package_install.sh /
 
 # Install dependencies
 # hadolint ignore=DL3008
 RUN set -x \
- && sh /opt/docker_package_install.sh stage2 \
- && rm /opt/docker_package_install.sh \
+ && sh /docker_package_install.sh stage2 \
+ && rm /docker_package_install.sh \
  && aircrack-ng -u
