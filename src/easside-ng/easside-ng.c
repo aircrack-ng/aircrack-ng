@@ -29,6 +29,7 @@
 #include <err.h>
 #include <fcntl.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <signal.h>
 #include <sys/time.h>

@@ -38,7 +38,12 @@
 #include "config.h"
 #endif
 
+#ifdef linux
+#include <linux/rtc.h>
+#endif
+
 #include <sys/types.h>
+#include <sys/ioctl.h>
 #include <sys/time.h>
 
 #include <pthread.h>
