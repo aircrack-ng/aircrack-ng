@@ -1,0 +1,16 @@
+name: IRC notifications
+
+on: [push]
+
+jobs:
+  notification:
+    runs-on: ubuntu-22.04
+    name: IRC Notification
+    steps:
+    - name: IRC notification
+      uses: Gottox/irc-message-action@v2
+      with:
+        channel: '#aircrack-ng'
+        nickname: git-aircrack-ng
+        message: |-
+          GitHub (aircrack-ng/aircrack-ng) push by ${{ github.actor }}: ${{ github.event.ref }} ${{ github.event.description }}
