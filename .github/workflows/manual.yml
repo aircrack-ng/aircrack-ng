@@ -2,6 +2,9 @@ name: Other Linux testing
 
 on:
   workflow_call:
+  workflow_dispatch:
+  schedule:
+    - cron: "* * 2 * *"
 
 jobs:
   lint:
