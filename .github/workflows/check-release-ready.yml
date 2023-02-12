@@ -47,32 +47,32 @@ jobs:
         name: Check all the things
         run: |
           ERROR=0
-          if [ "{{steps.changelog.outputs.LAST_VER}}" = "{{steps.version.outputs.LAST}}" ]; then
+          if [ "${{steps.changelog.outputs.LAST_VER}}" = "${{steps.version.outputs.LAST}}" ]; then
             echo "[!] Changelog: missing new version"
             ERROR=1
           fi
-          if [ "{{steps.changelog.outputs.CHANGES_FROM}}" != "{{steps.version.outputs.LAST}}" ]; then
+          if [ "${{steps.changelog.outputs.CHANGES_FROM}}" != "${{steps.version.outputs.LAST}}" ]; then
             echo "[!] Changelog: Invalid 'changes from' version"
             ERROR=1
           fi
-          if [ "{{steps.changelog.outputs.ENTRIES}}" -eq 0 ]; then
+          if [ "${{steps.changelog.outputs.ENTRIES}}" -eq 0 ]; then
             echo '[!] Changelog: Missing entries'
             ERROR=1
           fi
 
-          date --date="{{steps.changelog.outputs.REL_DATE}}" 2>/dev/null
+          date --date="${{steps.changelog.outputs.REL_DATE}}" 2>/dev/null
           if [ $? -ne 0 ]; then
             echo "[!] Changelog: Invalid release date"
             ERROR=1
           fi
 
-          date --date="1 {{steps.configure.outputs.VERSION_DATE}}"
+          date --date="1 ${{steps.configure.outputs.VERSION_DATE}}"
           if [ $? -ne 0 ]; then
             echo "[!] Configure: Invalid release date"
             ERROR=1
           fi
 
-          if [ "{{steps.configure.outputs.VERSION }}" = "{{steps.version.outputs.LAST}}" ];
+          if [ "${{steps.configure.outputs.VERSION }}" = "${{steps.version.outputs.LAST}}" ];
             echo "[!] Version and date in configure.ac must be updated"
             ERROR=1
           fi
