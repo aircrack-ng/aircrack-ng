@@ -38,6 +38,11 @@
 #include "config.h"
 #endif
 
+#ifdef linux
+#include <linux/rtc.h>
+#endif
+
+#include <sys/ioctl.h>
 #include <sys/time.h>
 
 #include <unistd.h>
@@ -46,6 +51,8 @@
 #include <stdio.h>
 #include <errno.h>
 #include <getopt.h>
+
+#include <fcntl.h>
 
 #include "aircrack-ng/defs.h"
 #include "aircrack-ng/version.h"
