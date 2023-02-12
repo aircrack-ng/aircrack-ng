@@ -1,4 +1,4 @@
-name: Release readyness
+name: Release readiness
 
 on:
   workflow_dispatch:
