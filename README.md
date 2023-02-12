@@ -27,6 +27,7 @@
 [![OpenBSD CI](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/openbsd.yml/badge.svg?event=push)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/openbsd.yml)
 [![Kali Linux CI](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/kali.yml/badge.svg?event=push)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/kali.yml)
 [![Alpine Linux](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/alpine.yml/badge.svg?event=push)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/alpine.yml)
+[![Alma Linux CI](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/almalinux.yml/badge.svg?event=push)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/almalinux.yml)
 
 ### Packagecloud.io
 
