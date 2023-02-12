@@ -42,7 +42,7 @@ jobs:
           else
             echo "VERSION=${VERSION_MAJOR}.${VERSION_MINOR}" >> $GITHUB_OUTPUT
           fi
-          VERSION_DATE=$(grep 'm4_define(\[version_date\],' configure.ac | awk -F, '{print $2}' | awk -F\" '{print $2}')
+          VERSION_DATE=$(grep 'm4_define(\[version_date\],' configure.ac | awk -F\" '{print $2}')
           echo "VERSION_DATE=${VERSION_DATE}" >> $GITHUB_OUTPUT
       -
         name: Get copyright dates in some tools
