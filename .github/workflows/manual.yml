@@ -60,5 +60,5 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           platforms: linux/amd64
-          build-args: IMAGE_BASE=${{ matrix.platform }}
+          build-args: "IMAGE_BASE=${{ matrix.platform }}"
           push: false
