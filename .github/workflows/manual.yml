@@ -1,10 +1,7 @@
 name: Other Linux testing
 
 on:
-  workflow_run:
-    workflows: ["Release readyness"]
-      types: 
-        - completed
+  workflow_call:
 
 jobs:
   lint:

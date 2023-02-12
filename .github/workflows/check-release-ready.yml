@@ -78,3 +78,6 @@ jobs:
           fi
           
           [ ${ERROR} -eq 1 ] && exit 1
+
+  build-other-linux:
+    uses: ./.github/workflows/manual.yml
