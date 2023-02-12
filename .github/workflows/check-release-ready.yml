@@ -103,7 +103,7 @@ jobs:
             DO_FAIL=1
           fi
 
-          if [ "${{steps.configure.outputs.VERSION }}" = "${{steps.git.outputs.LAST}}" ];
+          if [ "${{steps.configure.outputs.VERSION }}" = "${{steps.git.outputs.LAST}}" ]; then
             echo "[!] Version and date in configure.ac must be updated"
             DO_FAIL=1
           fi
