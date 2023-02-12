@@ -85,6 +85,26 @@ elif [ "${ID}" = 'opensuse-leap' ]; then
         zypper install -y libnl3-200 libopenssl1_1 zlib libpcap sqlite3 libpcre2-8-0 hwloc iw ethtool pciutils \
                         usbutils expect python3 python3-graphviz iw util-linux ethtool kmod
     fi
+elif [ "${ID}" = 'clear-linux-os' ]; then
+    echo "[*] Detected Clear Linux (${VERSION_ID})"
+    if [ "${STEP}" = 'builder' ]; then
+        # Build hostapd
+        swupd bundle-add wget c-basic devpkg-openssl devpkg-libnl
+        wget https://w1.fi/releases/hostapd-2.10.tar.gz
+        tar -zxf hostapd-2.10.tar.gz
+        cd hostapd-2.10/hostapd
+        cp defconfig .config
+        make
+        make install
+        hostapd -v
+
+        # Install the rest of the packages
+        swupd bundle-add devpkg-libgcrypt devpkg-hwloc devpkg-libpcap devpkg-pcre2 devpkg-sqlite-autoconf \
+                         ethtool network-basic software-testing sysadmin-basic wpa_supplicant os-testsuite
+    elif [ "${STEP}" = 'stage2' ]; then
+        swupd bundle-add libnl openssl devpkg-zlib devpkg-libpcap sqlite devpkg-pcre2 hwloc network-basic ethtool \
+                            sysadmin-basic python-extras
+    fi
 else
     echo "[!] Unsupported distro: ${ID} - PR welcome"
     exit 1
