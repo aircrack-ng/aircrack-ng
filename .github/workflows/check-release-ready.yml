@@ -44,6 +44,20 @@ jobs:
           fi
           VERSION_DATE=$(grep 'm4_define(\[version_date\],' configure.ac | awk -F, '{print $2}' | awk -F\" '{print $2}'
       -
+        name: Get copyright dates in some tools
+        id: copyright
+        run: |
+          for tool in airodump-ng aircrack-ng airbase-ng aireplay-ng; do
+            echo "Checking ${tool}"
+            LICENSE=$(grep Copyright src/${tool}/${tool}.c | grep $(date +%Y) )
+            HELP=$(grep ' - (C) ' src/${tool}/${tool}.c | grep $(date +%Y) )
+            if [ -z "${LICENSE}" ] || [ -z "${HELP}" ]; then
+              echo "${tool}=0" >> $GITHUB_OUTPUT
+            else
+              echo "${tool}=1" >> $GITHUB_OUTPUT
+            fi
+          done
+      -
         name: Check all the things
         run: |
           ERROR=0
@@ -76,7 +90,14 @@ jobs:
             echo "[!] Version and date in configure.ac must be updated"
             ERROR=1
           fi
-          
+
+          for tool in airodump-ng aircrack-ng airbase-ng aireplay-ng; do
+            if [ "${{steps.copyright.outputs.${tool} }}" -eq 0]; then
+              echo "[!] Missing copyrights in ${tool} license/help screen"
+              ERROR=1
+            fi
+          done
+
           [ ${ERROR} -eq 1 ] && exit 1
 
   build-other-linux:
