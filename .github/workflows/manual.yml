@@ -1,6 +1,14 @@
 name: Other Linux testing
 
 on:
+  push:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/manual.yml'
+  pull_request:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/manual.yml'
   workflow_call:
   workflow_dispatch:
   schedule:
