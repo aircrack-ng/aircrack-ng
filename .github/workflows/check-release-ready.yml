@@ -59,8 +59,8 @@ jobs:
           set -e
           for tool in airodump-ng aircrack-ng airbase-ng aireplay-ng; do
             echo "Checking ${tool}"
-            LICENSE=$(grep Copyright src/${tool}/${tool}.c | grep $(date +%Y) )
-            HELP=$(grep ' - (C) ' src/${tool}/${tool}.c | grep $(date +%Y) )
+            LICENSE=$(grep Copyright src/${tool}/${tool}.c | grep $(date +%Y) || true)
+            HELP=$(grep ' - (C) ' src/${tool}/${tool}.c | grep $(date +%Y) || true)
             if [ -z "${LICENSE}" ] || [ -z "${HELP}" ]; then
               echo "${tool}=0" >> $GITHUB_OUTPUT
             else
