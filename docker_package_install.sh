@@ -92,7 +92,7 @@ elif [ "${ID}" = 'clear-linux-os' ]; then
         swupd bundle-add wget c-basic devpkg-openssl devpkg-libnl
         wget https://w1.fi/releases/hostapd-2.10.tar.gz
         tar -zxf hostapd-2.10.tar.gz
-        cd hostapd-2.10/hostapd
+        cd hostapd-2.10/hostapd || exit 1
         cp defconfig .config
         make
         make install
