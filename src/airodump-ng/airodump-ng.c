@@ -124,6 +124,7 @@ static int * frequencies;
 
 static volatile int quitting = 0;
 static volatile time_t quitting_event_ts = 0;
+static unsigned char color_enabled = 0;
 
 static pMAC_t rBSSID;
 
@@ -398,16 +399,23 @@ static THREAD_ENTRY(input_thread)
 					"][ Are you sure you want to quit? Press Q again to quit.");
 		}
 
-		if (keycode == KEY_o)
+		if ((keycode == KEY_o) || (color_enabled == 1))
 		{
 			color_on();
-			snprintf(lopt.message, sizeof(lopt.message), "][ color on");
+
+			if (keycode == KEY_o)
+			{
+				// display message only once (when key 'o' is pressed)
+				snprintf(lopt.message, sizeof(lopt.message), "][ color on");
+				color_enabled = 1;
+			}
 		}
 
 		if (keycode == KEY_p)
 		{
 			color_off();
 			snprintf(lopt.message, sizeof(lopt.message), "][ color off");
+			color_enabled = 0;
 		}
 
 		if (keycode == KEY_s)
