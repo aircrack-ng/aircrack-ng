@@ -40,6 +40,7 @@ jobs:
           ENTRIES=0
           [ -n "$(head -n 2 ChangeLog | tail -n 1 | grep -E '^* ')" ] && ENTRIES=1
           echo "ENTRIES=${ENTRIES}" >> $GITHUB_OUTPUT
+          echo "Last: ${LAST_VER} - From: ${CHANGES_FROM} - Date: ${REL_DATE} - Entries present:${ENTRIES}"
 
       - name: Get info from configure
         id: configure
