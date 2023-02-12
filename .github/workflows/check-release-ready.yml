@@ -1,6 +1,14 @@
 name: Release readiness
 
 on:
+  push:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/check-release-ready.yml'
+  pull_request:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/check-release-ready.yml'
   workflow_dispatch:
 
 jobs:
