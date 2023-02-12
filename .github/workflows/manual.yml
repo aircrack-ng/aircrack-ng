@@ -62,5 +62,3 @@ jobs:
           platforms: linux/amd64
           build-args: IMAGE_BASE=${{ matrix.platform }}
           push: false
-          build-args: IMAGE_BASE=opensuse/leap:15
-          push: false
