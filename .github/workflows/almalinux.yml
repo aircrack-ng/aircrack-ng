@@ -105,7 +105,7 @@ jobs:
         with:
           cli-args: "docker_package_install.sh"
 
-  kali:
+  alma:
     runs-on: ubuntu-22.04
     needs: lint
     steps:
