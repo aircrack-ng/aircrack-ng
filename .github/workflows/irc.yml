@@ -13,4 +13,5 @@ jobs:
         channel: '#aircrack-ng'
         nickname: git-aircrack-ng
         message: |-
-          GitHub (aircrack-ng/aircrack-ng) push by ${{ github.actor }}: ${{ github.event.ref }} ${{ github.event.description }}
+          GitHub (aircrack-ng/aircrack-ng) push by ${{ github.actor }}: ${{ github.event.ref }} ${{ github.event.compare }}
+            ${{ join(github.event.commits.*.message) }}
