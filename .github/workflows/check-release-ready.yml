@@ -22,7 +22,7 @@ jobs:
         name: Get current tag
         id: git
         run: |
-          CUR_TAG=$(git tag -l --sort=version:refname "[0-9]*" | tail -n 1)
+          CUR_TAG=$(git tag -l --sort=version:refname | grep -E '^[0-9]\.' | tail -n 1)
           echo "LAST=${CUR_TAG}" >> $GITHUB_OUTPUT
           TAG_DATE=$(git log -1 --format=%ai ${CUR_TAG})
           echo "REL_DATE=\"${TAG_DATE}\"" >> $GITHUB_OUTPUT
