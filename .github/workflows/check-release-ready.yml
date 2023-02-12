@@ -26,6 +26,7 @@ jobs:
           echo "LAST=${CUR_TAG}" >> $GITHUB_OUTPUT
           TAG_DATE=$(git log -1 --format=%ai ${CUR_TAG})
           echo "REL_DATE=\"${TAG_DATE}\"" >> $GITHUB_OUTPUT
+          echo "Tag: ${CUR_TAG} - Date: ${TAG_DATE}"
       -
         name: Get Changelog information
         id: changelog
@@ -39,6 +40,7 @@ jobs:
           ENTRIES=0
           [ -n "$(head -n 2 ChangeLog | tail -n 1 | grep -E '^* ')" ] && ENTRIES=1
           echo "ENTRIES=${ENTRIES}" >> $GITHUB_OUTPUT
+
       - name: Get info from configure
         id: configure
         run: |
@@ -52,6 +54,8 @@ jobs:
           fi
           VERSION_DATE=$(grep 'm4_define(\[version_date\],' configure.ac | awk -F\" '{print $2}')
           echo "VERSION_DATE=${VERSION_DATE}" >> $GITHUB_OUTPUT
+          echo "Version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_MICRO} - Date: ${VERSION_DATE}"
+
       -
         name: Get copyright dates in some tools
         id: copyright
@@ -66,6 +70,7 @@ jobs:
             else
               echo "${tool}=1" >> $GITHUB_OUTPUT
             fi
+            echo "- ${tool}: ${LICENSE} --- ${HELP}"
           done
           set +e
       -
