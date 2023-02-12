@@ -71,58 +71,58 @@ jobs:
       -
         name: Check all the things
         run: |
-          ERROR=0
+          DO_FAIL=0
           if [ "${{steps.changelog.outputs.LAST_VER}}" = "${{steps.version.outputs.LAST}}" ]; then
             echo "[!] Changelog: missing new version"
-            ERROR=1
+            DO_FAIL=1
           fi
           if [ "${{steps.changelog.outputs.CHANGES_FROM}}" != "${{steps.version.outputs.LAST}}" ]; then
             echo "[!] Changelog: Invalid 'changes from' version"
-            ERROR=1
+            DO_FAIL=1
           fi
           if [ "${{steps.changelog.outputs.ENTRIES}}" -eq 0 ]; then
             echo '[!] Changelog: Missing entries'
-            ERROR=1
+            DO_FAIL=1
           fi
 
           date --date="${{steps.changelog.outputs.REL_DATE}}" 2>/dev/null
           if [ $? -ne 0 ]; then
             echo "[!] Changelog: Invalid release date"
-            ERROR=1
+            DO_FAIL=1
           fi
 
           date --date="1 ${{steps.configure.outputs.VERSION_DATE}}"
           if [ $? -ne 0 ]; then
             echo "[!] Configure: Invalid release date"
-            ERROR=1
+            DO_FAIL=1
           fi
 
           if [ "${{steps.configure.outputs.VERSION }}" = "${{steps.version.outputs.LAST}}" ];
             echo "[!] Version and date in configure.ac must be updated"
-            ERROR=1
+            DO_FAIL=1
           fi
 
           if [ "${{steps.copyright.outputs.airodump-ng }}" -eq 0]; then
             echo "[!] Missing copyrights in airodump-ng license/help screen"
-            ERROR=1
+            DO_FAIL=1
           fi
 
           if [ "${{steps.copyright.outputs.aircrack-ng }}" -eq 0]; then
             echo "[!] Missing copyrights in aircrack-ng license/help screen"
-            ERROR=1
+            DO_FAIL=1
           fi
 
           if [ "${{steps.copyright.outputs.airbase-ng }}" -eq 0]; then
             echo "[!] Missing copyrights in airbase-ng license/help screen"
-            ERROR=1
+            DO_FAIL=1
           fi
 
           if [ "${{steps.copyright.outputs.aireplay-ng }}" -eq 0]; then
             echo "[!] Missing copyrights in aireplay-ng license/help screen"
-            ERROR=1
+            DO_FAIL=1
           fi
 
-          [ ${ERROR} -eq 1 ] && exit 1
+          [ ${DO_FAIL} -eq 1 ] && exit 1
 
   #build-other-linux:
   #  uses: ./.github/workflows/manual.yml
