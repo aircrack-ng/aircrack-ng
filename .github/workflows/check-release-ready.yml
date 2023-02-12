@@ -48,6 +48,7 @@ jobs:
         name: Get copyright dates in some tools
         id: copyright
         run: |
+          set -e
           for tool in airodump-ng aircrack-ng airbase-ng aireplay-ng; do
             echo "Checking ${tool}"
             LICENSE=$(grep Copyright src/${tool}/${tool}.c | grep $(date +%Y) )
@@ -58,6 +59,7 @@ jobs:
               echo "${tool}=1" >> $GITHUB_OUTPUT
             fi
           done
+          set +e
       -
         name: Check all the things
         run: |
