@@ -125,6 +125,8 @@ static int * frequencies;
 static volatile int quitting = 0;
 static volatile time_t quitting_event_ts = 0;
 
+static pMAC_t rBSSID;
+
 static void dump_sort(void);
 static void dump_print(int ws_row, int ws_col, int if_num);
 static char *
@@ -778,7 +780,8 @@ static const char usage[] =
 	"  Filter options:\n"
 	"      --encrypt   <suite>   : Filter APs by cipher suite\n"
 	"      --netmask <netmask>   : Filter APs by mask\n"
-	"      --bssid     <bssid>   : Filter APs by BSSID\n"
+	"      --bssid     <bssid>   : Filter APs by BSSID,\n"
+	"                              you can pass multiple --bssid options\n"
 	"      --essid     <essid>   : Filter APs by ESSID\n"
 #if defined HAVE_PCRE2 || defined HAVE_PCRE
 	"      --essid-regex <regex> : Filter APs by ESSID using a regular\n"
@@ -818,17 +821,25 @@ static int is_filtered_netmask(const uint8_t * bssid)
 	unsigned char mac1[6];
 	unsigned char mac2[6];
 	int i;
+	pMAC_t cur = rBSSID;
+	unsigned char match = 0;
 
-	for (i = 0; i < 6; i++)
+	while (cur->next != NULL)
 	{
-		mac1[i] = bssid[i] & opt.f_netmask[i];
-		mac2[i] = opt.f_bssid[i] & opt.f_netmask[i];
-	}
+		cur = cur->next;
+		for (i = 0; i < 6; i++)
+		{
+			mac1[i] = bssid[i] & opt.f_netmask[i];
+			mac2[i] = cur->mac[i] & opt.f_netmask[i];
+		}
 
-	if (memcmp(mac1, mac2, 6) != 0)
-	{
-		return (1);
+		if (memcmp(mac1, mac2, 6) == 0)
+		{
+			match = 1;
+			break;
+		}
 	}
+	if (match != 1) return (1);
 
 	return (0);
 }
@@ -1228,6 +1239,8 @@ static int dump_add_packet(unsigned char * h80211,
 	unsigned char clear[2048];
 	int weight[16];
 	int num_xor = 0;
+	pMAC_t cur = rBSSID;
+	unsigned char match = 0;
 
 	struct AP_info * ap_cur = NULL;
 	struct ST_info * st_cur = NULL;
@@ -1275,7 +1288,7 @@ static int dump_add_packet(unsigned char * h80211,
 			abort();
 	}
 
-	if (memcmp(opt.f_bssid, NULL_MAC, 6) != 0)
+	if (getMACcount(rBSSID) > 0)
 	{
 		if (memcmp(opt.f_netmask, NULL_MAC, 6) != 0)
 		{
@@ -1283,7 +1296,16 @@ static int dump_add_packet(unsigned char * h80211,
 		}
 		else
 		{
-			if (memcmp(opt.f_bssid, bssid, 6) != 0) return (1);
+			while (cur->next != NULL)
+			{
+				cur = cur->next;
+				if (memcmp(cur->mac, bssid, 6) == 0)
+				{
+					match = 1;
+					break;
+				}
+			}
+			if (match != 1) return (1);
 		}
 	}
 
@@ -5826,6 +5848,7 @@ int main(int argc, char * argv[])
 	int wi_read_failed = 0;
 	int n = 0;
 	int output_format_first_time = 1;
+	unsigned char mac[6];
 #ifdef HAVE_PCRE2
 	int pcreerror;
 	PCRE2_UCHAR pcreerrorbuf[256];
@@ -5905,6 +5928,10 @@ int main(int argc, char * argv[])
 
 	ALLEGE(pthread_mutex_init(&(lopt.mx_print), NULL) == 0);
 	ALLEGE(pthread_mutex_init(&(lopt.mx_sort), NULL) == 0);
+
+	rBSSID = (pMAC_t) malloc(sizeof(struct MAC_list));
+	ALLEGE(rBSSID != NULL);
+	memset(rBSSID, 0, sizeof(struct MAC_list));
 
 	textstyle(TEXT_RESET); //(TEXT_RESET, TEXT_BLACK, TEXT_WHITE);
 
@@ -6019,7 +6046,6 @@ int main(int argc, char * argv[])
 		lopt.channel[i] = 0;
 	}
 
-	memset(opt.f_bssid, '\x00', 6);
 	memset(opt.f_netmask, '\x00', 6);
 	memset(lopt.wpa_bssid, '\x00', 6);
 
@@ -6381,12 +6407,11 @@ int main(int argc, char * argv[])
 
 			case 'd':
 
-				if (memcmp(opt.f_bssid, NULL_MAC, 6) != 0)
+				if (getmac(optarg, 1, mac) == 0)
 				{
-					printf("Notice: bssid already given\n");
-					break;
+					addMAC(rBSSID, mac);
 				}
-				if (getmac(optarg, 1, opt.f_bssid) != 0)
+				else
 				{
 					printf("Notice: invalid bssid\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
@@ -6633,8 +6658,7 @@ int main(int argc, char * argv[])
 
 	if (argc - optind == 1) lopt.s_iface = argv[argc - 1];
 
-	if ((memcmp(opt.f_netmask, NULL_MAC, 6) != 0)
-		&& (memcmp(opt.f_bssid, NULL_MAC, 6) == 0))
+	if ((memcmp(opt.f_netmask, NULL_MAC, 6) != 0) && (getMACcount(rBSSID) == 0))
 	{
 		printf("Notice: specify bssid \"--bssid\" with \"--netmask\"\n");
 		printf("\"%s --help\" for help.\n", argv[0]);
@@ -7459,6 +7483,9 @@ int main(int argc, char * argv[])
 			oui_cur = oui_next;
 		}
 	}
+
+	flushMACs(rBSSID);
+	free(rBSSID);
 
 	reset_term();
 	show_cursor();

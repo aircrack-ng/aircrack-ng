@@ -96,6 +96,13 @@ int64_t ftello64(FILE * fp);
 extern "C" {
 #endif
 
+typedef struct MAC_list * pMAC_t;
+struct MAC_list
+{
+	unsigned char mac[6];
+	pMAC_t next;
+};
+
 static const unsigned char ZERO[33] = "\x00\x00\x00\x00\x00\x00\x00\x00"
 									  "\x00\x00\x00\x00\x00\x00\x00\x00"
 									  "\x00\x00\x00\x00\x00\x00\x00\x00"
@@ -186,6 +193,12 @@ int hexStringToArray(char * in,
 
 /// Return the mac address bytes (or null if it's not a mac address)
 int getmac(const char * macAddress, const int strict, unsigned char * mac);
+
+int addMAC(pMAC_t pMAC, unsigned char * mac);
+
+int getMACcount(pMAC_t pMAC);
+
+int flushMACs(pMAC_t pMAC);
 
 /// Read a line of characters inputted by the user
 int readLine(char line[], int maxlength);

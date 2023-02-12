@@ -579,6 +579,66 @@ int getmac(const char * macAddress, const int strict, unsigned char * mac)
 	return 0;
 }
 
+int addMAC(pMAC_t pMAC, unsigned char * mac)
+{
+	pMAC_t cur = pMAC;
+
+	if (mac == NULL) return -1;
+
+	if (pMAC == NULL) return -1;
+
+	while (cur->next != NULL) cur = cur->next;
+
+	// alloc mem
+	cur->next = (pMAC_t) malloc(sizeof(struct MAC_list));
+	ALLEGE(cur->next != NULL);
+	cur = cur->next;
+
+	// set mac
+	memcpy(cur->mac, mac, 6);
+
+	cur->next = NULL;
+
+	return 0;
+}
+
+int getMACcount(pMAC_t pMAC)
+{
+	pMAC_t cur = pMAC;
+	int count = 0;
+
+	if (pMAC == NULL) return (-1);
+
+	while (cur->next != NULL)
+	{
+		cur = cur->next;
+		count++;
+	}
+
+	return (count);
+}
+
+int flushMACs(pMAC_t pMAC)
+{
+	pMAC_t old;
+	pMAC_t cur;
+	cur = pMAC;
+
+	if (pMAC == NULL) return -1;
+
+	while (cur->next != NULL)
+	{
+		old = cur->next;
+		cur->next = old->next;
+
+		memset(old->mac, 0, sizeof(old->mac));
+		old->next = NULL;
+		free(old);
+	}
+
+	return (0);
+}
+
 // Read a line of characters inputted by the user
 int readLine(char line[], int maxlength)
 {

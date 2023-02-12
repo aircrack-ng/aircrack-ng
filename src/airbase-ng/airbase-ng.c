@@ -271,13 +271,6 @@ struct ESSID_list
 	time_t expire;
 };
 
-typedef struct MAC_list * pMAC_t;
-struct MAC_list
-{
-	unsigned char mac[6];
-	pMAC_t next;
-};
-
 #include "aircrack-ng/support/station.h"
 
 typedef struct CF_packet * pCF_t;
@@ -451,29 +444,6 @@ static int capture_packet(unsigned char * packet, int length)
 		flock(fileno(opt.f_cap), LOCK_UN);
 #endif
 	}
-	return 0;
-}
-
-static int addMAC(pMAC_t pMAC, unsigned char * mac)
-{
-	pMAC_t cur = pMAC;
-
-	if (mac == NULL) return -1;
-
-	if (pMAC == NULL) return -1;
-
-	while (cur->next != NULL) cur = cur->next;
-
-	// alloc mem
-	cur->next = (pMAC_t) malloc(sizeof(struct MAC_list));
-	ALLEGE(cur->next != NULL);
-	cur = cur->next;
-
-	// set mac
-	memcpy(cur->mac, mac, 6);
-
-	cur->next = NULL;
-
 	return 0;
 }
 
@@ -658,22 +628,6 @@ static int getESSIDcount(void)
 	}
 
 	ALLEGE(pthread_mutex_unlock(&rESSIDmutex) == 0);
-	return (count);
-}
-
-static int getMACcount(pMAC_t pMAC)
-{
-	pMAC_t cur = pMAC;
-	int count = 0;
-
-	if (pMAC == NULL) return (-1);
-
-	while (cur->next != NULL)
-	{
-		cur = cur->next;
-		count++;
-	}
-
 	return (count);
 }
 
