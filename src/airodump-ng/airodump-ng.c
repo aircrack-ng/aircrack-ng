@@ -3469,7 +3469,8 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	int num_ap;
 	int num_sta;
 
-	if (!lopt.singlechan) columns_ap -= 4; // no RXQ in scan mode
+	if (!(lopt.singlechan || lopt.singlefreq))
+		columns_ap -= 4; // no RXQ in scan mode
 	if (lopt.show_uptime) columns_ap += 15; // show uptime needs more space
 
 	nlines = 2;
@@ -3632,7 +3633,8 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 		strbuf[0] = 0;
 		strlcat(strbuf, " BSSID              PWR ", sizeof(strbuf));
 
-		if (lopt.singlechan) strlcat(strbuf, "RXQ ", sizeof(strbuf));
+		if (lopt.singlechan || lopt.singlefreq)
+			strlcat(strbuf, "RXQ ", sizeof(strbuf));
 
 		strlcat(strbuf,
 				" Beacons    #Data, #/s  CH   MB   ENC CIPHER  AUTH ",
@@ -3776,7 +3778,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 			len = strlen(strbuf);
 
-			if (lopt.singlechan)
+			if (lopt.singlechan || lopt.singlefreq)
 			{
 				snprintf(strbuf + len,
 						 sizeof(strbuf) - len,
