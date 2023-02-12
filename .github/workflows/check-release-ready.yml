@@ -91,13 +91,13 @@ jobs:
             DO_FAIL=1
           fi
 
-          date --date="${{steps.changelog.outputs.REL_DATE}}" 2>/dev/null
+          date --date="${{steps.changelog.outputs.REL_DATE}}" >/dev/null 2>&1
           if [ $? -ne 0 ]; then
             echo "[!] Changelog: Invalid release date"
             DO_FAIL=1
           fi
 
-          date --date="1 ${{steps.configure.outputs.VERSION_DATE}}"
+          date --date="1 ${{steps.configure.outputs.VERSION_DATE}}" >/dev/null 2>&1
           if [ $? -ne 0 ]; then
             echo "[!] Configure: Invalid release date"
             DO_FAIL=1
