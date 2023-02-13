@@ -2250,7 +2250,12 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 
 					// insert essid
 					len = (size_t) getESSID(fessid);
-					if (!len)
+					if (lopt.hidden == 1)
+					{
+						memset(fessid, 0, sizeof(fessid));
+						len = 1;
+					}
+					else if (!len)
 					{
 						strncpy(fessid, "default", sizeof(fessid) - 1);
 						len = strlen(fessid);
@@ -2785,7 +2790,12 @@ static THREAD_ENTRY(beacon_thread)
 			/* flush expired ESSID entries */
 			flushESSID();
 			essid_len = (size_t) getNextESSID((char *) essid);
-			if (!essid_len)
+			if (lopt.hidden == 1)
+			{
+				memset(essid, 0, sizeof(essid));
+				essid_len = 1;
+			}
+			else if (!essid_len)
 			{
 				strncpy((char *) essid, "default", sizeof(essid) - 1);
 				essid_len = strlen("default"); //-V814
