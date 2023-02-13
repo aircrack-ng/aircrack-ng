@@ -1,13 +1,13 @@
 name: IRC notifications
 
-on: [push, pull_request, create]
+on: [push, pull_request, create, issues]
 
 jobs:
   notification:
     runs-on: ubuntu-22.04
     name: IRC Notification
     steps:
-    - name: Push
+    - name: Commit
       uses: Gottox/irc-message-action@v2
       if: github.event_name == 'push'
       with:
@@ -17,7 +17,7 @@ jobs:
           Commit by ${{ github.actor }}: ${{ github.event.compare }}
           ${{ join(github.event.commits.*.message) }}
 
-    - name: Pull Request
+    - name: Pull Request Created
       uses: Gottox/irc-message-action@v2
       if: github.event_name == 'pull_request'
       with:
@@ -26,7 +26,16 @@ jobs:
         message: |-
           New pull request by ${{ github.actor }}: ${{ github.event.pull_request.html_url }}
 
-    - name: Push
+    - name: Issue created
+      uses: Gottox/irc-message-action@v2
+      if: github.event_name == 'issues' && github.event.action == 'opened' && github.event.issue.draft == false
+      with:
+        channel: '#aircrack-ng'
+        nickname: github-aircrack-ng
+        message: |-
+          New issue #${{github.event.issue.number}} (${{github.event.issue.url}}) by ${{ github.actor }}: ${{github.event.issue.title}} ()
+
+    - name: New tag/release
       uses: Gottox/irc-message-action@v2
       if: github.event_name == 'create' && github.event.ref_type == 'tag'
       with:
