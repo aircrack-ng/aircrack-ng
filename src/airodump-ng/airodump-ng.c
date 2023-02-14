@@ -791,7 +791,8 @@ static const char usage[] =
 	"      --netmask <netmask>   : Filter APs by mask\n"
 	"      --bssid     <bssid>   : Filter APs by BSSID,\n"
 	"                              you can pass multiple --bssid options\n"
-	"      --essid     <essid>   : Filter APs by ESSID\n"
+	"      --essid     <essid>   : Filter APs by ESSID,\n"
+	"                              you can pass multiple --essid options\n"
 #if defined HAVE_PCRE2 || defined HAVE_PCRE
 	"      --essid-regex <regex> : Filter APs by ESSID using a regular\n"
 	"                              expression\n"
