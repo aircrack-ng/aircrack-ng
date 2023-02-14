@@ -110,7 +110,7 @@ It will only show associated clients.
 The minimum number of packets received by an AP before displaying it.
 .TP
 .I -N, --essid
-Filter APs by ESSID. Can be used several times to match a set of ESSID.
+Filter APs by ESSID. May be specified more than once: \(aq\-N AP1 \-N AP2\(aq
 .TP
 .I -R, --essid-regex
 Filter APs by ESSID using a regular expression.
