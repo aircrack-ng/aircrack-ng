@@ -143,6 +143,11 @@ jobs:
         run: |
           ccache -s
 
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: cpp
+
       - name: Build with ${{ matrix.compiler.cc }} using ${{ matrix.flags.name }}
         env:
           AM_COLOR_TESTS: always
@@ -209,6 +214,9 @@ jobs:
             !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.lai
             !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.o
             !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.lo
+      
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
 
   ubuntu_20_04:
     runs-on: ubuntu-20.04
