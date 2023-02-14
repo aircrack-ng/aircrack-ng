@@ -573,13 +573,11 @@ static THREAD_ENTRY(input_thread)
 				snprintf(lopt.message,
 						 sizeof(lopt.message),
 						 "][ enabled AP selection");
-				lopt.sort_by = SORT_BY_NOTHING;
 			}
 			else
 			{
 				lopt.en_selection_direction = selection_direction_no;
 				lopt.p_selected_ap = NULL;
-				lopt.sort_by = SORT_BY_NOTHING;
 				snprintf(lopt.message,
 						 sizeof(lopt.message),
 						 "][ disabled selection");
