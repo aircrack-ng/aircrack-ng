@@ -124,7 +124,6 @@ static int * frequencies;
 
 static volatile int quitting = 0;
 static volatile time_t quitting_event_ts = 0;
-static unsigned char color_enabled = 0;
 
 static pMAC_t rBSSID;
 
@@ -273,6 +272,8 @@ static struct local_options
 	unsigned long min_pkts;
 
 	int relative_time; /* read PCAP in psuedo-real-time */
+
+	int color_on;
 } lopt;
 
 static void resetSelection(void)
@@ -399,7 +400,7 @@ static THREAD_ENTRY(input_thread)
 					"][ Are you sure you want to quit? Press Q again to quit.");
 		}
 
-		if ((keycode == KEY_o) || (color_enabled == 1))
+		if ((keycode == KEY_o) || (lopt.color_on == 1))
 		{
 			color_on();
 
@@ -407,7 +408,7 @@ static THREAD_ENTRY(input_thread)
 			{
 				// display message only once (when key 'o' is pressed)
 				snprintf(lopt.message, sizeof(lopt.message), "][ color on");
-				color_enabled = 1;
+				lopt.color_on = 1;
 			}
 		}
 
@@ -415,7 +416,7 @@ static THREAD_ENTRY(input_thread)
 		{
 			color_off();
 			snprintf(lopt.message, sizeof(lopt.message), "][ color off");
-			color_enabled = 0;
+			lopt.color_on = 0;
 		}
 
 		if (keycode == KEY_s)
@@ -6018,6 +6019,7 @@ int main(int argc, char * argv[])
 	lopt.do_exit = 0;
 	lopt.min_pkts = 2;
 	lopt.relative_time = 0;
+	lopt.color_on = 0;
 #ifdef CONFIG_LIBNL
 	lopt.htval = CHANNEL_NO_HT;
 #endif
