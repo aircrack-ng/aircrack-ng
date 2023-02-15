@@ -6,6 +6,7 @@ on:
       - 'master'
     paths-ignore:
       - '.devcontainer/**'
+      - '.coverityignore'
       - '.github/ISSUE_TEMPLATE/**'
       - '.github/workflows/almalinux.yml'
       - '.github/workflows/check-release-ready.yml'
@@ -47,6 +48,7 @@ on:
       - 'master'
     paths-ignore:
       - '.devcontainer/**'
+      - '.coverityignore'
       - '.github/ISSUE_TEMPLATE/**'
       - '.github/workflows/almalinux.yml'
       - '.github/workflows/check-release-ready.yml'

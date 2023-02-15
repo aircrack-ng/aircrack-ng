@@ -11,6 +11,7 @@ on:
       - contrib/**
       - manpages/**
       - patches/**
+      - '.coverityignore'
       - '.github/ISSUE_TEMPLATE/**'
       - '.github/workflows/almalinux.yml'
       - '.github/workflows/alpine.yml'
@@ -56,6 +57,7 @@ on:
       - contrib/**
       - manpages/**
       - patches/**
+      - '.coverityignore'
       - '.github/ISSUE_TEMPLATE/**'
       - '.github/workflows/almalinux.yml'
       - '.github/workflows/alpine.yml'

@@ -6,6 +6,7 @@ on:
       - 'master'
     paths-ignore:
       - '.devcontainer/**'
+      - '.coverityignore'
       - '.github/ISSUE_TEMPLATE/**'
       - '.github/workflows/alpine.yml'
       - '.github/workflows/check-release-ready.yml'
@@ -46,6 +47,7 @@ on:
     branches: [ master ]
     paths-ignore:
       - '.devcontainer/**'
+      - '.coverityignore'
       - '.github/ISSUE_TEMPLATE/**'
       - '.github/workflows/alpine.yml'
       - '.github/workflows/check-release-ready.yml'
