@@ -7,12 +7,20 @@ jobs:
     runs-on: ubuntu-22.04
     name: IRC Notification
     steps:
+    # If 2 consecutive calls happen, the second one can fail as
+    #  it's not able to get the username requested
+    - name: Generate random username
+      id: random
+      run: |
+        USERNAME=$(mktemp -u | awk -F. '{print "gh-a-ng-" $2}')
+        echo "username=${USERNAME}" >> $GITHUB_OUTPUT
+
     - name: Commit
       uses: Gottox/irc-message-action@v2
       if: github.event_name == 'push'
       with:
         channel: '#aircrack-ng'
-        nickname: github-a-ng-c
+        nickname: ${{steps.random.outputs.username}}
         message: |-
           Commit by ${{ github.actor }}: ${{ github.event.compare }}
           ${{ join(github.event.commits.*.message) }}
@@ -22,7 +30,7 @@ jobs:
       if: github.event_name == 'pull_request'
       with:
         channel: '#aircrack-ng'
-        nickname: github-a-ng-p
+        nickname: ${{steps.random.outputs.username}}
         message: |-
           New pull request by ${{ github.actor }}: ${{ github.event.pull_request.title }} - ${{ github.event.pull_request.html_url }}
 
@@ -31,7 +39,7 @@ jobs:
       if: github.event_name == 'issues' && github.event.action == 'opened' && github.event.issue.draft == false
       with:
         channel: '#aircrack-ng'
-        nickname: github-a-ng-i
+        nickname: ${{steps.random.outputs.username}}
         message: |-
           New issue #${{github.event.issue.number}} (${{github.event.issue.url}}) by ${{ github.actor }}: ${{github.event.issue.title}} ()
 
@@ -40,6 +48,6 @@ jobs:
       if: github.event_name == 'create' && github.event.ref_type == 'tag'
       with:
         channel: '#aircrack-ng'
-        nickname: github-a-ng-r
+        nickname: ${{steps.random.outputs.username}}
         message: |-
           New release in GitHub: ${{ github.event.ref }}
