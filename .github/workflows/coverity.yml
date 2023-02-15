@@ -23,9 +23,12 @@ jobs:
 
           CUR_REV=$(git rev-parse HEAD | cut -b 1-30)
           echo "Current git revision: ${CUR_REV}"
-          
+
           SKIP=false
-          [ ${COV_REV} == ${CUR_REV} ] && SKIP=true
+          if [ ${COV_REV} == ${CUR_REV} ] ||
+             [ -z "$(git diff --name-only ${COV_REV}..HEAD | grep -v -f .coverityignore)" ]; then
+             SKIP=true
+          fi
           echo "skip=${SKIP}" >> $GITHUB_OUTPUT
       -
         name: Prepare build
