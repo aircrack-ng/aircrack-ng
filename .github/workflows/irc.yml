@@ -12,7 +12,7 @@ jobs:
       if: github.event_name == 'push'
       with:
         channel: '#aircrack-ng'
-        nickname: github-aircrack-ng
+        nickname: github-a-ng-c
         message: |-
           Commit by ${{ github.actor }}: ${{ github.event.compare }}
           ${{ join(github.event.commits.*.message) }}
@@ -22,7 +22,7 @@ jobs:
       if: github.event_name == 'pull_request'
       with:
         channel: '#aircrack-ng'
-        nickname: github-aircrack-ng
+        nickname: github-a-ng-p
         message: |-
           New pull request by ${{ github.actor }}: ${{ github.event.pull_request.title }} - ${{ github.event.pull_request.html_url }}
 
@@ -31,7 +31,7 @@ jobs:
       if: github.event_name == 'issues' && github.event.action == 'opened' && github.event.issue.draft == false
       with:
         channel: '#aircrack-ng'
-        nickname: github-aircrack-ng
+        nickname: github-a-ng-i
         message: |-
           New issue #${{github.event.issue.number}} (${{github.event.issue.url}}) by ${{ github.actor }}: ${{github.event.issue.title}} ()
 
@@ -40,6 +40,6 @@ jobs:
       if: github.event_name == 'create' && github.event.ref_type == 'tag'
       with:
         channel: '#aircrack-ng'
-        nickname: github-aircrack-ng
+        nickname: github-a-ng-r
         message: |-
           New release in GitHub: ${{ github.event.ref }}
