@@ -34,8 +34,9 @@ if [ "${ID}" = 'debian' ] || [ "${ID_LIKE}" = 'debian' ]; then
             iproute2 ethtool kmod wget ieee-data python3 python3-graphviz rfkill && \
         rm -rf /var/lib/apt/lists/*
     fi
-elif [ "${ID}" = 'arch' ]; then
-    echo "[*] Detected Arch Linux"
+elif [ "${ID}" = 'arch' ] || [ "${ID_LIKE}" = 'arch' ]; then
+    [ "${ID}" = 'arch' ] && echo "[*] Detected Arch Linux"
+    [ "${ID_LIKE}" = 'arch' ] && echo "[*] Detected Arch-based Linux: ${NAME} (${ID})"
     if [ "${STEP}" = 'builder' ]; then
         pacman -Sy --noconfirm base-devel libnl openssl ethtool util-linux zlib libpcap sqlite pcre2 hwloc \
                                 cmocka hostapd wpa_supplicant tcpdump screen iw usbutils pciutils expect git \
