@@ -7,6 +7,11 @@ jobs:
     runs-on: ubuntu-22.04
     name: IRC Notification
     steps:
+    - name: Skip if not aircrack-ng/aircrack-ng
+      run: |
+        if [ "${{ github.repository }}" != 'aircrack-ng/aircrack-ng' ]; then
+          exit 1
+        fi
     # If 2 consecutive calls happen, the second one can fail as
     #  it's not able to get the username requested
     - name: Generate random username
