@@ -74,6 +74,20 @@ jobs:
           done
           set +e
       -
+        name: Check for iw update
+        id: iw
+        run: |
+          IW_URL=$(grep -E '^IW_SOURCE=' scripts/airmon-ng.linux | awk -F\" '{print $2}' | xargs dirname)
+          wget ${IW_URL} -O index.html
+          CUR_IW=$(grep '<a href="iw' index.html | grep 'xz' | awk -F\" '{print $2}' | sort -V | tail -n 1)
+          AIRMON_IW=$(echo ${IW_URL} | xargs basename)
+
+          if [ "${CUR_IW}" = "${AIRMON_IW}" ]; then
+            echo "update=0" >> $GITHUB_OUTPUT
+          else
+            echo "update=1" >> $GITHUB_OUTPUT
+          fi
+      -
         name: Check all the things
         run: |
           DO_FAIL=0
@@ -124,6 +138,11 @@ jobs:
 
           if [ "${{steps.copyright.outputs.aireplay-ng }}" -eq 0 ]; then
             echo "[!] Missing copyrights in aireplay-ng license/help screen"
+            DO_FAIL=1
+          fi
+
+          if [ "${{steps.iw.outputs.update }}" -eq 1 ]; then
+            echo "[!] Airmon-ng: An updated version of iw is available"
             DO_FAIL=1
           fi
 
