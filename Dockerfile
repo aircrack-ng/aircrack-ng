@@ -14,7 +14,7 @@ RUN set -x \
 	&& make distclean || : && \
 		autoreconf -vif && \
 		set -e; \
-			./configure --with-experimental --with-ext-scripts --enable-maintainer-mode --without-opt --prefix=/usr && \
+			./configure --with-experimental --with-ext-scripts --enable-maintainer-mode --prefix=/usr && \
 			make -j3 && \
 		set +e && \
 			if ! make check -j3; then \
