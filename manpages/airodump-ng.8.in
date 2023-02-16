@@ -104,10 +104,10 @@ It will only show networks, matching the given bssid. May be specified more than
 It will only show networks, matching the given bssid ^ netmask combination. Need \-\-bssid (or \-d) to be specified.
 .TP
 .I -a
-It will only show associated clients. Using in combination with -z won't display any of the stations.
+It will only show associated stations. Using in combination with -z won't display any of the stations.
 .TP
 .I -z
-It will only show unassociated clients. Using in combination with -a won't display any of the stations.
+It will only show unassociated stations. Using in combination with -a won't display any of the stations.
 .TP
 .I -n <int>, --min-packets <int>
 The minimum number of packets received by an AP before displaying it.

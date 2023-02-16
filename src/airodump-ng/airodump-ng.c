@@ -180,8 +180,8 @@ static struct local_options
 	int * own_channels; /* custom channel list  */
 	int * own_frequencies; /* custom frequency list  */
 
-	int asso_client; /* only show associated clients */
-	int unasso_client; /* only show unassociated clients */
+	int asso_station; /* only show associated stations */
+	int unasso_station; /* only show unassociated stations */
 
 	unsigned char wpa_bssid[6]; /* the wpa handshake bssid   */
 	char message[512];
@@ -334,7 +334,7 @@ static void color_on(void)
 			continue;
 		}
 
-		// Don't filter unassociated clients by ESSID
+		// Don't filter unassociated stations by ESSID
 		if (memcmp(ap_cur->bssid, BROADCAST, 6) != 0
 			&& is_filtered_essid(ap_cur->essid))
 		{
@@ -353,9 +353,10 @@ static void color_on(void)
 				continue;
 			}
 
-			if (((memcmp(ap_cur->bssid, BROADCAST, 6) == 0) && lopt.asso_client)
+			if (((memcmp(ap_cur->bssid, BROADCAST, 6) == 0)
+				 && lopt.asso_station)
 				|| ((memcmp(ap_cur->bssid, BROADCAST, 6) != 0)
-					&& lopt.unasso_client))
+					&& lopt.unasso_station))
 			{
 				st_cur = st_cur->prev;
 				continue;
@@ -798,8 +799,8 @@ static const char usage[] =
 	"      --essid-regex <regex> : Filter APs by ESSID using a regular\n"
 	"                              expression\n"
 #endif
-	"      -a                    : Filter out unassociated clients\n"
-	"      -z                    : Filter out associated clients\n"
+	"      -a                    : Filter out unassociated stations\n"
+	"      -z                    : Filter out associated stations\n"
 	"\n"
 	"  By default, airodump-ng hops on 2.4GHz channels.\n"
 	"  You can make it capture on other/specific channel(s) by using:\n"
@@ -4154,7 +4155,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				continue;
 			}
 
-			// Don't filter unassociated clients by ESSID
+			// Don't filter unassociated stations by ESSID
 			if (memcmp(ap_cur->bssid, BROADCAST, 6) != 0
 				&& is_filtered_essid(ap_cur->essid))
 			{
@@ -4187,9 +4188,9 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				}
 
 				if (((memcmp(ap_cur->bssid, BROADCAST, 6) == 0)
-					 && lopt.asso_client)
+					 && lopt.asso_station)
 					|| ((memcmp(ap_cur->bssid, BROADCAST, 6) != 0)
-						&& lopt.unasso_client))
+						&& lopt.unasso_station))
 				{
 					st_cur = st_cur->prev;
 					continue;
@@ -5982,8 +5983,8 @@ int main(int argc, char * argv[])
 	opt.sk_start = 0;
 	opt.prefix = NULL;
 	lopt.f_encrypt = 0;
-	lopt.asso_client = 0;
-	lopt.unasso_client = 0;
+	lopt.asso_station = 0;
+	lopt.unasso_station = 0;
 	lopt.f_essid = NULL;
 	lopt.f_essid_count = 0;
 	lopt.active_scan_sim = 0;
@@ -6188,12 +6189,12 @@ int main(int argc, char * argv[])
 
 			case 'a':
 
-				lopt.asso_client = 1;
+				lopt.asso_station = 1;
 				break;
 
 			case 'z':
 
-				lopt.unasso_client = 1;
+				lopt.unasso_station = 1;
 				break;
 
 			case 'A':
