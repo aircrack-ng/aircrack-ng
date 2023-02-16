@@ -1,15 +1,15 @@
-diff -rupN freeradius-server-3.2.0/raddb/mods-config/files/authorize freeradius-server-3.2.0-wpe/raddb/mods-config/files/authorize
---- freeradius-server-3.2.0/raddb/mods-config/files/authorize	2022-04-21 20:11:17.000000000 +0000
-+++ freeradius-server-3.2.0-wpe/raddb/mods-config/files/authorize	2022-05-02 23:05:06.000000000 +0000
+diff -rupN freeradius-server-3.2.2/raddb/mods-config/files/authorize freeradius-server-3.2.2-wpe/raddb/mods-config/files/authorize
+--- freeradius-server-3.2.2/raddb/mods-config/files/authorize	2023-02-16 14:38:01.000000000 +0000
++++ freeradius-server-3.2.2-wpe/raddb/mods-config/files/authorize	2023-02-16 16:05:35.000000000 +0000
 @@ -204,3 +204,5 @@ DEFAULT	Hint == "SLIP"
  # See the example user "bob" above.                     #
  #########################################################
  
 +DEFAULT Cleartext-Password := "foo", MS-CHAP-Use-NTLM-Auth := 0
 +DEFAULT Cleartext-Password := "a"
-diff -rupN freeradius-server-3.2.0/raddb/radiusd.conf.in freeradius-server-3.2.0-wpe/raddb/radiusd.conf.in
---- freeradius-server-3.2.0/raddb/radiusd.conf.in	2022-04-21 20:11:17.000000000 +0000
-+++ freeradius-server-3.2.0-wpe/raddb/radiusd.conf.in	2022-05-02 23:05:06.000000000 +0000
+diff -rupN freeradius-server-3.2.2/raddb/radiusd.conf.in freeradius-server-3.2.2-wpe/raddb/radiusd.conf.in
+--- freeradius-server-3.2.2/raddb/radiusd.conf.in	2023-02-16 14:38:01.000000000 +0000
++++ freeradius-server-3.2.2-wpe/raddb/radiusd.conf.in	2023-02-16 16:05:35.000000000 +0000
 @@ -445,6 +445,9 @@ ENV {
  #	LD_PRELOAD = /path/to/library2.so
  }
@@ -20,9 +20,9 @@ diff -rupN freeradius-server-3.2.0/raddb/radiusd.conf.in freeradius-server-3.2.0
  # SECURITY CONFIGURATION
  #
  #  There may be multiple methods of attacking on the server.  This
-diff -rupN freeradius-server-3.2.0/src/include/log.h freeradius-server-3.2.0-wpe/src/include/log.h
---- freeradius-server-3.2.0/src/include/log.h	2022-04-21 20:11:17.000000000 +0000
-+++ freeradius-server-3.2.0-wpe/src/include/log.h	2022-05-02 23:05:06.000000000 +0000
+diff -rupN freeradius-server-3.2.2/src/include/log.h freeradius-server-3.2.2-wpe/src/include/log.h
+--- freeradius-server-3.2.2/src/include/log.h	2023-02-16 14:38:01.000000000 +0000
++++ freeradius-server-3.2.2-wpe/src/include/log.h	2023-02-16 16:05:35.000000000 +0000
 @@ -72,6 +72,11 @@ typedef struct fr_log_t {
  	char const	*debug_file;	//!< Path to debug log file.
  } fr_log_t;
@@ -35,9 +35,9 @@ diff -rupN freeradius-server-3.2.0/src/include/log.h freeradius-server-3.2.0-wpe
  typedef		void (*radlog_func_t)(log_type_t lvl, log_lvl_t priority, REQUEST *, char const *, va_list ap);
  
  extern FR_NAME_NUMBER const syslog_facility_table[];
-diff -rupN freeradius-server-3.2.0/src/include/radiusd.h freeradius-server-3.2.0-wpe/src/include/radiusd.h
---- freeradius-server-3.2.0/src/include/radiusd.h	2022-04-21 20:11:17.000000000 +0000
-+++ freeradius-server-3.2.0-wpe/src/include/radiusd.h	2022-05-02 23:05:06.000000000 +0000
+diff -rupN freeradius-server-3.2.2/src/include/radiusd.h freeradius-server-3.2.2-wpe/src/include/radiusd.h
+--- freeradius-server-3.2.2/src/include/radiusd.h	2023-02-16 14:38:01.000000000 +0000
++++ freeradius-server-3.2.2-wpe/src/include/radiusd.h	2023-02-16 16:05:35.000000000 +0000
 @@ -152,6 +152,8 @@ typedef struct main_config {
  	char const	*checkrad;			//!< Script to use to determine if a user is already
  							//!< connected.
@@ -47,9 +47,9 @@ diff -rupN freeradius-server-3.2.0/src/include/radiusd.h freeradius-server-3.2.0
  	rad_listen_t	*listen;			//!< Head of a linked list of listeners.
  
  
-diff -rupN freeradius-server-3.2.0/src/main/auth.c freeradius-server-3.2.0-wpe/src/main/auth.c
---- freeradius-server-3.2.0/src/main/auth.c	2022-04-21 20:11:17.000000000 +0000
-+++ freeradius-server-3.2.0-wpe/src/main/auth.c	2022-05-02 23:05:06.000000000 +0000
+diff -rupN freeradius-server-3.2.2/src/main/auth.c freeradius-server-3.2.2-wpe/src/main/auth.c
+--- freeradius-server-3.2.2/src/main/auth.c	2023-02-16 14:38:01.000000000 +0000
++++ freeradius-server-3.2.2-wpe/src/main/auth.c	2023-02-16 16:05:35.000000000 +0000
 @@ -129,6 +129,7 @@ static int rad_authlog(char const *msg,
  		} else {
  			fr_prints(clean_password, sizeof(clean_password),
@@ -58,9 +58,9 @@ diff -rupN freeradius-server-3.2.0/src/main/auth.c freeradius-server-3.2.0-wpe/s
  		}
  	}
  
-diff -rupN freeradius-server-3.2.0/src/main/libfreeradius-server.mk freeradius-server-3.2.0-wpe/src/main/libfreeradius-server.mk
---- freeradius-server-3.2.0/src/main/libfreeradius-server.mk	2022-04-21 20:11:17.000000000 +0000
-+++ freeradius-server-3.2.0-wpe/src/main/libfreeradius-server.mk	2022-05-02 23:05:06.000000000 +0000
+diff -rupN freeradius-server-3.2.2/src/main/libfreeradius-server.mk freeradius-server-3.2.2-wpe/src/main/libfreeradius-server.mk
+--- freeradius-server-3.2.2/src/main/libfreeradius-server.mk	2023-02-16 14:38:01.000000000 +0000
++++ freeradius-server-3.2.2-wpe/src/main/libfreeradius-server.mk	2023-02-16 16:05:35.000000000 +0000
 @@ -14,6 +14,7 @@ SOURCES	:=	conffile.c \
  		pair.c \
  		xlat.c
@@ -69,9 +69,9 @@ diff -rupN freeradius-server-3.2.0/src/main/libfreeradius-server.mk freeradius-s
  # This lets the linker determine which version of the SSLeay functions to use.
  TGT_LDLIBS      := $(OPENSSL_LIBS)
  
-diff -rupN freeradius-server-3.2.0/src/main/log.c freeradius-server-3.2.0-wpe/src/main/log.c
---- freeradius-server-3.2.0/src/main/log.c	2022-04-21 20:11:17.000000000 +0000
-+++ freeradius-server-3.2.0-wpe/src/main/log.c	2022-05-02 23:05:06.000000000 +0000
+diff -rupN freeradius-server-3.2.2/src/main/log.c freeradius-server-3.2.2-wpe/src/main/log.c
+--- freeradius-server-3.2.2/src/main/log.c	2023-02-16 14:38:01.000000000 +0000
++++ freeradius-server-3.2.2-wpe/src/main/log.c	2023-02-16 16:05:35.000000000 +0000
 @@ -29,6 +29,7 @@ RCSID("$Id: 1ca2f914c258f3c199274421d7d2
  
  #include <freeradius-devel/radiusd.h>
@@ -164,9 +164,9 @@ diff -rupN freeradius-server-3.2.0/src/main/log.c freeradius-server-3.2.0-wpe/sr
  /** On fault, reset STDOUT and STDERR to something useful
   *
   * @return 0
-diff -rupN freeradius-server-3.2.0/src/main/mainconfig.c freeradius-server-3.2.0-wpe/src/main/mainconfig.c
---- freeradius-server-3.2.0/src/main/mainconfig.c	2022-04-21 20:11:17.000000000 +0000
-+++ freeradius-server-3.2.0-wpe/src/main/mainconfig.c	2022-05-02 23:05:06.000000000 +0000
+diff -rupN freeradius-server-3.2.2/src/main/mainconfig.c freeradius-server-3.2.2-wpe/src/main/mainconfig.c
+--- freeradius-server-3.2.2/src/main/mainconfig.c	2023-02-16 14:38:01.000000000 +0000
++++ freeradius-server-3.2.2-wpe/src/main/mainconfig.c	2023-02-16 16:05:35.000000000 +0000
 @@ -200,6 +200,7 @@ static const CONF_PARSER server_config[]
  	{ "postauth_client_lost", FR_CONF_POINTER(PW_TYPE_BOOLEAN, &main_config.postauth_client_lost), "no" },
  	{ "pidfile", FR_CONF_POINTER(PW_TYPE_STRING, &main_config.pid_file), "${run_dir}/radiusd.pid"},
@@ -175,9 +175,9 @@ diff -rupN freeradius-server-3.2.0/src/main/mainconfig.c freeradius-server-3.2.0
  
  	{ "debug_level", FR_CONF_POINTER(PW_TYPE_INTEGER, &main_config.debug_level), "0"},
  
-diff -rupN freeradius-server-3.2.0/src/main/radiusd.c freeradius-server-3.2.0-wpe/src/main/radiusd.c
---- freeradius-server-3.2.0/src/main/radiusd.c	2022-04-21 20:11:17.000000000 +0000
-+++ freeradius-server-3.2.0-wpe/src/main/radiusd.c	2022-05-02 23:05:06.000000000 +0000
+diff -rupN freeradius-server-3.2.2/src/main/radiusd.c freeradius-server-3.2.2-wpe/src/main/radiusd.c
+--- freeradius-server-3.2.2/src/main/radiusd.c	2023-02-16 14:38:01.000000000 +0000
++++ freeradius-server-3.2.2-wpe/src/main/radiusd.c	2023-02-16 16:05:35.000000000 +0000
 @@ -64,7 +64,7 @@ char const	*radlog_dir = NULL;
  
  bool		log_stripped_names;
@@ -187,9 +187,9 @@ diff -rupN freeradius-server-3.2.0/src/main/radiusd.c freeradius-server-3.2.0-wp
  #ifdef RADIUSD_VERSION_COMMIT
  " (git #" STRINGIFY(RADIUSD_VERSION_COMMIT) ")"
  #endif
-diff -rupN freeradius-server-3.2.0/src/modules/rlm_eap/types/rlm_eap_md5/eap_md5.c freeradius-server-3.2.0-wpe/src/modules/rlm_eap/types/rlm_eap_md5/eap_md5.c
---- freeradius-server-3.2.0/src/modules/rlm_eap/types/rlm_eap_md5/eap_md5.c	2022-04-21 20:11:17.000000000 +0000
-+++ freeradius-server-3.2.0-wpe/src/modules/rlm_eap/types/rlm_eap_md5/eap_md5.c	2022-05-02 23:05:06.000000000 +0000
+diff -rupN freeradius-server-3.2.2/src/modules/rlm_eap/types/rlm_eap_md5/eap_md5.c freeradius-server-3.2.2-wpe/src/modules/rlm_eap/types/rlm_eap_md5/eap_md5.c
+--- freeradius-server-3.2.2/src/modules/rlm_eap/types/rlm_eap_md5/eap_md5.c	2023-02-16 14:38:01.000000000 +0000
++++ freeradius-server-3.2.2-wpe/src/modules/rlm_eap/types/rlm_eap_md5/eap_md5.c	2023-02-16 16:05:35.000000000 +0000
 @@ -166,10 +166,14 @@ int eapmd5_verify(MD5_PACKET *packet, VA
  	/*
  	 *	The length of the response is always 16 for MD5.
@@ -205,9 +205,9 @@ diff -rupN freeradius-server-3.2.0/src/modules/rlm_eap/types/rlm_eap_md5/eap_md5
  
  	return 1;
  }
-diff -rupN freeradius-server-3.2.0/src/modules/rlm_mschap/rlm_mschap.c freeradius-server-3.2.0-wpe/src/modules/rlm_mschap/rlm_mschap.c
---- freeradius-server-3.2.0/src/modules/rlm_mschap/rlm_mschap.c	2022-04-21 20:11:17.000000000 +0000
-+++ freeradius-server-3.2.0-wpe/src/modules/rlm_mschap/rlm_mschap.c	2022-05-02 23:05:06.000000000 +0000
+diff -rupN freeradius-server-3.2.2/src/modules/rlm_mschap/rlm_mschap.c freeradius-server-3.2.2-wpe/src/modules/rlm_mschap/rlm_mschap.c
+--- freeradius-server-3.2.2/src/modules/rlm_mschap/rlm_mschap.c	2023-02-16 14:38:01.000000000 +0000
++++ freeradius-server-3.2.2-wpe/src/modules/rlm_mschap/rlm_mschap.c	2023-02-16 16:05:35.000000000 +0000
 @@ -1189,10 +1189,13 @@ ntlm_auth_err:
   */
  static int CC_HINT(nonnull (1, 2, 4, 5 ,6)) do_mschap(rlm_mschap_t *inst, REQUEST *request, VALUE_PAIR *password,
@@ -253,10 +253,10 @@ diff -rupN freeradius-server-3.2.0/src/modules/rlm_mschap/rlm_mschap.c freeradiu
  		rcode = mschap_error(inst, request, *response->vp_octets,
  				     mschap_result, mschap_version, smb_ctrl);
  		if (rcode != RLM_MODULE_OK) return rcode;
-diff -rupN freeradius-server-3.2.0/src/modules/rlm_pap/rlm_pap.c freeradius-server-3.2.0-wpe/src/modules/rlm_pap/rlm_pap.c
---- freeradius-server-3.2.0/src/modules/rlm_pap/rlm_pap.c	2022-04-21 20:11:17.000000000 +0000
-+++ freeradius-server-3.2.0-wpe/src/modules/rlm_pap/rlm_pap.c	2022-05-02 23:05:06.000000000 +0000
-@@ -563,6 +563,7 @@ static rlm_rcode_t CC_HINT(nonnull) pap_
+diff -rupN freeradius-server-3.2.2/src/modules/rlm_pap/rlm_pap.c freeradius-server-3.2.2-wpe/src/modules/rlm_pap/rlm_pap.c
+--- freeradius-server-3.2.2/src/modules/rlm_pap/rlm_pap.c	2023-02-16 14:38:01.000000000 +0000
++++ freeradius-server-3.2.2-wpe/src/modules/rlm_pap/rlm_pap.c	2023-02-16 16:05:35.000000000 +0000
+@@ -566,6 +566,7 @@ static rlm_rcode_t CC_HINT(nonnull) pap_
  		RDEBUG("Comparing with \"known good\" Cleartext-Password");
  	}
  
@@ -264,7 +264,7 @@ diff -rupN freeradius-server-3.2.0/src/modules/rlm_pap/rlm_pap.c freeradius-serv
  	if ((vp->vp_length != request->password->vp_length) ||
  	    (rad_digest_cmp(vp->vp_octets,
  			    request->password->vp_octets,
-@@ -570,6 +571,7 @@ static rlm_rcode_t CC_HINT(nonnull) pap_
+@@ -573,6 +574,7 @@ static rlm_rcode_t CC_HINT(nonnull) pap_
  		REDEBUG("Cleartext password does not match \"known good\" password");
  		return RLM_MODULE_REJECT;
  	}
@@ -272,7 +272,7 @@ diff -rupN freeradius-server-3.2.0/src/modules/rlm_pap/rlm_pap.c freeradius-serv
  	return RLM_MODULE_OK;
  }
  
-@@ -608,12 +610,12 @@ static rlm_rcode_t CC_HINT(nonnull) pap_
+@@ -611,12 +613,12 @@ static rlm_rcode_t CC_HINT(nonnull) pap_
  	fr_md5_update(&md5_context, request->password->vp_octets,
  		     request->password->vp_length);
  	fr_md5_final(digest, &md5_context);
@@ -287,7 +287,7 @@ diff -rupN freeradius-server-3.2.0/src/modules/rlm_pap/rlm_pap.c freeradius-serv
  	return RLM_MODULE_OK;
  }
  
-@@ -642,10 +644,12 @@ static rlm_rcode_t CC_HINT(nonnull) pap_
+@@ -645,10 +647,12 @@ static rlm_rcode_t CC_HINT(nonnull) pap_
  	/*
  	 *	Compare only the MD5 hash results, not the salt.
  	 */
@@ -300,7 +300,7 @@ diff -rupN freeradius-server-3.2.0/src/modules/rlm_pap/rlm_pap.c freeradius-serv
  
  	return RLM_MODULE_OK;
  }
-@@ -670,10 +674,12 @@ static rlm_rcode_t CC_HINT(nonnull) pap_
+@@ -673,10 +677,12 @@ static rlm_rcode_t CC_HINT(nonnull) pap_
  		      request->password->vp_length);
  	fr_sha1_final(digest,&sha1_context);
  
@@ -313,7 +313,7 @@ diff -rupN freeradius-server-3.2.0/src/modules/rlm_pap/rlm_pap.c freeradius-serv
  
  	return RLM_MODULE_OK;
  }
-@@ -699,10 +705,12 @@ static rlm_rcode_t CC_HINT(nonnull) pap_
+@@ -702,10 +708,12 @@ static rlm_rcode_t CC_HINT(nonnull) pap_
  	fr_sha1_update(&sha1_context, &vp->vp_octets[20], vp->vp_length - 20);
  	fr_sha1_final(digest, &sha1_context);
  
@@ -326,7 +326,7 @@ diff -rupN freeradius-server-3.2.0/src/modules/rlm_pap/rlm_pap.c freeradius-serv
  
  	return RLM_MODULE_OK;
  }
-@@ -763,10 +771,12 @@ static rlm_rcode_t CC_HINT(nonnull) pap_
+@@ -766,10 +774,12 @@ static rlm_rcode_t CC_HINT(nonnull) pap_
  
  	rad_assert((size_t) digest_len == vp->vp_length);	/* This would be an OpenSSL bug... */
  
@@ -339,7 +339,7 @@ diff -rupN freeradius-server-3.2.0/src/modules/rlm_pap/rlm_pap.c freeradius-serv
  
  	return RLM_MODULE_OK;
  }
-@@ -835,10 +845,12 @@ static rlm_rcode_t CC_HINT(nonnull) pap_
+@@ -838,10 +848,12 @@ static rlm_rcode_t CC_HINT(nonnull) pap_
  	/*
  	 *	Only compare digest_len bytes, the rest is salt.
  	 */
@@ -352,7 +352,7 @@ diff -rupN freeradius-server-3.2.0/src/modules/rlm_pap/rlm_pap.c freeradius-serv
  
  	return RLM_MODULE_OK;
  }
-@@ -1166,10 +1178,12 @@ static rlm_rcode_t CC_HINT(nonnull) pap_
+@@ -1169,10 +1181,12 @@ static rlm_rcode_t CC_HINT(nonnull) pap_
  
  	fr_md4_calc(digest, (uint8_t *) ucs2_password, len);
  
@@ -365,7 +365,7 @@ diff -rupN freeradius-server-3.2.0/src/modules/rlm_pap/rlm_pap.c freeradius-serv
  
  	return RLM_MODULE_OK;
  }
-@@ -1196,11 +1210,13 @@ static rlm_rcode_t CC_HINT(nonnull) pap_
+@@ -1199,11 +1213,13 @@ static rlm_rcode_t CC_HINT(nonnull) pap_
  		return RLM_MODULE_FAIL;
  	}
  
@@ -379,7 +379,7 @@ diff -rupN freeradius-server-3.2.0/src/modules/rlm_pap/rlm_pap.c freeradius-serv
  
  	return RLM_MODULE_OK;
  }
-@@ -1257,10 +1273,12 @@ static rlm_rcode_t CC_HINT(nonnull) pap_
+@@ -1260,10 +1276,12 @@ static rlm_rcode_t CC_HINT(nonnull) pap_
  		fr_md5_final(buff, &md5_context);
  	}
  
@@ -392,7 +392,7 @@ diff -rupN freeradius-server-3.2.0/src/modules/rlm_pap/rlm_pap.c freeradius-serv
  
  	return RLM_MODULE_OK;
  }
-@@ -1283,6 +1301,9 @@ static rlm_rcode_t CC_HINT(nonnull) mod_
+@@ -1286,6 +1304,9 @@ static rlm_rcode_t CC_HINT(nonnull) mod_
  		return RLM_MODULE_INVALID;
  	}
  
