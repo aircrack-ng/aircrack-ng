@@ -25,14 +25,14 @@ RUN if [ "${NEW_VERSION}" = "${OLD_VERSION}" ]; then \
 
 
 
-RUN apt update && apt dist-upgrade -y && \
-	apt install -y wget patch make gcc \
+RUN apt-get update && apt-get dist-upgrade -y && \
+	apt-get install -y wget patch make gcc \
 		libssl-dev build-essential libtalloc-dev libpcre2-dev libsqlite3-dev \
 		libhiredis-dev libykclient-dev libyubikey-dev default-libmysqlclient-dev \
 		libcurl4-openssl-dev libperl-dev libpam0g-dev libcap-dev libmemcached-dev \
 		libgdbm-dev unixodbc-dev libpq-dev libwbclient-dev libkrb5-dev libjson-c-dev \
 		freetds-dev samba-dev libcollectdclient-dev libldap-dev && \
-	apt autoclean && \
+	apt-get autoclean && \
 	rm -rf /var/lib/apt/lists/*
 
 # Download and unpack
@@ -62,3 +62,4 @@ RUN make
 # Then copy patch to /output
 WORKDIR /tmp
 RUN mkdir /output && mv  freeradius-server-${NEW_VERSION}-wpe.diff /output
+WORKDIR /output
