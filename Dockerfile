@@ -31,7 +31,7 @@ RUN set -x \
 # Stage 2
 FROM ${IMAGE_BASE}
 
-COPY --from=builder /output/usr /usr
+COPY --from=builder /output/usr/ /usr/
 
 COPY docker_package_install.sh /
 
