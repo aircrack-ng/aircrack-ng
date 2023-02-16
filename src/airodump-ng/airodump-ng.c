@@ -125,8 +125,6 @@ static int * frequencies;
 static volatile int quitting = 0;
 static volatile time_t quitting_event_ts = 0;
 
-static pMAC_t rBSSID;
-
 static void dump_sort(void);
 static void dump_print(int ws_row, int ws_col, int if_num);
 static char *
@@ -142,6 +140,7 @@ static struct local_options
 	struct NA_info * na_1st;
 	struct oui * manufList;
 
+	pMAC_t rBSSID;
 	unsigned char prev_bssid[6];
 	char ** f_essid;
 	int f_essid_count;
@@ -830,7 +829,7 @@ static int is_filtered_netmask(const uint8_t * bssid)
 	unsigned char mac1[6];
 	unsigned char mac2[6];
 	int i;
-	pMAC_t cur = rBSSID;
+	pMAC_t cur = lopt.rBSSID;
 	unsigned char match = 0;
 
 	while (cur->next != NULL)
@@ -1248,7 +1247,7 @@ static int dump_add_packet(unsigned char * h80211,
 	unsigned char clear[2048];
 	int weight[16];
 	int num_xor = 0;
-	pMAC_t cur = rBSSID;
+	pMAC_t cur = lopt.rBSSID;
 	unsigned char match = 0;
 
 	struct AP_info * ap_cur = NULL;
@@ -1297,7 +1296,7 @@ static int dump_add_packet(unsigned char * h80211,
 			abort();
 	}
 
-	if (getMACcount(rBSSID) > 0)
+	if (getMACcount(lopt.rBSSID) > 0)
 	{
 		if (memcmp(opt.f_netmask, NULL_MAC, 6) != 0)
 		{
@@ -5938,10 +5937,6 @@ int main(int argc, char * argv[])
 	ALLEGE(pthread_mutex_init(&(lopt.mx_print), NULL) == 0);
 	ALLEGE(pthread_mutex_init(&(lopt.mx_sort), NULL) == 0);
 
-	rBSSID = (pMAC_t) malloc(sizeof(struct MAC_list));
-	ALLEGE(rBSSID != NULL);
-	memset(rBSSID, 0, sizeof(struct MAC_list));
-
 	textstyle(TEXT_RESET); //(TEXT_RESET, TEXT_BLACK, TEXT_WHITE);
 
 	/* initialize a bunch of variables */
@@ -6056,6 +6051,9 @@ int main(int argc, char * argv[])
 		lopt.channel[i] = 0;
 	}
 
+	lopt.rBSSID = (pMAC_t) malloc(sizeof(struct MAC_list));
+	ALLEGE(lopt.rBSSID != NULL);
+	memset(lopt.rBSSID, 0, sizeof(struct MAC_list));
 	memset(opt.f_netmask, '\x00', 6);
 	memset(lopt.wpa_bssid, '\x00', 6);
 
@@ -6419,7 +6417,7 @@ int main(int argc, char * argv[])
 
 				if (getmac(optarg, 1, mac) == 0)
 				{
-					addMAC(rBSSID, mac);
+					addMAC(lopt.rBSSID, mac);
 				}
 				else
 				{
@@ -6668,7 +6666,8 @@ int main(int argc, char * argv[])
 
 	if (argc - optind == 1) lopt.s_iface = argv[argc - 1];
 
-	if ((memcmp(opt.f_netmask, NULL_MAC, 6) != 0) && (getMACcount(rBSSID) == 0))
+	if ((memcmp(opt.f_netmask, NULL_MAC, 6) != 0)
+		&& (getMACcount(lopt.rBSSID) == 0))
 	{
 		printf("Notice: specify bssid \"--bssid\" with \"--netmask\"\n");
 		printf("\"%s --help\" for help.\n", argv[0]);
@@ -7494,8 +7493,8 @@ int main(int argc, char * argv[])
 		}
 	}
 
-	flushMACs(rBSSID);
-	free(rBSSID);
+	flushMACs(lopt.rBSSID);
+	free(lopt.rBSSID);
 
 	reset_term();
 	show_cursor();
