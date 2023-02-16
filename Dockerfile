@@ -14,7 +14,7 @@ RUN set -x \
 	&& make distclean || : && \
 		autoreconf -vif && \
 		set -e; \
-			./configure --with-experimental --with-ext-scripts --enable-maintainer-mode --prefix=/usr && \
+			./configure --with-experimental --with-ext-scripts --enable-maintainer-mode --prefix=/usr/local && \
 			make -j3 && \
 		set +e && \
 			if ! make check -j3; then \
@@ -31,7 +31,7 @@ RUN set -x \
 # Stage 2
 FROM ${IMAGE_BASE}
 
-COPY --from=builder /output/usr/ /usr/
+COPY --from=builder /output/usr /usr
 
 COPY docker_package_install.sh /
 
