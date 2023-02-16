@@ -101,11 +101,17 @@ elif [ "${ID}" = 'clear-linux-os' ]; then
         hostapd -v
 
         # Install the rest of the packages
-        swupd bundle-add devpkg-libgcrypt devpkg-hwloc devpkg-libpcap devpkg-pcre2 devpkg-sqlite-autoconf \
-                         ethtool network-basic software-testing sysadmin-basic wpa_supplicant os-testsuite
+        swupd bundle-add devpkg-libgcrypt devpkg-hwloc devpkg-libpcap
+        # Split it in multiple parts to avoid failure: "Error: Bundle too large by xxxxM"
+        swupd bundle-add devpkg-pcre2 devpkg-sqlite-autoconf
+        swupd bundle-add ethtool network-basic software-testing
+        swupd bundle-add sysadmin-basic wpa_supplicant os-testsuite
+                         
     elif [ "${STEP}" = 'stage2' ]; then
-        swupd bundle-add libnl openssl devpkg-zlib devpkg-libpcap sqlite devpkg-pcre2 hwloc network-basic ethtool \
-                            sysadmin-basic python-extras
+        # Break it in multiple steps to avoid the issue mentioned above
+        swupd bundle-add libnl openssl devpkg-zlib devpkg-libpcap
+        swupd bundle-add sqlite devpkg-pcre2 hwloc network-basic ethtool
+        swupd bundle-add sysadmin-basic python-extras
     fi
 else
     echo "[!] Unsupported distro: ${ID} - PR welcome"
