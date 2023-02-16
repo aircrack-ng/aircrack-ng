@@ -88,6 +88,27 @@ jobs:
             echo "update=1" >> $GITHUB_OUTPUT
           fi
       -
+        name: Check for hostapd updates
+        id: hostapd
+        run: |
+          wget https://w1.fi/hostapd/
+          LATEST_HOSTAPD=$(grep '.tar.gz' index.html | awk -F\" '{print $2}' | xargs basename)
+          README_HOSTAPD=$(grep -E '^tar' patches/wpe/hostapd-wpe/README.md | awk '{print $3}')
+          FILE_HOSTAPD=$(ls -1 patches/wpe/hostapd-wpe/ | grep hostapd)
+          FILE_HOSTAPD=${FILE_HOSTAPD%-wpe.patch}
+
+          if [ "${LATEST_HOSTAPD}" = "${README_HOSTAPD}" ]; then
+            echo "readme=0" >> $GITHUB_OUTPUT
+          else
+            echo "readme=1" >> $GITHUB_OUTPUT
+          fi
+
+          if [ "${LATEST_HOSTAPD}" = "${FILE_HOSTAPD}.tar.gz" ]; then
+            echo "file=0" >> $GITHUB_OUTPUT
+          else
+            echo "file=1" >> $GITHUB_OUTPUT
+          fi
+      -
         name: Check all the things
         run: |
           DO_FAIL=0
@@ -143,6 +164,15 @@ jobs:
 
           if [ "${{steps.iw.outputs.update }}" -eq 1 ]; then
             echo "[!] Airmon-ng: An updated version of iw is available"
+            DO_FAIL=1
+          fi
+
+          if [ "${{steps.hostapd.outputs.readme}}" = '1' ]; then
+            echo "[!] Hostapd-WPE: README.md needs an update"
+            DO_FAIL=1
+          fi
+          if [ "${{steps.hostapd.outputs.file}}" = '1' ]; then
+            echo "[!] Hostapd-WPE: patch needs an update"
             DO_FAIL=1
           fi
 
