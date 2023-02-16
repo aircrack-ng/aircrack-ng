@@ -181,6 +181,7 @@ static struct local_options
 	int * own_frequencies; /* custom frequency list  */
 
 	int asso_client; /* only show associated clients */
+	int unasso_client; /* only show unassociated clients */
 
 	unsigned char wpa_bssid[6]; /* the wpa handshake bssid   */
 	char message[512];
@@ -352,7 +353,9 @@ static void color_on(void)
 				continue;
 			}
 
-			if (!memcmp(ap_cur->bssid, BROADCAST, 6) && lopt.asso_client)
+			if (((memcmp(ap_cur->bssid, BROADCAST, 6) == 0) && lopt.asso_client)
+				|| ((memcmp(ap_cur->bssid, BROADCAST, 6) != 0)
+					&& lopt.unasso_client))
 			{
 				st_cur = st_cur->prev;
 				continue;
@@ -795,7 +798,8 @@ static const char usage[] =
 	"      --essid-regex <regex> : Filter APs by ESSID using a regular\n"
 	"                              expression\n"
 #endif
-	"      -a                    : Filter unassociated clients\n"
+	"      -a                    : Filter out unassociated clients\n"
+	"      -z                    : Filter out associated clients\n"
 	"\n"
 	"  By default, airodump-ng hops on 2.4GHz channels.\n"
 	"  You can make it capture on other/specific channel(s) by using:\n"
@@ -4182,7 +4186,10 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 					continue;
 				}
 
-				if (!memcmp(ap_cur->bssid, BROADCAST, 6) && lopt.asso_client)
+				if (((memcmp(ap_cur->bssid, BROADCAST, 6) == 0)
+					 && lopt.asso_client)
+					|| ((memcmp(ap_cur->bssid, BROADCAST, 6) != 0)
+						&& lopt.unasso_client))
 				{
 					st_cur = st_cur->prev;
 					continue;
@@ -5976,6 +5983,7 @@ int main(int argc, char * argv[])
 	opt.prefix = NULL;
 	lopt.f_encrypt = 0;
 	lopt.asso_client = 0;
+	lopt.unasso_client = 0;
 	lopt.f_essid = NULL;
 	lopt.f_essid_count = 0;
 	lopt.active_scan_sim = 0;
@@ -6112,12 +6120,12 @@ int main(int argc, char * argv[])
 	{
 		option_index = 0;
 
-		option
-			= getopt_long(argc,
-						  argv,
-						  "b:c:egiw:s:t:u:m:d:N:R:aHDB:Ahf:r:EC:o:x:MUI:WK:n:T",
-						  long_options,
-						  &option_index);
+		option = getopt_long(
+			argc,
+			argv,
+			"b:c:egiw:s:t:u:m:d:N:R:azHDB:Ahf:r:EC:o:x:MUI:WK:n:T",
+			long_options,
+			&option_index);
 
 		if (option < 0) break;
 
@@ -6181,6 +6189,11 @@ int main(int argc, char * argv[])
 			case 'a':
 
 				lopt.asso_client = 1;
+				break;
+
+			case 'z':
+
+				lopt.unasso_client = 1;
 				break;
 
 			case 'A':
