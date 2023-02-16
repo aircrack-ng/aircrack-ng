@@ -189,7 +189,7 @@ static struct local_options
 
 	char is_berlin; /* is the switch --berlin set? */
 	int numaps; /* number of APs on the current list */
-	int maxnumaps; /* maximum nubers of APs on the list */
+	int maxnumaps; /* maximum numbers of APs on the list */
 	int maxaps; /* number of all APs found */
 	int berlin; /* number of seconds it takes in berlin to fill the whole screen
 				   with APs*/
@@ -2164,7 +2164,7 @@ skip_probe:
 				if (p + 9 + offset > h80211 + caplen) break;
 				numuni = p[8 + offset] + (p[9 + offset] << 8);
 
-				// Number of Authentication Key Managament suites
+				// Number of Authentication Key Management suites
 				if (p + (11 + offset) + 4 * numuni > h80211 + caplen) break;
 				numauth = p[(10 + offset) + 4 * numuni]
 						  + (p[(11 + offset) + 4 * numuni] << 8);
