@@ -207,5 +207,6 @@ jobs:
 
           [ ${DO_FAIL} -eq 1 ] && exit 1
 
-  #build-other-linux:
-  #  uses: ./.github/workflows/manual.yml
+  build-other-linux:
+    needs: release-ready
+    uses: ./.github/workflows/manual.yml
