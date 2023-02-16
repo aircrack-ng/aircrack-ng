@@ -108,6 +108,26 @@ jobs:
           else
             echo "file=1" >> $GITHUB_OUTPUT
           fi
+      - 
+        name: Check for freeradius updates
+        run: |
+          wget https://github.com/FreeRADIUS/freeradius-server/releases.atom
+          LATEST=$(grep '<title>' releases.atom | grep -v Release | sort -V | tail -n 1 | awk -F\> '{print $2}' | awk -F\< '{print $1}')
+          # freeradius-server-${VERSION}-wpe.diff
+          FR_FILENAME=$(ls -1 patches/wpe/freeradius-wpe/ | grep freeradius)
+          README=$(grep -i 'updated patch' patches/wpe/freeradius-wpe/README.md | awk '{print $5}')
+
+          if [ "freeradius-server-${LATEST}-wpe.diff" = "${FR_FILENAME}" ]; then
+            echo "file=0" >> $GITHUB_OUTPUT
+          else
+            echo "file=1" >> $GITHUB_OUTPUT
+          fi
+
+          if [ "${LATEST}" = "${README}" ]; then
+            echo "readme=0" >> $GITHUB_OUTPUT
+          else
+            echo "readme=1" >> $GITHUB_OUTPUT
+          fi
       -
         name: Check all the things
         run: |
@@ -173,6 +193,15 @@ jobs:
           fi
           if [ "${{steps.hostapd.outputs.file}}" = '1' ]; then
             echo "[!] Hostapd-WPE: patch needs an update"
+            DO_FAIL=1
+          fi
+
+          if [ "${{steps.freeradius.outputs.readme}}" = '1' ]; then
+            echo "[!] Freeradius-WPE: README.md needs an update"
+            DO_FAIL=1
+          fi
+          if [ "${{steps.freeradius.outputs.file}}" = '1' ]; then
+            echo "[!] Freeradius-WPE: patch needs an update"
             DO_FAIL=1
           fi
 
