@@ -784,8 +784,6 @@ static const char usage[] =
 	"      --write-interval\n"
 	"                  <seconds> : Output file(s) write interval in seconds\n"
 	"      --background <enable> : Override background detection.\n"
-	"      -n              <int> : Minimum AP packets recv'd before\n"
-	"                              for displaying it\n"
 	"\n"
 	"  Filter options:\n"
 	"      --encrypt   <suite>   : Filter APs by cipher suite,\n"
@@ -799,6 +797,8 @@ static const char usage[] =
 	"      --essid-regex <regex> : Filter APs by ESSID using a regular\n"
 	"                              expression\n"
 #endif
+	"      -n              <int> : Minimum AP packets recv'd before\n"
+	"                              displaying it\n"
 	"      -a                    : Filter out unassociated stations\n"
 	"      -z                    : Filter out associated stations\n"
 	"\n"
