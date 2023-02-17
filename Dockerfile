@@ -37,6 +37,10 @@ FROM ${IMAGE_BASE}
 # In Arch-based distros, /usr/local/share/man is a symlink
 RUN mkdir /output
 COPY --from=builder /output/usr /output
+# And another workaround for Clear Linux where this directory does not exist
+RUN set -x && \
+	[ -d /usr/local/share/man ] || \
+		mkdir /usr/local/share/man
 RUN mv /output/local/share/man/* /usr/local/share/man/ && \
 	rmdir /output/local/share/man/ && \
 	cp -r /output/* /usr/ && \
