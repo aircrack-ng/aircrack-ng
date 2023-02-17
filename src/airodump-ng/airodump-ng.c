@@ -798,7 +798,7 @@ static const char usage[] =
 	"                              expression\n"
 #endif
 	"      -n              <int> : Minimum AP packets recv'd before\n"
-	"                              displaying it\n"
+	"                              displaying it (default: 2)\n"
 	"      -a                    : Filter out unassociated stations\n"
 	"      -z                    : Filter out associated stations\n"
 	"\n"
