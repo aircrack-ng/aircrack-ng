@@ -31,7 +31,16 @@ RUN set -x \
 # Stage 2
 FROM ${IMAGE_BASE}
 
-COPY --from=builder /output/usr /usr
+# Due to the behavior of buildx failing to copy to directories being
+# a symlink (whereas docker build works), copy the content to /output
+# then manually move all the files in /usr/local
+# In Arch-based distros, /usr/local/share/man is a symlink
+RUN mkdir /output
+COPY --from=builder /output/usr /output
+RUN mv /output/local/share/man/* /usr/local/share/man/ && \
+	rmdir /output/local/share/man/ && \
+	cp -r /output/* /usr/ && \
+	rm -rf /output
 
 COPY docker_package_install.sh /
 
