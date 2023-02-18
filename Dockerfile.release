@@ -45,7 +45,7 @@ COPY --from=builder /output/usr /output
 # hadolint ignore=SC2015
 RUN set -x && \
 	[ -d /usr/local/share/man ] || \
-		mkdir /usr/local/share/man
+		mkdir -p /usr/local/share/man
 RUN mv /output/local/share/man/* /usr/local/share/man/ && \
 	rmdir /output/local/share/man/ && \
 	cp -r /output/* /usr/ && \
