@@ -3,7 +3,7 @@ name: Coverity Scan
 on:
   workflow_dispatch:
   schedule:
-    - cron: "* */12 * * *"
+    - cron: "0 */12 * * *"
 
 jobs:
   coverity:
