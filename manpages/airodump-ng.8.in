@@ -110,7 +110,7 @@ It will only show associated stations. Using in combination with -z won't displa
 It will only show unassociated stations. Using in combination with -a won't display any of the stations.
 .TP
 .I -n <int>, --min-packets <int>
-The minimum number of packets received by an AP before displaying it.
+The minimum number of packets received by an AP before displaying it. Default value: 2.
 .TP
 .I -N, --essid
 Filter APs by ESSID. May be specified more than once: \(aq\-N AP1 \-N AP2\(aq
