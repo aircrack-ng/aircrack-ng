@@ -50,6 +50,7 @@ on:
       - 'README'
       - 'README.md'
       - 'SECURITY.md'
+      - 'scripts/airmon-ng.linux'
 
   pull_request:
     branches: [ master ]
@@ -97,6 +98,7 @@ on:
       - 'README'
       - 'README.md'
       - 'SECURITY.md'
+      - 'scripts/airmon-ng.linux'
 
 env:
   LANG: en_US.UTF-8

@@ -43,6 +43,7 @@ on:
       - 'README.md'
       - 'SECURITY.md'
       - 'centos_autotools.sh'
+      - 'scripts/airmon-ng.freebsd'
   workflow_dispatch:
 
 jobs:

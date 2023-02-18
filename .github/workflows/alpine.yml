@@ -44,6 +44,7 @@ on:
       - 'README.md'
       - 'SECURITY.md'
       - 'centos_autotools.sh'
+      - 'scripts/airmon-ng.freebsd'
   pull_request:
     branches:
       - 'master'
@@ -87,6 +88,7 @@ on:
       - 'README.md'
       - 'SECURITY.md'
       - 'centos_autotools.sh'
+      - 'scripts/airmon-ng.freebsd'
 
 jobs:
   lint:

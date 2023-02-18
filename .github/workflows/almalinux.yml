@@ -44,6 +44,7 @@ on:
       - 'README.md'
       - 'SECURITY.md'
       - 'centos_autotools.sh'
+      - 'scripts/airmon-ng.freebsd'
   pull_request:
     branches: [ master ]
     paths-ignore:
@@ -85,6 +86,7 @@ on:
       - 'README.md'
       - 'SECURITY.md'
       - 'centos_autotools.sh'
+      - 'scripts/airmon-ng.freebsd'
 
 jobs:
   lint:

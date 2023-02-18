@@ -50,6 +50,7 @@ on:
       - 'README'
       - 'README.md'
       - 'SECURITY.md'
+      - 'scripts/airmon-ng.*'
 
   pull_request:
     branches: [ master ]
