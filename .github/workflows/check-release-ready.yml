@@ -112,6 +112,7 @@ jobs:
           rm -f index.html
       - 
         name: Check for freeradius updates
+        id: freeradius
         run: |
           wget https://github.com/FreeRADIUS/freeradius-server/releases.atom
           LATEST=$(grep '<title>' releases.atom | grep -v Release | sort -V | tail -n 1 | awk -F\> '{print $2}' | awk -F\< '{print $1}')
