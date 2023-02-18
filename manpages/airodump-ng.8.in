@@ -115,6 +115,12 @@ It will only show unassociated stations. Using in combination with -a won't disp
 .I -n <int>, --min-packets <int>
 The minimum number of packets received by an AP before displaying it. Default value: 2.
 .TP
+.I -p <int>, --min-power <int>
+Filter out APs with PWR less than the specified value (default value: -120).
+.TP
+.I -q <int>, --min-rxq <int>
+Filter out APs with RXQ less than the specified value (default value: 0). Valid range: 0..100. Requires --channel (or -c) or -C.
+.TP
 .I -N, --essid
 Filter APs by ESSID. May be specified more than once: \(aq\-N AP1 \-N AP2\(aq
 .TP
