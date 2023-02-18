@@ -12,7 +12,7 @@ on:
   workflow_call:
   workflow_dispatch:
   schedule:
-    - cron: "* * 2 * *"
+    - cron: "0 0 2 * *"
 
 jobs:
   lint:
