@@ -229,6 +229,7 @@ static struct local_options
 	char * freqstring;
 	int freqoption;
 	int chanoption;
+	int ignore_other_channels;
 	int active_scan_sim; /* simulates an active scan, sending probe requests */
 
 	/* Airodump-ng start time: for kismet netxml file */
@@ -313,6 +314,8 @@ static void color_on(void)
 	struct AP_info * ap_cur;
 	struct ST_info * st_cur;
 	int color = 2;
+	int i;
+	int match;
 
 	color_off();
 
@@ -340,6 +343,28 @@ static void color_on(void)
 		{
 			ap_cur = ap_cur->prev;
 			continue;
+		}
+
+		// Don't filter unassociated stations by channel
+		if (memcmp(ap_cur->bssid, BROADCAST, 6) != 0 && lopt.chanoption
+			&& lopt.ignore_other_channels)
+		{
+			i = 0;
+			match = 0;
+			while (lopt.own_channels[i])
+			{
+				if (ap_cur->channel == lopt.own_channels[i])
+				{
+					match = 1;
+					break;
+				}
+				i++;
+			}
+			if (match != 1)
+			{
+				ap_cur = ap_cur->prev;
+				continue;
+			}
 		}
 
 		st_cur = lopt.st_end;
@@ -808,6 +833,8 @@ static const char usage[] =
 	"      --ht40-               : Set channel to HT40- (802.11n)\n"
 	"      --ht40+               : Set channel to HT40+ (802.11n)\n"
 	"      --channel <channels>  : Capture on specific channels\n"
+	"      --ignore-other-chans  : Filter out other channels\n"
+	"                              Requires --channel (or -c)\n"
 	"      --band <abg>          : Band on which airodump-ng should hop\n"
 	"      -C    <frequencies>   : Uses these frequencies in MHz to hop\n"
 	"      --cswitch  <method>   : Set channel switching method\n"
@@ -3453,6 +3480,8 @@ static char * parse_timestamp(unsigned long long timestamp)
 static int IsAp2BeSkipped(struct AP_info * ap_cur)
 {
 	REQUIRE(ap_cur != NULL);
+	int i = 0;
+	int match = 0;
 
 	if (ap_cur->nb_pkt < lopt.min_pkts
 		|| time(NULL) - ap_cur->tlast > lopt.berlin
@@ -3470,6 +3499,20 @@ static int IsAp2BeSkipped(struct AP_info * ap_cur)
 	if (is_filtered_essid(ap_cur->essid))
 	{
 		return (1);
+	}
+
+	if (lopt.chanoption && lopt.ignore_other_channels)
+	{
+		while (lopt.own_channels[i])
+		{
+			if (ap_cur->channel == lopt.own_channels[i])
+			{
+				match = 1;
+				break;
+			}
+			i++;
+		}
+		if (match != 1) return (1);
 	}
 
 	return (0);
@@ -5916,6 +5959,7 @@ int main(int argc, char * argv[])
 		   {"essid", 1, 0, 'N'},
 		   {"essid-regex", 1, 0, 'R'},
 		   {"channel", 1, 0, 'c'},
+		   {"ignore-other-chans", 0, 0, 'O'},
 		   {"gpsd", 0, 0, 'g'},
 		   {"ivs", 0, 0, 'i'},
 		   {"write", 1, 0, 'w'},
@@ -5956,6 +6000,7 @@ int main(int argc, char * argv[])
 	h80211 = NULL;
 	ivs_only = 0;
 	lopt.chanoption = 0;
+	lopt.ignore_other_channels = 0;
 	lopt.freqoption = 0;
 	lopt.num_cards = 0;
 	fdh = 0;
@@ -6124,7 +6169,7 @@ int main(int argc, char * argv[])
 		option = getopt_long(
 			argc,
 			argv,
-			"b:c:egiw:s:t:u:m:d:N:R:azHDB:Ahf:r:EC:o:x:MUI:WK:n:T",
+			"b:c:Oegiw:s:t:u:m:d:N:R:azHDB:Ahf:r:EC:o:x:MUI:WK:n:T",
 			long_options,
 			&option_index);
 
@@ -6254,6 +6299,10 @@ int main(int argc, char * argv[])
 					break;
 				}
 				lopt.channels = (int *) bg_chans;
+				break;
+
+			case 'O':
+				lopt.ignore_other_channels = 1;
 				break;
 
 			case 'C':
@@ -6684,6 +6733,13 @@ int main(int argc, char * argv[])
 		&& (getMACcount(lopt.rBSSID) == 0))
 	{
 		printf("Notice: specify bssid \"--bssid\" with \"--netmask\"\n");
+		printf("\"%s --help\" for help.\n", argv[0]);
+		return (EXIT_FAILURE);
+	}
+
+	if (lopt.ignore_other_channels && !lopt.chanoption)
+	{
+		printf("Error: --ignore-other-chans requires --channel (or -c)\n");
 		printf("\"%s --help\" for help.\n", argv[0]);
 		return (EXIT_FAILURE);
 	}
