@@ -13,6 +13,7 @@ on:
       - patches/**
       - '.devcontainer/**'
       - '.coverityignore'
+      - '.github/workflows/gentoo.yml'
       - '.github/ISSUE_TEMPLATE/**'
       - '.github/workflows/almalinux.yml'
       - '.github/workflows/alpine.yml'
@@ -58,6 +59,7 @@ on:
       - patches/**
       - '.devcontainer/**'
       - '.coverityignore'
+      - '.github/workflows/gentoo.yml'
       - '.github/ISSUE_TEMPLATE/**'
       - '.github/workflows/almalinux.yml'
       - '.github/workflows/alpine.yml'

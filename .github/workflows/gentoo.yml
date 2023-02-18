@@ -1,0 +1,53 @@
+name: Gentoo
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/gentoo.yml'
+  pull_request:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/gentoo.yml'
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  gentoo:
+    runs-on: ubuntu-22.04
+    steps:
+      - 
+        name: Git Checkout
+        uses: actions/checkout@v3
+      - 
+        name: Lint Dockerfile
+        uses: hadolint/hadolint-action@v3.0.0
+        with:
+          dockerfile: Dockerfile
+          verbose: true
+          failure-threshold: error
+      - 
+        name: Lint Release Dockerfile
+        uses: hadolint/hadolint-action@v3.0.0
+        with:
+          dockerfile: './Dockerfile.release'
+          verbose: true
+          failure-threshold: error
+      -
+        name: Shellcheck package install script
+        uses: sudo-bot/action-shellcheck@latest
+        with:
+          cli-args: "docker_package_install.sh"
+      -
+        name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      -
+        name: Build on linux/amd64
+        uses: docker/build-push-action@v3
+        with:
+          platforms: linux/amd64
+          build-args: "IMAGE_BASE=gentoo/stage3"
+          push: false

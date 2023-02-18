@@ -7,6 +7,7 @@ on:
     paths-ignore:
       - '.devcontainer/**'
       - '.coverityignore'
+      - '.github/workflows/gentoo.yml'
       - '.github/ISSUE_TEMPLATE/**'
       - '.github/workflows/almalinux.yml'
       - '.github/workflows/check-release-ready.yml'
@@ -49,6 +50,7 @@ on:
     paths-ignore:
       - '.devcontainer/**'
       - '.coverityignore'
+      - '.github/workflows/gentoo.yml'
       - '.github/ISSUE_TEMPLATE/**'
       - '.github/workflows/almalinux.yml'
       - '.github/workflows/check-release-ready.yml'

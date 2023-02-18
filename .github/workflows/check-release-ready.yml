@@ -214,3 +214,7 @@ jobs:
   build-other-linux:
     needs: release-ready
     uses: ./.github/workflows/manual.yml
+
+  build-gentoo:
+    needs: release-ready
+    uses: ./.github/workflows/gentoo.yml
