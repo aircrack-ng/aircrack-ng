@@ -1,4 +1,4 @@
-name: Gentoo
+name: Gentoo CI
 
 on:
   push:
