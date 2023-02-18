@@ -1,4 +1,5 @@
 ARG IMAGE_BASE=debian:unstable-slim
+# hadolint ignore=DL3006
 FROM ${IMAGE_BASE} AS builder
 
 # Install dependencies for building
@@ -6,6 +7,7 @@ COPY docker_package_install.sh /
 RUN sh /docker_package_install.sh builder
 
 # Build Aircrack-ng
+# hadolint ignore=DL3059
 RUN mkdir -p /aircrack-ng /output
 COPY . /aircrack-ng
 WORKDIR /aircrack-ng
@@ -29,6 +31,7 @@ RUN set -x \
 			make install DESTDIR=/output
 
 # Stage 2
+# hadolint ignore=DL3006
 FROM ${IMAGE_BASE}
 
 # Due to the behavior of buildx failing to copy to directories being
@@ -38,6 +41,7 @@ FROM ${IMAGE_BASE}
 RUN mkdir /output
 COPY --from=builder /output/usr /output
 # And another workaround for Clear Linux where this directory does not exist
+# hadolint ignore=SC2015
 RUN set -x && \
 	[ -d /usr/local/share/man ] || \
 		mkdir /usr/local/share/man
@@ -49,7 +53,6 @@ RUN mv /output/local/share/man/* /usr/local/share/man/ && \
 COPY docker_package_install.sh /
 
 # Install dependencies
-# hadolint ignore=DL3008
 RUN set -x \
  && sh /docker_package_install.sh stage2 \
  && rm /docker_package_install.sh \
