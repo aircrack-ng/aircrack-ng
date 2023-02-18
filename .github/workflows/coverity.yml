@@ -26,7 +26,7 @@ jobs:
 
           SKIP=false
           if [ ${COV_REV} == ${CUR_REV} ] ||
-             [ -z "$(git diff --name-only ${COV_REV}..HEAD | grep -v -f .coverityignore)" ]; then
+             [ -z "$(git diff --name-only ${COV_REV}..HEAD | grep -v -f .coverityignore | grep -v coverityignore)" ]; then
              SKIP=true
           fi
           echo "skip=${SKIP}" >> $GITHUB_OUTPUT
