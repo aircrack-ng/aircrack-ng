@@ -140,7 +140,7 @@ jobs:
         run: |
           New-Variable bash -Value "C:\tools\cygwin\bin\bash.exe" -Option Constant
           $unix_path = (& $bash --login -e -c "cygpath '${env:GITHUB_WORKSPACE}'")
-          Write-Host "::set-output name=unix_path::${unix_path}"
+          echo "unix_path=${unix_path}" >> $GITHUB_OUTPUT
 
       - name: Ccache stats before builds
         run: |
@@ -335,7 +335,7 @@ jobs:
         run: |
           New-Variable bash -Value "C:\tools\cygwin\bin\bash.exe" -Option Constant
           $unix_path = (& $bash --login -e -c "cygpath '${env:GITHUB_WORKSPACE}'")
-          Write-Host "::set-output name=unix_path::${unix_path}"
+          echo "unix_path=${unix_path}" >> $GITHUB_OUTPUT
 
       - name: Download Cygwin 64-bit artifacts
         uses: actions/download-artifact@v2

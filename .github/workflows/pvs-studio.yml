@@ -126,7 +126,7 @@ jobs:
         run: |
           p=$(curl -sRL "https://pvs-studio.com/en/pvs-studio/download-all/" |\
               grep -oE 'https?://cdn.pvs-studio.com/pvs-studio-[0-9.]+(-amd64\.deb)')
-          echo "::set-output name=debfile::$p"
+          echo "debfile=${p}" >> $GITHUB_OUTPUT
 
       - name: Fetch PVS-Studio package
         env:
