@@ -111,8 +111,9 @@ EOF
         emerge --sync
         emerge dev-db/sqlite dev-lang/python dev-libs/libbsd dev-libs/libnl dev-libs/libpcre dev-libs/openssl \
                 net-libs/libpcap net-wireless/iw net-wireless/lorcon net-wireless/wireless-tools sys-apps/ethtool \
-                sys-apps/hwdata sys-apps/hwloc sys-apps/pciutils sys-apps/usbutils sys-libs/zlib
+                sys-apps/hwdata sys-apps/hwloc sys-apps/pciutils sys-apps/usbutils sys-libs/zlib app-portage/gentoolkit
         eclean --deep distfiles && eclean --deep packages
+        emerge --depclean app-portage/gentoolkit
         rm -fr /var/db/repos/gentoo /etc/portage/binrepos.conf
     fi
 elif [ "${ID}" = 'clear-linux-os' ]; then
