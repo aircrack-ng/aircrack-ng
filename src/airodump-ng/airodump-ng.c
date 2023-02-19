@@ -323,8 +323,15 @@ static void color_on(void)
 
 	while (ap_cur != NULL)
 	{
-		if (ap_cur->nb_pkt < lopt.min_pkts
-			|| time(NULL) - ap_cur->tlast > lopt.berlin)
+		// Don't filter unassociated stations by number of packets
+		if (memcmp(ap_cur->bssid, BROADCAST, 6) != 0
+			&& ap_cur->nb_pkt < lopt.min_pkts)
+		{
+			ap_cur = ap_cur->prev;
+			continue;
+		}
+
+		if (time(NULL) - ap_cur->tlast > lopt.berlin)
 		{
 			ap_cur = ap_cur->prev;
 			continue;
