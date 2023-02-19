@@ -12,13 +12,7 @@ then
 	DIR="."
 fi
 
-if [ -n "${GITHUB_SHA}" ]; then
-    SHORT_SHA_REVISION="$(echo ${GITHUB_SHA} | cut -b 1-8)"
-
-    VERSION=$(cat ${DIR}/AC_VERSION 2>/dev/null)
-    REVISION="${VERSION}_rev-${SHORT_SHA_REVISION}"
-    SCM="_rev-${SHORT_SHA_REVISION}"
-elif test -d "${DIR}/.git"; then
+if test -d "${DIR}/.git"; then
     #
     # Locate the closest annotated tag
     #
@@ -54,6 +48,12 @@ elif test -d "${DIR}/.svn"; then
         REVISION="_r1"
         SCM="_r1"
     fi
+elif [ -n "${GITHUB_SHA}" ]; then
+    SHORT_SHA_REVISION="$(echo ${GITHUB_SHA} | cut -b 1-8)"
+
+    VERSION=$(cat ${DIR}/AC_VERSION 2>/dev/null)
+    REVISION="${VERSION}_rev-${SHORT_SHA_REVISION}"
+    SCM="_rev-${SHORT_SHA_REVISION}"
 else
     REVISION="$(cat ${DIR}/AC_VERSION 2>/dev/null)"
 fi
