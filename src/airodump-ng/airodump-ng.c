@@ -271,6 +271,8 @@ static struct local_options
 	int background_mode;
 
 	unsigned long min_pkts;
+	int16_t min_power;
+	int8_t min_rxq;
 
 	int relative_time; /* read PCAP in psuedo-real-time */
 
@@ -332,6 +334,23 @@ static void color_on(void)
 		}
 
 		if (time(NULL) - ap_cur->tlast > lopt.berlin)
+		{
+			ap_cur = ap_cur->prev;
+			continue;
+		}
+
+		// Don't filter unassociated stations by power
+		if (memcmp(ap_cur->bssid, BROADCAST, 6) != 0
+			&& ap_cur->avg_power < (int) lopt.min_power)
+		{
+			ap_cur = ap_cur->prev;
+			continue;
+		}
+
+		// Don't filter unassociated stations by RXQ
+		if (memcmp(ap_cur->bssid, BROADCAST, 6) != 0
+			&& ((lopt.singlechan || lopt.singlefreq)
+				&& (ap_cur->rx_quality < (int) lopt.min_rxq)))
 		{
 			ap_cur = ap_cur->prev;
 			continue;
@@ -831,6 +850,11 @@ static const char usage[] =
 #endif
 	"      -n              <int> : Minimum AP packets recv'd before\n"
 	"                              displaying it (default: 2)\n"
+	"      -p              <int> : Filter out APs with PWR less than\n"
+	"                              the specified value (default: -120)\n"
+	"      -q              <int> : Filter out APs with RXQ less than\n"
+	"                              the specified value (default: 0)\n"
+	"                              Requires --channel (or -c) or -C\n"
 	"      -a                    : Filter out unassociated stations\n"
 	"      -z                    : Filter out associated stations\n"
 	"\n"
@@ -3497,6 +3521,17 @@ static int IsAp2BeSkipped(struct AP_info * ap_cur)
 		return (1);
 	}
 
+	if (ap_cur->avg_power < (int) lopt.min_power)
+	{
+		return (1);
+	}
+
+	if ((lopt.singlechan || lopt.singlefreq)
+		&& (ap_cur->rx_quality < (int) lopt.min_rxq))
+	{
+		return (1);
+	}
+
 	if (ap_cur->security != 0 && lopt.f_encrypt != 0
 		&& ((ap_cur->security & lopt.f_encrypt) == 0))
 	{
@@ -5985,6 +6020,8 @@ int main(int argc, char * argv[])
 		   {"wps", 0, 0, 'W'},
 		   {"background", 1, 0, 'K'},
 		   {"min-packets", 1, 0, 'n'},
+		   {"min-power", 1, 0, 'p'},
+		   {"min-rxq", 1, 0, 'q'},
 		   {"real-time", 0, 0, 'T'},
 		   {0, 0, 0, 0}};
 
@@ -6074,6 +6111,8 @@ int main(int argc, char * argv[])
 	lopt.background_mode = -1;
 	lopt.do_exit = 0;
 	lopt.min_pkts = 2;
+	lopt.min_power = -120;
+	lopt.min_rxq = -1;
 	lopt.relative_time = 0;
 	lopt.color_on = 0;
 #ifdef CONFIG_LIBNL
@@ -6176,7 +6215,7 @@ int main(int argc, char * argv[])
 		option = getopt_long(
 			argc,
 			argv,
-			"b:c:Oegiw:s:t:u:m:d:N:R:azHDB:Ahf:r:EC:o:x:MUI:WK:n:T",
+			"b:c:Oegiw:s:t:u:m:d:N:R:azHDB:Ahf:r:EC:o:x:MUI:WK:n:p:q:T",
 			long_options,
 			&option_index);
 
@@ -6549,6 +6588,29 @@ int main(int argc, char * argv[])
 				lopt.min_pkts = strtoul(optarg, NULL, 10);
 				break;
 
+			case 'p':
+
+				if (sscanf(optarg, "%" SCNd16, &lopt.min_power) != 1)
+				{
+					printf("Error: invalid --min-power (or -p) value\n");
+					printf("\"%s --help\" for help.\n", argv[0]);
+					return (EXIT_FAILURE);
+				}
+				break;
+
+			case 'q':
+
+				if ((sscanf(optarg, "%" SCNd8, &lopt.min_rxq) != 1)
+					|| (lopt.min_rxq > 100)
+					|| (lopt.min_rxq < 0))
+				{
+					printf("Error: invalid --min-rxq (or -q) value (valid "
+						   "range: 0..100)\n");
+					printf("\"%s --help\" for help.\n", argv[0]);
+					return (EXIT_FAILURE);
+				}
+				break;
+
 			case 'o':
 
 				// Reset output format if it's the first time the option is
@@ -6747,6 +6809,13 @@ int main(int argc, char * argv[])
 	if (lopt.ignore_other_channels && !lopt.chanoption)
 	{
 		printf("Error: --ignore-other-chans requires --channel (or -c)\n");
+		printf("\"%s --help\" for help.\n", argv[0]);
+		return (EXIT_FAILURE);
+	}
+
+	if ((lopt.min_rxq != -1) && !(lopt.chanoption || lopt.freqoption))
+	{
+		printf("Error: --min-rxq (or -q) requires --channel (or -c) or -C\n");
 		printf("\"%s --help\" for help.\n", argv[0]);
 		return (EXIT_FAILURE);
 	}
