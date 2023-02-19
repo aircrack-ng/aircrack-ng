@@ -158,7 +158,7 @@ elif [ "${ID}" = 'clear-linux-os' ]; then
         # Install the rest of the packages
         swupd bundle-add devpkg-libgcrypt devpkg-hwloc devpkg-libpcap
         # Split it in multiple parts to avoid failure: "Error: Bundle too large by xxxxM"
-        swupd bundle-add devpkg-pcre2 devpkg-sqlite-autoconf
+        swupd bundle-add devpkg-pcre2 devpkg-sqlite-autoconf git
         swupd bundle-add ethtool network-basic software-testing
         swupd bundle-add sysadmin-basic wpa_supplicant os-testsuite
                          
