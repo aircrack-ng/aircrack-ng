@@ -57,17 +57,43 @@ elif [ "${ID}" = 'alpine' ]; then
             libnl3 openssl ethtool libpcap util-linux sqlite-dev pcre2 zlib pciutils usbutils hwloc wget \
             iproute2 kmod python3 py3-graphviz urfkill iw 
     fi
-elif [ "${ID}" = 'fedora' ] || [ "${ID}" = 'almalinux' ] || [ "${ID}" = 'rocky' ]; then
+elif [ "${ID}" = 'fedora' ] || [ "${ID}" = 'almalinux' ] || [ "${ID}" = 'rocky' ] || [ "${ID}" = 'ol' ]; then
     echo "[*] Distribution: ${NAME} (${VERSION_ID})"
+    LIBPCAP=libpcap-devel
+    CMOCKA=libcmocka-devel
+    dnf distrosync -y --refresh
     if [ "${STEP}" = 'builder' ]; then
         if [ "${ID}" = 'almalinux' ] || [ "${ID}" = 'rocky' ]; then
             echo "[*] Install EPEL and enabling CRB"
             dnf install epel-release dnf-plugins-core -y
             dnf config-manager --set-enabled crb
+            dnf distrosync -y --refresh
+        elif [ "${ID}" = 'ol' ]; then
+            echo "[*] Install EPEL"
+            dnf install epel-release dnf-plugins-core -y
+            dnf install xz cmake gcc -y
+            LIBPCAP=libpcap
+            # We're installing cmocka manually, not present in repos
+            CMOCKA=""
+            dnf distrosync -y --refresh
+
+            cd /tmp || exit
+            curl https://cmocka.org/files/1.0/cmocka-1.0.1.tar.xz -o cmocka-1.0.1.tar.xz
+            tar -xf cmocka-1.0.1.tar.xz
+            cd cmocka-1.0.1 || exit
+            mkdir build
+            cd build || exit
+            cmake ..
+            make
+            make install
+            # Otherwise tests will fail because it cannot open the shared library
+            export LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64
+            ldconfig
+            cd / || exit
         fi
 
-        dnf install -y libtool pkgconfig sqlite-devel autoconf automake openssl-devel libpcap-devel \
-                        pcre2-devel rfkill libnl3-devel gcc gcc-c++ ethtool hwloc-devel libcmocka-devel \
+        dnf install -y libtool pkgconfig sqlite-devel autoconf automake openssl-devel ${LIBPCAP} \
+                        pcre2-devel rfkill libnl3-devel gcc gcc-c++ ethtool hwloc-devel ${CMOCKA} \
                         make file expect hostapd wpa_supplicant iw usbutils tcpdump screen zlib-devel \
                         expect python3-pip python3-setuptools git
     elif [ "${STEP}" = 'stage2' ]; then

@@ -47,7 +47,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [ 'clearlinux:base', 'rockylinux:9', 'almalinux:9', 'opensuse/leap:15', 'archlinux:base', 'manjarolinux/base', 'ubuntu:22.10', 'ubuntu:23.04' ]
+        platform: [ 'clearlinux:base', 'rockylinux:9', 'almalinux:9', 'opensuse/leap:15', 'archlinux:base', 'manjarolinux/base', 'ubuntu:22.10', 'ubuntu:23.04', 'oraclelinux:9' ]
     steps:
       -
         name: Set up QEMU
