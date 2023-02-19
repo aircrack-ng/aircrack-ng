@@ -96,7 +96,7 @@ elif [ "${ID}" = 'gentoo' ]; then
 priority = 9999
 sync-uri = https://gentoo.osuosl.org/experimental/amd64/binpkg/default/linux/17.1/x86-64/
 EOF
-        emerge --sync
+        emerge --sync >/dev/null
         emerge app-portage/elt-patches dev-db/sqlite dev-lang/python dev-libs/libbsd dev-libs/libnl dev-libs/libpcre \
                 dev-libs/openssl dev-vcs/git net-libs/libpcap net-wireless/iw net-wireless/lorcon sys-apps/hwloc \
                 net-wireless/wireless-tools sys-apps/ethtool sys-apps/hwdata sys-apps/pciutils sys-apps/usbutils \
@@ -108,7 +108,7 @@ EOF
 priority = 9999
 sync-uri = https://gentoo.osuosl.org/experimental/amd64/binpkg/default/linux/17.1/x86-64/
 EOF
-        emerge --sync
+        emerge --sync >/dev/null
         emerge dev-db/sqlite dev-lang/python dev-libs/libbsd dev-libs/libnl dev-libs/libpcre dev-libs/openssl \
                 net-libs/libpcap net-wireless/iw net-wireless/lorcon net-wireless/wireless-tools sys-apps/ethtool \
                 sys-apps/hwdata sys-apps/hwloc sys-apps/pciutils sys-apps/usbutils sys-libs/zlib app-portage/gentoolkit
