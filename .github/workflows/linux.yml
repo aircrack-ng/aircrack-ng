@@ -208,7 +208,7 @@ jobs:
 
       - name: Archive artifacts
         if: ${{ env.ACT != 'true' }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}
           path: |
@@ -308,7 +308,7 @@ jobs:
           ccache -s
 
       - name: Archive artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: ${{ env.ACT != 'true' }}
         with:
           name: linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}

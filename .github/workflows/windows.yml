@@ -264,7 +264,7 @@ jobs:
           C:\tools\cygwin\bin\bash.exe -e -l -c "ccache -s"
 
       - name: Archive 64-bit artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: 64bit
           path: |
@@ -304,7 +304,7 @@ jobs:
           Pop-Location
 
       - name: Archive GUI artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: gui
           path: |
@@ -382,7 +382,7 @@ jobs:
           "@ | & $bash --login -o errexit -o nounset -o pipefail -o igncr
 
       - name: Save package artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: release-windows
           path: |
