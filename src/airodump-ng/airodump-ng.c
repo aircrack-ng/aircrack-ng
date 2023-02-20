@@ -277,6 +277,7 @@ static struct local_options
 	int relative_time; /* read PCAP in psuedo-real-time */
 
 	int color_on;
+	int color;
 } lopt;
 
 static void resetSelection(void)
@@ -315,11 +316,8 @@ static void color_on(void)
 {
 	struct AP_info * ap_cur;
 	struct ST_info * st_cur;
-	int color = 2;
 	int i;
 	int match;
-
-	color_off();
 
 	ap_cur = lopt.ap_end;
 
@@ -413,7 +411,7 @@ static void color_on(void)
 				continue;
 			}
 
-			if (color > TEXT_MAX_COLOR) color++;
+			if (lopt.color > TEXT_MAX_COLOR) lopt.color++;
 
 			if (!ap_cur->marked)
 			{
@@ -421,7 +419,7 @@ static void color_on(void)
 				if (!memcmp(ap_cur->bssid, BROADCAST, 6))
 					ap_cur->marked_color = 1;
 				else
-					ap_cur->marked_color = color++;
+					ap_cur->marked_color = lopt.color++;
 			}
 
 			st_cur = st_cur->prev;
@@ -471,6 +469,8 @@ static THREAD_ENTRY(input_thread)
 			color_off();
 			snprintf(lopt.message, sizeof(lopt.message), "][ color off");
 			lopt.color_on = 0;
+			// reset color (if color is enabled again it starts again from green)
+			lopt.color = TEXT_GREEN;
 		}
 
 		if (keycode == KEY_s)
@@ -6115,6 +6115,7 @@ int main(int argc, char * argv[])
 	lopt.min_rxq = -1;
 	lopt.relative_time = 0;
 	lopt.color_on = 0;
+	lopt.color = TEXT_GREEN;
 #ifdef CONFIG_LIBNL
 	lopt.htval = CHANNEL_NO_HT;
 #endif
