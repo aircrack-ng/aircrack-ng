@@ -8,6 +8,7 @@ FROM mcr.microsoft.com/vscode/devcontainers/cpp:0-${VARIANT}
 ARG CLANGURL="https://releases.llvm.org/3.8.1/"
 ARG CLANGFILE="clang+llvm-3.8.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz"
 
+# hadolint ignore=DL3003,DL3008
 RUN apt-get update \
  && export DEBIAN_FRONTEND=noninteractive \
  && apt-get -y install --no-install-recommends \
