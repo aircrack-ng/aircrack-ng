@@ -104,7 +104,7 @@ env:
 
 jobs:
   clang_format:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
 
     name: Clang-Format
 
