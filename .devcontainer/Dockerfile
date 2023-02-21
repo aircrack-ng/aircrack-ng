@@ -21,6 +21,6 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/* \
  && /usr/bin/pip3 install pre-commit \
  && cd /tmp \
- && wget "${CLANGURL}/${CLANGFILE}" \
+ && wget -q "${CLANGURL}/${CLANGFILE}" \
  && tar -x --strip-components=1 -C /usr/local -J -f ${CLANGFILE} \
  && rm -f ${CLANGFILE}
