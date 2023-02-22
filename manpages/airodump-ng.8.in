@@ -121,10 +121,10 @@ Filter out APs with PWR less than the specified value (default value: -120).
 .I -q <int>, --min-rxq <int>
 Filter out APs with RXQ less than the specified value (default value: 0). Valid range: 0..100. Requires --channel (or -c) or -C.
 .TP
-.I -N, --essid
+.I -N <essid>, --essid <essid>
 Filter APs by ESSID. May be specified more than once: \(aq\-N AP1 \-N AP2\(aq
 .TP
-.I -R, --essid-regex
+.I -R <regex>, --essid-regex <regex>
 Filter APs by ESSID using a regular expression.
 .SH INTERACTION
 .PP
