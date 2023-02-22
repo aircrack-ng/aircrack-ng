@@ -6740,7 +6740,7 @@ int main(int argc, char * argv[])
 
 			case 'H':
 				airodump_usage();
-				return (EXIT_FAILURE);
+				return (EXIT_SUCCESS);
 
 			case 'x':
 
