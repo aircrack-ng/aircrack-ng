@@ -35,6 +35,9 @@ Prints ACK/CTS/RTS statistics. Helps in debugging and general injection optimiza
 .I -h
 Hides known stations for \-\-showack.
 .TP
+.I -f <msecs>
+Time in milliseconds between hopping channels.
+.TP
 .I --berlin <secs>
 Time before removing the AP/client from the screen when no more frames are received (Default: 120 seconds). See airodump-ng source for the history behind this option ;).
 .TP
