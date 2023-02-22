@@ -29,13 +29,13 @@ It will record all beacons into the cap file. By default it only records one bea
 .I -u <secs>, --update <secs>
 Delay <secs> seconds delay between display updates (default: 1 second). Useful for slow CPU.
 .TP
-.I --showack
+.I -A, --showack
 Prints ACK/CTS/RTS statistics. Helps in debugging and general injection optimization. It is indication if you inject, inject too fast, reach the AP, the frames are valid encrypted frames. Allows one to detect "hidden" stations, which are too far away to capture high bitrate frames, as ACK frames are sent at 1Mbps.
 .TP
 .I -h
 Hides known stations for \-\-showack.
 .TP
-.I --berlin <secs>
+.I -B <secs>, --berlin <secs>
 Time before removing the AP/client from the screen when no more frames are received (Default: 120 seconds). See airodump-ng source for the history behind this option ;).
 .TP
 .I -c <channel>[,<channel>[,...]], --channel <channel>[,<channel>[,...]]
@@ -80,7 +80,7 @@ Display APs uptime obtained from its beacon timestamp.
 .I -W, --wps
 Display a WPS column with WPS version, config method(s), AP Setup Locked obtained from APs beacon or probe response (if any).
 .TP
-.I --output-format <formats>
+.I -o <formats>, --output-format <formats>
 Define the formats to use (separated by a comma). Possible values are: pcap, ivs, csv, gps, kismet, netxml. The default values are: pcap, csv, kismet, kismet-newcore.
 \(aqpcap\(aq is for recording a capture in pcap format, \(aqivs\(aq is for ivs format (it is a shortcut for --ivs). \(aqcsv\(aq will create an airodump-ng CSV file, \(aqkismet\(aq will create a kismet csv file and \(aqkismet-newcore\(aq will create the kismet netxml file. \(aqgps\(aq is a shortcut for --gps.
 .br
