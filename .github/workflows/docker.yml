@@ -27,6 +27,7 @@ on:
       - '.github/workflows/style.yml'
       - '.github/workflows/windows.yml'
       - '.vscode/**'
+      - 'apparmor/**'
       - 'contrib/**'
       - 'patches/**'
       - '.clang-format'
