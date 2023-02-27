@@ -4205,7 +4205,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 		CHECK_END_OF_SCREEN();
 	}
 
-	if (lopt.show_sta)
+	if (lopt.show_sta && !(lopt.asso_station && lopt.unasso_station))
 	{
 		strlcpy(strbuf,
 				" BSSID              STATION "
