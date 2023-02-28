@@ -133,7 +133,7 @@ jobs:
           envs: 'LANG TZ MAKE'
           usesh: true
           prepare: |
-            pkg install -y pkgconf shtool libtool ${{ matrix.compiler.cc }} automake autoconf pcre2 sqlite3 gmake cmocka
+            pkg install -y git pkgconf shtool libtool ${{ matrix.compiler.cc }} automake autoconf pcre2 sqlite3 gmake cmocka
           run: |
             export CC="${{ matrix.compiler.cc }}"
             export CXX="${{ matrix.compiler.cxx }}"
