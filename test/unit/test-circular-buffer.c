@@ -99,7 +99,7 @@ static void test_cbuf_multibyte_compare_buffer(void ** state)
 	assert_int_equal(nb_elements, circular_buffer_size(cbuf));
 	assert_false(circular_buffer_is_empty(cbuf));
 	assert_true(circular_buffer_is_full(cbuf));
-	assert_string_equal("a1234567b1234567", buffer);
+	assert_memory_equal("a1234567b1234567", buffer, size);
 
 	// END
 #undef size
