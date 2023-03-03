@@ -16,11 +16,6 @@
 [![OpenBSD CI](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/openbsd.yml/badge.svg?event=push)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/openbsd.yml)
 [![Windows CI](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/windows.yml/badge.svg?event=push)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/windows.yml)
 
-### Packagecloud.io
-
-[![PackageCloud DEB](https://img.shields.io/badge/deb-packagecloud.io-844fec.svg)](https://packagecloud.io/aircrack-ng/git/install#bash-deb)
-[![PackageCloud RPM](https://img.shields.io/badge/rpm-packagecloud.io-844fec.svg)](https://packagecloud.io/aircrack-ng/git/install#bash-rpm)
-
 ### Others
 
 [![Coverity Scan](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/coverity.yml/badge.svg)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/coverity.yml)
@@ -484,11 +479,6 @@ the additional flag `--without-opt` to the `./configure` line:
 ## Linux/BSD
 
 Aircrack-ng is available in most distributions repositories. However, it is not always up-to-date.
-
-We provide up-to-date versions via PackageCloud for a number of Linux distributions:
-
-- development (each commit in this repo): https://packagecloud.io/aircrack-ng/git
-- stable releases: https://packagecloud.io/aircrack-ng/release
 
 ## Windows
  * Install the appropriate "monitor" driver for your card; standard drivers don't work for capturing data.
