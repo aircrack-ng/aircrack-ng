@@ -3580,7 +3580,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	struct AP_info * ap_cur;
 	struct ST_info * st_cur;
 	struct NA_info * na_cur;
-	int columns_ap = 83;
+	int columns_ap = 84;
 	int columns_sta = 74;
 	ssize_t len;
 
@@ -3766,22 +3766,22 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			strlcat(strbuf, "WPS   ", sizeof(strbuf));
 			if (ws_col > (columns_ap - 4))
 			{
-				const size_t n_strbuf = strlen(strbuf);
-				memset(strbuf + n_strbuf, 32, sizeof(strbuf) - n_strbuf - 1);
-				snprintf(strbuf + columns_ap + lopt.maxsize_wps_seen - 5,
-						 8,
+				memset(strbuf + columns_ap, ' ', sizeof(strbuf) - columns_ap);
+				snprintf(strbuf + columns_ap - strlen("ESSID")
+							 + lopt.maxsize_wps_seen
+							 + strlen(" "),
+						 6,
 						 "%s",
-						 "  ESSID");
+						 "ESSID");
 				if (lopt.show_manufacturer)
 				{
 					memset(strbuf + columns_ap + lopt.maxsize_wps_seen + 1,
-						   32,
-						   sizeof(strbuf) - columns_ap - lopt.maxsize_wps_seen
-							   - 1);
+						   ' ',
+						   sizeof(strbuf) - columns_ap - lopt.maxsize_wps_seen);
 					snprintf(strbuf + columns_ap + lopt.maxsize_wps_seen
 								 + lopt.maxsize_essid_seen
-								 - 4,
-							 15,
+								 - strlen("ESSID"),
+							 13,
 							 "%s",
 							 "MANUFACTURER");
 				}
@@ -3793,12 +3793,12 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 			if (lopt.show_manufacturer && (ws_col > (columns_ap - 4)))
 			{
-				// write spaces (32).
-				memset(strbuf + columns_ap, 32, lopt.maxsize_essid_seen - 5);
-				snprintf(strbuf + columns_ap + lopt.maxsize_essid_seen - 7,
-						 15,
+				memset(strbuf + columns_ap, ' ', sizeof(strbuf) - columns_ap);
+				snprintf(strbuf + columns_ap - strlen("ESSID")
+							 + lopt.maxsize_essid_seen,
+						 13,
 						 "%s",
-						 "  MANUFACTURER");
+						 "MANUFACTURER");
 			}
 		}
 		strbuf[ws_col - 1] = '\0';
