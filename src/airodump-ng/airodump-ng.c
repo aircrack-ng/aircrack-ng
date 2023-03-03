@@ -4049,7 +4049,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				textcolor_fg(ap_cur->marked_color);
 			}
 
-			memset(strbuf + len, 32, sizeof(strbuf) - len - 1);
+			memset(strbuf + len, ' ', sizeof(strbuf) - len - 1);
 
 			if (ws_col > (columns_ap - 4))
 			{
@@ -4113,7 +4113,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 					else
 					{
 						// pad output
-						memset(strbuf + len, 32, sizeof(strbuf) - len - 1);
+						memset(strbuf + len, ' ', sizeof(strbuf) - len - 1);
 						len += lopt.maxsize_wps_seen - (len - wps_len);
 						strbuf[len] = '\0';
 					}
@@ -4159,7 +4159,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 					else
 					{
 						// pad output
-						memset(strbuf + len, 32, sizeof(strbuf) - len - 1);
+						memset(strbuf + len, ' ', sizeof(strbuf) - len - 1);
 						len += lopt.maxsize_essid_seen - (len - essid_len);
 						strbuf[len] = '\0';
 					}
@@ -4178,12 +4178,12 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 			len = strlen(strbuf);
 
-			// write spaces (32) until the end of column
+			// write spaces until the end of column
 			int len_remaining = ws_col - len;
 			if (len_remaining > 0)
 			{
 				ALLEGE((size_t) len + len_remaining <= sizeof(strbuf));
-				memset(strbuf + len, 32, len_remaining);
+				memset(strbuf + len, ' ', len_remaining);
 			}
 
 			strbuf[ws_col - 1] = '\0';
