@@ -441,24 +441,6 @@ Aircrack-ng is available in most distributions repositories. However, it is not 
 - PVS-Studio static analysis (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/pvs-studio.yml
 - Coverity Scan static analysis: https://scan.coverity.com/projects/aircrack-ng
 
-=== Buildbots ===
-
-URL: https://buildbot.aircrack-ng.org/
-
-Linux buildbots:
-- CentOS
-- AArch64
-- Kali Linux
-- Armel Kali Linux
-- Armhf Kali Linux
-- Alpine Linux
-
-BSD buildbots:
-- OpenBSD
-- FreeBSD
-- NetBSD
-- DragonflyBSD
-
 == Documentation ==
 
 Some more information is present in the README file.
