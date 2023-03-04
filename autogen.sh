@@ -44,7 +44,6 @@ set -euf
 test -n "${srcdir:-}" || srcdir="$(dirname "$0")"
 test -n "${srcdir:-}" || srcdir=.
 
-olddir="$(pwd)"
 cd "$srcdir"
 
 missing_tool()
@@ -100,7 +99,7 @@ if [ -z "${AUTOMAKE:-}" ]; then
 fi
 
 "$LIBTOOLIZE" --force --copy --automake
-"$ACLOCAL" -I build/m4/stubs -I build/m4 ${ACLOCAL_FLAGS:-}
+"$ACLOCAL" -I build/m4/stubs -I build/m4 "${ACLOCAL_FLAGS:-}"
 "$AUTOCONF"
 "$AUTOHEADER"
 "$AUTOMAKE" \
@@ -114,7 +113,7 @@ EOF
 } > reautogen.sh
 chmod +x reautogen.sh
 
-if [ ! -z "${NOCONFIGURE:-}" ]; then
+if [ -n "${NOCONFIGURE:-}" ]; then
     echo "Done. ./configure skipped."
     exit $?
 fi
