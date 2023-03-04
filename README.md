@@ -490,20 +490,6 @@ Aircrack-ng is available in most distributions repositories. However, it is not 
    `Start menu -> Run... -> cmd.exe` then use them
  * Run the executables without any parameters to have help
 
-# Continuous integration
-
-- Linux CI (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/linux.yml
-- Linux PCRE CI (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/linux-pcre.yml
-- Windows CI (Github actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/windows.yml
-- macOS CI (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/macos.yml
-- DragonFlyBSD CI (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/dragonflybsd.yml
-- FreeBSD CI (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/freebsd.yml
-- NetBSD CI (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/netbsd.yml
-- OpenBSD CI (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/openbsd.yml
-- Code style and consistency (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/style.yml
-- PVS-Studio static analysis (GitHub actions): https://github.com/aircrack-ng/aircrack-ng/actions/workflows/pvs-studio.yml
-- Coverity Scan static analysis: https://scan.coverity.com/projects/aircrack-ng
-
 # Documentation
 
 Some more information is present in the [README](README) file.
