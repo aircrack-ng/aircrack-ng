@@ -62,8 +62,8 @@ All tools are command line which allows for heavy scripting. A lot of GUIs have 
  * On Windows, cygwin has to be used and it also requires w32api package.
  * On Windows, if using clang, libiconv and libiconv-devel
  * Linux: LibNetlink 1 or 3. It can be disabled by passing --disable-libnl to configure.
- * pkg-config (pkgconf on FreeBSD)
- * FreeBSD, OpenBSD, NetBSD, Solaris and OS X with Macports: gmake
+ * pkg-config (pkgconf on FreeBSD, DragonFlyBSD, OpenBSD and NetBSD)
+ * FreeBSD, DragonFlyBSD, OpenBSD, NetBSD, Solaris and OS X with Macports: gmake
  * Linux/Cygwin: make and Standard C++ Library development package (Debian: libstdc++-dev)
 
 Note: Airmon-ng only requires pciutils if the system has a PCI/PCIe bus and it is populated.
@@ -155,6 +155,10 @@ Below are instructions for installing the basic requirements to build
 #### OpenBSD
 
     pkg_add pkgconf shtool libtool gcc automake autoconf pcre2 sqlite3 openssl gmake cmocka
+
+#### NetBSD
+
+    pkg_add pkgconf libtool gcc7 automake autoconf pcre2 sqlite3 openssl gmake cmocka
 
 ### macOS
 
