@@ -132,6 +132,8 @@ jobs:
         with:
           envs: 'LANG TZ MAKE'
           usesh: true
+          sync: rsync
+          copyback: false
           prepare: |
             pkg_add git pkgconf shtool libtool llvm automake-1.16.5 autoconf-2.71 pcre2 sqlite3 openssl gmake cmocka
           run: |
