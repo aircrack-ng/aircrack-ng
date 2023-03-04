@@ -3777,7 +3777,8 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				{
 					memset(strbuf + columns_ap + lopt.maxsize_wps_seen + 1,
 						   ' ',
-						   sizeof(strbuf) - columns_ap - lopt.maxsize_wps_seen);
+						   sizeof(strbuf) - columns_ap - lopt.maxsize_wps_seen
+							   - 1);
 					snprintf(strbuf + columns_ap + lopt.maxsize_wps_seen
 								 + lopt.maxsize_essid_seen
 								 - strlen("ESSID"),
