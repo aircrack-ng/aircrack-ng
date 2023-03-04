@@ -4207,10 +4207,18 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 	if (lopt.show_sta && !(lopt.asso_station && lopt.unasso_station))
 	{
-		strlcpy(strbuf,
-				" BSSID              STATION "
-				"           PWR   Rate    Lost    Frames  Notes  Probes",
-				sizeof(strbuf));
+		if (lopt.show_manufacturer)
+			strlcpy(strbuf,
+					" BSSID              STATION "
+					"           PWR   Rate    Lost    Frames  Notes  "
+					"Manufacturer                   "
+					" Probes",
+					sizeof(strbuf));
+		else
+			strlcpy(strbuf,
+					" BSSID              STATION "
+					"           PWR   Rate    Lost    Frames  Notes  Probes",
+					sizeof(strbuf));
 		strbuf[ws_col - 1] = '\0';
 		console_puts(strbuf);
 		CHECK_END_OF_SCREEN();
@@ -4317,6 +4325,19 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 					   (st_cur->wpa.pmkid[0] != 0)
 						   ? "PMKID"
 						   : (st_cur->wpa.state == 7 ? "EAPOL" : ""));
+
+				if (lopt.show_manufacturer)
+				{
+					if (st_cur->manuf == NULL)
+					{
+						st_cur->manuf = get_manufacturer(st_cur->stmac[0],
+														 st_cur->stmac[1],
+														 st_cur->stmac[2]);
+					}
+					if (strstr(st_cur->manuf, "Unknown") == NULL)
+						printf(strlen(st_cur->manuf) > 32 ? "  %s" : "  %-32s",
+							   st_cur->manuf);
+				}
 
 				if (ws_col > (columns_sta - 6))
 				{
