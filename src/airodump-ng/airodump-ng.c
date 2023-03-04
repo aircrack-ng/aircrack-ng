@@ -4209,7 +4209,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	{
 		strlcpy(strbuf,
 				" BSSID              STATION "
-				"           PWR   Rate    Lost    Frames  Notes  Probes",
+				"           PWR    Rate    Lost   Frames  Notes  Probes",
 				sizeof(strbuf));
 		strbuf[ws_col - 1] = '\0';
 		console_puts(strbuf);
@@ -4288,35 +4288,63 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				if (nlines >= (ws_row - 1)) return;
 
 				if (!memcmp(ap_cur->bssid, BROADCAST, 6))
-					printf(" (not associated) ");
+					snprintf(
+						strbuf, sizeof(strbuf) - 1, "%s", " (not associated) ");
 				else
-					printf(" %02X:%02X:%02X:%02X:%02X:%02X",
-						   ap_cur->bssid[0],
-						   ap_cur->bssid[1],
-						   ap_cur->bssid[2],
-						   ap_cur->bssid[3],
-						   ap_cur->bssid[4],
-						   ap_cur->bssid[5]);
+					snprintf(strbuf,
+							 sizeof(strbuf) - 1,
+							 " %02X:%02X:%02X:%02X:%02X:%02X",
+							 ap_cur->bssid[0],
+							 ap_cur->bssid[1],
+							 ap_cur->bssid[2],
+							 ap_cur->bssid[3],
+							 ap_cur->bssid[4],
+							 ap_cur->bssid[5]);
 
-				printf("  %02X:%02X:%02X:%02X:%02X:%02X",
-					   st_cur->stmac[0],
-					   st_cur->stmac[1],
-					   st_cur->stmac[2],
-					   st_cur->stmac[3],
-					   st_cur->stmac[4],
-					   st_cur->stmac[5]);
+				snprintf(strbuf + strlen(strbuf),
+						 sizeof(strbuf) - strlen(strbuf) - 1,
+						 "  %02X:%02X:%02X:%02X:%02X:%02X",
+						 st_cur->stmac[0],
+						 st_cur->stmac[1],
+						 st_cur->stmac[2],
+						 st_cur->stmac[3],
+						 st_cur->stmac[4],
+						 st_cur->stmac[5]);
 
-				printf("  %3d ", st_cur->power);
-				printf("  %2d", st_cur->rate_to / 1000000);
-				printf("%c", (st_cur->qos_fr_ds) ? 'e' : ' ');
-				printf("-%2d", st_cur->rate_from / 1000000);
-				printf("%c", (st_cur->qos_to_ds) ? 'e' : ' ');
-				printf("  %4d", st_cur->missed);
-				printf(" %8lu", st_cur->nb_pkt);
-				printf("  %-5s",
-					   (st_cur->wpa.pmkid[0] != 0)
-						   ? "PMKID"
-						   : (st_cur->wpa.state == 7 ? "EAPOL" : ""));
+				snprintf(strbuf + strlen(strbuf),
+						 sizeof(strbuf) - strlen(strbuf) - 1,
+						 "  %3d ",
+						 st_cur->power);
+				snprintf(strbuf + strlen(strbuf),
+						 sizeof(strbuf) - strlen(strbuf) - 1,
+						 "  %2d",
+						 st_cur->rate_to / 1000000);
+				snprintf(strbuf + strlen(strbuf),
+						 sizeof(strbuf) - strlen(strbuf) - 1,
+						 "%c",
+						 (st_cur->qos_fr_ds) ? 'e' : ' ');
+				snprintf(strbuf + strlen(strbuf),
+						 sizeof(strbuf) - strlen(strbuf) - 1,
+						 "-%2d",
+						 st_cur->rate_from / 1000000);
+				snprintf(strbuf + strlen(strbuf),
+						 sizeof(strbuf) - strlen(strbuf) - 1,
+						 "%c",
+						 (st_cur->qos_to_ds) ? 'e' : ' ');
+				snprintf(strbuf + strlen(strbuf),
+						 sizeof(strbuf) - strlen(strbuf) - 1,
+						 "  %4d",
+						 st_cur->missed);
+				snprintf(strbuf + strlen(strbuf),
+						 sizeof(strbuf) - strlen(strbuf) - 1,
+						 " %8lu",
+						 st_cur->nb_pkt);
+				snprintf(strbuf + strlen(strbuf),
+						 sizeof(strbuf) - strlen(strbuf) - 1,
+						 "  %-5s",
+						 (st_cur->wpa.pmkid[0] != 0)
+							 ? "PMKID"
+							 : (st_cur->wpa.state == 7 ? "EAPOL" : ""));
 
 				if (ws_col > (columns_sta - 6))
 				{
@@ -4337,13 +4365,19 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 						if (n >= (int) sizeof(ssid_list)) break;
 					}
 
-					memset(strbuf, 0, sizeof(strbuf));
-					snprintf(strbuf, sizeof(strbuf) - 1, "%-256s", ssid_list)
+					snprintf(strbuf + strlen(strbuf),
+							 sizeof(strbuf) - strlen(strbuf) - 1,
+							 " %s",
+							 ssid_list)
 							< 0
 						? abort()
 						: (void) 0;
-					strbuf[MAX(ws_col - 75, 0)] = '\0';
-					printf(" %s", strbuf);
+
+					memset(strbuf + strlen(strbuf),
+						   ' ',
+						   sizeof(strbuf) - strlen(strbuf));
+					strbuf[ws_col - 1] = '\0';
+					printf("%s", strbuf);
 				}
 
 				erase_line(0);
