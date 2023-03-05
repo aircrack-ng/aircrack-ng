@@ -4210,7 +4210,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	{
 		strlcpy(strbuf,
 				" BSSID              STATION "
-				"           PWR   Rate    Lost    Frames  Notes  Probes",
+				"           PWR    Rate    Lost   Frames  Notes  Probes",
 				sizeof(strbuf));
 		strbuf[ws_col - 1] = '\0';
 		console_puts(strbuf);
