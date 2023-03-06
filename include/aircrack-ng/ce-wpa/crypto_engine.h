@@ -149,7 +149,7 @@ struct ac_crypto_engine_perthread
 #undef CRYPT_PADDING
 
 	/// Holds a 20-byte buffer for a SHA1 digest. Double cache-line size is to
-	/// space the next field futher out.
+	/// space the next field further out.
 	CACHELINE_PADDED_FIELD(uint8_t,
 						   ptk,
 						   20 * MAX_KEYS_PER_CRYPT_SUPPORTED,

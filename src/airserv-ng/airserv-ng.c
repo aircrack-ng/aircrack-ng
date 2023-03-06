@@ -1,5 +1,5 @@
 /*
-  *  Server for osdep network driver.  Uses osdep itself!  [ph33r teh recursion]
+  *  Server for osdep network driver.  Uses osdep itself!  [ph33r the recursion]
   *
   *  Copyright (c) 2007-2009  Andrea Bittau <a.bittau@cs.ucl.ac.uk>
   *

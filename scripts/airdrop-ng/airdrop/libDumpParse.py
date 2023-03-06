@@ -37,7 +37,7 @@ class airDumpParse:
 		Function takes parsed dump file list and does some more cleaning.
 		Returns a list of 2 dictionaries (Clients and APs)
 		"""
-		try: #some very basic error handeling to make sure they are loading up the correct file
+		try: #some very basic error handling to make sure they are loading up the correct file
 			try:
 				apStart = cleanedDump.index('BSSID, First time seen, Last time seen, Channel, Speed, Privacy, Power, # beacons, # data, LAN IP, ESSID')
 			except Exception:

@@ -1,6 +1,6 @@
 /* pingreply.c - Ping reply
  *
- * DESCIPTION
+ * DESCRIPTION
  *
  * Replies to all ping requests. Useful for testing sniffing/injecting
  * packets with airtun-ng.

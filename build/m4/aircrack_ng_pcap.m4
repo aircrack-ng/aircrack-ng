@@ -82,7 +82,7 @@ if test "${with_libpcap_include+set}" != set; then
 fi
 
 dnl
-dnl Verify that required headers are useable
+dnl Verify that required headers are usable
 dnl
 saved_cflags="$CFLAGS"
 CFLAGS="$PCAP_INCLUDES $CFLAGS"

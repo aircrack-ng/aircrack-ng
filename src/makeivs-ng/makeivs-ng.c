@@ -1,5 +1,5 @@
 /*
-  * Server for osdep network driver.  Uses osdep itself!  [ph33r teh recursion]
+  * Server for osdep network driver.  Uses osdep itself!  [ph33r the recursion]
   *
   *  Copyright (C) 2006-2022 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
   *  Copyright (C) 2004, 2005 Christophe Devine

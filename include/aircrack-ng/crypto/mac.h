@@ -2,7 +2,7 @@
 /**
  * \file      mac.h
  *
- * \brief     Message Authenication Code algorithms
+ * \brief     Message Authentication Code algorithms
  *
  * \ingroup
  * \cond

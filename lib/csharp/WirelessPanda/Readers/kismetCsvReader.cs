@@ -74,10 +74,10 @@ namespace WirelessPanda.Readers
             // Parse content
             for (int i = 1; i < content.Length && !string.IsNullOrEmpty(content[i]); i++)
             {
-                string [] splitted = content[i].Split(';');
+                string [] split = content[i].Split(';');
 
                 // Check if there are enough elements
-                if (splitted.Length < 39)
+                if (split.Length < 39)
                 {
                     continue;
                 }
@@ -85,36 +85,36 @@ namespace WirelessPanda.Readers
                 AccessPoint ap = new AccessPoint();
                 
                 // Skip first element which is the network number (if someone cares about it, email me)
-                ap.NetworkType = splitted[1].Trim();
-                ap.ESSID = splitted[2].Trim();
-                ap.ESSIDLength = (byte)splitted[2].Length;
-                ap.BSSID = splitted[3].Trim();
-                ap.Info = splitted[4].Trim();
-                ap.Channel = int.Parse(splitted[5]);
-                ap.Cloaked = (splitted[6].Trim().ToLower() == "yes");
-                ap.Encryption = splitted[7].Trim();
-                ap.Decrypted = (splitted[8].Trim().ToLower() == "yes");
-                ap.MaxRate = double.Parse(splitted[9]);
-                ap.MaxSeenRate = double.Parse(splitted[10]);
-                ap.Beacon = ulong.Parse(splitted[11]);
-                ap.LLC = ulong.Parse(splitted[12]);
-                ap.DataFrames = ulong.Parse(splitted[13]);
-                ap.Crypt = ulong.Parse(splitted[14]);
-                ap.Weak = ulong.Parse(splitted[15]);
-                ap.Total = ulong.Parse(splitted[16]);
-                ap.Carrier = splitted[17].Trim();
-                ap.Encoding = splitted[18].Trim();
-                ap.FirstTimeSeen = this.parseDateTime(splitted[19]);
-                ap.LastTimeSeen = this.parseDateTime(splitted[20]);
-                ap.BestQuality = int.Parse(splitted[21]);
-                ap.BestSignal = int.Parse(splitted[22]);
-                ap.BestNoise = int.Parse(splitted[23]);
-                ap.MinLocation = new Coordinates(splitted[24], splitted[25], splitted[26], splitted[27]);
-                ap.MaxLocation = new Coordinates(splitted[28], splitted[29], splitted[30], splitted[31]);
-                ap.BestLocation = new Coordinates(splitted[32], splitted[33], splitted[34], "");
-                ap.DataSize = ulong.Parse(splitted[35]);
-                ap.IPType = int.Parse(splitted[36]);
-                ap.IP = splitted[37].Replace(" ", "");
+                ap.NetworkType = split[1].Trim();
+                ap.ESSID = split[2].Trim();
+                ap.ESSIDLength = (byte)split[2].Length;
+                ap.BSSID = split[3].Trim();
+                ap.Info = split[4].Trim();
+                ap.Channel = int.Parse(split[5]);
+                ap.Cloaked = (split[6].Trim().ToLower() == "yes");
+                ap.Encryption = split[7].Trim();
+                ap.Decrypted = (split[8].Trim().ToLower() == "yes");
+                ap.MaxRate = double.Parse(split[9]);
+                ap.MaxSeenRate = double.Parse(split[10]);
+                ap.Beacon = ulong.Parse(split[11]);
+                ap.LLC = ulong.Parse(split[12]);
+                ap.DataFrames = ulong.Parse(split[13]);
+                ap.Crypt = ulong.Parse(split[14]);
+                ap.Weak = ulong.Parse(split[15]);
+                ap.Total = ulong.Parse(split[16]);
+                ap.Carrier = split[17].Trim();
+                ap.Encoding = split[18].Trim();
+                ap.FirstTimeSeen = this.parseDateTime(split[19]);
+                ap.LastTimeSeen = this.parseDateTime(split[20]);
+                ap.BestQuality = int.Parse(split[21]);
+                ap.BestSignal = int.Parse(split[22]);
+                ap.BestNoise = int.Parse(split[23]);
+                ap.MinLocation = new Coordinates(split[24], split[25], split[26], split[27]);
+                ap.MaxLocation = new Coordinates(split[28], split[29], split[30], split[31]);
+                ap.BestLocation = new Coordinates(split[32], split[33], split[34], "");
+                ap.DataSize = ulong.Parse(split[35]);
+                ap.IPType = int.Parse(split[36]);
+                ap.IP = split[37].Replace(" ", "");
 
                 this.addAccessPoint(ap);
             }

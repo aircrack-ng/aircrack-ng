@@ -1981,7 +1981,7 @@ static void post_input(struct wstate * ws, struct timeval * now)
 
 	el = elapsed_time_diff(&ws->ws_last_wcount, now);
 
-	/* calculate rate, roughtly */
+	/* calculate rate, roughly */
 	if (el < 1 * 1000 * 1000) return;
 
 	ws->ws_rate = ws->ws_packets - ws->ws_last_wep_count;

@@ -1,13 +1,13 @@
 .TH AIRDECAP-NG 1 "@MAN_RELEASE_DATE@" "@MAN_RELEASE_VERSION@"
 
 .SH NAME
-airdecap-ng - decrypt a WEP/WPA crypted pcap file
+airdecap-ng - decrypt a WEP/WPA encrypted pcap file
 .SH SYNOPSIS
 .B airdecap-ng
 [options] <pcap file>
 .SH DESCRIPTION
 .BI airdecap-ng
-decrypts a WEP/WPA crypted pcap file to a unencrypted one by using the right WEP/WPA keys.
+decrypts a WEP/WPA encrypted pcap file to a unencrypted one by using the right WEP/WPA keys.
 .SH OPTIONS
 .TP
 .I -H, --help

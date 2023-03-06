@@ -95,7 +95,7 @@ This is used to specify the channel on which to run the Access Point.
 This causes the Access Point to hide the SSID and to not broadcast the value.
 .TP
 .I -s
-When specfiied, this forces shared key authentication for all clients. 
+When specified, this forces shared key authentication for all clients.
 
 The soft AP will send an "authentication method unsupported" rejection to any open system authentication request if "-s" is specified.
 .TP

@@ -123,7 +123,7 @@ Version 1.6 (changes from aircrack-ng 1.5.2) - Released 25 Jan 2020:
 * General: Fixed SPARC build on Solaris 11
 * General: Removed coveralls.io
 * General: Updated dependencies in README.md/INSTALLING
-* General: Use upstream radiotap libary, as a sub-tree
+* General: Use upstream radiotap library, as a sub-tree
 * General: various fixes and improvements (code, CI, integration tests, coverity)
 * HostAPd-WPE: Updated for v2.9
 * Manpages: Fixes and improvements
@@ -771,7 +771,7 @@ Version 1.0-beta1 (changes from aircrack-ng 0.9.2) - Released 01 October 2007:
 * New IVS format for storing all relevant data
 * Auto-creation of rtap interface if it doesn't exist (ipw2200)
 * Better acx, rtl8180, orinoco and madwifi-ng detection
-* Using OpenSSL instead of build-in crypto
+* Using OpenSSL instead of built-in crypto
 * Added library rx/tx support
 * Added airpcap rx/tx support
 * Added airdriver-ng script for installing and managing patched drivers
@@ -1058,7 +1058,7 @@ Older Changelog:
 Version 2.41 released on 2005-11-22. Changes from version 2.4:
 
     * airodump: show probing clients as "not associated"
-    * airodump: don't substract the noise level unless madwifi
+    * airodump: don't subtract the noise level unless madwifi
     * airodump: fixed channel hopping with old orinoco
     * airmon.sh: added detection of the zd1211 driver
 
@@ -1101,7 +1101,7 @@ Version 2.23 released on 2005-08-17. Changes from version 2.22:
 
     * aireplay: updated the madwifi patch, fixes WEP/WPA support
     * airodump: fixed a few buffer overflows, code cleanup for gcc4
-    * aircrack: also printf the WEP key if >= 75% ASCII caracters
+    * aircrack: also printf the WEP key if >= 75% ASCII characters
 
 
 Version 2.22 released on 2005-08-14. Changes from version 2.21:

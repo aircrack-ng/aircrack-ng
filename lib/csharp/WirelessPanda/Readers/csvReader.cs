@@ -80,53 +80,53 @@ namespace WirelessPanda.Readers
             int i = 2; // Start at line 3 (skipping header)
             for (; i < content.Length && !string.IsNullOrEmpty(content[i]); i++) 
             {
-                string [] splitted = content[i].Split(',');
+                string [] split = content[i].Split(',');
 
                 switch (this._fileFormat)
                 {
                     case CSVFileFormat.v0X:
-                        if (splitted.Length < 11)
+                        if (split.Length < 11)
                         {
                             continue;
                         }
                         break;
 
                     case CSVFileFormat.v1X:
-                        if (splitted.Length < 15)
+                        if (split.Length < 15)
                         {
                             continue;
                         }
                         break;
                 }
                 AccessPoint ap = new AccessPoint();
-                ap.BSSID = splitted[0].Trim();
-                ap.FirstTimeSeen = this.parseDateTime(splitted[1]);
-                ap.LastTimeSeen = this.parseDateTime(splitted[2]);
-                ap.Channel = int.Parse(splitted[3].Trim());
-                ap.MaxRate = double.Parse(splitted[4].Trim());
-                ap.Privacy = splitted[5].Trim();
+                ap.BSSID = split[0].Trim();
+                ap.FirstTimeSeen = this.parseDateTime(split[1]);
+                ap.LastTimeSeen = this.parseDateTime(split[2]);
+                ap.Channel = int.Parse(split[3].Trim());
+                ap.MaxRate = double.Parse(split[4].Trim());
+                ap.Privacy = split[5].Trim();
 
                 switch (this._fileFormat)
                 {
                     case CSVFileFormat.v0X:
-                        ap.Power = int.Parse(splitted[6].Trim());
-                        ap.Beacons = long.Parse(splitted[7].Trim());
-                        ap.DataFrames = ulong.Parse(splitted[8].Trim());
-                        ap.IP = splitted[9].Replace(" ", "");
-                        ap.ESSID = splitted[10].Substring(1); // TODO: Improve it because it may contain a ','
+                        ap.Power = int.Parse(split[6].Trim());
+                        ap.Beacons = long.Parse(split[7].Trim());
+                        ap.DataFrames = ulong.Parse(split[8].Trim());
+                        ap.IP = split[9].Replace(" ", "");
+                        ap.ESSID = split[10].Substring(1); // TODO: Improve it because it may contain a ','
                         ap.ESSIDLength = (byte)ap.ESSID.Length;
                         break;
 
                     case CSVFileFormat.v1X:
-                        ap.Cipher = splitted[6].Trim();
-                        ap.Authentication = splitted[7].Trim();
-                        ap.Power = int.Parse(splitted[8].Trim());
-                        ap.Beacons = long.Parse(splitted[9].Trim());
-                        ap.DataFrames = ulong.Parse(splitted[10].Trim());
-                        ap.IP = splitted[11].Replace(" ", "");
-                        ap.ESSIDLength = byte.Parse(splitted[12].Trim());
-                        ap.ESSID = splitted[13].Substring(1); // TODO: Improve it because it may contain a ','
-                        ap.Key = splitted[14];
+                        ap.Cipher = split[6].Trim();
+                        ap.Authentication = split[7].Trim();
+                        ap.Power = int.Parse(split[8].Trim());
+                        ap.Beacons = long.Parse(split[9].Trim());
+                        ap.DataFrames = ulong.Parse(split[10].Trim());
+                        ap.IP = split[11].Replace(" ", "");
+                        ap.ESSIDLength = byte.Parse(split[12].Trim());
+                        ap.ESSID = split[13].Substring(1); // TODO: Improve it because it may contain a ','
+                        ap.Key = split[14];
                         break;
                 }
 
@@ -139,31 +139,31 @@ namespace WirelessPanda.Readers
             i += 2; // Skip station header
             for (; i < content.Length && !string.IsNullOrEmpty(content[i]); i++)
             {
-                string[] splitted = content[i].Split(',');
+                string[] split = content[i].Split(',');
 
                 // Skip to the next if not long enough
-                if (splitted.Length < 6)
+                if (split.Length < 6)
                 {
                     continue;
                 }
 
                 // Parse station information
                 Station sta = new Station();
-                sta.StationMAC = splitted[0].Trim();
-                sta.FirstTimeSeen = this.parseDateTime(splitted[1]);
-                sta.LastTimeSeen = this.parseDateTime(splitted[2]);
-                sta.Power = int.Parse(splitted[3].Trim());
-                sta.NbPackets = ulong.Parse(splitted[4].Trim());
-                sta.BSSID = splitted[5].Trim();
+                sta.StationMAC = split[0].Trim();
+                sta.FirstTimeSeen = this.parseDateTime(split[1]);
+                sta.LastTimeSeen = this.parseDateTime(split[2]);
+                sta.Power = int.Parse(split[3].Trim());
+                sta.NbPackets = ulong.Parse(split[4].Trim());
+                sta.BSSID = split[5].Trim();
 
                 // Get probed ESSID list
-                if (splitted.Length > 6 && splitted[6] != "")
+                if (split.Length > 6 && split[6] != "")
                 {
                     List<string> list = new List<string>();
-                    for (int j = 6; j < splitted.Length; j++)
+                    for (int j = 6; j < split.Length; j++)
                     {
                         // There's always a whitespace character before
-                        list.Add(splitted[j].Substring(1));
+                        list.Add(split[j].Substring(1));
                     }
                     sta.ProbedESSIDsList = list.ToArray();
                 }

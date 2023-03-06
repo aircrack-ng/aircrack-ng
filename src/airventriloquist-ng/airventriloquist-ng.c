@@ -766,7 +766,7 @@ static void process_unencrypted_data_packet(uint8_t * packet,
 		size_80211hdr = sizeof(struct ieee80211_qosframe);
 		// Here's an idea from a presentation out of NL, assign this packet
 		// a QOS priority that isn't used in order to not collide with
-		// squence numbers from the real AP/STA
+		// sequence numbers from the real AP/STA
 		struct ieee80211_qosframe * wqfrm
 			= (struct ieee80211_qosframe *) packet;
 		wqfrm->i_qos[0] = 0x7;
@@ -1325,7 +1325,7 @@ static bool find_station_in_db(uint8_t * p_stmac)
 	}
 
 	if (NULL == lopt.st_cur)
-		// If not fount, opt.st_cur == NULL
+		// If not found, opt.st_cur == NULL
 		return (FALSE);
 	else
 		// If found, opt.st_cur == p_stmac
