@@ -44,7 +44,7 @@ Write the key into a file. Overwrites the file if it already exists.
 .B Static WEP cracking options:
 .TP
 .I -c
-Search alpha-numeric characters only.
+Search alphanumeric characters only.
 .TP
 .I -t
 Search binary coded decimal characters only.
