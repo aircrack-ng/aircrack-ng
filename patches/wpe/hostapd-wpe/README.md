@@ -137,7 +137,7 @@ This functionality simply waits for an client to send a directed probe, when it 
 
 Microsoft offers something called "Computer Based Authentication". When a computer joins a domain it is assigned a password. This password is stored on the system and in active directory. We can harvest the MSCHAPv2 response from these systems but its going to take a lifetime to crack. Unless you're just trying to solve for the hash, and not the actual password :)
 
-One other thing to note, if the client returns all zeros, it isnt joined to a domain. 
+One other thing to note, if the client returns all zeros, it isn't joined to a domain. 
 
 # Testing Heartbleed
 
