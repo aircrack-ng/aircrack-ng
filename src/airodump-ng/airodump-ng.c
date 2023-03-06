@@ -4708,7 +4708,7 @@ static THREAD_ENTRY(gps_tracker_thread)
 	*return_success = 0;
 	*return_error = -1;
 
-	// Incase we GPSd goes down or we lose connection or a fix, we keep trying to connect inside the while loop
+	// In case we GPSd goes down or we lose connection or a fix, we keep trying to connect inside the while loop
 	while (lopt.do_exit == 0)
 	{
 		// If our socket connection to GPSD has been attempted and failed wait before trying again - used to prevent locking the CPU on socket retries
