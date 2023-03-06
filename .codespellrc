@@ -1,0 +1,3 @@
+[codespell]
+skip = *.patch,./LICENSE.OpenSSL,./test/password.lst,./test/password-2.lst,./test/password-3.lst,
+ignore-words-list = aci,ba,curent,datas,inout,keep-alives,nnumber,overthere,parm,parms,ue,varian,wan
