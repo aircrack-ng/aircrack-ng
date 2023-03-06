@@ -440,7 +440,7 @@ class ruleMatch:
                         #update current working client
                         self.Client = client 
                         try: 
-                            #atempt to remove client from capr dict
+                            #attempt to remove client from capr dict
                             position = self.capr[self.bssid].index(self.Client)
                             del self.capr[self.bssid][position]
                         except ValueError:
@@ -448,7 +448,7 @@ class ruleMatch:
                     if self.violators.has_key(self.bssid):
                         #set allow bcast to False
                         self.violators[self.bssid][0]["allow"] = False
-                        #set channel incase it has changed
+                        #set channel in case it has changed
                         self.violators[self.bssid][0]["channel"] = self.channel 
                     else:
                         self.violators[self.bssid] = [
@@ -523,7 +523,7 @@ class ruleMatch:
                             "Allow "+self.Client+" client to "+self.bssid+" bssid\n"])
                 else: 
                     message.printError(["ERROR in config file at:",
-                        "Rule Numer "+self.num,
+                        "Rule Number "+self.num,
                         self.rule,self.rulesDB,
                         "Could not match "+self.bssid+" or "+self.clients,
                         "Please check the rule and try again"])
@@ -544,7 +544,7 @@ class ruleMatch:
                             self.violators[self.bssid][1].extend(
                                     self.capr[self.bssid] #add all clients
                                     )
-                            #update channel incase it changed
+                            #update channel in case it changed
                             self.violators[self.bssid][0]["channel"] = self.channel
                         else:
                             self.violators[self.bssid] = [
@@ -639,7 +639,7 @@ class ruleMatch:
                         #do final processing on all affected clients
                         #remove duplicates
                         self.violators[self.bssid][1] = self.rm_dupe(self.violators[self.bssid][1])
-                        #update channel on the card incase it changed
+                        #update channel on the card in case it changed
                         self.violators[self.bssid][0]["channel"] = self.channel
             else:
                 message.printMessage(["Config file error at line",
@@ -852,7 +852,7 @@ def makeMagic(targets,slept = 0):
     and packets are sent to them
     """
     packetQue = []
-    packetCount = 1 #hardcoded number of how many copys of each packet is sent
+    packetCount = 1 #hardcoded number of how many copies of each packet is sent
     for bssid in targets:
         for client in targets[bssid][1]:
             engine = packetGenerator(

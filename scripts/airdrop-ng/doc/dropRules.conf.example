@@ -43,7 +43,7 @@
 
 #d/00:1F:3C|any #kicks all clients that match that oui 
 
-#d/action|00:1F:3C kick any clinets off an actiontec router that match the oui
+#d/action|00:1F:3C kick any clients off an actiontec router that match the oui
 
 #d/action|00:21:E9:3D:EB:45,00:17:AB:5C:DE:3A,00:1B:63:00:60:C4 #kick the following clients off an any actiontech router
 
