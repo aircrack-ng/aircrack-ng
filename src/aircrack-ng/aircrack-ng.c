@@ -231,7 +231,7 @@ static const char usage[]
 	  "\n"
 	  "  Static WEP cracking options:\n"
 	  "\n"
-	  "      -c         : search alpha-numeric characters only\n"
+	  "      -c         : search alphanumeric characters only\n"
 	  "      -t         : search binary coded decimal chr only\n"
 	  "      -h         : search the numeric key for Fritz!BOX\n"
 	  "      -d <mask>  : use masking of the key (A1:XX:CF:YY)\n"
@@ -3106,7 +3106,7 @@ static int calc_poll(int B)
 
 	if (opt.debug_row[B]) wep.poll[B][opt.debug[B]].val = 32767;
 
-	/* if option is set, restrict keyspace to alpha-numeric */
+	/* if option is set, restrict keyspace to alphanumeric */
 
 	if (opt.is_alnum)
 	{
