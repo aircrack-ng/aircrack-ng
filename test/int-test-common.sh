@@ -155,7 +155,7 @@ backup_regdomain() {
 set_regdomain() {
 	if [ -z "$1" ]; then
 		echo "set_regdomain(): No regdomain given"
-		retun 1
+		return 1
 	fi
 
 	echo "Changing regdomain to $1"
