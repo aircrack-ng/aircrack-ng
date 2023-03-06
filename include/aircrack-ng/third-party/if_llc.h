@@ -38,7 +38,7 @@
  * IEEE 802.2 Link Level Control headers, for use in conjunction with
  * 802.{3,4,5} media access control methods.
  *
- * Headers here do not use bit fields due to shortcommings in many
+ * Headers here do not use bit fields due to shortcomings in many
  * compilers.
  */
 
