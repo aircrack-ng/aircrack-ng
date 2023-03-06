@@ -196,7 +196,7 @@ class dotCreate:
 
     def graphCreate(self,keepdot_):
         """
-        Write out the graphviz dotFile and creat the graph
+        Write out the graphviz dotFile and create the graph
         """
         print("\n**** WARNING Images can be large, up to 12 Feet by 12 Feet****")
         print("Creating your Graph using, %s and writing to, %s"  %(self.csv,self.png))
