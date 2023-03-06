@@ -1483,7 +1483,7 @@ if [ "$#" != "0" ]; then
 	fi
 fi
 
-#start/stop interface existance check
+#start/stop interface existence check
 if [ "$1" = "start" ] || [ "$1" = "stop" ]; then
   if ! ifaceExists "${2}"; then
     printf "Requested device \"%s\" does not exist.\n" "${2}"
