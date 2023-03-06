@@ -138,7 +138,7 @@ static struct WPA_ST_info * st_1st = NULL;
 
 pFrag_t rFragment;
 
-static struct net_entry * find_entry(unsigned char * adress)
+static struct net_entry * find_entry(unsigned char * address)
 {
 	struct net_entry * cur = nets;
 
@@ -146,7 +146,7 @@ static struct net_entry * find_entry(unsigned char * adress)
 
 	do
 	{
-		if (!memcmp(cur->addr, adress, 6))
+		if (!memcmp(cur->addr, address, 6))
 		{
 			return (cur);
 		}
@@ -156,7 +156,7 @@ static struct net_entry * find_entry(unsigned char * adress)
 	return (NULL);
 }
 
-static void set_entry(unsigned char * adress, unsigned char network)
+static void set_entry(unsigned char * address, unsigned char network)
 {
 	struct net_entry * cur;
 
@@ -171,7 +171,7 @@ static void set_entry(unsigned char * adress, unsigned char network)
 	}
 	else
 	{
-		cur = find_entry(adress);
+		cur = find_entry(address);
 		if (cur == NULL)
 		{
 			cur = malloc(sizeof(struct net_entry));
@@ -183,13 +183,13 @@ static void set_entry(unsigned char * adress, unsigned char network)
 		}
 	}
 
-	memcpy(cur->addr, adress, 6);
+	memcpy(cur->addr, address, 6);
 	cur->net = network;
 }
 
-static int get_entry(unsigned char * adress)
+static int get_entry(unsigned char * address)
 {
-	struct net_entry * cur = find_entry(adress);
+	struct net_entry * cur = find_entry(address);
 
 	if (cur == NULL)
 	{
