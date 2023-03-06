@@ -1,0 +1,28 @@
+name: Codespell
+
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+  push:
+    branches: [ master ]
+
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  codespell:
+    name: Codespell spell checker
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+
+      - name: Install dependencies
+        run: sudo apt update -y && sudo apt install -y codespell
+
+      - name: Run codespell
+        run: codespell
