@@ -24,8 +24,7 @@ jobs:
           CUR_REV=$(git rev-parse HEAD | cut -b 1-30)
           echo "Current git revision: ${CUR_REV}"
 
-          git --version
-          ls -al
+          git log -n 3
 
           SKIP=false
           if [ ${COV_REV} == ${CUR_REV} ] ||
