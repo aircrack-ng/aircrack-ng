@@ -131,6 +131,14 @@
 	"\xf2\x01\x00\x50\xf2\x02\x00\x50\xf2\x03\x00\x50\xf2\x04\x00\x50"         \
 	"\xf2\x05\x02\x00\x00\x50\xf2\x01\x00\x50\xf2\x02"
 
+#define USEC_TO_MSEC(x) ((x) / 1000UL)
+#define NSEC_TO_USEC(x) ((x) / 1000UL)
+#define NSEC_TO_MSEC(x) ((x) / 1000000UL)
+#define SEC_TO_USEC(x) ((x) *1000000UL)
+#define SEC_TO_MSEC(x) ((x) *1000UL)
+#define SEC_TO_MSEC(x) ((x) *1000UL)
+#define MSEC_TO_USEC(x) ((x) *1000UL)
+
 static const char usage[]
 	= "\n"
 	  "  %s - (C) 2008-2022 Thomas d'Otreppe\n"
@@ -2719,201 +2727,203 @@ static THREAD_ENTRY(beacon_thread)
 	REQUIRE(arg != NULL);
 
 	struct AP_conf apc;
-	struct timeval tv, tv1, tv2;
+	struct timespec ts;
+	unsigned long ref_timer;
+	long jitter;
+	long wait_time;
 	uint64_t timestamp;
 	uint8_t beacon[512];
 	size_t beacon_len = 0;
-	int seq = 0, i = 0, n = 0;
+	int seq = 0, i = 0;
 	size_t essid_len;
 	int temp_channel;
 	uint8_t essid[MAX_IE_ELEMENT_SIZE + 1];
-	float f, ticks[3];
-	ssize_t rc;
+	unsigned ssid_count;
+	unsigned delay;
 
 	memset(essid, 0, MAX_IE_ELEMENT_SIZE + 1);
 	memcpy(&apc, arg, sizeof(struct AP_conf));
 
-	ticks[0] = 0;
-	ticks[1] = 0;
-	ticks[2] = 0;
+	// setup a reference timer that we can keep time against
+	delay = MSEC_TO_USEC(apc.interval);
+	ALLEGE(!clock_gettime(CLOCK_MONOTONIC, &ts));
+	ref_timer = SEC_TO_USEC(ts.tv_sec) + NSEC_TO_USEC(ts.tv_nsec);
+	ref_timer -= delay;
 
 	while (1)
 	{
-		/* sleep until the next clock tick */
-		if (dev.fd_rtc >= 0)
+		if (clock_gettime(CLOCK_MONOTONIC, &ts))
 		{
-			if ((rc = read(dev.fd_rtc, &n, sizeof(n))) < 0)
-			{
-				perror("read(/dev/rtc) failed");
-				return (NULL);
-			}
-
-			if (rc == 0)
-			{
-				perror("EOF encountered on /dev/rtc");
-				return (NULL);
-			}
-
-			ticks[0]++;
-			ticks[1]++;
-			ticks[2]++;
+			// avoid a tight loop in case of a persistent error
+			usleep(MSEC_TO_USEC(apc.interval));
+			continue;
 		}
+
+		// configured periodic time adjusted by number of ssids
+		if ((ssid_count = getESSIDcount()) == 0)
+		{
+			ref_timer = SEC_TO_USEC(ts.tv_sec) + NSEC_TO_USEC(ts.tv_nsec);
+			usleep(MSEC_TO_USEC(apc.interval));
+			continue;
+		}
+
+		delay = MSEC_TO_USEC(apc.interval) / ssid_count;
+
+		ref_timer += delay;
+
+		// figure out timer jitter with respect to reference timer
+		jitter = SEC_TO_USEC(ts.tv_sec) + NSEC_TO_USEC(ts.tv_nsec) - ref_timer;
+
+		// adjust delay with jitter correction
+		if ((wait_time = delay - jitter) < 0) wait_time = 0;
+
+#ifdef DEBUG
+		printf("ref=%lu, act=%lu, jitter=%04ld, wait_time=%04ld, ssids=%d\n",
+			   ref_timer,
+			   SEC_TO_MSEC(ts.tv_sec) + NSEC_TO_MSEC(ts.tv_nsec),
+			   jitter,
+			   wait_time,
+			   ssid_count);
+#endif
+
+		usleep(wait_time);
+
+		/* threshold reach, send one frame */
+		timestamp = SEC_TO_USEC(ts.tv_sec) + NSEC_TO_USEC(ts.tv_nsec);
+
+		/* flush expired ESSID entries */
+		flushESSID();
+		essid_len = (size_t) getNextESSID((char *) essid);
+		if (!essid_len)
+		{
+			strncpy((char *) essid, "default", sizeof(essid) - 1);
+			essid_len = strlen("default");
+		}
+
+		beacon_len = 0;
+
+		memcpy(beacon,
+			   "\x80\x00\x00\x00",
+			   4); // type/subtype/framecontrol/duration
+		beacon_len += 4;
+		memcpy(beacon + beacon_len, BROADCAST, 6); // destination
+		beacon_len += 6;
+		if (!lopt.adhoc)
+			memcpy(beacon + beacon_len, apc.bssid, 6); // source
 		else
+			memcpy(beacon + beacon_len, opt.r_smac, 6); // source
+		beacon_len += 6;
+		memcpy(beacon + beacon_len, apc.bssid, 6); // bssid
+		beacon_len += 6;
+		memcpy(beacon + beacon_len, "\x00\x00", 2); // seq+frag
+		beacon_len += 2;
+
+		memcpy(beacon + beacon_len,
+			   "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+			   12); // fixed information
+
+		beacon[beacon_len + 8] = (uint8_t)(
+			(apc.interval * MAX(getESSIDcount(), 1)) & 0xFF); // beacon interval
+		beacon[beacon_len + 9]
+			= (uint8_t)(((apc.interval * MAX(getESSIDcount(), 1)) >> 8) & 0xFF);
+		memcpy(beacon + beacon_len + 10, apc.capa, 2); // capability
+		beacon_len += 12;
+
+		beacon[beacon_len] = 0x00; // essid tag
+		beacon[beacon_len + 1] = (uint8_t) essid_len; // essid tag
+		beacon_len += 2;
+		memcpy(beacon + beacon_len, essid, essid_len); // actual essid
+		beacon_len += essid_len;
+
+		memcpy(beacon + beacon_len, RATES, sizeof(RATES) - 1); // rates
+		beacon_len += sizeof(RATES) - 1;
+
+		beacon[beacon_len] = 0x03; // channel tag
+		beacon[beacon_len + 1] = 0x01;
+		temp_channel = wi_get_channel(_wi_in); // current channel
+		if (!invalid_channel_displayed)
 		{
-			gettimeofday(&tv, NULL);
-			usleep(1000000 / RTC_RESOLUTION);
-			gettimeofday(&tv2, NULL);
+			if (temp_channel > 255)
+			{
+				// Display error message once
+				invalid_channel_displayed = 1;
+				fprintf(stderr,
+						"Error: Got channel %d, expected a value < 256.\n",
+						temp_channel);
+			}
+			else if (temp_channel < 1)
+			{
+				invalid_channel_displayed = 1;
+				fprintf(stderr,
+						"Error: Got channel %d, expected a value > 0.\n",
+						temp_channel);
+			}
+		}
+		beacon[beacon_len + 2] = (uint8_t)(
+			((temp_channel > 255 || temp_channel < 1) && lopt.channel != 0)
+				? lopt.channel
+				: temp_channel);
 
-			f = 1000000.0f * (float) (tv2.tv_sec - tv.tv_sec)
-				+ (float) (tv2.tv_usec - tv.tv_usec);
+		beacon_len += 3;
 
-			ticks[0] += f / (1000000.f / RTC_RESOLUTION);
-			ticks[1] += f / (1000000.f / RTC_RESOLUTION);
-			ticks[2] += f / (1000000.f / RTC_RESOLUTION);
+		if (lopt.allwpa)
+		{
+			memcpy(
+				beacon + beacon_len, ALL_WPA2_TAGS, sizeof(ALL_WPA2_TAGS) - 1);
+			beacon_len += sizeof(ALL_WPA2_TAGS) - 1;
+		}
+		else if (lopt.wpa2type > 0)
+		{
+			memcpy(beacon + beacon_len, WPA2_TAG, 22);
+			beacon[beacon_len + 7] = (uint8_t) lopt.wpa2type;
+			beacon[beacon_len + 13] = (uint8_t) lopt.wpa2type;
+			beacon_len += 22;
 		}
 
-		if (((double) ticks[2] / (double) RTC_RESOLUTION)
-			>= ((double) apc.interval / 1000.0) * (double) seq)
+		// Add extended rates
+		memcpy(beacon + beacon_len, EXTENDED_RATES, sizeof(EXTENDED_RATES) - 1);
+		beacon_len += sizeof(EXTENDED_RATES) - 1;
+
+		if (lopt.allwpa)
 		{
-			/* threshold reach, send one frame */
-			//             ticks[2] = 0;
-			fflush(stdout);
-			gettimeofday(&tv1, NULL);
-			timestamp = tv1.tv_sec * 1000000UL + tv1.tv_usec;
-			fflush(stdout);
-
-			/* flush expired ESSID entries */
-			flushESSID();
-			essid_len = (size_t) getNextESSID((char *) essid);
-			if (!essid_len)
-			{
-				strncpy((char *) essid, "default", sizeof(essid) - 1);
-				essid_len = strlen("default"); //-V814
-			}
-
-			beacon_len = 0;
-
-			memcpy(beacon,
-				   "\x80\x00\x00\x00",
-				   4); // type/subtype/framecontrol/duration
-			beacon_len += 4;
-			memcpy(beacon + beacon_len, BROADCAST, 6); // destination
-			beacon_len += 6;
-			if (!lopt.adhoc)
-				memcpy(beacon + beacon_len, apc.bssid, 6); // source
-			else
-				memcpy(beacon + beacon_len, opt.r_smac, 6); // source
-			beacon_len += 6;
-			memcpy(beacon + beacon_len, apc.bssid, 6); // bssid
-			beacon_len += 6;
-			memcpy(beacon + beacon_len, "\x00\x00", 2); // seq+frag
-			beacon_len += 2;
-
-			memcpy(beacon + beacon_len,
-				   "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
-				   12); // fixed information
-
-			beacon[beacon_len + 8]
-				= (uint8_t)((apc.interval * MAX(getESSIDcount(), 1))
-							& 0xFF); // beacon interval
-			beacon[beacon_len + 9] = (uint8_t)(
-				((apc.interval * MAX(getESSIDcount(), 1)) >> 8) & 0xFF);
-			memcpy(beacon + beacon_len + 10, apc.capa, 2); // capability
-			beacon_len += 12;
-
-			beacon[beacon_len] = 0x00; // essid tag
-			beacon[beacon_len + 1] = (uint8_t) essid_len; // essid tag
-			beacon_len += 2;
-			memcpy(beacon + beacon_len, essid, essid_len); // actual essid
-			beacon_len += essid_len;
-
-			memcpy(beacon + beacon_len, RATES, sizeof(RATES) - 1); // rates
-			beacon_len += sizeof(RATES) - 1;
-
-			beacon[beacon_len] = 0x03; // channel tag
-			beacon[beacon_len + 1] = 0x01;
-			temp_channel = wi_get_channel(_wi_in); // current channel
-			if (!invalid_channel_displayed)
-			{
-				if (temp_channel > 255)
-				{
-					// Display error message once
-					invalid_channel_displayed = 1;
-					fprintf(stderr,
-							"Error: Got channel %d, expected a value < 256.\n",
-							temp_channel);
-				}
-				else if (temp_channel < 1)
-				{
-					invalid_channel_displayed = 1;
-					fprintf(stderr,
-							"Error: Got channel %d, expected a value > 0.\n",
-							temp_channel);
-				}
-			}
-			beacon[beacon_len + 2] = (uint8_t)(
-				((temp_channel > 255 || temp_channel < 1) && lopt.channel != 0)
-					? lopt.channel
-					: temp_channel);
-
-			beacon_len += 3;
-
-			if (lopt.allwpa)
-			{
-				memcpy(beacon + beacon_len,
-					   ALL_WPA2_TAGS,
-					   sizeof(ALL_WPA2_TAGS) - 1);
-				beacon_len += sizeof(ALL_WPA2_TAGS) - 1;
-			}
-			else if (lopt.wpa2type > 0)
-			{
-				memcpy(beacon + beacon_len, WPA2_TAG, 22);
-				beacon[beacon_len + 7] = (uint8_t) lopt.wpa2type;
-				beacon[beacon_len + 13] = (uint8_t) lopt.wpa2type;
-				beacon_len += 22;
-			}
-
-			// Add extended rates
-			memcpy(beacon + beacon_len,
-				   EXTENDED_RATES,
-				   sizeof(EXTENDED_RATES) - 1);
-			beacon_len += sizeof(EXTENDED_RATES) - 1;
-
-			if (lopt.allwpa)
-			{
-				memcpy(beacon + beacon_len,
-					   ALL_WPA1_TAGS,
-					   sizeof(ALL_WPA1_TAGS) - 1);
-				beacon_len += sizeof(ALL_WPA1_TAGS) - 1;
-			}
-			else if (lopt.wpa1type > 0)
-			{
-				memcpy(beacon + beacon_len, WPA1_TAG, 24);
-				beacon[beacon_len + 11] = (uint8_t) lopt.wpa1type;
-				beacon[beacon_len + 17] = (uint8_t) lopt.wpa1type;
-				beacon_len += 24;
-			}
-
-			// copy timestamp into beacon; a mod 2^64 counter incremented each
-			// microsecond
-			for (i = 0; i < 8; i++)
-			{
-				beacon[24 + i] = (uint8_t)((timestamp >> (i * 8)) & 0xFF);
-			}
-
-			beacon[22] = (uint8_t)((seq << 4) & 0xFF);
-			beacon[23] = (uint8_t)((seq >> 4) & 0xFF);
-
-			fflush(stdout);
-
-			if (my_send_packet(beacon, beacon_len) < 0)
-			{
-				printf("Error sending beacon!\n");
-				return (NULL);
-			}
-
-			seq++;
+			memcpy(
+				beacon + beacon_len, ALL_WPA1_TAGS, sizeof(ALL_WPA1_TAGS) - 1);
+			beacon_len += sizeof(ALL_WPA1_TAGS) - 1;
 		}
+		else if (lopt.wpa1type > 0)
+		{
+			memcpy(beacon + beacon_len, WPA1_TAG, 24);
+			beacon[beacon_len + 11] = (uint8_t) lopt.wpa1type;
+			beacon[beacon_len + 17] = (uint8_t) lopt.wpa1type;
+			beacon_len += 24;
+		}
+
+		// copy timestamp into beacon; a mod 2^64 counter incremented each
+		// microsecond
+		for (i = 0; i < 8; i++)
+		{
+			beacon[24 + i] = (uint8_t)((timestamp >> (i * 8)) & 0xFF);
+		}
+
+		beacon[22] = (uint8_t)((seq << 4) & 0xFF);
+		beacon[23] = (uint8_t)((seq >> 4) & 0xFF);
+
+		fflush(stdout);
+
+#ifdef DEBUG
+		printf("sending beacon time(%lu.%03lu) %s\n",
+			   ts.tv_sec,
+			   NSEC_TO_MSEC(ts.tv_nsec),
+			   essid);
+#endif
+
+		if (my_send_packet(beacon, beacon_len) < 0)
+		{
+			fprintf(stderr, "Error sending beacon!\n");
+			return (NULL);
+		}
+
+		seq++;
 	}
 
 	return (NULL);
