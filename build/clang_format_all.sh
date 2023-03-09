@@ -34,10 +34,8 @@ if test ! -e configure.ac; then
     exit 1;
 fi;
 
-if ! valid_clang_format; then
-	# if not valid yet, first try the command line parameter
-	CLANG_FORMAT=$1
-fi;
+# First try the command line parameter
+CLANG_FORMAT=$1
 
 if ! valid_clang_format; then
 	# Next try the full version
