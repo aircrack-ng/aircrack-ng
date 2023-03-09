@@ -21,7 +21,6 @@ CLANG_FORMAT_VERSION=$CLANG_MAJOR.$CLANG_MINOR
 valid_clang_format() {
 	if which "$CLANG_FORMAT" > /dev/null 2>&1; then
 		if $CLANG_FORMAT --version | grep -q $CLANG_FORMAT_VERSION; then
-			echo "Located $CLANG_FORMAT";
 			return 0;
 		fi
 	fi
@@ -61,6 +60,8 @@ if ! valid_clang_format; then
 	echo "'clang-format-$CLANG_FORMAT_VERSION' so that it doesn't interfere with any other"
 	echo "versions you might have installed, and this script will find it there"
 	exit 1;
+else
+	echo "Located $CLANG_FORMAT";
 fi;
 
 # Format all source code
