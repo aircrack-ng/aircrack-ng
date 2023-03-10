@@ -17,10 +17,17 @@ jobs:
         name: Git Checkout
         uses: actions/checkout@v3
       -
+        name: Add LLVM repo
+        uses: myci-actions/add-deb-repo@10
+        with:
+          repo: deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16 main
+          repo-name: llvm
+          keys-asc: https://apt.llvm.org/llvm-snapshot.gpg.key
+      -
         name: Install required tools
         run: |
               sudo apt-get update
-              sudo apt-get install clang clang-tools build-essential autoconf automake libtool \
+              sudo apt-get install clang-16 clang-tools-16 build-essential autoconf automake libtool \
                           pkg-config libnl-3-dev libnl-genl-3-dev libssl-dev ethtool \
                           shtool rfkill zlib1g-dev libpcap-dev libsqlite3-dev libpcre2-dev \
                           libhwloc-dev libcmocka-dev hostapd wpasupplicant tcpdump screen \
