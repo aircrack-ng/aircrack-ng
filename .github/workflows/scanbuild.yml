@@ -39,9 +39,9 @@ jobs:
           SCANBUILD_DIR=/tmp/scanbuild
           CPUS=$(nproc)
           autoreconf -vif
-          CC=clang CXX=clang++ ./configure --with-experimental --enable-maintainer-mode || { cat config.log; exit 1; }
+          CC=clang-16 CXX=clang++-16 ./configure --with-experimental --enable-maintainer-mode || { cat config.log; exit 1; }
           mkdir "${SCANBUILD_DIR}"
-          scan-build -sarif -o "${SCANBUILD_DIR}" -enable-checker alpha.security.taint.TaintPropagation -enable-checker alpha.security.ArrayBoundV2 make -j ${CPUS}
+          scan-build-16 -sarif -o "${SCANBUILD_DIR}" -enable-checker alpha.security.taint.TaintPropagation -enable-checker alpha.security.ArrayBoundV2 make -j ${CPUS}
           echo "directory=${SCANBUILD_DIR}/$(ls -1 ${SCANBUILD_DIR})" >> $GITHUB_OUTPUT
       -
         name: Merge SARIF files
