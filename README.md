@@ -18,6 +18,7 @@
 
 ### Others
 
+[![Clang Scan-build](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/scanbuild.yml/badge.svg)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/scanbuild.yml)
 [![Codespell](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/codespell.yml/badge.svg)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/codespell.yml)
 [![Coverity Scan](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/coverity.yml/badge.svg)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/coverity.yml)
 [![Docker (git) push to DockerHub](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/docker.yml/badge.svg?event=push)](https://github.com/aircrack-ng/aircrack-ng/actions/workflows/docker.yml)
