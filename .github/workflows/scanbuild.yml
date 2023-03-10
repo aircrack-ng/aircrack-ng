@@ -25,7 +25,7 @@ jobs:
         name: Build and run scan-build
         id: scanbuild
         run: |
-          SCANBUILD_DIR=/scanbuild
+          SCANBUILD_DIR=/tmp/scanbuild
           CPUS=$(nproc)
           autoreconf -vif
           CC=clang CXX=clang++ ./configure --with-experimental --enable-maintainer-mode || { cat config.log; exit 1; }
