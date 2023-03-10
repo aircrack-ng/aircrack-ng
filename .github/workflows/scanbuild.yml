@@ -15,8 +15,8 @@ jobs:
       -
         name: Install required tools
         run: |
-              apt-get update
-              apt-get install clang clang-tools build-essential autoconf automake libtool \
+              sudo apt-get update
+              sudo apt-get install clang clang-tools build-essential autoconf automake libtool \
                           pkg-config libnl-3-dev libnl-genl-3-dev libssl-dev ethtool \
                           shtool rfkill zlib1g-dev libpcap-dev libsqlite3-dev libpcre2-dev \
                           libhwloc-dev libcmocka-dev hostapd wpasupplicant tcpdump screen \
@@ -35,7 +35,7 @@ jobs:
       -
         name: Merge SARIF files
         run: |
-          npm i -g @microsoft/sarif-multitool
+          sudo npm i -g @microsoft/sarif-multitool
           sarif-multitool merge ${{steps.scanbuild.outputs.directory}}/*.sarif --recurse --output-directory=. --output-file=results.sarif
 
       -
