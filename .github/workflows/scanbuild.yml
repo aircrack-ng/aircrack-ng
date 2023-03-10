@@ -1,6 +1,10 @@
 name: Clang Scan-build
 
 on:
+  push:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/scanbuild.yml'
   workflow_dispatch:
   schedule:
     - cron: "0 1 * * *"
