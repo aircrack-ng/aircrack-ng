@@ -39,8 +39,8 @@ jobs:
       -
         name: Merge SARIF files
         run: |
-          sudo npm i -g @microsoft/sarif-multitool
-          sarif-multitool merge ${{steps.scanbuild.outputs.directory}}/*.sarif --recurse --output-directory=. --output-file=results.sarif
+          npm i @microsoft/sarif-multitool
+          npx sarif-multitool merge ${{steps.scanbuild.outputs.directory}}/*.sarif --recurse --output-directory=. --output-file=results.sarif
 
       -
         name: Upload SARIF file
