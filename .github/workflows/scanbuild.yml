@@ -1,0 +1,46 @@
+name: Clang Scan-build
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 1 * * *"
+
+jobs:
+  coverity:
+    runs-on: ubuntu-22.04
+    steps:
+      - 
+        name: Git Checkout
+        uses: actions/checkout@v3
+      -
+        name: Install required tools
+        run: |
+              apt-get update
+              apt-get install clang clang-tools build-essential autoconf automake libtool \
+                          pkg-config libnl-3-dev libnl-genl-3-dev libssl-dev ethtool \
+                          shtool rfkill zlib1g-dev libpcap-dev libsqlite3-dev libpcre2-dev \
+                          libhwloc-dev libcmocka-dev hostapd wpasupplicant tcpdump screen \
+                          iw usbutils expect git -y
+      -
+        name: Build and run scan-build
+        id: scanbuild
+        run: |
+          SCANBUILD_DIR=/scanbuild
+          CPUS=$(nproc)
+          autoreconf -vif
+          CC=clang CXX=clang++ ./configure --with-experimental --enable-maintainer-mode || { cat config.log; exit 1; }
+          mkdir "${SCANBUILD_DIR}"
+          scan-build -sarif -o "${SCANBUILD_DIR}" -enable-checker alpha.security.taint.TaintPropagation -enable-checker alpha.security.ArrayBoundV2 make -j ${CPUS}
+          echo "directory=${SCANBUILD_DIR}/$(ls -1 ${SCANBUILD_DIR})" >> $GITHUB_OUTPUT
+      -
+        name: Merge SARIF files
+        run: |
+          npm i -g @microsoft/sarif-multitool
+          sarif-multitool merge ${{steps.scanbuild.outputs.directory}}/*.sarif --recurse --output-directory=. --output-file=results.sarif
+
+      -
+        name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: results.sarif
+          category: scanbuild
