@@ -8,6 +8,55 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "0 1 * * *"
+  pull_request:
+    branches: [ master ]
+    paths-ignore:
+      - apparmor/**
+      - contrib/**
+      - manpages/**
+      - patches/**
+      - '.coverityignore'
+      - '.github/workflows/gentoo.yml'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/workflows/almalinux.yml'
+      - '.github/workflows/alpine.yml'
+      - '.github/workflows/check-release-ready.yml'
+      - '.github/workflows/codespell.yml'
+      - '.github/workflows/coverity.yml'
+      - '.github/workflows/docker.yml'
+      - '.github/workflows/docker-release.yml'
+      - '.github/workflows/dragonflybsd.yml'
+      - '.github/workflows/freebsd.yml'
+      - '.github/workflows/irc.yml'
+      - '.github/workflows/kali.yml'
+      - '.github/workflows/linux.yml'
+      - '.github/workflows/linux-pcre.yml'
+      - '.github/workflows/macos.yml'
+      - '.github/workflows/manual.yml'
+      - '.github/workflows/netbsd.yml'
+      - '.github/workflows/openbsd.yml'
+      - '.github/workflows/pvs-studio.yml'
+      - '.github/workflows/style.yml'
+      - '.github/workflows/windows.yml'
+      - '.vscode/**'
+      - '.clang-format'
+      - '.editorconfig'
+      - '.gitignore'
+      - '.pre-commit-config.yaml'
+      - 'AC_VERSION.in'
+      - 'AUTHORS'
+      - 'centos_autotools.sh'
+      - 'ChangeLog'
+      - 'docker_package_install.sh'
+      - 'Dockerfile'
+      - 'Dockerfile.release'
+      - 'INSTALLING'
+      - 'LICENSE'
+      - 'LICENSE.OpenSSL'
+      - 'README'
+      - 'README.md'
+      - 'SECURITY.md'
+      - 'scripts/airmon-ng.freebsd'
 
 jobs:
   scanbuild:
@@ -51,13 +100,23 @@ jobs:
 
       -
         name: Upload SARIF file
+        if: github.event_name != 'pull_request'
         uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: results.sarif
           category: scanbuild
 
       -
+        name: Archive artifacts (Pull request)
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v3
+        with:
+          name: scanbuild-pr-${{ github.event.number }}
+          path: results.sarif
+
+      -
         name: Archive artifacts (Push)
+        if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v3
         with:
           name: scanbuild
