@@ -119,7 +119,8 @@ struct icmp
 	uint8_t icmp_type; /* type of message, see below */
 	uint8_t icmp_code; /* type sub code */
 	uint16_t icmp_cksum; /* ones complement checksum of struct */
-	union {
+	union
+	{
 		u_char ih_pptr; /* ICMP_PARAMPROB */
 		struct in_addr ih_gwaddr; /* gateway address */
 		struct ih_idseq /* echo datagram */
@@ -154,7 +155,8 @@ struct icmp
 #define icmp_num_addrs icmp_hun.ih_rtradv.irt_num_addrs
 #define icmp_wpa icmp_hun.ih_rtradv.irt_wpa
 #define icmp_lifetime icmp_hun.ih_rtradv.irt_lifetime
-	union {
+	union
+	{
 		struct
 		{
 			uint32_t its_otime;

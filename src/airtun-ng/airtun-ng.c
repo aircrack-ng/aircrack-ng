@@ -716,8 +716,7 @@ static int packet_recv(unsigned char * packet, size_t length)
 			/* frame 1: Pairwise == 1, Install == 0, Ack == 1, MIC == 0 */
 
 			if ((packet[z + 6] & 0x08) != 0 && (packet[z + 6] & 0x40) == 0
-				&& (packet[z + 6] & 0x80) != 0
-				&& (packet[z + 5] & 0x01) == 0)
+				&& (packet[z + 6] & 0x80) != 0 && (packet[z + 5] & 0x01) == 0)
 			{
 				/* set authenticator nonce */
 
@@ -727,8 +726,7 @@ static int packet_recv(unsigned char * packet, size_t length)
 			/* frame 2 or 4: Pairwise == 1, Install == 0, Ack == 0, MIC == 1 */
 
 			if ((packet[z + 6] & 0x08) != 0 && (packet[z + 6] & 0x40) == 0
-				&& (packet[z + 6] & 0x80) == 0
-				&& (packet[z + 5] & 0x01) != 0)
+				&& (packet[z + 6] & 0x80) == 0 && (packet[z + 5] & 0x01) != 0)
 			{
 				if (memcmp(&packet[z + 17], ZERO, 32) != 0)
 				{
@@ -761,8 +759,7 @@ static int packet_recv(unsigned char * packet, size_t length)
 			/* frame 3: Pairwise == 1, Install == 1, Ack == 1, MIC == 1 */
 
 			if ((packet[z + 6] & 0x08) != 0 && (packet[z + 6] & 0x40) != 0
-				&& (packet[z + 6] & 0x80) != 0
-				&& (packet[z + 5] & 0x01) != 0)
+				&& (packet[z + 6] & 0x80) != 0 && (packet[z + 5] & 0x01) != 0)
 			{
 				if (memcmp(&packet[z + 17], ZERO, 32) != 0)
 				{
@@ -1232,7 +1229,7 @@ int main(int argc, char * argv[])
 
 	dev.fd_rtc = -1;
 
-/* open the RTC device if necessary */
+	/* open the RTC device if necessary */
 
 #if defined(__i386__)
 #if defined(linux)

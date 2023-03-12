@@ -2732,9 +2732,7 @@ static void print_status(int advance)
 						   n->n_flood_in.s_speed,
 						   n->n_flood_out.s_speed,
 						   (int) (n->n_replay_len
-								  - sizeof(struct ieee80211_frame)
-								  - 4
-								  - 4));
+								  - sizeof(struct ieee80211_frame) - 4 - 4));
 					break;
 
 				case ASTATE_DEAUTH:

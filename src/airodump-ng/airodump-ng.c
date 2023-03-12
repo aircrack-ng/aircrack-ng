@@ -106,17 +106,17 @@ static const char * OUI_PATHS[]
 static int read_pkts = 0;
 
 static int abg_chans[]
-	= {1,   7,   13,  2,   8,   3,   14,  9,   4,   10,  5,   11,  6,
-	   12,  36,  38,  40,  42,  44,  46,  48,  50,  52,  54,  56,  58,
-	   60,  62,  64,  100, 102, 104, 106, 108, 110, 112, 114, 116, 118,
+	= {1,	7,	 13,  2,   8,	3,	 14,  9,   4,	10,	 5,	  11,  6,
+	   12,	36,	 38,  40,  42,	44,	 46,  48,  50,	52,	 54,  56,  58,
+	   60,	62,	 64,  100, 102, 104, 106, 108, 110, 112, 114, 116, 118,
 	   120, 122, 124, 126, 128, 132, 134, 136, 138, 140, 142, 144, 149,
 	   151, 153, 155, 157, 159, 161, 165, 169, 173, 0};
 
 static int bg_chans[] = {1, 7, 13, 2, 8, 3, 14, 9, 4, 10, 5, 11, 6, 12, 0};
 
 static int a_chans[]
-	= {36,  38,  40,  42,  44,  46,  48,  50,  52,  54,  56,  58,
-	   60,  62,  64,  100, 102, 104, 106, 108, 110, 112, 114, 116,
+	= {36,	38,	 40,  42,  44,	46,	 48,  50,  52,	54,	 56,  58,
+	   60,	62,	 64,  100, 102, 104, 106, 108, 110, 112, 114, 116,
 	   118, 120, 122, 124, 126, 128, 132, 134, 136, 138, 140, 142,
 	   144, 149, 151, 153, 155, 157, 159, 161, 165, 169, 173, 0};
 
@@ -983,20 +983,23 @@ static void update_rx_quality(void)
 			if (ap_cur->fcapt > 1)
 			{
 				capt_time
-					= (1000000UL * (ap_cur->ftimel.tv_sec
-									- ap_cur->ftimef.tv_sec) // time between
+					= (1000000UL
+						   * (ap_cur->ftimel.tv_sec
+							  - ap_cur->ftimef.tv_sec) // time between
 					   // first and last
 					   // captured frame
 					   + (ap_cur->ftimel.tv_usec - ap_cur->ftimef.tv_usec));
 
 				miss_time
-					= (1000000UL * (ap_cur->ftimef.tv_sec
-									- ap_cur->ftimer.tv_sec) // time between
+					= (1000000UL
+						   * (ap_cur->ftimef.tv_sec
+							  - ap_cur->ftimer.tv_sec) // time between
 					   // timer reset and
 					   // first frame
 					   + (ap_cur->ftimef.tv_usec - ap_cur->ftimer.tv_usec))
-					  + (1000000UL * (cur_time.tv_sec
-									  - ap_cur->ftimel.tv_sec) // time between
+					  + (1000000UL
+							 * (cur_time.tv_sec
+								- ap_cur->ftimel.tv_sec) // time between
 						 // last frame and
 						 // this moment
 						 + (cur_time.tv_usec - ap_cur->ftimel.tv_usec));
@@ -1973,7 +1976,7 @@ skip_probe:
 						break;
 				}
 
-				ap_cur->n_channel.any_chan_width = (uint8_t)((p[3] / 4) % 2);
+				ap_cur->n_channel.any_chan_width = (uint8_t) ((p[3] / 4) % 2);
 			}
 
 			// HT capabilities
@@ -1985,8 +1988,8 @@ skip_probe:
 				}
 
 				// Short GI for 20/40MHz
-				ap_cur->n_channel.short_gi_20 = (uint8_t)((p[3] / 32) % 2);
-				ap_cur->n_channel.short_gi_40 = (uint8_t)((p[3] / 64) % 2);
+				ap_cur->n_channel.short_gi_20 = (uint8_t) ((p[3] / 32) % 2);
+				ap_cur->n_channel.short_gi_40 = (uint8_t) ((p[3] / 64) % 2);
 
 				// Parse MCS rate
 				/*
@@ -2018,18 +2021,18 @@ skip_probe:
 				// Standard is AC
 				strcpy(ap_cur->standard, "ac");
 
-				ap_cur->ac_channel.split_chan = (uint8_t)((p[3] / 4) % 4);
+				ap_cur->ac_channel.split_chan = (uint8_t) ((p[3] / 4) % 4);
 
-				ap_cur->ac_channel.short_gi_80 = (uint8_t)((p[3] / 32) % 2);
-				ap_cur->ac_channel.short_gi_160 = (uint8_t)((p[3] / 64) % 2);
+				ap_cur->ac_channel.short_gi_80 = (uint8_t) ((p[3] / 32) % 2);
+				ap_cur->ac_channel.short_gi_160 = (uint8_t) ((p[3] / 64) % 2);
 
-				ap_cur->ac_channel.mu_mimo = (uint8_t)((p[4] & 0x18) % 2);
+				ap_cur->ac_channel.mu_mimo = (uint8_t) ((p[4] & 0x18) % 2);
 
 				// A few things indicate Wave 2: MU-MIMO, 80+80 Channels
 				ap_cur->ac_channel.wave_2
-					= (uint8_t)((ap_cur->ac_channel.mu_mimo
-								 || ap_cur->ac_channel.split_chan)
-								% 2);
+					= (uint8_t) ((ap_cur->ac_channel.mu_mimo
+								  || ap_cur->ac_channel.split_chan)
+								 % 2);
 
 				// Maximum rates (16 bit)
 				uint16_t tx_mcs = 0;
@@ -2039,7 +2042,7 @@ skip_probe:
 				for (uint8_t stream_idx = 0; stream_idx < MAX_AC_MCS_INDEX;
 					 ++stream_idx)
 				{
-					uint8_t mcs = (uint8_t)(tx_mcs % 4);
+					uint8_t mcs = (uint8_t) (tx_mcs % 4);
 
 					// Unsupported -> No more spatial stream
 					if (mcs == 3)
@@ -2153,12 +2156,12 @@ skip_probe:
 				float max_rate
 					= (ap_cur->standard[0] == 'n')
 						  ? get_80211n_rate(
-								width, sgi, ap_cur->n_channel.mcs_index)
+							  width, sgi, ap_cur->n_channel.mcs_index)
 						  : get_80211ac_rate(
-								width,
-								sgi,
-								ap_cur->ac_channel.mcs_index[amount_ss - 1],
-								amount_ss);
+							  width,
+							  sgi,
+							  ap_cur->ac_channel.mcs_index[amount_ss - 1],
+							  amount_ss);
 
 				// If no error, update rate
 				if (max_rate > 0)
@@ -2621,10 +2624,10 @@ skip_probe:
 						ivs2.flags |= IVS2_XOR;
 						ivs2.len += clen + 4;
 						/* reveal keystream (plain^encrypted) */
-						for (n = 0; n < (size_t)(ivs2.len - 4); n++)
+						for (n = 0; n < (size_t) (ivs2.len - 4); n++)
 						{
-							clear[n] = (uint8_t)((clear[n] ^ h80211[z + 4 + n])
-												 & 0xFF);
+							clear[n] = (uint8_t) ((clear[n] ^ h80211[z + 4 + n])
+												  & 0xFF);
 						}
 						// clear is now the keystream
 					}
@@ -2642,11 +2645,12 @@ skip_probe:
 						/* reveal keystream (plain^encrypted) */
 						for (o = 0; o < num_xor; o++)
 						{
-							for (n = 0; n < (size_t)(ivs2.len - 4); n++)
+							for (n = 0; n < (size_t) (ivs2.len - 4); n++)
 							{
-								clear[2 + n + o * 32] = (uint8_t)(
-									(clear[2 + n + o * 32] ^ h80211[z + 4 + n])
-									& 0xFF);
+								clear[2 + n + o * 32]
+									= (uint8_t) ((clear[2 + n + o * 32]
+												  ^ h80211[z + 4 + n])
+												 & 0xFF);
 							}
 						}
 						memcpy(clear + 4 + 1 + 1 + 32 * num_xor,
@@ -2755,14 +2759,13 @@ skip_probe:
 			/* frame 1: Pairwise == 1, Install == 0, Ack == 1, MIC == 0 */
 
 			if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
-				&& (h80211[z + 6] & 0x80) != 0
-				&& (h80211[z + 5] & 0x01) == 0)
+				&& (h80211[z + 6] & 0x80) != 0 && (h80211[z + 5] & 0x01) == 0)
 			{
 				memcpy(st_cur->wpa.anonce, &h80211[z + 17], 32);
 
 				st_cur->wpa.state = 1;
 
-				uint8_t key_descriptor_version = (uint8_t)(h80211[z + 6] & 7);
+				uint8_t key_descriptor_version = (uint8_t) (h80211[z + 6] & 7);
 
 				p = h80211 + z + 99;
 
@@ -2846,8 +2849,7 @@ skip_probe:
 			if (z + 17 + 32 > (unsigned) caplen) goto write_packet;
 
 			if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
-				&& (h80211[z + 6] & 0x80) == 0
-				&& (h80211[z + 5] & 0x01) != 0)
+				&& (h80211[z + 6] & 0x80) == 0 && (h80211[z + 5] & 0x01) != 0)
 			{
 				if (memcmp(&h80211[z + 17], ZERO, 32) != 0)
 				{
@@ -2858,7 +2860,7 @@ skip_probe:
 				if ((st_cur->wpa.state & 4) != 4)
 				{
 					st_cur->wpa.eapol_size
-						= (uint32_t)((h80211[z + 2] << 8) + h80211[z + 3] + 4);
+						= (uint32_t) ((h80211[z + 2] << 8) + h80211[z + 3] + 4);
 
 					if (caplen - z < st_cur->wpa.eapol_size
 						|| st_cur->wpa.eapol_size == 0 //-V560
@@ -2875,15 +2877,14 @@ skip_probe:
 						st_cur->wpa.eapol, &h80211[z], st_cur->wpa.eapol_size);
 					memset(st_cur->wpa.eapol + 81, 0, 16);
 					st_cur->wpa.state |= 4;
-					st_cur->wpa.keyver = (uint8_t)(h80211[z + 6] & 7);
+					st_cur->wpa.keyver = (uint8_t) (h80211[z + 6] & 7);
 				}
 			}
 
 			/* frame 3: Pairwise == 1, Install == 1, Ack == 1, MIC == 1 */
 
 			if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) != 0
-				&& (h80211[z + 6] & 0x80) != 0
-				&& (h80211[z + 5] & 0x01) != 0)
+				&& (h80211[z + 6] & 0x80) != 0 && (h80211[z + 5] & 0x01) != 0)
 			{
 				if (memcmp(&h80211[z + 17], ZERO, 32) != 0)
 				{
@@ -2910,7 +2911,7 @@ skip_probe:
 						st_cur->wpa.eapol, &h80211[z], st_cur->wpa.eapol_size);
 					memset(st_cur->wpa.eapol + 81, 0, 16);
 					st_cur->wpa.state |= 4;
-					st_cur->wpa.keyver = (uint8_t)(h80211[z + 6] & 7);
+					st_cur->wpa.keyver = (uint8_t) (h80211[z + 6] & 7);
 				}
 			}
 
@@ -3492,7 +3493,7 @@ static char * parse_timestamp(unsigned long long timestamp)
 	memset(s, 0, TSTP_LEN);
 
 	// Calculate days, hours, mins and secs
-	days = (uint8_t)(timestamp / TSTP_DAY);
+	days = (uint8_t) (timestamp / TSTP_DAY);
 	rem = timestamp % TSTP_DAY;
 	hours = (unsigned char) (rem / TSTP_HOUR);
 	rem %= TSTP_HOUR;
@@ -3768,8 +3769,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			{
 				memset(strbuf + columns_ap, ' ', sizeof(strbuf) - columns_ap);
 				snprintf(strbuf + columns_ap - strlen("ESSID")
-							 + lopt.maxsize_wps_seen
-							 + strlen(" "),
+							 + lopt.maxsize_wps_seen + strlen(" "),
 						 6,
 						 "%s",
 						 "ESSID");
@@ -3780,8 +3780,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 						   sizeof(strbuf) - columns_ap - lopt.maxsize_wps_seen
 							   - 1);
 					snprintf(strbuf + columns_ap + lopt.maxsize_wps_seen
-								 + lopt.maxsize_essid_seen
-								 - strlen("ESSID"),
+								 + lopt.maxsize_essid_seen - strlen("ESSID"),
 							 13,
 							 "%s",
 							 "MANUFACTURER");
@@ -4154,7 +4153,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 				if (lopt.show_manufacturer)
 				{
-					if (lopt.maxsize_essid_seen <= (u_int)(len - essid_len))
+					if (lopt.maxsize_essid_seen <= (u_int) (len - essid_len))
 						lopt.maxsize_essid_seen
 							= (u_int) MAX(len - essid_len, 5);
 					else
@@ -5269,7 +5268,7 @@ channel_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 			first = 0;
 		}
 
-		usleep((useconds_t)(lopt.hopfreq * 1000));
+		usleep((useconds_t) (lopt.hopfreq * 1000));
 	}
 
 	exit(0);
@@ -5367,7 +5366,7 @@ frequency_hopper(struct wif * wi[], int if_num, int chan_count, pid_t parent)
 			first = 0;
 		}
 
-		usleep((useconds_t)(lopt.hopfreq * 1000));
+		usleep((useconds_t) (lopt.hopfreq * 1000));
 	}
 
 	exit(0);
@@ -6601,8 +6600,7 @@ int main(int argc, char * argv[])
 			case 'q':
 
 				if ((sscanf(optarg, "%" SCNd8, &lopt.min_rxq) != 1)
-					|| (lopt.min_rxq > 100)
-					|| (lopt.min_rxq < 0))
+					|| (lopt.min_rxq > 100) || (lopt.min_rxq < 0))
 				{
 					printf("Error: invalid --min-rxq (or -q) value (valid "
 						   "range: 0..100)\n");
