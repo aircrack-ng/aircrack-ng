@@ -37,7 +37,7 @@ jobs:
         channel: '#aircrack-ng'
         nickname: ${{steps.random.outputs.username}}
         message: |-
-          New pull request by ${{ github.actor }}: ${{ github.event.pull_request.title }} - ${{ github.event.pull_request.html_url }}
+          New pull request #${{ github.event.number }} by ${{ github.actor }}: ${{ github.event.pull_request.title }} - ${{ github.event.pull_request.html_url }}
 
     - name: Issue created
       uses: Gottox/irc-message-action@v2.1.3
