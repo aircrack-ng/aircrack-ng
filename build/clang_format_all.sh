@@ -4,8 +4,8 @@
 #   https://github.com/baldurk/renderdoc/raw/v1.x/util/clang_format_all.sh
 #
 
-CLANG_MAJOR=3
-CLANG_MINOR=8
+CLANG_MAJOR=12
+CLANG_MINOR=0
 
 CLANG_FORMAT_VERSION=$CLANG_MAJOR.$CLANG_MINOR
 
