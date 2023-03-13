@@ -5,9 +5,6 @@ ARG VARIANT
 
 FROM mcr.microsoft.com/vscode/devcontainers/cpp:0-${VARIANT}
 
-ARG CLANGURL="https://releases.llvm.org/3.8.1/"
-ARG CLANGFILE="clang+llvm-3.8.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz"
-
 # hadolint ignore=DL3003,DL3008
 RUN apt-get update \
  && export DEBIAN_FRONTEND=noninteractive \
@@ -20,8 +17,4 @@ RUN apt-get update \
 	  clang-format-14 \
 	  python3-pip \
  && rm -rf /var/lib/apt/lists/* \
- && /usr/bin/pip3 install pre-commit \
- && cd /tmp \
- && wget -q "${CLANGURL}/${CLANGFILE}" \
- && tar -x --strip-components=1 -C /usr/local -J -f ${CLANGFILE} \
- && rm -f ${CLANGFILE}
+ && /usr/bin/pip3 install pre-commit
