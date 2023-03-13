@@ -22,12 +22,12 @@ valid_clang_format() {
 		# $ clang-format-12 --version
 		# clang-format version 12.0.1 (https://github.com/llvm/llvm-project.git fed41342a82f5a3a9201819a82bf7a48313e296b)
 		if $CLANG_FORMAT --version | grep -q "version $1"; then
-			echo "Located $CLANG_FORMAT";
-			return 0;
+			echo "Located $CLANG_FORMAT"
+			return 0
 		fi
 	fi
 
-	return 1;
+	return 1
 }
 
 # Format all source code
@@ -44,7 +44,7 @@ format_code() {
 
 if test ! -e configure.ac; then
 	echo "Must be at the root of the entire project."
-	exit 1;
+	exit 1
 fi;
 
 for clang_version in "${CLANG_VERSION[@]}"; do
@@ -78,4 +78,4 @@ echo "Aircrack-ng requires a very specific clang-format version to ensure there 
 echo "any variance between versions that can happen. You can install it as"
 echo -n "'clang-format-"; IFS='/';echo -n "${CLANG_VERSION[*]}";IFS=$' \t\n'; echo "' so that it doesn't interfere with any other"
 echo "versions you might have installed, and this script will find it there"
-exit 1;
+exit 1
