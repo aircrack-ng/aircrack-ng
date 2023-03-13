@@ -134,12 +134,12 @@ jobs:
           git diff
 
           set -e && git diff --quiet || (
-            echo "***************************************************";
-            echo "*** The code is not clean against clang-format  ***";
-            echo "*** Please run clang-format-12.0 and fix the    ***";
-            echo "*** differences then rebase/squash them into    ***";
-            echo "*** the relevant commits. Do not add a commit   ***";
-            echo "*** for just formatting fixes. Thanks!          ***";
-            echo "***************************************************";
+            echo "****************************************************";
+            echo "*** The code is not clean against clang-format   ***";
+            echo "*** Please run clang-format-12/13/14/15 and fix  ***";
+            echo "*** the differences then rebase/squash them into ***";
+            echo "*** the relevant commits. Do not add a commit    ***";
+            echo "*** for just formatting fixes. Thanks!           ***";
+            echo "****************************************************";
             exit 1;
           )
