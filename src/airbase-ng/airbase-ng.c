@@ -1893,8 +1893,9 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 							  10)
 						   == 0)
 				{
-					st_cur->wpa.eapol_size = (uint32_t)(
-						(packet[z + 8 + 2] << 8) + packet[z + 8 + 3] + 4);
+					st_cur->wpa.eapol_size
+						= (uint32_t) ((packet[z + 8 + 2] << 8)
+									  + packet[z + 8 + 3] + 4);
 
 					if ((unsigned) length - z - 10 < st_cur->wpa.eapol_size
 						|| st_cur->wpa.eapol_size == 0 //-V560
@@ -1915,7 +1916,7 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 						   st_cur->wpa.eapol_size);
 					memset(st_cur->wpa.eapol + 81, 0, 16);
 					st_cur->wpa.state |= 4;
-					st_cur->wpa.keyver = (uint8_t)(packet[z + 8 + 6] & 7);
+					st_cur->wpa.keyver = (uint8_t) (packet[z + 8 + 6] & 7);
 
 					memcpy(st_cur->wpa.stmac, st_cur->stmac, 6);
 
@@ -1963,8 +1964,7 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 				/* check the extended IV flag */
 				/* WEP and we got the key */
 				if ((packet[z + 3] & 0x20) == 0 && opt.crypt == CRYPT_WEP
-					&& !lopt.caffelatte
-					&& !lopt.cf_attack)
+					&& !lopt.caffelatte && !lopt.cf_attack)
 				{
 					memcpy(K, packet + z, 3);
 					memcpy(K + 3, opt.wepkey, opt.weplen);
@@ -2110,8 +2110,8 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 						   "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
 						   12); // fixed information
 					packet[z + 8]
-						= (uint8_t)((apc->interval) & 0xFF); // beacon interval
-					packet[z + 9] = (uint8_t)((apc->interval >> 8) & 0xFF);
+						= (uint8_t) ((apc->interval) & 0xFF); // beacon interval
+					packet[z + 9] = (uint8_t) ((apc->interval >> 8) & 0xFF);
 					memcpy(packet + z + 10, apc->capa, 2); // capability
 
 					// set timestamp
@@ -2123,7 +2123,7 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 					for (i = 0; i < 8; i++)
 					{
 						packet[z + i]
-							= (uint8_t)((timestamp >> (i * 8)) & 0xFF);
+							= (uint8_t) ((timestamp >> (i * 8)) & 0xFF);
 					}
 
 					// insert tagged parameters
@@ -2157,10 +2157,10 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 						}
 					}
 					packet[length + 2]
-						= (uint8_t)(((temp_channel > 255 || temp_channel < 1)
-									 && lopt.channel != 0)
-										? lopt.channel
-										: temp_channel);
+						= (uint8_t) (((temp_channel > 255 || temp_channel < 1)
+									  && lopt.channel != 0)
+										 ? lopt.channel
+										 : temp_channel);
 
 					length += 3;
 
@@ -2232,8 +2232,8 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 						   "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
 						   12); // fixed information
 					packet[z + 8]
-						= (uint8_t)((apc->interval) & 0xFF); // beacon interval
-					packet[z + 9] = (uint8_t)((apc->interval >> 8) & 0xFF);
+						= (uint8_t) ((apc->interval) & 0xFF); // beacon interval
+					packet[z + 9] = (uint8_t) ((apc->interval >> 8) & 0xFF);
 					memcpy(packet + z + 10, apc->capa, 2); // capability
 
 					// set timestamp
@@ -2245,7 +2245,7 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 					for (i = 0; i < 8; i++)
 					{
 						packet[z + i]
-							= (uint8_t)((timestamp >> (i * 8)) & 0xFF);
+							= (uint8_t) ((timestamp >> (i * 8)) & 0xFF);
 					}
 
 					// insert essid
@@ -2295,10 +2295,10 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 						}
 					}
 					packet[length + 2]
-						= (uint8_t)(((temp_channel > 255 || temp_channel < 1)
-									 && lopt.channel != 0)
-										? lopt.channel
-										: temp_channel);
+						= (uint8_t) (((temp_channel > 255 || temp_channel < 1)
+									  && lopt.channel != 0)
+										 ? lopt.channel
+										 : temp_channel);
 
 					length += 3;
 
@@ -2814,10 +2814,11 @@ static THREAD_ENTRY(beacon_thread)
 				   12); // fixed information
 
 			beacon[beacon_len + 8]
-				= (uint8_t)((apc.interval * MAX(getESSIDcount(), 1))
-							& 0xFF); // beacon interval
-			beacon[beacon_len + 9] = (uint8_t)(
-				((apc.interval * MAX(getESSIDcount(), 1)) >> 8) & 0xFF);
+				= (uint8_t) ((apc.interval * MAX(getESSIDcount(), 1))
+							 & 0xFF); // beacon interval
+			beacon[beacon_len + 9]
+				= (uint8_t) (((apc.interval * MAX(getESSIDcount(), 1)) >> 8)
+							 & 0xFF);
 			memcpy(beacon + beacon_len + 10, apc.capa, 2); // capability
 			beacon_len += 12;
 
@@ -2851,10 +2852,11 @@ static THREAD_ENTRY(beacon_thread)
 							temp_channel);
 				}
 			}
-			beacon[beacon_len + 2] = (uint8_t)(
-				((temp_channel > 255 || temp_channel < 1) && lopt.channel != 0)
-					? lopt.channel
-					: temp_channel);
+			beacon[beacon_len + 2]
+				= (uint8_t) (((temp_channel > 255 || temp_channel < 1)
+							  && lopt.channel != 0)
+								 ? lopt.channel
+								 : temp_channel);
 
 			beacon_len += 3;
 
@@ -2898,11 +2900,11 @@ static THREAD_ENTRY(beacon_thread)
 			// microsecond
 			for (i = 0; i < 8; i++)
 			{
-				beacon[24 + i] = (uint8_t)((timestamp >> (i * 8)) & 0xFF);
+				beacon[24 + i] = (uint8_t) ((timestamp >> (i * 8)) & 0xFF);
 			}
 
-			beacon[22] = (uint8_t)((seq << 4) & 0xFF);
-			beacon[23] = (uint8_t)((seq >> 4) & 0xFF);
+			beacon[22] = (uint8_t) ((seq << 4) & 0xFF);
+			beacon[23] = (uint8_t) ((seq >> 4) & 0xFF);
 
 			fflush(stdout);
 
@@ -3811,7 +3813,7 @@ int main(int argc, char * argv[])
 
 	dev.fd_rtc = -1;
 
-/* open the RTC device if necessary */
+	/* open the RTC device if necessary */
 
 #if defined(__i386__)
 #if defined(linux)

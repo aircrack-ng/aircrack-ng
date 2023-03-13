@@ -503,10 +503,10 @@ static BOOLEAN read_packets(void)
 			_packet_elt_head->current->is_dropped = 1;
 		}
 
-// TODO: Get the speed from the packet if radiotap/prism header exist.
+		// TODO: Get the speed from the packet if radiotap/prism header exist.
 
-// TODO: Get also the channel from the headers (the sensor may inject
-//       cloaked frames on a channel is not the same as the AP)
+		// TODO: Get also the channel from the headers (the sensor may inject
+		//       cloaked frames on a channel is not the same as the AP)
 
 #ifdef DEBUG
 		printf("Retry bit: %d\n", _packet_elt_head->current->retry_bit);

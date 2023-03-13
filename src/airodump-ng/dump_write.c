@@ -101,9 +101,9 @@ static char * format_text_for_csv(const unsigned char * input, size_t len)
 		}
 		else if (input[i] == '\n' || input[i] == '\r' || input[i] == '\t')
 		{
-			ret[pos++]
-				= (char) ((input[i] == '\n') ? 'n' : (input[i] == '\t') ? 't'
-																		: 'r');
+			ret[pos++] = (char) ((input[i] == '\n')	  ? 'n'
+								 : (input[i] == '\t') ? 't'
+													  : 'r');
 		}
 		else
 		{
@@ -1053,8 +1053,9 @@ int dump_write_kismet_netxml(struct AP_info * ap_1st,
 		   FIXME: Take G.freqoption in account */
 		fprintf(opt.f_kis_xml,
 				"\t\t<freqmhz>%d %lu</freqmhz>\n",
-				(ap_cur->channel) == -1 ? 0 : getFrequencyFromChannel(
-												  ap_cur->channel),
+				(ap_cur->channel) == -1
+					? 0
+					: getFrequencyFromChannel(ap_cur->channel),
 				// ap_cur->nb_data + ap_cur->nb_bcn );
 				ap_cur->nb_pkt);
 

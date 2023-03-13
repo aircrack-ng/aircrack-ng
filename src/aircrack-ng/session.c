@@ -464,8 +464,7 @@ int ac_session_save(struct session * s,
 					long long int nb_keys_tried)
 {
 	if (s == NULL || s->filename == NULL || s->working_dir == NULL
-		|| s->argc == 0
-		|| s->argv == NULL)
+		|| s->argc == 0 || s->argv == NULL)
 	{
 		return (-1);
 	}

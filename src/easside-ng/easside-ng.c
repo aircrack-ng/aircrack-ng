@@ -408,7 +408,7 @@ read_beacon(struct east_state * es, struct ieee80211_frame * wh, int len)
 	REQUIRE(es != NULL);
 	REQUIRE(wh != NULL);
 
-	ieee80211_mgt_beacon_t b = (ieee80211_mgt_beacon_t)(wh + 1);
+	ieee80211_mgt_beacon_t b = (ieee80211_mgt_beacon_t) (wh + 1);
 	uint16_t capa;
 	int bhlen = 12;
 	int got_ssid = 0, got_channel = 0;
@@ -1300,7 +1300,7 @@ redirect_enque(struct east_state * es, struct ieee80211_frame * wh, int len)
 				slot->rp_id,
 				s,
 				d,
-				(uintmax_t)((size_t) len - sizeof(*wh) - 8),
+				(uintmax_t) ((size_t) len - sizeof(*wh) - 8),
 				queue_len(es));
 }
 

@@ -1106,9 +1106,7 @@ static int do_attack_fake_auth(void)
 		if ((((tv3.tv_sec * 1000000 - tv2.tv_sec * 1000000)
 			  + (tv3.tv_usec - tv2.tv_usec))
 			 > (100 * 1000))
-			&& (gotack > 0)
-			&& (gotack < packets)
-			&& (state == 3))
+			&& (gotack > 0) && (gotack < packets) && (state == 3))
 		{
 			PCT;
 			printf("Not enough acks, repeating...\n");
@@ -4312,8 +4310,7 @@ static int do_attack_fragment(void)
 				if (((tv2.tv_sec * 1000000UL - tv.tv_sec * 1000000UL)
 					 + (tv2.tv_usec - tv.tv_usec))
 						> (100 * 1000)
-					&& acksgot > 0
-					&& acksgot < packets) // wait 100ms for acks
+					&& acksgot > 0 && acksgot < packets) // wait 100ms for acks
 				{
 					PCT;
 					printf("Not enough acks, repeating...\n");
@@ -4499,8 +4496,7 @@ static int do_attack_fragment(void)
 				if (((tv2.tv_sec * 1000000UL - tv.tv_sec * 1000000UL)
 					 + (tv2.tv_usec - tv.tv_usec))
 						> (100 * 1000)
-					&& acksgot > 0
-					&& acksgot < packets) // wait 100ms for acks
+					&& acksgot > 0 && acksgot < packets) // wait 100ms for acks
 				{
 					PCT;
 					printf("Not enough acks, repeating...\n");
@@ -4662,8 +4658,7 @@ static int do_attack_fragment(void)
 				if (((tv2.tv_sec * 1000000 - tv.tv_sec * 1000000)
 					 + (tv2.tv_usec - tv.tv_usec))
 						> (100 * 1000)
-					&& acksgot > 0
-					&& acksgot < packets) // wait 100ms for acks
+					&& acksgot > 0 && acksgot < packets) // wait 100ms for acks
 				{
 					PCT;
 					printf("Not enough acks, repeating...\n");
@@ -6565,7 +6560,7 @@ int main(int argc, char * argv[])
 
 	dev.fd_rtc = -1;
 
-/* open the RTC device if necessary */
+	/* open the RTC device if necessary */
 
 #if defined(__i386__)
 #if defined(linux)

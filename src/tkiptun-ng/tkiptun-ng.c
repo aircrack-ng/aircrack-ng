@@ -2635,7 +2635,7 @@ int main(int argc, char * argv[])
 
 	dev.fd_rtc = -1;
 
-/* open the RTC device if necessary */
+	/* open the RTC device if necessary */
 
 #if defined(__i386__)
 #if defined(linux)

@@ -562,10 +562,10 @@ skip_station:
 						ivs2.flags |= IVS2_XOR;
 						ivs2.len += clen + 4;
 						/* reveal keystream (plain^encrypted) */
-						for (n = 0; n < (size_t)(ivs2.len - 4); n++)
+						for (n = 0; n < (size_t) (ivs2.len - 4); n++)
 						{
-							clear[n] = (uint8_t)((clear[n] ^ h80211[z + 4 + n])
-												 & 0xFF);
+							clear[n] = (uint8_t) ((clear[n] ^ h80211[z + 4 + n])
+												  & 0xFF);
 						}
 						// clear is now the keystream
 					}
@@ -583,11 +583,12 @@ skip_station:
 						/* reveal keystream (plain^encrypted) */
 						for (o = 0; o < num_xor; o++)
 						{
-							for (n = 0; n < (size_t)(ivs2.len - 4); n++)
+							for (n = 0; n < (size_t) (ivs2.len - 4); n++)
 							{
-								clear[2 + n + o * 32] = (uint8_t)(
-									(clear[2 + n + o * 32] ^ h80211[z + 4 + n])
-									& 0xFF);
+								clear[2 + n + o * 32]
+									= (uint8_t) ((clear[2 + n + o * 32]
+												  ^ h80211[z + 4 + n])
+												 & 0xFF);
 							}
 						}
 						memcpy(clear + 4 + 1 + 1 + 32 * num_xor,
@@ -659,8 +660,7 @@ skip_station:
 			/* frame 1: Pairwise == 1, Install == 0, Ack == 1, MIC == 0 */
 
 			if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
-				&& (h80211[z + 6] & 0x80) != 0
-				&& (h80211[z + 5] & 0x01) == 0)
+				&& (h80211[z + 6] & 0x80) != 0 && (h80211[z + 5] & 0x01) == 0)
 			{
 				memcpy(st_cur->wpa.anonce, &h80211[z + 17], 32);
 				st_cur->wpa.state = 1;
@@ -671,8 +671,7 @@ skip_station:
 			if (z + 17 + 32 > caplen) return (FAILURE);
 
 			if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) == 0
-				&& (h80211[z + 6] & 0x80) == 0
-				&& (h80211[z + 5] & 0x01) != 0)
+				&& (h80211[z + 6] & 0x80) == 0 && (h80211[z + 5] & 0x01) != 0)
 			{
 				if (memcmp(&h80211[z + 17], ZERO, 32) != 0)
 				{
@@ -684,8 +683,7 @@ skip_station:
 			/* frame 3: Pairwise == 1, Install == 1, Ack == 1, MIC == 1 */
 
 			if ((h80211[z + 6] & 0x08) != 0 && (h80211[z + 6] & 0x40) != 0
-				&& (h80211[z + 6] & 0x80) != 0
-				&& (h80211[z + 5] & 0x01) != 0)
+				&& (h80211[z + 6] & 0x80) != 0 && (h80211[z + 5] & 0x01) != 0)
 			{
 				st_cur->wpa.eapol_size
 					= (h80211[z + 2] << 8) + h80211[z + 3] + 4u;
@@ -708,7 +706,7 @@ skip_station:
 				memcpy(st_cur->wpa.eapol, &h80211[z], st_cur->wpa.eapol_size);
 				memset(st_cur->wpa.eapol + 81, 0, 16);
 				st_cur->wpa.state |= 8;
-				st_cur->wpa.keyver = (uint8_t)(h80211[z + 6] & 7);
+				st_cur->wpa.keyver = (uint8_t) (h80211[z + 6] & 7);
 
 				if (st_cur->wpa.state == 15)
 				{
