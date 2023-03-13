@@ -4,7 +4,6 @@
 #   https://github.com/baldurk/renderdoc/raw/v1.x/util/clang_format_all.sh
 #
 
-# shellcheck disable=SC2039
 CLANG_VERSION=(12 13 14 15)
 
 # Locate the clang-format executable. We try:
