@@ -120,11 +120,11 @@ wireless_tools_whine() {
 
 if [ -d /sys/bus/pci ] || [ -d /sys/bus/pci_express ] || [ -d /proc/bus/pci ]; then
 	PCI_DEVICES=0
-	if [ -d /sys/bus/pci/devices ] && [ "$(ls -1 /sys/bus/pci/devices 2>/dev/null | wc -l)" != '0' ]; then
+	if [ -d /sys/bus/pci/devices ] && [ "$(find /sys/bus/pci/devices 2>/dev/null | wc -l)" != '0' ]; then
 		PCI_DEVICES=1
 	elif [ -r /proc/bus/pci/devices ] && [ -n "$(cat /proc/bus/pci/devices 2>/dev/null)" ]; then
 		PCI_DEVICES=1
-	elif [ -d /sys/bus/pci_express/devices ] && [ "$(ls -1 /sys/bus/pci_express/devices 2>/dev/null | wc -l)" != '0' ]; then
+	elif [ -d /sys/bus/pci_express/devices ] && [ "$(find /sys/bus/pci_express/devices 2>/dev/null | wc -l)" != '0' ]; then
 		PCI_DEVICES=1
 	fi
 
@@ -193,6 +193,8 @@ usage() {
 handleLostPhys() {
   MISSING_INTERFACE=""
   if [ -d /sys/class/ieee80211 ]; then
+    #this should be fixed, but it's not going to be right now
+    # shellcheck disable=2045
     for i in $(ls /sys/class/ieee80211/); do
       if [ ! -d "/sys/class/ieee80211/${i}/device/net" ]; then
         MISSING_INTERFACE="${i}"
@@ -248,6 +250,8 @@ findFreeInterface() {
 				IW_ERROR="$(iw phy "${PHYDEV}" interface add "wlan${i}${target_suffix}" type "${target_mode}" 2>&1)"
 				if [ -z "${IW_ERROR}" ]; then
 					if [ -d "/sys/class/ieee80211/${PHYDEV}/device/net" ]; then
+						#this should be fixed, but it's not going to be right now
+						# shellcheck disable=2045
 						for j in $(ls "/sys/class/ieee80211/${PHYDEV}/device/net/"); do
 							if [ "$(cat "/sys/class/ieee80211/${PHYDEV}/device/net/${j}/type")" = "${target_type}" ]; then
 								#here is where we catch udev renaming our interface
@@ -296,6 +300,8 @@ rfkill_check() {
 		return 187
 	fi
 	rfkill_status="$(rfkill list "${index}" 2>&1)"
+	# it's easier to capture and check this way, but a refactor could make it simpler and safer
+	# shellcheck disable=2181
 	if [ $? != 0 ]; then
 		printf "rfkill error: %s\n" "${rfkill_status}"
 		return 187
@@ -322,11 +328,12 @@ rfkill_unblock() {
 		#immediately return if rfkill isn't supported
 		return 0
 	fi
-	rfkill_status="$(rfkill unblock "${1#phy}" 2>&1)"
-	if [ $? != 0 ]; then
+	if ! rfkill unblock "${1#phy}" 2>&1; then
 		rfkill_status="$(rfkill unblock "${index}" 2>&1)"
+		# it would be nice to refactor this, but it's easier this way
+		# shellcheck disable=2181
 		if [ $? != 0 ]; then
-      if [ "$(printf "%s" "${rfkill_status}" | grep -c "Usage")" -eq 1 ]; then
+			if [ "$(printf "%s" "${rfkill_status}" | grep -c "Usage")" -eq 1 ]; then
 				printf "Missing parameters in rfkill! Report this"
 			else
 				printf "rfkill error: %s\n" "${rfkill_status}"
@@ -482,6 +489,8 @@ startMac80211Iface() {
 	fi
 	#check if $1 already has a mon interface on the same phy and bail if it does
 	if [ -d "/sys/class/ieee80211/${PHYDEV}/device/net" ]; then
+		#this should be fixed, but it's not going to be right now
+		# shellcheck disable=2045
 		for i in $(ls "/sys/class/ieee80211/${PHYDEV}/device/net/"); do
 			if [ "$(cat "/sys/class/ieee80211/${PHYDEV}/device/net/${i}/type")" = "803" ]; then
 				setChannelMac80211 "${i}"
@@ -618,7 +627,7 @@ setChannelMac80211() {
   setLink "${1}" up
   i=0
   if [ -n "${CH}" ]; then
-    if [ ${CH} -lt 1000 ]; then
+    if [ "${CH}" -lt 1000 ]; then
       if [ -r "/sys/class/net/$1/phy80211/name" ]; then
         channel_list="$(iw phy "$(cat "/sys/class/net/${1}/phy80211/name")" info 2>&1 | awk -F'[][]' '$2{print $2}')"
         hardware_valid_channel=1
@@ -725,6 +734,8 @@ stopMac80211Iface() {
 			if [ "${ELITE}" = "0" ]; then
 				need_sta=1
 				if [ -d "/sys/class/ieee80211/${PHYDEV}/device/net" ]; then
+					# this should be refactored, but it's very fragile so not today
+					# shellcheck disable=2045
 					for i in $(ls "/sys/class/ieee80211/${PHYDEV}/device/net/"); do
 						if [ -r "/sys/class/ieee80211/${PHYDEV}/device/net/${i}/type" ] && [ "$(cat "/sys/class/ieee80211/${PHYDEV}/device/net/${i}/type")" = "1" ]; then
 							[ "${2}" != "abort" ] && printf "\n\t\t(mac80211 station mode vif already available for [%s]%s on [%s]%s)\n" "${PHYDEV}" "${1}" "${PHYDEV}" "${i}"
@@ -753,6 +764,8 @@ stopMac80211Iface() {
 						sleep 1
 						interface="${1%mon}"
 						if [ -d "/sys/class/ieee80211/${PHYDEV}/device/net" ]; then
+							# this should be refactored, but it's very fragile so not today
+							# shellcheck disable=2045
 							for i in $(ls "/sys/class/ieee80211/${PHYDEV}/device/net/"); do
 								if [ "$(cat "/sys/class/ieee80211/${PHYDEV}/device/net/${i}/type")" = "1" ]; then
 									#here is where we catch udev renaming our interface
@@ -870,7 +883,7 @@ getDriver() {
 	#Here we will catch the broken lying drivers not caught above
 	#currently this only functions for pci devices and not usb since lsusb has no -k option
 	if [ "${MODINFO}" = "1" ]; then
-		if modinfo -F filename ${DRIVER}  > /dev/null 2>&1
+		if modinfo -F filename "${DRIVER}"  > /dev/null 2>&1
 		then
 			true
 		else
@@ -956,6 +969,8 @@ getChipset() {
 	#this needs cleanup, we shouldn't have multiple lines assigning chipset per bus
 	#fix this to be one line per bus
 	if [ -f "/sys/class/net/${1}/device/modalias" ]; then
+		# refactor this soon
+		# shellcheck disable=2166
 		if [ "${BUS}" = "usb" ]; then
 			if [ "${LSUSB}" = "1" ]; then
 				BUSINFO="$(cut -d ":" -f 2 "/sys/class/net/${1}/device/modalias" | cut -b 1-10 | sed 's/^.//;s/p/:/')"
@@ -1182,28 +1197,32 @@ getExtendedInfo() {
 }
 
 scanProcesses() {
-	#this test means it errored and said it was busybox since busybox doesn't print without error
-	if (ps -A 2>&1 | grep -q BusyBox)
-	then
-		#busybox in openwrt cannot handle -A but its output by default is -A
-		psopts=""
-	else
-		psopts="-A"
-	fi
-	if ( ps -o comm= 2>&1 | grep -q BusyBox )
-	then
-		#busybox in openwrt cannot handle -o
-		pso="0"
-	else
-		pso="1"
-	fi
+  #this test means it errored and said it was busybox since busybox doesn't print without error
+  # this was written with ps because some systems don't have pgrep.  Adding another branch that uses pgrep won't help remove this code
+  # shellcheck disable=2009
+  if (ps -A 2>&1 | grep -q BusyBox)
+  then
+    #busybox in openwrt cannot handle -A but its output by default is -A
+    psopts=""
+  else
+    psopts="-A"
+  fi
+  # this was written with ps because some systems don't have pgrep.  Adding another branch that uses pgrep won't help remove this code
+  # shellcheck disable=2009
+  if ( ps -o comm= 2>&1 | grep -q BusyBox )
+  then
+    #busybox in openwrt cannot handle -o
+    pso="0"
+  else
+    pso="1"
+  fi
 
-	PROCESSES="wpa_action\|wpa_supplicant\|wpa_cli\|dhclient\|ifplugd\|dhcdbd\|dhcpcd\|udhcpc\|NetworkManager\|knetworkmanager\|avahi-autoipd\|avahi-daemon\|wlassistant\|wifibox\|net_applet\|wicd-daemon\|wicd-client\|iwd\|hostapd"
-	#PS_ERROR="invalid\|illegal"
+  PROCESSES="wpa_action\|wpa_supplicant\|wpa_cli\|dhclient\|ifplugd\|dhcdbd\|dhcpcd\|udhcpc\|NetworkManager\|knetworkmanager\|avahi-autoipd\|avahi-daemon\|wlassistant\|wifibox\|net_applet\|wicd-daemon\|wicd-client\|iwd\|hostapd"
+  #PS_ERROR="invalid\|illegal"
 
-	if [ "${1}" = "kill" ]; then
+  if [ "${1}" = "kill" ]; then
     if [ -x "$(command -v systemctl 2>&1)" ]; then
-		  for service in network-manager NetworkManager avahi-daemon wicd; do
+      for service in network-manager NetworkManager avahi-daemon wicd; do
         if systemctl status "${service}" > /dev/null 2>&1; then
           killservice=1
           until systemctl stop "${service}" 2> /dev/null > /dev/null; do
@@ -1216,12 +1235,12 @@ scanProcesses() {
         fi
       done
     fi
-		servicecmd=""
-		if [ -x "$(command -v service 2>&1)" ]; then
-			servicecmd="service"
-		elif [ -x "$(command -v rc-service 2>&1)" ]; then
-			servicecmd="rc-service"
-		fi
+    servicecmd=""
+    if [ -x "$(command -v service 2>&1)" ]; then
+      servicecmd="service"
+    elif [ -x "$(command -v rc-service 2>&1)" ]; then
+      servicecmd="rc-service"
+    fi
     if [ -n "${servicecmd}" ]; then
       for service in network-manager NetworkManager avahi-daemon wicd; do
         if "${servicecmd}" "${service}" status 2> /dev/null > /dev/null; then
@@ -1236,59 +1255,73 @@ scanProcesses() {
         fi
       done
     fi
-	fi
+  fi
 
-	unset match
-	if [ "${pso}" = 1 ]; then
-		match="$(ps ${psopts} -o comm= | grep ${PROCESSES} | grep -v grep | wc -l)"
-	elif [ "${pso}" = 0 ]; then
-		#openwrt busybox grep hits on itself so we -v it out
-		match="$(ps ${psopts} | grep ${PROCESSES} | grep -v grep | wc -l)"
-	fi
-	if [ "${match}" -gt 0 ] && [ "${1}" != "kill" ]; then
-		printf "Found %s processes that could cause trouble.\n" "${match}"
-		printf "Kill them using 'airmon-ng check kill' before putting\n"
-		printf "the card in monitor mode, they will interfere by changing channels\n"
-		printf "and sometimes putting the interface back in managed mode\n\n"
-	else
-		if [ "${1}" != "kill" ] && [ -n "${1}" ]; then
-			printf "No interfering processes found\n"
-			return
-		fi
-	fi
+  unset match
+  if [ "${pso}" = 1 ]; then
+    # this was written with ps because some systems don't have pgrep.  Adding another branch that uses pgrep won't help remove this code
+    # shellcheck disable=2009
+    match="$(ps ${psopts} -o comm= | grep ${PROCESSES} | grep -vc grep)"
+  elif [ "${pso}" = 0 ]; then
+    #openwrt busybox grep hits on itself so we -v it out
+    # this was written with ps because some systems don't have pgrep.  Adding another branch that uses pgrep won't help remove this code
+    # shellcheck disable=2009
+    match="$(ps ${psopts} | grep ${PROCESSES} | grep -vc grep)"
+  fi
+  if [ "${match}" -gt 0 ] && [ "${1}" != "kill" ]; then
+    printf "Found %s processes that could cause trouble.\n" "${match}"
+    printf "Kill them using 'airmon-ng check kill' before putting\n"
+    printf "the card in monitor mode, they will interfere by changing channels\n"
+    printf "and sometimes putting the interface back in managed mode\n\n"
+  else
+    if [ "${1}" != "kill" ] && [ -n "${1}" ]; then
+      printf "No interfering processes found\n"
+      return
+    fi
+  fi
 
-	if [ "${match}" -gt 0 ]; then
-		if [ "${1}" = "kill" ]; then
-			printf "Killing these processes:\n\n"
-		fi
-		if [ "${pso}" = "1" ]; then
-			ps ${psopts} -o pid=PID -o comm=Name | grep "${PROCESSES}\|PID"
-		else
-			#openwrt busybox grep hits on itself so we -v it out
-			ps ${psopts} | grep "${PROCESSES}\|PID | grep -v grep"
-		fi
-		if [ "${1}" = "kill" ]; then
-			#we have to use signal 9 because things like nm actually respawn wpa_supplicant too quickly
-			if [ "${pso}" = "1" ]; then
-				for pid in $(ps ${psopts} -o pid= -o comm= | grep "${PROCESSES}" | awk '{print $1}'); do
-					kill -9 "${pid}"
-				done
-			else
-				#openwrt busybox grep hits on itself so we -v it out
-				for pid in $(ps ${psopts} | grep "${PROCESSES}" | grep -v grep | awk '{print $1}'); do
-					kill -9 "${pid}"
-				done
-			fi
-		fi
-	fi
+  if [ "${match}" -gt 0 ]; then
+    if [ "${1}" = "kill" ]; then
+      printf "Killing these processes:\n\n"
+    fi
+    if [ "${pso}" = "1" ]; then
+      # this was written with ps because some systems don't have pgrep.  Adding another branch that uses pgrep won't help remove this code
+      # shellcheck disable=2009
+      ps ${psopts} -o pid=PID -o comm=Name | grep "${PROCESSES}\|PID"
+    else
+      #openwrt busybox grep hits on itself so we -v it out
+      # this was written with ps because some systems don't have pgrep.  Adding another branch that uses pgrep won't help remove this code
+      # shellcheck disable=2009
+      ps ${psopts} | grep "${PROCESSES}\|PID | grep -v grep"
+    fi
+    if [ "${1}" = "kill" ]; then
+      #we have to use signal 9 because things like nm actually respawn wpa_supplicant too quickly
+      if [ "${pso}" = "1" ]; then
+        # this was written with ps because some systems don't have pgrep.  Adding another branch that uses pgrep won't help remove this code
+        # shellcheck disable=2009
+        for pid in $(ps ${psopts} -o pid= -o comm= | grep "${PROCESSES}" | awk '{print $1}'); do
+          kill -9 "${pid}"
+        done
+      else
+        #openwrt busybox grep hits on itself so we -v it out
+        # this was written with ps because some systems don't have pgrep.  Adding another branch that uses pgrep won't help remove this code
+        # shellcheck disable=2009
+        for pid in $(ps ${psopts} | grep "${PROCESSES}" | grep -v grep | awk '{print $1}'); do
+          kill -9 "${pid}"
+        done
+      fi
+    fi
+  fi
 
-	printf "\n"
+  printf "\n"
 
 }
 
 listInterfaces() {
   unset iface_list
   if [ -d '/sys/class/net' ]; then
+    # refactor this for globs, but make sure it works across shells
+    # shellcheck disable=2045
     for iface in $(ls -1 /sys/class/net)
     do
       if [ -f "/sys/class/net/${iface}/uevent" ]; then
@@ -1322,7 +1355,8 @@ getPhy() {
 		PHYDEV="$(cat "/sys/class/net/${1}/phy80211/name")"
 	fi
 	if [ -d "/sys/class/net/${1}/phy80211/" ] && [ -z "${PHYDEV}" ]; then
-
+		# refactor this for globs, but be careful of shell support
+		# shellcheck disable=2012
 		PHYDEV="$(ls -l "/sys/class/net/${1}/phy80211" | sed 's/^.*\/\([a-zA-Z0-9_-]*\)$/\1/')"
 	fi
 }
@@ -1614,6 +1648,8 @@ for iface in $(printf "%s" "${iface_list}"); do
 				CHIPSETt="\t\t\t\t\t\t\t\t\t\t"
 			fi
 		fi
+		# just plain hard to read
+		# shellcheck disable=2059
 		printf "${FROM}[${PHYDEV}]${iface}${FIELD1t}${DRIVER}[${STACK}]-${FIRMWARE}${FIELD2t}${CHIPSET}${CHIPSETt}${EXTENDED}\n"
 	else
 		#beautify output spacing (within reason, interface/driver max length is 15 and phy max length is 7))
@@ -1627,6 +1663,8 @@ for iface in $(printf "%s" "${iface_list}"); do
 		else
 			ifacet="\t\t"
 		fi
+		# just plain hard to read
+		# shellcheck disable=2059
 		printf "${PHYDEV}\t${iface}${ifacet}${DRIVER}${DRIVERt}${CHIPSET}\n"
 	fi
 
