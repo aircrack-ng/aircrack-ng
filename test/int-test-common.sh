@@ -13,7 +13,7 @@ cleanup() {
 screen_cleanup() {
 	SCREEN_NAME=capture
 	[ -n "$1" ] && SCREEN_NAME="$1"
-	screen -S ${SCREEN_NAME} -p 0 -X quit
+	screen -S "${SCREEN_NAME}" -p 0 -X quit
 	screen -wipe
 }
 
@@ -22,7 +22,7 @@ check_arg_is_number() {
 		echo "${2}() requires an argument, and it must be a number"
 		exit 1
 	fi
-	if [ -z "$(echo $1 | ${GREP} -E '^[0-9]{1,}$')" ]; then
+	if [ -z "$(echo "$1" | ${GREP} -E '^[0-9]{1,}$')" ]; then
 		echo "${2}() expects the a number, got $1"
 		exit 1
 	fi
@@ -34,7 +34,7 @@ load_module() {
 
 	if [ -z "$(lsmod | ${GREP} mac80211_hwsim)" ]; then
 		echo "Loading mac80211_hwsim with $1 radios"
-		modprobe mac80211_hwsim radios=$1 2>&1 >/dev/null
+		modprobe mac80211_hwsim radios="$1" 2>&1 >/dev/null
 		if [ $? -ne 0 ]; then
 			# XXX: It can fail if inside a container too
 			echo "Failed inserting module, skipping"
@@ -51,7 +51,7 @@ check_radios_present() {
 	check_arg_is_number "$1" 'check_radios_present'
 
 	AMOUNT_RADIOS=$("${abs_builddir}/../scripts/airmon-ng" | ${GREP} hwsim | wc -l)
-	if [ ${AMOUNT_RADIOS} -ne $1 ]; then
+	if [ "${AMOUNT_RADIOS}" -ne "$1" ]; then
 		echo "Expected $1 radios, got ${AMOUNT_RADIOS}, hwsim may be in use by something else, aborting"
 		exit 1
 	fi
@@ -63,7 +63,7 @@ airmon_ng_check() {
 	# Display output of "airmon-ng check" if there are interfering process
 	# Can help in detecting if previous tests didn't clean up
 	# Or, if running the first test, check if there are interfering processes
-	if [ $("${abs_builddir}/../scripts/airmon-ng" check | grep "PID" | wc -l) -eq 1 ]; then
+	if [ "$("${abs_builddir}/../scripts/airmon-ng" check | grep "PID" | wc -l)" -eq 1 ]; then
 		"${abs_builddir}/../scripts/airmon-ng" check
 	fi
 }
@@ -103,7 +103,7 @@ check_tools_compiled() {
 }
 
 check_root() {
-	if [ $(id -u) -ne 0 ]; then
+	if [ "$(id -u)" -ne 0 ]; then
 		echo 'Not root, skipping'
 		exit 77
 	fi
@@ -117,7 +117,7 @@ is_tool_present() {
 		exit 1
 	fi
 
-	hash $1 2>&1 >/dev/null
+	hash "$1" 2>&1 >/dev/null
 	if [ $? -ne 0 ]; then
 		echo "$1 is not installed, aborting!"
 		exit 1
@@ -133,7 +133,7 @@ check_airmon_ng_deps_present() {
 get_hwsim_interface_name() {
 	check_arg_is_number "$1" 'get_hwsim_interface_name'
 
-	IFACE=$("${abs_builddir}/../scripts/airmon-ng" 2>/dev/null | ${GREP} hwsim | head -n $1 | tail -n 1 | ${AWK} '{print $2}')
+	IFACE=$("${abs_builddir}/../scripts/airmon-ng" 2>/dev/null | ${GREP} hwsim | head -n "$1" | tail -n 1 | ${AWK} '{print $2}')
 
 	if [ -z "${IFACE}" ]; then
 		echo "Failed getting interface $1"
@@ -159,11 +159,11 @@ set_regdomain() {
 	fi
 
 	echo "Changing regdomain to $1"
-	iw reg set $1
+	iw reg set "$1"
 }
 
 restore_regdomain() {
-	[ -n "${REG_DOMAIN}" ] && set_regdomain ${REG_DOMAIN}
+	[ -n "${REG_DOMAIN}" ] && set_regdomain "${REG_DOMAIN}"
 }
 
 ########################## Channel settings ##########################
@@ -176,21 +176,21 @@ get_first_5ghz_channel() {
 		return 1
 	fi
 
-	TMP_IFACE_PHY=$(iw dev $1 info | ${GREP} wiphy | ${AWK} '{print $2}')
+	TMP_IFACE_PHY=$(iw dev "$1" info | ${GREP} wiphy | ${AWK} '{print $2}')
 
 	if [ -z "${TMP_IFACE_PHY}" ]; then
 		echo "get_first_5ghz_channel(): Interface $1 does not exist or does not have associated PHY"
 		return 1
 	fi
 
-	FIRST_5GHZ_CHANNEL=$(iw phy phy${TMP_IFACE_PHY} info | ${GREP} -E '\* 5[0-9]{3} MHz' | ${GREP} -v -E '(no IR|disabled)' | ${AWK} -F\[ '{ print $2}' | ${AWK} -F\] '{print $1}' | head -n 1)
+	FIRST_5GHZ_CHANNEL=$(iw phy phy"${TMP_IFACE_PHY}" info | ${GREP} -E '\* 5[0-9]{3} MHz' | ${GREP} -v -E '(no IR|disabled)' | ${AWK} -F\[ '{ print $2}' | ${AWK} -F\] '{print $1}' | head -n 1)
 
 	if [ -z "${FIRST_5GHZ_CHANNEL}" ]; then
 		echo "get_first_5ghz_channel(): No 5GHz channel available"
 		return 1
 	fi
 
-	if [ $(echo "${FIRST_5GHZ_CHANNEL}" | ${GREP} -E '^[1-9][0-9]{1,2}$' | wc -l) -ne 1 ]; then
+	if [ "$(echo "${FIRST_5GHZ_CHANNEL}" | ${GREP} -E '^[1-9][0-9]{1,2}$' | wc -l)" -ne 1 ]; then
 		echo "get_first_5ghz_channel(): Failure to get channel: ${FIRST_5GHZ_CHANNEL}"
 		return 1
 	fi
@@ -208,8 +208,8 @@ set_interface_channel() {
 	check_arg_is_number "$2" 'set_interface_channel'
 
 	echo "Setting $1 on channel $2"
-	ip link set $1 up
-	iw dev $1 set channel $2
+	ip link set "$1" up
+	iw dev "$1" set channel "$2"
 	if [ $? -eq 1 ]; then
 		echo "iw dev $1 set channel $2 failed, exiting"
 		return 1
@@ -224,16 +224,16 @@ set_monitor_mode() {
 	fi
 
 	echo "Putting $1 in monitor mode"
-	ip link set $1 down
-	iw dev $1 set monitor none
+	ip link set "$1" down
+	iw dev "$1" set monitor none
 	if [ $? -eq 1 ]; then
 		echo "iw dev $1 set monitor none failed, exiting"
 		return 1
 	fi
-	ip link set $1 up
+	ip link set "$1" up
 
 	# Check card is in monitor mode
-	IFACE_MODE=$(iw dev $1 info | grep type | awk '{print $2}')
+	IFACE_MODE=$(iw dev "$1" info | grep type | awk '{print $2}')
 	if [ "${IFACE_MODE}" != 'monitor' ]; then
 		echo "Failed to set $1 in monitor mode: ${IFACE_MODE}"
 		return 1
@@ -264,7 +264,7 @@ run_tcpdump() {
 
 	# Run tcpdump
 	echo "Starting tcpdump on ${TCPDUMP_IFACE}"
-	tcpdump -Z root -i ${TCPDUMP_IFACE} -w ${TEMP_TCPDUMP_PCAP} -U ${ADDL_TCPDUMP_PARAMS} & 2>&1 >/dev/null
+	tcpdump -Z root -i "${TCPDUMP_IFACE}" -w "${TEMP_TCPDUMP_PCAP}" -U "${ADDL_TCPDUMP_PARAMS}" & 2>&1 >/dev/null
 
 	# Get PID
 	TCPDUMP_PID=$!
@@ -306,8 +306,8 @@ kill_tcpdump() {
 clean_tcpdump() {
 	kill_tcpdump nowait
 
-	if [ -n "${TEMP_TCPDUMP_PCAP}" ] && [ -f ${TEMP_TCPDUMP_PCAP} ]; then
-		rm -f ${TEMP_TCPDUMP_PCAP}
+	if [ -n "${TEMP_TCPDUMP_PCAP}" ] && [ -f "${TEMP_TCPDUMP_PCAP}" ]; then
+		rm -f "${TEMP_TCPDUMP_PCAP}"
 		TEMP_TCPDUMP_PCAP=""
 	fi
 }
@@ -337,10 +337,10 @@ run_hostapd() {
 
 	# Run HostAPd
 	echo "Starting HostAPd with ${TEMP_HOSTAPD_CONF_FILE}"
-	hostapd -P ${HOSTAPD_PID_FILE} -B ${TEMP_HOSTAPD_CONF_FILE} 2>&1
+	hostapd -P "${HOSTAPD_PID_FILE}" -B "${TEMP_HOSTAPD_CONF_FILE}" 2>&1
 	if test $? -ne 0; then
 		echo 'Failed starting HostAPd with the following configuration:'
-		cat ${TEMP_HOSTAPD_CONF_FILE}
+		cat "${TEMP_HOSTAPD_CONF_FILE}"
 		echo '------------'
 		echo 'Running airmon-ng check kill may fix the issue'
 		cleanup
@@ -349,22 +349,22 @@ run_hostapd() {
 
 	# Get PID
 	sleep 0.5
-	HOSTAPD_PID=$(cat ${HOSTAPD_PID_FILE} 2>/dev/null)
+	HOSTAPD_PID=$(cat "${HOSTAPD_PID_FILE}" 2>/dev/null)
 	echo "HostAPd PID: ${HOSTAPD_PID}"
 
 	return 1
 }
 
 kill_hostapd() {
-	if [ -n "${TEMP_HOSTAPD_CONF_FILE}" ] && [ -f ${HOSTAPD_PID_FILE} ]; then
+	if [ -n "${TEMP_HOSTAPD_CONF_FILE}" ] && [ -f "${HOSTAPD_PID_FILE}" ]; then
 
 		# Get HostAPd PID
-		PID_TO_KILL=$(cat ${HOSTAPD_PID_FILE} 2>/dev/null)
+		PID_TO_KILL=$(cat "${HOSTAPD_PID_FILE}" 2>/dev/null)
 		echo "Killing HostAPd PID ${PID_TO_KILL}"
 
 		# Kill and cleanup
-		kill -9 ${PID_TO_KILL}
-		rm -f ${TEMP_HOSTAPD_CONF_FILE} ${HOSTAPD_PID_FILE}
+		kill -9 "${PID_TO_KILL}"
+		rm -f "${TEMP_HOSTAPD_CONF_FILE}" "${HOSTAPD_PID_FILE}"
 		TEMP_HOSTAPD_CONF_FILE=""
 		HOSTAPD_PID=""
 		HOSTAPD_PID_FILE=""
@@ -396,10 +396,10 @@ run_wpa_supplicant() {
 
 	# Run WPA supplicant
 	echo "Starting WPA_supplicant with ${TEMP_WPAS_CONF_FILE} on $2"
-	wpa_supplicant -B -Dnl80211 -i $2 -c ${TEMP_WPAS_CONF_FILE} -P ${WPAS_PID_FILE} 2>&1
+	wpa_supplicant -B -Dnl80211 -i "$2" -c "${TEMP_WPAS_CONF_FILE}" -P "${WPAS_PID_FILE}" 2>&1
 	if test $? -ne 0; then
 		echo 'Failed starting WPA supplicant with the following configuration:'
-		cat ${TEMP_WPAS_CONF_FILE}
+		cat "${TEMP_WPAS_CONF_FILE}"
 		echo '------------'
 		echo 'Running airmon-ng check kill may fix the issue'
 		cleanup
@@ -408,20 +408,20 @@ run_wpa_supplicant() {
 
 	# Get PID
 	sleep 0.5
-	WPAS_PID=$(cat ${WPAS_PID_FILE} 2>/dev/null)
+	WPAS_PID=$(cat "${WPAS_PID_FILE}" 2>/dev/null)
 	echo "WPA supplicant PID: ${WPAS_PID}"
 }
 
 kill_wpa_supplicant() {
-	if [ -n "${TEMP_WPAS_CONF_FILE}" ] && [ -f ${WPAS_PID_FILE} ]; then
+	if [ -n "${TEMP_WPAS_CONF_FILE}" ] && [ -f "${WPAS_PID_FILE}" ]; then
 
 		# Get WPA supplicant PID
-		PID_TO_KILL=$(cat ${WPAS_PID_FILE} 2>/dev/null)
+		PID_TO_KILL=$(cat "${WPAS_PID_FILE}" 2>/dev/null)
 		echo "Killing WPA supplicant PID ${PID_TO_KILL}"
 
 		# Kill and cleanup
-		kill -9 ${PID_TO_KILL}
-		rm -f ${TEMP_WPAS_CONF_FILE} ${WPAS_PID_FILE}
+		kill -9 "${PID_TO_KILL}"
+		rm -f "${TEMP_WPAS_CONF_FILE}" "${WPAS_PID_FILE}"
 		TEMP_WPAS_CONF_FILE=""
 		WPAS_PID=""
 		WPAS_PID_FILE=""
