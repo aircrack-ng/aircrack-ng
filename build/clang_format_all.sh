@@ -33,11 +33,11 @@ valid_clang_format() {
 # Format all source code
 format_code() {
 	find src -iname '*.h' -a \( ! -path "include/aircrack-ng/third-party/*" -a ! -path "lib/radiotap/*" \) -print0 | \
-			xargs -0 -n1 $CLANG_FORMAT -i -style=file
+			xargs -0 -n1 "$CLANG_FORMAT" -i -style=file
 	find src -iname '*.cpp' -a \( ! -path "include/aircrack-ng/third-party/*" -a ! -path "lib/radiotap/*" \) -print0 | \
-			xargs -0 -n1 $CLANG_FORMAT -i -style=file
+			xargs -0 -n1 "$CLANG_FORMAT" -i -style=file
 	find src -iname '*.c' -a \( ! -path "include/aircrack-ng/third-party/*" -a ! -path "lib/radiotap/*" \) -print0 | \
-			xargs -0 -n1 $CLANG_FORMAT -i -style=file
+			xargs -0 -n1 "$CLANG_FORMAT" -i -style=file
 	$CLANG_FORMAT -i -style=file include/aircrack-ng/third-party/eapol.h
 	$CLANG_FORMAT -i -style=file include/aircrack-ng/third-party/hashcat.h
 }
