@@ -42,7 +42,7 @@ if [ "$(cat ${TMP_MD5})" != '45a93bc091a3929a7d63f86ddbb81401' ]; then
 	echo "Unexpected airdecap-ng output:"
 	echo "$airdecap_output"
 	echo "Expected MD5 hash: 45a93bc091a3929a7d63f86ddbb81401"
-	echo "Actual MD5 hash: ${TMP_MD5}"
+	echo -n "Actual MD5 hash: "; cat ${TMP_MD5}
 	echo "Decrypted file: ${TMP_DEC}"
 	exit 1
 fi
