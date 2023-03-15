@@ -117,7 +117,7 @@ fi
 
 # Crack the capture
 timeout 60 "${abs_builddir}/../aircrack-ng${EXEEXT}" \
-    "${AIRCRACK_NG_ARGS}" \
+    ${AIRCRACK_NG_ARGS} \
     -w "${abs_srcdir}/password.lst" \
     -a 2 \
     -e "${SSID}" \
