@@ -99,7 +99,7 @@ if [ -z "${AUTOMAKE:-}" ]; then
 fi
 
 "$LIBTOOLIZE" --force --copy --automake
-"$ACLOCAL" -I build/m4/stubs -I build/m4 "${ACLOCAL_FLAGS:-}"
+"$ACLOCAL" -I build/m4/stubs -I build/m4 ${ACLOCAL_FLAGS:-}
 "$AUTOCONF"
 "$AUTOHEADER"
 "$AUTOMAKE" \
