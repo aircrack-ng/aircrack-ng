@@ -107,14 +107,14 @@ jobs:
         uses: actions/checkout@v3
       - 
         name: Lint Dockerfile
-        uses: hadolint/hadolint-action@v3.0.0
+        uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: Dockerfile
           verbose: true
           failure-threshold: error
       - 
         name: Lint Release Dockerfile
-        uses: hadolint/hadolint-action@v3.0.0
+        uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: './Dockerfile.release'
           verbose: true
