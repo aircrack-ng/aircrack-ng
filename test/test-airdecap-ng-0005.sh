@@ -21,6 +21,7 @@ if [ $? != 0 ]; then
   exit 1
 else
   echo "$airdecap_output" | \
+  grep -E '(Total|Number) ' | \
   cut -b 40- | \
    tr -d ' ' | \
   ${MD5_BIN} | \
