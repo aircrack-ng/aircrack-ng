@@ -259,7 +259,7 @@ Finally, the additional targets listed below may be of use in your environment:
 When configuring, the following flags can be used and combined to adjust the suite
 to your choosing:
 
-* **with-airpcap=DIR**:  needed for supporting airpcap devices on windows (cygwin or msys2 only)
+* **with-airpcap=DIR**:  needed for supporting airpcap devices on Windows (Cygwin or MSYS2 only).
                 Replace DIR above with the absolute location to the root of the
                 extracted source code from the Airpcap CD or downloaded SDK available
                 online. Required on Windows to build `besside-ng`, `besside-ng-crawler`, 
