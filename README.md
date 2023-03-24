@@ -287,7 +287,7 @@ to your choosing:
 
 * **disable-libnl**:  Set up the project to be compiled without libnl (1 or 3). Linux option only.
 
-* **without-opt**:  Do not enable stack protector (on GCC 4.9 and above).
+* **without-opt**:  Do not enable -O3 optimizations.
 
 * **enable-shared**:   Make OSdep a shared library.
 
