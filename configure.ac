@@ -156,7 +156,6 @@ PKG_CHECK_MODULES([CMOCKA], [cmocka], [
 # Extras, but needed
 #
 AIRCRACK_NG_LARGEFILE
-dnl AX_ADD_FORTIFY_SOURCE
 AIRCRACK_NG_PTHREAD
 AX_LIB_SOCKET_NSL
 AC_CHECK_LIB([dl], [dlopen], [ LIBS="$LIBS -ldl" ], [:])
