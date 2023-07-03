@@ -18,6 +18,16 @@ if ! mountpoint -q -- /sys; then
   printf "This program cannot continue without a working sysfs.\n"
   exit 1
 fi
+if [ ! -d '/sys/class' ]; then
+  printf "This program cannot continue without a working sysfs.\n"
+  printf "/sys/class is missing\n"
+  exit 1
+fi
+if [ ! -d '/sys/class/net' ]; then
+  printf "This program cannot continue without a working sysfs.\n"
+  printf "/sys/class/net is missing\n"
+  exit 1
+fi
 
 if [ "${1}" = "--elite" ]; then
 	shift
