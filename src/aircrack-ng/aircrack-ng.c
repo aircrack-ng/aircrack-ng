@@ -164,6 +164,14 @@ static pthread_mutex_t mx_nb = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t mx_wpastats = PTHREAD_MUTEX_INITIALIZER;
 static ac_cpuset_t * g_cpuset = NULL;
 
+struct 
+{
+	wpapsk_password	key;
+	unsigned char pmk[32];
+	unsigned char ptk[64];
+	unsigned char mic[16];
+} wpa_crack_result;
+
 typedef struct
 {
 	uint8_t mode;
@@ -4004,35 +4012,16 @@ static void crack_wpa_successfully_cracked(
 
 	wpa_cracked = 1; // Inform producer we're done.
 
-	if (opt.is_quiet)
-	{
-		return;
-	}
+	memcpy((uint8_t *)&(wpa_crack_result.key), (uint8_t *)&keys[j], sizeof(wpa_crack_result));
+	memcpy(wpa_crack_result.pmk, dso_ac_crypto_engine_get_pmk(&engine, threadid, j), sizeof(wpa_crack_result.pmk));
+	memcpy(wpa_crack_result.ptk, dso_ac_crypto_engine_get_ptk(&engine, threadid, j), sizeof(wpa_crack_result.ptk));
+	memcpy(wpa_crack_result.mic, mic[j], sizeof(wpa_crack_result.mic));
 
 	increment_passphrase_counts(keys, nparallel);
 
-	show_wpa_stats((char *) keys[j].v,
-				   keys[j].length,
-				   dso_ac_crypto_engine_get_pmk(&engine, threadid, j),
-				   dso_ac_crypto_engine_get_ptk(&engine, threadid, j),
-				   mic[j],
-				   1);
-
-	if (opt.l33t)
+	if (opt.is_quiet)
 	{
-		textstyle(TEXT_BRIGHT);
-		textcolor_fg(TEXT_RED);
-	}
-
-	moveto((80 - 15 - (int) keys[j].length) / 2, 8);
-	erase_line(2);
-	printf("KEY FOUND! [ %s ]\n", keys[j].v);
-	move(CURSOR_DOWN, 11);
-
-	if (opt.l33t)
-	{
-		textcolor_normal();
-		textcolor_fg(TEXT_GREEN);
+		return;
 	}
 }
 
@@ -4164,6 +4153,8 @@ static THREAD_ENTRY(crack_wpa_thread)
 #endif
 			crack_wpa_successfully_cracked(
 				data, keys, mic, nparallel, threadid, j);
+			// found the passphrase, no need to do the remain.
+			done = true;
 		}
 
 		increment_passphrase_counts(keys, nparallel);
@@ -4267,6 +4258,7 @@ static THREAD_ENTRY(crack_wpa_pmkid_thread)
 #endif
 			crack_wpa_successfully_cracked(
 				data, keys, mic, nparallel, threadid, j);
+			done = true;
 		}
 
 		increment_passphrase_counts(keys, nparallel);
@@ -5809,6 +5801,13 @@ static int perform_wpa_crack(struct AP_info * ap_cur)
 
 		if (ret == SUCCESS)
 		{
+			show_wpa_stats((char *)wpa_crack_result.key.v,
+							wpa_crack_result.key.length,
+							wpa_crack_result.pmk,
+							wpa_crack_result.ptk,
+							wpa_crack_result.mic,
+							1);
+
 			if (opt.is_quiet)
 			{
 				printf("KEY FOUND! [ %s ]\n", wpa_data[i].key);
