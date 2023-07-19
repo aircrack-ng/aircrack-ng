@@ -203,8 +203,6 @@ usage() {
 handleLostPhys() {
   MISSING_INTERFACE=""
   if [ -d /sys/class/ieee80211 ]; then
-    #this should be fixed, but it's not going to be right now
-    # shellcheck disable=2045
     for i in /sys/class/ieee80211/*; do
       if [ -e "${i}" ] && [ ! -d "${i}/device/net" ]; then
         MISSING_INTERFACE="${i}"
