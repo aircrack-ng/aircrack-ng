@@ -205,7 +205,7 @@ handleLostPhys() {
   if [ -d /sys/class/ieee80211 ]; then
     for i in /sys/class/ieee80211/*; do
       if [ -e "${i}" ] && [ ! -d "${i}/device/net" ]; then
-        MISSING_INTERFACE="${i}"
+        MISSING_INTERFACE="${i##*/}"
         printf "\nFound %s with no interfaces assigned, would you like to assign one to it? [y/n] " "${MISSING_INTERFACE}"
         yesorno
         retcode=$?
