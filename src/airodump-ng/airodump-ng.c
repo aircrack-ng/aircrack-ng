@@ -63,6 +63,7 @@
 #include <getopt.h>
 #include <pthread.h>
 #include <limits.h>
+#include <inttypes.h>
 
 #include "aircrack-ng/pcre/compat-pcre.h"
 #include "aircrack-ng/defs.h"
