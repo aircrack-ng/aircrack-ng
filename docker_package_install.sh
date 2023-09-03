@@ -19,13 +19,16 @@ if [ "${ID}" = 'debian' ] || [ "${ID_LIKE}" = 'debian' ]; then
     [ "${ID_LIKE}" = 'debian' ] && echo "[*] Detected debian-based distro: ${ID} (${VERSION_ID})"
     [ "${ID}" = 'debian' ] && echo "[*] Detected debian (${VERSION_CODENAME}/${VERSION_ID})"
     if [ "${STEP}" = 'builder' ]; then
+        LIBTINFO=$(dpkg -l libtinfo5 > /dev/null 2>&1 && echo libtinfo5)
+        [ -z "${LIBTINFO}" ] && LIBTINFO=$(dpkg -l libtinfo6 > /dev/null 2>&1 && echo libtinfo6)
+
         apt-get update \
         && export DEBIAN_FRONTEND=noninteractive \
         && apt-get -y install --no-install-recommends \
             build-essential autoconf automake libtool pkg-config libnl-3-dev libnl-genl-3-dev libssl-dev \
             ethtool shtool rfkill zlib1g-dev libpcap-dev libsqlite3-dev libpcre2-dev libhwloc-dev \
             libcmocka-dev hostapd wpasupplicant tcpdump screen iw usbutils expect gawk bear \
-            libtinfo5 python3-pip git && \
+            "${LIBTINFO}" python3-pip git && \
                 rm -rf /var/lib/apt/lists/*
     elif [ "${STEP}" = 'stage2' ]; then
         apt-get update && \
