@@ -22,18 +22,23 @@ if [ "${ID}" = 'debian' ] || [ "${ID_LIKE}" = 'debian' ]; then
         LIBTINFO=$(dpkg -l libtinfo5 > /dev/null 2>&1 && echo libtinfo5)
         [ -z "${LIBTINFO}" ] && LIBTINFO=$(dpkg -l libtinfo6 > /dev/null 2>&1 && echo libtinfo6)
 
+        LIBSSL_PKG=$(dpkg -l libssl3 > /dev/null 2>&1 && echo libssl3)
+        [ -z "${LIBSSL_PKG}" ] && LIBSSL_PKG=$(dpkg -l libssl1.1 > /dev/null 2>&1 && echo libssl1.1)
+
+        LIBPCRE_PKG=$(apt search libpcre2-posix 2>/dev/null | grep 'libpcre2-posix' | awk -F/ '{print $1}')
+
         apt-get update \
         && export DEBIAN_FRONTEND=noninteractive \
         && apt-get -y install --no-install-recommends \
             build-essential autoconf automake libtool pkg-config libnl-3-dev libnl-genl-3-dev libssl-dev \
             ethtool shtool rfkill zlib1g-dev libpcap-dev libsqlite3-dev libpcre2-dev libhwloc-dev \
             libcmocka-dev hostapd wpasupplicant tcpdump screen iw usbutils expect gawk bear \
-            "${LIBTINFO}" python3-pip git && \
+            "${LIBTINFO}" git python3-setuptools && \
                 rm -rf /var/lib/apt/lists/*
     elif [ "${STEP}" = 'stage2' ]; then
         apt-get update && \
         apt-get -y install --no-install-recommends \
-            libsqlite3-0 libssl3 hwloc libpcre2-posix3 libnl-3-200 libnl-genl-3-200 iw usbutils pciutils \
+            libsqlite3-0 "${LIBSSL_PKG}" hwloc "${LIBPCRE_PKG}" libnl-3-200 libnl-genl-3-200 iw usbutils pciutils \
             iproute2 ethtool kmod wget ieee-data python3 python3-graphviz rfkill && \
         rm -rf /var/lib/apt/lists/*
     fi
