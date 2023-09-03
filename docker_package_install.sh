@@ -38,10 +38,12 @@ elif [ "${ID}" = 'arch' ] || [ "${ID_LIKE}" = 'arch' ]; then
     [ "${ID}" = 'arch' ] && echo "[*] Detected Arch Linux"
     [ "${ID_LIKE}" = 'arch' ] && echo "[*] Detected Arch-based Linux: ${NAME} (${ID})"
     if [ "${STEP}" = 'builder' ]; then
+	    pacman -Sy --noconfirm libgpg-error gnupg gpgme glibc
         pacman -Sy --noconfirm base-devel libnl openssl ethtool util-linux zlib libpcap sqlite pcre2 hwloc \
                                 cmocka hostapd wpa_supplicant tcpdump screen iw usbutils pciutils expect git \
                                 python python-setuptools
     elif [ "${STEP}" = 'stage2' ]; then
+        pacman -Sy --noconfirm libgpg-error gnupg gpgme glibc
         pacman -Sy --noconfirm libnl openssl ethtool util-linux zlib libpcap sqlite pcre2 hwloc iw usbutils \
                                 pciutils python-graphviz python
     fi
