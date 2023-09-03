@@ -71,7 +71,7 @@ elif [ "${ID}" = 'fedora' ] || [ "${ID}" = 'almalinux' ] || [ "${ID}" = 'rocky' 
     echo "[*] Distribution: ${NAME} (${VERSION_ID})"
     LIBPCAP=libpcap-devel
     CMOCKA=libcmocka-devel
-    dnf distrosync -y --refresh
+    dnf distro-sync -y --refresh
     if [ "${STEP}" = 'builder' ]; then
         if [ "${ID}" = 'almalinux' ] || [ "${ID}" = 'rocky' ]; then
             echo "[*] Install EPEL and enabling CRB"
