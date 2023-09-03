@@ -77,7 +77,7 @@ elif [ "${ID}" = 'fedora' ] || [ "${ID}" = 'almalinux' ] || [ "${ID}" = 'rocky' 
             echo "[*] Install EPEL and enabling CRB"
             dnf install epel-release dnf-plugins-core -y
             dnf config-manager --set-enabled crb
-            dnf distrosync -y --refresh
+            dnf distro-sync -y --refresh
         elif [ "${ID}" = 'ol' ]; then
             echo "[*] Install EPEL"
             dnf install epel-release dnf-plugins-core -y
@@ -85,7 +85,7 @@ elif [ "${ID}" = 'fedora' ] || [ "${ID}" = 'almalinux' ] || [ "${ID}" = 'rocky' 
             LIBPCAP=libpcap
             # We're installing cmocka manually, not present in repos
             CMOCKA=""
-            dnf distrosync -y --refresh
+            dnf distro-sync -y --refresh
 
             cd /tmp || exit
             curl https://cmocka.org/files/1.0/cmocka-1.0.1.tar.xz -o cmocka-1.0.1.tar.xz
