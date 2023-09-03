@@ -28,6 +28,8 @@ RUN set -x \
 				exit 1; \
 			fi && \
 		set -e && \
+			export PYTHONPATH="/output/usr/local/lib/python$(python3 --version | awk '{print $2}' | awk -F. '{print $1 "." $2}')/site-packages/" && \
+			mkdir -p ${PYTHONPATH} && \
 			make install DESTDIR=/output
 
 # Stage 2
