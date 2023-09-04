@@ -11,7 +11,7 @@ RUN sh /docker_package_install.sh builder
 RUN mkdir -p /aircrack-ng /output
 COPY . /aircrack-ng
 WORKDIR /aircrack-ng
-# hadolint ignore=SC2006
+# hadolint ignore=SC2006,SC2086,DL4006
 RUN set -x \
 	&& make distclean || : && \
 		autoreconf -vif && \
