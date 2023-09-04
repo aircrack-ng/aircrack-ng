@@ -71,21 +71,26 @@ elif [ "${ID}" = 'fedora' ] || [ "${ID}" = 'almalinux' ] || [ "${ID}" = 'rocky' 
     echo "[*] Distribution: ${NAME} (${VERSION_ID})"
     LIBPCAP=libpcap-devel
     CMOCKA=libcmocka-devel
-    dnf distro-sync -y --refresh
+    DNF_BIN=dnf
+    type dnf5 >/dev/null 2>&1
+    # shellcheck disable=SC2181
+    [ $? -eq 0 ] && DNF_BIN=dnf5
+    echo "DNF: ${DNF_BIN}"
+    ${DNF_BIN} distro-sync -y --refresh
     if [ "${STEP}" = 'builder' ]; then
         if [ "${ID}" = 'almalinux' ] || [ "${ID}" = 'rocky' ]; then
             echo "[*] Install EPEL and enabling CRB"
-            dnf install epel-release dnf-plugins-core -y
-            dnf config-manager --set-enabled crb
-            dnf distro-sync -y --refresh
+            ${DNF_BIN} install epel-release dnf-plugins-core -y
+            ${DNF_BIN} config-manager --set-enabled crb
+            ${DNF_BIN} distro-sync -y --refresh
         elif [ "${ID}" = 'ol' ]; then
             echo "[*] Install EPEL"
-            dnf install epel-release dnf-plugins-core -y
-            dnf install xz cmake gcc -y
+            ${DNF_BIN} install epel-release dnf-plugins-core -y
+            ${DNF_BIN} install xz cmake gcc -y
             LIBPCAP=libpcap
             # We're installing cmocka manually, not present in repos
             CMOCKA=""
-            dnf distro-sync -y --refresh
+            ${DNF_BIN} distro-sync -y --refresh
 
             cd /tmp || exit
             curl https://cmocka.org/files/1.0/cmocka-1.0.1.tar.xz -o cmocka-1.0.1.tar.xz
@@ -102,15 +107,15 @@ elif [ "${ID}" = 'fedora' ] || [ "${ID}" = 'almalinux' ] || [ "${ID}" = 'rocky' 
             cd / || exit
         fi
 
-        dnf install -y libtool pkgconfig sqlite-devel autoconf automake openssl-devel ${LIBPCAP} \
-                        pcre2-devel rfkill libnl3-devel gcc gcc-c++ ethtool hwloc-devel ${CMOCKA} \
-                        make file expect hostapd wpa_supplicant iw usbutils tcpdump screen zlib-devel \
-                        expect python3-pip python3-setuptools git
+        ${DNF_BIN} install -y libtool pkgconfig sqlite-devel autoconf automake openssl-devel ${LIBPCAP} \
+                              pcre2-devel rfkill libnl3-devel gcc gcc-c++ ethtool hwloc-devel ${CMOCKA} \
+                              make file expect hostapd wpa_supplicant iw usbutils tcpdump screen zlib-devel \
+                              expect python3-pip python3-setuptools git
     elif [ "${STEP}" = 'stage2' ]; then
         GRAPHVIZ=python3-graphviz
         [ "${ID}" != 'fedora' ] && GRAPHVIZ=graphviz-python3
-        dnf install -y libnl3 openssl-libs zlib libpcap sqlite-libs pcre2 hwloc iw ethtool pciutils \
-                        usbutils expect python3 ${GRAPHVIZ} iw util-linux ethtool kmod
+        ${DNF_BIN} install -y libnl3 openssl-libs zlib libpcap sqlite-libs pcre2 hwloc iw ethtool pciutils \
+                              usbutils expect python3 ${GRAPHVIZ} iw util-linux ethtool kmod
     fi
 elif [ "${ID}" = 'opensuse-leap' ]; then
     echo "[*] Detected openSUSE Leap"
