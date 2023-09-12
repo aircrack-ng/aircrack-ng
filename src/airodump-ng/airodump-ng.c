@@ -501,14 +501,6 @@ static void input_thread(void * arg)
 			ALLEGE(pthread_mutex_unlock(&(lopt.mx_sort)) == 0);
 		}
 
-				default:
-					break;
-			}
-			ALLEGE(pthread_mutex_lock(&(lopt.mx_sort)) == 0);
-			dump_sort();
-			ALLEGE(pthread_mutex_unlock(&(lopt.mx_sort)) == 0);
-		}
-
 		if (keycode == KEY_SPACE)
 		{
 			lopt.do_pause = (lopt.do_pause + 1) % 2;
