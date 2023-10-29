@@ -41,11 +41,12 @@ AC_DEFUN([AIRCRACK_NG_COMPAT], [
 AC_ARG_WITH(libbsd,
 	[AS_HELP_STRING([--with-libbsd[[=auto|yes|no]]], [use BSD library, [default=auto]])])
 
+AC_CHECK_FUNCS([strlcpy strlcat], [:])
+
 case $with_libbsd in
 	yes | "" | auto)
 		AC_CHECK_HEADERS([bsd/string.h], [HAVE_BSD_STRING_H=yes])
 		AC_CHECK_LIB([bsd], [strlcpy], [:])
-		AC_CHECK_FUNCS([strlcpy strlcat], [:])
 		;;
 esac
 
