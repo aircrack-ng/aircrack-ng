@@ -28,7 +28,7 @@ Channel lock
 
 .TP
 .I -p <pps>
-Packages per second to send (flood rate).
+Packets per second to send (flood rate).
 
 .TP
 .I -W
@@ -36,7 +36,7 @@ Crack only WPA networks
 
 .TP
 .I -v
-Verbose mode. Use -vv for more verbose, -vv for even more and so on.
+Verbose mode. Use -vv for more verbose, -vvv for even more and so on.
 
 .TP
 .I -h

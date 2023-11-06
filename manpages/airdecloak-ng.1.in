@@ -1,7 +1,7 @@
 .TH AIRDECLOAK-NG 1 "@MAN_RELEASE_DATE@" "@MAN_RELEASE_VERSION@"
 
 .SH NAME
-airuncloak-ng - Removes wep cloaked framed from a pcap file.
+airuncloak-ng - Removes wep cloaked frames from a pcap file.
 .SH SYNOPSIS
 .B airuncloak-ng
 <options>
