@@ -180,7 +180,8 @@ elif [ "${ID}" = 'clear-linux-os' ]; then
     elif [ "${STEP}" = 'stage2' ]; then
         # Break it in multiple steps to avoid the issue mentioned above
         swupd bundle-add libnl openssl devpkg-zlib devpkg-libpcap
-        swupd bundle-add sqlite devpkg-pcre2 hwloc network-basic ethtool
+        swupd bundle-add sqlite devpkg-pcre2 hwloc ethtool
+        swupd bundle-add network-basic
         swupd bundle-add sysadmin-basic python-extras
     fi
 else
