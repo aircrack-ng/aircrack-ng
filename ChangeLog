@@ -1,3 +1,53 @@
+Version 1.8 (changes from aircrack-ng 1.7) - Released XX XXX 2023:
+* Aircrack-ng: Fix heap overflow in session handling, reported by Andrew Kramer (Commit hash 3301282)
+* Aircrack-ng: Handle Apple ARM CPUs model info
+* Airodump-ng: Fix bad optimization
+* Airodump-ng & Aircrack-ng: fix PMKID handling
+* Airmon-ng: Cosmetic fix - missing closing parenthesis
+* Airmon-ng: Unquote newlines when parsing sysfs
+* Airmon-ng: Ensure /sys/class/net exists before iterating
+* Airmon-ng: Check for wireless tools
+* Airmon-ng: Set interface down when it uses deprecated wireless tools
+* Airmon-ng: Add additional device ID for rtl8723cs
+* Easside-ng: Remove code duplication
+* Airolib-ng: Fix getopt usage
+* Besside-ng: Fix 'Bad beacon' issue
+* Airdecloak-ng: Fix typos, and indentation in usage info
+* Airdecloak-ng: Remove dead code from getopt switch, add default branch to getopt switch
+* Scripts: replace optparse with argparse
+* Scripts: Switch from distutils to setuptools
+* Airdrop-ng: Fix typos
+* Autotools: Silence missing file
+* Autotools: Allow cross-compile python
+* Autotools: Modernize usage
+* Autotools: Various fixes and improvements
+* Autotools: Add PCRE2 support
+* Patches: Fix output file names for hostapd WPE binaries
+* Patches: Fix compilation of hostapd WPE
+* Patches: Fix -r option in hostapd WPE
+* Manpages: Document multiple interface usage for airodump-ng
+* Manpages: Specify that airdecloak-ng --null-packets is not yet implemented
+* CI/CD: Drop Windows 32 bit compilation
+* CI/CD: Add Ubuntu 22.04 builds
+* CI/CD: Fix PVS Studio
+* CI/CD: General maintenance, various fixes and improvements
+* CI/CD: Add Coverity Scan action
+* CI/CD: Converted all buildbots to GitHub actions, including *BSD, Windows and MacOS
+* CI/CD: Add cross-compilation for a number of CPU architectures
+* CI/CD: Switch to PCRE2, but keep one PCRE action
+* General: Reorganize badges in README.md
+* General: Add PCRE2 support in autotools, airodump-ng, besside-ng, and makefiles, and document it
+* General: Create Docker container and upload it to DockerHub (multiple CPU arch)
+* General: Improve sysctl usage for *BSD
+* General: Optimize strlen() calls
+* General: Use stdint.h types
+* General: Reformat source code
+* General: Fix building on s390x
+* General: Add support for OpenSSL 3.x and consolidate usage RC4, MD5, SHA-1, SHA-256, and HMAC
+* General: Update Devcontainer to Ubuntu 22.04
+* General: Improve bug report template and links
+* General: Various fixes and improvements (code, CI, integration tests, Coverity)
+
 Version 1.7 (changes from aircrack-ng 1.6) - Released 10 May 2022:
 * Airdecap-ng: Endianness fixes
 * Airdecap-ng: Output PCAP as little endian
