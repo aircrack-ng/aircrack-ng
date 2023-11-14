@@ -2,7 +2,7 @@
 
 Updated patch for FreeRadius 3.2.2
 
-More information about WPE can be found:
+Historic information about WPE can be found:
 https://www.willhackforsushi.com/?page_id=37
 
 Supported and tested EAP Types/Inner Authentication Methods (others may also work):
