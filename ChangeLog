@@ -2,6 +2,19 @@ Version 1.8 (changes from aircrack-ng 1.7) - Released XX XXX 2023:
 * Aircrack-ng: Fix heap overflow in session handling, reported by Andrew Kramer (Commit hash 3301282)
 * Aircrack-ng: Handle Apple ARM CPUs model info
 * Airodump-ng: Fix bad optimization
+* Airodump-ng: Display RXQ when using frequencies
+* Airodump-ng: Add support for multiple --bssid
+* Airodump-ng: When coloring BSSID, color newly added clients
+* Airodump-ng: Document using multiple --encrypt
+* Airodump-ng: Document using multiple --essid
+* Airodump-ng: Keep selected sorting after pressing TAB
+* Airodump-ng: Allow to use -a and -z together to hide all clients
+* Airodump-ng: Move -n option to filter in usage info, and document default value in manpage
+* Airodump-ng: Add --ignore-other-chans to hide out of range channels when used along with --channel
+* Airodump-ng: fix coloring of unassociated stations when '-n' is used
+* Airodump-ng: add support for '--min-power' and '--min-rxq' options
+* Airodump-ng: fix marking when color is enabled
+* Airodump-ng: return EXIT_SUCCESS in case of --help
 * Airodump-ng & Aircrack-ng: fix PMKID handling
 * Airmon-ng: Cosmetic fix - missing closing parenthesis
 * Airmon-ng: Unquote newlines when parsing sysfs
@@ -25,8 +38,10 @@ Version 1.8 (changes from aircrack-ng 1.7) - Released XX XXX 2023:
 * Patches: Fix output file names for hostapd WPE binaries
 * Patches: Fix compilation of hostapd WPE
 * Patches: Fix -r option in hostapd WPE
+* Patches: Update WPE patch for freeradius to v3.2.3
 * Manpages: Document multiple interface usage for airodump-ng
 * Manpages: Specify that airdecloak-ng --null-packets is not yet implemented
+* Manpages: add missing aliases, arguments, and other options in airodump-ng manpage
 * CI/CD: Drop Windows 32 bit compilation
 * CI/CD: Add Ubuntu 22.04 builds
 * CI/CD: Fix PVS Studio
@@ -35,9 +50,13 @@ Version 1.8 (changes from aircrack-ng 1.7) - Released XX XXX 2023:
 * CI/CD: Converted all buildbots to GitHub actions, including *BSD, Windows and MacOS
 * CI/CD: Add cross-compilation for a number of CPU architectures
 * CI/CD: Switch to PCRE2, but keep one PCRE action
+* CI/CD: Rework and unify ignore path
+* CI/CD: Add workflow for previously manual release checks
+* CI/CD: Add CodeQL
+* General: Add workflow to notify on IRC
 * General: Reorganize badges in README.md
 * General: Add PCRE2 support in autotools, airodump-ng, besside-ng, and makefiles, and document it
-* General: Create Docker container and upload it to DockerHub (multiple CPU arch)
+* General: Create Docker container, upload it to DockerHub (multiple CPU arch), and document it
 * General: Improve sysctl usage for *BSD
 * General: Optimize strlen() calls
 * General: Use stdint.h types
@@ -46,7 +65,7 @@ Version 1.8 (changes from aircrack-ng 1.7) - Released XX XXX 2023:
 * General: Add support for OpenSSL 3.x and consolidate usage RC4, MD5, SHA-1, SHA-256, and HMAC
 * General: Update Devcontainer to Ubuntu 22.04
 * General: Improve bug report template and links
-* General: Various fixes and improvements (code, CI, integration tests, Coverity)
+* General: Various fixes and improvements (code, refactoring, CI, integration tests, Coverity, typos, unused #include)
 
 Version 1.7 (changes from aircrack-ng 1.6) - Released 10 May 2022:
 * Airdecap-ng: Endianness fixes
