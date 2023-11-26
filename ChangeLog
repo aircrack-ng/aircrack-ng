@@ -15,6 +15,9 @@ Version 1.8 (changes from aircrack-ng 1.7) - Released XX XXX 2023:
 * Airodump-ng: add support for '--min-power' and '--min-rxq' options
 * Airodump-ng: fix marking when color is enabled
 * Airodump-ng: return EXIT_SUCCESS in case of --help
+* Airodump-ng: use long options in usage info
+* Airodump-ng: fix displaying -M and -W columns
+* Airodump-ng: fix displaying of station 'Rate' and 'Lost' columns
 * Airodump-ng & Aircrack-ng: fix PMKID handling
 * Airmon-ng: Cosmetic fix - missing closing parenthesis
 * Airmon-ng: Unquote newlines when parsing sysfs
@@ -22,6 +25,9 @@ Version 1.8 (changes from aircrack-ng 1.7) - Released XX XXX 2023:
 * Airmon-ng: Check for wireless tools
 * Airmon-ng: Set interface down when it uses deprecated wireless tools
 * Airmon-ng: Add additional device ID for rtl8723cs
+* Airmon-ng: shellcheck fixes
+* Airmon-ng: in a for loop, replace ls with a glob
+* Airmon-ng: add '-type l' to two find command; fixes bug
 * Easside-ng: Remove code duplication
 * Airolib-ng: Fix getopt usage
 * Besside-ng: Fix 'Bad beacon' issue
@@ -35,6 +41,7 @@ Version 1.8 (changes from aircrack-ng 1.7) - Released XX XXX 2023:
 * Autotools: Modernize usage
 * Autotools: Various fixes and improvements
 * Autotools: Add PCRE2 support
+* Autotools: shellcheck fixes
 * Patches: Fix output file names for hostapd WPE binaries
 * Patches: Fix compilation of hostapd WPE
 * Patches: Fix -r option in hostapd WPE
@@ -42,6 +49,7 @@ Version 1.8 (changes from aircrack-ng 1.7) - Released XX XXX 2023:
 * Manpages: Document multiple interface usage for airodump-ng
 * Manpages: Specify that airdecloak-ng --null-packets is not yet implemented
 * Manpages: add missing aliases, arguments, and other options in airodump-ng manpage
+* Manpages: Fix typos in besside-ng and airdecloak-ng
 * CI/CD: Drop Windows 32 bit compilation
 * CI/CD: Add Ubuntu 22.04 builds
 * CI/CD: Fix PVS Studio
@@ -52,7 +60,13 @@ Version 1.8 (changes from aircrack-ng 1.7) - Released XX XXX 2023:
 * CI/CD: Switch to PCRE2, but keep one PCRE action
 * CI/CD: Rework and unify ignore path
 * CI/CD: Add workflow for previously manual release checks
-* CI/CD: Add CodeQL
+* CI/CD: Add CodeQL workflow
+* CI/CD: Add codespell workflow
+* CI/CD: Add scanbuild workflow
+* CI/CD: Updated codestyle to clang-format 12 (from 3.8)
+* CI/CD: Use more distros for testing, and keep them up to date
+* CI/CD: Add markdown broken link detector
+* Testing: shellcheck fixes
 * General: Add workflow to notify on IRC
 * General: Reorganize badges in README.md
 * General: Add PCRE2 support in autotools, airodump-ng, besside-ng, and makefiles, and document it
@@ -66,6 +80,8 @@ Version 1.8 (changes from aircrack-ng 1.7) - Released XX XXX 2023:
 * General: Update Devcontainer to Ubuntu 22.04
 * General: Improve bug report template and links
 * General: Various fixes and improvements (code, refactoring, CI, integration tests, Coverity, typos, unused #include)
+* General: Remove packagecloud.io
+* General: Reformat code with clang-format-12
 
 Version 1.7 (changes from aircrack-ng 1.6) - Released 10 May 2022:
 * Airdecap-ng: Endianness fixes
