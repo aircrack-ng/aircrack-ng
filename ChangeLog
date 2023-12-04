@@ -51,7 +51,8 @@ Version 1.8 (changes from aircrack-ng 1.7) - Released XX XXX 2023:
 * Manpages: add missing aliases, arguments, and other options in airodump-ng manpage
 * Manpages: Fix typos in besside-ng and airdecloak-ng
 * CI/CD: Drop Windows 32 bit compilation
-* CI/CD: Add Ubuntu 22.04 builds
+* CI/CD: Add all currently support Ubuntu, Debian, RHEL-based distro
+* CI/CD: Add Arch, Clear Linux, Gentoo, Alpine, Manjaro
 * CI/CD: Fix PVS Studio
 * CI/CD: General maintenance, various fixes and improvements
 * CI/CD: Add Coverity Scan action
