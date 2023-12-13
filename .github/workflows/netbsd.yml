@@ -133,14 +133,14 @@ jobs:
 
       - name: Build with ${{ matrix.compiler.cc }} using ${{ matrix.flags.name }}
         id: build
-        uses: vmactions/netbsd-vm@v1.0.3
+        uses: vmactions/netbsd-vm@v1
         with:
           envs: 'LANG TZ MAKE'
           usesh: true
           sync: rsync
           copyback: false
           prepare: |
-            pkg_add git pkgconf libtool gcc7 automake autoconf pcre2 sqlite3 openssl gmake cmocka
+            /usr/sbin/pkg_add git pkgconf libtool gcc7 automake autoconf pcre2 sqlite3 openssl gmake cmocka
           run: |
             export CC="${{ matrix.compiler.cc }}"
             export CXX="${{ matrix.compiler.cxx }}"
