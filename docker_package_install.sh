@@ -132,7 +132,7 @@ elif [ "${ID}" = 'gentoo' ]; then
     echo "[*] Detected Gentoo"
     if [ "${STEP}" = 'builder' ]; then
         export EMERGE_DEFAULT_OPTS="--binpkg-respect-use=y --getbinpkg=y"
-        cat <<EOF >/etc/portage/binrepos.conf
+        cat <<EOF >/etc/portage/binrepos.conf/osuosl.conf
 [binhost]
 priority = 9999
 sync-uri = https://gentoo.osuosl.org/experimental/amd64/binpkg/default/linux/17.1/x86-64/
@@ -146,7 +146,7 @@ EOF
                 sys-devel/autoconf sys-devel/automake sys-devel/gnuconfig sys-devel/libtool sys-libs/zlib
     elif [ "${STEP}" = 'stage2' ]; then
         export EMERGE_DEFAULT_OPTS="--binpkg-respect-use=y --getbinpkg=y"
-        cat <<EOF >/etc/portage/binrepos.conf
+        cat <<EOF >/etc/portage/binrepos.conf/osuosl.conf
 [binhost]
 priority = 9999
 sync-uri = https://gentoo.osuosl.org/experimental/amd64/binpkg/default/linux/17.1/x86-64/
@@ -159,7 +159,7 @@ EOF
                 sys-apps/hwdata sys-apps/hwloc sys-apps/pciutils sys-apps/usbutils sys-libs/zlib app-portage/gentoolkit
         eclean --deep distfiles && eclean --deep packages
         emerge --depclean app-portage/gentoolkit
-        rm -fr /var/db/repos/gentoo /etc/portage/binrepos.conf
+        rm -fr /var/db/repos/gentoo /etc/portage/binrepos.conf/osuosl.conf
     fi
 elif [ "${ID}" = 'clear-linux-os' ]; then
     echo "[*] Detected Clear Linux (${VERSION_ID})"
