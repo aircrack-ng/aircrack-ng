@@ -137,6 +137,7 @@ elif [ "${ID}" = 'gentoo' ]; then
 priority = 9999
 sync-uri = https://gentoo.osuosl.org/experimental/amd64/binpkg/default/linux/17.1/x86-64/
 EOF
+        echo 'FEATURES="${FEATURES} -pid-sandbox"' >> /etc/portage/make.conf
         emerge --sync >/dev/null
         emerge app-portage/elt-patches dev-db/sqlite dev-lang/python dev-libs/libbsd dev-libs/libnl dev-libs/libpcre2 \
                 dev-libs/openssl dev-vcs/git net-libs/libpcap net-wireless/iw net-wireless/lorcon sys-apps/hwloc \
