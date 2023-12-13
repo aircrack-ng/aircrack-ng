@@ -143,7 +143,7 @@ jobs:
     name: Ubuntu 22.04 ${{ matrix.compiler.cc }} using ${{ matrix.flags.name }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 750
           submodules: 'recursive'
@@ -264,7 +264,7 @@ jobs:
     name: Ubuntu 20.04 ${{ matrix.compiler.cc }} using ${{ matrix.flags.name }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 750
           submodules: 'recursive'

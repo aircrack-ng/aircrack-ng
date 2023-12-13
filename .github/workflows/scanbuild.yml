@@ -65,7 +65,7 @@ jobs:
     steps:
       - 
         name: Git Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       -
         name: Add LLVM repo
         uses: myci-actions/add-deb-repo@10

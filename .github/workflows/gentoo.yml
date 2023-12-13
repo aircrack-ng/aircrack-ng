@@ -18,7 +18,7 @@ jobs:
     steps:
       - 
         name: Git Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - 
         name: Lint Dockerfile
         uses: hadolint/hadolint-action@v3.1.0
@@ -40,13 +40,13 @@ jobs:
           cli-args: "docker_package_install.sh"
       -
         name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
       -
         name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
       -
         name: Build on linux/amd64
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           platforms: linux/amd64
           build-args: "IMAGE_BASE=gentoo/stage3"

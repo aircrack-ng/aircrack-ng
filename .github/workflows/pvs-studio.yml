@@ -109,7 +109,7 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         env:
           PVS_STUDIO_NAME: ${{ secrets.PvsStudioName }}
           PVS_STUDIO_KEY: ${{ secrets.PvsStudioKey }}
