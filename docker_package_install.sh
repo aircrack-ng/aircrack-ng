@@ -146,7 +146,8 @@ EOF
         emerge app-portage/elt-patches dev-db/sqlite dev-lang/python dev-libs/libbsd dev-libs/libnl dev-libs/libpcre2 \
                 dev-libs/openssl dev-vcs/git net-libs/libpcap net-wireless/iw net-wireless/lorcon sys-apps/hwloc \
                 net-wireless/wireless-tools sys-apps/ethtool sys-apps/hwdata sys-apps/pciutils sys-apps/usbutils \
-                sys-devel/autoconf sys-devel/automake sys-devel/gnuconfig sys-devel/libtool sys-libs/zlib
+                sys-devel/autoconf sys-devel/automake sys-devel/gnuconfig sys-devel/libtool sys-libs/zlib \
+                --jobs="$(nproc)" --quiet
     elif [ "${STEP}" = 'stage2' ]; then
         export EMERGE_DEFAULT_OPTS="--binpkg-respect-use=y --getbinpkg=y"
         cat <<EOF >/etc/portage/binrepos.conf/osuosl.conf
@@ -162,7 +163,8 @@ EOF
         emerge-webrsync
         emerge dev-db/sqlite dev-lang/python dev-libs/libbsd dev-libs/libnl dev-libs/libpcre2 dev-libs/openssl \
                 net-libs/libpcap net-wireless/iw net-wireless/lorcon net-wireless/wireless-tools sys-apps/ethtool \
-                sys-apps/hwdata sys-apps/hwloc sys-apps/pciutils sys-apps/usbutils sys-libs/zlib app-portage/gentoolkit
+                sys-apps/hwdata sys-apps/hwloc sys-apps/pciutils sys-apps/usbutils sys-libs/zlib app-portage/gentoolkit \
+                --jobs="$(nproc)"
         eclean --deep distfiles && eclean --deep packages
         emerge --depclean app-portage/gentoolkit
         rm -fr /var/db/repos/gentoo /etc/portage/binrepos.conf/osuosl.conf
