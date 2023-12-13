@@ -80,9 +80,10 @@ jobs:
           IW_URL=$(grep -E '^IW_SOURCE=' scripts/airmon-ng.linux | awk -F\" '{print $2}' | xargs dirname)
           wget ${IW_URL} -O index.html
           CUR_IW=$(grep '<a href="iw' index.html | grep 'xz' | awk -F\" '{print $2}' | sort -V | tail -n 1)
-          AIRMON_IW=$(echo ${IW_URL} | xargs basename)
 
-          if [ "${CUR_IW}" = "${AIRMON_IW}" ]; then
+          AIRMON_IW_FILENAME=$(grep -E '^IW_SOURCE=' scripts/airmon-ng.linux | awk -F\" '{print $2}' | xargs basename)
+
+          if [ "${CUR_IW}" = "${AIRMON_IW_FILENAME}" ]; then
             echo "update=0" >> $GITHUB_OUTPUT
           else
             echo "update=1" >> $GITHUB_OUTPUT
