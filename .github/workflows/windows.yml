@@ -131,7 +131,7 @@ jobs:
           restore-keys: ${{ runner.os }}-cygwin-64bit-
 
       - name: Set up Cygwin
-        uses: cygwin/cygwin-install-action@v3
+        uses: cygwin/cygwin-install-action@v4
         with:
           platform: x64
           install-dir: C:\tools\cygwin
@@ -300,7 +300,7 @@ jobs:
           Pop-Location
 
       - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.2
+        uses: microsoft/setup-msbuild@v1.1
 
       - name: Build
         shell: pwsh
@@ -329,7 +329,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Cygwin
-        uses: cygwin/cygwin-install-action@v3
+        uses: cygwin/cygwin-install-action@v4
         with:
           platform: x64
           install-dir: C:\tools\cygwin
@@ -348,13 +348,13 @@ jobs:
           echo "unix_path=${unix_path}" >> $GITHUB_OUTPUT
 
       - name: Download Cygwin 64-bit artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: 64bit
           path: 64bit
 
       - name: Download GUI artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: gui
           path: gui
