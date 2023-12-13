@@ -113,7 +113,7 @@ env:
 
 jobs:
   openbsd:
-    runs-on: macos-12
+    runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
