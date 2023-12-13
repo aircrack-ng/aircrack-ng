@@ -133,7 +133,7 @@ jobs:
 
       - name: Build with ${{ matrix.compiler.cc }} using ${{ matrix.flags.name }}
         id: build
-        uses: vmactions/netbsd-vm@v1
+        uses: vmactions/netbsd-vm@v1.0.3
         with:
           envs: 'LANG TZ MAKE'
           usesh: true
