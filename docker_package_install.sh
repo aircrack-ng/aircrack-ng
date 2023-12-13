@@ -138,7 +138,10 @@ priority = 9999
 sync-uri = https://gentoo.osuosl.org/experimental/amd64/binpkg/default/linux/17.1/x86-64/
 EOF
         # shellcheck disable=SC2016
-        echo 'FEATURES="${FEATURES} -pid-sandbox"' >> /etc/portage/make.conf
+        echo 'FEATURES="${FEATURES} -ipc-sandbox -network-sandbox -pid-sandbox"' >> /etc/portage/make.conf
+        if [ ! -d "/etc/portage/gnupg" ]; then
+          getuto
+        fi
         emerge-webrsync
         emerge app-portage/elt-patches dev-db/sqlite dev-lang/python dev-libs/libbsd dev-libs/libnl dev-libs/libpcre2 \
                 dev-libs/openssl dev-vcs/git net-libs/libpcap net-wireless/iw net-wireless/lorcon sys-apps/hwloc \
@@ -152,7 +155,10 @@ priority = 9999
 sync-uri = https://gentoo.osuosl.org/experimental/amd64/binpkg/default/linux/17.1/x86-64/
 EOF
         # shellcheck disable=SC2016
-        echo 'FEATURES="${FEATURES} -pid-sandbox"' >> /etc/portage/make.conf
+        echo 'FEATURES="${FEATURES} -ipc-sandbox -network-sandbox -pid-sandbox"' >> /etc/portage/make.conf
+        if [ ! -d "/etc/portage/gnupg" ]; then
+          getuto
+        fi
         emerge-webrsync
         emerge dev-db/sqlite dev-lang/python dev-libs/libbsd dev-libs/libnl dev-libs/libpcre2 dev-libs/openssl \
                 net-libs/libpcap net-wireless/iw net-wireless/lorcon net-wireless/wireless-tools sys-apps/ethtool \
