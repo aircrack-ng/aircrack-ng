@@ -130,37 +130,26 @@ elif [ "${ID}" = 'opensuse-leap' ]; then
     fi
 elif [ "${ID}" = 'gentoo' ]; then
     echo "[*] Detected Gentoo"
-    if [ "${STEP}" = 'builder' ]; then
-        export EMERGE_DEFAULT_OPTS="--binpkg-respect-use=y --getbinpkg=y"
-        cat <<EOF >/etc/portage/binrepos.conf/osuosl.conf
+    export EMERGE_DEFAULT_OPTS="--binpkg-respect-use=y --getbinpkg=y"
+    cat <<EOF >/etc/portage/binrepos.conf/osuosl.conf
 [binhost]
 priority = 9999
 sync-uri = https://gentoo.osuosl.org/experimental/amd64/binpkg/default/linux/17.1/x86-64/
 EOF
-        # shellcheck disable=SC2016
-        echo 'FEATURES="${FEATURES} -ipc-sandbox -network-sandbox -pid-sandbox"' >> /etc/portage/make.conf
-        if [ ! -d "/etc/portage/gnupg" ]; then
-          getuto
-        fi
-        emerge-webrsync
+    # shellcheck disable=SC2016
+    echo 'FEATURES="${FEATURES} -ipc-sandbox -network-sandbox -pid-sandbox"' >> /etc/portage/make.conf
+    if [ ! -d "/etc/portage/gnupg" ]; then
+        getuto
+    fi
+    emerge-webrsync
+
+    if [ "${STEP}" = 'builder' ]; then
         emerge app-portage/elt-patches dev-db/sqlite dev-lang/python dev-libs/libbsd dev-libs/libnl dev-libs/libpcre2 \
                 dev-libs/openssl dev-vcs/git net-libs/libpcap net-wireless/iw net-wireless/lorcon sys-apps/hwloc \
                 net-wireless/wireless-tools sys-apps/ethtool sys-apps/hwdata sys-apps/pciutils sys-apps/usbutils \
                 sys-devel/autoconf sys-devel/automake sys-devel/gnuconfig sys-devel/libtool sys-libs/zlib \
                 --jobs="$(nproc)" --quiet
     elif [ "${STEP}" = 'stage2' ]; then
-        export EMERGE_DEFAULT_OPTS="--binpkg-respect-use=y --getbinpkg=y"
-        cat <<EOF >/etc/portage/binrepos.conf/osuosl.conf
-[binhost]
-priority = 9999
-sync-uri = https://gentoo.osuosl.org/experimental/amd64/binpkg/default/linux/17.1/x86-64/
-EOF
-        # shellcheck disable=SC2016
-        echo 'FEATURES="${FEATURES} -ipc-sandbox -network-sandbox -pid-sandbox"' >> /etc/portage/make.conf
-        if [ ! -d "/etc/portage/gnupg" ]; then
-          getuto
-        fi
-        emerge-webrsync
         emerge dev-db/sqlite dev-lang/python dev-libs/libbsd dev-libs/libnl dev-libs/libpcre2 dev-libs/openssl \
                 net-libs/libpcap net-wireless/iw net-wireless/lorcon net-wireless/wireless-tools sys-apps/ethtool \
                 sys-apps/hwdata sys-apps/hwloc sys-apps/pciutils sys-apps/usbutils sys-libs/zlib app-portage/gentoolkit \
