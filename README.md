@@ -28,7 +28,8 @@
 
 ### Repository versions
 
-![Arch Linux package](https://img.shields.io/archlinux/v/community/x86_64/aircrack-ng)
+![Arch Linux package](https://img.shields.io/archlinux/v/extra/x86_64/aircrack-ng)
+![Debian package](https://img.shields.io/debian/v/aircrack-ng/stable?label=debian%20stable)
 ![Debian package](https://img.shields.io/debian/v/aircrack-ng/testing?label=debian%20testing)
 ![Docker Image Version (latest by date)](https://img.shields.io/docker/v/aircrackng/git?color=blue&label=Docker%20Tag%20%7C%20git)
 ![Fedora package](https://img.shields.io/fedora/v/aircrack-ng)
@@ -38,7 +39,8 @@
 ![Ubuntu package](https://img.shields.io/ubuntu/v/aircrack-ng/jammy?label=Ubuntu%2022.04)
 ![Ubuntu package](https://img.shields.io/ubuntu/v/aircrack-ng/kinetic?label=Ubuntu%2022.10)
 ![Ubuntu package](https://img.shields.io/ubuntu/v/aircrack-ng/lunar?label=Ubuntu%2023.04)
-
+![Ubuntu package](https://img.shields.io/ubuntu/v/aircrack-ng/mantic?label=Ubuntu%2023.10)
+![Ubuntu package](https://img.shields.io/ubuntu/v/aircrack-ng/noble?label=Ubuntu%2024.04)
 
 ## Description
 
