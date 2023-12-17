@@ -53,6 +53,7 @@
 #include <assert.h>
 
 #include <aircrack-ng/support/common.h>
+#include <aircrack-ng/support/local_limits.h>
 
 #if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)    \
 	|| defined(__DragonFly__) || defined(__MidnightBSD__)

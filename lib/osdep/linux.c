@@ -72,6 +72,7 @@
 #include "common.h"
 #include "channel.h"
 #include "aircrack-ng/defs.h"
+#include "aircrack-ng/support/local_limits.h"
 
 #ifdef CONFIG_LIBNL
 struct nl80211_state state;
