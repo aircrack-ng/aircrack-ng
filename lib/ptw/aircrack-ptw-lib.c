@@ -435,6 +435,7 @@ static void guesskeybytes(
 	return;
 }
 
+#define PTW_CORRECTNESS_MIN_SESSION_COUNT 3
 #define PTW_CORRECTNESS_SESSION_COUNT 10
 /*
  * Is a guessed key correct?
@@ -448,7 +449,7 @@ static int correct(PTW_attackstate * state, uint8_t * key, int keylen)
 	int end_check;
 
 	// We need at least 3 sessions to be somehow certain
-	if (state->sessions_collected < 3)
+	if (state->sessions_collected < PTW_CORRECTNESS_MIN_SESSION_COUNT)
 	{
 		return 0;
 	}
