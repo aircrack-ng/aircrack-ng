@@ -172,5 +172,11 @@ wpa3-psk.pcap:
     WPA3 PSK SAE authentication. Passphrase for the network 
     'WPA3-Network' is 'abcdefgh'
 
+3.pcap
+	Allows to reproduce issue #672 (Fixed by commit 312bb64)
+
+floating_point_exception.pcap
+	Allows to reproduce issue #672 and triggers a SIGFPE (Fixed by commit 312bb64)
+
 More sample pcap are available from Wireshark: 
     https://wiki.wireshark.org/SampleCaptures#Wifi_.2F_Wireless_LAN_captures_.2F_802.11
