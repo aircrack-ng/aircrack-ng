@@ -435,6 +435,7 @@ static void guesskeybytes(
 	return;
 }
 
+#define PTW_CORRECTNESS_SESSION_COUNT 10
 /*
  * Is a guessed key correct?
  */
@@ -444,7 +445,7 @@ static int correct(PTW_attackstate * state, uint8_t * key, int keylen)
 	REQUIRE(key != NULL && keylen > 0);
 
 	int i;
-	int k;
+	int end_check;
 
 	// We need at least 3 sessions to be somehow certain
 	if (state->sessions_collected < 3)
@@ -454,8 +455,19 @@ static int correct(PTW_attackstate * state, uint8_t * key, int keylen)
 
 	tried++;
 
-	k = rand_u32() % (state->sessions_collected - 10);
-	for (i = k; i < k + 10; i++)
+	// Validate against 10 sessions at a random place ...
+	if (state->sessions_collected > PTW_CORRECTNESS_SESSION_COUNT)
+	{
+		i = rand_u32() % (state->sessions_collected - PTW_CORRECTNESS_SESSION_COUNT + 1);
+		end_check = i + PTW_CORRECTNESS_SESSION_COUNT;
+	}
+	else
+	{
+		// ... or against all of them if we don't have 10
+		i = 0;
+		end_check = state->sessions_collected;
+	}
+	for (; i < end_check; i++)
 	{
 		if (!state->rc4test(key,
 							keylen,
