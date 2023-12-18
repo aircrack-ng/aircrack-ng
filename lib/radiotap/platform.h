@@ -25,6 +25,10 @@
 #include <machine/endian.h>
 #endif
 
+#if defined (__gnu_hurd__)
+#include <endian.h>
+#endif
+
 #if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__) || defined(__MidnightBSD__) || defined(__NetBSD__)
 #include <sys/endian.h>
 #include <sys/types.h>

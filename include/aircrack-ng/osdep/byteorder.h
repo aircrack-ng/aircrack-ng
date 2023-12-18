@@ -122,6 +122,12 @@ typedef uint8_t u_int8_t; //-V677
 
 #endif
 
+#if defined (__gnu_hurd__)
+#include <endian.h>
+#include <stdint.h>
+
+#endif
+
 /*
 	 * Windows (DDK)
 	 */
