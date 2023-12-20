@@ -1823,6 +1823,12 @@ int main(int argc, char * argv[])
 		return (EXIT_FAILURE);
 	}
 
+	// If there aren't any usable frame, don't bother continuing
+	if (_packet_elt_head->nb_packets == 0) {
+		printf("Bye\n");
+		return EXIT_SUCCESS;
+	}
+
 	// 2. Go through the list and mark all cloaked packets
 	puts("Checking for cloaked frames");
 	tempBool = check_for_cloaking();
