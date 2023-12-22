@@ -644,6 +644,9 @@ setChannelMac80211() {
       # everyone else defaults to channel 1
       CH="1"
     fi
+  elif [ "${DRIVER}" = "wil6210" ] && [ "${CH}" -lt "58320" ]; then
+    printf "wil6210 doesn't support setting by channel, please specify a frequency\n"
+    exit 1
   fi
 
   if [ -n "${CH}" ]; then
