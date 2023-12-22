@@ -178,5 +178,8 @@ wpa3-psk.pcap:
 floating_point_exception.pcap
 	Allows to reproduce issue #672 and triggers a SIGFPE (Fixed by commit 312bb64)
 
+80211ad_beacon.pcap
+	DMG Beacon (802.11ad)
+
 More sample pcap are available from Wireshark: 
     https://wiki.wireshark.org/SampleCaptures#Wifi_.2F_Wireless_LAN_captures_.2F_802.11
