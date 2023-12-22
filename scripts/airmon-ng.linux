@@ -721,12 +721,14 @@ stopDeprecatedIface() {
 }
 
 changeMac80211IfaceTypeManaged() {
+  setLink "${1}" down
   iw dev "${1}" set type managed > /dev/null 2>&1
   setLink "${1}" up
   printf "\t\t(monitor mode disabled)\n"
 }
 
 changeQcacldIfaceTypeManaged() {
+  setLink "${1}" down
   #stupidly unsafe with more than one card, oh well
   qcaldSafetyCheck
   echo 0 > /sys/module/wlan/parameters/con_mode
