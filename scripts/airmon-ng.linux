@@ -637,7 +637,7 @@ setChannelMac80211() {
   setLink "${1}" up
   i=0
   if [ -n "${CH}" ]; then
-    if [ "${CH}" -lt 1000 ]; then
+    if [ "${CH}" -lt 900 ]; then
       if [ -r "/sys/class/net/$1/phy80211/name" ]; then
         channel_list="$(iw phy "$(cat "/sys/class/net/${1}/phy80211/name")" info 2>&1 | awk -F'[][]' '$2{print $2}')"
         hardware_valid_channel=1
