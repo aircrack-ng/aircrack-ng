@@ -50,6 +50,7 @@
 #include <aircrack-ng/osdep/osdep.h>
 #include <aircrack-ng/support/common.h>
 #include <aircrack-ng/third-party/ieee80211.h>
+#include <aircrack-ng/support/ieee80211_compat.h>
 
 /* Tagged parameters in beacon-frames */
 #define MGNT_PAR_SSID 0x00

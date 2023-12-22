@@ -49,6 +49,7 @@
 #include "aircrack-ng/osdep/byteorder.h"
 #include "aircrack-ng/osdep/packed.h"
 #include "aircrack-ng/third-party/ieee80211.h"
+#include "aircrack-ng/support/ieee80211_compat.h"
 #include "aircrack-ng/ce-wep/uniqueiv.h"
 #include "aircrack-ng/support/common.h"
 #include "aircrack-ng/third-party/eapol.h"
