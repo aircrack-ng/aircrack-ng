@@ -1004,14 +1004,24 @@ getFirmware() {
 
 getChipset() {
 	#this needs cleanup, we shouldn't have multiple lines assigning chipset per bus
+	#also clean up the horrible sed lines
 	#fix this to be one line per bus
+	#
+	#test examples
+	#lspci
+	#0000:01:00.0 Network controller: Qualcomm Atheros QCA9980/9990 802.11ac Wireless Network Adapter
+	#0001:01:00.0 Network controller: Qualcomm Atheros QCA9980/9990 802.11ac Wireless Network Adapter
+	#0002:01:00.0 Network controller: Wilocity Ltd. Wil6200 802.11ad Wireless Network Adapter (rev 02)
+	#0000:00:14.3 Network controller: Intel Corporation Device 7a70 (rev 11)
+	#lsusb
+	#?
 	if [ -f "/sys/class/net/${1}/device/modalias" ]; then
 		# refactor this soon
 		# shellcheck disable=2166
 		if [ "${BUS}" = "usb" ]; then
 			if [ "${LSUSB}" = "1" ]; then
 				BUSINFO="$(cut -d ":" -f 2 "/sys/class/net/${1}/device/modalias" | cut -b 1-10 | sed 's/^.//;s/p/:/')"
-				CHIPSET="$(lsusb -d "${BUSINFO}" | head -n1 - | cut -f3- -d ":" | sed 's/^....//;s/ Network Connection//g;s/ Wireless Adapter//g;s/^ //')"
+				CHIPSET="$(lsusb -d "${BUSINFO}" | head -n1 - | cut -f3- -d ":" | sed 's/^....//;s/ Network Connection//g;s/ Wireless.*Adapter//g;s/^ //')"
 			elif [ "${LSUSB}" = "0" ]; then
 				printf "Your system doesn't seem to support usb but we found usb hardware, please report this.\n"
 				exit 1
@@ -1020,10 +1030,10 @@ getChipset() {
 		elif [ "${BUS}" = "pci" -o "${BUS}" = "pcmcia" ] && [ "${LSPCI}" = "1" ]; then
 			if [ -f "/sys/class/net/${1}/device/vendor" ] && [ -f "/sys/class/net/${1}/device/device" ]; then
 				DEVICEID="$(sed -e 's/0x//' "/sys/class/net/${1}/device/vendor"):$(sed -e 's/0x//' "/sys/class/net/${1}/device/device")"
-				CHIPSET="$(lspci -d "${DEVICEID}" | head -n1 - | cut -f3- -d ":" | sed 's/Wireless LAN Controller //g;s/ Network Connection//g;s/ Wireless Adapter//;s/^ //')"
+				CHIPSET="$(lspci -d "${DEVICEID}" | head -n1 - | cut -f2- -d " " | sed -e 's/Wireless LAN Controller //g' -e 's/ Network Connection//g' -e 's/ Wireless.*Adapter//' -e 's/Network controller: //' -e 's/^ //')"
 			else
 				BUSINFO="$(printf "%s" "${ethtool_output}" | grep bus-info | cut -d ":" -f "3-" | sed 's/^ //')"
-				CHIPSET="$(lspci | grep "${BUSINFO}" | head -n1 - | cut -f3- -d ":" | sed 's/Wireless LAN Controller //g;s/ Network Connection//g;s/ Wireless Adapter//;s/^ //')"
+				CHIPSET="$(lspci | grep "${BUSINFO}" | head -n1 - | cut -f3- -d ":" | sed 's/Wireless LAN Controller //g;s/ Network Connection//g;s/ Wireless.*Adapter//;s/^ //')"
 				DEVICEID="$(lspci -nn | grep "${BUSINFO}" | grep '[[0-9][0-9][0-9][0-9]:[0-9][0-9][0-9][0-9]' -o)"
 			fi
 		elif [ "${BUS}" = "sdio" ]; then
