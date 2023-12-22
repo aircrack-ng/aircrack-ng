@@ -639,7 +639,7 @@ setChannelMac80211() {
   if [ -n "${CH}" ]; then
     if [ "${CH}" -lt 900 ]; then
       if [ -r "/sys/class/net/$1/phy80211/name" ]; then
-        channel_list="$(iw phy "$(cat "/sys/class/net/${1}/phy80211/name")" info 2>&1 | awk -F'[][]' '$2{print $2}')"
+        channel_list="$(iw phy "$(cat "/sys/class/net/${1}/phy80211/name")" channels 2>&1 | awk -F'[][]' '$2{print $2}')"
         hardware_valid_channel=1
         for i in $channel_list; do
           if [ "${CH}" = "${i}" ]; then
@@ -655,7 +655,7 @@ setChannelMac80211() {
       IW_ERROR="$(iw dev "${1}" set channel "${CH}" 2>&1)"
     else
       if [ -r "/sys/class/net/$1/phy80211/name" ]; then
-        frequency_list="$(iw phy "$(cat "/sys/class/net/${1}/phy80211/name")" info 2>&1 | sed -nr 's/.*( |^)([0-9]+) MHz .*/\2/p')"
+        frequency_list="$(iw phy "$(cat "/sys/class/net/${1}/phy80211/name")" channels 2>&1 | sed -nr 's/.*( |^)([0-9]+) MHz .*/\2/p')"
         hardware_valid_freq=1
         for i in $frequency_list; do
           if [ "${CH}" = "${i}" ]; then
