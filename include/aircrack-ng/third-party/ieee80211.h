@@ -1007,7 +1007,7 @@ struct ieee80211_ie_vht_txpwrenv {
 	uint8_t ie;
 	uint8_t len;
 	uint8_t tx_info;
-	int8_t tx_elem[0];	/* TX power elements, 1/2 dB, signed */
+	int8_t tx_elem[]; /* TX power elements, 1/2 dB, signed */
 };
 
 /* VHT action codes */
@@ -1145,7 +1145,7 @@ struct ieee80211_ap_chan_report_ie {
 	uint8_t		len;
 	uint8_t		i_class; /* operating class */
 	/* Annex E, E.1 Country information and operating classes */
-	uint8_t		chan_list[0];
+	uint8_t		chan_list[];
 } __packed;
 
 #define IEEE80211_EXTCAP_CMS			(1ULL <<  0) /* 20/40 BSS coexistence management support */
