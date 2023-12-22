@@ -1,4 +1,4 @@
-/*	$NetBSD: ieee80211.h,v 1.26 2013/03/30 14:14:31 christos Exp $	*/
+/*	$NetBSD: ieee80211.h,v 1.28 2016/09/16 09:25:30 mlelstv Exp $	*/
 /*-
  * Copyright (c) 2001 Atsushi Onoe
  * Copyright (c) 2002-2005 Sam Leffler, Errno Consulting
@@ -79,6 +79,17 @@ struct ieee80211_qosframe {
 	u_int8_t	i_qos[2];
 	/* possibly followed by addr4[IEEE80211_ADDR_LEN]; */
 	/* see below */
+} __packed;
+
+struct ieee80211_htframe {		/* 11n */
+	u_int8_t	i_fc[2];
+	u_int8_t	i_dur[2];
+	u_int8_t	i_addr1[IEEE80211_ADDR_LEN];
+	u_int8_t	i_addr2[IEEE80211_ADDR_LEN];
+	u_int8_t	i_addr3[IEEE80211_ADDR_LEN];
+	u_int8_t	i_seq[2];
+	u_int8_t	i_qos[2];
+	u_int8_t	i_ht[4];
 } __packed;
 
 struct ieee80211_qoscntl {
@@ -170,6 +181,9 @@ struct ieee80211_qosframe_addr4 {
 #define	IEEE80211_FC1_DIR_FROMDS		0x02	/* AP ->STA */
 #define	IEEE80211_FC1_DIR_DSTODS		0x03	/* AP ->AP  */
 
+#define IEEE80211_IS_DSTODS(wh) \
+	(((wh)->i_fc[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_DSTODS)
+
 #define	IEEE80211_FC1_MORE_FRAG			0x04
 #define	IEEE80211_FC1_RETRY			0x08
 #define	IEEE80211_FC1_PWR_MGT			0x10
@@ -201,6 +215,12 @@ struct ieee80211_qosframe_addr4 {
 #define	IEEE80211_QOS_ESOP			0x0010
 #define	IEEE80211_QOS_ESOP_S			4
 #define	IEEE80211_QOS_TID			0x000f
+
+/* does frame have QoS sequence control data */
+#define IEEE80211_QOS_HAS_SEQ(wh) \
+	(((wh)->i_fc[0] & \
+	    (IEEE80211_FC0_TYPE_MASK | IEEE80211_FC0_SUBTYPE_QOS)) == \
+	    (IEEE80211_FC0_TYPE_DATA | IEEE80211_FC0_SUBTYPE_QOS))
 
 /*
  * WME/802.11e information element.
