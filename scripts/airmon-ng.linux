@@ -642,23 +642,28 @@ setChannelMac80211() {
     if [ "${CH}" -lt 900 ] && [ "${DRIVER}" != "wil6210" ]; then
       if [ -r "/sys/class/net/$1/phy80211/name" ]; then
         channel_list="$(iw phy "$(cat "/sys/class/net/${1}/phy80211/name")" channels 2>&1 | awk -F'[][]' '$2{print $2}')"
-        hardware_valid_channel=1
-        for i in $channel_list; do
-          if [ "${CH}" = "0" ]; then
-            # channel 0 means default, default means set first supported channel
-            CH="${i}"
-            hardware_valid_channel=0
-            break
+        if [ -n "${channel_list}" ]; then
+          hardware_valid_channel=1
+          for i in $channel_list; do
+            if [ "${CH}" = "0" ]; then
+              # channel 0 means default, default means set first supported channel
+              CH="${i}"
+              hardware_valid_channel=0
+              break
+            fi
+            if [ "${CH}" = "${i}" ]; then
+              hardware_valid_channel=0
+              break
+            fi
+            last_chan="${i}"
+          done
+          if [ "${hardware_valid_channel}" = "1" ]; then
+            printf "Channel %s does not appear to be supported by %s hardware, defaulting to known valid channel %s\n\n" "${CH}" "${1}" "${last_chan}"
+            CH="${last_chan}"
           fi
-          if [ "${CH}" = "${i}" ]; then
-            hardware_valid_channel=0
-            break
-          fi
-          last_chan="${i}"
-        done
-        if [ "${hardware_valid_channel}" = "1" ]; then
-          printf "Channel %s does not appear to be supported by %s hardware, defaulting to known valid channel %s\n\n" "${CH}" "${1}" "${last_chan}"
-          CH="${last_chan}"
+        else
+          printf "Hardware %s supported channel list is empty, giving up.\n" "${1}"
+          exit 1
         fi
       fi
       IW_ERROR="$(iw dev "${1}" set channel "${CH}" 2>&1)"
@@ -666,23 +671,28 @@ setChannelMac80211() {
     else
       if [ -r "/sys/class/net/$1/phy80211/name" ]; then
         frequency_list="$(iw phy "$(cat "/sys/class/net/${1}/phy80211/name")" channels 2>&1 | sed -nr 's/.*( |^)([0-9]+) MHz .*/\2/p')"
-        hardware_valid_freq=1
-        for i in $frequency_list; do
-          if [ "${CH}" = "0" ]; then
-            # channel 0 means default, default means set first supported freq
-            CH="${i}"
-            hardware_valid_channel=0
-            break
+        if [ -n "${frequency_list}" ]; then
+          hardware_valid_freq=1
+          for i in $frequency_list; do
+            if [ "${CH}" = "0" ]; then
+              # channel 0 means default, default means set first supported freq
+              CH="${i}"
+              hardware_valid_freq=0
+              break
+            fi
+            if [ "${CH}" = "${i}" ]; then
+              hardware_valid_freq=0
+              break
+            fi
+            last_freq="${i}"
+          done
+          if [ "${hardware_valid_freq}" = "1" ]; then
+            printf "Frequency %s does not appear to be supported by %s hardware, defaulting to known valid freq %s Mhz\n\n" "${CH}" "${1}" "${last_freq}"
+            CH="${last_freq}"
           fi
-          if [ "${CH}" = "${i}" ]; then
-            hardware_valid_freq=0
-            break
-          fi
-          last_freq="${i}"
-        done
-        if [ "${hardware_valid_freq}" = "1" ]; then
-          printf "Frequency %s does not appear to be supported by %s hardware, defaulting to known valid freq %s Mhz\n\n" "${CH}" "${1}" "${last_freq}"
-          CH="${last_freq}"
+        else
+          printf "Hardware %s supported frequency list is empty, giving up.\n" "${1}"
+          exit 1
         fi
       fi
       IW_ERROR="$(iw dev "${1}" set freq "${CH}" 2>&1)"
