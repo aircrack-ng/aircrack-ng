@@ -635,7 +635,6 @@ startwlIface() {
 
 setChannelMac80211() {
   setLink "${1}" up
-  i=0
   if [ -n "${CH}" ]; then
     # if channel is less than 900 assume it's a channel and try to set it as a channel
     # wil6210 driver doesn't support setting by channel afaict so jump it to the else
@@ -644,18 +643,18 @@ setChannelMac80211() {
         channel_list="$(iw phy "$(cat "/sys/class/net/${1}/phy80211/name")" channels 2>&1 | awk -F'[][]' '$2{print $2}')"
         if [ -n "${channel_list}" ]; then
           hardware_valid_channel=1
-          for i in $channel_list; do
+          for supported_channel in ${channel_list}; do
             if [ "${CH}" = "0" ]; then
               # channel 0 means default, default means set first supported channel
-              CH="${i}"
+              CH="${supported_channel}"
               hardware_valid_channel=0
               break
             fi
-            if [ "${CH}" = "${i}" ]; then
+            if [ "${CH}" = "${supported_channel}" ]; then
               hardware_valid_channel=0
               break
             fi
-            last_chan="${i}"
+            last_chan="${supported_channel}"
           done
           if [ "${hardware_valid_channel}" = "1" ]; then
             printf "Channel %s does not appear to be supported by %s hardware, defaulting to known valid channel %s\n\n" "${CH}" "${1}" "${last_chan}"
@@ -673,18 +672,18 @@ setChannelMac80211() {
         frequency_list="$(iw phy "$(cat "/sys/class/net/${1}/phy80211/name")" channels 2>&1 | sed -nr 's/.*( |^)([0-9]+) MHz .*/\2/p')"
         if [ -n "${frequency_list}" ]; then
           hardware_valid_freq=1
-          for i in $frequency_list; do
+          for supported_freq in $frequency_list; do
             if [ "${CH}" = "0" ]; then
               # channel 0 means default, default means set first supported freq
-              CH="${i}"
+              CH="${supported_freq}"
               hardware_valid_freq=0
               break
             fi
-            if [ "${CH}" = "${i}" ]; then
+            if [ "${CH}" = "${supported_freq}" ]; then
               hardware_valid_freq=0
               break
             fi
-            last_freq="${i}"
+            last_freq="${supported_freq}"
           done
           if [ "${hardware_valid_freq}" = "1" ]; then
             printf "Frequency %s does not appear to be supported by %s hardware, defaulting to known valid freq %s Mhz\n\n" "${CH}" "${1}" "${last_freq}"
