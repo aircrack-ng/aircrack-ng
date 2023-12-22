@@ -58,11 +58,11 @@ if [ -n "${3}" ];then
 	if [ "${3}" -gt 0 ] > /dev/null 2>&1; then
 		CH="${3}"
 	else
-		printf "\nYou have entered an invalid channel \"%s\" which will be ignored\n" "${3}"
-		CH=3
+		printf "\nYou have entered an invalid channel or frequency \"%s\" which will be ignored\n" "${3}"
+		CH="default"
 	fi
 else
-	CH=10
+	CH="default"
 fi
 
 #TODO LIST
@@ -636,6 +636,16 @@ startwlIface() {
 setChannelMac80211() {
   setLink "${1}" up
   i=0
+  if [ "${CH}" = "default" ]; then
+    if [ "${DRIVER}" = "wil6210" ]; then
+      #wil6210 doesn't support setting by channel afaict, so set band 3 / 60GHz channel 1 by freq
+      CH="58320"
+    else
+      # everyone else defaults to channel 1
+      CH="1"
+    fi
+  fi
+
   if [ -n "${CH}" ]; then
     if [ "${CH}" -lt 900 ]; then
       if [ -r "/sys/class/net/$1/phy80211/name" ]; then
