@@ -41,6 +41,7 @@ on:
       - '.github/workflows/windows.yml'
       - '.vscode/**'
       - '.clang-format'
+      - '.codespellrc'
       - '.editorconfig'
       - '.gitignore'
       - '.pre-commit-config.yaml'
