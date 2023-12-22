@@ -12,11 +12,13 @@ if [ ! -d '/sys/' ]; then
 	printf "CONFIG_SYSFS is disabled in your kernel, this program will not work.\n"
   exit 1
 fi
-if ! mountpoint -q -- /sys; then
-  printf "/sys is not mounted, you can probably mount it with:\n"
-  printf "mount -t sysfs sysfs /sys\n"
-  printf "This program cannot continue without a working sysfs.\n"
-  exit 1
+if [ -x "$(command -v mountpoint 2>&1)" ]; then
+  if ! mountpoint -q -- /sys > /dev/null; then
+    printf "/sys is not mounted, you can probably mount it with:\n"
+    printf "mount -t sysfs sysfs /sys\n"
+    printf "This program cannot continue without a working sysfs.\n"
+    exit 1
+  fi
 fi
 if [ ! -d '/sys/class' ]; then
   printf "This program cannot continue without a working sysfs.\n"
