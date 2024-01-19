@@ -71,18 +71,21 @@ fi
 #fix to not assume wifi drivers are modules
 #rewrite to not have two devices at any one time
 
-if [ -n "$(command -v id 2> /dev/null)" ]; then
-	USERID="$(id -u 2> /dev/null)"
-fi
+# We need root only when doing something, enumeration works as user
+if [ "${1}" = "check" ] || [ "${1}" = "start" ] || [ "${1}" = "stop" ]; then
+  if [ -n "$(command -v id 2> /dev/null)" ]; then
+    USERID="$(id -u 2> /dev/null)"
+  fi
 
-if [ -z "${USERID}" ] && [ -n "$(id -ru)" ]; then
-	USERID="$(id -ru)"
-fi
+  if [ -z "${USERID}" ] && [ -n "$(id -ru)" ]; then
+    USERID="$(id -ru)"
+  fi
 
-if [ -n "${USERID}" ] && [ "${USERID}" != "0" ]; then
-	printf "Run it as root\n" ; exit 1;
-elif [ -z "${USERID}" ]; then
-	printf "Unable to determine user id, permission errors may occur.\n"
+  if [ -n "${USERID}" ] && [ "${USERID}" != "0" ]; then
+    printf "Run it as root\n" ; exit 1;
+  elif [ -z "${USERID}" ]; then
+    printf "Unable to determine user id, permission errors may occur.\n"
+  fi
 fi
 
 #check for all needed binaries
@@ -1565,7 +1568,7 @@ if [ "$#" != "0" ]; then
 fi
 
 #start/stop interface existence check
-if [ "$1" = "start" ] || [ "$1" = "stop" ]; then
+if [ "${1}" = "start" ] || [ "${1}" = "stop" ]; then
   if ! ifaceExists "${2}"; then
     printf "Requested device \"%s\" does not exist.\n" "${2}"
     printf "Run %s without any arguments to see available interfaces\n" "${0}"
