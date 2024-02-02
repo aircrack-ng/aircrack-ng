@@ -74,7 +74,7 @@ EXPORT int net_send(int s, int command, void * arg, int len)
 
 	pktlen = sizeof(struct net_hdr) + len;
 
-	pktbuf = (char *) calloc(sizeof(char), pktlen);
+	pktbuf = (char *) calloc(pktlen, sizeof(char));
 	if (pktbuf == NULL)
 	{
 		perror("calloc");

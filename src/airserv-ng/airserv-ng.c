@@ -119,7 +119,7 @@ static void client_add(struct sstate * ss, int s, struct sockaddr_in * s_in)
 
 	struct client * c;
 
-	if (!(c = calloc(sizeof(struct client), 1))) err(1, "calloc()");
+	if (!(c = calloc(1, sizeof(struct client)))) err(1, "calloc()");
 
 	c->c_s = s;
 	char * netip = inet_ntoa(s_in->sin_addr);
