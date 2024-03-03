@@ -219,7 +219,7 @@ jobs:
             !macos-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.lo
 
   macos-arm64:
-    runs-on: macos-13-xlarge
+    runs-on: macos-14
 
     strategy:
       fail-fast: false
