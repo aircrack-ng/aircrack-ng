@@ -122,6 +122,8 @@ jobs:
       fail-fast: false
       matrix:
         compiler:
+          - cc:  gcc-13
+            cxx: g++-13
           - cc:  gcc-12
             cxx: g++-12
           - cc:  gcc-11
