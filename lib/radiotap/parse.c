@@ -39,7 +39,7 @@ static void print_radiotap_namespace(struct ieee80211_radiotap_iterator *iter)
 {
 	switch (iter->this_arg_index) {
 	case IEEE80211_RADIOTAP_TSFT:
-		printf("\tTSFT: %llu\n", le64toh(*(unsigned long long *)iter->this_arg));
+		printf("\tTSFT: %llu\n", (unsigned long long)le64toh(*(unsigned long long *)iter->this_arg));
 		break;
 	case IEEE80211_RADIOTAP_FLAGS:
 		printf("\tflags: %02x\n", *iter->this_arg);
