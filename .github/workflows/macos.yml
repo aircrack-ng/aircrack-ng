@@ -218,7 +218,6 @@ jobs:
             !macos-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.o
             !macos-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.lo
 
-jobs:
   macos-arm64:
     runs-on: macos-xlarge
 
