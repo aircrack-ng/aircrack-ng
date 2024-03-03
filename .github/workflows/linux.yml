@@ -140,6 +140,8 @@ jobs:
             cxx: clang++-13
           - cc:  clang-14
             cxx: clang++-14
+          - cc:  clang-15
+            cxx: clang++-15
         flags:
           - name: Gcrypt
             flags: "--with-gcrypt"
