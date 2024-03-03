@@ -21,7 +21,7 @@ jobs:
         echo "username=${USERNAME}" >> $GITHUB_OUTPUT
 
     - name: Commit
-      uses: Gottox/irc-message-action@v2.1.4
+      uses: Gottox/irc-message-action@v2.1.5
       if: github.event_name == 'push'
       with:
         channel: '#aircrack-ng'
@@ -31,7 +31,7 @@ jobs:
           ${{ join(github.event.commits.*.message) }}
 
     - name: Pull Request Created
-      uses: Gottox/irc-message-action@v2.1.4
+      uses: Gottox/irc-message-action@v2.1.5
       if: github.event_name == 'pull_request'
       with:
         channel: '#aircrack-ng'
@@ -40,7 +40,7 @@ jobs:
           New pull request #${{ github.event.number }} by ${{ github.actor }}: ${{ github.event.pull_request.title }} - ${{ github.event.pull_request.html_url }}
 
     - name: Issue created
-      uses: Gottox/irc-message-action@v2.1.4
+      uses: Gottox/irc-message-action@v2.1.5
       if: github.event_name == 'issues' && github.event.action == 'opened' && github.event.issue.draft == false
       with:
         channel: '#aircrack-ng'
@@ -49,7 +49,7 @@ jobs:
           New issue #${{github.event.issue.number}} (${{github.event.issue.url}}) by ${{ github.actor }}: ${{github.event.issue.title}} ()
 
     - name: New tag/release
-      uses: Gottox/irc-message-action@v2.1.4
+      uses: Gottox/irc-message-action@v2.1.5
       if: github.event_name == 'create' && github.event.ref_type == 'tag'
       with:
         channel: '#aircrack-ng'
