@@ -235,7 +235,7 @@ jobs:
           PVS_STUDIO_NAME: ${{ secrets.PvsStudioName }}
           PVS_STUDIO_KEY: ${{ secrets.PvsStudioKey }}
         if: ${{ env.ACT != 'true' && env.PVS_STUDIO_NAME != null && env.PVS_STUDIO_KEY != null }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: pvs-analysis-report
           path: pvs-report

@@ -270,7 +270,7 @@ jobs:
           C:\tools\cygwin\bin\bash.exe -e -l -c "ccache -s"
 
       - name: Archive 64-bit artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: 64bit
           path: |
@@ -310,7 +310,7 @@ jobs:
           Pop-Location
 
       - name: Archive GUI artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: gui
           path: |
@@ -348,13 +348,13 @@ jobs:
           echo "unix_path=${unix_path}" >> $GITHUB_OUTPUT
 
       - name: Download Cygwin 64-bit artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: 64bit
           path: 64bit
 
       - name: Download GUI artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: gui
           path: gui
@@ -388,7 +388,7 @@ jobs:
           "@ | & $bash --login -o errexit -o nounset -o pipefail -o igncr
 
       - name: Save package artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: release-windows
           path: |

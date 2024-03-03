@@ -111,7 +111,7 @@ jobs:
       -
         name: Archive artifacts (Pull request)
         if: github.event_name == 'pull_request'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: scanbuild-pr-${{ github.event.number }}
           path: results.sarif
@@ -119,7 +119,7 @@ jobs:
       -
         name: Archive artifacts (Push)
         if: github.event_name != 'pull_request'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: scanbuild
           path: results.sarif

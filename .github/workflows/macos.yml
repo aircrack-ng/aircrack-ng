@@ -203,7 +203,7 @@ jobs:
           ccache -s
 
       - name: Archive artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: macos-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}
           path: |
