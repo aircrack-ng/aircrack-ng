@@ -226,7 +226,7 @@ jobs:
         if: ${{ env.ACT != 'true' }}
         uses: actions/upload-artifact@v4
         with:
-          name: linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}
+          name: linux-ubuntu-22.04-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}
           path: |
             linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}
             !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/.deps
@@ -327,7 +327,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: ${{ env.ACT != 'true' }}
         with:
-          name: linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}
+          name: linux-ubuntu-20.04-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}
           path: |
             linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}
             !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/.deps
