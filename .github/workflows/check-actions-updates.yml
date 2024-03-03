@@ -1,0 +1,17 @@
+name: Check action updates
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 1 * *"
+
+jobs:
+  actupdate:
+    runs-on: ubuntu-22.04
+    steps:
+      - 
+        name: Git Checkout
+        uses: actions/checkout@v4
+      - 
+        name: Check actions updates
+        uses: rahulinux/gh-check-action@v1.0.0
