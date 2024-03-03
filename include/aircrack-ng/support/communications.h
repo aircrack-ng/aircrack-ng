@@ -148,6 +148,7 @@ struct communication_options
 
 	int f_index; /* outfiles index       */
 	FILE * f_txt; /* output csv file      */
+	FILE * f_json; /* output json file      */    
 	FILE * f_kis; /* output kismet csv file      */
 	FILE * f_kis_xml; /* output kismet netxml file */
 	FILE * f_gps; /* output gps file      */
@@ -161,6 +162,7 @@ struct communication_options
 
 	int output_format_pcap;
 	int output_format_csv;
+  int output_format_json;
 	int output_format_kismet_csv;
 	int output_format_kismet_netxml;
 	int output_format_log_csv;

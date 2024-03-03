@@ -45,6 +45,9 @@ int dump_write_airodump_ng_logcsv_add_client(const struct AP_info * ap_cur,
 											 struct tm * tm_gpstime,
 											 float * gps_loc);
 char * get_manufacturer_from_string(char * buffer);
+int dump_write_json(struct AP_info * ap_1st,
+				   struct ST_info * st_1st,
+				   unsigned int f_encrypt);
 int dump_write_kismet_netxml(struct AP_info * ap_1st,
 							 struct ST_info * st_1st,
 							 unsigned int f_encrypt,
