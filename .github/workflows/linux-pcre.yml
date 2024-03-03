@@ -138,7 +138,7 @@ jobs:
           fetch-depth: 750
           submodules: 'recursive'
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         id: cache
         if: ${{ env.ACT != 'true' }}
         with:
@@ -223,7 +223,7 @@ jobs:
           fetch-depth: 750
           submodules: 'recursive'
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         id: cache
         if: ${{ env.ACT != 'true' }}
         with:

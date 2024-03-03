@@ -121,7 +121,7 @@ jobs:
       - uses: actions/checkout@v4
 
       # Caching Cygwin fails due to /dev files and symlinks, sad :(
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         id: cache
         with:
           path: |

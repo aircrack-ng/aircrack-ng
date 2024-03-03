@@ -138,7 +138,7 @@ jobs:
           fetch-depth: 750
           submodules: 'recursive'
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         id: cache
         with:
           path: |
