@@ -48,8 +48,8 @@ COPY --from=builder /output/usr /output
 RUN set -x && \
 	[ -d /usr/local/share/man ] || \
 		mkdir -p /usr/local/share/man
-RUN mv /output/local/share/man/* /usr/local/share/man/ && \
-	rmdir /output/local/share/man/ && \
+RUN cp -r /output/local/share/man/* /usr/local/share/man/ && \
+	rm -rf /output/local/share/man && \
 	cp -r /output/* /usr/ && \
 	rm -rf /output
 
