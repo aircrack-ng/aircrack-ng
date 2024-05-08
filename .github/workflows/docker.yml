@@ -18,7 +18,7 @@ on:
       - '.github/workflows/docker-release.yml'
       - '.github/workflows/dragonflybsd.yml'
       - '.github/workflows/freebsd.yml'
-      - '.github/workflows/irc.yml'
+      - '.github/workflows/gcc.yml'      - '.github/workflows/irc.yml'
       - '.github/workflows/linux.yml'
       - '.github/workflows/linux-pcre.yml'
       - '.github/workflows/macos.yml'
