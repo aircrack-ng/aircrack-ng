@@ -4,7 +4,8 @@ FROM ${IMAGE_BASE} AS builder
 
 # Install dependencies for building
 COPY docker_package_install.sh /
-RUN sh /docker_package_install.sh builder
+RUN chmod +x docker_package_install.sh && \
+	 /docker_package_install.sh builder
 
 # Build Aircrack-ng
 # hadolint ignore=DL3059
