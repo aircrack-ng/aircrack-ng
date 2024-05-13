@@ -120,7 +120,7 @@ env:
 
 jobs:
   macos:
-    runs-on: macos-latest
+    runs-on: macos-13
 
     strategy:
       fail-fast: false
