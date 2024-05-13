@@ -72,16 +72,16 @@ jobs:
         uses: actions/checkout@v4
       -
         name: Add LLVM repo
-        uses: myci-actions/add-deb-repo@10
+        uses: myci-actions/add-deb-repo@11
         with:
-          repo: deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16 main
+          repo: deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-18 main
           repo-name: llvm
           keys-asc: https://apt.llvm.org/llvm-snapshot.gpg.key
       -
         name: Install required tools
         run: |
               sudo apt-get update
-              sudo apt-get install clang-16 clang-tools-16 build-essential autoconf automake libtool \
+              sudo apt-get install clang-18 clang-tools-18 build-essential autoconf automake libtool \
                           pkg-config libnl-3-dev libnl-genl-3-dev libssl-dev ethtool \
                           shtool rfkill zlib1g-dev libpcap-dev libsqlite3-dev libpcre2-dev \
                           libhwloc-dev libcmocka-dev hostapd wpasupplicant tcpdump screen \
@@ -93,9 +93,9 @@ jobs:
           SCANBUILD_DIR=/tmp/scanbuild
           CPUS=$(nproc)
           autoreconf -vif
-          CC=clang-16 CXX=clang++-16 ./configure --with-experimental --enable-maintainer-mode || { cat config.log; exit 1; }
+          CC=clang-18 CXX=clang++-18 ./configure --with-experimental --enable-maintainer-mode || { cat config.log; exit 1; }
           mkdir "${SCANBUILD_DIR}"
-          scan-build-16 -sarif -o "${SCANBUILD_DIR}" -enable-checker alpha.security.taint.TaintPropagation -enable-checker alpha.security.ArrayBoundV2 make -j ${CPUS}
+          scan-build-18 -sarif -o "${SCANBUILD_DIR}" -enable-checker alpha.security.taint.TaintPropagation -enable-checker alpha.security.ArrayBoundV2 make -j ${CPUS}
           echo "directory=${SCANBUILD_DIR}/$(ls -1 ${SCANBUILD_DIR})" >> $GITHUB_OUTPUT
       -
         name: Merge SARIF files
