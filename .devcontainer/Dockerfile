@@ -1,20 +1,39 @@
-# See here for image contents: https://github.com/microsoft/vscode-dev-containers/tree/v0.154.2/containers/cpp/.devcontainer/base.Dockerfile
+FROM ubuntu:22.04
 
-# [Choice] Debian / Ubuntu version: debian-10, debian-9, ubuntu-20.04, ubuntu-18.04
-ARG VARIANT
+# hadolint ignore=DL3005,DL3008
+RUN apt-get update && \
+    apt-get dist-upgrade -y && \
+    sed -i 's,path-exclude=/usr/share/man/,#path-exclude=/usr/share/man/,' /etc/dpkg/dpkg.cfg.d/excludes && \
+    rm /etc/dpkg/dpkg.cfg.d/excludes && \
+    DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends \
+        build-essential autoconf automake libtool pkg-config libnl-3-dev libnl-genl-3-dev libssl-dev \
+        ethtool shtool rfkill zlib1g-dev libpcap-dev libsqlite3-dev libpcre2-dev libhwloc-dev \
+        libcmocka-dev hostapd wpasupplicant tcpdump screen iw usbutils expect gawk bear zsh curl \
+        libtinfo5 clang-14 clangd-14 clang-format-14 python3-pip binfmt-support codespell wget \
+        man-db manpages-posix-dev manpages-dev gdb valgrind locales sudo ltrace strace shellcheck \
+        cppcheck yamllint pre-commit cpplint nano vim less && \
+    rm -rf /var/lib/apt/lists/*
 
-FROM mcr.microsoft.com/vscode/devcontainers/cpp:0-${VARIANT}
 
-# hadolint ignore=DL3003,DL3008
-RUN apt-get update \
- && export DEBIAN_FRONTEND=noninteractive \
- && apt-get -y install --no-install-recommends \
-      build-essential autoconf automake libtool pkg-config libnl-3-dev libnl-genl-3-dev libssl-dev \
-	  ethtool shtool rfkill zlib1g-dev libpcap-dev libsqlite3-dev libpcre2-dev libhwloc-dev \
-	  libcmocka-dev hostapd wpasupplicant tcpdump screen iw usbutils expect gawk bear \
-	  libtinfo5 \
-	  clangd-14 \
-	  clang-format-14 \
-	  python3-pip \
- && rm -rf /var/lib/apt/lists/* \
- && /usr/bin/pip3 install pre-commit
+RUN if [ "$(dpkg --print-architecture)" = "amd64" ]; then \
+        wget -nv https://github.com/hadolint/hadolint/releases/download/v2.12.0/hadolint-Linux-x86_64 -O /usr/local/bin/hadolint; \
+        chmod +x /usr/local/bin/hadolint; \
+    elif [ "$(dpkg --print-architecture)" = "arm64" ]; then \
+        wget -nv https://github.com/hadolint/hadolint/releases/download/v2.12.0/hadolint-Linux-arm64 -O /usr/local/bin/hadolint; \
+        chmod +x /usr/local/bin/hadolint; \
+    else \
+        echo "Hadolint not available for $(dpkg --print-architecture)"; \
+    fi
+
+# Create locale
+RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
+    locale-gen
+
+# Fix man redirection
+RUN rm -f /usr/bin/man && \
+    dpkg-divert --remove --rename /usr/bin/man
+
+# Add vscode user
+RUN useradd -m vscode && \
+echo "vscode ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers && \
+    chown -R vscode:vscode /root
