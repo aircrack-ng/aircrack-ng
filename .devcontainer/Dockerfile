@@ -35,7 +35,6 @@ FROM ubuntu2204-node20
 RUN apt-get update && \
     apt-get dist-upgrade -y && \
     sed -i 's,path-exclude=/usr/share/man/,#path-exclude=/usr/share/man/,' /etc/dpkg/dpkg.cfg.d/excludes && \
-    rm /etc/dpkg/dpkg.cfg.d/excludes && \
     DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends \
         build-essential autoconf automake libtool pkg-config libnl-3-dev libnl-genl-3-dev libssl-dev \
         ethtool shtool rfkill zlib1g-dev libpcap-dev libsqlite3-dev libpcre2-dev libhwloc-dev \
