@@ -32,7 +32,7 @@ jobs:
           dockerfile: '.devcontainer/Dockerfile'
       -
         name: Lint devcontainer.json
-        run: python3 -m json.tool devcontainer.json
+        run: python3 -m json.tool .devcontainer/devcontainer.json
 
   docker-build:
     runs-on: ubuntu-22.04
