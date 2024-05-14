@@ -1,4 +1,35 @@
-FROM ubuntu:22.04
+FROM ubuntu:22.04 as ubuntu2204-node20
+	 
+# Set environment variables for configuration and defaults
+ENV NODE_VERSION=20
+ENV NVM_DIR="/opt/nvm"
+
+# Install dependencies
+# hadolint ignore=DL3008
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends wget ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install nvm
+RUN mkdir ${NVM_DIR} && \
+    wget -nv https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh && \
+    bash install.sh && \
+    rm install.sh
+
+# Set the nvm environment variables
+ENV SHIPPABLE_NODE_VERSION=$NODE_VERSION
+
+# hadolint ignore=SC2016
+RUN echo "export NVM_DIR=\"${NVM_DIR}\"" >> /etc/profile && \
+    echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> /etc/profile && \
+    echo 'nvm use default' >> /etc/profile
+
+# Make npm, node, and others available with sudo
+RUN for file in `ls -1 $NVM_DIR/versions/node/$(. "$NVM_DIR/nvm.sh" && nvm which $NODE_VERSION | xargs dirname | xargs dirname | xargs basename)/bin/*`; do \
+        ln -s "${file}" "/usr/local/bin/$(basename ${file})"; \
+    done
+
+FROM ubuntu2204-node20
 
 # hadolint ignore=DL3005,DL3008
 RUN apt-get update && \
@@ -58,5 +89,7 @@ RUN rm -f /usr/bin/man && \
 
 # Add vscode user
 RUN useradd -m vscode && \
-echo "vscode ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers && \
-    chown -R vscode:vscode /root
+    sed -i 's/env_reset/env_reset\nDefaults        env_keep += "PATH NVM_INC NVM_DIR NVM_CD_FLAGS NVM_BIN SHIPPABLE_NODE_VERSION NODE_VERSION"/' /etc/sudoers && \
+    echo "vscode ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers && \
+    chown -R vscode:vscode /root && \
+    chown -R vscode:vscode /opt/nvm
