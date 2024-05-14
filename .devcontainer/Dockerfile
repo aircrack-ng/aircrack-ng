@@ -14,6 +14,29 @@ RUN apt-get update && \
         cppcheck yamllint pre-commit cpplint nano vim less && \
     rm -rf /var/lib/apt/lists/*
 
+# ActionLint
+RUN if [ "$(dpkg --print-architecture)" = "amd64" ]; then \
+        wget -nv https://github.com/rhysd/actionlint/releases/download/v1.7.0/actionlint_1.7.0_linux_amd64.tar.gz -O /usr/local/bin/actionlint; \
+        chmod +x /usr/local/bin/actionlint; \
+    elif [ "$(dpkg --print-architecture)" = "arm64" ]; then \
+        wget -nv https://github.com/rhysd/actionlint/releases/download/v1.7.0/actionlint_1.7.0_linux_arm64.tar.gz -O /usr/local/bin/actionlint; \
+        chmod +x /usr/local/bin/actionlint; \
+    else \
+        echo "Installation of actionlint for $(dpkg --print-architecture) not implemented"; \
+    fi
+
+
+
+# ACT
+RUN if [ "$(dpkg --print-architecture)" = "amd64" ]; then \
+        wget -nv https://github.com/nektos/act/releases/latest/download/act_Linux_x86_64.tar.gz -O /usr/local/bin/act; \
+        chmod +x /usr/local/bin/act; \
+    elif [ "$(dpkg --print-architecture)" = "arm64" ]; then \
+        wget -nv https://github.com/nektos/act/releases/latest/download/act_Linux_arm64.tar.gz -O /usr/local/bin/act; \
+        chmod +x /usr/local/bin/act; \
+    else \
+        echo "Installation of act for $(dpkg --print-architecture) not implemented"; \
+    fi
 
 RUN if [ "$(dpkg --print-architecture)" = "amd64" ]; then \
         wget -nv https://github.com/hadolint/hadolint/releases/download/v2.12.0/hadolint-Linux-x86_64 -O /usr/local/bin/hadolint; \
