@@ -65,6 +65,8 @@ jobs:
   
   devcontainer:
     runs-on: ubuntu-22.04
+    needs:
+      - docker-build
     timeout-minutes: 2
     steps:
       -
