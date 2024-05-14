@@ -78,6 +78,10 @@ RUN if [ "$(dpkg --print-architecture)" = "amd64" ]; then \
         echo "Hadolint not available for $(dpkg --print-architecture)"; \
     fi
 
+# Install @devcontainers/cli
+# hadolint ignore=DL3016
+RUN npm install -g @devcontainers/cli
+
 # Create locale
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
     locale-gen
