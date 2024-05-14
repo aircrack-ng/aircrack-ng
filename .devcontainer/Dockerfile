@@ -55,8 +55,6 @@ RUN if [ "$(dpkg --print-architecture)" = "amd64" ]; then \
         echo "Installation of actionlint for $(dpkg --print-architecture) not implemented"; \
     fi
 
-
-
 # ACT
 RUN if [ "$(dpkg --print-architecture)" = "amd64" ]; then \
         wget -nv https://github.com/nektos/act/releases/latest/download/act_Linux_x86_64.tar.gz -O /usr/local/bin/act; \
