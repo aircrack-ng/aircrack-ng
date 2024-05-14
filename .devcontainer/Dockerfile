@@ -1,5 +1,5 @@
 FROM ubuntu:22.04 as ubuntu2204-node20
-	 
+
 # Set environment variables for configuration and defaults
 ENV NODE_VERSION=20
 ENV NVM_DIR="/opt/nvm"
