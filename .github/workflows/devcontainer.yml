@@ -30,8 +30,11 @@ jobs:
         uses: ghe-actions/dockerfile-validator@v1
         with:
           dockerfile: '.devcontainer/Dockerfile'
+      -
+        name: Lint devcontainer.json
+        run: python3 -m json.tool devcontainer.json
 
-  build:
+  docker-build:
     runs-on: ubuntu-22.04
     needs:
       - lint
@@ -59,3 +62,22 @@ jobs:
           context: .devcontainer
           push: false
           platforms: ${{ matrix.platform }}
+  
+  devcontainer:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 2
+    steps:
+      -
+        name: Git Checkout
+        uses: actions/checkout@v4
+      - 
+        name: Set-up nodejs
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      -
+        name: Install devcontainer CLI
+        run: npm install -g @devcontainers/cli
+      -
+        name: Build the devcontainer
+        run: devcontainer build --workspace-folder .
