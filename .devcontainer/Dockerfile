@@ -25,6 +25,7 @@ RUN echo "export NVM_DIR=\"${NVM_DIR}\"" >> /etc/profile && \
     echo 'nvm use default' >> /etc/profile
 
 # Make npm, node, and others available with sudo
+# hadolint ignore=DL4006,SC2086
 RUN for file in `ls -1 $NVM_DIR/versions/node/$(. "$NVM_DIR/nvm.sh" && nvm which $NODE_VERSION | xargs dirname | xargs dirname | xargs basename)/bin/*`; do \
         ln -s "${file}" "/usr/local/bin/$(basename ${file})"; \
     done
