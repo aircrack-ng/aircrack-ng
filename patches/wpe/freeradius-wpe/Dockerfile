@@ -63,8 +63,8 @@ RUN if [ $(diff -rupN freeradius-server-${NEW_VERSION} freeradius-server-${NEW_V
 # Ensure it compiles
 WORKDIR /tmp/freeradius-server-${NEW_VERSION}-wpe
 RUN ./configure
-# hadolint ignore=DL3059
-RUN make
+# hadolint ignore=DL3059,SC2046
+RUN make -j $(nproc)
 
 # Then copy patch to /output
 WORKDIR /tmp
