@@ -38,8 +38,7 @@ RUN apt-get update && apt-get dist-upgrade -y && \
 
 # Download and unpack
 WORKDIR /tmp
-# hadolint ignore=DL4006
-# shellcheck ignore=SC2046
+# hadolint ignore=DL4006,SC2046
 RUN wget -nv https://github.com/FreeRADIUS/freeradius-server/releases/download/release_$(echo ${NEW_VERSION} | tr '.' '_')/freeradius-server-${NEW_VERSION}.tar.bz2
 RUN tar -xjf freeradius-server-${NEW_VERSION}.tar.bz2
 # hadolint ignore=DL3059
@@ -54,7 +53,7 @@ RUN patch --no-backup-if-mismatch -Np1 -i ../freeradius-server-${OLD_VERSION}-wp
 
 # Create updated patch
 WORKDIR /tmp/
-# shellcheck ignore=SC2046
+# hadolint ignore=SC2046
 RUN if [ $(diff -rupN freeradius-server-${NEW_VERSION} freeradius-server-${NEW_VERSION}-wpe > freeradius-server-${NEW_VERSION}-wpe.diff) -eq 2 ]; then \
 		echo "diff failed"; \
 		ext 1; \
