@@ -1,6 +1,6 @@
 # FreeRadius Wireless Pawn Edition
 
-Updated patch for FreeRadius 3.2.3
+Updated patch for FreeRadius 3.2.4
 
 Historic information about WPE can be found:
 https://www.willhackforsushi.com/?page_id=37
@@ -32,11 +32,11 @@ apt install libsqlite3-dev libhiredis-dev libykclient-dev libyubikey-dev default
 Run the following commands:
 
 ```
-wget ftp://ftp.freeradius.org/pub/freeradius/freeradius-server-3.2.3.tar.bz2
-tar -xjf freeradius-server-3.2.3.tar.bz2
-cd freeradius-server-3.2.3/
-wget https://raw.githubusercontent.com/aircrack-ng/aircrack-ng/master/patches/wpe/freeradius-wpe/freeradius-server-3.2.3-wpe.diff
-patch -Np1 -i freeradius-server-3.2.3-wpe.diff
+wget ftp://ftp.freeradius.org/pub/freeradius/freeradius-server-3.2.4.tar.bz2
+tar -xjf freeradius-server-3.2.4.tar.bz2
+cd freeradius-server-3.2.4/
+wget https://raw.githubusercontent.com/aircrack-ng/aircrack-ng/master/patches/wpe/freeradius-wpe/freeradius-server-3.2.4-wpe.diff
+patch -Np1 -i freeradius-server-3.2.4-wpe.diff
 ./configure
 make
 make install
