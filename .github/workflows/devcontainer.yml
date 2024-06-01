@@ -27,9 +27,10 @@ jobs:
         uses: actions/checkout@v4
       - 
         name: Lint Dockerfile
-        uses: ghe-actions/dockerfile-validator@v1
+        uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: '.devcontainer/Dockerfile'
+          verbose: true
       -
         name: Lint devcontainer.json
         run: python3 -m json.tool .devcontainer/devcontainer.json
