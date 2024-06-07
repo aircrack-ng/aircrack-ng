@@ -138,7 +138,7 @@ elif [ "${ID}" = 'alpine' ]; then
     elif [ "${STEP}" = 'stage2' ]; then
         apk add --no-cache \
             libnl3 openssl ethtool libpcap util-linux sqlite-dev pcre2 zlib pciutils usbutils hwloc wget \
-            iproute2 kmod python3 py3-graphviz urfkill iw 
+            iproute2 kmod python3 py3-graphviz urfkill iw
     fi
 elif [ "${ID}" = 'fedora' ] || [ "${ID}" = 'almalinux' ] || [ "${ID}" = 'rocky' ] || [ "${ID}" = 'ol' ]; then
     echo "[*] Distribution: ${NAME} (${VERSION_ID})"
