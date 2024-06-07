@@ -19,11 +19,11 @@ install_hwloc() {
     rm hwloc-2.10.0.tar.bz2
     cd hwloc-2.10.0 || exit
     ./configure
-    make -j $(nproc)
+    make -j "$(nproc)"
     make install
     cd ..
     rm -rf hwloc-2.10.0
-    cd ${CUR_PWD} || exit
+    cd "${CUR_PWD}" || exit
 }
 
 install_iw() {
@@ -38,7 +38,7 @@ install_iw() {
     mv iw /usr/local/sbin
     cd ..
     rm -rf iw-6.9
-    cd ${CUR_PWD} || exit
+    cd "${CUR_PWD}" || exit
 }
 
 install_hostapd() {
@@ -54,7 +54,7 @@ install_hostapd() {
     hostapd -v
     cd ../..
     rm -rf hostapd-2.10
-    cd ${CUR_PWD} || exit
+    cd "${CUR_PWD}" || exit
 }
 
 install_cmocka() {
@@ -74,7 +74,7 @@ install_cmocka() {
     ldconfig
     cd ../..
     rm -rf cmocka-1.0.1
-    cd ${CUR_PWD} || exit
+    cd "${CUR_PWD}" || exit
 }
 
 
