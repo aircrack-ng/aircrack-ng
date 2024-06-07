@@ -224,23 +224,41 @@ EOF
 elif [ "${ID}" = 'clear-linux-os' ]; then
     echo "[*] Detected Clear Linux (${VERSION_ID})"
     if [ "${STEP}" = 'builder' ]; then
+        # Break swupd in multiple steps to avoid 'bundle too large by xxxM'
         # Build hostapd
-        swupd bundle-add wget c-basic devpkg-openssl devpkg-libnl
+        swupd bundle-add --skip-diskspace-check wget
+        swupd bundle-add --skip-diskspace-check c-basic
+        swupd bundle-add --skip-diskspace-check devpkg-openssl
+        swupd bundle-add --skip-diskspace-check devpkg-libnl
         install_hostapd
 
         # Install the rest of the packages
-        swupd bundle-add devpkg-libgcrypt devpkg-hwloc devpkg-libpcap
-        # Split it in multiple parts to avoid failure: "Error: Bundle too large by xxxxM"
-        swupd bundle-add devpkg-pcre2 devpkg-sqlite-autoconf git
-        swupd bundle-add ethtool network-basic software-testing
-        swupd bundle-add sysadmin-basic wpa_supplicant os-testsuite
+        swupd bundle-add --skip-diskspace-check devpkg-libgcrypt
+        swupd bundle-add --skip-diskspace-check devpkg-hwloc
+        swupd bundle-add --skip-diskspace-check devpkg-libpcap
+        swupd bundle-add --skip-diskspace-check devpkg-pcre2
+        swupd bundle-add --skip-diskspace-check devpkg-sqlite-autoconf
+        swupd bundle-add --skip-diskspace-check git
+        swupd bundle-add --skip-diskspace-check ethtool
+        swupd bundle-add --skip-diskspace-check network-basic
+        swupd bundle-add --skip-diskspace-check software-testing
+        swupd bundle-add --skip-diskspace-check sysadmin-basic
+        swupd bundle-add --skip-diskspace-check wpa_supplicant
+        swupd bundle-add --skip-diskspace-check os-testsuite
                          
     elif [ "${STEP}" = 'stage2' ]; then
-        # Break it in multiple steps to avoid the issue mentioned above
-        swupd bundle-add libnl openssl devpkg-zlib devpkg-libpcap
-        swupd bundle-add sqlite devpkg-pcre2 hwloc ethtool
-        swupd bundle-add network-basic
-        swupd bundle-add sysadmin-basic python-extras
+        # Break it in multiple steps to avoid 'bundle too large by xxxM'
+        swupd bundle-add --skip-diskspace-check libnl
+        swupd bundle-add --skip-diskspace-check openssl
+        swupd bundle-add --skip-diskspace-check devpkg-zlib
+        swupd bundle-add --skip-diskspace-check devpkg-libpcap
+        swupd bundle-add --skip-diskspace-check sqlite
+        swupd bundle-add --skip-diskspace-check devpkg-pcre2
+        swupd bundle-add --skip-diskspace-check hwloc
+        swupd bundle-add --skip-diskspace-check ethtool
+        swupd bundle-add --skip-diskspace-check network-basic
+        swupd bundle-add --skip-diskspace-check sysadmin-basic
+        swupd bundle-add --skip-diskspace-check python-extras
     fi
 elif [ "${ID}" = 'slackware' ]; then
     echo "[*] Detected Slackware Linux (${VERSION_ID})"
