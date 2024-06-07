@@ -77,6 +77,11 @@ install_cmocka() {
     cd "${CUR_PWD}" || exit
 }
 
+# Check if /etc/os-release exists
+if [ ! -f /etc/os-release ]; then
+    echo "Unsupported distribution"
+    exit 1
+fi
 
 # Load OS info
 # shellcheck source=/dev/null
