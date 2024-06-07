@@ -129,7 +129,7 @@ elif [ "${ID}" = 'arch' ] || [ "${ID_LIKE}" = 'arch' ]; then
                                 pciutils python-graphviz python
     fi
 elif [ "${ID}" = 'alpine' ]; then
-    echo "[*] Detected alpine"
+    echo "[*] Detected alpine (${VERSION_ID})"
     if [ "${STEP}" = 'builder' ]; then
         apk add --no-cache \
             gcc g++ make autoconf automake libtool libnl3-dev openssl-dev ethtool libpcap-dev cmocka-dev \
