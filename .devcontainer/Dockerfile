@@ -45,6 +45,9 @@ RUN apt-get update && \
         cppcheck yamllint pre-commit cpplint nano vim less && \
     rm -rf /var/lib/apt/lists/*
 
+# Symlink for pre-commit
+RUN ln -s /usr/bin/clang-format-14 /usr/local/bin/clang-format
+
 # ActionLint
 RUN if [ "$(dpkg --print-architecture)" = "amd64" ]; then \
         wget -nv https://github.com/rhysd/actionlint/releases/download/v1.7.0/actionlint_1.7.0_linux_amd64.tar.gz -O /usr/local/bin/actionlint; \
