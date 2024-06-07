@@ -11,6 +11,36 @@ elif [ "${STEP}" = 'stage2' ]; then
     echo "[*] Stage2 step"
 fi
 
+install_hwloc() {
+    CUR_PWD=$(pwd)
+    cd /tmp || exit
+    wget https://download.open-mpi.org/release/hwloc/v2.10/hwloc-2.10.0.tar.bz2
+    tar -jxf hwloc-2.10.0.tar.bz2
+    rm hwloc-2.10.0.tar.bz2
+    cd hwloc-2.10.0 || exit
+    ./configure
+    make -j $(nproc)
+    make install
+    cd ..
+    rm -rf hwloc-2.10.0
+    cd ${CUR_PWD} || exit
+}
+
+install_iw() {
+    CUR_PWD=$(pwd)
+    cd /tmp || exit
+    wget https://mirrors.edge.kernel.org/pub/software/network/iw/iw-6.9.tar.xz
+    tar -xf iw-6.9.tar.xz
+    rm iw-6.9.tar.xz
+    cd iw-6.9 || exit
+    make
+    chmod +x iw
+    mv iw /usr/local/sbin
+    cd ..
+    rm -rf iw-6.9
+    cd ${CUR_PWD} || exit
+}
+
 install_hostapd() {
     CUR_PWD=$(pwd)
     cd /tmp || exit
@@ -205,6 +235,34 @@ elif [ "${ID}" = 'clear-linux-os' ]; then
         swupd bundle-add sqlite devpkg-pcre2 hwloc ethtool
         swupd bundle-add network-basic
         swupd bundle-add sysadmin-basic python-extras
+    fi
+elif [ "${ID}" = 'slackware' ]; then
+    echo "[*] Detected Slackware Linux (${VERSION_ID})"
+    slackpkg update
+    if [ "${STEP}" = 'builder' ]; then
+        slackpkg install ca-certificates perl dcron gcc g++ make guile gc wget openssl libnl3 \
+                         binutils glibc flex kernel-headers pkg-config cmake libarchive lz4 libxml2
+        update-ca-certificates -f
+        # Otherwise tests will fail because it cannot open the shared library
+        export LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64
+        install_hostapd
+        install_cmocka
+        install_hwloc
+
+        slackpkg install autoconf automake libtool ethtool libmnl libpcap tcpdump libcap-ng dbus pciutils usbutils expect tcl \
+            screen util-linux sqlite icu4c libedit pcre2 zlib git python3 gawk python-pip wpa_supplicant expat m4
+        pip install setuptools
+    elif [ "${STEP}" = 'stage2' ]; then
+        slackpkg install ca-certificates perl dcron
+        slackpkg install util-linux pciutils usbutils wget iproute2 kmod python3 util-linux python-pip expat ethtool \
+                         libmnl glibc libnl3 sqlite icu4c
+        slackpkg install make guile gc gcc wget kernel-headers pkg-config  glibc binutils
+        update-ca-certificates -f
+        pip install graphviz
+        install_iw
+        slackpkg remove perl dcron make guile gc gcc gcc-brig gcc-g++ gcc-gdc gcc-gfortran gcc-gnat gcc-go gcc-objc \
+                        kernel-headers pkg-config binutils
+        rm -f /var/lib/slackpkg/*
     fi
 else
     echo "[!] Unsupported distro: ${ID} - PR welcome"

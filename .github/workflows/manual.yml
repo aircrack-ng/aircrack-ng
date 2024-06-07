@@ -59,7 +59,8 @@ jobs:
           'oraclelinux:9',
           'fedora:39',
           'fedora:40',
-          'fedora:41'
+          'fedora:41',
+          'aclemons/slackware:15.0'
         ]
     steps:
       -
