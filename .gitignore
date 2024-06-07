@@ -129,3 +129,8 @@ coverage*.info
 *.pidb
 /.vscode/settings.json
 /infer-out/
+node_modules/**
+package.json
+package-lock.json
+scripts/**/*.egg-info/*
+**/*-py3*.egg
