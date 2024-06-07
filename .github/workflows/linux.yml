@@ -185,7 +185,7 @@ jobs:
           export COMPILER_NAME=$(echo ${{ matrix.compiler.cc }} | awk -F- '{print $1}')
           export COMPILER_VERSION=$(echo ${{ matrix.compiler.cc }} | awk -F- '{print $2}')
 
-          if [ ${COMPILER_NAME} = 'clang' ] && [ ${COMPILER_VERSION} -ge 13 ]; then
+          if [ ${COMPILER_NAME} = 'gcc' ] && [ ${COMPILER_VERSION} -ge 13 ]; then
             $SUDO apt-get install software-properties-common -y
             $SUDO add-apt-repository ppa:ubuntu-toolchain-r/test -y
           fi
