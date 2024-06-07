@@ -134,7 +134,7 @@ elif [ "${ID}" = 'alpine' ]; then
         apk add --no-cache \
             gcc g++ make autoconf automake libtool libnl3-dev openssl-dev ethtool libpcap-dev cmocka-dev \
             hostapd wpa_supplicant tcpdump screen iw pkgconf util-linux sqlite-dev pcre2-dev linux-headers \
-            zlib-dev pciutils usbutils expect hwloc-dev git python3 expect gawk bear py3-pip
+            zlib-dev pciutils usbutils expect hwloc-dev git python3 gawk bear py3-pip
     elif [ "${STEP}" = 'stage2' ]; then
         apk add --no-cache \
             libnl3 openssl ethtool libpcap util-linux sqlite-dev pcre2 zlib pciutils usbutils hwloc wget \
