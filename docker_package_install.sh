@@ -77,9 +77,10 @@ install_cmocka() {
     cd "${CUR_PWD}" || exit
 }
 
-# Check if /etc/os-release exists
+# Check if /etc/os-release exists and print error message
+# For example, NixOS container doesn't have one
 if [ ! -f /etc/os-release ]; then
-    echo "Unsupported distribution"
+    echo "Unsupported distribution, /etc/os-release does not exist"
     exit 1
 fi
 
