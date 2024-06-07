@@ -181,14 +181,27 @@ jobs:
         run: |
           SUDO="$([ "$ACT" = "true" ] || echo sudo)"
           $SUDO apt update -q
-          [ ${{ matrix.compiler.cc }} = 'gcc-13' ] && $SUDO apt-get install software-properties-common -y
-          [ ${{ matrix.compiler.cc }} = 'gcc-13' ] && $SUDO add-apt-repository ppa:ubuntu-toolchain-r/test -y
+
           export COMPILER_NAME=$(echo ${{ matrix.compiler.cc }} | awk -F- '{print $1}')
           export COMPILER_VERSION=$(echo ${{ matrix.compiler.cc }} | awk -F- '{print $2}')
+
+          if [ ${COMPILER_NAME} = 'clang' ] && [ ${COMPILER_VERSION} -ge 13 ]; then
+            $SUDO apt-get install software-properties-common -y
+            $SUDO add-apt-repository ppa:ubuntu-toolchain-r/test -y
+          fi
+
+          if [ ${COMPILER_NAME} = 'clang' ] && [ ${COMPILER_VERSION} -ge 16 ]; then
+            $SUDO apt-get install lsb-release wget software-properties-common gnupg -y
+            wget -nv https://apt.llvm.org/llvm.sh
+            chmod +x llvm.sh
+            $SUDO ./llvm.sh ${COMPILER_VERSION}
+          fi
+          if [ -z "$(command -v ${{ matrix.compiler.cc }})" ]; then
+            [ "${COMPILER_NAME}" = 'gcc' ] && $SUDO apt-get install -y ${{ matrix.compiler.cc }} ${{ matrix.compiler.cxx }}
+            [ "${COMPILER_NAME}" = 'clang' ] && $SUDO apt-get install -y ${{ matrix.compiler.cc }}
+          fi
+
           $SUDO apt-get install -y git autoconf automake build-essential ccache ethtool expect hostapd iw lcov libcmocka-dev libgcrypt20-dev libhwloc-dev libnl-3-dev libnl-genl-3-dev libpcap-dev libpcre2-dev libsqlite3-dev libssl-dev libtool pkg-config rfkill screen shtool tcpdump usbutils wpasupplicant zlib1g-dev
-          [ ${COMPILER_NAME} = 'clang' ] && [ ${COMPILER_VERSION} -ge 16 ] && $SUDO apt-get install lsb-release wget software-properties-common gnupg && wget -nv https://apt.llvm.org/llvm.sh && chmod +x llvm.sh && $SUDO ./llvm.sh ${COMPILER_VERSION}
-          [ ${COMPILER_NAME} = 'gcc' ] && $SUDO apt-get install -y ${{ matrix.compiler.cc }} ${{ matrix.compiler.cxx }}
-          [ ${COMPILER_NAME} = 'clang' ] && [ ${COMPILER_VERSION} -lt 16 ] && $SUDO apt-get install -y ${{ matrix.compiler.cc }} ${{ matrix.compiler.cxx }}
 
       - name: Ccache stats before builds
         run: |
