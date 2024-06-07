@@ -37,7 +37,8 @@
         "ms-vscode.cpptools",
         "xaver.clang-format",
         "fnando.linter",
-        "github.vscode-github-actions"
+        "github.vscode-github-actions",
+        "ms-python.python"
       ]
     }
   },
