@@ -60,7 +60,8 @@ jobs:
           'fedora:39',
           'fedora:40',
           'fedora:41',
-          'aclemons/slackware:15.0'
+          'aclemons/slackware:15.0',
+          'gcc:14'
         ]
     steps:
       -
