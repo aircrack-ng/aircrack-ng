@@ -116,7 +116,7 @@ elif [ "${ID}" = 'arch' ] || [ "${ID_LIKE}" = 'arch' ]; then
 	    pacman -Sy --noconfirm libgpg-error gnupg gpgme glibc
         pacman -Sy --noconfirm base-devel libnl openssl ethtool util-linux zlib libpcap sqlite pcre2 hwloc \
                                 cmocka hostapd wpa_supplicant tcpdump screen iw usbutils pciutils expect git \
-                                python python-setuptools
+                                python python-setuptools expat
     elif [ "${STEP}" = 'stage2' ]; then
         pacman -Sy --noconfirm libgpg-error gnupg gpgme glibc
         pacman -Sy --noconfirm libnl openssl ethtool util-linux zlib libpcap sqlite pcre2 hwloc iw usbutils \
