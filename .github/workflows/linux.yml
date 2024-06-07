@@ -146,6 +146,14 @@ jobs:
             cxx: clang++-14
           - cc:  clang-15
             cxx: clang++-15
+          - cc:  clang-16
+            cxx: clang++-16
+          - cc:  clang-17
+            cxx: clang++-17
+          - cc:  clang-18
+            cxx: clang++-18
+          - cc:  clang-19
+            cxx: clang++-19
         flags:
           - name: Gcrypt
             flags: "--with-gcrypt"
@@ -175,7 +183,12 @@ jobs:
           $SUDO apt update -q
           [ ${{ matrix.compiler.cc }} = 'gcc-13' ] && $SUDO apt-get install software-properties-common -y
           [ ${{ matrix.compiler.cc }} = 'gcc-13' ] && $SUDO add-apt-repository ppa:ubuntu-toolchain-r/test -y
-          $SUDO apt-get install -y git ${{ matrix.compiler.cc }} ${{ matrix.compiler.cxx }} autoconf automake build-essential ccache ethtool expect hostapd iw lcov libcmocka-dev libgcrypt20-dev libhwloc-dev libnl-3-dev libnl-genl-3-dev libpcap-dev libpcre2-dev libsqlite3-dev libssl-dev libtool pkg-config rfkill screen shtool tcpdump usbutils wpasupplicant zlib1g-dev
+          export COMPILER_NAME=$(echo ${{ matrix.compiler.cc }} | awk -F- '{print $1}')
+          export COMPILER_VERSION=$(echo ${{ matrix.compiler.cc }} | awk -F- '{print $2}')
+          $SUDO apt-get install -y git autoconf automake build-essential ccache ethtool expect hostapd iw lcov libcmocka-dev libgcrypt20-dev libhwloc-dev libnl-3-dev libnl-genl-3-dev libpcap-dev libpcre2-dev libsqlite3-dev libssl-dev libtool pkg-config rfkill screen shtool tcpdump usbutils wpasupplicant zlib1g-dev
+          [ ${COMPILER_NAME} = 'clang' ] && [ ${COMPILER_VERSION} -ge 16 ] && $SUDO apt-get install lsb-release wget software-properties-common gnupg && wget -nv https://apt.llvm.org/llvm.sh && chmod +x llvm.sh && $SUDO ./llvm.sh ${COMPILER_VERSION}
+          [ ${COMPILER_NAME} = 'gcc' ] && $SUDO apt-get install -y ${{ matrix.compiler.cc }} ${{ matrix.compiler.cxx }}
+          [ ${COMPILER_NAME} = 'clang' ] && [ ${COMPILER_VERSION} -lt 16 ] && $SUDO apt-get install -y ${{ matrix.compiler.cc }} ${{ matrix.compiler.cxx }}
 
       - name: Ccache stats before builds
         run: |
