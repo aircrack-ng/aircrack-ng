@@ -173,6 +173,8 @@ jobs:
         run: |
           SUDO="$([ "$ACT" = "true" ] || echo sudo)"
           $SUDO apt update -q
+          [ ${{ matrix.compiler.cc }} = 'gcc-13' ] && $SUDO apt-get install software-properties-common -y
+          [ ${{ matrix.compiler.cc }} = 'gcc-13' ] && $SUDO add-apt-repository ppa:ubuntu-toolchain-r/test -y
           $SUDO apt-get install -y git ${{ matrix.compiler.cc }} ${{ matrix.compiler.cxx }} autoconf automake build-essential ccache ethtool expect hostapd iw lcov libcmocka-dev libgcrypt20-dev libhwloc-dev libnl-3-dev libnl-genl-3-dev libpcap-dev libpcre2-dev libsqlite3-dev libssl-dev libtool pkg-config rfkill screen shtool tcpdump usbutils wpasupplicant zlib1g-dev
 
       - name: Ccache stats before builds
