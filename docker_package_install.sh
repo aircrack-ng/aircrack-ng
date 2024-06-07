@@ -2,14 +2,51 @@
 
 echo "[*] Installing packages"
 STEP=$1
-if [ -z "$STEP" ]; then
+if [ -z "${STEP}" ]; then
     echo "[!] Must specify 'builder' or 'stage2' as arguments"
     exit 1
-elif [ "$STEP" = 'builder' ]; then
+elif [ "${STEP}" = 'builder' ]; then
     echo "[*] Builder step"
-elif [ "$STEP" = 'stage2' ]; then
+elif [ "${STEP}" = 'stage2' ]; then
     echo "[*] Stage2 step"
 fi
+
+install_hostapd() {
+    CUR_PWD=$(pwd)
+    cd /tmp || exit
+    wget https://w1.fi/releases/hostapd-2.10.tar.gz
+    tar -zxf hostapd-2.10.tar.gz
+    rm hostapd-2.10.tar.gz
+    cd hostapd-2.10/hostapd || exit 1
+    cp defconfig .config
+    make
+    make install
+    hostapd -v
+    cd ../..
+    rm -rf hostapd-2.10
+    cd ${CUR_PWD} || exit
+}
+
+install_cmocka() {
+    CUR_PWD=$(pwd)
+    cd /tmp || exit
+    wget https://cmocka.org/files/1.0/cmocka-1.0.1.tar.xz
+    tar -xf cmocka-1.0.1.tar.xz
+    rm cmocka-1.0.1.tar.xz
+    cd cmocka-1.0.1 || exit
+    mkdir build
+    cd build || exit
+    cmake ..
+    make
+    make install
+    # Otherwise tests will fail because it cannot open the shared library
+    #export LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64
+    ldconfig
+    cd ../..
+    rm -rf cmocka-1.0.1
+    cd ${CUR_PWD} || exit
+}
+
 
 # Load OS info
 # shellcheck source=/dev/null
@@ -92,18 +129,8 @@ elif [ "${ID}" = 'fedora' ] || [ "${ID}" = 'almalinux' ] || [ "${ID}" = 'rocky' 
             CMOCKA=""
             ${DNF_BIN} distro-sync -y --refresh
 
-            cd /tmp || exit
-            curl https://cmocka.org/files/1.0/cmocka-1.0.1.tar.xz -o cmocka-1.0.1.tar.xz
-            tar -xf cmocka-1.0.1.tar.xz
-            cd cmocka-1.0.1 || exit
-            mkdir build
-            cd build || exit
-            cmake ..
-            make
-            make install
-            # Otherwise tests will fail because it cannot open the shared library
             export LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64
-            ldconfig
+            install_cmocka
             cd / || exit
         fi
 
@@ -163,13 +190,7 @@ elif [ "${ID}" = 'clear-linux-os' ]; then
     if [ "${STEP}" = 'builder' ]; then
         # Build hostapd
         swupd bundle-add wget c-basic devpkg-openssl devpkg-libnl
-        wget https://w1.fi/releases/hostapd-2.10.tar.gz
-        tar -zxf hostapd-2.10.tar.gz
-        cd hostapd-2.10/hostapd || exit 1
-        cp defconfig .config
-        make
-        make install
-        hostapd -v
+        install_hostapd
 
         # Install the rest of the packages
         swupd bundle-add devpkg-libgcrypt devpkg-hwloc devpkg-libpcap
