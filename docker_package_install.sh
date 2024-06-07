@@ -153,7 +153,7 @@ elif [ "${ID}" = 'fedora' ] || [ "${ID}" = 'almalinux' ] || [ "${ID}" = 'rocky' 
         elif [ "${ID}" = 'ol' ]; then
             echo "[*] Install EPEL"
             ${DNF_BIN} install epel-release dnf-plugins-core -y
-            ${DNF_BIN} install xz cmake gcc -y
+            ${DNF_BIN} install xz cmake gcc wget -y
             LIBPCAP=libpcap
             # We're installing cmocka manually, not present in repos
             CMOCKA=""
