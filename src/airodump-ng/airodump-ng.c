@@ -4773,8 +4773,8 @@ static THREAD_ENTRY(gps_tracker_thread)
 
 				// Send ?WATCH={"json":true};
 				memset(line, 0, sizeof(line));
-				strcpy(line, "?WATCH={\"enable\":true,\"json\":true};\n");
-				if (send(gpsd_sock, line, 22, 0) != 22) continue;
+				strcpy(line, "?WATCH={\"json\":true}\n");
+				if (send(gpsd_sock, line, 21, 0) != 21) continue;
 			}
 		}
 		else if (is_json < 0)
