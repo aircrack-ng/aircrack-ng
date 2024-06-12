@@ -405,6 +405,7 @@ int dump_write_csv(struct AP_info * ap_1st,
 	return (0);
 }
 
+
 int dump_write_airodump_ng_logcsv_add_ap(const struct AP_info * ap_cur,
 										 const int32_t ri_power,
 										 struct tm * tm_gpstime,
@@ -659,6 +660,314 @@ char * get_manufacturer_from_string(char * buffer)
 
 	return (manuf);
 }
+
+int dump_write_json(struct AP_info * ap_1st,
+				   struct ST_info * st_1st,
+				   unsigned int f_encrypt)
+{
+	int i, probes_written;
+	struct tm * ltime;
+	struct AP_info * ap_cur;
+	struct ST_info * st_cur;
+	char * temp;
+  char * manuf;
+
+	if (!opt.record_data || !opt.output_format_json) return (0);
+
+	fseek(opt.f_json, 0, SEEK_SET);
+
+	ap_cur = ap_1st;
+
+	while (ap_cur != NULL)
+	{
+		if (memcmp(ap_cur->bssid, BROADCAST, 6) == 0)
+		{
+			ap_cur = ap_cur->next;
+			continue;
+		}
+
+		if (ap_cur->security != 0 && f_encrypt != 0
+			&& ((ap_cur->security & f_encrypt) == 0))
+		{
+			ap_cur = ap_cur->next;
+			continue;
+		}
+
+		if (is_filtered_essid(ap_cur->essid))
+		{
+			ap_cur = ap_cur->next;
+			continue;
+		}
+
+    fprintf( opt.f_json,
+             "{\"BSSID\":\"%02X:%02X:%02X:%02X:%02X:%02X\", ",
+             ap_cur->bssid[0],
+             ap_cur->bssid[1],
+             ap_cur->bssid[2],
+             ap_cur->bssid[3],
+             ap_cur->bssid[4],
+             ap_cur->bssid[5] );
+    
+
+		ltime = localtime(&ap_cur->tinit);
+    
+    fprintf( opt.f_json,
+             "\"FirstTimeSeen\":\"%04d-%02d-%02d %02d:%02d:%02d\", ",
+             1900 + ltime->tm_year,
+             1 + ltime->tm_mon,
+             ltime->tm_mday,
+             ltime->tm_hour,
+             ltime->tm_min,
+             ltime->tm_sec );
+    
+		ltime = localtime(&ap_cur->tlast);
+    
+    fprintf( opt.f_json,
+             "\"LastTimeSeen\":\"%04d-%02d-%02d %02d:%02d:%02d\", ",
+             1900 + ltime->tm_year,
+             1 + ltime->tm_mon,
+             ltime->tm_mday,
+             ltime->tm_hour,
+             ltime->tm_min,
+             ltime->tm_sec );
+
+
+    fprintf( opt.f_json,
+             "\"channel\":%2d, \"max_speed\":\"%3d\",",
+             ap_cur->channel,
+             ap_cur->max_speed );  
+
+    fprintf( opt.f_json, "\"Privacy\":");
+
+		if ((ap_cur->security & (STD_OPN | STD_WEP | STD_WPA | STD_WPA2)) == 0)
+        fprintf(opt.f_json, "\"\"" );
+		else
+		{
+        fprintf( opt.f_json, "\"" );
+        if (ap_cur->security & STD_WPA2)
+        {
+            if (ap_cur->security & AUTH_SAE || ap_cur->security & AUTH_OWE)
+                fprintf(opt.f_json, "WPA3");
+            fprintf(opt.f_json, "WPA2");
+        }
+        if (ap_cur->security & STD_WPA) fprintf(opt.f_json, " WPA");
+        if (ap_cur->security & STD_WEP) fprintf(opt.f_json, " WEP");
+        if (ap_cur->security & STD_OPN) fprintf(opt.f_json, " OPN");
+        fprintf( opt.f_json, "\"" );
+		}
+
+		fprintf(opt.f_json, ",");
+
+		if ((ap_cur->security & ENC_FIELD) == 0)
+        fprintf( opt.f_json, "\"Cipher\":\"\" ");
+		else
+		{
+      fprintf( opt.f_json, " \"Cipher\":\"" );
+			if (ap_cur->security & ENC_CCMP) fprintf(opt.f_json, "CCMP");
+			if (ap_cur->security & ENC_WRAP) fprintf(opt.f_json, "WRAP");
+			if (ap_cur->security & ENC_TKIP) fprintf(opt.f_json, "TKIP");
+			if (ap_cur->security & ENC_WEP104) fprintf(opt.f_json, "WEP104");
+			if (ap_cur->security & ENC_WEP40) fprintf(opt.f_json, "WEP40");
+			if (ap_cur->security & ENC_WEP) fprintf(opt.f_json, "WEP");
+			if (ap_cur->security & ENC_GCMP) fprintf(opt.f_json, "GCMP");
+			if (ap_cur->security & ENC_GMAC) fprintf(opt.f_json, "GMAC");
+      fprintf( opt.f_json, "\"");
+		}
+
+		fprintf(opt.f_json, ",");
+
+		if ((ap_cur->security & AUTH_FIELD) == 0)
+        fprintf( opt.f_json, " \"Authentication\":\"\"");
+		else
+		{
+      fprintf( opt.f_json, " \"Authentication\":\"" );        
+			if (ap_cur->security & AUTH_SAE) fprintf(opt.f_json, "SAE");
+			if (ap_cur->security & AUTH_MGT) fprintf(opt.f_json, "MGT");
+			if (ap_cur->security & AUTH_CMAC) fprintf(opt.f_json, "CMAC");
+			if (ap_cur->security & AUTH_PSK)
+			{
+				if (ap_cur->security & STD_WEP)
+					fprintf(opt.f_json, "SKA");
+				else
+					fprintf(opt.f_json, "PSK");
+			}
+			if (ap_cur->security & AUTH_OWE) fprintf(opt.f_json, "OWE");
+			if (ap_cur->security & AUTH_OPN) fprintf(opt.f_json, "OPN");
+      fprintf( opt.f_json, "\"");      
+		}
+
+    fprintf( opt.f_json,
+             ", \"Power\":%3d, \"#beacons\":%8ld,\"#IV\":%8ld, ",
+             ap_cur->avg_power,
+             ap_cur->nb_bcn,
+             ap_cur->nb_data);
+    
+    fprintf( opt.f_json,
+             "\"LANIP\":\"%3d.%3d.%3d.%3d\", ",
+             ap_cur->lanip[0],
+             ap_cur->lanip[1],
+             ap_cur->lanip[2],
+             ap_cur->lanip[3]);
+
+    fprintf( opt.f_json, "\"ID-length\":%3d, ", ap_cur->ssid_length);
+
+		if (verifyssid(ap_cur->essid))
+      fprintf( opt.f_json, "\"ESSID\":\"%s\", ", ap_cur->essid );
+		else
+		{
+			temp = format_text_for_csv(ap_cur->essid,
+									   (size_t) ap_cur->ssid_length);
+			if (temp != NULL) //-V547
+			{
+        fprintf(opt.f_json, "\"ESSID\":\"%s\", ", temp );
+				free(temp);
+			}
+		}
+
+		if (ap_cur->key != NULL)
+		{
+      fprintf( opt.f_json, "\"Key\":\"");
+			for (i = 0; i < (int) strlen(ap_cur->key); i++)
+			{
+        fprintf(opt.f_json, "%02X", ap_cur->key[i]);
+				if (i < (int) (strlen(ap_cur->key) - 1))
+					fprintf(opt.f_json, ":");
+			}
+      fprintf(opt.f_json, "\",");
+		}
+
+    manuf	= sanitize_xml((unsigned char *) ap_cur->manuf, strlen(ap_cur->manuf));
+    fprintf(opt.f_json,"\"Manufacturer\":\"%s\", ",(manuf != NULL) ? manuf : "Unknown");
+    free(manuf);
+       
+    //terminate json AP data
+    fprintf(opt.f_json,"\"wlan_type\":\"AP\",\"timestamp\":\"%d\"}",(int)time(NULL));
+    fprintf(opt.f_json, "\r\n");
+    
+    fflush(opt.f_json);
+
+		ap_cur = ap_cur->next;
+	}
+
+  //append STA info
+  
+	st_cur = st_1st;
+	while (st_cur != NULL)
+	{
+		ap_cur = st_cur->base;
+
+		if (ap_cur->nb_pkt < 2)
+		{
+			st_cur = st_cur->next;
+			continue;
+		}
+
+    fprintf(opt.f_json,
+            "{\"StationMAC\":\"%02X:%02X:%02X:%02X:%02X:%02X\", ",
+            st_cur->stmac[0],
+            st_cur->stmac[1],
+            st_cur->stmac[2],
+            st_cur->stmac[3],
+            st_cur->stmac[4],
+            st_cur->stmac[5] );
+
+		ltime = localtime(&st_cur->tinit);
+
+    fprintf(opt.f_json,
+            "\"FirstTimeSeen\":\"%04d-%02d-%02d %02d:%02d:%02d\", ",
+            1900 + ltime->tm_year,
+            1 + ltime->tm_mon,
+            ltime->tm_mday,
+            ltime->tm_hour,
+            ltime->tm_min,
+            ltime->tm_sec );
+    
+		ltime = localtime(&st_cur->tlast);
+
+    fprintf(opt.f_json,
+            "\"LastTimeSeen\":\"%04d-%02d-%02d %02d:%02d:%02d\", ",
+            1900 + ltime->tm_year,
+            1 + ltime->tm_mon,
+            ltime->tm_mday,
+            ltime->tm_hour,
+            ltime->tm_min,
+            ltime->tm_sec );
+
+    fprintf(opt.f_json,
+             "\"Power\":%3d, \"#packets\":%8ld, ",
+             st_cur->power,
+             st_cur->nb_pkt );
+
+
+
+		if (!memcmp(ap_cur->bssid, BROADCAST, 6))
+      fprintf(opt.f_json, "\"BSSID\":\"(not associated)\" ," );
+		else
+        fprintf(opt.f_json,
+                 "\"BSSID\":\"%02X:%02X:%02X:%02X:%02X:%02X\",",
+                ap_cur->bssid[0],
+                ap_cur->bssid[1],
+                ap_cur->bssid[2],
+                ap_cur->bssid[3],
+                ap_cur->bssid[4],
+                ap_cur->bssid[5] );
+
+    //add ESSID  
+    fprintf(opt.f_json,"\"ESSID\":\"%s\", ",ap_cur->essid);
+
+		probes_written = 0;
+    fprintf(opt.f_json, "\"ProbedESSIDs\":\"");
+		for (i = 0; i < NB_PRB; i++)
+		{
+			if (st_cur->ssid_length[i] == 0) continue;
+
+			if (verifyssid((const unsigned char *) st_cur->probes[i]))
+			{
+				temp = (char *) calloc(
+					1, (st_cur->ssid_length[i] + 1) * sizeof(char));
+				ALLEGE(temp != NULL);
+				memcpy(temp, st_cur->probes[i], st_cur->ssid_length[i] + 1u);
+			}
+			else
+			{
+				temp = format_text_for_csv((unsigned char *) st_cur->probes[i],
+										   (size_t) st_cur->ssid_length[i]);
+				ALLEGE(temp != NULL); //-V547
+			}
+
+			if (probes_written == 0)
+			{
+        fprintf(opt.f_json, "%s", temp);
+				probes_written = 1;
+			}
+			else
+			{
+        fprintf(opt.f_json, ",%s", temp);
+			}
+
+			free(temp);
+		}
+    fprintf(opt.f_json, "\",");
+
+    //add manufacturer for STA
+    manuf	= sanitize_xml((unsigned char *) ap_cur->manuf, strlen(st_cur->manuf));
+    fprintf(opt.f_json,"\"Manufacturer\":\"%s\", ",(manuf != NULL) ? manuf : "Unknown");
+    free(manuf);
+
+    //terminate json client data
+    fprintf(opt.f_json,"\"wlan_type\":\"CL\",\"timestamp\":\"%d\"}",(int)time(NULL));
+    fprintf(opt.f_json, "\r\n" );
+    fflush(opt.f_json);
+
+		st_cur = st_cur->next;
+	}
+
+	fflush(opt.f_json);
+
+	return (0);
+}
+
+
 
 #define KISMET_NETXML_HEADER_BEGIN                                             \
 	"<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n<!DOCTYPE "              \
