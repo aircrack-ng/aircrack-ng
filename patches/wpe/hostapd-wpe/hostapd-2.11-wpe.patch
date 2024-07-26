@@ -1,6 +1,6 @@
-diff '--color=auto' -rupN hostapd-2.10/hostapd/.config hostapd-2.10-wpe/hostapd/.config
---- hostapd-2.10/hostapd/.config	1970-01-01 00:00:00.000000000 +0000
-+++ hostapd-2.10-wpe/hostapd/.config	2022-02-22 00:00:00.356000000 +0000
+diff '--color=auto' -rupN hostapd-2.11/hostapd/.config hostapd-2.11-wpe/hostapd/.config
+--- hostapd-2.11/hostapd/.config	1970-01-01 00:00:00.000000000 +0000
++++ hostapd-2.11-wpe/hostapd/.config	2024-07-26 09:11:33.196000000 +0000
 @@ -0,0 +1,416 @@
 +# Wireless Pawn Edition HostAPd configuration file
 +#
@@ -418,24 +418,24 @@ diff '--color=auto' -rupN hostapd-2.10/hostapd/.config hostapd-2.10-wpe/hostapd/
 +
 +# Forgotten/lost somewhere
 +CONFIG_SAE=y
-diff '--color=auto' -rupN hostapd-2.10/hostapd/Makefile hostapd-2.10-wpe/hostapd/Makefile
---- hostapd-2.10/hostapd/Makefile	2022-01-16 20:51:29.000000000 +0000
-+++ hostapd-2.10-wpe/hostapd/Makefile	2022-02-21 23:29:30.104000000 +0000
+diff '--color=auto' -rupN hostapd-2.11/hostapd/Makefile hostapd-2.11-wpe/hostapd/Makefile
+--- hostapd-2.11/hostapd/Makefile	2024-07-20 18:04:37.000000000 +0000
++++ hostapd-2.11-wpe/hostapd/Makefile	2024-07-26 12:17:15.692000000 +0000
 @@ -1,4 +1,4 @@
 -ALL=hostapd hostapd_cli
 +ALL=hostapd-wpe hostapd_cli-wpe
  CONFIG_FILE = .config
  
  include ../src/build.rules
-@@ -84,6 +84,7 @@ OBJS += ../src/ap/beacon.o
- OBJS += ../src/ap/bss_load.o
+@@ -85,6 +85,7 @@ OBJS += ../src/ap/bss_load.o
  OBJS += ../src/ap/neighbor_db.o
  OBJS += ../src/ap/rrm.o
+ OBJS += ../src/common/ptksa_cache.o
 +OBJS += ../src/wpe/wpe.o
  
  OBJS_c = hostapd_cli.o
  OBJS_c += ../src/common/wpa_ctrl.o
-@@ -1277,11 +1278,20 @@ $(DESTDIR)$(BINDIR)/%: %
+@@ -1303,11 +1304,20 @@ $(DESTDIR)$(BINDIR)/%: %
  
  install: $(addprefix $(DESTDIR)$(BINDIR)/,$(ALL))
  
@@ -458,7 +458,7 @@ diff '--color=auto' -rupN hostapd-2.10/hostapd/Makefile hostapd-2.10-wpe/hostapd
  	@$(E) "  LD " $@
  
  ifdef CONFIG_WPA_TRACE
-@@ -1291,8 +1301,8 @@ endif
+@@ -1317,8 +1327,8 @@ endif
  _OBJS_VAR := OBJS_c
  include ../src/objs.mk
  
@@ -469,10 +469,9 @@ diff '--color=auto' -rupN hostapd-2.10/hostapd/Makefile hostapd-2.10-wpe/hostapd
  	@$(E) "  LD " $@
  
  NOBJS = nt_password_hash.o ../src/crypto/ms_funcs.o $(SHA1OBJS)
-
-diff '--color=auto' -rupN hostapd-2.10/hostapd/certs/Makefile hostapd-2.10-wpe/hostapd/certs/Makefile
---- hostapd-2.10/hostapd/certs/Makefile	1970-01-01 00:00:00.000000000 +0000
-+++ hostapd-2.10-wpe/hostapd/certs/Makefile	2022-02-21 23:29:30.100000000 +0000
+diff '--color=auto' -rupN hostapd-2.11/hostapd/certs/Makefile hostapd-2.11-wpe/hostapd/certs/Makefile
+--- hostapd-2.11/hostapd/certs/Makefile	1970-01-01 00:00:00.000000000 +0000
++++ hostapd-2.11-wpe/hostapd/certs/Makefile	2024-07-26 09:11:33.200000000 +0000
 @@ -0,0 +1,145 @@
 +######################################################################
 +#
@@ -619,9 +618,9 @@ diff '--color=auto' -rupN hostapd-2.10/hostapd/certs/Makefile hostapd-2.10-wpe/h
 +destroycerts:
 +	rm -f *~ dh *.csr *.crt *.p12 *.der *.pem *.key index.txt* \
 +			serial*  *\.0 *\.1
-diff '--color=auto' -rupN hostapd-2.10/hostapd/certs/README hostapd-2.10-wpe/hostapd/certs/README
---- hostapd-2.10/hostapd/certs/README	1970-01-01 00:00:00.000000000 +0000
-+++ hostapd-2.10-wpe/hostapd/certs/README	2022-02-21 23:29:30.100000000 +0000
+diff '--color=auto' -rupN hostapd-2.11/hostapd/certs/README hostapd-2.11-wpe/hostapd/certs/README
+--- hostapd-2.11/hostapd/certs/README	1970-01-01 00:00:00.000000000 +0000
++++ hostapd-2.11-wpe/hostapd/certs/README	2024-07-26 09:11:33.200000000 +0000
 @@ -0,0 +1,226 @@
 +  This directory contains scripts to create the server certificates.
 +To make a set of default (i.e. test) certificates, simply type:
@@ -849,9 +848,9 @@ diff '--color=auto' -rupN hostapd-2.10/hostapd/certs/README hostapd-2.10-wpe/hos
 +change the "ca.cnf", "server.cnf", and "client.cnf" files to specify
 +the use of SHA1 for the certificates. To do this, change the
 +'default_md' entry in those files from 'md5' to 'sha1'.
-diff '--color=auto' -rupN hostapd-2.10/hostapd/certs/README.wpe hostapd-2.10-wpe/hostapd/certs/README.wpe
---- hostapd-2.10/hostapd/certs/README.wpe	1970-01-01 00:00:00.000000000 +0000
-+++ hostapd-2.10-wpe/hostapd/certs/README.wpe	2022-02-21 23:29:30.100000000 +0000
+diff '--color=auto' -rupN hostapd-2.11/hostapd/certs/README.wpe hostapd-2.11-wpe/hostapd/certs/README.wpe
+--- hostapd-2.11/hostapd/certs/README.wpe	1970-01-01 00:00:00.000000000 +0000
++++ hostapd-2.11-wpe/hostapd/certs/README.wpe	2024-07-26 09:11:33.200000000 +0000
 @@ -0,0 +1,13 @@
 +# Certificate creation for Hostapd-WPE #
 +########################################
@@ -866,9 +865,9 @@ diff '--color=auto' -rupN hostapd-2.10/hostapd/certs/README.wpe hostapd-2.10-wpe
 +- Windows 10 (and possibly any Windows starting from Vista) will fail EAP
 +   if certificates signed with MD5 are used. 
 +- Generated certificates used a SHA256 signature.
-diff '--color=auto' -rupN hostapd-2.10/hostapd/certs/bootstrap hostapd-2.10-wpe/hostapd/certs/bootstrap
---- hostapd-2.10/hostapd/certs/bootstrap	1970-01-01 00:00:00.000000000 +0000
-+++ hostapd-2.10-wpe/hostapd/certs/bootstrap	2022-02-21 23:29:30.100000000 +0000
+diff '--color=auto' -rupN hostapd-2.11/hostapd/certs/bootstrap hostapd-2.11-wpe/hostapd/certs/bootstrap
+--- hostapd-2.11/hostapd/certs/bootstrap	1970-01-01 00:00:00.000000000 +0000
++++ hostapd-2.11-wpe/hostapd/certs/bootstrap	2024-07-26 09:11:33.200000000 +0000
 @@ -0,0 +1,82 @@
 +#!/bin/sh
 +#
@@ -952,9 +951,9 @@ diff '--color=auto' -rupN hostapd-2.10/hostapd/certs/bootstrap hostapd-2.10-wpe/
 +if [ ! -f client.crt ]; then
 +  openssl ca -batch -keyfile ca.key -cert ca.pem -in client.csr  -key `grep output_password ca.cnf | sed 's/.*=//;s/^ *//'` -out client.crt -extensions xpclient_ext -extfile xpextensions -config ./client.cnf
 +fi
-diff '--color=auto' -rupN hostapd-2.10/hostapd/certs/ca.cnf hostapd-2.10-wpe/hostapd/certs/ca.cnf
---- hostapd-2.10/hostapd/certs/ca.cnf	1970-01-01 00:00:00.000000000 +0000
-+++ hostapd-2.10-wpe/hostapd/certs/ca.cnf	2022-02-21 23:29:30.100000000 +0000
+diff '--color=auto' -rupN hostapd-2.11/hostapd/certs/ca.cnf hostapd-2.11-wpe/hostapd/certs/ca.cnf
+--- hostapd-2.11/hostapd/certs/ca.cnf	1970-01-01 00:00:00.000000000 +0000
++++ hostapd-2.11-wpe/hostapd/certs/ca.cnf	2024-07-26 09:11:33.200000000 +0000
 @@ -0,0 +1,62 @@
 +[ ca ]
 +default_ca		= CA_default
@@ -1018,9 +1017,9 @@ diff '--color=auto' -rupN hostapd-2.10/hostapd/certs/ca.cnf hostapd-2.10-wpe/hos
 +basicConstraints	= critical,CA:true
 +crlDistributionPoints	= URI:http://www.example.org/example_ca.crl
 +
-diff '--color=auto' -rupN hostapd-2.10/hostapd/certs/client.cnf hostapd-2.10-wpe/hostapd/certs/client.cnf
---- hostapd-2.10/hostapd/certs/client.cnf	1970-01-01 00:00:00.000000000 +0000
-+++ hostapd-2.10-wpe/hostapd/certs/client.cnf	2022-02-21 23:29:30.100000000 +0000
+diff '--color=auto' -rupN hostapd-2.11/hostapd/certs/client.cnf hostapd-2.11-wpe/hostapd/certs/client.cnf
+--- hostapd-2.11/hostapd/certs/client.cnf	1970-01-01 00:00:00.000000000 +0000
++++ hostapd-2.11-wpe/hostapd/certs/client.cnf	2024-07-26 09:11:33.200000000 +0000
 @@ -0,0 +1,53 @@
 +[ ca ]
 +default_ca		= CA_default
@@ -1075,9 +1074,9 @@ diff '--color=auto' -rupN hostapd-2.10/hostapd/certs/client.cnf hostapd-2.10-wpe
 +organizationName	= Example Inc.
 +emailAddress		= user@example.org
 +commonName		= user@example.org
-diff '--color=auto' -rupN hostapd-2.10/hostapd/certs/demoCA/cacert.pem hostapd-2.10-wpe/hostapd/certs/demoCA/cacert.pem
---- hostapd-2.10/hostapd/certs/demoCA/cacert.pem	1970-01-01 00:00:00.000000000 +0000
-+++ hostapd-2.10-wpe/hostapd/certs/demoCA/cacert.pem	2022-02-21 23:29:30.100000000 +0000
+diff '--color=auto' -rupN hostapd-2.11/hostapd/certs/demoCA/cacert.pem hostapd-2.11-wpe/hostapd/certs/demoCA/cacert.pem
+--- hostapd-2.11/hostapd/certs/demoCA/cacert.pem	1970-01-01 00:00:00.000000000 +0000
++++ hostapd-2.11-wpe/hostapd/certs/demoCA/cacert.pem	2024-07-26 09:11:33.200000000 +0000
 @@ -0,0 +1,22 @@
 +-----BEGIN CERTIFICATE-----
 +MIIDtjCCAx+gAwIBAgIBADANBgkqhkiG9w0BAQQFADCBnzELMAkGA1UEBhMCQ0Ex
@@ -1101,9 +1100,9 @@ diff '--color=auto' -rupN hostapd-2.10/hostapd/certs/demoCA/cacert.pem hostapd-2
 +UHcE5LwJeeT2CsOtnug+bzRzaSKdH3cim6LpgjWdpWMCSgAWPbptbJhsC60or4UT
 +L/jw12UBvxt8Lf9ljOHmLAGZe25k4+jUNzNUzpkShHZRU5BjuFu8VIXF
 +-----END CERTIFICATE-----
-diff '--color=auto' -rupN hostapd-2.10/hostapd/certs/server.cnf hostapd-2.10-wpe/hostapd/certs/server.cnf
---- hostapd-2.10/hostapd/certs/server.cnf	1970-01-01 00:00:00.000000000 +0000
-+++ hostapd-2.10-wpe/hostapd/certs/server.cnf	2022-02-21 23:29:30.100000000 +0000
+diff '--color=auto' -rupN hostapd-2.11/hostapd/certs/server.cnf hostapd-2.11-wpe/hostapd/certs/server.cnf
+--- hostapd-2.11/hostapd/certs/server.cnf	1970-01-01 00:00:00.000000000 +0000
++++ hostapd-2.11-wpe/hostapd/certs/server.cnf	2024-07-26 09:11:33.200000000 +0000
 @@ -0,0 +1,54 @@
 +[ ca ]
 +default_ca		= CA_default
@@ -1159,9 +1158,9 @@ diff '--color=auto' -rupN hostapd-2.10/hostapd/certs/server.cnf hostapd-2.10-wpe
 +emailAddress		= admin@example.org
 +commonName		= "Example Server Certificate"
 +
-diff '--color=auto' -rupN hostapd-2.10/hostapd/certs/xpextensions hostapd-2.10-wpe/hostapd/certs/xpextensions
---- hostapd-2.10/hostapd/certs/xpextensions	1970-01-01 00:00:00.000000000 +0000
-+++ hostapd-2.10-wpe/hostapd/certs/xpextensions	2022-02-21 23:29:30.100000000 +0000
+diff '--color=auto' -rupN hostapd-2.11/hostapd/certs/xpextensions hostapd-2.11-wpe/hostapd/certs/xpextensions
+--- hostapd-2.11/hostapd/certs/xpextensions	1970-01-01 00:00:00.000000000 +0000
++++ hostapd-2.11-wpe/hostapd/certs/xpextensions	2024-07-26 09:11:33.200000000 +0000
 @@ -0,0 +1,24 @@
 +#
 +#  File containing the OIDs required for Windows.
@@ -1187,9 +1186,9 @@ diff '--color=auto' -rupN hostapd-2.10/hostapd/certs/xpextensions hostapd-2.10-w
 +#  to generate these certs.
 +#
 +# 1.3.6.1.4.1.311.17.2
-diff '--color=auto' -rupN hostapd-2.10/hostapd/config_file.c hostapd-2.10-wpe/hostapd/config_file.c
---- hostapd-2.10/hostapd/config_file.c	2022-01-16 20:51:29.000000000 +0000
-+++ hostapd-2.10-wpe/hostapd/config_file.c	2022-02-21 23:29:30.100000000 +0000
+diff '--color=auto' -rupN hostapd-2.11/hostapd/config_file.c hostapd-2.11-wpe/hostapd/config_file.c
+--- hostapd-2.11/hostapd/config_file.c	2024-07-20 18:04:37.000000000 +0000
++++ hostapd-2.11-wpe/hostapd/config_file.c	2024-07-26 09:11:33.200000000 +0000
 @@ -24,7 +24,7 @@
  #include "ap/wpa_auth.h"
  #include "ap/ap_config.h"
@@ -1199,7 +1198,7 @@ diff '--color=auto' -rupN hostapd-2.10/hostapd/config_file.c hostapd-2.10-wpe/ho
  
  #ifndef CONFIG_NO_VLAN
  static int hostapd_config_read_vlan_file(struct hostapd_bss_config *bss,
-@@ -2493,6 +2493,22 @@ static int hostapd_config_fill(struct ho
+@@ -2606,6 +2606,22 @@ static int hostapd_config_fill(struct ho
  		}
  		bss->eapol_version = eapol_version;
  		wpa_printf(MSG_DEBUG, "eapol_version=%d", bss->eapol_version);
@@ -1222,9 +1221,9 @@ diff '--color=auto' -rupN hostapd-2.10/hostapd/config_file.c hostapd-2.10-wpe/ho
  #ifdef EAP_SERVER
  	} else if (os_strcmp(buf, "eap_authenticator") == 0) {
  		bss->eap_server = atoi(pos);
-diff '--color=auto' -rupN hostapd-2.10/hostapd/hostapd-wpe.conf hostapd-2.10-wpe/hostapd/hostapd-wpe.conf
---- hostapd-2.10/hostapd/hostapd-wpe.conf	1970-01-01 00:00:00.000000000 +0000
-+++ hostapd-2.10-wpe/hostapd/hostapd-wpe.conf	2022-02-21 23:29:30.100000000 +0000
+diff '--color=auto' -rupN hostapd-2.11/hostapd/hostapd-wpe.conf hostapd-2.11-wpe/hostapd/hostapd-wpe.conf
+--- hostapd-2.11/hostapd/hostapd-wpe.conf	1970-01-01 00:00:00.000000000 +0000
++++ hostapd-2.11-wpe/hostapd/hostapd-wpe.conf	2024-07-26 09:11:33.200000000 +0000
 @@ -0,0 +1,2042 @@
 +# Configuration file for hostapd-wpe
 +
@@ -3268,9 +3267,9 @@ diff '--color=auto' -rupN hostapd-2.10/hostapd/hostapd-wpe.conf hostapd-2.10-wpe
 +#bss=wlan0_1
 +#bssid=00:13:10:95:fe:0b
 +# ...
-diff '--color=auto' -rupN hostapd-2.10/hostapd/hostapd-wpe.eap_user hostapd-2.10-wpe/hostapd/hostapd-wpe.eap_user
---- hostapd-2.10/hostapd/hostapd-wpe.eap_user	1970-01-01 00:00:00.000000000 +0000
-+++ hostapd-2.10-wpe/hostapd/hostapd-wpe.eap_user	2022-02-21 23:29:30.104000000 +0000
+diff '--color=auto' -rupN hostapd-2.11/hostapd/hostapd-wpe.eap_user hostapd-2.11-wpe/hostapd/hostapd-wpe.eap_user
+--- hostapd-2.11/hostapd/hostapd-wpe.eap_user	1970-01-01 00:00:00.000000000 +0000
++++ hostapd-2.11-wpe/hostapd/hostapd-wpe.eap_user	2024-07-26 09:11:33.200000000 +0000
 @@ -0,0 +1,107 @@
 +# hostapd user database for integrated EAP server
 +
@@ -3379,10 +3378,10 @@ diff '--color=auto' -rupN hostapd-2.10/hostapd/hostapd-wpe.eap_user hostapd-2.10
 +# WPE - DO NOT REMOVE - These entries are specifically in here 
 +*		PEAP,TTLS,TLS,FAST
 +"t"	    TTLS-PAP,TTLS-CHAP,TTLS-MSCHAP,MSCHAPV2,MD5,GTC,TTLS,TTLS-MSCHAPV2  "t"	[2]
-diff '--color=auto' -rupN hostapd-2.10/hostapd/main.c hostapd-2.10-wpe/hostapd/main.c
---- hostapd-2.10/hostapd/main.c	2022-01-16 20:51:29.000000000 +0000
-+++ hostapd-2.10-wpe/hostapd/main.c	2022-02-22 00:03:05.108000000 +0000
-@@ -30,7 +30,7 @@
+diff '--color=auto' -rupN hostapd-2.11/hostapd/main.c hostapd-2.11-wpe/hostapd/main.c
+--- hostapd-2.11/hostapd/main.c	2024-07-20 18:04:37.000000000 +0000
++++ hostapd-2.11-wpe/hostapd/main.c	2024-07-26 12:24:18.700000000 +0000
+@@ -31,7 +31,7 @@
  #include "config_file.h"
  #include "eap_register.h"
  #include "ctrl_iface.h"
@@ -3391,7 +3390,7 @@ diff '--color=auto' -rupN hostapd-2.10/hostapd/main.c hostapd-2.10-wpe/hostapd/m
  
  struct hapd_global {
  	void **drv_priv;
-@@ -451,11 +451,17 @@ static int hostapd_global_run(struct hap
+@@ -552,11 +552,17 @@ static int hostapd_global_run(struct hap
  static void show_version(void)
  {
  	fprintf(stderr,
@@ -3399,9 +3398,9 @@ diff '--color=auto' -rupN hostapd-2.10/hostapd/main.c hostapd-2.10-wpe/hostapd/m
 +		"hostapd-WPE v%s\n"
  		"User space daemon for IEEE 802.11 AP management,\n"
  		"IEEE 802.1X/WPA/WPA2/EAP/RADIUS Authenticator\n"
- 		"Copyright (c) 2002-2022, Jouni Malinen <j@w1.fi> "
--		"and contributors\n",
-+		"and contributors\n"
+ 		"Copyright (c) 2002-2024, Jouni Malinen <j@w1.fi> "
+- 		"and contributors\n",
++ 		"and contributors\n"
 +		"-----------------------------------------------------\n"
 +		"WPE (Wireless Pwnage Edition)\n"
 +		"This version has been cleverly modified to target\n"
@@ -3411,22 +3410,22 @@ diff '--color=auto' -rupN hostapd-2.10/hostapd/main.c hostapd-2.10-wpe/hostapd/m
  		VERSION_STR);
  }
  
-@@ -465,7 +471,7 @@ static void usage(void)
+@@ -566,7 +572,7 @@ static void usage(void)
  	show_version();
  	fprintf(stderr,
  		"\n"
--		"usage: hostapd [-hdBKtv] [-P <PID file>] [-e <entropy file>] "
+-		"usage: hostapd [-hdBKtvq] [-P <PID file>] [-e <entropy file>] "
 +		"usage: hostapd-wpe [-hdBKtvrkc] [-P <PID file>] [-e <entropy file>] "
  		"\\\n"
  		"         [-g <global ctrl_iface>] [-G <group>]\\\n"
  		"         [-i <comma-separated list of interface names>]\\\n"
-@@ -493,7 +499,16 @@ static void usage(void)
- #endif /* CONFIG_DEBUG_SYSLOG */
+@@ -595,7 +601,16 @@ static void usage(void)
  		"   -S   start all the interfaces synchronously\n"
  		"   -t   include timestamps in some debug messages\n"
--		"   -v   show hostapd version\n");
-+		"   -v   show hostapd version\n\n"
-+		"\n"
+ 		"   -v   show hostapd version\n"
+-		"   -q   show less debug messages (-qq for even less)\n");
++		"   -q   show less debug messages (-qq for even less)\n"
++		"\n\n"
 +		"WPE options:\n"
 +		"   -r   Return Success where possible\n"
 +#if OPENSSL_VERSION_NUMBER  < 0x10100000L
@@ -3438,16 +3437,16 @@ diff '--color=auto' -rupN hostapd-2.10/hostapd/main.c hostapd-2.10-wpe/hostapd/m
  
  	exit(1);
  }
-@@ -684,7 +699,7 @@ int main(int argc, char *argv[])
+@@ -809,7 +824,7 @@ int main(int argc, char *argv[])
  #endif /* CONFIG_DPP */
  
  	for (;;) {
--		c = getopt(argc, argv, "b:Bde:f:hi:KP:sSTtu:vg:G:");
-+		c = getopt(argc, argv, "b:Bde:f:hi:KP:sSTtu:vg:G:kcr");
+-		c = getopt(argc, argv, "b:Bde:f:hi:KP:sSTtu:vg:G:q");
++		c = getopt(argc, argv, "b:Bde:f:hi:KP:sSTtu:vg:G:qrkc");
  		if (c < 0)
  			break;
  		switch (c) {
-@@ -753,6 +768,15 @@ int main(int argc, char *argv[])
+@@ -877,6 +892,15 @@ int main(int argc, char *argv[])
  		case 'u':
  			return gen_uuid(optarg);
  #endif /* CONFIG_WPS */
@@ -3463,20 +3462,20 @@ diff '--color=auto' -rupN hostapd-2.10/hostapd/main.c hostapd-2.10-wpe/hostapd/m
  		case 'i':
  			if (hostapd_get_interface_names(&if_names,
  							&if_names_size, optarg))
-diff '--color=auto' -rupN hostapd-2.10/src/Makefile hostapd-2.10-wpe/src/Makefile
---- hostapd-2.10/src/Makefile	2022-01-16 20:51:29.000000000 +0000
-+++ hostapd-2.10-wpe/src/Makefile	2022-02-21 23:29:30.152000000 +0000
+diff '--color=auto' -rupN hostapd-2.11/src/Makefile hostapd-2.11-wpe/src/Makefile
+--- hostapd-2.11/src/Makefile	2024-07-20 18:04:37.000000000 +0000
++++ hostapd-2.11-wpe/src/Makefile	2024-07-26 12:29:11.820000000 +0000
 @@ -1,5 +1,5 @@
- SUBDIRS=ap common crypto drivers eapol_auth eapol_supp eap_common eap_peer eap_server l2_packet p2p pae radius rsn_supp tls utils wps
+ SUBDIRS=ap common crypto drivers eapol_auth eapol_supp eap_common eap_peer eap_server l2_packet p2p pae pasn radius rsn_supp tls utils wps
 -SUBDIRS += fst
 +SUBDIRS += fst wpe
  
  all:
  	for d in $(SUBDIRS); do [ -d $$d ] && $(MAKE) -C $$d; done
-diff '--color=auto' -rupN hostapd-2.10/src/ap/beacon.c hostapd-2.10-wpe/src/ap/beacon.c
---- hostapd-2.10/src/ap/beacon.c	2022-01-16 20:51:29.000000000 +0000
-+++ hostapd-2.10-wpe/src/ap/beacon.c	2022-02-21 23:29:30.128000000 +0000
-@@ -32,7 +32,7 @@
+diff '--color=auto' -rupN hostapd-2.11/src/ap/beacon.c hostapd-2.11-wpe/src/ap/beacon.c
+--- hostapd-2.11/src/ap/beacon.c	2024-07-20 18:04:37.000000000 +0000
++++ hostapd-2.11-wpe/src/ap/beacon.c	2024-07-26 09:11:33.200000000 +0000
+@@ -33,7 +33,7 @@
  #include "dfs.h"
  #include "taxonomy.h"
  #include "ieee802_11_auth.h"
@@ -3485,7 +3484,7 @@ diff '--color=auto' -rupN hostapd-2.10/src/ap/beacon.c hostapd-2.10-wpe/src/ap/b
  
  #ifdef NEED_AP_MLME
  
-@@ -975,6 +975,13 @@ void handle_probe_req(struct hostapd_dat
+@@ -1480,6 +1480,13 @@ void handle_probe_req(struct hostapd_dat
  	}
  #endif /* CONFIG_TAXONOMY */
  
@@ -3499,19 +3498,19 @@ diff '--color=auto' -rupN hostapd-2.10/src/ap/beacon.c hostapd-2.10-wpe/src/ap/b
  	res = ssid_match(hapd, elems.ssid, elems.ssid_len,
  			 elems.ssid_list, elems.ssid_list_len,
  			 elems.short_ssid_list, elems.short_ssid_list_len);
-diff '--color=auto' -rupN hostapd-2.10/src/ap/ieee802_11.c hostapd-2.10-wpe/src/ap/ieee802_11.c
---- hostapd-2.10/src/ap/ieee802_11.c	2022-01-16 20:51:29.000000000 +0000
-+++ hostapd-2.10-wpe/src/ap/ieee802_11.c	2022-02-21 23:29:30.128000000 +0000
-@@ -55,7 +55,7 @@
- #include "fils_hlp.h"
- #include "dpp_hostapd.h"
- #include "gas_query_ap.h"
+diff '--color=auto' -rupN hostapd-2.11/src/ap/ieee802_11.c hostapd-2.11-wpe/src/ap/ieee802_11.c
+--- hostapd-2.11/src/ap/ieee802_11.c	2024-07-20 18:04:37.000000000 +0000
++++ hostapd-2.11-wpe/src/ap/ieee802_11.c	2024-07-26 12:25:41.092000000 +0000
+@@ -58,7 +58,7 @@
+ #include "comeback_token.h"
+ #include "nan_usd_ap.h"
+ #include "pasn/pasn_common.h"
 -
 +#include "wpe/wpe.h"
  
  #ifdef CONFIG_FILS
  static struct wpabuf *
-@@ -3998,8 +3998,8 @@ static u16 check_ssid(struct hostapd_dat
+@@ -3438,8 +3438,8 @@ static u16 check_ssid(struct hostapd_dat
  	if (ssid_ie == NULL)
  		return WLAN_STATUS_UNSPECIFIED_FAILURE;
  
@@ -3522,10 +3521,10 @@ diff '--color=auto' -rupN hostapd-2.10/src/ap/ieee802_11.c hostapd-2.10-wpe/src/
  		hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE80211,
  			       HOSTAPD_LEVEL_INFO,
  			       "Station tried to associate with unknown SSID "
-diff '--color=auto' -rupN hostapd-2.10/src/ap/ieee802_1x.c hostapd-2.10-wpe/src/ap/ieee802_1x.c
---- hostapd-2.10/src/ap/ieee802_1x.c	2022-01-16 20:51:29.000000000 +0000
-+++ hostapd-2.10-wpe/src/ap/ieee802_1x.c	2022-02-21 23:29:30.128000000 +0000
-@@ -855,6 +855,8 @@ static void handle_eap_response(struct h
+diff '--color=auto' -rupN hostapd-2.11/src/ap/ieee802_1x.c hostapd-2.11-wpe/src/ap/ieee802_1x.c
+--- hostapd-2.11/src/ap/ieee802_1x.c	2024-07-20 18:04:37.000000000 +0000
++++ hostapd-2.11-wpe/src/ap/ieee802_1x.c	2024-07-26 09:11:33.204000000 +0000
+@@ -923,6 +923,8 @@ static void handle_eap_response(struct h
  {
  	u8 type, *data;
  	struct eapol_state_machine *sm = sta->eapol_sm;
@@ -3534,7 +3533,7 @@ diff '--color=auto' -rupN hostapd-2.10/src/ap/ieee802_1x.c hostapd-2.10-wpe/src/
  
  	if (!sm)
  		return;
-@@ -874,6 +876,16 @@ static void handle_eap_response(struct h
+@@ -942,6 +944,16 @@ static void handle_eap_response(struct h
  		       eap->code, eap->identifier, be_to_host16(eap->length),
  		       eap_server_get_name(0, type), type);
  
@@ -3551,9 +3550,9 @@ diff '--color=auto' -rupN hostapd-2.10/src/ap/ieee802_1x.c hostapd-2.10-wpe/src/
  	sm->dot1xAuthEapolRespFramesRx++;
  
  	wpabuf_free(sm->eap_if->eapRespData);
-diff '--color=auto' -rupN hostapd-2.10/src/crypto/ms_funcs.h hostapd-2.10-wpe/src/crypto/ms_funcs.h
---- hostapd-2.10/src/crypto/ms_funcs.h	2022-01-16 20:51:29.000000000 +0000
-+++ hostapd-2.10-wpe/src/crypto/ms_funcs.h	2022-02-21 23:29:30.144000000 +0000
+diff '--color=auto' -rupN hostapd-2.11/src/crypto/ms_funcs.h hostapd-2.11-wpe/src/crypto/ms_funcs.h
+--- hostapd-2.11/src/crypto/ms_funcs.h	2024-07-20 18:04:37.000000000 +0000
++++ hostapd-2.11-wpe/src/crypto/ms_funcs.h	2024-07-26 09:11:33.204000000 +0000
 @@ -9,6 +9,10 @@
  #ifndef MS_FUNCS_H
  #define MS_FUNCS_H
@@ -3565,18 +3564,18 @@ diff '--color=auto' -rupN hostapd-2.10/src/crypto/ms_funcs.h hostapd-2.10-wpe/sr
  int generate_nt_response(const u8 *auth_challenge, const u8 *peer_challenge,
  			 const u8 *username, size_t username_len,
  			 const u8 *password, size_t password_len,
-diff '--color=auto' -rupN hostapd-2.10/src/crypto/tls_openssl.c hostapd-2.10-wpe/src/crypto/tls_openssl.c
---- hostapd-2.10/src/crypto/tls_openssl.c	2022-01-16 20:51:29.000000000 +0000
-+++ hostapd-2.10-wpe/src/crypto/tls_openssl.c	2022-02-21 23:29:30.140000000 +0000
-@@ -21,6 +21,7 @@
+diff '--color=auto' -rupN hostapd-2.11/src/crypto/tls_openssl.c hostapd-2.11-wpe/src/crypto/tls_openssl.c
+--- hostapd-2.11/src/crypto/tls_openssl.c	2024-07-26 12:31:12.300000000 +0000
++++ hostapd-2.11-wpe/src/crypto/tls_openssl.c	2024-07-26 12:33:34.152000000 +0000
+@@ -29,7 +29,6 @@
  #include <openssl/opensslv.h>
  #include <openssl/pkcs12.h>
  #include <openssl/x509v3.h>
-+#include <openssl/rand.h>
- #ifndef OPENSSL_NO_ENGINE
- #include <openssl/engine.h>
- #endif /* OPENSSL_NO_ENGINE */
-@@ -37,6 +38,7 @@
+-#include <openssl/rand.h>
+ #if OPENSSL_VERSION_NUMBER >= 0x30000000L
+ #include <openssl/core_names.h>
+ #include <openssl/decoder.h>
+@@ -50,6 +49,7 @@
  #include "sha256.h"
  #include "tls.h"
  #include "tls_openssl.h"
@@ -3584,7 +3583,7 @@ diff '--color=auto' -rupN hostapd-2.10/src/crypto/tls_openssl.c hostapd-2.10-wpe
  
  #if !defined(CONFIG_FIPS) &&                             \
      (defined(EAP_FAST) || defined(EAP_FAST_DYNAMIC) ||   \
-@@ -204,6 +206,10 @@ static int tls_add_ca_from_keystore_enco
+@@ -205,6 +205,10 @@ static int tls_add_ca_from_keystore_enco
  
  #endif /* ANDROID */
  
@@ -3595,7 +3594,7 @@ diff '--color=auto' -rupN hostapd-2.10/src/crypto/tls_openssl.c hostapd-2.10-wpe
  static int tls_openssl_ref_count = 0;
  static int tls_ex_idx_session = -1;
  
-@@ -1577,7 +1583,12 @@ struct tls_connection * tls_connection_i
+@@ -1724,7 +1728,12 @@ struct tls_connection * tls_connection_i
  
  	conn->context = context;
  	SSL_set_app_data(conn->ssl, conn);
@@ -3609,8 +3608,8 @@ diff '--color=auto' -rupN hostapd-2.10/src/crypto/tls_openssl.c hostapd-2.10-wpe
  	SSL_set_msg_callback_arg(conn->ssl, conn);
  	options = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 |
  		SSL_OP_SINGLE_DH_USE;
-@@ -4286,6 +4297,10 @@ openssl_handshake(struct tls_connection
- {
+@@ -4501,6 +4510,10 @@ openssl_handshake(struct tls_connection
+ 	struct tls_context *context = conn->context;
  	int res;
  	struct wpabuf *out_data;
 +#if OPENSSL_VERSION_NUMBER  < 0x10100000L
@@ -3620,7 +3619,7 @@ diff '--color=auto' -rupN hostapd-2.10/src/crypto/tls_openssl.c hostapd-2.10-wpe
  
  	/*
  	 * Give TLS handshake data from the server (if available) to OpenSSL
-@@ -4394,6 +4409,30 @@ openssl_handshake(struct tls_connection
+@@ -4619,6 +4632,30 @@ openssl_handshake(struct tls_connection
  	}
  	wpabuf_put(out_data, res);
  
@@ -3651,7 +3650,7 @@ diff '--color=auto' -rupN hostapd-2.10/src/crypto/tls_openssl.c hostapd-2.10-wpe
  	return out_data;
  }
  
-@@ -4526,6 +4565,13 @@ struct wpabuf * tls_connection_encrypt(v
+@@ -4751,6 +4788,13 @@ struct wpabuf * tls_connection_encrypt(v
  		tls_show_errors(MSG_INFO, __func__, "BIO_reset failed");
  		return NULL;
  	}
@@ -3665,7 +3664,7 @@ diff '--color=auto' -rupN hostapd-2.10/src/crypto/tls_openssl.c hostapd-2.10-wpe
  	res = SSL_write(conn->ssl, wpabuf_head(in_data), wpabuf_len(in_data));
  	if (res < 0) {
  		tls_show_errors(MSG_INFO, __func__,
-@@ -4533,6 +4579,12 @@ struct wpabuf * tls_connection_encrypt(v
+@@ -4758,6 +4802,12 @@ struct wpabuf * tls_connection_encrypt(v
  		return NULL;
  	}
  
@@ -3678,7 +3677,7 @@ diff '--color=auto' -rupN hostapd-2.10/src/crypto/tls_openssl.c hostapd-2.10-wpe
  	/* Read encrypted data to be sent to the server */
  	buf = wpabuf_alloc(wpabuf_len(in_data) + 300);
  	if (buf == NULL)
-@@ -5773,3 +5825,69 @@ bool tls_connection_get_own_cert_used(st
+@@ -6028,3 +6078,69 @@ bool tls_connection_get_own_cert_used(st
  		return SSL_get_certificate(conn->ssl) != NULL;
  	return false;
  }
@@ -3748,9 +3747,9 @@ diff '--color=auto' -rupN hostapd-2.10/src/crypto/tls_openssl.c hostapd-2.10-wpe
 +}
 +#endif /* OPENSSL_VERSION_NUMBER  < 0x10100000L */
 +
-diff '--color=auto' -rupN hostapd-2.10/src/eap_server/eap_server.c hostapd-2.10-wpe/src/eap_server/eap_server.c
---- hostapd-2.10/src/eap_server/eap_server.c	2022-01-16 20:51:29.000000000 +0000
-+++ hostapd-2.10-wpe/src/eap_server/eap_server.c	2022-02-21 23:29:30.152000000 +0000
+diff '--color=auto' -rupN hostapd-2.11/src/eap_server/eap_server.c hostapd-2.11-wpe/src/eap_server/eap_server.c
+--- hostapd-2.11/src/eap_server/eap_server.c	2024-07-20 18:04:37.000000000 +0000
++++ hostapd-2.11-wpe/src/eap_server/eap_server.c	2024-07-26 09:11:33.204000000 +0000
 @@ -160,6 +160,8 @@ int eap_user_get(struct eap_sm *sm, cons
  {
  	struct eap_user *user;
@@ -3772,9 +3771,9 @@ diff '--color=auto' -rupN hostapd-2.10/src/eap_server/eap_server.c hostapd-2.10-
  	if (sm->eapol_cb->get_eap_user(sm->eapol_ctx, identity,
  				       identity_len, phase2, user) != 0) {
  		eap_user_free(user);
-diff '--color=auto' -rupN hostapd-2.10/src/eap_server/eap_server_mschapv2.c hostapd-2.10-wpe/src/eap_server/eap_server_mschapv2.c
---- hostapd-2.10/src/eap_server/eap_server_mschapv2.c	2022-01-16 20:51:29.000000000 +0000
-+++ hostapd-2.10-wpe/src/eap_server/eap_server_mschapv2.c	2022-02-21 23:29:30.152000000 +0000
+diff '--color=auto' -rupN hostapd-2.11/src/eap_server/eap_server_mschapv2.c hostapd-2.11-wpe/src/eap_server/eap_server_mschapv2.c
+--- hostapd-2.11/src/eap_server/eap_server_mschapv2.c	2024-07-20 18:04:37.000000000 +0000
++++ hostapd-2.11-wpe/src/eap_server/eap_server_mschapv2.c	2024-07-26 09:11:33.204000000 +0000
 @@ -12,7 +12,7 @@
  #include "crypto/ms_funcs.h"
  #include "crypto/random.h"
@@ -3784,7 +3783,7 @@ diff '--color=auto' -rupN hostapd-2.10/src/eap_server/eap_server_mschapv2.c host
  
  struct eap_mschapv2_hdr {
  	u8 op_code; /* MSCHAPV2_OP_* */
-@@ -290,7 +290,7 @@ static void eap_mschapv2_process_respons
+@@ -296,7 +296,7 @@ static void eap_mschapv2_process_respons
  	size_t username_len, user_len;
  	int res;
  	char *buf;
@@ -3793,7 +3792,7 @@ diff '--color=auto' -rupN hostapd-2.10/src/eap_server/eap_server_mschapv2.c host
  	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_MSCHAPV2, respData,
  			       &len);
  	if (pos == NULL || len < 1)
-@@ -371,6 +371,8 @@ static void eap_mschapv2_process_respons
+@@ -377,6 +377,8 @@ static void eap_mschapv2_process_respons
  		}
  	}
  #endif /* CONFIG_TESTING_OPTIONS */
@@ -3802,7 +3801,7 @@ diff '--color=auto' -rupN hostapd-2.10/src/eap_server/eap_server_mschapv2.c host
  
  	if (username_len != user_len ||
  	    os_memcmp(username, user, username_len) != 0) {
-@@ -405,6 +407,11 @@ static void eap_mschapv2_process_respons
+@@ -411,6 +413,11 @@ static void eap_mschapv2_process_respons
  		return;
  	}
  
@@ -3814,7 +3813,7 @@ diff '--color=auto' -rupN hostapd-2.10/src/eap_server/eap_server_mschapv2.c host
  	if (os_memcmp_const(nt_response, expected, 24) == 0) {
  		const u8 *pw_hash;
  		u8 pw_hash_buf[16], pw_hash_hash[16];
-@@ -445,6 +452,8 @@ static void eap_mschapv2_process_respons
+@@ -451,6 +458,8 @@ static void eap_mschapv2_process_respons
  		wpa_printf(MSG_DEBUG, "EAP-MSCHAPV2: Invalid NT-Response");
  		data->state = FAILURE_REQ;
  	}
@@ -3823,9 +3822,9 @@ diff '--color=auto' -rupN hostapd-2.10/src/eap_server/eap_server_mschapv2.c host
  }
  
  
-diff '--color=auto' -rupN hostapd-2.10/src/eap_server/eap_server_peap.c hostapd-2.10-wpe/src/eap_server/eap_server_peap.c
---- hostapd-2.10/src/eap_server/eap_server_peap.c	2022-01-16 20:51:29.000000000 +0000
-+++ hostapd-2.10-wpe/src/eap_server/eap_server_peap.c	2022-02-21 23:29:30.152000000 +0000
+diff '--color=auto' -rupN hostapd-2.11/src/eap_server/eap_server_peap.c hostapd-2.11-wpe/src/eap_server/eap_server_peap.c
+--- hostapd-2.11/src/eap_server/eap_server_peap.c	2024-07-20 18:04:37.000000000 +0000
++++ hostapd-2.11-wpe/src/eap_server/eap_server_peap.c	2024-07-26 09:11:33.204000000 +0000
 @@ -17,7 +17,7 @@
  #include "eap_common/eap_tlv_common.h"
  #include "eap_common/eap_peap_common.h"
@@ -3835,9 +3834,9 @@ diff '--color=auto' -rupN hostapd-2.10/src/eap_server/eap_server_peap.c hostapd-
  
  /* Maximum supported PEAP version
   * 0 = Microsoft's PEAP version 0; draft-kamath-pppext-peapv0-00.txt
-diff '--color=auto' -rupN hostapd-2.10/src/eap_server/eap_server_ttls.c hostapd-2.10-wpe/src/eap_server/eap_server_ttls.c
---- hostapd-2.10/src/eap_server/eap_server_ttls.c	2022-01-16 20:51:29.000000000 +0000
-+++ hostapd-2.10-wpe/src/eap_server/eap_server_ttls.c	2022-02-21 23:29:30.152000000 +0000
+diff '--color=auto' -rupN hostapd-2.11/src/eap_server/eap_server_ttls.c hostapd-2.11-wpe/src/eap_server/eap_server_ttls.c
+--- hostapd-2.11/src/eap_server/eap_server_ttls.c	2024-07-20 18:04:37.000000000 +0000
++++ hostapd-2.11-wpe/src/eap_server/eap_server_ttls.c	2024-07-26 09:11:33.204000000 +0000
 @@ -16,7 +16,7 @@
  #include "eap_server/eap_tls_common.h"
  #include "eap_common/chap.h"
@@ -3847,7 +3846,7 @@ diff '--color=auto' -rupN hostapd-2.10/src/eap_server/eap_server_ttls.c hostapd-
  
  #define EAP_TTLS_VERSION 0
  
-@@ -538,9 +538,11 @@ static void eap_ttls_process_phase2_pap(
+@@ -539,9 +539,11 @@ static void eap_ttls_process_phase2_pap(
  		return;
  	}
  
@@ -3861,7 +3860,7 @@ diff '--color=auto' -rupN hostapd-2.10/src/eap_server/eap_server_ttls.c hostapd-
  		wpa_printf(MSG_DEBUG, "EAP-TTLS/PAP: Invalid user password");
  		eap_ttls_state(data, FAILURE);
  		return;
-@@ -603,8 +605,9 @@ static void eap_ttls_process_phase2_chap
+@@ -604,8 +606,9 @@ static void eap_ttls_process_phase2_chap
  	chap_md5(password[0], sm->user->password, sm->user->password_len,
  		 challenge, challenge_len, hash);
  
@@ -3873,7 +3872,7 @@ diff '--color=auto' -rupN hostapd-2.10/src/eap_server/eap_server_ttls.c hostapd-
  		wpa_printf(MSG_DEBUG, "EAP-TTLS/CHAP: Correct user password");
  		eap_ttls_state(data, SUCCESS);
  		eap_ttls_valid_session(sm, data);
-@@ -675,7 +678,9 @@ static void eap_ttls_process_phase2_msch
+@@ -676,7 +679,9 @@ static void eap_ttls_process_phase2_msch
  		return;
  	}
  
@@ -3884,7 +3883,7 @@ diff '--color=auto' -rupN hostapd-2.10/src/eap_server/eap_server_ttls.c hostapd-
  		wpa_printf(MSG_DEBUG, "EAP-TTLS/MSCHAP: Correct response");
  		eap_ttls_state(data, SUCCESS);
  		eap_ttls_valid_session(sm, data);
-@@ -697,7 +702,7 @@ static void eap_ttls_process_phase2_msch
+@@ -698,7 +703,7 @@ static void eap_ttls_process_phase2_msch
  					     u8 *response, size_t response_len)
  {
  	u8 *chal, *username, nt_response[24], *rx_resp, *peer_challenge,
@@ -3893,7 +3892,7 @@ diff '--color=auto' -rupN hostapd-2.10/src/eap_server/eap_server_ttls.c hostapd-
  	size_t username_len, i;
  
  	if (challenge == NULL || response == NULL ||
-@@ -782,6 +787,9 @@ static void eap_ttls_process_phase2_msch
+@@ -783,6 +788,9 @@ static void eap_ttls_process_phase2_msch
  	}
  
  	rx_resp = response + 2 + EAP_TTLS_MSCHAPV2_CHALLENGE_LEN + 8;
@@ -3903,9 +3902,9 @@ diff '--color=auto' -rupN hostapd-2.10/src/eap_server/eap_server_ttls.c hostapd-
  #ifdef CONFIG_TESTING_OPTIONS
  	{
  		u8 challenge2[8];
-diff '--color=auto' -rupN hostapd-2.10/src/utils/wpa_debug.c hostapd-2.10-wpe/src/utils/wpa_debug.c
---- hostapd-2.10/src/utils/wpa_debug.c	2022-01-16 20:51:29.000000000 +0000
-+++ hostapd-2.10-wpe/src/utils/wpa_debug.c	2022-02-21 23:29:30.160000000 +0000
+diff '--color=auto' -rupN hostapd-2.11/src/utils/wpa_debug.c hostapd-2.11-wpe/src/utils/wpa_debug.c
+--- hostapd-2.11/src/utils/wpa_debug.c	2024-07-20 18:04:37.000000000 +0000
++++ hostapd-2.11-wpe/src/utils/wpa_debug.c	2024-07-26 09:11:33.204000000 +0000
 @@ -28,7 +28,7 @@ static FILE *wpa_debug_tracing_file = NU
  
  
@@ -3915,9 +3914,9 @@ diff '--color=auto' -rupN hostapd-2.10/src/utils/wpa_debug.c hostapd-2.10-wpe/sr
  int wpa_debug_timestamp = 0;
  int wpa_debug_syslog = 0;
  #ifndef CONFIG_NO_STDOUT_DEBUG
-diff '--color=auto' -rupN hostapd-2.10/src/wpe/Makefile hostapd-2.10-wpe/src/wpe/Makefile
---- hostapd-2.10/src/wpe/Makefile	1970-01-01 00:00:00.000000000 +0000
-+++ hostapd-2.10-wpe/src/wpe/Makefile	2022-02-21 23:29:30.160000000 +0000
+diff '--color=auto' -rupN hostapd-2.11/src/wpe/Makefile hostapd-2.11-wpe/src/wpe/Makefile
+--- hostapd-2.11/src/wpe/Makefile	1970-01-01 00:00:00.000000000 +0000
++++ hostapd-2.11-wpe/src/wpe/Makefile	2024-07-26 09:11:33.204000000 +0000
 @@ -0,0 +1,8 @@
 +all:
 +	@echo Nothing to be made.
@@ -3927,9 +3926,9 @@ diff '--color=auto' -rupN hostapd-2.10/src/wpe/Makefile hostapd-2.10-wpe/src/wpe
 +
 +install:
 +	@echo Nothing to be made.
-diff '--color=auto' -rupN hostapd-2.10/src/wpe/wpe.c hostapd-2.10-wpe/src/wpe/wpe.c
---- hostapd-2.10/src/wpe/wpe.c	1970-01-01 00:00:00.000000000 +0000
-+++ hostapd-2.10-wpe/src/wpe/wpe.c	2022-02-21 23:29:30.160000000 +0000
+diff '--color=auto' -rupN hostapd-2.11/src/wpe/wpe.c hostapd-2.11-wpe/src/wpe/wpe.c
+--- hostapd-2.11/src/wpe/wpe.c	1970-01-01 00:00:00.000000000 +0000
++++ hostapd-2.11-wpe/src/wpe/wpe.c	2024-07-26 09:11:33.204000000 +0000
 @@ -0,0 +1,232 @@
 +/*
 +    wpe.c - 
@@ -4163,9 +4162,9 @@ diff '--color=auto' -rupN hostapd-2.10/src/wpe/wpe.c hostapd-2.10-wpe/src/wpe/wp
 +    return wpe_hb_msg;
 +}
 +#endif /* OPENSSL_VERSION_NUMBER  < 0x10100000L */
-diff '--color=auto' -rupN hostapd-2.10/src/wpe/wpe.h hostapd-2.10-wpe/src/wpe/wpe.h
---- hostapd-2.10/src/wpe/wpe.h	1970-01-01 00:00:00.000000000 +0000
-+++ hostapd-2.10-wpe/src/wpe/wpe.h	2022-02-21 23:29:30.160000000 +0000
+diff '--color=auto' -rupN hostapd-2.11/src/wpe/wpe.h hostapd-2.11-wpe/src/wpe/wpe.h
+--- hostapd-2.11/src/wpe/wpe.h	1970-01-01 00:00:00.000000000 +0000
++++ hostapd-2.11-wpe/src/wpe/wpe.h	2024-07-26 09:11:33.204000000 +0000
 @@ -0,0 +1,54 @@
 +/*
 +    wpe.h - 
