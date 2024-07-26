@@ -55,6 +55,7 @@ jobs:
           'archlinux:base',
           'manjarolinux/base',
           'ubuntu:24.04',
+          'ubuntu:24.10',
           'oraclelinux:9',
           'fedora:39',
           'fedora:40',
