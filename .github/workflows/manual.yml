@@ -54,7 +54,6 @@ jobs:
           'opensuse/leap:15',
           'archlinux:base',
           'manjarolinux/base',
-          'ubuntu:23.10',
           'ubuntu:24.04',
           'oraclelinux:9',
           'fedora:39',
