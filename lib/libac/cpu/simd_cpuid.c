@@ -35,7 +35,9 @@
 #elif defined(__arm__) || defined(__aarch64__)
 #ifdef HAS_AUXV
 #include <sys/auxv.h>
+#ifdef __linux__
 #include <asm/hwcap.h>
+#endif
 #endif
 #endif /* __arm__ */
 #ifdef __linux__
@@ -43,8 +45,10 @@
 #include <sys/stat.h>
 #include <linux/sysctl.h>
 #endif
-#if defined(__FreeBSD__) || defined(__OpenBSD__)
+#if defined(__FreeBSD__)
 #include <sys/user.h>
+#endif
+#if defined(__FreeBSD__) || defined(__OpenBSD__)
 #include <sys/sysctl.h>
 #endif
 #if defined(__APPLE__) && defined(__aarch64__)
@@ -106,6 +110,19 @@ unsigned long GetCacheTotalLize(unsigned ebx, unsigned ecx)
 	return (SetSz * WaySz * SectorSz * LnSz);
 }
 
+#if (defined(__FreeBSD__) || defined(__OpenBSD__)) && \
+    (defined(__arm__) || defined(__aarch64__) || defined(__powerpc__)) && \
+    defined(HAS_AUXV)
+unsigned long getauxval(unsigned long type)
+{
+	unsigned long hwcaps = 0;
+
+	elf_aux_info(type, &hwcaps, sizeof(hwcaps));
+
+	return hwcaps;
+}
+#endif
+
 //
 // Return maximum SIMD size for the CPU.
 // AVX512F		  		= 16 / 512 bit
@@ -139,7 +156,7 @@ int cpuid_simdsize(int viewmax)
 		return 4;
 
 #elif (defined(__arm__) || defined(__aarch64__)) && defined(HAS_AUXV)
-	long hwcaps = getauxval(AT_HWCAP);
+	unsigned long hwcaps = getauxval(AT_HWCAP);
 
 	if (hwcaps & (1 << 12)) // NEON
 		return 4;
@@ -248,7 +265,7 @@ static char * cpuid_featureflags(void)
 			sprintcat((char *) &flags, "AVX512F", sizeof(flags));
 	}
 #elif (defined(__arm__) || defined(__aarch64__)) && defined(HAS_AUXV)
-	long hwcaps = getauxval(AT_HWCAP);
+	unsigned long hwcaps = getauxval(AT_HWCAP);
 
 #if defined(__aarch64__)
 	if (hwcaps & (1 << 1)) sprintcat((char *) &flags, "ASIMD", sizeof(flags));
