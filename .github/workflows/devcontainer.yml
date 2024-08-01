@@ -68,7 +68,7 @@ jobs:
     runs-on: ubuntu-22.04
     needs:
       - docker-build
-    timeout-minutes: 2
+    timeout-minutes: 8
     steps:
       -
         name: Git Checkout
