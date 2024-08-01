@@ -95,6 +95,7 @@ on:
       - '.github/workflows/style.yml'
       - '.github/workflows/windows.yml'
       - '.vscode/**'
+      - '.devcontainer/**'
       - '.clang-format'
       - '.codespellrc'
       - '.editorconfig'
