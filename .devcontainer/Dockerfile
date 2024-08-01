@@ -50,10 +50,10 @@ RUN ln -s /usr/bin/clang-format-14 /usr/local/bin/clang-format
 
 # ActionLint
 RUN if [ "$(dpkg --print-architecture)" = "amd64" ]; then \
-        wget -nv https://github.com/rhysd/actionlint/releases/download/v1.7.0/actionlint_1.7.0_linux_amd64.tar.gz -O /usr/local/bin/actionlint; \
+        wget -nv https://github.com/rhysd/actionlint/releases/download/v1.7.1/actionlint_1.7.1_linux_amd64.tar.gz -O /usr/local/bin/actionlint; \
         chmod +x /usr/local/bin/actionlint; \
     elif [ "$(dpkg --print-architecture)" = "arm64" ]; then \
-        wget -nv https://github.com/rhysd/actionlint/releases/download/v1.7.0/actionlint_1.7.0_linux_arm64.tar.gz -O /usr/local/bin/actionlint; \
+        wget -nv https://github.com/rhysd/actionlint/releases/download/v1.7.1/actionlint_1.7.1_linux_arm64.tar.gz -O /usr/local/bin/actionlint; \
         chmod +x /usr/local/bin/actionlint; \
     else \
         echo "Installation of actionlint for $(dpkg --print-architecture) not implemented"; \
