@@ -10,7 +10,7 @@ See INSTALLING file for more information
 OpenWrt Devices
 ===============
 
-You can use airodump-ng on OpenWrt devices. You'll have to use specify
+You can use airodump-ng on OpenWrt devices. You'll have to specify
 prism0 as interface. Airodump-ng will automatically create it.
 Rq: Aireplay DOESN'T work on OpenWrt (2.4 kernel) with broadcom chipset since the driver doesn't support injection. It *may* work with 2.6 kernels >= 2.6.24 (kamikaze 8.09+ custom-built).
 
@@ -33,10 +33,10 @@ Drivers
 	Solution: Use a more recent driver. Madwifi-ng has been deprecated for years.
 	
 	
-	Problem 2: When changing rate while you are capturing packet makes airodump-ng stall
+	Problem 2: When changing rate while you are capturing packet, airodump-ng stalls
 	Solution 2: Restart airodump-ng or change rate before starting it.
 	
-	Problem 3: After some time it stops capturing packets and you're really sure no network manager are running at all.
+	Problem 3: After some time it stops capturing packets and you're really sure no network managers are running at all.
 	Solution 3: That's a known bug in the driver, it may happen at any time (the time before it fails can vary a lot: 
 	            from 5 minutes to 50 or even more). Try (as root) unloading completely the driver with 'madwifi-unload'
 	            and then run 'modprobe ath_pci autocreate=monitor'.
@@ -68,14 +68,14 @@ Aircrack-ng
 
 	Problem: On windows only, opening/creating a database doesn't work when airolib-ng is in directories containing
 	         special characters like 'ç', 'é', 'è', 'à', ... (directories containing spaces are not affected).
-	Reason: It's a SQLite issue.
+	Reason: It's an SQLite issue.
 	Solution: Rename the directory or move the database into another directory.
 
 
 	Airodump-ng
 	-----------
 
-	Problem: Airodump-ng stop working after some time.
+	Problem: Airodump-ng stops working after some time.
 	Solution 1: You may have a network manager running that puts back the card in managed mode. 
 	            You'll have to disable it (the fastest solution is killing the process) then restart airodump-ng.
 	Solution 2: See Problem 3 of Madwifi-ng.
