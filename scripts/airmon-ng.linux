@@ -72,15 +72,14 @@ fi
 #rewrite to not have two devices at any one time
 
 # We need root only when doing something, enumeration works as user
+if [ -n "$(command -v id 2> /dev/null)" ]; then
+  USERID="$(id -u 2> /dev/null)"
+fi
+
+if [ -z "${USERID}" ] && [ -n "$(id -ru)" ]; then
+  USERID="$(id -ru)"
+fi
 if [ "${1}" = "check" ] || [ "${1}" = "start" ] || [ "${1}" = "stop" ]; then
-  if [ -n "$(command -v id 2> /dev/null)" ]; then
-    USERID="$(id -u 2> /dev/null)"
-  fi
-
-  if [ -z "${USERID}" ] && [ -n "$(id -ru)" ]; then
-    USERID="$(id -ru)"
-  fi
-
   if [ -n "${USERID}" ] && [ "${USERID}" != "0" ]; then
     printf "Run it as root\n" ; exit 1;
   elif [ -z "${USERID}" ]; then
@@ -1412,94 +1411,111 @@ getPhy() {
 }
 
 checkvm() {
-	#this entire section of code is completely stolen from Carlos Perez's work in checkvm.rb for metasploit and rewritten (poorly) in sh
-	#check loaded modules
-	if [ -x "$(command -v lsmod 2>&1)" ]; then
-		lsmod_data="$(lsmod 2>&1 | awk '{print $1}')"
-		if [ -n "${lsmod}" ]; then
-			printf "%s" "${lsmod_data}" | grep -iqE "vboxsf|vboxguest" 2> /dev/null && vm="VirtualBox"
-			printf "%s" "${lsmod_data}" | grep -iqE "vmw_ballon|vmxnet|vmw" 2> /dev/null && vm="VMware"
-			printf "%s" "${lsmod_data}" | grep -iqE "xen-vbd|xen-vnif" 2> /dev/null && vm="Xen"
-			printf "%s" "${lsmod_data}" | grep -iqE "virtio_pci|virtio_net" 2> /dev/null && vm="Qemu/KVM"
-			printf "%s" "${lsmod_data}" | grep -iqE "hv_vmbus|hv_blkvsc|hv_netvsc|hv_utils|hv_storvsc" && vm="MS Hyper-V"
-			[ -n "${vm}" ] && vm_from="lsmod"
-		fi
-	fi
+  #this entire section of code is completely stolen from Carlos Perez's work in checkvm.rb for metasploit and rewritten (poorly) in sh
+  #check loaded modules
+  if [ -x "$(command -v lsmod 2>&1)" ]; then
+    lsmod_data="$(lsmod 2>&1 | awk '{print $1}')"
+    if [ -n "${lsmod}" ]; then
+      printf "%s" "${lsmod_data}" | grep -iqE "vboxsf|vboxguest" 2> /dev/null && vm="VirtualBox"
+      printf "%s" "${lsmod_data}" | grep -iqE "vmw_ballon|vmxnet|vmw" 2> /dev/null && vm="VMware"
+      printf "%s" "${lsmod_data}" | grep -iqE "xen-vbd|xen-vnif" 2> /dev/null && vm="Xen"
+      printf "%s" "${lsmod_data}" | grep -iqE "virtio_pci|virtio_net" 2> /dev/null && vm="Qemu/KVM"
+      printf "%s" "${lsmod_data}" | grep -iqE "hv_vmbus|hv_blkvsc|hv_netvsc|hv_utils|hv_storvsc" && vm="MS Hyper-V"
+      [ -n "${vm}" ] && vm_from="lsmod"
+    fi
+  fi
 
-	#check scsi driver
-	if [ -z "${vm_from}" ]; then
-		if [ -r /proc/scsi/scsi ]; then
-			grep -iq "vmware" /proc/scsi/scsi 2> /dev/null && vm="VMware"
-			grep -iq "vbox" /proc/scsi/scsi 2> /dev/null && vm="VirtualBox"
-			[ -n "${vm}" ] && vm_from="/pro/scsi/scsi"
-		fi
-	fi
+  #check scsi driver
+  if [ -z "${vm_from}" ]; then
+    if [ -r /proc/scsi/scsi ]; then
+      grep -iq "vmware" /proc/scsi/scsi 2> /dev/null && vm="VMware"
+      grep -iq "vbox" /proc/scsi/scsi 2> /dev/null && vm="VirtualBox"
+      [ -n "${vm}" ] && vm_from="/pro/scsi/scsi"
+    fi
+  fi
 
-	# Check IDE Devices
-	if [ -z "${vm_from}" ];	then
-		if [ -d /proc/ide ]; then
-			ide_model="$(cat /proc/ide/hd*/model)"
-			printf "%s" "${ide_model}" | grep -iq "vbox" 2> /dev/null && vm="VirtualBox"
-			printf "%s" "${ide_model}" | grep -iq "vmware" 2> /dev/null && vm="VMware"
-			printf "%s" "${ide_model}" | grep -iq "qemu" 2> /dev/null && vm="Qemu/KVM"
-			printf "%s" "${ide_model}" | grep -iqE "virtual (hd|cd)" 2> /dev/null && vm="Hyper-V/Virtual PC"
-			[ -n "${vm}" ] && vm_from="ide_model"
-		fi
-	fi
+  # Check IDE Devices
+  if [ -z "${vm_from}" ];	then
+    if [ -d /proc/ide ]; then
+      ide_model="$(cat /proc/ide/hd*/model)"
+      printf "%s" "${ide_model}" | grep -iq "vbox" 2> /dev/null && vm="VirtualBox"
+      printf "%s" "${ide_model}" | grep -iq "vmware" 2> /dev/null && vm="VMware"
+      printf "%s" "${ide_model}" | grep -iq "qemu" 2> /dev/null && vm="Qemu/KVM"
+      printf "%s" "${ide_model}" | grep -iqE "virtual (hd|cd)" 2> /dev/null && vm="Hyper-V/Virtual PC"
+      [ -n "${vm}" ] && vm_from="ide_model"
+    fi
+  fi
 
-	# Check using lspci
-	if [ -z "${vm_from}" ] && [ "${LSPCI}" = "1" ]; then
-			lspci_data="$(lspci 2>&1)"
-			printf "%s" "${lspci_data}" | grep -iq "vmware" 2> /dev/null && vm="VMware"
-			printf "%s" "${lspci_data}" | grep -iq "virtualbox" 2> /dev/null && vm="VirtualBox"
-			[ -n "${vm}" ] && vm_from="lspci"
-	fi
+  # Check using lspci
+  if [ -z "${vm_from}" ] && [ "${LSPCI}" = "1" ]; then
+    lspci_data="$(lspci 2>&1)"
+    printf "%s" "${lspci_data}" | grep -iq "vmware" 2> /dev/null && vm="VMware"
+    printf "%s" "${lspci_data}" | grep -iq "virtualbox" 2> /dev/null && vm="VirtualBox"
+    [ -n "${vm}" ] && vm_from="lspci"
+  fi
 
-	# Xen bus check
-	## XXX: Removing unsafe check
-	# this check triggers if CONFIG_XEN_PRIVILEGED_GUEST=y et al are set in kconfig (debian default) even in not actually a guest
+  # Xen bus check
+  ## XXX: Removing unsafe check
+  # this check triggers if CONFIG_XEN_PRIVILEGED_GUEST=y et al are set in kconfig (debian default) even in not actually a guest
 
-	# Check using lscpu
-	if [ -z "${vm_from}" ]; then
-		if [ -x "$(command -v lscpu 2>&1)" ]; then
-                        lscpu_data="$(lscpu 2>&1)"
-			printf "%s" "${lscpu_data}" | grep -iq "Xen" 2> /dev/null && vm="Xen"
-			printf "%s" "${lscpu_data}" | grep -iq "Microsoft" 2> /dev/null && vm="MS Hyper-V"
-			[ -n "${vm}" ] && vm_from="lscpu"
-		fi
-	fi
+  # Check using lscpu
+  if [ -z "${vm_from}" ]; then
+    if [ -x "$(command -v lscpu 2>&1)" ]; then
+      lscpu_data="$(lscpu 2>&1)"
+      printf "%s" "${lscpu_data}" | grep -iq "Xen" 2> /dev/null && vm="Xen"
+      printf "%s" "${lscpu_data}" | grep -iq "Microsoft" 2> /dev/null && vm="MS Hyper-V"
+      [ -n "${vm}" ] && vm_from="lscpu"
+    fi
+  fi
 
-	#Check vmnet
-	if [ -z "${vm_from}" ]; then
-		if [ -e /dev/vmnet ]; then
-			vm="VMware"
-			vm_from="/dev/vmnet"
-		fi
-	fi
+  #Check vmnet
+  if [ -z "${vm_from}" ]; then
+    if [ -e /dev/vmnet ]; then
+      vm="VMware"
+      vm_from="/dev/vmnet"
+    fi
+  fi
 
-	#Check dmi info
-	if [ -z "${vm_from}" ]; then
-		if [ -x "$(command -v dmidecode 2>&1)" ]; then
-			dmidecode 2>&1 | grep -iq "microsoft corporation" 2> /dev/null && vm="MS Hyper-V"
-			dmidecode 2>&1 | grep -iq "vmware" 2> /dev/null && vm="VMware"
-			dmidecode 2>&1 | grep -iq "virtualbox" 2> /dev/null && vm="VirtualBox"
-			dmidecode 2>&1 | grep -iq "qemu" 2> /dev/null && vm="Qemu/KVM"
-			dmidecode 2>&1 | grep -iq "domu" 2> /dev/null && vm="Xen"
-			[ -n "${vm}" ] && vm_from="dmi_info"
-		fi
-	fi
+  #Check dmi info
+  if [ -z "${vm_from}" ]; then
+    if [ -x "$(command -v dmidecode 2>&1)" ]; then
+      dmidecode 2>&1 | grep -iq "microsoft corporation" 2> /dev/null && vm="MS Hyper-V"
+      dmidecode 2>&1 | grep -iq "vmware" 2> /dev/null && vm="VMware"
+      dmidecode 2>&1 | grep -iq "virtualbox" 2> /dev/null && vm="VirtualBox"
+      dmidecode 2>&1 | grep -iq "qemu" 2> /dev/null && vm="Qemu/KVM"
+      dmidecode 2>&1 | grep -iq "domu" 2> /dev/null && vm="Xen"
+      [ -n "${vm}" ] && vm_from="dmi_info"
+    fi
+  fi
 
-	# Check dmesg Output
-	if [ -z "${vm_from}" ]; then
-		if [ -x "$(command -v dmesg 2>&1)" ]; then
-			dmesg | grep -iqE "vboxbios|vboxcput|vboxfacp|vboxxsdt|(vbox cd-rom)|(vbox harddisk)" && vm="VirtualBox"
-			dmesg | grep -iqE "(vmware virtual ide)|(vmware pvscsi)|(vmware virtual platform)" && vm="VMware"
-			dmesg | grep -iqE "(xen_mem)|(xen-vbd)" && vm="Xen"
-			dmesg | grep -iqE "(qemu virtual cpu version)" && vm="Qemu/KVM"
-			[ -n "${vm}" ] && vm_from="dmesg"
-		fi
-	fi
-	checkvm_status="run"
+  # Check dmesg Output
+  if [ -z "${vm_from}" ]; then
+    if [ -n "${USERID}" ] && [ "${USERID}" = "0" ]; then
+      if [ -x "$(command -v dmesg 2>&1)" ]; then
+        while true; do
+          if dmesg | grep -iqE "vboxbios|vboxcput|vboxfacp|vboxxsdt|(vbox cd-rom)|(vbox harddisk)"; then
+            vm="VirtualBox"
+            break
+          fi
+          if dmesg | grep -iqE "(vmware virtual ide)|(vmware pvscsi)|(vmware virtual platform)"; then
+            vm="VMware"
+            break
+          fi
+          if dmesg | grep -iqE "(xen_mem)|(xen-vbd)"; then
+            vm="Xen"
+            break
+          fi
+          if dmesg | grep -iqE "(qemu virtual cpu version)"; then
+            vm="Qemu/KVM"
+            break
+          fi
+          break
+        done
+        [ -n "${vm}" ] && vm_from="dmesg"
+      fi
+    fi
+  fi
+  checkvm_status="run"
 }
 
 kernel_breakage_check() {
