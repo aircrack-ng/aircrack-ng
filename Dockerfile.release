@@ -27,8 +27,8 @@ RUN set -x \
 	autoreconf -vif && \
 	set -e; \
 		./configure --with-experimental --with-ext-scripts --enable-maintainer-mode --without-opt --prefix=/usr && \
-		make -j3 && \
-		make check -j3 && \
+		make -j$(nproc) && \
+		make check -j$(nproc) && \
 		make install DESTDIR=/output
 
 # Stage 2
