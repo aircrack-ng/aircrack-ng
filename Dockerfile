@@ -18,9 +18,9 @@ RUN set -x \
 		autoreconf -vif && \
 		set -e; \
 			./configure --with-experimental --with-ext-scripts --enable-maintainer-mode --prefix=/usr/local && \
-			make -j3 && \
+			make -j$(nproc) && \
 		set +e && \
-			if ! make check -j3; then \
+			if ! make check -j$(nproc); then \
 				echo "Processor: $(uname -m)"; \
 				for file in `grep -l "(exit status: [1-9]" test/*.log`; do \
 					echo "[*] Test ${file}:"; \
