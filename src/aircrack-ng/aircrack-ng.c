@@ -4575,7 +4575,7 @@ static int do_make_wkp(struct AP_info * ap_cur)
 	if (!(string_has_suffix(opt.wkp, ".wkp")
 		  || string_has_suffix(opt.wkp, ".WKP")))
 	{
-		strcat(opt.wkp, ".wkp");
+		strncat(opt.wkp, ".wkp", 5);
 	}
 
 	fp_wkp = fopen(opt.wkp, "w");
@@ -4704,7 +4704,7 @@ static int do_make_hccap(struct AP_info * ap_cur)
 	// write file
 	FILE * fp_hccap;
 
-	strcat(opt.hccap, ".hccap");
+	strncat(opt.hccap, ".hccap", 7);
 
 	fp_hccap = fopen(opt.hccap, "wb");
 	if (fp_hccap == NULL)
@@ -4847,7 +4847,7 @@ static int do_make_hccapx(struct AP_info * ap_cur)
 	// write file
 	FILE * fp_hccapx;
 
-	strcat(opt.hccapx, ".hccapx");
+	strncat(opt.hccapx, ".hccapx", 8);
 
 	fp_hccapx = fopen(opt.hccapx, "wb");
 	if (fp_hccapx == NULL)
@@ -6647,8 +6647,8 @@ int main(int argc, char * argv[])
 		ap_cur->target = 1;
 		ap_cur->wpa.state = 7;
 		ap_cur->wpa.keyver = (uint8_t) (opt.amode & 0xFF);
-		strcpy((char *) ap_cur->essid, "sorbo");
-		strcpy((char *) ap_cur->bssid, "deadb");
+		strncpy((char *) ap_cur->essid, "sorbo", 6);
+		strncpy((char *) ap_cur->bssid, "deadb", 6);
 		c_avl_insert(targets, ap_cur->bssid, ap_cur);
 
 		goto __start;

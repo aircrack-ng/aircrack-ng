@@ -2156,7 +2156,7 @@ static int do_linux_open(struct wif * wi, char * iface)
 					dev->main_if
 						= (char *) malloc(strlen(this_iface->d_name) + 1);
 					if (dev->main_if == NULL) continue;
-					strcpy(dev->main_if, this_iface->d_name);
+					strncpy(dev->main_if, this_iface->d_name, sizeof(this_iface->d_name));
 					break;
 				}
 			}

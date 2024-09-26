@@ -4652,7 +4652,7 @@ json_get_value_for_name(const char * buffer, const char * name, char * value)
 		else if (strncmp(cursor, "true", 4) == 0)
 		{
 			/* Boolean */
-			strcpy(value, "true");
+			strncpy(value, "true", 5);
 			ret = 1;
 		}
 		else if (strncmp(cursor, "false", 5) == 0)
@@ -4951,7 +4951,7 @@ static THREAD_ENTRY(gps_tracker_thread)
 
 				memset(line, 0, sizeof(line));
 
-				strcat(line, "PVTAD\r\n");
+				strncat(line, "PVTAD\r\n", 8);
 				if (send(gpsd_sock, line, 7, 0) != 7)
 				{
 					free(return_success);
