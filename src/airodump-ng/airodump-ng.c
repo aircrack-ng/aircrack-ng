@@ -4658,7 +4658,7 @@ json_get_value_for_name(const char * buffer, const char * name, char * value)
 		else if (strncmp(cursor, "false", 5) == 0)
 		{
 			/* Boolean */
-			strcpy(value, "false");
+			strncpy(value, "false", 6);
 			ret = 1;
 		}
 		else if ('{' == *cursor || '[' == *cursor)
