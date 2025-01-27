@@ -1714,9 +1714,9 @@ for iface in $(printf "%s" "${iface_list}"); do
 				CHIPSETt="\t\t\t\t\t\t\t\t\t\t"
 			fi
 		fi
-		# just plain hard to read
-		# shellcheck disable=2059
-		printf "${FROM}[${PHYDEV}]${iface}${FIELD1t}${DRIVER}[${STACK}]-${FIRMWARE}${FIELD2t}${CHIPSET}${CHIPSETt}${EXTENDED}\n"
+		printf '%s[%s]%s%s%s[%s]-%s%s%s%s%s\n' \
+			"${FROM}" "${PHYDEV}" "${iface}" "${FIELD1t}" "${DRIVER}" "${STACK}" \
+			"${FIRMWARE}" "${FIELD2t}" "${CHIPSET}" "${CHIPSETt}" "${EXTENDED}"
 	else
 		#beautify output spacing (within reason, interface/driver max length is 15 and phy max length is 7))
 		if [ ${#DRIVER} -gt 7 ]; then
