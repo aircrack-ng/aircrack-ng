@@ -501,10 +501,10 @@ startMac80211Iface() {
 	fi
 	#check if $1 already has a mon interface on the same phy and bail if it does
 	if [ -d "/sys/class/ieee80211/${PHYDEV}/device/net" ]; then
-		#this should be fixed, but it's not going to be right now
-		# shellcheck disable=2045
-		for i in $(ls "/sys/class/ieee80211/${PHYDEV}/device/net/"); do
-			if [ "$(cat "/sys/class/ieee80211/${PHYDEV}/device/net/${i}/type")" = "803" ]; then
+		for i in "/sys/class/ieee80211/${PHYDEV}/device/net"/*/"type"; do
+			if [ -e "${i}" ] && [ "$(cat "${i}")" = "803" ]; then
+				i=${i%/*}
+				i=${i##*/}
 				setChannelMac80211 "${i}"
 				printf "\t\t(mac80211 monitor mode already enabled for [%s]%s on [%s]%s)\n" "${PHYDEV}" "${1}" "${PHYDEV}" "${i}"
 				exit
