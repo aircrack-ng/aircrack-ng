@@ -307,7 +307,7 @@ rfkill_check() {
 	fi
 	#first we have to find the rfkill index
 	#this is available as /sys/class/net/wlan0/phy80211/rfkill## but that's a bit difficult to parse
-	index="$(rfkill list | grep "${1}:" | awk -F: '{print $1}')"
+	index="$(rfkill list | grep "${1}:" | awk -F: '{print $1}' | head -n 1)"
 	if [ -z "$index" ]; then
 		return 187
 	fi
