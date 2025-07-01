@@ -607,6 +607,24 @@ static THREAD_ENTRY(input_thread)
 			}
 		}
 
+		if (keycode == KEY_HOME || keycode == KEY_H)
+		{
+			if (lopt.p_selected_ap)
+			{
+				lopt.p_selected_ap = lopt.ap_end;
+				lopt.en_selection_direction = selection_direction_up;
+			}
+		}
+
+		if (keycode == KEY_END || keycode == KEY_L)
+		{
+			if (lopt.p_selected_ap)
+			{
+				lopt.p_selected_ap = lopt.ap_1st;
+				lopt.en_selection_direction = selection_direction_down;
+			}
+		}
+
 		if (keycode == KEY_i)
 		{
 			lopt.sort_inv *= -1;
