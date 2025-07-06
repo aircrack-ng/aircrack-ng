@@ -704,7 +704,7 @@ int capture_ask_packet(int * caplen, int just_grab)
 
 		nb_pkt_read++;
 
-		if (filter_packet(h80211, *caplen) != 0) continue;
+		if (!opt.no_filter && filter_packet(h80211, *caplen) != 0) continue;
 
 		if (opt.fast) break;
 

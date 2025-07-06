@@ -137,6 +137,7 @@ struct communication_options
 	int bittest;
 
 	int nodetect;
+	int no_filter;
 	int ignore_negative_one;
 	int rtc;
 
