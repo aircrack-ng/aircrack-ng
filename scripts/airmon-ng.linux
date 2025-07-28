@@ -501,12 +501,10 @@ startMac80211Iface() {
 	fi
 	#check if $1 already has a mon interface on the same phy and bail if it does
 	if [ -d "/sys/class/ieee80211/${PHYDEV}/device/net" ]; then
-		#this should be fixed, but it's not going to be right now
-		# shellcheck disable=2045
-		for i in $(ls "/sys/class/ieee80211/${PHYDEV}/device/net/"); do
-			if [ "$(cat "/sys/class/ieee80211/${PHYDEV}/device/net/${i}/type")" = "803" ]; then
+		for i in "/sys/class/ieee80211/${PHYDEV}/device/net"/*; do
+			if [ "$(cat "${i}/type")" = "803" ]; then
 				setChannelMac80211 "${i}"
-				printf "\t\t(mac80211 monitor mode already enabled for [%s]%s on [%s]%s)\n" "${PHYDEV}" "${1}" "${PHYDEV}" "${i}"
+        printf "\t\t(mac80211 monitor mode already enabled for [%s]%s on [%s]%s)\n" "${PHYDEV}" "${1}" "${PHYDEV}" "$(basename "${i}")"
 				exit
 			fi
 		done
@@ -865,21 +863,17 @@ stopwlIface() {
 getDriver() {
 	unset DRIVER
 	#standard detection path, this is all that is needed for proper drivers
-	#DRIVER=$(printf "$ethtool_output" | awk '/driver/ {print $2}')
+	DRIVER=$(printf "$ethtool_output" | awk '/driver/ {print $2}')
 
-	#if $(modinfo -F filename ${DRIVER} > /dev/null 2>&1)
-	#then
-	#	true
-	#else
-	#	unset DRIVER
-	#fi
+	if $(modinfo -F filename ${DRIVER} > /dev/null 2>&1); then
+    return
+	else
+		unset DRIVER
+	fi
 
-	#if [ "$DRIVER" = "" ]
-	#then
-		if [ -f "/sys/class/net/$1/device/uevent" ]; then
-			DRIVER="$(awk -F'=' '$1 == "DRIVER" {print $2}' "/sys/class/net/${1}/device/uevent")"
-		fi
-	#fi
+  if [ -f "/sys/class/net/$1/device/uevent" ]; then
+    DRIVER="$(awk -F'=' '$1 == "DRIVER" {print $2}' "/sys/class/net/${1}/device/uevent")"
+  fi
 
 	#here we test for driver usb, ath9k_htc,rt2870, possibly others show this
 	if [ "$DRIVER" = "usb" ]; then
