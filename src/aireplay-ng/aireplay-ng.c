@@ -134,6 +134,7 @@ static const char usage[] =
 	"      -f fromds : frame control, From    DS bit\n"
 	"      -w iswep  : frame control, WEP     bit\n"
 	"      -D        : disable AP detection\n"
+	"      -N        : disable filter\n"
 	"\n"
 	"  Replay options:\n"
 	"\n"
@@ -6034,7 +6035,7 @@ int main(int argc, char * argv[])
 		int option = getopt_long(argc,
 								 argv,
 								 "b:d:s:m:n:u:v:t:Z:T:f:g:w:x:p:a:c:h:e:ji:r:k:"
-								 "l:y:o:q:Q0:1:23456789HFBDR",
+								 "l:y:o:q:Q0:1:23456789HFBDRN",
 								 long_options,
 								 &option_index);
 
@@ -6504,6 +6505,11 @@ int main(int argc, char * argv[])
 			case 'R':
 
 				opt.rtc = 0;
+				break;
+
+			case 'N':
+
+				opt.no_filter = 1;
 				break;
 
 			default:
