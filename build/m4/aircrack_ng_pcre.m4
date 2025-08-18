@@ -75,6 +75,10 @@ fi
 if test "x$HAVE_PCRE" = "xyes" && test "x$HAVE_PCRE2" = "xyes"; then
     AC_DEFINE([HAVE_PCRE2], [1], [Define this if you have libpcre2-8 on your system])
     PCRE2_NOTE="(Pcre and Pcre2 found, using Pcre2)"
+    # Reset PCRE cflags and libs variables as we include both PCRE and PCRE2 in Makefile.inc
+    # and would result in trying to link/include both library.
+    PCRE_CFLAGS=""
+    PCRE_LIBS=""
 elif test "x$HAVE_PCRE" = "xyes"; then
     AC_DEFINE([HAVE_PCRE], [1], [Define this if you have libpcre on your system])
 elif test "x$HAVE_PCRE2" = "xyes"; then
