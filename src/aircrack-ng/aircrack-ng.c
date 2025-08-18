@@ -637,15 +637,17 @@ static __attribute__((noinline)) void clean_exit(int ret)
 	close_aircrack = 1;
 	if (ret)
 	{
+		close_aircrack_fast = 1;
+
 		if (!opt.is_quiet)
 		{
 			printf("\nQuitting aircrack-ng...\n");
 			fflush(stdout);
 		}
-
-		close_aircrack_fast = 1;
-
-		return;
+		else
+		{
+			return;
+		}
 	}
 
 	if (opt.dict)
