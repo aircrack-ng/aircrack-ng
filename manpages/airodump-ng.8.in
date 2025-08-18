@@ -104,10 +104,13 @@ Removes the message that says \(aqfixed channel <interface>: -1\(aq.
 It will only show networks matching the given encryption. Note that WPA is a shortcut for WPA1, WPA2 and WPA3. May be specified more than once: \(aq\-t OPN \-t WPA2\(aq
 .TP
 .I -d <bssid>, --bssid <bssid>
-It will only show networks, matching the given bssid. May be specified more than once: \(aq\-d 0D:F7:E2:61:C6:6D \-d 5B:62:A1:83:00:A8\(aq
+It will only show networks, matching the given BSSID. May be specified more than once: \(aq\-d 0D:F7:E2:61:C6:6D \-d 5B:62:A1:83:00:A8\(aq
+.TP
+.I -X <bssid>, --exclude-bssid <bssid>
+It will show all networks, except the one matching the given BSSID. May be specified more than once: \(aq\-X 0D:F7:E2:61:C6:6D \-X 5B:62:A1:83:00:A8\(aq
 .TP
 .I -m <mask>, --netmask <mask>
-It will only show networks, matching the given bssid ^ netmask combination. Need \-\-bssid (or \-d) to be specified.
+It will only show networks, matching the given BSSID ^ netmask combination. Need \-\-bssid (or \-d) to be specified.
 .TP
 .I -a
 It will only show associated stations. Using in combination with -z won't display any of the stations.
