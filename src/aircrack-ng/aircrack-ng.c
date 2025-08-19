@@ -3789,12 +3789,9 @@ static void show_wpa_stats(char * key,
 	delta = chrono(&t_begin, 0);
 	if (delta <= FLT_EPSILON) goto __out;
 
-	et_s = (int) lrintf(fmodf(delta, 59.f));
-	et_m = (int) lrintf(fmodf(((delta - et_s) / 60.0), 59.0f));
-	if (delta >= 60.f * 60.f)
-		et_h = (int) lrintf((delta - et_s - et_m) / (60.f * 60.f));
-	else
-		et_h = 0;
+	et_s = (int) (fmodf(delta, 60.f));
+	et_m = (int) (fmodf(((delta - et_s) / 60.0), 60.0f));
+	et_h = (int) (delta / (60.f * 60.f));
 
 	ALLEGE(pthread_mutex_lock(&mx_nb) == 0);
 	cur_nb_kprev = nb_kprev;
