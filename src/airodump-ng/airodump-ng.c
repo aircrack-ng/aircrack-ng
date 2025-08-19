@@ -542,6 +542,11 @@ static THREAD_ENTRY(input_thread)
 							 sizeof(lopt.message),
 							 "][ sorting by ESSID");
 					break;
+				case SORT_BY_UPTIME:
+					snprintf(lopt.message,
+							 sizeof(lopt.message),
+							 "][ sorting by uptime");
+					break;
 				default:
 					break;
 			}
@@ -3311,6 +3316,12 @@ static void dump_sort(void)
 										 (char *) ap_min->essid,
 										 ESSID_LENGTH))
 								* lopt.sort_inv
+							< 0)
+							ap_min = ap_cur;
+						break;
+					case SORT_BY_UPTIME:
+						if ((ap_cur->timestamp < ap_min->timestamp) 
+								&& lopt.sort_inv
 							< 0)
 							ap_min = ap_cur;
 						break;
