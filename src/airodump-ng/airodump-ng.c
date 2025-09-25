@@ -4799,7 +4799,6 @@ static THREAD_ENTRY(gps_tracker_thread)
 		while (lopt.do_exit == 0)
 		{
 			gpsd_tried_connection = 0; // reset socket connection test
-			usleep(50000);
 
 			// Reset all GPS data before each read so that if we lose GPS signal
 			// or drop to a 2D fix, the loss of data is accurately reflected
@@ -4955,6 +4954,9 @@ static THREAD_ENTRY(gps_tracker_thread)
 			else
 			{
 				// Else read a NON JSON format
+				// In the old protocol, it us the client which
+				// determines the frequency of the updates
+				usleep(500000);
 
 				memset(line, 0, GPSD_BUF_SIZE);
 
