@@ -2206,6 +2206,14 @@ skip_probe:
 				}
 			}
 		}
+
+		/* For open/WEP networks, MFP is necessarily disabled. */
+		if (ap_cur->mfp < 0
+			&& (ap_cur->security & (STD_OPN | STD_WEP))
+			&& !(ap_cur->security & (STD_WPA | STD_WPA2)))
+		{
+			ap_cur->mfp = 0;
+		}
 	}
 
 	/* packet parsing: Beacon & Probe response */
@@ -3816,7 +3824,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			strlcat(strbuf, "        UPTIME ", sizeof(strbuf));
 
 		if (lopt.show_mfp)
-			strlcat(strbuf, "MFP ", sizeof(strbuf));
+			strlcat(strbuf, "MFP  ", sizeof(strbuf));
 
 		if (lopt.show_wps)
 		{
@@ -4109,15 +4117,15 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 			if (ws_col > (columns_ap - 4))
 			{
-				if (lopt.show_mfp)
-				{
-					int mfp_val = (ap_cur->mfp < 0) ? -1 : ap_cur->mfp;
-					snprintf(strbuf + len,
-							 sizeof(strbuf) - len,
-							 " %d ",
-							 mfp_val);
-					len = strlen(strbuf);
-				}
+			if (lopt.show_mfp)
+			{
+				int mfp_val = (ap_cur->mfp < 0) ? -1 : ap_cur->mfp;
+				snprintf(strbuf + len,
+						 sizeof(strbuf) - len,
+						 " %2d ",
+						 mfp_val);
+				len = strlen(strbuf);
+			}
 
 				if (lopt.show_wps)
 				{
