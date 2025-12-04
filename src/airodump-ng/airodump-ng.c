@@ -131,6 +131,8 @@ static void dump_print(int ws_row, int ws_col, int if_num);
 static char *
 get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2);
 int is_filtered_essid(const uint8_t * essid);
+static int rsn_mfp_from_ie(const unsigned char * rsn, size_t len);
+static int mfp_value_from_caps(uint16_t rsn_caps);
 
 /* bunch of global stuff */
 struct communication_options opt;
@@ -265,6 +267,7 @@ static struct local_options
 	int file_write_interval;
 	u_int maxsize_wps_seen;
 	int show_wps;
+	int show_mfp;
 	struct tm gps_time; /* the timestamp from the gps data */
 #ifdef CONFIG_LIBNL
 	unsigned int htval;
@@ -826,6 +829,7 @@ static const char usage[] =
 	"      --manufacturer        : Display manufacturer from IEEE OUI list\n"
 	"      --uptime              : Display AP Uptime from Beacon Timestamp\n"
 	"      --wps                 : Display WPS information (if any)\n"
+	"      --mfp, --fmt          : Display MFP information (-1/ blank unknown, 0 disabled, 1 capable, 2 required)\n"
 	"      --output-format\n"
 	"                  <formats> : Output format. Possible values:\n"
 	"                              pcap, ivs, csv, gps, kismet, netxml, "
@@ -1287,6 +1291,34 @@ static int remove_namac(unsigned char * mac)
 	return (0);
 }
 
+static int mfp_value_from_caps(uint16_t rsn_caps)
+{
+	if (rsn_caps & 0x0040) return 2;
+	if (rsn_caps & 0x0080) return 1;
+	return 0;
+}
+
+static int rsn_mfp_from_ie(const unsigned char * rsn, size_t len)
+{
+	size_t pos = 6; // version (2) + group cipher suite (4)
+
+	if (rsn == NULL) return (-1);
+	if (len < pos + 2) return (-1); // pairwise count
+
+	size_t pairwise_count = rsn[pos] | ((size_t) rsn[pos + 1] << 8);
+	pos += 2 + 4 * pairwise_count;
+
+	if (len < pos + 2) return (-1); // AKM count
+	size_t akm_count = rsn[pos] | ((size_t) rsn[pos + 1] << 8);
+	pos += 2 + 4 * akm_count;
+
+	if (len < pos + 2) return (-1); // RSN capabilities
+
+	uint16_t rsn_caps = rsn[pos] | ((uint16_t) rsn[pos + 1] << 8);
+
+	return mfp_value_from_caps(rsn_caps);
+}
+
 // NOTE(jbenden): This is also in ivstools.c
 static int dump_add_packet(unsigned char * h80211,
 						   int caplen,
@@ -1498,6 +1530,8 @@ static int dump_add_packet(unsigned char * h80211,
 		ap_cur->ac_channel.mhz_160_chan = 0;
 		ap_cur->ac_channel.wave_2 = 0;
 		memset(ap_cur->ac_channel.mcs_index, 0, MAX_AC_MCS_INDEX);
+
+		ap_cur->mfp = -1;
 	}
 
 	/* update the last time seen */
@@ -1677,6 +1711,7 @@ static int dump_add_packet(unsigned char * h80211,
 		st_cur->qos_fr_ds = 0;
 		st_cur->qos_to_ds = 0;
 		st_cur->channel = 0;
+		st_cur->mfp = -1;
 
 		gettimeofday(&(st_cur->ftimer), NULL);
 
@@ -2312,6 +2347,15 @@ skip_probe:
 					}
 				}
 
+				if (type == 0x30)
+				{
+					size_t rsn_caps_offset = 4 * numauth;
+					uint16_t rsn_caps = p[rsn_caps_offset]
+										| ((uint16_t) p[rsn_caps_offset + 1]
+										   << 8);
+					ap_cur->mfp = mfp_value_from_caps(rsn_caps);
+				}
+
 				p = org_p + length + 2;
 			}
 			else if ((type == 0xDD && (length >= 8)
@@ -2477,6 +2521,12 @@ skip_probe:
 				if (verifyssid(ap_cur->essid) == 0)
 					for (i = 0; i < n; i++)
 						if (ap_cur->essid[i] < 32) ap_cur->essid[i] = '.';
+			}
+
+			if (p[0] == 0x30 && st_cur != NULL)
+			{
+				int mfp_val = rsn_mfp_from_ie(p + 2, (size_t) p[1]);
+				if (mfp_val >= 0) st_cur->mfp = mfp_val;
 			}
 
 			p += 2 + p[1];
@@ -3592,6 +3642,8 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	if (!(lopt.singlechan || lopt.singlefreq))
 		columns_ap -= 4; // no RXQ in scan mode
 	if (lopt.show_uptime) columns_ap += 15; // show uptime needs more space
+	if (lopt.show_mfp) columns_ap += 4;
+	if (lopt.show_mfp) columns_sta += 4;
 
 	nlines = 2;
 
@@ -3762,6 +3814,9 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 		if (lopt.show_uptime)
 			strlcat(strbuf, "        UPTIME ", sizeof(strbuf));
+
+		if (lopt.show_mfp)
+			strlcat(strbuf, "MFP ", sizeof(strbuf));
 
 		if (lopt.show_wps)
 		{
@@ -4054,6 +4109,16 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 			if (ws_col > (columns_ap - 4))
 			{
+				if (lopt.show_mfp)
+				{
+					int mfp_val = (ap_cur->mfp < 0) ? -1 : ap_cur->mfp;
+					snprintf(strbuf + len,
+							 sizeof(strbuf) - len,
+							 " %d ",
+							 mfp_val);
+					len = strlen(strbuf);
+				}
+
 				if (lopt.show_wps)
 				{
 					ssize_t wps_len = len;
@@ -4208,10 +4273,17 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 	if (lopt.show_sta && !(lopt.asso_station && lopt.unasso_station))
 	{
-		strlcpy(strbuf,
-				" BSSID              STATION "
-				"           PWR    Rate    Lost   Frames  Notes  Probes",
-				sizeof(strbuf));
+		if (lopt.show_mfp)
+			strlcpy(strbuf,
+					" BSSID              STATION "
+					"           PWR    Rate    Lost   Frames  MFP Notes  "
+					"Probes",
+					sizeof(strbuf));
+		else
+			strlcpy(strbuf,
+					" BSSID              STATION "
+					"           PWR    Rate    Lost   Frames  Notes  Probes",
+					sizeof(strbuf));
 		strbuf[ws_col - 1] = '\0';
 		console_puts(strbuf);
 		CHECK_END_OF_SCREEN();
@@ -4314,6 +4386,13 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				printf("%c", (st_cur->qos_to_ds) ? 'e' : ' ');
 				printf("  %4d", st_cur->missed);
 				printf(" %8lu", st_cur->nb_pkt);
+				if (lopt.show_mfp)
+				{
+					if (st_cur->mfp < 0)
+						printf("    ");
+					else
+						printf("  %d", st_cur->mfp);
+				}
 				printf("  %-5s",
 					   (st_cur->wpa.pmkid[0] != 0)
 						   ? "PMKID"
@@ -4343,7 +4422,12 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 							< 0
 						? abort()
 						: (void) 0;
-					strbuf[MAX(ws_col - 75, 0)] = '\0';
+					size_t probes_room
+						= (ws_col > 0 && ws_col > columns_sta)
+							  ? (size_t) ws_col - (size_t) columns_sta - 1
+							  : 0;
+					if (probes_room >= sizeof(strbuf)) probes_room = sizeof(strbuf) - 1;
+					strbuf[probes_room] = '\0';
 					printf(" %s", strbuf);
 				}
 
@@ -6017,6 +6101,8 @@ int main(int argc, char * argv[])
 		   {"uptime", 0, 0, 'U'},
 		   {"write-interval", 1, 0, 'I'},
 		   {"wps", 0, 0, 'W'},
+		   {"mfp", 0, 0, 'F'},
+		   {"fmt", 0, 0, 'F'},
 		   {"background", 1, 0, 'K'},
 		   {"min-packets", 1, 0, 'n'},
 		   {"min-power", 1, 0, 'p'},
@@ -6107,6 +6193,7 @@ int main(int argc, char * argv[])
 	lopt.file_write_interval = 5; // Write file every 5 seconds by default
 	lopt.maxsize_wps_seen = 6;
 	lopt.show_wps = 0;
+	lopt.show_mfp = 0;
 	lopt.background_mode = -1;
 	lopt.do_exit = 0;
 	lopt.min_pkts = 2;
@@ -6215,7 +6302,7 @@ int main(int argc, char * argv[])
 		option = getopt_long(
 			argc,
 			argv,
-			"b:c:Oegiw:s:t:u:m:d:N:R:azHDB:Ahf:r:EC:o:x:MUI:WK:n:p:q:T",
+			"b:c:Oegiw:s:t:u:m:d:N:R:azHDB:Ahf:r:EC:o:x:MUI:WFK:n:p:q:T",
 			long_options,
 			&option_index);
 
@@ -6315,6 +6402,11 @@ int main(int argc, char * argv[])
 			case 'W':
 
 				lopt.show_wps = 1;
+				break;
+
+			case 'F':
+
+				lopt.show_mfp = 1;
 				break;
 
 			case 'c':
