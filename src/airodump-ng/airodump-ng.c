@@ -829,7 +829,7 @@ static const char usage[] =
 	"      --manufacturer        : Display manufacturer from IEEE OUI list\n"
 	"      --uptime              : Display AP Uptime from Beacon Timestamp\n"
 	"      --wps                 : Display WPS information (if any)\n"
-	"      --mfp, --fmt          : Display MFP information (-1/ blank unknown, 0 disabled, 1 capable, 2 required)\n"
+	"      --mfp, --pmf          : Display MFP information (-1/ blank unknown, 0 disabled, 1 capable, 2 required)\n"
 	"      --output-format\n"
 	"                  <formats> : Output format. Possible values:\n"
 	"                              pcap, ivs, csv, gps, kismet, netxml, "
@@ -6110,7 +6110,7 @@ int main(int argc, char * argv[])
 		   {"write-interval", 1, 0, 'I'},
 		   {"wps", 0, 0, 'W'},
 		   {"mfp", 0, 0, 'F'},
-		   {"fmt", 0, 0, 'F'},
+		   {"pmf", 0, 0, 'F'},
 		   {"background", 1, 0, 'K'},
 		   {"min-packets", 1, 0, 'n'},
 		   {"min-power", 1, 0, 'p'},
