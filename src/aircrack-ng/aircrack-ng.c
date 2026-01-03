@@ -1377,6 +1377,21 @@ static int packet_reader__update_ap_info(struct AP_info * ap_cur,
 
 	/* locate the station MAC in the 802.11 header */
 
+	unsigned char bssid_temp[ETHER_ADDR_LEN];
+	int is_wds = ((h80211[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_DSTODS);
+
+	/* For WDS, pre-extract BSSID to identify station */
+	if (is_wds && (h80211[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_DATA)
+	{
+		/* Try both Addr1 and Addr2 to find which matches opt.bssid */
+		memcpy(bssid_temp, h80211 + 4, ETHER_ADDR_LEN); /* Addr1 */
+		if (me->mode != PACKET_READER_READ_MODE
+			|| memcmp(bssid_temp, opt.bssid, ETHER_ADDR_LEN) != 0)
+		{
+			memcpy(bssid_temp, h80211 + 10, ETHER_ADDR_LEN); /* Addr2 */
+		}
+	}
+
 	switch (h80211[1] & IEEE80211_FC1_DIR_MASK)
 	{
 		case IEEE80211_FC1_DIR_NODS:
@@ -1388,6 +1403,14 @@ static int packet_reader__update_ap_info(struct AP_info * ap_cur,
 			/* reject broadcast MACs */
 			if ((h80211[4] % 2) != 0) goto skip_station;
 			memcpy(stmac, h80211 + 4, ETHER_ADDR_LEN);
+			break;
+
+		case IEEE80211_FC1_DIR_DSTODS:
+			/* WDS: use the MAC that is NOT the BSSID */
+			if (memcmp(h80211 + 4, bssid_temp, ETHER_ADDR_LEN) == 0)
+				memcpy(stmac, h80211 + 10, ETHER_ADDR_LEN); /* Addr1 is BSSID, use Addr2 */
+			else
+				memcpy(stmac, h80211 + 4, ETHER_ADDR_LEN); /* Addr2 is BSSID, use Addr1 */
 			break;
 
 		default:
@@ -1917,9 +1940,12 @@ static int packet_reader_process_packet(packet_reader_t * me,
 				memcpy(bssid, h80211 + 4, ETHER_ADDR_LEN);
 				break; // ToDS
 			case IEEE80211_FC1_DIR_FROMDS:
-			case IEEE80211_FC1_DIR_DSTODS:
 				memcpy(bssid, h80211 + 10, ETHER_ADDR_LEN);
-				break; // WDS -> Transmitter taken as BSSID
+				break; // FromDS
+			case IEEE80211_FC1_DIR_DSTODS:
+				/* WDS: use Receiver Address as BSSID for consistency */
+				memcpy(bssid, h80211 + 4, ETHER_ADDR_LEN);
+				break;
 			default:
 				fprintf(stderr,
 						"Expected a value between 0 and 3, got %d.\n",
@@ -1959,7 +1985,23 @@ static int packet_reader_process_packet(packet_reader_t * me,
 
 	if (me->mode == PACKET_READER_READ_MODE)
 	{
-		if (memcmp(bssid, opt.bssid, ETHER_ADDR_LEN) != 0) return (0);
+		int bssid_match = (memcmp(bssid, opt.bssid, ETHER_ADDR_LEN) == 0);
+
+		/* WDS bridge: check if either end matches the target BSSID */
+		if (!bssid_match && (h80211[1] & IEEE80211_FC1_DIR_MASK) == IEEE80211_FC1_DIR_DSTODS)
+		{
+			unsigned char alt_bssid[ETHER_ADDR_LEN];
+			/* Check Addr2 (Transmitter) as alternative BSSID */
+			memcpy(alt_bssid, h80211 + 10, ETHER_ADDR_LEN);
+			if (memcmp(alt_bssid, opt.bssid, ETHER_ADDR_LEN) == 0)
+			{
+				/* Use the matching BSSID for AP lookup */
+				memcpy(bssid, alt_bssid, ETHER_ADDR_LEN);
+				bssid_match = 1;
+			}
+		}
+
+		if (!bssid_match) return (0);
 	}
 
 	if (memcmp(opt.maddr, ZERO, ETHER_ADDR_LEN) != 0
