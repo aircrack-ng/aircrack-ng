@@ -311,10 +311,7 @@ rfkill_check() {
 	if [ -z "$index" ]; then
 		return 187
 	fi
-	rfkill_status="$(rfkill list "${index}" 2>&1)"
-	# it's easier to capture and check this way, but a refactor could make it simpler and safer
-	# shellcheck disable=2181
-	if [ $? != 0 ]; then
+	if ! rfkill_status="$(rfkill list "${index}" 2>&1)"; then
 		printf "rfkill error: %s\n" "${rfkill_status}"
 		return 187
 	elif [ -z "${rfkill_status}" ]; then
@@ -341,10 +338,7 @@ rfkill_unblock() {
 		return 0
 	fi
 	if ! rfkill unblock "${1#phy}" 2>&1; then
-		rfkill_status="$(rfkill unblock "${index}" 2>&1)"
-		# it would be nice to refactor this, but it's easier this way
-		# shellcheck disable=2181
-		if [ $? != 0 ]; then
+		if ! rfkill_status="$(rfkill unblock "${index}" 2>&1)"; then
 			if [ "$(printf "%s" "${rfkill_status}" | grep -c "Usage")" -eq 1 ]; then
 				printf "Missing parameters in rfkill! Report this"
 			else
@@ -1709,8 +1703,9 @@ for iface in $(printf "%s" "${iface_list}"); do
 			fi
 		fi
 		# just plain hard to read
-		# shellcheck disable=2059
-		printf "${FROM}[${PHYDEV}]${iface}${FIELD1t}${DRIVER}[${STACK}]-${FIRMWARE}${FIELD2t}${CHIPSET}${CHIPSETt}${EXTENDED}\n"
+		printf '%s[%s]%s%s%s[%s]-%s%s%s%s%s\n' \
+			"${FROM}" "${PHYDEV}" "${iface}" "${FIELD1t}" "${DRIVER}" \
+			"${STACK}" "${FIRMWARE}" "${FIELD2t}" "${CHIPSET}" "${CHIPSETt}" "${EXTENDED}"
 	else
 		#beautify output spacing (within reason, interface/driver max length is 15 and phy max length is 7))
 		if [ ${#DRIVER} -gt 7 ]; then
@@ -1724,8 +1719,7 @@ for iface in $(printf "%s" "${iface_list}"); do
 			ifacet="\t\t"
 		fi
 		# just plain hard to read
-		# shellcheck disable=2059
-		printf "${PHYDEV}\t${iface}${ifacet}${DRIVER}${DRIVERt}${CHIPSET}\n"
+		printf '%s\t%s%s%s%s%s\n' "${PHYDEV}" "${iface}" "${ifacet}" "${DRIVER}" "${DRIVERt}" "${CHIPSET}"
 	fi
 
 	if [ "${DRIVER}" = "wl" ]; then
