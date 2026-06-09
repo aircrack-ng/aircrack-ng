@@ -978,11 +978,11 @@ getFirmware() {
 	FIRMWARE="$(printf "%s" "${ethtool_output}" | awk '/firmware-version/ {print $2}')"
 	#ath9k_htc and intel firmware is a shorter version number than most so trap and make it pretty
 	if [ "${DRIVER}" = "ath9k_htc" ] || [ "${DRIVER}" = "iwlwifi" ]; then
-		FIRMWARE="$FIRMWARE\t"
+		FIRMWAREt="\t"
 	fi
 
 	if [ "$FIRMWARE" = "N/A" ]; then
-		FIRMWARE="$FIRMWARE\t"
+		FIRMWAREt="\t"
 	elif [ -z "$FIRMWARE" ]; then
 		FIRMWARE="unavailable"
 	fi
@@ -1643,7 +1643,7 @@ else
 fi
 
 for iface in $(printf "%s" "${iface_list}"); do
-	unset ethtool_output DRIVER FROM FIRMWARE STACK MADWIFI MAC80211 BUS BUSADDR BUSINFO DEVICEID CHIPSET EXTENDED NET_TYPE PHYDEV ifacet DRIVERt FIELD1 FIELD1t FIELD2 FIELD2t CHIPSETt
+	unset ethtool_output DRIVER FROM FIRMWARE FIRMWAREt STACK MADWIFI MAC80211 BUS BUSADDR BUSINFO DEVICEID CHIPSET EXTENDED NET_TYPE PHYDEV ifacet DRIVERt FIELD1 FIELD1t FIELD2 FIELD2t CHIPSETt
 	#add a RUNNING check here and up the device if it isn't already
 	ethtool_output="$(ethtool -i "${iface}" 2>&1)"
 	if [ "$ethtool_output" != "Cannot get driver information: Operation not supported" ]; then
@@ -1702,9 +1702,9 @@ for iface in $(printf "%s" "${iface_list}"); do
 				CHIPSETt="\t\t\t\t\t\t\t\t\t\t"
 			fi
 		fi
-		printf '%s[%s]%s%b%s[%s]-%s%b%s%b%b\n' \
+		printf '%s[%s]%s%b%s[%s]-%s%b%b%s%b%b\n' \
 			"${FROM}" "${PHYDEV}" "${iface}" "${FIELD1t}" "${DRIVER}" \
-			"${STACK}" "${FIRMWARE}" "${FIELD2t}" "${CHIPSET}" "${CHIPSETt}" "${EXTENDED}"
+			"${STACK}" "${FIRMWARE}" "${FIRMWAREt}" "${FIELD2t}" "${CHIPSET}" "${CHIPSETt}" "${EXTENDED}"
 	else
 		#beautify output spacing (within reason, interface/driver max length is 15 and phy max length is 7))
 		if [ ${#DRIVER} -gt 7 ]; then
