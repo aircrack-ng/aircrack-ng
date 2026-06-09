@@ -1702,7 +1702,7 @@ for iface in $(printf "%s" "${iface_list}"); do
 				CHIPSETt="\t\t\t\t\t\t\t\t\t\t"
 			fi
 		fi
-		printf '%s[%s]%s%b%s[%s]-%s%b%s%b%s\n' \
+		printf '%s[%s]%s%b%s[%s]-%s%b%s%b%b\n' \
 			"${FROM}" "${PHYDEV}" "${iface}" "${FIELD1t}" "${DRIVER}" \
 			"${STACK}" "${FIRMWARE}" "${FIELD2t}" "${CHIPSET}" "${CHIPSETt}" "${EXTENDED}"
 	else
