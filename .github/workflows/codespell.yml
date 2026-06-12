@@ -25,4 +25,8 @@ jobs:
         run: sudo apt update -y && sudo apt install -y codespell
 
       - name: Run codespell
-        run: codespell
+        # Devine's name is not misspelled
+        # clen is a variable name
+        # vor is a variable name
+        # SHS is Secure Hash Standard
+        run: codespell -L Devine,clen,vor,SHS

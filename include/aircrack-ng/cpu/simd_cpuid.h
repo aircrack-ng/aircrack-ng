@@ -44,7 +44,7 @@ struct _cpuinfo
 	int cores; /* Real CPU cores       */
 	int coreperid; /* Max cores per id     */
 	int htt; /* Hyper-Threading      */
-	int maxlogic; /* Max addressible lCPU */
+	int maxlogic; /* Max addressable lCPU */
 	int hv; /* Hypervisor detected  */
 	int cpufreq_cur; /* CPUfreq Current	*/
 	int cpufreq_max; /* CPUfreq Maximum	*/

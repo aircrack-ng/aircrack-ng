@@ -404,13 +404,13 @@ void alter_endianity(void * _x, unsigned int size)
 	 + ((i) & (0xffffffff - 3)) * SIMD_COEF_32                                 \
 	 + (3 - ((i) &3))                                                          \
 	 + (unsigned int) index / SIMD_COEF_32 * SHA_BUF_SIZ * 4                   \
-		   * SIMD_COEF_32) // for endianity conversion
+		   * SIMD_COEF_32) // for endianness conversion
 #define SHAGETOUTPOS(i, index)                                                 \
 	((index & (SIMD_COEF_32 - 1)) * 4                                          \
 	 + ((i) & (0xffffffff - 3)) * SIMD_COEF_32                                 \
 	 + (3 - ((i) &3))                                                          \
 	 + (unsigned int) index / SIMD_COEF_32 * 20                                \
-		   * SIMD_COEF_32) // for endianity conversion
+		   * SIMD_COEF_32) // for endianness conversion
 // for MD4/MD5 or any 64 byte LE SSE interleaved hash
 #define GETPOS(i, index)                                                       \
 	((index & (SIMD_COEF_32 - 1)) * 4                                          \

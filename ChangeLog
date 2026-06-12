@@ -1025,7 +1025,7 @@ Version 0.6 (changes from aircrack-ng 0.5) - Released 23 June 2006:
 * aircrack-ng: Now bruteforce only last keybyte by default (faster than last 2KB)
 * aircrack-ng: Added option to show ASCII version of the key
 * aircrack-ng: Fixed: bug with -d option. It adds a leading "0x00" to the key
-* aireplay-ng: fixed compilaton issues on some distro
+* aireplay-ng: fixed compilation issues on some distro
 * aireplay-ng: fixed a bug when using 'ash'
 * aireplay-ng: You can change ring buffer size (-g option)
 * airodump-ng: Log by default only one beacon (added option to log all beacons)
