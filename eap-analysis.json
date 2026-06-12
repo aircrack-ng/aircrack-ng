@@ -1,0 +1,20 @@
+{
+  "eap_clients": [
+    {
+      "client_mac": "BE:09:77:06:31:96",
+      "ap_mac": "24:16:1B:CA:E0:C0",
+      "first_seen_us": 1701116174803963,
+      "last_seen_us": 1701116175038838,
+      "has_eap_identity": false,
+      "eap_identity": "",
+      "eap_method": 0,
+      "has_outer_tls": false,
+      "has_fourway_handshake": false,
+      "eap_packets": 0,
+      "eapol_packets": 0
+    }
+  ],
+  "summary": {
+    "total_clients": 0
+  }
+}
