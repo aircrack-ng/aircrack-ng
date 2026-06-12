@@ -29,4 +29,4 @@ jobs:
         # clen is a variable name
         # vor is a variable name
         # SHS is Secure Hash Standard
-        run: codespell -L Devine,clen,vor,SHS
+        run: codespell -L devine,clen,vor,shs
