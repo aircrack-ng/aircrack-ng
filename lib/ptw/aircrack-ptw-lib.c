@@ -86,7 +86,7 @@ typedef struct
 	double difference;
 } doublesorthelper;
 
-// The rc4 initial state, the idendity permutation
+// The rc4 initial state, the identity permutation
 static const uint32_t rc4initial[] = {
 	0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,  12,  13,  14,
 	15,  16,  17,  18,  19,  20,  21,  22,  23,  24,  25,  26,  27,  28,  29,

@@ -1712,7 +1712,7 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 				smac, seqnum, &len, opt.crypt, opt.wepkey, (int) opt.weplen);
 			timeoutFrag();
 
-			/* we got frag, no compelete packet avail -> do nothing */
+			/* we got frag, no complete packet avail -> do nothing */
 			if (buffer == NULL) return (1);
 
 			memcpy(packet, buffer, len);

@@ -206,7 +206,7 @@ struct ST_info
 	int rate_from; /* last bitrate from station */
 	struct timeval ftimer; /* time of restart           */
 	int missed; /* number of missed packets  */
-	unsigned int lastseq; /* last seen sequnce number  */
+	unsigned int lastseq; /* last seen sequence number  */
 	int wpatype; /* 1=wpa1 2=wpa2             */
 	int wpahash; /* 1=md5(tkip) 2=sha1(ccmp)  */
 	int wep; /* capability encryption bit */

@@ -113,7 +113,7 @@ static char itoa64[64]
 	= "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 char atoi64[0x100];
 
-/* for endianity conversion */
+/* for endianness conversion */
 #ifdef SIMD_CORE
 #define GETPOS(i, index)                                                       \
 	((index & (SIMD_COEF_32 - 1)) * 4                                          \
