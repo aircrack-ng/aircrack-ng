@@ -4686,10 +4686,11 @@ json_get_value_for_name(const char * buffer, const char * name, char * value)
 	return (ret);
 }
 
+#define GPSD_BUF_SIZE 16384
 static THREAD_ENTRY(gps_tracker_thread)
 {
 	int gpsd_sock = -1;
-	char line[1537], buffer[1537], data[1537];
+	char * line, * buffer, * data;
 	char * temp;
 	struct sockaddr_in gpsd_addr;
 	int is_json;
@@ -4704,6 +4705,12 @@ static THREAD_ENTRY(gps_tracker_thread)
 	ALLEGE(return_success != NULL);
 	int * return_error = malloc(sizeof(int));
 	ALLEGE(return_error != NULL);
+	line = malloc(GPSD_BUF_SIZE);
+	ALLEGE(line != NULL);
+	buffer = malloc(GPSD_BUF_SIZE);
+	ALLEGE(buffer != NULL);
+	data = malloc(GPSD_BUF_SIZE);
+	ALLEGE(buffer != NULL);
 
 	*return_success = 0;
 	*return_error = -1;
@@ -4719,9 +4726,9 @@ static THREAD_ENTRY(gps_tracker_thread)
 		gpsd_tried_connection = 1;
 
 		time_t updateTime = time(NULL);
-		memset(line, 0, sizeof(line));
-		memset(buffer, 0, sizeof(buffer));
-		memset(data, 0, sizeof(data));
+		memset(line, 0, GPSD_BUF_SIZE);
+		memset(buffer, 0, GPSD_BUF_SIZE);
+		memset(data, 0, GPSD_BUF_SIZE);
 
 		/* attempt to connect to localhost, port 2947 */
 		pos = 0;
@@ -4754,7 +4761,7 @@ static THREAD_ENTRY(gps_tracker_thread)
 		{
 			/* Probably JSON.  Read the first line and verify it's a version of the
 			* protocol we speak. */
-			if ((pos = read_line(gpsd_sock, buffer, 0, sizeof(buffer))) <= 0)
+			if ((pos = read_line(gpsd_sock, buffer, 0, GPSD_BUF_SIZE)) <= 0)
 				continue;
 
 			pos = get_line_from_buffer(buffer, (size_t) pos, line);
@@ -4772,7 +4779,7 @@ static THREAD_ENTRY(gps_tracker_thread)
 				}
 
 				// Send ?WATCH={"json":true};
-				memset(line, 0, sizeof(line));
+				memset(line, 0, GPSD_BUF_SIZE);
 				strcpy(line, "?WATCH={\"json\":true};\n");
 				if (send(gpsd_sock, line, 22, 0) != 22) continue;
 			}
@@ -4792,7 +4799,6 @@ static THREAD_ENTRY(gps_tracker_thread)
 		while (lopt.do_exit == 0)
 		{
 			gpsd_tried_connection = 0; // reset socket connection test
-			usleep(500000);
 
 			// Reset all GPS data before each read so that if we lose GPS signal
 			// or drop to a 2D fix, the loss of data is accurately reflected
@@ -4817,7 +4823,7 @@ static THREAD_ENTRY(gps_tracker_thread)
 				// Format definition: http://catb.org/gpsd/gpsd_json.html
 
 				if ((pos = read_line(
-						 gpsd_sock, buffer, (size_t) pos, sizeof(buffer)))
+						 gpsd_sock, buffer, (size_t) pos, GPSD_BUF_SIZE))
 					<= 0)
 					break;
 				pos = get_line_from_buffer(buffer, (size_t) pos, line);
@@ -4948,8 +4954,11 @@ static THREAD_ENTRY(gps_tracker_thread)
 			else
 			{
 				// Else read a NON JSON format
+				// In the old protocol, it us the client which
+				// determines the frequency of the updates
+				usleep(500000);
 
-				memset(line, 0, sizeof(line));
+				memset(line, 0, GPSD_BUF_SIZE);
 
 				strcat(line, "PVTAD\r\n");
 				if (send(gpsd_sock, line, 7, 0) != 7)
@@ -4958,8 +4967,8 @@ static THREAD_ENTRY(gps_tracker_thread)
 					return (return_error);
 				}
 
-				memset(line, 0, sizeof(line));
-				if (recv(gpsd_sock, line, sizeof(line) - 1, 0) <= 0)
+				memset(line, 0, GPSD_BUF_SIZE);
+				if (recv(gpsd_sock, line, GPSD_BUF_SIZE - 1, 0) <= 0)
 				{
 					free(return_success);
 					return (return_error);
@@ -5004,6 +5013,9 @@ static THREAD_ENTRY(gps_tracker_thread)
 	}
 
 	free(return_error);
+	free(line);
+	free(buffer);
+	free(data);
 	return (return_success);
 }
 
