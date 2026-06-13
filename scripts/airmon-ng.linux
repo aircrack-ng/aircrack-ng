@@ -1376,7 +1376,7 @@ listInterfaces() {
     done
   fi
   if [ "${WIRELESS_TOOLS}" = "1" ] && [ -x "$(command -v sort 2>&1)" ]; then
-    for iface in $(iwconfig 2> /dev/null | sed -e 's/^\(\w*\)\s.*/\1/' -e '/^$/d'); do
+    for iface in $(iwconfig 2> /dev/null | sed -n 's/^\([^[:space:]][^[:space:]]*\)[[:space:]].*/\1/p'); do
       iface_list="${iface_list} ${iface}"
     done
     #                                           sort needs newline separated,   convert back after
