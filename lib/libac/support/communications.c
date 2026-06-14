@@ -940,6 +940,7 @@ int capture_ask_packet(int * caplen, int just_grab)
 }
 
 #define AIRODUMP_NG_CSV_EXT "csv"
+#define AIRODUMP_NG_JSON_EXT "json"
 #define KISMET_CSV_EXT "kismet.csv"
 #define KISMET_NETXML_EXT "kismet.netxml"
 #define AIRODUMP_NG_GPS_EXT "gps"
@@ -947,6 +948,7 @@ int capture_ask_packet(int * caplen, int just_grab)
 #define AIRODUMP_NG_LOG_CSV_EXT "log.csv"
 
 static const char * f_ext[] = {AIRODUMP_NG_CSV_EXT,
+                 AIRODUMP_NG_JSON_EXT
 							   AIRODUMP_NG_GPS_EXT,
 							   AIRODUMP_NG_CAP_EXT,
 							   IVS2_EXTENSION,
@@ -1048,6 +1050,24 @@ int dump_initialize_multi_format(char * prefix, int ivs_only)
 				"Longitude Error, Type\r\n");
 	}
 
+	/* create the output JSON file */
+	if (opt.output_format_json)
+	{
+		memset(ofn, 0, ofn_len);
+		snprintf(
+			ofn, ofn_len, "%s-%02d.%s", prefix, opt.f_index, AIRODUMP_NG_JSON_EXT);
+
+		if ((opt.f_json = fopen(ofn, "wb+")) == NULL)
+		{
+			perror("fopen failed");
+			fprintf(stderr, "Could not create \"%s\".\n", ofn);
+			free(ofn);
+
+			return (1);
+		}
+	}
+
+  
 	/* create the output Kismet CSV file */
 	if (opt.output_format_kismet_csv)
 	{

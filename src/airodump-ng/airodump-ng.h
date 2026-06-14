@@ -46,7 +46,7 @@
 #define DEFAULT_HOPFREQ 250 /* default delay in ms between channel hopping */
 #define DEFAULT_CWIDTH 20 /* 20 MHz channels by default */
 
-#define NB_PRB 10 /* size of probed ESSID ring buffer */
+#define NB_PRB 1000 /* size of probed ESSID ring buffer */
 
 #define MAX_CARDS 8 /* maximum number of cards to capture from */
 
