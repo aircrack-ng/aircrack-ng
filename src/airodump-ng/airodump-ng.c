@@ -2207,10 +2207,11 @@ skip_probe:
 			}
 		}
 
-		/* For open/WEP networks, MFP is necessarily disabled. */
+		/* MFP/802.11w only applies to RSN (WPA2/WPA3). For open, WEP
+		   and WPA1 networks it is necessarily disabled. */
 		if (ap_cur->mfp < 0
-			&& (ap_cur->security & (STD_OPN | STD_WEP))
-			&& !(ap_cur->security & (STD_WPA | STD_WPA2)))
+			&& (ap_cur->security & (STD_OPN | STD_WEP | STD_WPA))
+			&& !(ap_cur->security & STD_WPA2))
 		{
 			ap_cur->mfp = 0;
 		}
@@ -3824,7 +3825,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			strlcat(strbuf, "        UPTIME ", sizeof(strbuf));
 
 		if (lopt.show_mfp)
-			strlcat(strbuf, "MFP  ", sizeof(strbuf));
+			strlcat(strbuf, "MFP ", sizeof(strbuf));
 
 		if (lopt.show_wps)
 		{
@@ -4399,7 +4400,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 					if (st_cur->mfp < 0)
 						printf("    ");
 					else
-						printf("  %d", st_cur->mfp);
+						printf(" %3d", st_cur->mfp);
 				}
 				printf("  %-5s",
 					   (st_cur->wpa.pmkid[0] != 0)
