@@ -6290,7 +6290,7 @@ int main(int argc, char * argv[])
 		int option = getopt_long(argc,
 								 argv,
 								 "b:d:s:m:n:u:v:t:Z:T:f:g:w:x:p:a:c:h:e:ji:r:k:"
-								 "l:y:o:q:Q0:1:23456789ACHFBDR",
+								 "l:y:o:q:Q0:1:23456789A:C:HFBDR",
 								 long_options,
 								 &option_index);
 
