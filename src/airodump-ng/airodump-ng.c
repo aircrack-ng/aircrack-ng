@@ -938,9 +938,6 @@ int is_filtered_essid(const uint8_t * essid)
 	if (lopt.f_essid_regex)
 	{
 #ifdef HAVE_PCRE2
-		lopt.f_essid_match_data
-			= pcre2_match_data_create_from_pattern(lopt.f_essid_regex, NULL);
-
 		return COMPAT_PCRE_MATCH(lopt.f_essid_regex,
 								 essid,
 								 ESSID_LENGTH,
@@ -6571,6 +6568,21 @@ int main(int argc, char * argv[])
 #endif
 					exit(EXIT_FAILURE);
 				}
+
+#ifdef HAVE_PCRE2
+				/* Allocate match data once, here, rather than on every
+				 * is_filtered_essid() call - that leaked one match_data
+				 * per evaluated frame. */
+				lopt.f_essid_match_data
+					= pcre2_match_data_create_from_pattern(lopt.f_essid_regex,
+														   NULL);
+				if (lopt.f_essid_match_data == NULL)
+				{
+					printf("Error: could not allocate PCRE2 match data. "
+						   "Aborting\n");
+					exit(EXIT_FAILURE);
+				}
+#endif
 #else
 				printf("Error: Airodump-ng wasn't compiled with PCRE support; "
 					   "aborting\n");

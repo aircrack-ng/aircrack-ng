@@ -1126,9 +1126,6 @@ static int is_filtered_essid(char * essid)
 	if (_conf.cf_essid_regex)
 	{
 #ifdef HAVE_PCRE2
-		_conf.cf_essid_match_data
-			= pcre2_match_data_create_from_pattern(_conf.cf_essid_regex, NULL);
-
 		return COMPAT_PCRE_MATCH(_conf.cf_essid_regex,
 								 essid,
 								 MAX_IE_ELEMENT_SIZE,
@@ -3384,6 +3381,21 @@ int main(int argc, char * argv[])
 #endif
 					exit(EXIT_FAILURE);
 				}
+
+#ifdef HAVE_PCRE2
+				/* Allocate match data once, here, rather than on every
+				 * is_filtered_essid() call - that leaked one match_data
+				 * per evaluated frame. */
+				_conf.cf_essid_match_data
+					= pcre2_match_data_create_from_pattern(_conf.cf_essid_regex,
+														   NULL);
+				if (_conf.cf_essid_match_data == NULL)
+				{
+					printf("Error: could not allocate PCRE2 match data. "
+						   "Aborting\n");
+					exit(EXIT_FAILURE);
+				}
+#endif
 				break;
 #else
 				printf("Error: Regular expressions are unsupported in this "
