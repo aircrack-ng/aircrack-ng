@@ -262,10 +262,10 @@ findFreeInterface() {
 				IW_ERROR="$(iw phy "${PHYDEV}" interface add "wlan${i}${target_suffix}" type "${target_mode}" 2>&1)"
 				if [ -z "${IW_ERROR}" ]; then
 					if [ -d "/sys/class/ieee80211/${PHYDEV}/device/net" ]; then
-						#this should be fixed, but it's not going to be right now
-						# shellcheck disable=2045
-						for j in $(ls "/sys/class/ieee80211/${PHYDEV}/device/net/"); do
-							if [ "$(cat "/sys/class/ieee80211/${PHYDEV}/device/net/${j}/type")" = "${target_type}" ]; then
+						for j in "/sys/class/ieee80211/${PHYDEV}/device/net"/*/"type"; do
+							if [ -e "${j}" ] && [ "$(cat "${j}")" = "${target_type}" ]; then
+								j=${j%/*}
+								j=${j##*/}
 								#here is where we catch udev renaming our interface
 								k="${j#wlan}"
 								i="${k%mon}"
