@@ -427,7 +427,7 @@ static char * cpuid_modelinfo(void)
 	char *line = NULL, *token = NULL;
 	size_t linecap = 0;
 	ssize_t linelen;
-#elif __FreeBSD__ /* ARM support for FreeBSD */
+#elif defined(__FreeBSD__) || defined(__OpenBSD__) /* ARM support for FreeBSD / OpenBSD */
 	int mib[] = {CTL_HW, HW_MODEL};
 	char modelbuf[64];
 	size_t len = sizeof(modelbuf);
@@ -491,7 +491,7 @@ static char * cpuid_modelinfo(void)
 	fclose(cfd);
 
 	if (pm == NULL) return NULL;
-#elif __FreeBSD__
+#elif defined(__FreeBSD__) || defined(__OpenBSD__)
 	if (sysctl(mib, 2, modelbuf, &len, NULL, 0))
 		snprintf(modelbuf, sizeof(modelbuf), "Unknown");
 
