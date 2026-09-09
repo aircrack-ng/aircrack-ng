@@ -5950,6 +5950,10 @@ int main(int argc, char * argv[])
 	int old = 0;
 	char essid[ESSID_LENGTH + 1];
 	int restore_session = 0;
+	// next_dict() (called while parsing -w) zeroes cracking_session->pos
+	// and overwrites wordlist_id; stash those values at load time.
+	int64_t restore_pos = 0;
+	unsigned char restore_wordlist_id = 0;
 #if defined(__i386__) || defined(__x86_64__) || defined(__arm__)               \
 	|| defined(__aarch64__)
 	int in_use_simdsize = 0;
@@ -6057,6 +6061,8 @@ int main(int argc, char * argv[])
 			return (EXIT_FAILURE);
 		}
 		nbarg = cracking_session->argc;
+		restore_pos = cracking_session->pos;
+		restore_wordlist_id = cracking_session->wordlist_id;
 		printf("Restoring session\n");
 		restore_session = 1;
 	}
@@ -6849,8 +6855,12 @@ int main(int argc, char * argv[])
 			memcpy(opt.bssid, ap_cur->bssid, ETHER_ADDR_LEN);
 			opt.bssid_set = 1;
 
+			// Use the position/wordlist stashed at load time: parsing -w
+			// already called next_dict(), which zeroed cracking_session->pos.
+			const int64_t saved_pos = restore_pos;
+
 			// Set wordlist
-			if (next_dict(cracking_session->wordlist_id))
+			if (next_dict(restore_wordlist_id))
 			{
 				fprintf(stderr,
 						"Failed setting wordlist ID from restore session.\n");
@@ -6858,8 +6868,8 @@ int main(int argc, char * argv[])
 			}
 
 			// Move into position in the wordlist
-			if (fseeko(opt.dict, cracking_session->pos, SEEK_SET) != 0
-				|| ftello(opt.dict) != cracking_session->pos)
+			if (fseeko(opt.dict, saved_pos, SEEK_SET) != 0
+				|| ftello(opt.dict) != saved_pos)
 			{
 				fprintf(stderr,
 						"Failed setting position in wordlist from "
@@ -7123,6 +7133,13 @@ int main(int argc, char * argv[])
 			   (opt.essid_set) ? "essid" : "bssid");
 
 		goto exit_main;
+	}
+
+	// Copy target BSSID to the cracking session: without this, sessions
+	// started with -e/-b save BSSID 00:00:00:00:00:00 and cannot be restored
+	if (cracking_session)
+	{
+		memcpy(cracking_session->bssid, ap_cur->bssid, ETHER_ADDR_LEN);
 	}
 
 	if (ap_cur->crypt < 2)
