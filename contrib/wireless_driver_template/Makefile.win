@@ -1,0 +1,94 @@
+# Makefile for Wireless Driver DLL
+# Supports Windows with MinGW/MSYS2 and GCC
+
+# Compiler settings
+CC := gcc
+CFLAGS := -Wall -Wextra -Werror -O2 -fPIC
+LDFLAGS := -shared -Wl,--out-implib,libwireless_driver.a
+
+# Libraries to link
+LIBS := -lkernel32 -luser32 -lsetupapi -liphlpapi -lws2_32 -ladvapi32
+
+# Source files
+SOURCES := wireless_driver.c
+OBJECTS := $(SOURCES:.c=.o)
+TARGET := wireless_driver.dll
+IMPLIB := libwireless_driver.a
+
+# Debug/Release configuration
+DEBUG ?= 0
+ifeq ($(DEBUG), 1)
+    CFLAGS += -g -DDEBUG
+else
+    CFLAGS += -DNDEBUG
+endif
+
+# Platform detection
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S), MSYS_NT)
+    # MSYS2 on Windows
+    PLATFORM := Windows
+endif
+ifeq ($(UNAME_S), MinGw)
+    # MinGW on Windows
+    PLATFORM := Windows
+endif
+ifeq ($(UNAME_S), Windows_NT)
+    # Native Windows cmd
+    PLATFORM := Windows
+    RM := del /F /Q
+    MKDIR := mkdir
+else
+    # Unix-like systems
+    RM := rm -f
+    MKDIR := mkdir -p
+endif
+
+.PHONY: all clean install debug release
+
+all: $(TARGET)
+
+debug:
+	$(MAKE) DEBUG=1
+
+release:
+	$(MAKE) DEBUG=0
+
+$(TARGET): $(OBJECTS)
+	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
+	@echo "Built $(TARGET)"
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+clean:
+ifdef PLATFORM
+	$(RM) $(OBJECTS) $(TARGET) $(IMPLIB)
+	@echo "Cleaned"
+else
+	rm -f $(OBJECTS) $(TARGET) $(IMPLIB)
+	@echo "Cleaned"
+endif
+
+install: $(TARGET)
+	@if not exist "$(AIRCRACK_PREFIX)" (echo AIRCRACK_PREFIX not set && exit /b 1)
+	copy $(TARGET) $(AIRCRACK_PREFIX)
+	@echo "Installed to $(AIRCRACK_PREFIX)"
+
+.DEFAULT_GOAL := all
+
+help:
+	@echo "Wireless Driver DLL Makefile"
+	@echo "Usage: make [target]"
+	@echo ""
+	@echo "Targets:"
+	@echo "  all       - Build the DLL (default)"
+	@echo "  debug     - Build with debug symbols"
+	@echo "  release   - Build optimized release"
+	@echo "  clean     - Remove build artifacts"
+	@echo "  install   - Install DLL to AIRCRACK_PREFIX"
+	@echo "  help      - Show this help message"
+	@echo ""
+	@echo "Example:"
+	@echo "  make release"
+	@echo "  make install AIRCRACK_PREFIX=C:\\Program\ Files\\aircrack-ng"
