@@ -4553,6 +4553,10 @@ static inline ssize_t
 read_line(int sock, char * buffer, size_t pos, size_t size)
 {
 	ssize_t status = 1;
+	fd_set read_fd;
+	int fdnum;
+	struct timeval timeout;
+
 	if (size < 1 || pos >= size || buffer == NULL || sock < 0)
 	{
 		return (-1);
@@ -4560,6 +4564,20 @@ read_line(int sock, char * buffer, size_t pos, size_t size)
 
 	while (strchr_n(buffer, 0x0A, pos) == NULL && status > 0 && pos < size)
 	{
+		fdnum = 0;
+		while (fdnum == 0 && lopt.do_exit == 0)
+		{
+			FD_ZERO(&read_fd);
+			FD_SET(sock, &read_fd);
+			timeout.tv_sec = 0;
+			timeout.tv_usec = 500000;
+			fdnum = select(sock + 1, &read_fd, NULL, NULL, &timeout);
+		}
+		if (fdnum < 0 || lopt.do_exit == 1)
+		{
+			status = 0;
+			break;
+		}
 		status = recv(sock, buffer + pos, size - pos, 0);
 		if (status > 0)
 		{
@@ -4697,6 +4715,7 @@ static THREAD_ENTRY(gps_tracker_thread)
 	int gpsd_tried_connection = 0;
 	fd_set read_fd;
 	struct timeval timeout;
+	int fdnum;
 
 	(void) arg;
 
@@ -4959,10 +4978,20 @@ static THREAD_ENTRY(gps_tracker_thread)
 				}
 
 				memset(line, 0, sizeof(line));
-				if (recv(gpsd_sock, line, sizeof(line) - 1, 0) <= 0)
+				fdnum = 0;
+				while (fdnum == 0 && lopt.do_exit == 0)
 				{
-					free(return_success);
-					return (return_error);
+					FD_ZERO(&read_fd);
+					FD_SET(gpsd_sock, &read_fd);
+					timeout.tv_sec = 0;
+					timeout.tv_usec = 500000;
+					fdnum
+						= select(gpsd_sock + 1, &read_fd, NULL, NULL, &timeout);
+				}
+				if (fdnum < 0 || lopt.do_exit == 1
+					|| recv(gpsd_sock, line, sizeof(line) - 1, 0) <= 0)
+				{
+					break;
 				}
 
 				if (memcmp(line, "GPSD,P=", 7) != 0) continue;
