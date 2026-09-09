@@ -562,42 +562,21 @@ startMac80211Iface() {
 			printf "\nPlease run \"airmon-ng check kill\" and/or kill your network manager."
 		fi
 	else
-		isRPiWireless && iw "${1}" del
-		printf "\t\t(mac80211 station mode vif disabled for [%s]%s)\n" "${PHYDEV}" "${1}"
+		IW_ERROR="$(iw "${1}" del 2>&1)"
+		if [ -n "${IW_ERROR}" ]; then
+      if [ -f "/sys/class/net/$1/device/uevent" ]; then
+        DRIVER="$(awk -F'=' '$1 == "DRIVER" {print $2}' "/sys/class/net/${1}/device/uevent")"
+      fi
+      if [ -n "${DRIVER}" ] && [ "${DRIVER}" = 'brcmfmac' ] && [ "${IW_ERROR}" = 'command failed: Unknown error 524 (-524)' ]; then
+        printf '\nINFO: iw error removing managed mode interface %s: %s\n' "${1}" "${IW_ERROR}"
+        printf 'INFO: This is normal and expected for nexmon\n'
+      else
+        printf '\nERROR: iw error removing managed mode interface %s: %s\n' "${1}" "${IW_ERROR}"
+      fi
+    else
+  		printf '\t\t(mac80211 station mode vif disabled for [%s]%s)\n' "${PHYDEV}" "${1}"
+    fi
 	fi
-}
-
-isRPiWireless() {
-	HW_REV="$(grep Revision /proc/cpuinfo | awk '{print $3}')"
-	[ -z "${HW_REV}" ] && return 0
-	# http://www.raspberrypi-spy.co.uk/2012/09/checking-your-raspberry-pi-board-version/
-	# https://www.raspberrypi.org/documentation/hardware/raspberrypi/revision-codes/README.md
-	[ "${HW_REV}" = 'a22082' ] && return 1
-	[ "${HW_REV}" = 'a32082' ] && return 1
-	[ "${HW_REV}" = 'a52082' ] && return 1
-	[ "${HW_REV}" = 'a02082' ] && return 1
-	[ "${HW_REV}" = '9000c1' ] && return 1
-	[ "${HW_REV}" = 'a020d3' ] && return 1
-	[ "${HW_REV}" = '9020e0' ] && return 1
-	[ "${HW_REV}" = '9020e0' ] && return 1
-	[ "${HW_REV}" = 'a22083' ] && return 1
-	[ "${HW_REV}" = 'a020a0' ] && return 1
-	[ "${HW_REV}" = 'a220a0' ] && return 1
-	[ "${HW_REV}" = 'a02100' ] && return 1
-	[ "${HW_REV}" = 'a03111' ] && return 1
-	[ "${HW_REV}" = 'b03111' ] && return 1
-	[ "${HW_REV}" = 'c03111' ] && return 1
-	[ "${HW_REV}" = 'b03112' ] && return 1
-	[ "${HW_REV}" = 'b03114' ] && return 1
-	[ "${HW_REV}" = 'c03112' ] && return 1
-	[ "${HW_REV}" = 'c03114' ] && return 1
-	[ "${HW_REV}" = 'd03114' ] && return 1
-	[ "${HW_REV}" = 'c03130' ] && return 1
-	[ "${HW_REV}" = 'a03140' ] && return 1
-	[ "${HW_REV}" = 'b03140' ] && return 1
-	[ "${HW_REV}" = 'c03140' ] && return 1
-	[ "${HW_REV}" = 'd03140' ] && return 1
-	return 0
 }
 
 startwlIface() {
