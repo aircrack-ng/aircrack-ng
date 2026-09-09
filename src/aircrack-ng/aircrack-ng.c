@@ -4165,17 +4165,19 @@ static THREAD_ENTRY(crack_wpa_thread)
 			crack_wpa_successfully_cracked(
 				data, keys, mic, nparallel, threadid, j);
 		}
-
-		increment_passphrase_counts(keys, nparallel);
-
-		if (threadid == first_wpa_threadid && !opt.is_quiet)
+		if (!wpa_craced)
 		{
-			show_wpa_stats((char *) keys[0].v,
+           increment_passphrase_counts(keys, nparallel);
+
+		   if (threadid == first_wpa_threadid && !opt.is_quiet)
+		   {   
+			   show_wpa_stats((char *) keys[0].v,
 						   keys[0].length,
 						   dso_ac_crypto_engine_get_pmk(&engine, threadid, 0),
 						   dso_ac_crypto_engine_get_ptk(&engine, threadid, 0),
 						   mic[0],
 						   0);
+		   }
 		}
 	}
 
