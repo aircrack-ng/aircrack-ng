@@ -467,48 +467,48 @@ yesorno() {
 }
 
 startMac80211Iface() {
-	#check if rfkill is set and cry if it is
-	rfkill_check "${PHYDEV}"
-	rfkill_retcode="$?"
-	case ${rfkill_retcode} in
-		1) printf "\t%s is soft blocked, please run \"rfkill unblock %s\" to use this interface.\n" "${1}" "${index}" ;;
-		2) printf "\t%s is hard blocked, please flip the hardware wifi switch (or in BIOS) to on.\n"a "${1}"
-		   printf "\tIt may also be possible to unblock with \"rfkill unblock %s\"\n" "${index}"
-		   if [ "${checkvm_status}" != "run" ]; then
-		   	checkvm
-		   fi
-		   if [ -n "${vm}" ]; then
-		   	printf "Detected VM using %s\n" "${vm_from}"
-		   	printf "This appears to be a %s Virtual Machine\n" "${vm}"
-		   	printf "Some distributions have bugs causing rfkill hard block to be forced on in a VM.\n"
-		   	printf "If toggling the rfkill hardware switch and \"rfkill unblock %s\" both fail\n" "${index}"
-		   	printf "to fix this, please try not running in a VM.\n"
-		   fi
-		   ;;
-		3) printf "\t%s is hard and soft blocked, please flip the hardware wifi switch to on.\n" "${1}"
-		   printf "\tIt may also be needed to unblock with \"rfkill unblock %s\"\n" "${index}" ;;
-	esac
-	if [ "${rfkill_retcode}" != 0 ]; then
-		printf "rfkill error, unable to start %s\n\n" "${1}"
-		printf "Would you like to try and automatically resolve this? [y/n] "
-		yesorno
-		retcode="$?"
-		if [ "${retcode}" = "1" ]; then
-			return 1
-		elif [ "${retcode}" = "0" ]; then
-			rfkill_unblock "${PHYDEV}"
-		fi
-	fi
-	#check if $1 already has a mon interface on the same phy and bail if it does
-	if [ -d "/sys/class/ieee80211/${PHYDEV}/device/net" ]; then
-		for i in "/sys/class/ieee80211/${PHYDEV}/device/net"/*; do
-			if [ "$(cat "${i}/type")" = "803" ]; then
-				setChannelMac80211 "${i}"
+  #check if rfkill is set and cry if it is
+  rfkill_check "${PHYDEV}"
+  rfkill_retcode="$?"
+  case ${rfkill_retcode} in
+    1) printf "\t%s is soft blocked, please run \"rfkill unblock %s\" to use this interface.\n" "${1}" "${index}" ;;
+    2) printf "\t%s is hard blocked, please flip the hardware wifi switch (or in BIOS) to on.\n"a "${1}"
+      printf "\tIt may also be possible to unblock with \"rfkill unblock %s\"\n" "${index}"
+      if [ "${checkvm_status}" != "run" ]; then
+        checkvm
+      fi
+      if [ -n "${vm}" ]; then
+        printf "Detected VM using %s\n" "${vm_from}"
+        printf "This appears to be a %s Virtual Machine\n" "${vm}"
+        printf "Some distributions have bugs causing rfkill hard block to be forced on in a VM.\n"
+        printf "If toggling the rfkill hardware switch and \"rfkill unblock %s\" both fail\n" "${index}"
+        printf "to fix this, please try not running in a VM.\n"
+      fi
+      ;;
+    3) printf "\t%s is hard and soft blocked, please flip the hardware wifi switch to on.\n" "${1}"
+      printf "\tIt may also be needed to unblock with \"rfkill unblock %s\"\n" "${index}" ;;
+  esac
+  if [ "${rfkill_retcode}" != 0 ]; then
+    printf "rfkill error, unable to start %s\n\n" "${1}"
+    printf "Would you like to try and automatically resolve this? [y/n] "
+    yesorno
+    retcode="$?"
+    if [ "${retcode}" = "1" ]; then
+      return 1
+    elif [ "${retcode}" = "0" ]; then
+      rfkill_unblock "${PHYDEV}"
+    fi
+  fi
+  #check if $1 already has a mon interface on the same phy and bail if it does
+  if [ -d "/sys/class/ieee80211/${PHYDEV}/device/net" ]; then
+    for i in "/sys/class/ieee80211/${PHYDEV}/device/net"/*; do
+      if [ "$(cat "${i}/type")" = "803" ]; then
+        setChannelMac80211 "${i}"
         printf "\t\t(mac80211 monitor mode already enabled for [%s]%s on [%s]%s)\n" "${PHYDEV}" "${1}" "${PHYDEV}" "$(basename "${i}")"
-				exit
-			fi
-		done
-	fi
+        exit
+      fi
+    done
+  fi
   #handle Qualcomm qcacld
   if [ "${DRIVER}" = "icnss" ]; then
     setLink "${1}" down
@@ -524,44 +524,44 @@ startMac80211Iface() {
     setChannelMac80211 "${1}"
     return
   fi
-	#we didn't bail means we need a monitor interface
-	if [ ${#1} -gt 12 ]; then
-		printf "Interface %smon is too long for linux so it will be renamed to the old style (wlan#) name.\n" "${1}"
-		findFreeInterface monitor
-	else
-		if [ -e "/sys/class/net/${1}mon" ]; then
-			printf "\nYou already have a %smon device but it is NOT in monitor mode." "${1}"
-			printf "\nWhatever you did, don't do it again."
-			printf "\nPlease run \"iw %smon del\" before attempting to continue\n" "${1}"
-			exit 1
-		fi
-		#we didn't bail means our target interface is available
-		setLink "${1}" down
-		IW_ERROR="$(iw phy "${PHYDEV}" interface add "${1}mon" type monitor 2>&1)"
-		if [ -z "${IW_ERROR}" ]; then
-			sleep 1
-			if [ -r "/sys/class/ieee80211/${PHYDEV}/device/net/${1}mon/type" ] && [ "$(cat "/sys/class/ieee80211/${PHYDEV}/device/net/${1}mon/type")" = "803" ]; then
-				setChannelMac80211 "${1}mon"
-			else
-				printf "\nNewly created monitor mode interface %smon is *NOT* in monitor mode.\n" "${1}"
-				printf "Removing non-monitor %smon interface...\n" "${1}"
-				stopMac80211Iface "${1}mon" abort
-				exit 1
-			fi
-			printf "\t\t(mac80211 monitor mode vif enabled for [%s]%s on [%s]%smon)\n" "${PHYDEV}" "${1}" "${PHYDEV}" "${1}"
-		else
-			printf "\nERROR adding monitor mode interface: %s\n" "${IW_ERROR}"
-			exit 1
-		fi
-	fi
-	if [ "${ELITE}" = "1" ]; then
-		#check if $1 is still down, warn if not
-		if ifaceIsUp "${1}"
-		then
-			printf "\nInterface %s is up, but it should be down. Something is interfering." "${1}"
-			printf "\nPlease run \"airmon-ng check kill\" and/or kill your network manager."
-		fi
-	else
+  #we didn't bail means we need a monitor interface
+  if [ ${#1} -gt 12 ]; then
+    printf "Interface %smon is too long for linux so it will be renamed to the old style (wlan#) name.\n" "${1}"
+    findFreeInterface monitor
+  else
+    if [ -e "/sys/class/net/${1}mon" ]; then
+      printf "\nYou already have a %smon device but it is NOT in monitor mode." "${1}"
+      printf "\nWhatever you did, don't do it again."
+      printf "\nPlease run \"iw %smon del\" before attempting to continue\n" "${1}"
+      exit 1
+    fi
+    #we didn't bail means our target interface is available
+    setLink "${1}" down
+    IW_ERROR="$(iw phy "${PHYDEV}" interface add "${1}mon" type monitor 2>&1)"
+    if [ -z "${IW_ERROR}" ]; then
+      sleep 1
+      if [ -r "/sys/class/ieee80211/${PHYDEV}/device/net/${1}mon/type" ] && [ "$(cat "/sys/class/ieee80211/${PHYDEV}/device/net/${1}mon/type")" = "803" ]; then
+        setChannelMac80211 "${1}mon"
+      else
+        printf "\nNewly created monitor mode interface %smon is *NOT* in monitor mode.\n" "${1}"
+        printf "Removing non-monitor %smon interface...\n" "${1}"
+        stopMac80211Iface "${1}mon" abort
+        exit 1
+      fi
+      printf "\t\t(mac80211 monitor mode vif enabled for [%s]%s on [%s]%smon)\n" "${PHYDEV}" "${1}" "${PHYDEV}" "${1}"
+    else
+      printf "\nERROR adding monitor mode interface: %s\n" "${IW_ERROR}"
+      exit 1
+    fi
+  fi
+  if [ "${ELITE}" = "1" ]; then
+    #check if $1 is still down, warn if not
+    if ifaceIsUp "${1}"
+    then
+      printf "\nInterface %s is up, but it should be down. Something is interfering." "${1}"
+      printf "\nPlease run \"airmon-ng check kill\" and/or kill your network manager."
+    fi
+  else
     IW_ERROR="$(iw "${1}" del 2>&1)"
     if [ -n "${IW_ERROR}" ]; then
       if [ -f "/sys/class/net/$1/device/uevent" ]; then
@@ -576,7 +576,7 @@ startMac80211Iface() {
     else
       printf '\t\t(mac80211 station mode vif disabled for [%s]%s)\n' "${PHYDEV}" "${1}"
     fi
-	fi
+  fi
 }
 
 startwlIface() {
