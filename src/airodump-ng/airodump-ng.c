@@ -3751,7 +3751,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	if (lopt.show_ap)
 	{
 		strbuf[0] = 0;
-		strlcat(strbuf, " BSSID              PWR ", sizeof(strbuf));
+		strlcat(strbuf, " BSSID               PWR ", sizeof(strbuf));
 
 		if (lopt.singlechan || lopt.singlefreq)
 			strlcat(strbuf, "RXQ ", sizeof(strbuf));
@@ -3901,7 +3901,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			{
 				snprintf(strbuf + len,
 						 sizeof(strbuf) - len,
-						 "  %3d %3d %8lu %8lu %4d",
+						 "  %4d %3d %8lu %8lu %4d",
 						 ap_cur->avg_power,
 						 ap_cur->rx_quality,
 						 ap_cur->nb_bcn,
@@ -3912,7 +3912,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 			{
 				snprintf(strbuf + len,
 						 sizeof(strbuf) - len,
-						 "  %3d %8lu %8lu %4d",
+						 "  %4d %8lu %8lu %4d",
 						 ap_cur->avg_power,
 						 ap_cur->nb_bcn,
 						 ap_cur->nb_data,
@@ -4210,7 +4210,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 	{
 		strlcpy(strbuf,
 				" BSSID              STATION "
-				"           PWR    Rate    Lost   Frames  Notes  Probes",
+				"            PWR    Rate    Lost   Frames  Notes  Probes",
 				sizeof(strbuf));
 		strbuf[ws_col - 1] = '\0';
 		console_puts(strbuf);
@@ -4307,7 +4307,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 					   st_cur->stmac[4],
 					   st_cur->stmac[5]);
 
-				printf("  %3d ", st_cur->power);
+				printf("  %4d ", st_cur->power);
 				printf("  %2d", st_cur->rate_to / 1000000);
 				printf("%c", (st_cur->qos_fr_ds) ? 'e' : ' ');
 				printf("-%2d", st_cur->rate_from / 1000000);
@@ -4374,7 +4374,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 
 		strlcpy(strbuf,
 				" MAC       "
-				"          CH PWR    ACK ACK/s    CTS RTS_RX RTS_TX  OTHER",
+				"          CH  PWR    ACK ACK/s    CTS RTS_RX RTS_TX  OTHER",
 				sizeof(strbuf));
 		strbuf[ws_col - 1] = '\0';
 		console_puts(strbuf);
@@ -4408,7 +4408,7 @@ static void dump_print(int ws_row, int ws_col, int if_num)
 				   na_cur->namac[5]);
 
 			printf("  %3d", na_cur->channel);
-			printf(" %3d", na_cur->power);
+			printf(" %4d", na_cur->power);
 			printf(" %6d", na_cur->ack);
 			printf("  %4d", na_cur->ackps);
 			printf(" %6d", na_cur->cts);
