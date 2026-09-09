@@ -430,10 +430,27 @@ changeMac80211IfaceTypeMonitor() {
   printf "\t\t(monitor mode enabled)\n"
 }
 
+qcacldConModePath() {
+  # The qcacld module is not always called "wlan". On GKI-era devices it is
+  # built per-target, e.g. qca_cld3_adrastea, so locate con_mode instead of
+  # assuming the module name.
+  if [ -n "${QCACLD_CON_MODE}" ]; then
+    printf "%s" "${QCACLD_CON_MODE}"
+    return 0
+  fi
+  for f in /sys/module/*/parameters/con_mode; do
+    [ -f "${f}" ] || continue
+    QCACLD_CON_MODE="${f}"
+    printf "%s" "${QCACLD_CON_MODE}"
+    return 0
+  done
+  return 1
+}
+
 qcaldSafetyCheck() {
-  icnss_file="/sys/module/wlan/parameters/con_mode"
-  if [ ! -f "${icnss_file}" ]; then
-    printf "Unable to find %s which is needed to control mode.\n" "${icnss_file}"
+  icnss_file="$(qcacldConModePath)"
+  if [ -z "${icnss_file}" ] || [ ! -f "${icnss_file}" ]; then
+    printf "Unable to find a con_mode parameter under /sys/module/*/parameters/\n"
     printf "Is /sys mounted correctly?\n"
     exit 1
   fi
@@ -449,7 +466,7 @@ changeQcacldIfaceTypeMonitor() {
   #work if you have multiple cards with this driver
   #hopefully that never happens
   qcaldSafetyCheck
-  echo 4 > /sys/module/wlan/parameters/con_mode
+  echo 4 > "$(qcacldConModePath)"
   setLink "${1}" up
   printf "\t\t(monitor mode enabled)\n"
 }
@@ -510,7 +527,7 @@ startMac80211Iface() {
     done
   fi
   #handle Qualcomm qcacld
-  if [ "${DRIVER}" = "icnss" ]; then
+  if [ "${DRIVER}" = "icnss" ] || [ "${DRIVER#icnss}" != "${DRIVER}" ]; then
     setLink "${1}" down
     changeQcacldIfaceTypeMonitor "${1}"
     setChannelMac80211 "${1}"
@@ -722,7 +739,7 @@ changeQcacldIfaceTypeManaged() {
   setLink "${1}" down
   #stupidly unsafe with more than one card, oh well
   qcaldSafetyCheck
-  echo 0 > /sys/module/wlan/parameters/con_mode
+  echo 0 > "$(qcacldConModePath)"
   setLink "${1}" up
   printf "\t\t(monitor mode disabled)\n"
 }
@@ -738,7 +755,7 @@ stopMac80211Iface() {
 			printf "please report it.\n"
 			exit 1
 		else
-			if [ "${DRIVER}" = "icnss" ]; then
+			if [ "${DRIVER}" = "icnss" ] || [ "${DRIVER#icnss}" != "${DRIVER}" ]; then
 				changeQcacldIfaceTypeManaged "${1}"
 				return
 			fi
