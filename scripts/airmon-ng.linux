@@ -562,8 +562,8 @@ startMac80211Iface() {
 			printf "\nPlease run \"airmon-ng check kill\" and/or kill your network manager."
 		fi
 	else
-		IW_ERROR="$(iw "${1}" del 2>&1)"
-		if [ -n "${IW_ERROR}" ]; then
+    IW_ERROR="$(iw "${1}" del 2>&1)"
+    if [ -n "${IW_ERROR}" ]; then
       if [ -f "/sys/class/net/$1/device/uevent" ]; then
         DRIVER="$(awk -F'=' '$1 == "DRIVER" {print $2}' "/sys/class/net/${1}/device/uevent")"
       fi
@@ -574,7 +574,7 @@ startMac80211Iface() {
         printf '\nERROR: iw error removing managed mode interface %s: %s\n' "${1}" "${IW_ERROR}"
       fi
     else
-  		printf '\t\t(mac80211 station mode vif disabled for [%s]%s)\n' "${PHYDEV}" "${1}"
+      printf '\t\t(mac80211 station mode vif disabled for [%s]%s)\n' "${PHYDEV}" "${1}"
     fi
 	fi
 }
