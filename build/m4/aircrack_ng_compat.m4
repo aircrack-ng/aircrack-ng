@@ -38,11 +38,30 @@ dnl If you delete this exception statement from all source files in the
 dnl program, then also delete it here.
 
 AC_DEFUN([AIRCRACK_NG_COMPAT], [
+AC_ARG_WITH(libbsd,
+	[AS_HELP_STRING([--with-libbsd[[=auto|yes|no]]], [use BSD library, [default=auto]])])
 
-AC_CHECK_HEADERS([bsd/string.h], [HAVE_BSD_STRING_H=yes], [HAVE_BSD_STRING_H=no])
-AM_CONDITIONAL([HAVE_BSD_STRING_H], [test "$HAVE_BSD_STRING_H" = yes])
-AC_CHECK_LIB([bsd], [strlcpy], [ LIBS="$LIBS -lbsd" ], [:])
 AC_CHECK_FUNCS([strlcpy strlcat], [:])
+
+case $with_libbsd in
+	yes | "" | auto)
+		AC_CHECK_HEADERS([bsd/string.h], [HAVE_BSD_STRING_H=yes])
+		AC_CHECK_LIB([bsd], [strlcpy], [:])
+		;;
+esac
+
+AM_CONDITIONAL([HAVE_BSD_STRING_H], [test "$HAVE_BSD_STRING_H" = yes])
+
+if test $with_libbsd != no
+then
+	if test $ac_cv_lib_bsd_strlcpy = yes
+	then
+		LIBS="$LIBS -lbsd"
+	elif test $with_libbsd = yes
+	then
+		AC_MSG_ERROR([cannot configure required bsd library])
+	fi
+fi
 
 have_bsd=no
 if test "$cross_compiling" != yes
