@@ -501,48 +501,48 @@ yesorno() {
 }
 
 startMac80211Iface() {
-	#check if rfkill is set and cry if it is
-	rfkill_check "${PHYDEV}"
-	rfkill_retcode="$?"
-	case ${rfkill_retcode} in
-		1) printf "\t%s is soft blocked, please run \"rfkill unblock %s\" to use this interface.\n" "${1}" "${index}" ;;
-		2) printf "\t%s is hard blocked, please flip the hardware wifi switch (or in BIOS) to on.\n"a "${1}"
-		   printf "\tIt may also be possible to unblock with \"rfkill unblock %s\"\n" "${index}"
-		   if [ "${checkvm_status}" != "run" ]; then
-		   	checkvm
-		   fi
-		   if [ -n "${vm}" ]; then
-		   	printf "Detected VM using %s\n" "${vm_from}"
-		   	printf "This appears to be a %s Virtual Machine\n" "${vm}"
-		   	printf "Some distributions have bugs causing rfkill hard block to be forced on in a VM.\n"
-		   	printf "If toggling the rfkill hardware switch and \"rfkill unblock %s\" both fail\n" "${index}"
-		   	printf "to fix this, please try not running in a VM.\n"
-		   fi
-		   ;;
-		3) printf "\t%s is hard and soft blocked, please flip the hardware wifi switch to on.\n" "${1}"
-		   printf "\tIt may also be needed to unblock with \"rfkill unblock %s\"\n" "${index}" ;;
-	esac
-	if [ "${rfkill_retcode}" != 0 ]; then
-		printf "rfkill error, unable to start %s\n\n" "${1}"
-		printf "Would you like to try and automatically resolve this? [y/n] "
-		yesorno
-		retcode="$?"
-		if [ "${retcode}" = "1" ]; then
-			return 1
-		elif [ "${retcode}" = "0" ]; then
-			rfkill_unblock "${PHYDEV}"
-		fi
-	fi
-	#check if $1 already has a mon interface on the same phy and bail if it does
-	if [ -d "/sys/class/ieee80211/${PHYDEV}/device/net" ]; then
-		for i in "/sys/class/ieee80211/${PHYDEV}/device/net"/*; do
-			if [ "$(cat "${i}/type")" = "803" ]; then
-				setChannelMac80211 "${i}"
+  #check if rfkill is set and cry if it is
+  rfkill_check "${PHYDEV}"
+  rfkill_retcode="$?"
+  case ${rfkill_retcode} in
+    1) printf "\t%s is soft blocked, please run \"rfkill unblock %s\" to use this interface.\n" "${1}" "${index}" ;;
+    2) printf "\t%s is hard blocked, please flip the hardware wifi switch (or in BIOS) to on.\n"a "${1}"
+      printf "\tIt may also be possible to unblock with \"rfkill unblock %s\"\n" "${index}"
+      if [ "${checkvm_status}" != "run" ]; then
+        checkvm
+      fi
+      if [ -n "${vm}" ]; then
+        printf "Detected VM using %s\n" "${vm_from}"
+        printf "This appears to be a %s Virtual Machine\n" "${vm}"
+        printf "Some distributions have bugs causing rfkill hard block to be forced on in a VM.\n"
+        printf "If toggling the rfkill hardware switch and \"rfkill unblock %s\" both fail\n" "${index}"
+        printf "to fix this, please try not running in a VM.\n"
+      fi
+      ;;
+    3) printf "\t%s is hard and soft blocked, please flip the hardware wifi switch to on.\n" "${1}"
+      printf "\tIt may also be needed to unblock with \"rfkill unblock %s\"\n" "${index}" ;;
+  esac
+  if [ "${rfkill_retcode}" != 0 ]; then
+    printf "rfkill error, unable to start %s\n\n" "${1}"
+    printf "Would you like to try and automatically resolve this? [y/n] "
+    yesorno
+    retcode="$?"
+    if [ "${retcode}" = "1" ]; then
+      return 1
+    elif [ "${retcode}" = "0" ]; then
+      rfkill_unblock "${PHYDEV}"
+    fi
+  fi
+  #check if $1 already has a mon interface on the same phy and bail if it does
+  if [ -d "/sys/class/ieee80211/${PHYDEV}/device/net" ]; then
+    for i in "/sys/class/ieee80211/${PHYDEV}/device/net"/*; do
+      if [ "$(cat "${i}/type")" = "803" ]; then
+        setChannelMac80211 "${i}"
         printf "\t\t(mac80211 monitor mode already enabled for [%s]%s on [%s]%s)\n" "${PHYDEV}" "${1}" "${PHYDEV}" "$(basename "${i}")"
-				exit
-			fi
-		done
-	fi
+        exit
+      fi
+    done
+  fi
   #handle Qualcomm qcacld
   if [ "${DRIVER}" = "icnss" ]; then
     setLink "${1}" down
@@ -558,80 +558,59 @@ startMac80211Iface() {
     setChannelMac80211 "${1}"
     return
   fi
-	#we didn't bail means we need a monitor interface
-	if [ ${#1} -gt 12 ]; then
-		printf "Interface %smon is too long for linux so it will be renamed to the old style (wlan#) name.\n" "${1}"
-		findFreeInterface monitor
-	else
-		if [ -e "/sys/class/net/${1}mon" ]; then
-			printf "\nYou already have a %smon device but it is NOT in monitor mode." "${1}"
-			printf "\nWhatever you did, don't do it again."
-			printf "\nPlease run \"iw %smon del\" before attempting to continue\n" "${1}"
-			exit 1
-		fi
-		#we didn't bail means our target interface is available
-		setLink "${1}" down
-		IW_ERROR="$(iw phy "${PHYDEV}" interface add "${1}mon" type monitor 2>&1)"
-		if [ -z "${IW_ERROR}" ]; then
-			sleep 1
-			if [ -r "/sys/class/ieee80211/${PHYDEV}/device/net/${1}mon/type" ] && [ "$(cat "/sys/class/ieee80211/${PHYDEV}/device/net/${1}mon/type")" = "803" ]; then
-				setChannelMac80211 "${1}mon"
-			else
-				printf "\nNewly created monitor mode interface %smon is *NOT* in monitor mode.\n" "${1}"
-				printf "Removing non-monitor %smon interface...\n" "${1}"
-				stopMac80211Iface "${1}mon" abort
-				exit 1
-			fi
-			printf "\t\t(mac80211 monitor mode vif enabled for [%s]%s on [%s]%smon)\n" "${PHYDEV}" "${1}" "${PHYDEV}" "${1}"
-		else
-			printf "\nERROR adding monitor mode interface: %s\n" "${IW_ERROR}"
-			exit 1
-		fi
-	fi
-	if [ "${ELITE}" = "1" ]; then
-		#check if $1 is still down, warn if not
-		if ifaceIsUp "${1}"
-		then
-			printf "\nInterface %s is up, but it should be down. Something is interfering." "${1}"
-			printf "\nPlease run \"airmon-ng check kill\" and/or kill your network manager."
-		fi
-	else
-		isRPiWireless && iw "${1}" del
-		printf "\t\t(mac80211 station mode vif disabled for [%s]%s)\n" "${PHYDEV}" "${1}"
-	fi
-}
-
-isRPiWireless() {
-	HW_REV="$(grep Revision /proc/cpuinfo | awk '{print $3}')"
-	[ -z "${HW_REV}" ] && return 0
-	# http://www.raspberrypi-spy.co.uk/2012/09/checking-your-raspberry-pi-board-version/
-	# https://www.raspberrypi.org/documentation/hardware/raspberrypi/revision-codes/README.md
-	[ "${HW_REV}" = 'a22082' ] && return 1
-	[ "${HW_REV}" = 'a32082' ] && return 1
-	[ "${HW_REV}" = 'a52082' ] && return 1
-	[ "${HW_REV}" = 'a02082' ] && return 1
-	[ "${HW_REV}" = '9000c1' ] && return 1
-	[ "${HW_REV}" = 'a020d3' ] && return 1
-	[ "${HW_REV}" = '9020e0' ] && return 1
-	[ "${HW_REV}" = '9020e0' ] && return 1
-	[ "${HW_REV}" = 'a22083' ] && return 1
-	[ "${HW_REV}" = 'a020a0' ] && return 1
-	[ "${HW_REV}" = 'a220a0' ] && return 1
-	[ "${HW_REV}" = 'a02100' ] && return 1
-	[ "${HW_REV}" = 'a03111' ] && return 1
-	[ "${HW_REV}" = 'b03111' ] && return 1
-	[ "${HW_REV}" = 'c03111' ] && return 1
-	[ "${HW_REV}" = 'b03112' ] && return 1
-	[ "${HW_REV}" = 'b03114' ] && return 1
-	[ "${HW_REV}" = 'c03112' ] && return 1
-	[ "${HW_REV}" = 'c03114' ] && return 1
-	[ "${HW_REV}" = 'd03114' ] && return 1
-	[ "${HW_REV}" = 'c03130' ] && return 1
-	[ "${HW_REV}" = 'a03140' ] && return 1
-	[ "${HW_REV}" = 'b03140' ] && return 1
-	[ "${HW_REV}" = 'c03140' ] && return 1
-	[ "${HW_REV}" = 'd03140' ] && return 1
-	return 0
+  #we didn't bail means we need a monitor interface
+  if [ ${#1} -gt 12 ]; then
+    printf "Interface %smon is too long for linux so it will be renamed to the old style (wlan#) name.\n" "${1}"
+    findFreeInterface monitor
+  else
+    if [ -e "/sys/class/net/${1}mon" ]; then
+      printf "\nYou already have a %smon device but it is NOT in monitor mode." "${1}"
+      printf "\nWhatever you did, don't do it again."
+      printf "\nPlease run \"iw %smon del\" before attempting to continue\n" "${1}"
+      exit 1
+    fi
+    #we didn't bail means our target interface is available
+    setLink "${1}" down
+    IW_ERROR="$(iw phy "${PHYDEV}" interface add "${1}mon" type monitor 2>&1)"
+    if [ -z "${IW_ERROR}" ]; then
+      sleep 1
+      if [ -r "/sys/class/ieee80211/${PHYDEV}/device/net/${1}mon/type" ] && [ "$(cat "/sys/class/ieee80211/${PHYDEV}/device/net/${1}mon/type")" = "803" ]; then
+        setChannelMac80211 "${1}mon"
+      else
+        printf "\nNewly created monitor mode interface %smon is *NOT* in monitor mode.\n" "${1}"
+        printf "Removing non-monitor %smon interface...\n" "${1}"
+        stopMac80211Iface "${1}mon" abort
+        exit 1
+      fi
+      printf "\t\t(mac80211 monitor mode vif enabled for [%s]%s on [%s]%smon)\n" "${PHYDEV}" "${1}" "${PHYDEV}" "${1}"
+    else
+      printf "\nERROR adding monitor mode interface: %s\n" "${IW_ERROR}"
+      exit 1
+    fi
+  fi
+  if [ "${ELITE}" = "1" ]; then
+    #check if $1 is still down, warn if not
+    if ifaceIsUp "${1}"
+    then
+      printf "\nInterface %s is up, but it should be down. Something is interfering." "${1}"
+      printf "\nPlease run \"airmon-ng check kill\" and/or kill your network manager."
+    fi
+  else
+    IW_ERROR="$(iw "${1}" del 2>&1)"
+    if [ -n "${IW_ERROR}" ]; then
+      if [ -f "/sys/class/net/$1/device/uevent" ]; then
+        DRIVER="$(awk -F'=' '$1 == "DRIVER" {print $2}' "/sys/class/net/${1}/device/uevent")"
+      fi
+      if [ -n "${DRIVER}" ] && [ "${DRIVER}" = 'brcmfmac' ] && [ "${IW_ERROR}" = 'command failed: Unknown error 524 (-524)' ]; then
+        printf '\nINFO: iw error removing managed mode interface %s: %s\n' "${1}" "${IW_ERROR}"
+        printf 'INFO: This is normal and expected for nexmon\n'
+      else
+        printf '\nERROR: iw error removing managed mode interface %s: %s\n' "${1}" "${IW_ERROR}"
+      fi
+    else
+      printf '\t\t(mac80211 station mode vif disabled for [%s]%s)\n' "${PHYDEV}" "${1}"
+    fi
+  fi
 }
 
 startwlIface() {
@@ -897,9 +876,9 @@ stopwlIface() {
 getDriver() {
 	unset DRIVER
 	#standard detection path, this is all that is needed for proper drivers
-	DRIVER=$(printf "$ethtool_output" | awk '/driver/ {print $2}')
+	DRIVER=$(printf '%s' "${ethtool_output}" | awk '/driver/ {print $2}')
 
-	if $(modinfo -F filename ${DRIVER} > /dev/null 2>&1); then
+	if modinfo -F filename "${DRIVER}" > /dev/null 2>&1; then
     return
 	else
 		unset DRIVER
@@ -978,39 +957,37 @@ getDriver() {
 
 getFrom() {
 	#from detection
-	FROM="K"
-	if [ "${MODINFO}" = "1" ] && [ -f /proc/modules ]; then
-		if modinfo -F filename "${DRIVER}" 2>&1 | grep -q 'kernel/drivers'
-		then
-			FROM="K"
+  FROM='K'
+	if [ "${MODINFO}" = '1' ] && [ -f /proc/modules ]; then
+		if modinfo -F filename "${DRIVER}" 2>&1 | grep -q 'kernel/drivers'; then
+			FROM='K'
 			#we add special handling here because we hate the vendor drivers AND they install in the wrong place
-			if [ "$DRIVER" = "r8187" ]; then
-				FROM="V"
-			elif [ "$DRIVER" = "r8187l" ]; then
-				FROM="V"
-			elif [ "$DRIVER" = "rt5390sta" ]; then
-				FROM="V"
-			elif [ "${DRIVER}" = "8812au" ] || [ "${DRIVER}" = "8814au" ]; then
-				FROM="V"
+			if [ "${DRIVER}" = 'r8187' ]; then
+				FROM='V'
+			elif [ "${DRIVER}" = 'r8187l' ]; then
+				FROM='V'
+			elif [ "${DRIVER}" = 'rt5390sta' ]; then
+				FROM='V'
+			elif [ "${DRIVER}" = '8812au' ] || [ "${DRIVER}" = "8814au" ]; then
+				FROM='V'
 			fi
-		elif modinfo -F filename "${DRIVER}" 2>&1 | grep -q 'updates/drivers'
-		then
-			FROM="C"
-		elif modinfo -F filename "${DRIVER}" 2>&1 | grep -q 'misc'
-		then
-			FROM="V"
-		elif modinfo -F filename "${DRIVER}" 2>&1 | grep -q 'staging'
-		then
-			FROM="S"
+		elif modinfo -F filename "${DRIVER}" 2>&1 | grep -q '/updates/drivers'; then
+			FROM='C'
+		elif modinfo -F filename "${DRIVER}" 2>&1 | grep -q '/misc'; then
+			FROM='V'
+		elif modinfo -F filename "${DRIVER}" 2>&1 | grep -q '/staging'; then
+			FROM='S'
+    elif modinfo -F filename "${DRIVER}" 2>&1 | grep -q '/dkms'; then
+      FROM='D'
 		else
-			FROM="?"
+			FROM='?'
 		fi
 	else
-		FROM="K"
+		FROM='K'
 	fi
   #maybe add an 'intree' check?
-	if [ "$DEBUG" = "1" ]; then
-		printf "getFrom() %s\n" "${FROM}"
+	if [ "${DEBUG}" = '1' ]; then
+		printf 'getFrom() %s\n' "${FROM}"
 	fi
 }
 
@@ -1678,6 +1655,7 @@ if [ "$VERBOSE" = "1" ]; then
 	fi
 	printf "V indicates driver comes directly from the vendor, almost certainly a bad thing\n"
 	printf "S indicates driver comes from the staging tree, these drivers are meant for reference not actual use, BEWARE\n"
+	printf "D indicates driver was built by DKMS, these drivers were built by the package manager but are of unknown quality, BEWARE\n"
 	printf "? indicates we do not know where the driver comes from... report this\n\n"
 fi
 
