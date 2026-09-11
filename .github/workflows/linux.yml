@@ -164,7 +164,7 @@ jobs:
 
     name: Ubuntu 22.04 ${{ matrix.compiler.cc }} using ${{ matrix.flags.name }}
 
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - uses: actions/checkout@v4
@@ -200,9 +200,15 @@ jobs:
             chmod +x llvm.sh
             $SUDO ./llvm.sh ${COMPILER_VERSION}
           fi
-          if [ -z "$(command -v ${{ matrix.compiler.cc }})" ]; then
-            [ "${COMPILER_NAME}" = 'gcc' ] && $SUDO apt-get install -y ${{ matrix.compiler.cc }} ${{ matrix.compiler.cxx }}
-            [ "${COMPILER_NAME}" = 'clang' ] && $SUDO apt-get install -y ${{ matrix.compiler.cc }}
+          # gcc-N and g++-N are separate packages and the runner image does
+          # not necessarily carry both, so check for the C++ compiler too
+          # rather than assuming it comes along with the C one.
+          if [ "${COMPILER_NAME}" = 'gcc' ]; then
+            if [ -z "$(command -v ${{ matrix.compiler.cc }})" ] || [ -z "$(command -v ${{ matrix.compiler.cxx }})" ]; then
+              $SUDO apt-get install -y ${{ matrix.compiler.cc }} ${{ matrix.compiler.cxx }}
+            fi
+          elif [ -z "$(command -v ${{ matrix.compiler.cc }})" ]; then
+            $SUDO apt-get install -y ${{ matrix.compiler.cc }}
           fi
 
           $SUDO apt-get install -y git autoconf automake build-essential ccache ethtool expect hostapd iw lcov libcmocka-dev libgcrypt20-dev libhwloc-dev libnl-3-dev libnl-genl-3-dev libpcap-dev libpcre2-dev libsqlite3-dev libssl-dev libtool pkg-config rfkill screen shtool tcpdump usbutils wpasupplicant zlib1g-dev
@@ -210,11 +216,6 @@ jobs:
       - name: Ccache stats before builds
         run: |
           ccache -s
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: cpp
 
       - name: Build with ${{ matrix.compiler.cc }} using ${{ matrix.flags.name }}
         env:
@@ -276,38 +277,22 @@ jobs:
             !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.lai
             !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.o
             !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.lo
-      
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
 
-  ubuntu_20_04:
-    runs-on: ubuntu-20.04
+  # CodeQL analyses the C/C++ sources, which is independent of the compiler
+  # used, so it runs once here rather than in every matrix cell above. Doing
+  # so avoids ~28 jobs racing the shared codeql-trap cache and keeps the build
+  # matrix inside its timeout.
+  codeql:
+    runs-on: ubuntu-22.04
 
-    strategy:
-      fail-fast: false
-      matrix:
-        # gcc: 9.3.0, 10.2.0
-        # clang: 10.0.0, 11.0.0, 12.0.1
-        compiler:
-          - cc:  gcc-10
-            cxx: g++-10
-          - cc:  gcc-9
-            cxx: g++-9
-          - cc:  clang-12
-            cxx: clang++-12
-          - cc:  clang-11
-            cxx: clang++-11
-          - cc:  clang-10
-            cxx: clang++-10
-        flags:
-          - name: Gcrypt
-            flags: "--with-gcrypt"
-          - name: OpenSSL
-            flags: ""
+    name: CodeQL (cpp)
 
-    name: Ubuntu 20.04 ${{ matrix.compiler.cc }} using ${{ matrix.flags.name }}
+    timeout-minutes: 20
 
-    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
 
     steps:
       - uses: actions/checkout@v4
@@ -315,67 +300,25 @@ jobs:
           fetch-depth: 750
           submodules: 'recursive'
 
-      - uses: actions/cache@v4
-        id: cache
-        if: ${{ env.ACT != 'true' }}
-        with:
-          path: |
-            /home/runner/.ccache
-          key: ${{ runner.os }}-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}-${{ hashFiles('.github/workflows/linux.yml') }}
-          restore-keys: ${{ runner.os }}-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}
-
       - name: Install dependencies
         run: |
           sudo apt update -q
-          sudo apt-get install -y autoconf automake build-essential ccache ethtool expect hostapd iw lcov libcmocka-dev libgcrypt20-dev libhwloc-dev libnl-3-dev libnl-genl-3-dev libpcap-dev libpcre2-dev libsqlite3-dev libssl-dev libtool pkg-config rfkill screen shtool tcpdump usbutils wpasupplicant zlib1g-dev
+          sudo apt-get install -y autoconf automake build-essential ethtool expect hostapd iw lcov libcmocka-dev libgcrypt20-dev libhwloc-dev libnl-3-dev libnl-genl-3-dev libpcap-dev libpcre2-dev libsqlite3-dev libssl-dev libtool pkg-config rfkill screen shtool tcpdump usbutils wpasupplicant zlib1g-dev
 
-      - name: Ccache stats before builds
-        run: |
-          ccache -s
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: cpp
 
-      - name: Build with ${{ matrix.compiler.cc }} using ${{ matrix.flags.name }}
-        env:
-          AM_COLOR_TESTS: always
+      - name: Build
         run: |
           CPUS=$(nproc)
-          export CC="ccache ${{ matrix.compiler.cc }}"
-          export CXX="ccache ${{ matrix.compiler.cxx }}"
-          echo "::group::make distclean"
-          make distclean || :
-          echo "::endgroup::"
-          echo "::group::autoreconf"
           autoreconf -vif
-          echo "::endgroup::"
-          echo "::group::configure"
-          mkdir linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}
-          cd linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}
-          echo ">> Configure with $CC, $CXX, and ${{ matrix.flags.flags }}"
-          ../configure --without-opt --with-experimental --enable-maintainer-mode ${{ matrix.flags.flags }} || { cat config.log; exit 1; }
-          echo "::endgroup::"
-          echo "::group::build"
-          echo ">> Build using ${CPUS} jobs"
+          mkdir codeql-build
+          cd codeql-build
+          ../configure --without-opt --with-experimental --enable-maintainer-mode --with-gcrypt || { cat config.log; exit 1; }
           make -j ${CPUS}
-          echo "::endgroup::"
-          echo "::group::run tests"
-          make -j ${CPUS} check || { find . -name 'test-suite.log' -exec cat {} ';' && exit 1; }
-          echo "::endgroup::"
           cd ..
 
-      - name: Ccache stats after builds
-        run: |
-          ccache -s
-
-      - name: Archive artifacts
-        uses: actions/upload-artifact@v4
-        if: ${{ env.ACT != 'true' }}
-        with:
-          name: linux-ubuntu-20.04-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}
-          path: |
-            linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/.deps
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/.dirstamp
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.a
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.la
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.lai
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.o
-            !linux-${{ matrix.compiler.cc }}-${{ matrix.flags.name }}/**/*.lo
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3

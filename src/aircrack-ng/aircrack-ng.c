@@ -4962,7 +4962,7 @@ static int next_key(char ** key, int keysize)
 
 	char *tmp, *tmpref;
 	int i, rtn;
-	unsigned int dec;
+	unsigned int dec = 0;
 	char * hex;
 
 	tmpref = tmp = (char *) malloc(1024);
@@ -5026,7 +5026,10 @@ static int next_key(char ** key, int keysize)
 					rtn = 1;
 					break;
 				}
-				if (sscanf(hex, "%x", &dec) == 0)
+				/* sscanf returns EOF, not 0, when the token holds nothing
+				 * convertible at all, so compare against the number of
+				 * expected conversions instead. */
+				if (sscanf(hex, "%x", &dec) != 1)
 				{
 					rtn = 1;
 					break;

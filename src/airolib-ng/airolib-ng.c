@@ -149,8 +149,7 @@ static int sql_exec_cb(sqlite3 * db,
 	REQUIRE(sql != NULL);
 
 #ifdef SQL_DEBUG
-	printf(sql);
-	printf("\n");
+	printf("%s\n", sql);
 	fflush(stdout);
 #endif
 
@@ -255,8 +254,7 @@ sql_prepare(sqlite3 * db, const char * sql, sqlite3_stmt ** ppStmt, int wait)
 	REQUIRE(sql != NULL);
 
 #ifdef SQL_DEBUG
-	printf(sql);
-	printf("\n");
+	printf("%s\n", sql);
 	fflush(stdout);
 #endif
 

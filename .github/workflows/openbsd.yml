@@ -146,18 +146,37 @@ jobs:
         id: build
         uses: vmactions/openbsd-vm@v1
         with:
+          # Deliberately unpinned. OpenBSD only serves packages for the
+          # releases it still supports, so pinning one guarantees the job dies
+          # the day that release ages out — /pub/OpenBSD/7.6/packages/amd64/ is
+          # already a 404 and took every pkg_add with it.
+          #
+          # The package list only names things that exist across the supported
+          # releases and resolve to exactly one candidate:
+          #   - llvm    dropped, ambiguous (19/20/21 in 7.9) and unnecessary,
+          #             the run below builds with base clang
+          #   - openssl dropped, ambiguous (3.5 and 4.0 in 7.9); base LibreSSL
+          #             already provides /usr/include/openssl
+          #   - pkgconf dropped, no longer packaged after 7.7 (it lives in base)
+          # autoconf and automake are selected by branch (pkg_add(1):
+          # "pkgname%branch"), not by version. The packages carry a revision
+          # suffix - autoconf-2.71p0, automake-1.16.5p0 - so "autoconf-2.71" is
+          # read as a complete pkgname, matches nothing and fails with "Can't
+          # find". The branch form ignores the revision and keeps matching when
+          # it is bumped. Branches match AUTOCONF_VERSION / AUTOMAKE_VERSION
+          # exported in the run block below.
           envs: 'LANG TZ MAKE'
           usesh: true
           sync: rsync
           copyback: false
           prepare: |
-            pkg_add git pkgconf shtool libtool llvm automake-1.16.5 autoconf-2.71 pcre2 sqlite3 openssl gmake cmocka
+            pkg_add git shtool libtool automake%1.16 autoconf%2.71 pcre2 sqlite3 gmake cmocka
           run: |
             export CC="clang"
             export CXX="clang++"
             alias nproc='sysctl -n hw.ncpu'
             CPUS=$(nproc)
-            git config --global --add safe.directory /Users/runner/work/aircrack-ng/aircrack-ng
+            git config --global --add safe.directory "$GITHUB_WORKSPACE"
             export AUTOCONF_VERSION=2.71
             export AUTOMAKE_VERSION=1.16
             echo "::group::make distclean"

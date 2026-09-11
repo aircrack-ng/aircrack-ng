@@ -1,6 +1,7 @@
 /*
  *  OS dependent APIs for Linux
  *
+ *  Copyright (C) 2018-2026 Christian Bremvaag <christian@aircrack-ng.org>
  *  Copyright (C) 2006-2018 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *  Copyright (C) 2004, 2005 Christophe Devine
  *
@@ -169,11 +170,40 @@ static int check_crc_buf_osdep(unsigned char * buf, int len)
 			&& ((crc >> 24) & 0xFF) == buf[3]);
 }
 
+/* Check that an interface name is safe to embed in a file path or to hand
+ * over to another program. Only the characters the kernel itself accepts in
+ * a network interface name are allowed, which also rules out anything a
+ * shell would treat as special. */
+static int is_valid_iface_name(const char * iface)
+{
+	size_t i;
+
+	if (iface == NULL) return 0;
+
+	if (iface[0] == '\0' || strlen(iface) >= IFNAMSIZ) return 0;
+
+	if (strcmp(iface, ".") == 0 || strcmp(iface, "..") == 0) return 0;
+
+	for (i = 0; iface[i] != '\0'; i++)
+	{
+		const unsigned char c = (unsigned char) iface[i];
+
+		if (c >= 'a' && c <= 'z') continue;
+		if (c >= 'A' && c <= 'Z') continue;
+		if (c >= '0' && c <= '9') continue;
+		if (c == '-' || c == '_' || c == '.' || c == ':') continue;
+
+		return 0;
+	}
+
+	return 1;
+}
+
 // Check if the driver is ndiswrapper */
 static int is_ndiswrapper(const char * iface, const char * path)
 {
 	int n, pid;
-	if (!path || !iface || strlen(iface) >= IFNAMSIZ)
+	if (!path || !is_valid_iface_name(iface))
 	{
 		return 0;
 	}
@@ -189,6 +219,113 @@ static int is_ndiswrapper(const char * iface, const char * path)
 
 	waitpid(pid, &n, 0);
 	return ((WIFEXITED(n) && WEXITSTATUS(n) == 0));
+}
+
+/* Run a program without going through a shell, with stdout/stderr discarded.
+ * Returns 0 when the program exited successfully, -1 otherwise. */
+static int run_program(char * const argv[])
+{
+	int n;
+	pid_t pid;
+
+	if ((pid = fork()) < 0) return -1;
+
+	if (pid == 0)
+	{
+		close(0);
+		close(1);
+		close(2);
+		IGNORE_NZ(chdir("/"));
+		execvp(argv[0], argv);
+		exit(1);
+	}
+
+	if (waitpid(pid, &n, 0) < 0) return -1;
+
+	return ((WIFEXITED(n) && WEXITSTATUS(n) == 0) ? 0 : -1);
+}
+
+/* Run a program without going through a shell and report whether `needle`
+ * shows up anywhere in its standard output. This replaces the former
+ * "<prog> <iface> | grep <needle>" shell pipelines. */
+static int program_output_contains(char * const argv[], const char * needle)
+{
+	int n;
+	int pipefd[2];
+	pid_t pid;
+	size_t needle_len;
+	size_t buffered = 0;
+	ssize_t rd;
+	int found = 0;
+	/* Keep the tail of the previous chunk around so that a match straddling
+	 * two reads is not missed. */
+	char buf[1024];
+
+	if (needle == NULL) return 0;
+
+	needle_len = strlen(needle);
+	if (needle_len == 0 || needle_len >= sizeof(buf) / 2) return 0;
+
+	if (pipe(pipefd) < 0) return 0;
+
+	if ((pid = fork()) < 0)
+	{
+		close(pipefd[0]);
+		close(pipefd[1]);
+		return 0;
+	}
+
+	if (pid == 0)
+	{
+		close(pipefd[0]);
+		close(0);
+		close(2);
+		if (dup2(pipefd[1], 1) < 0) exit(1);
+		close(pipefd[1]);
+		IGNORE_NZ(chdir("/"));
+		execvp(argv[0], argv);
+		exit(1);
+	}
+
+	close(pipefd[1]);
+
+	for (;;)
+	{
+		const size_t space = sizeof(buf) - 1 - buffered;
+
+		if (space == 0 || space > sizeof(buf) - 1) break;
+
+		rd = read(pipefd[0], buf + buffered, space);
+
+		if (rd <= 0) break;
+
+		buffered += (size_t) rd;
+		buf[buffered] = '\0';
+
+		if (strstr(buf, needle) != NULL)
+		{
+			found = 1;
+			break;
+		}
+
+		/* Retain the last needle_len - 1 bytes as the new prefix. */
+		if (buffered >= needle_len)
+		{
+			const size_t keep = needle_len - 1;
+			memmove(buf, buf + buffered - keep, keep);
+			buffered = keep;
+		}
+	}
+
+	close(pipefd[0]);
+
+	/* Reap the child so it never lingers as a zombie. Like the shell
+	 * pipeline this replaces, only the match matters, not the exit status
+	 * of the program producing the output. */
+	while (waitpid(pid, &n, 0) < 0 && errno == EINTR)
+		;
+
+	return found;
 }
 
 /* Search a file recursively */
@@ -257,12 +394,12 @@ static char * wiToolsPath(const char * tool)
 {
 	char * path /*, *found, *env */;
 	int i, nbelems;
-	static const char * paths[] = {"/sbin",
+	static const char * paths[] = {"/usr/local/sbin",
+								   "/usr/local/bin",
+								   "/sbin",
 								   "/usr/sbin",
-								   "/usr/local/sbin",
 								   "/bin",
 								   "/usr/bin",
-								   "/usr/local/bin",
 								   "/tmp"};
 
 	// Also search in other known location just in case we haven't found it yet
@@ -1086,6 +1223,144 @@ static int linux_set_channel_nl80211(struct wif * wi, int channel)
 {
 	return linux_set_ht_channel_nl80211(wi, channel, CHANNEL_NO_HT);
 }
+
+/*
+ * Realtek, channel -1 gap: fall back to an nl80211 NL80211_CMD_GET_INTERFACE query
+ * when the legacy Wireless Extensions ioctl (SIOCGIWFREQ, used by linux_get_channel()
+ * above) fails and returns -1. Several current mac80211 drivers -- notably
+ * Realtek's rtw88/rtw89/rtl88x2bu, used by supported USB adapters
+ * -- never populate that ioctl once the interface is tuned via the modern
+ * nl80211 API (what airodump-ng/`iw` actually use to lock the channel), so it
+ * always reads back -1 even though the radio genuinely is on a real channel.
+ * aireplay-ng's own --ignore-negative-one flag only suppresses treating that
+ * -1 as fatal; every status line that logs "on channel %d" still prints the
+ * bogus value. Querying nl80211 directly for NL80211_ATTR_WIPHY_FREQ reads
+ * the *actual* channel the same way `iw dev <if> info` does, fixing the
+ * report instead of just hiding it.
+ */
+struct linux_get_channel_nl80211_cb_arg
+{
+	int chan;
+};
+
+static int linux_get_channel_nl80211_valid_handler(struct nl_msg * msg, void * arg)
+{
+	struct linux_get_channel_nl80211_cb_arg * res = arg;
+	struct genlmsghdr * gnlh = nlmsg_data(nlmsg_hdr(msg));
+	struct nlattr * tb[NL80211_ATTR_MAX + 1];
+
+	nla_parse(tb,
+		  NL80211_ATTR_MAX,
+		  genlmsg_attrdata(gnlh, 0),
+		  genlmsg_attrlen(gnlh, 0),
+		  NULL);
+
+	if (tb[NL80211_ATTR_WIPHY_FREQ])
+	{
+		int freq = (int) nla_get_u32(tb[NL80211_ATTR_WIPHY_FREQ]);
+		res->chan = getChannelFromFrequency(freq);
+	}
+
+	return NL_SKIP;
+}
+
+static int linux_get_channel_nl80211_ack_handler(struct nl_msg * msg, void * arg)
+{
+	int * ret = arg;
+	(void) msg;
+	*ret = 0;
+	return NL_STOP;
+}
+
+static int linux_get_channel_nl80211_finish_handler(struct nl_msg * msg, void * arg)
+{
+	int * ret = arg;
+	(void) msg;
+	*ret = 0;
+	return NL_SKIP;
+}
+
+static int linux_get_channel_nl80211_error_handler(struct sockaddr_nl * nla,
+								  struct nlmsgerr * err,
+								  void * arg)
+{
+	int * ret = arg;
+	(void) nla;
+	*ret = err->error;
+	return NL_STOP;
+}
+
+static int linux_get_channel_nl80211(struct wif * wi)
+{
+	struct priv_linux * dev = wi_priv(wi);
+	struct nl_msg * msg;
+	struct nl_cb * cb;
+	struct linux_get_channel_nl80211_cb_arg arg;
+	int devid, err;
+
+	arg.chan = -1;
+
+	devid = if_nametoindex(dev->main_if ? dev->main_if : wi_get_ifname(wi));
+	if (devid == 0) return -1;
+
+	msg = nlmsg_alloc();
+	if (!msg) return -1;
+
+	cb = nl_cb_alloc(NL_CB_DEFAULT);
+	if (!cb)
+	{
+		nlmsg_free(msg);
+		return -1;
+	}
+
+	genlmsg_put(msg,
+			0,
+			0,
+			genl_family_get_id(state.nl80211),
+			0,
+			0,
+			NL80211_CMD_GET_INTERFACE,
+			0);
+	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, devid);
+
+	err = 1;
+	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, linux_get_channel_nl80211_valid_handler, &arg);
+	nl_cb_set(cb, NL_CB_FINISH, NL_CB_CUSTOM, linux_get_channel_nl80211_finish_handler, &err);
+	nl_cb_set(cb, NL_CB_ACK, NL_CB_CUSTOM, linux_get_channel_nl80211_ack_handler, &err);
+	nl_cb_err(cb, NL_CB_CUSTOM, linux_get_channel_nl80211_error_handler, &err);
+
+	if (nl_send_auto_complete(state.nl_sock, msg) < 0)
+	{
+		nl_cb_put(cb);
+		nlmsg_free(msg);
+		return -1;
+	}
+
+	while (err > 0)
+		nl_recvmsgs(state.nl_sock, cb);
+
+	nl_cb_put(cb);
+	nlmsg_free(msg);
+
+	return arg.chan;
+
+nla_put_failure:
+	nl_cb_put(cb);
+	nlmsg_free(msg);
+	return -1;
+}
+
+/*
+ * WEXT + NETLINK: linux_get_channel() falls back to nl80211 the moment the legacy
+ * ioctl reports -1 -- see linux_get_channel_nl80211()'s comment above for why
+ * that ioctl is unreliable on current Realtek mac80211 drivers.
+ */
+static int linux_get_channel_wext_or_nl80211(struct wif * wi)
+{
+	int chan = linux_get_channel(wi);
+	if (chan != -1) return chan;
+	return linux_get_channel_nl80211(wi);
+}
 #else // CONFIG_LIBNL
 
 static int linux_set_channel(struct wif * wi, int channel)
@@ -1271,7 +1546,7 @@ static int opensysfs(struct priv_linux * dev, char * iface, int fd)
 	int fd2;
 	char buf[256];
 
-	if (iface == NULL || strlen(iface) >= IFNAMSIZ)
+	if (!is_valid_iface_name(iface))
 	{
 		return 1;
 	}
@@ -1799,10 +2074,14 @@ static int do_linux_open(struct wif * wi, char * iface)
 	char buf[128];
 	char * r_file = NULL;
 	struct ifreq ifr;
+	struct stat sbuf;
 	int iface_malloced = 0;
 	size_t iface_len = 0;
 
-	if (iface == NULL || strlen(iface) >= IFNAMSIZ)
+	/* The interface name comes straight from the command line and ends up in
+	 * file paths and in the argument list of helper programs, so reject
+	 * anything that is not a plain interface name. */
+	if (!is_valid_iface_name(iface))
 	{
 		return (1);
 	}
@@ -1869,40 +2148,34 @@ static int do_linux_open(struct wif * wi, char * iface)
 	memset(strbuf, 0, sizeof(strbuf));
 	snprintf(strbuf,
 			 sizeof(strbuf) - 1,
-			 "ls /sys/class/net/%s/phy80211/subsystem >/dev/null 2>/dev/null",
+			 "/sys/class/net/%s/phy80211/subsystem",
 			 iface);
 
-	if (system(strbuf) == 0) dev->drivertype = DT_MAC80211_RT;
+	if (stat(strbuf, &sbuf) == 0) dev->drivertype = DT_MAC80211_RT;
 
 	/* IPW2200 detection */
 	memset(strbuf, 0, sizeof(strbuf));
-	snprintf(strbuf,
-			 sizeof(strbuf) - 1,
-			 "ls /sys/class/net/%s/device/inject >/dev/null 2>/dev/null",
-			 iface);
+	snprintf(
+		strbuf, sizeof(strbuf) - 1, "/sys/class/net/%s/device/inject", iface);
 
-	if (system(strbuf) == 0) dev->drivertype = DT_IPW2200;
+	if (stat(strbuf, &sbuf) == 0) dev->drivertype = DT_IPW2200;
 
 	/* BCM43XX detection */
 	memset(strbuf, 0, sizeof(strbuf));
 	snprintf(strbuf,
 			 sizeof(strbuf) - 1,
-			 "ls /sys/class/net/%s/device/inject_nofcs >/dev/null 2>/dev/null",
+			 "/sys/class/net/%s/device/inject_nofcs",
 			 iface);
 
-	if (system(strbuf) == 0) dev->drivertype = DT_BCM43XX;
+	if (stat(strbuf, &sbuf) == 0) dev->drivertype = DT_BCM43XX;
 
 	/* check if wlan-ng or hostap or r8180 */
 	if (strlen(iface) == 5 && memcmp(iface, "wlan", 4) == 0)
 	{
-		memset(strbuf, 0, sizeof(strbuf));
-		snprintf(strbuf,
-				 sizeof(strbuf) - 1,
-				 "wlancfg show %s 2>/dev/null | "
-				 "grep p2CnfWEPFlags >/dev/null",
-				 iface);
+		char * const wlancfg_argv[]
+			= {"wlancfg", "show", (char *) iface, NULL};
 
-		if (system(strbuf) == 0)
+		if (program_output_contains(wlancfg_argv, "p2CnfWEPFlags"))
 		{
 			if (uname(&checklinuxversion) >= 0)
 			{
@@ -1924,23 +2197,13 @@ static int do_linux_open(struct wif * wi, char * iface)
 			dev->wlanctlng = wiToolsPath("wlanctl-ng");
 		}
 
-		memset(strbuf, 0, sizeof(strbuf));
-		snprintf(strbuf,
-				 sizeof(strbuf) - 1,
-				 "iwpriv %s 2>/dev/null | "
-				 "grep antsel_rx >/dev/null",
-				 iface);
+		char * const iwpriv_argv[] = {"iwpriv", (char *) iface, NULL};
 
-		if (system(strbuf) == 0) dev->drivertype = DT_HOSTAP;
+		if (program_output_contains(iwpriv_argv, "antsel_rx"))
+			dev->drivertype = DT_HOSTAP;
 
-		memset(strbuf, 0, sizeof(strbuf));
-		snprintf(strbuf,
-				 sizeof(strbuf) - 1,
-				 "iwpriv %s 2>/dev/null | "
-				 "grep  GetAcx111Info  >/dev/null",
-				 iface);
-
-		if (system(strbuf) == 0) dev->drivertype = DT_ACX;
+		if (program_output_contains(iwpriv_argv, "GetAcx111Info"))
+			dev->drivertype = DT_ACX;
 	}
 
 	/* enable injection on ralink */
@@ -1949,12 +2212,9 @@ static int do_linux_open(struct wif * wi, char * iface)
 		|| strcmp(iface, "rausb0") == 0
 		|| strcmp(iface, "rausb1") == 0)
 	{
-		memset(strbuf, 0, sizeof(strbuf));
-		snprintf(strbuf,
-				 sizeof(strbuf) - 1,
-				 "iwpriv %s rfmontx 1 >/dev/null 2>/dev/null",
-				 iface);
-		IGNORE_NZ(system(strbuf));
+		char * const rfmontx_argv[]
+			= {"iwpriv", (char *) iface, "rfmontx", "1", NULL};
+		IGNORE_NZ(run_program(rfmontx_argv));
 	}
 
 	/* check if newer athXraw interface available */
@@ -1992,19 +2252,18 @@ static int do_linux_open(struct wif * wi, char * iface)
 		{
 			// Madwifi-old
 			memset(strbuf, 0, sizeof(strbuf));
-			snprintf(strbuf,
-					 sizeof(strbuf) - 1,
-					 "sysctl -w dev.%s.rawdev=1 >/dev/null 2>/dev/null",
-					 iface);
+			snprintf(strbuf, sizeof(strbuf) - 1, "dev.%s.rawdev=1", iface);
 
-			if (system(strbuf) == 0)
+			char * const sysctl_argv[] = {"sysctl", "-w", strbuf, NULL};
+
+			if (run_program(sysctl_argv) == 0)
 			{
+				char * const ifconfig_argv[]
+					= {"ifconfig", athXraw, "up", NULL};
 
 				athXraw[3] = iface[3];
 
-				memset(strbuf, 0, sizeof(strbuf));
-				snprintf(strbuf, sizeof(strbuf) - 1, "ifconfig %s up", athXraw);
-				IGNORE_NZ(system(strbuf));
+				IGNORE_NZ(run_program(ifconfig_argv));
 
 #if 0 /* some people reported problems when prismheader is enabled */
                 memset( strbuf, 0, sizeof( strbuf ) );
@@ -2037,14 +2296,10 @@ static int do_linux_open(struct wif * wi, char * iface)
 
 		if (WIFEXITED(n) && WEXITSTATUS(n) == 0) dev->drivertype = DT_ORINOCO;
 
-		memset(strbuf, 0, sizeof(strbuf));
-		snprintf(strbuf,
-				 sizeof(strbuf) - 1,
-				 "iwpriv %s 2>/dev/null | "
-				 "grep get_scan_times >/dev/null",
-				 iface);
+		char * const iwpriv_argv[] = {"iwpriv", (char *) iface, NULL};
 
-		if (system(strbuf) == 0) dev->drivertype = DT_AT76USB;
+		if (program_output_contains(iwpriv_argv, "get_scan_times"))
+			dev->drivertype = DT_AT76USB;
 
 		/* test if zd1211rw */
 
@@ -2093,6 +2348,12 @@ static int do_linux_open(struct wif * wi, char * iface)
 		}
 		fclose(acpi);
 		acpi = NULL;
+
+		/* Strip the trailing newline sysfs adds, then make sure what we got
+		 * back is a usable interface name before it is used as one. */
+		buf[strcspn(buf, "\r\n")] = '\0';
+
+		if (!is_valid_iface_name(buf)) goto close_out;
 
 		// use name in buf as new iface and set original iface as main iface
 		iface_len = strlen(iface) + 1;
@@ -2401,10 +2662,11 @@ static struct wif * linux_open(char * iface)
 	linux_nl80211_init(&state);
 	wi->wi_set_ht_channel = linux_set_ht_channel_nl80211;
 	wi->wi_set_channel = linux_set_channel_nl80211;
+	wi->wi_get_channel = linux_get_channel_wext_or_nl80211;
 #else
 	wi->wi_set_channel = linux_set_channel;
-#endif // CONFIG_LIBNL
 	wi->wi_get_channel = linux_get_channel;
+#endif // CONFIG_LIBNL
 	wi->wi_set_freq = linux_set_freq;
 	wi->wi_get_freq = linux_get_freq;
 #ifdef CONFIG_LIBNL
@@ -2464,7 +2726,10 @@ EXPORT int get_battery_state(void)
 						 &flag,
 						 &batteryTime,
 						 units);
-			if (!ret) return 0;
+			/* A short or malformed /proc/apm line stops sscanf part way
+			 * through, leaving the remaining variables unset, so require
+			 * every conversion rather than just a non-zero result. */
+			if (ret != 5) return 0;
 
 			if ((flag & 0x80) == 0 && charging != 0xFF && ac != 1
 				&& batteryTime == -1)

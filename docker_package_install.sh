@@ -197,7 +197,7 @@ elif [ "${ID}" = 'gentoo' ]; then
     cat <<EOF >/etc/portage/binrepos.conf/osuosl.conf
 [binhost]
 priority = 9999
-sync-uri = https://gentoo.osuosl.org/experimental/amd64/binpkg/default/linux/17.1/x86-64/
+sync-uri = https://gentoo.osuosl.org/releases/amd64/binpackages/23.0/x86-64/
 EOF
     # shellcheck disable=SC2016
     echo 'FEATURES="${FEATURES} -ipc-sandbox -network-sandbox -pid-sandbox"' >> /etc/portage/make.conf
@@ -210,7 +210,7 @@ EOF
         emerge app-portage/elt-patches dev-db/sqlite dev-lang/python dev-libs/libbsd dev-libs/libnl dev-libs/libpcre2 \
                 dev-libs/openssl dev-vcs/git net-libs/libpcap net-wireless/iw net-wireless/lorcon sys-apps/hwloc \
                 net-wireless/wireless-tools sys-apps/ethtool sys-apps/hwdata sys-apps/pciutils sys-apps/usbutils \
-                sys-devel/autoconf sys-devel/automake sys-devel/gnuconfig sys-devel/libtool sys-libs/zlib \
+                dev-build/autoconf dev-build/automake dev-build/libtool sys-devel/gnuconfig sys-libs/zlib \
                 --jobs="$(nproc)" --quiet
     elif [ "${STEP}" = 'stage2' ]; then
         emerge dev-db/sqlite dev-lang/python dev-libs/libbsd dev-libs/libnl dev-libs/libpcre2 dev-libs/openssl \

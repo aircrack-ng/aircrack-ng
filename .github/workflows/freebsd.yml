@@ -157,7 +157,7 @@ jobs:
             export CXX="${{ matrix.compiler.cxx }}"
             alias nproc='sysctl -n hw.ncpu'
             CPUS=$(nproc)
-            git config --global --add safe.directory /Users/runner/work/aircrack-ng/aircrack-ng
+            git config --global --add safe.directory "$GITHUB_WORKSPACE"
             echo "::group::make distclean"
             make distclean || :
             echo "::endgroup::"
