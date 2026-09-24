@@ -223,7 +223,11 @@ int get_ram_size(void)
 	}
 
 	memset(str, 0x00, sizeof(str));
-	while (ret == -1 && !feof(fp) && fscanf(fp, "%100s %d", str, &val) != 0)
+	/* Stop on EOF or a read error, both of which fscanf reports as EOF. A
+	 * partial match returns 1 and has to keep the loop going: the unit that
+	 * trails each value ("kB") is read as the next name, and the following
+	 * pass realigns on the real name. */
+	while (ret == -1 && !feof(fp) && fscanf(fp, "%100s %d", str, &val) != EOF)
 	{
 		if (!(strncmp(str, "MemTotal", 8)))
 		{

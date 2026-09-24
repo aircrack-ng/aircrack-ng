@@ -4,14 +4,13 @@ on: [push, pull_request, create, issues]
 
 jobs:
   notification:
+    # Only the upstream repository has anything to say on #aircrack-ng. Guard
+    # the whole job so forks skip it instead of running a step that exits 1,
+    # which marked every push on a fork as a failed workflow run.
+    if: github.repository == 'aircrack-ng/aircrack-ng'
     runs-on: ubuntu-22.04
     name: IRC Notification
     steps:
-    - name: Skip if not aircrack-ng/aircrack-ng
-      run: |
-        if [ "${{ github.repository }}" != 'aircrack-ng/aircrack-ng' ]; then
-          exit 1
-        fi
     # If 2 consecutive calls happen, the second one can fail as
     #  it's not able to get the username requested
     - name: Generate random username

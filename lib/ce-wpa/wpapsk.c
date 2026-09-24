@@ -109,7 +109,7 @@
 #endif
 #endif
 
-static char itoa64[64]
+static char itoa64[]
 	= "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 char atoi64[0x100];
 

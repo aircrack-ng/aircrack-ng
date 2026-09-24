@@ -150,13 +150,13 @@ jobs:
           sync: rsync
           copyback: false
           prepare: |
-            /usr/sbin/pkg_add git pkgconf libtool gcc13 automake autoconf pcre2 sqlite3 openssl gmake cmocka ca_certificates
+            /usr/sbin/pkg_add git pkgconf libtool gcc13 automake autoconf pcre2 sqlite3 openssl gmake cmocka
           run: |
             export CC="${{ matrix.compiler.cc }}"
             export CXX="${{ matrix.compiler.cxx }}"
             alias nproc='getconf NPROCESSORS_ONLN'
             CPUS=$(nproc)
-            git config --global --add safe.directory /Users/runner/work/aircrack-ng/aircrack-ng
+            git config --global --add safe.directory "$GITHUB_WORKSPACE"
             echo "::group::make distclean"
             make distclean || :
             echo "::endgroup::"

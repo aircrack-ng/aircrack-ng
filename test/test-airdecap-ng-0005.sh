@@ -20,7 +20,11 @@ if [ $? != 0 ]; then
   echo "$airdecap_output"
   exit 1
 else
+  # airdecap-ng refreshes a "Read N packets...\r" status line once a second,
+  # so on a slow machine that fragment shares a line with the first stat and
+  # shifts the column cut(1) picks. Split on CR to put it on its own line.
   echo "$airdecap_output" | \
+  tr '\r' '\n' | \
   grep -E '(Total|Number) ' | \
   cut -b 40- | \
    tr -d ' ' | \

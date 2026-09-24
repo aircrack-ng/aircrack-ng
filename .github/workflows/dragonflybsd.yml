@@ -149,13 +149,13 @@ jobs:
           sync: rsync
           copyback: false
           prepare: |
-            pkg install -y git pkgconf shtool libtool ${{ matrix.compiler.cc }} automake autoconf pcre2 sqlite3 gmake cmocka
+            pkg install -y git-lite pkgconf shtool libtool ${{ matrix.compiler.cc }} automake autoconf pcre2 sqlite3 gmake cmocka
           run: |
             export CC="${{ matrix.compiler.cc }}"
             export CXX="${{ matrix.compiler.cxx }}"
             alias nproc='sysctl -n hw.ncpu'
             CPUS=$(nproc)
-            git config --global --add safe.directory /Users/runner/work/aircrack-ng/aircrack-ng
+            git config --global --add safe.directory "$GITHUB_WORKSPACE"
             echo "::group::make distclean"
             make distclean || :
             echo "::endgroup::"
