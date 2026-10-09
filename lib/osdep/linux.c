@@ -363,6 +363,20 @@ static void nl80211_cleanup(struct nl80211_state * state)
 
 /* Callbacks */
 
+/* --- ADDED NETLINK CALLBACK FOR GETTING FREQUENCY --- */
+static int get_freq_nl_callback(struct nl_msg *msg, void *arg)
+{
+	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
+	struct nlattr *tb[NL80211_ATTR_MAX + 1];
+	int *freq = arg;
+
+	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
+	
+	if (tb[NL80211_ATTR_WIPHY_FREQ]) {
+		*freq = nla_get_u32(tb[NL80211_ATTR_WIPHY_FREQ]);
+	}
+	return NL_SKIP;
+}
 /*
 static int error_handler(struct sockaddr_nl *nla, struct nlmsgerr *err,
 					 void *arg)
@@ -390,6 +404,7 @@ static int linux_get_channel(struct wif * wi)
 	int fd, frequency;
 	int chan = 0;
 
+	/* 2. Fallback to ioctl */
 	memset(&wrq, 0, sizeof(struct iwreq));
 
 	if (dev->main_if)
@@ -417,12 +432,53 @@ static int linux_get_channel(struct wif * wi)
 	return chan;
 }
 
+#ifdef CONFIG_LIBNL
+static int linux_get_channel_nl80211(struct wif * wi)
+{
+	struct priv_linux * dev = wi_priv(wi);
+	struct nl_msg *msg;
+	int freq_nl = 0;
+	unsigned int devid = if_nametoindex(wi->wi_interface);
+	int chan = 0;
+
+	if (devid == 0) return dev->channel; //eturn cached value if interface is invalid
+
+	msg = nlmsg_alloc();
+	if (msg) {
+		genlmsg_put(msg, NL_AUTO_PORT, NL_AUTO_SEQ, genl_family_get_id(state.nl80211), 0, NLM_F_REQUEST, NL80211_CMD_GET_INTERFACE, 0);
+		nla_put_u32(msg, NL80211_ATTR_IFINDEX, devid);
+
+		/* Bind callback to the local variable &freq_nl */
+		nl_socket_modify_cb(state.nl_sock, NL_CB_VALID, NL_CB_CUSTOM, get_freq_nl_callback, &freq_nl);
+		
+		if (nl_send_auto_complete(state.nl_sock, msg) >= 0) {
+			nl_recvmsgs_default(state.nl_sock);
+		}
+		nlmsg_free(msg);
+
+		/* Unregister the callback immediately after use to prevent late messages from writing to a dangling pointer!*/
+		nl_socket_modify_cb(state.nl_sock, NL_CB_VALID, NL_CB_DEFAULT, NULL, NULL);
+
+		if (freq_nl > 0) {
+			chan = getChannelFromFrequency(freq_nl);
+			dev->channel = chan;
+			return chan;
+		}
+	}
+
+	/*  Ioctl fallback if Netlink fails. */
+	if (dev->channel > 0) return dev->channel;
+	return linux_get_channel(wi);
+}
+#endif
+
 static int linux_get_freq(struct wif * wi)
 {
 	struct priv_linux * dev = wi_priv(wi);
 	struct iwreq wrq;
 	int fd, frequency;
 
+	/* 2. Fallback to ioctl */
 	memset(&wrq, 0, sizeof(struct iwreq));
 
 	if (dev->main_if)
@@ -447,6 +503,46 @@ static int linux_get_freq(struct wif * wi)
 
 	return frequency;
 }
+
+#ifdef CONFIG_LIBNL
+static int linux_get_freq_nl80211(struct wif * wi)
+{
+	struct priv_linux * dev = wi_priv(wi);
+	struct nl_msg *msg;
+	int freq_nl = 0;
+	unsigned int devid = if_nametoindex(wi->wi_interface);
+
+	if (devid == 0) return dev->freq; // Return cached value if interface is invalid
+
+	msg = nlmsg_alloc();
+	if (msg) {
+		genlmsg_put(msg, NL_AUTO_PORT, NL_AUTO_SEQ, genl_family_get_id(state.nl80211), 0, NLM_F_REQUEST, NL80211_CMD_GET_INTERFACE, 0);
+		nla_put_u32(msg, NL80211_ATTR_IFINDEX, devid);
+
+		/* Bind callback to the local variable &freq_nl */
+		nl_socket_modify_cb(state.nl_sock, NL_CB_VALID, NL_CB_CUSTOM, get_freq_nl_callback, &freq_nl);
+		
+		if (nl_send_auto_complete(state.nl_sock, msg) >= 0) {
+			nl_recvmsgs_default(state.nl_sock);
+		}
+		nlmsg_free(msg);
+
+		/* Unregister the callback immediately after use to prevent late messages from writing to a dangling pointer! */
+		nl_socket_modify_cb(state.nl_sock, NL_CB_VALID, NL_CB_DEFAULT, NULL, NULL);
+
+		if (freq_nl > 0) {
+			dev->freq = freq_nl;
+			return freq_nl;
+		}
+	}
+
+	if (dev->freq > 0) return dev->freq;
+	/* ioctl fallback if Netlink fails. */
+	return linux_get_freq(wi);
+
+;
+}
+#endif
 
 static int linux_set_rate(struct wif * wi, int rate)
 {
@@ -925,7 +1021,12 @@ static int linux_write(struct wif * wi,
 
 	return (ret);
 }
-
+/* * Forward declaration for linux_set_channel().
+ * The function definition is kept below to avoid a massive 
+ * and unreadable git diff that would occur if we moved the 
+ * entire function body up here.
+ */
+static int linux_set_channel(struct wif * wi, int channel);
 #if defined(CONFIG_LIBNL)
 static int ieee80211_channel_to_frequency(int chan)
 {
@@ -941,97 +1042,9 @@ static int
 linux_set_ht_channel_nl80211(struct wif * wi, int channel, unsigned int htval)
 {
 	struct priv_linux * dev = wi_priv(wi);
-	char s[32];
-	int pid, status;
-
 	unsigned int devid;
 	struct nl_msg * msg;
 	unsigned int freq;
-
-	memset(s, 0, sizeof(s));
-
-	switch (dev->drivertype)
-	{
-		case DT_WLANNG:
-			snprintf(s, sizeof(s) - 1, "channel=%d", channel);
-
-			if ((pid = fork()) == 0)
-			{
-				close(0);
-				close(1);
-				close(2);
-				IGNORE_NZ(chdir("/"));
-				execl(dev->wlanctlng,
-					  "wlanctl-ng",
-					  wi_get_ifname(wi),
-					  "lnxreq_wlansniff",
-					  s,
-					  NULL);
-				exit(1);
-			}
-
-			waitpid(pid, &status, 0);
-
-			if (WIFEXITED(status))
-			{
-				dev->channel = channel;
-				return (WEXITSTATUS(status));
-			}
-			else
-				return (1);
-			break;
-
-		case DT_ORINOCO:
-			snprintf(s, sizeof(s) - 1, "%d", channel);
-
-			if ((pid = fork()) == 0)
-			{
-				close(0);
-				close(1);
-				close(2);
-				IGNORE_NZ(chdir("/"));
-				execlp(dev->iwpriv,
-					   "iwpriv",
-					   wi_get_ifname(wi),
-					   "monitor",
-					   "1",
-					   s,
-					   NULL);
-				exit(1);
-			}
-
-			waitpid(pid, &status, 0);
-			dev->channel = channel;
-			return 0;
-			break; // yeah ;)
-
-		case DT_ZD1211RW:
-			snprintf(s, sizeof(s) - 1, "%d", channel);
-
-			if ((pid = fork()) == 0)
-			{
-				close(0);
-				close(1);
-				close(2);
-				IGNORE_NZ(chdir("/"));
-				execlp(dev->iwconfig,
-					   "iwconfig",
-					   wi_get_ifname(wi),
-					   "channel",
-					   s,
-					   NULL);
-				exit(1);
-			}
-
-			waitpid(pid, &status, 0);
-			dev->channel = channel;
-			chan = channel;
-			return 0;
-			break; // yeah ;)
-
-		default:
-			break;
-	}
 
 	/* libnl stuff */
 	chan = channel;
@@ -1079,15 +1092,15 @@ linux_set_ht_channel_nl80211(struct wif * wi, int channel, unsigned int htval)
 
 	return (0);
 nla_put_failure:
-	return -ENOBUFS;
+	if (msg) nlmsg_free(msg);
+	return linux_set_channel(wi, channel);
 }
 
 static int linux_set_channel_nl80211(struct wif * wi, int channel)
 {
 	return linux_set_ht_channel_nl80211(wi, channel, CHANNEL_NO_HT);
 }
-#else // CONFIG_LIBNL
-
+#endif
 static int linux_set_channel(struct wif * wi, int channel)
 {
 	struct priv_linux * dev = wi_priv(wi);
@@ -1201,7 +1214,6 @@ static int linux_set_channel(struct wif * wi, int channel)
 
 	return (0);
 }
-#endif
 
 static int linux_set_freq(struct wif * wi, int freq)
 {
@@ -1265,6 +1277,45 @@ static int linux_set_freq(struct wif * wi, int freq)
 
 	return (0);
 }
+
+#ifdef CONFIG_LIBNL
+static int linux_set_freq_nl80211(struct wif * wi, int freq)
+{
+	struct priv_linux * dev = wi_priv(wi);
+	/* --- Core Fix: 1. Try to use modern Netlink (nl80211) interface to set frequency first --- */
+	struct nl_msg *msg;
+	unsigned int devid = if_nametoindex(wi->wi_interface);
+
+	msg = nlmsg_alloc();
+	if (msg) {
+		genlmsg_put(msg,
+					0,
+					0,
+					genl_family_get_id(state.nl80211),
+					0,
+					0,
+					NL80211_CMD_SET_WIPHY,
+					0);
+
+		/* The NLA_PUT_U32 macro contains a hidden goto nla_put_failure mechanism */
+		NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, devid);
+		NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_FREQ, freq);
+
+		/* Send command to switch the card's frequency */
+		nl_send_auto_complete(state.nl_sock, msg);
+		nlmsg_free(msg);
+
+		dev->freq = freq;
+		return (0);
+
+nla_put_failure:
+		nlmsg_free(msg);
+		/* If Netlink message assembly fails, do not report an error, let it fall through to the fallback */
+	}
+
+	return linux_set_freq(wi, freq);
+}
+#endif
 
 static int opensysfs(struct priv_linux * dev, char * iface, int fd)
 {
@@ -2401,17 +2452,17 @@ static struct wif * linux_open(char * iface)
 	linux_nl80211_init(&state);
 	wi->wi_set_ht_channel = linux_set_ht_channel_nl80211;
 	wi->wi_set_channel = linux_set_channel_nl80211;
+	wi->wi_get_channel = linux_get_channel_nl80211;
+	wi->wi_set_freq = linux_set_freq_nl80211;
+	wi->wi_get_freq = linux_get_freq_nl80211;
+	wi->wi_close = linux_close_nl80211;
 #else
 	wi->wi_set_channel = linux_set_channel;
-#endif // CONFIG_LIBNL
 	wi->wi_get_channel = linux_get_channel;
 	wi->wi_set_freq = linux_set_freq;
 	wi->wi_get_freq = linux_get_freq;
-#ifdef CONFIG_LIBNL
-	wi->wi_close = linux_close_nl80211;
-#else
 	wi->wi_close = linux_close;
-#endif
+#endif // CONFIG_LIBNL
 	wi->wi_fd = linux_fd;
 	wi->wi_get_mac = linux_get_mac;
 	wi->wi_set_mac = linux_set_mac;
