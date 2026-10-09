@@ -396,7 +396,7 @@ skip_station:
 			{
 				/* found a non-cloaked ESSID */
 
-				n = p[1];
+				n = (p[1] > 32) ? 32 : p[1];
 
 				memset(ap_cur->essid, 0, ESSID_LENGTH + 1);
 				memcpy(ap_cur->essid, p + 2, n);

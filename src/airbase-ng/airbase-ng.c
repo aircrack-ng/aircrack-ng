@@ -2480,6 +2480,11 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 
 			st_cur->wep = (packet[z] & 0x10) >> 4;
 
+			// Reject packets with invalid sizes
+			if ((size_t)z + (size_t)fixed > length) {
+				return (1);
+			}
+
 			// Check SSID is present
 			tag = parse_tags(packet + z + fixed,
 							 IEEE80211_ELEMID_SSID,
