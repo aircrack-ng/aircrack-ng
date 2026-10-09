@@ -383,6 +383,89 @@ static void test_callback(struct nl_msg *msg, void *arg)
 */
 #endif /* End nl80211 */
 
+#ifdef CONFIG_LIBNL
+struct nl80211_get_freq_result
+{
+	int freq;
+	int done;
+};
+
+static int nl80211_get_freq_handler(struct nl_msg * msg, void * arg)
+{
+	struct nl80211_get_freq_result * res = arg;
+	struct nlattr * tb[NL80211_ATTR_MAX + 1];
+	struct genlmsghdr * gnlh = nlmsg_data(nlmsg_hdr(msg));
+
+	nla_parse(tb,
+			  NL80211_ATTR_MAX,
+			  genlmsg_attrdata(gnlh, 0),
+			  genlmsg_attrlen(gnlh, 0),
+			  NULL);
+
+	if (tb[NL80211_ATTR_WIPHY_FREQ])
+	{
+		res->freq = (int) nla_get_u32(tb[NL80211_ATTR_WIPHY_FREQ]);
+		res->done = 1;
+	}
+	return NL_OK;
+}
+
+static int linux_get_channel_nl80211(struct wif * wi)
+{
+	struct nl_msg * msg;
+	struct nl_cb * cb;
+	struct nl80211_get_freq_result res = {.freq = -1, .done = 0};
+	unsigned int devid;
+	int err;
+
+	devid = if_nametoindex(wi->wi_interface);
+	if (devid == 0) return -1;
+
+	msg = nlmsg_alloc();
+	if (!msg) return -1;
+
+	genlmsg_put(msg,
+				0,
+				0,
+				genl_family_get_id(state.nl80211),
+				0,
+				0,
+				NL80211_CMD_GET_INTERFACE,
+				0);
+
+	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, devid);
+
+	cb = nl_cb_alloc(NL_CB_DEFAULT);
+	if (!cb)
+	{
+		nlmsg_free(msg);
+		return -1;
+	}
+
+	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, nl80211_get_freq_handler, &res);
+
+	err = nl_send_auto_complete(state.nl_sock, msg);
+	if (err < 0)
+	{
+		nl_cb_put(cb);
+		nlmsg_free(msg);
+		return -1;
+	}
+
+	nl_recvmsgs(state.nl_sock, cb);
+	nl_cb_put(cb);
+	nlmsg_free(msg);
+
+	if (!res.done || res.freq <= 0) return -1;
+
+	return getChannelFromFrequency(res.freq);
+
+nla_put_failure:
+	nlmsg_free(msg);
+	return -1;
+}
+#endif /* CONFIG_LIBNL */
+
 static int linux_get_channel(struct wif * wi)
 {
 	struct priv_linux * dev = wi_priv(wi);
@@ -2401,10 +2484,11 @@ static struct wif * linux_open(char * iface)
 	linux_nl80211_init(&state);
 	wi->wi_set_ht_channel = linux_set_ht_channel_nl80211;
 	wi->wi_set_channel = linux_set_channel_nl80211;
+	wi->wi_get_channel = linux_get_channel_nl80211;
 #else
 	wi->wi_set_channel = linux_set_channel;
-#endif // CONFIG_LIBNL
 	wi->wi_get_channel = linux_get_channel;
+#endif // CONFIG_LIBNL
 	wi->wi_set_freq = linux_set_freq;
 	wi->wi_get_freq = linux_get_freq;
 #ifdef CONFIG_LIBNL
