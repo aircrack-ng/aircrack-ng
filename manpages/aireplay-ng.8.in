@@ -132,6 +132,9 @@ if the interface\(aqs channel can\(aqt be determined ignore the mismatch, needed
 .I --deauth-rc <rc>, -Z <rc>
 Provide a reason code when doing deauthication (between 0 and 255). By default, 7 is used: Class 3 frame received from unassociated STA. 0 is a reserved value. Reason codes explanations can be found in the IEEE802.11 standard or in https://mrncciew.com/2014/10/11/802-11-mgmt-deauth-disassociation-frames/
 .PP
+.I --csa-channel <ch>, -C <ch>
+Channel number advertised in the CSA information element. By default, 14 is used.
+.PP
 .TP
 .B Attack modes:          
 .TP
@@ -141,6 +144,9 @@ Recovering a hidden ESSID. This is an ESSID which is not being broadcast. Anothe
 Capturing WPA/WPA2 handshakes by forcing clients to reauthenticate or
 Generate ARP requests (Windows clients sometimes flush their ARP cache when disconnected).
 Of course, this attack is totally useless if there are no associated wireless client or on fake authentications.
+.TP
+.I --csa=<count>
+This attack waits for a beacon from the selected AP, rewrites the tagged parameters to include a CSA information element, and transmits the modified beacon in 64-frame bursts. The CSA mode is set to 1, the count to 0, and the advertised channel comes from --csa-channel.
 .TP
 .I -1 <delay>, --fakeauth=<delay>
 The fake authentication attack allows you to perform the two types of WEP authentication (Open System and Shared Key) plus associate with the access point (AP). This is only useful when you need an associated MAC address in various aireplay-ng attacks and there is currently no associated client. It should be noted that the fake authentication attack does NOT generate any ARP packets. Fake authentication cannot be used to authenticate/associate with WPA/WPA2 Access Points.
