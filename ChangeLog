@@ -2,6 +2,7 @@ Version 1.8 (changes from aircrack-ng 1.7) - Released XX XXX 2023:
 * Aircrack-ng: Fix heap overflow in session handling, reported by Andrew Kramer (Commit hash 3301282)
 * Aircrack-ng: Handle Apple ARM CPUs model info
 * Airodump-ng: Fix bad optimization
+* Airodump-ng: Fix CSV Privacy field showing "WPA3 WPA2" for WPA3-SAE/OWE networks (Closes: #2679)
 * Airodump-ng: Display RXQ when using frequencies
 * Airodump-ng: Add support for multiple --bssid
 * Airodump-ng: When coloring BSSID, color newly added clients

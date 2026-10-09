@@ -212,7 +212,8 @@ int dump_write_csv(struct AP_info * ap_1st,
 			{
 				if (ap_cur->security & AUTH_SAE || ap_cur->security & AUTH_OWE)
 					fprintf(opt.f_txt, " WPA3");
-				fprintf(opt.f_txt, " WPA2");
+				else
+					fprintf(opt.f_txt, " WPA2");
 			}
 			if (ap_cur->security & STD_WPA) fprintf(opt.f_txt, " WPA");
 			if (ap_cur->security & STD_WEP) fprintf(opt.f_txt, " WEP");
