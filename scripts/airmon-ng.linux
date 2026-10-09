@@ -377,17 +377,13 @@ ifaceIsUp() {
 }
 
 ifaceExists() {
-	if [ -x "$(command -v ip 2>&1)" ]; then
-		ifaceExistsCmd="ip link show dev"
-	elif [ -x "$(command -v ifconfig 2>&1)" ]; then
-		ifaceExistsCmd="ifconfig"
-	fi
-	if ${ifaceExistsCmd} "${1}" > /dev/null 2>&1
-	then
-		return
-	else
-		return 1
-	fi
+  if [ -x "$(command -v ip 2>&1)" ]; then
+    ip link show dev "${1}" > /dev/null 2>&1
+  elif [ -x "$(command -v ifconfig 2>&1)" ]; then
+    ifconfig "${1}" > /dev/null 2>&1
+  else
+    return 1
+  fi
 }
 
 startDeprecatedIface() {
