@@ -193,6 +193,15 @@ struct options
 	char * wkp; /* EWSA Project file */
 	char * hccap; /* Hashcat capture file */
 	char * hccapx; /* Hashcat X (3.6+) capture file */
+	
+	/* New features for Track B-2 */
+	char * rsn_csv_file; /* RSN IE CSV output file */
+	char * eap_summary_file; /* EAP/EAPOL summary JSON output file */
+	char * anonymize_file; /* Anonymized pcap output file */
+	char * mapping_file; /* MAC mapping file for anonymization */
+	int do_rsn_extract; /* Extract RSN IEs to CSV */
+	int do_eap_summary; /* Summarize EAP/EAPOL flows */
+	int do_anonymize; /* Anonymize pcap file */
 };
 
 typedef struct
