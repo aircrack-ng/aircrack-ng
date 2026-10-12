@@ -97,7 +97,8 @@
 #define SORT_BY_CIPHER 9
 #define SORT_BY_AUTH 10
 #define SORT_BY_ESSID 11
-#define MAX_SORT 11
+#define SORT_BY_UPTIME 12
+#define MAX_SORT 12
 
 #define RATES "\x01\x04\x02\x04\x0B\x16\x32\x08\x0C\x12\x18\x24\x30\x48\x60\x6C"
 
