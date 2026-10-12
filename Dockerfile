@@ -17,6 +17,7 @@ RUN set -x \
 	&& make distclean || : && \
 		autoreconf -vif && \
 		set -e; \
+			CFLAGS="-Wno-error=unterminated-string-initialization" \
 			./configure --with-experimental --with-ext-scripts --enable-maintainer-mode --prefix=/usr/local && \
 			make -j$(nproc) && \
 		set +e && \

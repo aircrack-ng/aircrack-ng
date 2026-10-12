@@ -4590,7 +4590,7 @@ static int
 json_get_value_for_name(const char * buffer, const char * name, char * value)
 {
 	char * to_find;
-	char * cursor;
+	const char * cursor;
 	size_t to_find_len;
 	char * vcursor = value;
 	int ret = 0;
