@@ -23,13 +23,19 @@
 #if defined(__arm__) || defined(__aarch64__)
 #ifdef HAS_AUXV
 #include <sys/auxv.h>
+#ifdef __linux__
 #include <asm/hwcap.h>
+#endif
 #endif
 #else
 #error "The wrong CPU architecture file has been included."
 #endif
 
 #include "aircrack-ng/cpu/trampoline.h"
+
+#if defined(__FreeBSD__) || defined(__OpenBSD__)
+unsigned long getauxval(unsigned long);
+#endif
 
 void simd_init(void) {}
 
@@ -39,7 +45,7 @@ int simd_get_supported_features(void)
 {
 	int result = 0;
 #ifdef HAS_AUXV
-	long hwcaps = getauxval(AT_HWCAP);
+	unsigned long hwcaps = getauxval(AT_HWCAP);
 
 #if defined(HWCAP_ASIMD)
 	if (hwcaps & HWCAP_ASIMD)
