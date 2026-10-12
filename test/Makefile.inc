@@ -53,6 +53,10 @@ test_hex_string_to_array_LDADD = $(libaccrypto_la_LIBADD) $(libaircrack_la_LIBAD
 
 check_PROGRAMS += test-hex_string_to_array
 
+test_csa_beacon_SOURCES = %D%/test-csa-beacon.c
+check_PROGRAMS += test-csa-beacon
+TESTS += test-csa-beacon
+
 TESTS += %D%/test-hex_string_to_array.sh \
 		 %D%/test-aircrack-ng-0001.sh \
 		 %D%/test-aircrack-ng-0002.sh \
@@ -100,6 +104,7 @@ INTEGRATION_TESTS += %D%/test-aireplay-ng-0001.sh \
 		 %D%/test-aireplay-ng-0006.sh \
 		 %D%/test-aireplay-ng-0007.sh \
          %D%/test-aireplay-ng-0008.sh \
+		 %D%/test-aireplay-ng-0009.sh \
 		 %D%/test-airbase-ng-0001.sh \
 		 %D%/test-airbase-ng-0002.sh \
 		 %D%/test-airbase-ng-0003.sh \
@@ -200,6 +205,7 @@ EXTRA_DIST += %D%/test-aireplay-ng-0001.sh \
 			  %D%/test-aireplay-ng-0006.sh \
 			  %D%/test-aireplay-ng-0007.sh \
               %D%/test-aireplay-ng-0007.sh \
+			  %D%/test-aireplay-ng-0009.sh \
 			  %D%/test-airbase-ng-0001.sh \
 			  %D%/test-airbase-ng-0002.sh \
 			  %D%/test-airbase-ng-0003.sh \
