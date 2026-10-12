@@ -1,0 +1,709 @@
+diff --git a/include/aircrack-ng/aircrack-ng.h b/include/aircrack-ng/aircrack-ng.h
+index 8ea1b8c8..5d742aaa 100644
+--- a/include/aircrack-ng/aircrack-ng.h
++++ b/include/aircrack-ng/aircrack-ng.h
+@@ -193,6 +193,15 @@ struct options
+ 	char * wkp; /* EWSA Project file */
+ 	char * hccap; /* Hashcat capture file */
+ 	char * hccapx; /* Hashcat X (3.6+) capture file */
++	
++	/* New features for Track B-2 */
++	char * rsn_csv_file; /* RSN IE CSV output file */
++	char * eap_summary_file; /* EAP/EAPOL summary JSON output file */
++	char * anonymize_file; /* Anonymized pcap output file */
++	char * mapping_file; /* MAC mapping file for anonymization */
++	int do_rsn_extract; /* Extract RSN IEs to CSV */
++	int do_eap_summary; /* Summarize EAP/EAPOL flows */
++	int do_anonymize; /* Anonymize pcap file */
+ };
+ 
+ typedef struct
+diff --git a/src/aircrack-ng/aircrack-ng.c b/src/aircrack-ng/aircrack-ng.c
+index 438be6b6..8998b658 100644
+--- a/src/aircrack-ng/aircrack-ng.c
++++ b/src/aircrack-ng/aircrack-ng.c
+@@ -297,11 +297,21 @@ static const char usage[]
+ 	  "\n"
+ 	  "      -u         : Displays # of CPUs & SIMD support\n"
+ 	  "      --help     : Displays this usage screen\n"
++	  "\n"
++	  "  Security audit options (Track B-2 extensions):\n"
++	  "\n"
++	  "      --rsn-csv <file>     : Extract RSN IEs to CSV format\n"
++	  "      --eap-summary <file> : Summarize EAP/EAPOL flows to JSON\n"
++	  "      --anonymize <file>   : Create anonymized pcap file\n"
+ 	  "\n";
+ 
+ static struct session * cracking_session = NULL;
+ static char * progname = NULL;
+ 
++/* Track B-2 feature file handles */
++static FILE * rsn_csv_handle = NULL;
++static FILE * eap_summary_handle = NULL;
++
+ static inline float chrono(struct timeval * start, int reset);
+ static ssize_t safe_write(int fd, void * buf, size_t len);
+ static struct AP_info * hccapx_to_ap(struct hccapx * hx);
+@@ -313,6 +323,477 @@ static inline int append_ap(struct AP_info * new_ap)
+ 	return (c_avl_insert(access_points, new_ap->bssid, new_ap));
+ }
+ 
++/* RSN IE extraction functions for Track B-2 */
++static void extract_rsn_ie(unsigned char *h80211, struct pcap_pkthdr *pkh, 
++                          unsigned char *bssid, char *essid, int channel,
++                          FILE *rsn_csv_file)
++{
++	unsigned char *p;
++	int i;
++	
++	if (!rsn_csv_file) return;
++	
++	/* Look for RSN IE (Element ID 48) */
++	p = h80211 + 36; /* Start after fixed fields */
++	
++	while (p < h80211 + pkh->caplen - 2)
++	{
++		if (p + 2 + p[1] > h80211 + pkh->caplen) break;
++		
++		if (p[0] == 48 && p[1] >= 2) /* RSN IE found */
++		{
++			unsigned char *rsn_data = p + 2;
++			int rsn_len = p[1];
++			
++			/* Extract BSSID */
++			fprintf(rsn_csv_file, "%02X:%02X:%02X:%02X:%02X:%02X,",
++				bssid[0], bssid[1], bssid[2], bssid[3], bssid[4], bssid[5]);
++			
++			/* Extract SSID */
++			fprintf(rsn_csv_file, "\"%s\",", essid ? essid : "");
++			
++			/* Extract Channel */
++			fprintf(rsn_csv_file, "%d,", channel);
++			
++			/* Parse RSN IE structure */
++			if (rsn_len >= 4)
++			{
++				/* Skip version (2 bytes) */
++				int offset = 2;
++				
++				/* Group cipher */
++				if (offset + 4 <= rsn_len)
++				{
++					fprintf(rsn_csv_file, "%02X%02X%02X%02X,",
++						rsn_data[offset], rsn_data[offset+1], 
++						rsn_data[offset+2], rsn_data[offset+3]);
++					offset += 4;
++				}
++				else
++				{
++					fprintf(rsn_csv_file, ",");
++				}
++				
++				/* Pairwise cipher count and ciphers */
++				if (offset + 2 <= rsn_len)
++				{
++					int pairwise_count = rsn_data[offset] | (rsn_data[offset+1] << 8);
++					offset += 2;
++					
++					fprintf(rsn_csv_file, "\"");
++					for (i = 0; i < pairwise_count && offset + 4 <= rsn_len; i++)
++					{
++						if (i > 0) fprintf(rsn_csv_file, ";");
++						fprintf(rsn_csv_file, "%02X%02X%02X%02X",
++							rsn_data[offset], rsn_data[offset+1],
++							rsn_data[offset+2], rsn_data[offset+3]);
++						offset += 4;
++					}
++					fprintf(rsn_csv_file, "\",");
++				}
++				else
++				{
++					fprintf(rsn_csv_file, ",");
++				}
++				
++				/* AKM count and suites */
++				if (offset + 2 <= rsn_len)
++				{
++					int akm_count = rsn_data[offset] | (rsn_data[offset+1] << 8);
++					offset += 2;
++					
++					fprintf(rsn_csv_file, "\"");
++					for (i = 0; i < akm_count && offset + 4 <= rsn_len; i++)
++					{
++						if (i > 0) fprintf(rsn_csv_file, ";");
++						fprintf(rsn_csv_file, "%02X%02X%02X%02X",
++							rsn_data[offset], rsn_data[offset+1],
++							rsn_data[offset+2], rsn_data[offset+3]);
++						offset += 4;
++					}
++					fprintf(rsn_csv_file, "\",");
++				}
++				else
++				{
++					fprintf(rsn_csv_file, ",");
++				}
++				
++				/* RSN Capabilities */
++				if (offset + 2 <= rsn_len)
++				{
++					int capabilities = rsn_data[offset] | (rsn_data[offset+1] << 8);
++					int mfpc = (capabilities & 0x80) ? 1 : 0;
++					int mfpr = (capabilities & 0x40) ? 1 : 0;
++					fprintf(rsn_csv_file, "%d,%d", mfpc, mfpr);
++				}
++				else
++				{
++					fprintf(rsn_csv_file, ",");
++				}
++			}
++			else
++			{
++				fprintf(rsn_csv_file, ",,,,");
++			}
++			
++			fprintf(rsn_csv_file, "\n");
++			return;
++		}
++		
++		p += 2 + p[1];
++	}
++}
++
++/* EAP/EAPOL analysis functions for Track B-2 */
++struct eap_client_info {
++	uint8_t mac[6];
++	uint8_t ap_mac[6];
++	uint64_t first_seen;
++	uint64_t last_seen;
++	int has_eap_identity;
++	char eap_identity[256];
++	int eap_method;
++	int has_outer_tls;
++	int has_fourway_handshake;
++	int eap_packets;
++	int eapol_packets;
++	struct eap_client_info *next;
++};
++
++static struct eap_client_info *eap_clients = NULL;
++
++static struct eap_client_info *find_or_create_eap_client(uint8_t *client_mac, uint8_t *ap_mac)
++{
++	struct eap_client_info *client = eap_clients;
++	
++	/* Search for existing client */
++	while (client) {
++		if (memcmp(client->mac, client_mac, 6) == 0 && 
++		    memcmp(client->ap_mac, ap_mac, 6) == 0) {
++			return client;
++		}
++		client = client->next;
++	}
++	
++	/* Create new client */
++	client = (struct eap_client_info *)calloc(1, sizeof(struct eap_client_info));
++	if (!client) return NULL;
++	
++	memcpy(client->mac, client_mac, 6);
++	memcpy(client->ap_mac, ap_mac, 6);
++	client->first_seen = 0;
++	client->last_seen = 0;
++	client->has_eap_identity = 0;
++	client->eap_identity[0] = '\0';
++	client->eap_method = 0;
++	client->has_outer_tls = 0;
++	client->has_fourway_handshake = 0;
++	client->eap_packets = 0;
++	client->eapol_packets = 0;
++	
++	/* Add to list */
++	client->next = eap_clients;
++	eap_clients = client;
++	
++	return client;
++}
++
++static void analyze_eap_packet(unsigned char *h80211, struct pcap_pkthdr *pkh,
++                              unsigned char *bssid, unsigned char *client_mac)
++{
++	if (!opt.do_eap_summary) return;
++	
++	uint64_t timestamp = pkh->tv_sec * 1000000ULL + pkh->tv_usec;
++	struct eap_client_info *client = find_or_create_eap_client(client_mac, bssid);
++	
++	if (!client) return;
++	
++	if (client->first_seen == 0) client->first_seen = timestamp;
++	client->last_seen = timestamp;
++	
++	/* Determine if this is EAPOL or EAP over LAN */
++	int z = 24; /* Start after 802.11 header */
++	
++	/* Skip LLC/SNAP if present */
++	if (h80211[z] == 0xAA && h80211[z+1] == 0xAA && h80211[z+2] == 0x03) {
++		z += 8; /* Skip LLC/SNAP header */
++	}
++	
++	/* Check for EAPOL (0x888E) */
++	if (pkh->caplen > z + 4 && h80211[z] == 0x88 && h80211[z+1] == 0x8E) {
++		client->eapol_packets++;
++		
++		/* EAPOL header: version(1) + type(1) + length(2) */
++		uint8_t eapol_type = h80211[z+3];
++		
++		if (eapol_type == 0) { /* EAP Packet */
++			client->eap_packets++;
++			
++			if (pkh->caplen > z + 8) {
++				/* EAP header: code(1) + identifier(1) + length(2) + type(1) */
++				uint8_t eap_code = h80211[z+4];
++				uint8_t eap_type = h80211[z+8];
++				
++				if (eap_code == 2) { /* Response */
++					if (eap_type == 1 && !client->has_eap_identity) { /* Identity */
++						client->has_eap_identity = 1;
++						/* Extract identity if available */
++						int identity_len = MIN(h80211[z+6] * 256 + h80211[z+7] - 5, 255);
++						if (identity_len > 0 && pkh->caplen > z + 9 + identity_len) {
++							memcpy(client->eap_identity, &h80211[z+9], identity_len);
++							client->eap_identity[identity_len] = '\0';
++						}
++					}
++					else if (eap_type == 25) { /* PEAP */
++						client->eap_method = 25;
++						client->has_outer_tls = 1;
++					}
++					else if (eap_type == 13) { /* EAP-TLS */
++						client->eap_method = 13;
++						client->has_outer_tls = 1;
++					}
++					else if (eap_type == 21) { /* TTLS */
++						client->eap_method = 21;
++						client->has_outer_tls = 1;
++					}
++					else if (eap_type >= 4) { /* Other methods */
++						if (client->eap_method == 0) client->eap_method = eap_type;
++					}
++				}
++			}
++		}
++		else if (eapol_type == 3) { /* EAPOL-Key (WPA handshake) */
++			client->has_fourway_handshake = 1;
++		}
++	}
++}
++
++static void write_eap_summary_json(FILE *file)
++{
++	if (!file || !eap_clients) return;
++	
++	struct eap_client_info *client = eap_clients;
++	
++	fprintf(file, "{\n  \"eap_clients\": [\n");
++	
++	int first = 1;
++	while (client) {
++		if (!first) fprintf(file, ",\n");
++		first = 0;
++		
++		fprintf(file, "    {\n");
++		fprintf(file, "      \"client_mac\": \"%02X:%02X:%02X:%02X:%02X:%02X\",\n",
++			client->mac[0], client->mac[1], client->mac[2],
++			client->mac[3], client->mac[4], client->mac[5]);
++		fprintf(file, "      \"ap_mac\": \"%02X:%02X:%02X:%02X:%02X:%02X\",\n",
++			client->ap_mac[0], client->ap_mac[1], client->ap_mac[2],
++			client->ap_mac[3], client->ap_mac[4], client->ap_mac[5]);
++		fprintf(file, "      \"first_seen_us\": %llu,\n", (unsigned long long)client->first_seen);
++		fprintf(file, "      \"last_seen_us\": %llu,\n", (unsigned long long)client->last_seen);
++		fprintf(file, "      \"has_eap_identity\": %s,\n", client->has_eap_identity ? "true" : "false");
++		fprintf(file, "      \"eap_identity\": \"%s\",\n", client->eap_identity);
++		fprintf(file, "      \"eap_method\": %d,\n", client->eap_method);
++		fprintf(file, "      \"has_outer_tls\": %s,\n", client->has_outer_tls ? "true" : "false");
++		fprintf(file, "      \"has_fourway_handshake\": %s,\n", client->has_fourway_handshake ? "true" : "false");
++		fprintf(file, "      \"eap_packets\": %d,\n", client->eap_packets);
++		fprintf(file, "      \"eapol_packets\": %d\n", client->eapol_packets);
++		fprintf(file, "    }");
++		
++		client = client->next;
++	}
++	
++	fprintf(file, "\n  ],\n");
++	fprintf(file, "  \"summary\": {\n");
++	fprintf(file, "    \"total_clients\": %d\n", 0); /* TODO: count clients */
++	fprintf(file, "  }\n");
++	fprintf(file, "}\n");
++}
++
++/* Anonymization functions for Track B-2 */
++struct mac_mapping {
++	uint8_t original[6];
++	uint8_t anonymized[6];
++	struct mac_mapping *next;
++};
++
++static struct mac_mapping *mac_mappings = NULL;
++static uint32_t mac_counter = 1;
++
++/* Generate deterministic MAC address from original */
++static void generate_anonymous_mac(uint8_t *original, uint8_t *anonymous)
++{
++	/* Use simple XOR with counter for deterministic pseudonym */
++	uint32_t hash = 0;
++	for (int i = 0; i < 6; i++) {
++		hash = hash * 31 + original[i];
++	}
++	hash ^= mac_counter++;
++	
++	/* Set local administered bit, clear multicast bit */
++	anonymous[0] = 0x02 | ((hash >> 24) & 0xFC);
++	anonymous[1] = (hash >> 16) & 0xFF;
++	anonymous[2] = (hash >> 8) & 0xFF;
++	anonymous[3] = hash & 0xFF;
++	anonymous[4] = (hash >> 12) & 0xFF;
++	anonymous[5] = (hash >> 4) & 0xFF;
++}
++
++/* Find or create MAC mapping */
++static uint8_t *get_anonymous_mac(uint8_t *original)
++{
++	struct mac_mapping *mapping = mac_mappings;
++	
++	/* Search for existing mapping */
++	while (mapping) {
++		if (memcmp(mapping->original, original, 6) == 0) {
++			return mapping->anonymized;
++		}
++		mapping = mapping->next;
++	}
++	
++	/* Create new mapping */
++	mapping = (struct mac_mapping *)malloc(sizeof(struct mac_mapping));
++	if (!mapping) return NULL;
++	
++	memcpy(mapping->original, original, 6);
++	generate_anonymous_mac(original, mapping->anonymized);
++	
++	/* Add to list */
++	mapping->next = mac_mappings;
++	mac_mappings = mapping;
++	
++	return mapping->anonymized;
++}
++
++/* Write MAC mapping file */
++static void write_mac_mapping_file(const char *filename)
++{
++	FILE *file = fopen(filename, "w");
++	if (!file) return;
++	
++	fprintf(file, "# MAC Address Mapping File\n");
++	fprintf(file, "# Original MAC -> Anonymized MAC\n");
++	
++	struct mac_mapping *mapping = mac_mappings;
++	while (mapping) {
++		fprintf(file, "%02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X\n",
++			mapping->original[0], mapping->original[1], mapping->original[2],
++			mapping->original[3], mapping->original[4], mapping->original[5],
++			mapping->anonymized[0], mapping->anonymized[1], mapping->anonymized[2],
++			mapping->anonymized[3], mapping->anonymized[4], mapping->anonymized[5]);
++		mapping = mapping->next;
++	}
++	
++	fclose(file);
++}
++
++/* Anonymize a single packet */
++static void anonymize_packet(uint8_t *packet, int length)
++{
++	if (length < 24) return; /* Too short for 802.11 header */
++	
++	/* Anonymize MAC addresses in 802.11 header */
++	uint8_t *anon_addr;
++	
++	/* Address 1 (Destination) */
++	if (!IEEE80211_IS_MULTICAST(&packet[4])) {
++		anon_addr = get_anonymous_mac(&packet[4]);
++		if (anon_addr) memcpy(&packet[4], anon_addr, 6);
++	}
++	
++	/* Address 2 (Source) */
++	anon_addr = get_anonymous_mac(&packet[10]);
++	if (anon_addr) memcpy(&packet[10], anon_addr, 6);
++	
++	/* Address 3 (BSSID) */
++	anon_addr = get_anonymous_mac(&packet[16]);
++	if (anon_addr) memcpy(&packet[16], anon_addr, 6);
++	
++	/* Address 4 if present (DS to DS) */
++	if ((packet[1] & 0x03) == 0x03 && length >= 30) {
++		anon_addr = get_anonymous_mac(&packet[24]);
++		if (anon_addr) memcpy(&packet[24], anon_addr, 6);
++	}
++	
++	/* Check for EAP identity and redact if present */
++	int offset = 24;
++	
++	/* Skip to payload */
++	if (length > offset + 8 && packet[offset] == 0xAA) {
++		offset += 8; /* Skip LLC/SNAP */
++	}
++	
++	/* Check for EAPOL */
++	if (length > offset + 4 && packet[offset] == 0x88 && packet[offset+1] == 0x8E) {
++		uint8_t eapol_type = packet[offset+3];
++		if (eapol_type == 0 && length > offset + 9) { /* EAP packet */
++			uint8_t eap_code = packet[offset+4];
++			uint8_t eap_type = packet[offset+8];
++			
++			if (eap_code == 2 && eap_type == 1) { /* EAP Response Identity */
++				int eap_length = (packet[offset+6] << 8) | packet[offset+7];
++				int identity_len = eap_length - 5;
++				
++				if (identity_len > 0 && length > offset + 9 + identity_len) {
++					/* Redact identity with 'X' characters */
++					memset(&packet[offset+9], 'X', identity_len);
++				}
++			}
++		}
++	}
++}
++
++/* Process an entire pcap file for anonymization */
++static int anonymize_pcap_file(const char *input_file, const char *output_file)
++{
++	FILE *in = fopen(input_file, "rb");
++	FILE *out = fopen(output_file, "wb");
++	
++	if (!in || !out) {
++		if (in) fclose(in);
++		if (out) fclose(out);
++		return -1;
++	}
++	
++	/* Copy pcap file header */
++	uint8_t pcap_header[24];
++	if (fread(pcap_header, 1, 24, in) != 24) {
++		fclose(in);
++		fclose(out);
++		return -1;
++	}
++	fwrite(pcap_header, 1, 24, out);
++	
++	/* Process packets */
++	uint8_t packet_header[16];
++	while (fread(packet_header, 1, 16, in) == 16) {
++		uint32_t packet_length = *(uint32_t *)&packet_header[8];
++		
++		if (packet_length > 65535) break; /* Sanity check */
++		
++		uint8_t *packet_data = malloc(packet_length);
++		if (!packet_data) break;
++		
++		if (fread(packet_data, 1, packet_length, in) != packet_length) {
++			free(packet_data);
++			break;
++		}
++		
++		/* Anonymize the packet */
++		anonymize_packet(packet_data, packet_length);
++		
++		/* Write packet header and anonymized data */
++		fwrite(packet_header, 1, 16, out);
++		fwrite(packet_data, 1, packet_length, out);
++		
++		free(packet_data);
++	}
++	
++	fclose(in);
++	fclose(out);
++	return 0;
++}
++
+ static long load_hccapx_file(int fd)
+ {
+ 	REQUIRE(fd >= 0);
+@@ -633,6 +1114,20 @@ static __attribute__((noinline)) void clean_exit(int ret)
+ 
+ 	char tmpbuf[128];
+ 	memset(tmpbuf, 0, 128);
++	
++	/* Clean up Track B-2 feature files */
++	if (rsn_csv_handle)
++	{
++		fclose(rsn_csv_handle);
++		rsn_csv_handle = NULL;
++	}
++	if (eap_summary_handle)
++	{
++		/* Write EAP summary before closing */
++		write_eap_summary_json(eap_summary_handle);
++		fclose(eap_summary_handle);
++		eap_summary_handle = NULL;
++	}
+ 
+ 	close_aircrack = 1;
+ 	if (ret)
+@@ -1437,6 +1932,27 @@ skip_station:
+ 
+ 			p += 2 + p[1];
+ 		}
++		
++		/* Track B-2: Extract RSN IE if requested */
++		if (opt.do_rsn_extract && rsn_csv_handle)
++		{
++			/* Get channel from DS Parameter Set IE (Element ID 3) */
++			int channel = 0;
++			unsigned char *ie_p = h80211 + 36;
++			while (ie_p < h80211 + pkh->caplen - 2)
++			{
++				if (ie_p + 2 + ie_p[1] > h80211 + pkh->caplen) break;
++				if (ie_p[0] == 3 && ie_p[1] == 1) /* DS Parameter Set */
++				{
++					channel = ie_p[2];
++					break;
++				}
++				ie_p += 2 + ie_p[1];
++			}
++			
++			extract_rsn_ie(h80211, pkh, ap_cur->bssid, ap_cur->essid, 
++						   channel, rsn_csv_handle);
++		}
+ 	}
+ 
+ 	/* packet parsing: Association Request */
+@@ -1559,6 +2075,12 @@ skip_station:
+ 
+ 	if (h80211[z] != 0x88 || h80211[z + 1] != 0x8E) return (0);
+ 
++	/* Track B-2: Analyze EAP/EAPOL packet if requested */
++	if (opt.do_eap_summary && st_cur)
++	{
++		analyze_eap_packet(h80211, pkh, ap_cur->bssid, st_cur->stmac);
++	}
++
+ 	z += 2;
+ 
+ 	ap_cur->eapol = 1;
+@@ -6024,6 +6546,15 @@ int main(int argc, char * argv[])
+ 	opt.hccap = NULL;
+ 	opt.forced_amode = 0;
+ 	opt.hccapx = NULL;
++	
++	/* Initialize new Track B-2 options */
++	opt.rsn_csv_file = NULL;
++	opt.eap_summary_file = NULL;
++	opt.anonymize_file = NULL;
++	opt.mapping_file = NULL;
++	opt.do_rsn_extract = 0;
++	opt.do_eap_summary = 0;
++	opt.do_anonymize = 0;
+ 
+ 	forceptw = 0;
+ 
+@@ -6083,6 +6614,9 @@ int main(int argc, char * argv[])
+ 			   {"restore-session", 1, 0, 'R'},
+ 			   {"simd", 1, 0, 'W'},
+ 			   {"simd-list", 0, 0, 0},
++			   {"rsn-csv", 1, 0, 0},
++			   {"eap-summary", 1, 0, 0},
++			   {"anonymize", 1, 0, 0},
+ 			   {0, 0, 0, 0}};
+ 
+ 		// Load argc/argv either from the cracking session or from arguments
+@@ -6110,6 +6644,25 @@ int main(int argc, char * argv[])
+ 
+ 				exit(EXIT_SUCCESS);
+ 			}
++			else if (strncmp(long_options[option_index].name, "rsn-csv", 7) == 0)
++			{
++				opt.do_rsn_extract = 1;
++				opt.rsn_csv_file = strdup(optarg);
++			}
++			else if (strncmp(long_options[option_index].name, "eap-summary", 11) == 0)
++			{
++				opt.do_eap_summary = 1;
++				opt.eap_summary_file = strdup(optarg);
++			}
++			else if (strncmp(long_options[option_index].name, "anonymize", 9) == 0)
++			{
++				opt.do_anonymize = 1;
++				opt.anonymize_file = strdup(optarg);
++				/* Create mapping file name */
++				char mapping_name[256];
++				snprintf(mapping_name, sizeof(mapping_name), "%s.mapping", optarg);
++				opt.mapping_file = strdup(mapping_name);
++			}
+ 		}
+ 
+ 		switch (option)
+@@ -6629,6 +7182,30 @@ int main(int argc, char * argv[])
+ 		}
+ 	}
+ 
++	/* Initialize Track B-2 feature files */
++	if (opt.do_rsn_extract && opt.rsn_csv_file)
++	{
++		rsn_csv_handle = fopen(opt.rsn_csv_file, "w");
++		if (rsn_csv_handle == NULL)
++		{
++			fprintf(stderr, "Failed to open RSN CSV file: %s\n", opt.rsn_csv_file);
++			goto exit_main;
++		}
++		/* Write CSV header */
++		fprintf(rsn_csv_handle, "BSSID,SSID,Channel,GroupCipher,PairwiseCiphers,AKMSuites,MFPC,MFPR\n");
++		fflush(rsn_csv_handle);
++	}
++	
++	if (opt.do_eap_summary && opt.eap_summary_file)
++	{
++		eap_summary_handle = fopen(opt.eap_summary_file, "w");
++		if (eap_summary_handle == NULL)
++		{
++			fprintf(stderr, "Failed to open EAP summary file: %s\n", opt.eap_summary_file);
++			goto exit_main;
++		}
++	}
++
+ 	if (_speed_test)
+ 	{
+ 		if (opt.forced_amode != 1)
+@@ -6709,6 +7286,39 @@ int main(int argc, char * argv[])
+ 		goto exit_main;
+ 	}
+ 
++	/* Handle anonymization mode */
++	if (opt.do_anonymize && opt.anonymize_file)
++	{
++		if (nbarg - optind != 1)
++		{
++			printf("Anonymization requires exactly one input file.\n");
++			goto exit_main;
++		}
++		
++		char *input_file = (restore_session && cracking_session) 
++			? cracking_session->argv[optind]
++			: argv[optind];
++			
++		printf("Anonymizing %s -> %s\n", input_file, opt.anonymize_file);
++		
++		if (anonymize_pcap_file(input_file, opt.anonymize_file) == 0)
++		{
++			if (opt.mapping_file)
++			{
++				write_mac_mapping_file(opt.mapping_file);
++				printf("MAC mapping written to %s\n", opt.mapping_file);
++			}
++			printf("Anonymization completed successfully.\n");
++			ret = SUCCESS;
++		}
++		else
++		{
++			printf("Anonymization failed.\n");
++			ret = FAILURE;
++		}
++		goto exit_main;
++	}
++
+ 	if ((!opt.essid_set && !opt.bssid_set) && (opt.is_quiet || opt.no_stdin))
+ 	{
+ 		printf("Please specify an ESSID or BSSID.\n");
