@@ -3780,14 +3780,6 @@ int main(int argc, char * argv[])
 		return (EXIT_FAILURE);
 	}
 
-	if ((memcmp(opt.f_netmask, NULL_MAC, 6) != 0)
-		&& (memcmp(opt.f_bssid, NULL_MAC, 6) == 0))
-	{
-		printf("Notice: specify bssid \"--bssid\" with \"--netmask\"\n");
-		printf("\"%s --help\" for help.\n", argv[0]);
-		return (EXIT_FAILURE);
-	}
-
 	if (lopt.mitm && (getMACcount(rBSSID) != 1 || getMACcount(rClient) < 1))
 	{
 		printf("Notice: You need to specify exactly one BSSID (-b)"
