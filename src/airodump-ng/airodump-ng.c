@@ -832,6 +832,11 @@ static const char usage[] =
 	"logcsv\n"
 	"      --ignore-negative-one : Removes the message that says\n"
 	"                              fixed channel <interface>: -1\n"
+	"      --retry-interface[=N] : Keep running when the monitor interface\n"
+	"                             briefly disappears (e.g. driver channel\n"
+	"                             changes that drop the netdev). N = max\n"
+	"                             consecutive read failures tolerated\n"
+	"                             (default 50 if N omitted).\n"
 	"      --write-interval\n"
 	"                  <seconds> : Output file(s) write interval in seconds\n"
 	"      --background <enable> : Override background detection.\n"
@@ -6022,6 +6027,7 @@ int main(int argc, char * argv[])
 		   {"min-power", 1, 0, 'p'},
 		   {"min-rxq", 1, 0, 'q'},
 		   {"real-time", 0, 0, 'T'},
+		   {"retry-interface", 2, 0, 256},
 		   {0, 0, 0, 0}};
 
 	pid_t main_pid = getpid();
@@ -6736,6 +6742,11 @@ int main(int argc, char * argv[])
 
 				break;
 
+			case 256:  /* --retry-interface[=N] */
+				opt.retry_interface = optarg ? atoi(optarg) : 50;
+				if (opt.retry_interface < 1) opt.retry_interface = 50;
+				osdep_set_tolerant(1);
+				break;
 			case 'H':
 				airodump_usage();
 				return (EXIT_SUCCESS);
@@ -6884,8 +6895,21 @@ int main(int argc, char * argv[])
 						wi[i] = wi_open(ifnam);
 						if (!wi[i])
 						{
-							printf("Can't reopen %s\n", ifnam);
-							exit(EXIT_FAILURE);
+							if (opt.retry_interface)
+							{
+								while (!wi[i])
+								{
+									usleep(100000);
+									if (lopt.do_exit) break;
+									wi[i] = wi_open(ifnam);
+								}
+								if (!wi[i]) break;
+							}
+							else
+							{
+								printf("Can't reopen %s\n", ifnam);
+								exit(EXIT_FAILURE);
+							}
 						}
 					}
 
@@ -6944,8 +6968,21 @@ int main(int argc, char * argv[])
 						wi[i] = wi_open(ifnam);
 						if (!wi[i])
 						{
-							printf("Can't reopen %s\n", ifnam);
-							exit(EXIT_FAILURE);
+							if (opt.retry_interface)
+							{
+								while (!wi[i])
+								{
+									usleep(100000);
+									if (lopt.do_exit) break;
+									wi[i] = wi_open(ifnam);
+								}
+								if (!wi[i]) break;
+							}
+							else
+							{
+								printf("Can't reopen %s\n", ifnam);
+								exit(EXIT_FAILURE);
+							}
 						}
 					}
 
@@ -7459,7 +7496,7 @@ int main(int argc, char * argv[])
 						== -1)
 					{
 						wi_read_failed++;
-						if (wi_read_failed > 1)
+						if (wi_read_failed > (opt.retry_interface ? opt.retry_interface : 1))
 						{
 							lopt.do_exit = 1;
 							break;
@@ -7478,12 +7515,25 @@ int main(int argc, char * argv[])
 						wi[i] = wi_open(ifnam);
 						if (!wi[i])
 						{
-							printf("Can't reopen %s\n", ifnam);
+							if (opt.retry_interface)
+							{
+								while (!wi[i])
+								{
+									usleep(100000);
+									if (lopt.do_exit) break;
+									wi[i] = wi_open(ifnam);
+								}
+								if (!wi[i]) break;
+							}
+							else
+							{
+								printf("Can't reopen %s\n", ifnam);
 
-							/* Restore terminal */
-							show_cursor();
+								/* Restore terminal */
+								show_cursor();
 
-							exit(EXIT_FAILURE);
+								exit(EXIT_FAILURE);
+							}
 						}
 
 						fd_raw[i] = wi_fd(wi[i]);

@@ -199,4 +199,10 @@ IMPORT int ti_write(struct tif * ti, void * buf, int len);
 IMPORT int ti_set_mac(struct tif * ti, unsigned char * mac);
 IMPORT int ti_set_ip(struct tif * ti, struct in_addr * ip);
 
+/* When enabled, libosdep suppresses perror() for transient netdev-down
+ * errno codes (ENETDOWN, ENETUNREACH, ENODEV). Those are expected while
+ * a monitor interface briefly drops during a channel change on some
+ * drivers; the caller is responsible for retrying wi_open. */
+IMPORT void osdep_set_tolerant(int enable);
+
 #endif /* __AIRCRACK_NG_OSEDEP_H__ */

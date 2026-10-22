@@ -138,6 +138,8 @@ struct communication_options
 
 	int nodetect;
 	int ignore_negative_one;
+	int retry_interface; /* 0 = legacy (exit on reopen failure), >0 = max
+	                      * consecutive read failures tolerated before exit */
 	int rtc;
 
 	int reassoc;

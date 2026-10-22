@@ -156,6 +156,10 @@ static unsigned long calc_crc_osdep(unsigned char * buf, int len)
 
 /* CRC checksum verification routine */
 
+/* Resilience toggle, set via osdep_set_tolerant() in osdep.c. Default off
+ * preserves legacy perror() behavior on read failures. */
+int _osdep_tolerant = 0;
+
 static int check_crc_buf_osdep(unsigned char * buf, int len)
 {
 	unsigned long crc;
@@ -623,7 +627,9 @@ static int linux_read(struct wif * wi,
 		return (-1);
 	else if (caplen < 0)
 	{
-		perror("read failed");
+		if (!_osdep_tolerant
+		    || (errno != ENETDOWN && errno != ENETUNREACH && errno != ENODEV))
+			perror("read failed");
 		return (-1);
 	}
 

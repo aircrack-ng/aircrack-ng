@@ -262,3 +262,9 @@ struct tif * ti_alloc(int sz)
 }
 
 void * ti_priv(struct tif * ti) { return ti->ti_priv; }
+
+/* Resilience: toggle the libosdep "tolerant" mode
+ * which suppresses perror() for transient netdev-down errno codes.
+ * The actual storage lives in the per-platform osdep (e.g. linux.c). */
+extern int _osdep_tolerant;
+EXPORT void osdep_set_tolerant(int enable) { _osdep_tolerant = enable ? 1 : 0; }
