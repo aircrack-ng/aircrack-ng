@@ -7033,7 +7033,8 @@ int main(int argc, char * argv[])
 
 		destroy(ap_cur->ivbuf, free);
 
-		// Destroy WPA struct in all stations of the selected AP
+		// Release all stations of the selected AP, so no EAPOL state carries
+		// over into the next read pass, which adds them again.
 		if (ap_cur->stations != NULL)
 		{
 			void * key = NULL;
@@ -7043,7 +7044,7 @@ int main(int argc, char * argv[])
 			{
 				INVARIANT(st_tmp != NULL);
 
-				memset(&st_tmp->wpa, 0, sizeof(struct WPA_hdsk));
+				free(st_tmp);
 			}
 		}
 	}
