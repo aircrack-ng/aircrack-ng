@@ -70,6 +70,9 @@ void ac_cpuset_destroy(ac_cpuset_t * cset)
 
 	if (cset->hwloc_cpusets != NULL)
 	{
+		for (size_t i = 0; i < cset->nbThreads; ++i)
+			hwloc_bitmap_free(cset->hwloc_cpusets[i]);
+
 		free(cset->hwloc_cpusets);
 		cset->hwloc_cpusets = NULL;
 	}
@@ -81,10 +84,11 @@ void ac_cpuset_distribute(ac_cpuset_t * cset, size_t count)
 {
 	assert(cset != NULL);
 
-	cset->nbThreads = count;
 	cset->hwloc_cpusets = calloc(count, sizeof(hwloc_cpuset_t));
 
 	if (!cset->hwloc_cpusets) return;
+
+	cset->nbThreads = count;
 
 	hwloc_obj_t root = hwloc_get_root_obj(cset->topology);
 
@@ -119,7 +123,7 @@ void ac_cpuset_bind_thread_at(ac_cpuset_t * cset, pthread_t tid, size_t idx)
 {
 	assert(cset != NULL);
 
-	if (idx > cset->nbThreads) return;
+	if (idx >= cset->nbThreads) return;
 
 	hwloc_bitmap_singlify(cset->hwloc_cpusets[idx]);
 

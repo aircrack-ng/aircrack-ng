@@ -103,6 +103,7 @@ coverage*.info
 /test-wpapsk-cmac
 /test-circular-buffer
 /test-circular-queue
+/test-cpuset
 /GPATH
 /GRTAGS
 /GSYMS

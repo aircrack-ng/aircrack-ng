@@ -80,7 +80,7 @@ void ac_cpuset_bind_thread_at(ac_cpuset_t * cset, pthread_t tid, size_t idx)
 {
 	assert(cset != NULL);
 
-	if (idx > cset->nbThreads) return;
+	if (idx >= cset->nbThreads) return;
 
 #if defined(HAVE_PTHREAD_AFFINITY_NP) && HAVE_PTHREAD_AFFINITY_NP
 	// set affinity to a specific processor, for the specified thread.

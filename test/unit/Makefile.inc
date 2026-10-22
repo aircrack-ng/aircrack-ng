@@ -70,6 +70,11 @@ test_string_has_suffix_CFLAGS  = $(UNIT_COMMON_CFLAGS)
 test_string_has_suffix_LDFLAGS = -rdynamic
 test_string_has_suffix_LDADD   = $(LIBAIRCRACK_LIBS) $(UNIT_COMMON_LDADD)
 
+test_cpuset_SOURCES = %D%/test-cpuset.c
+test_cpuset_CFLAGS  = $(UNIT_COMMON_CFLAGS)
+test_cpuset_LDFLAGS = -rdynamic
+test_cpuset_LDADD   = $(LIBAIRCRACK_LIBS) $(UNIT_COMMON_LDADD)
+
 test_wpapsk_SOURCES = %D%/test-wpapsk.c
 test_wpapsk_CFLAGS  = "-DLIBAIRCRACK_CE_WPA_PATH=\"$(LIBAIRCRACK_CE_WPA_PATH)\"" \
 											"-DABS_TOP_SRCDIR=\"$(abs_top_srcdir)\"" \
@@ -91,14 +96,14 @@ test_wpapsk_cmac_LDFLAGS = -rdynamic
 test_wpapsk_cmac_LDADD   = $(LIBAIRCRACK_LIBS) \
 												   $(UNIT_COMMON_LDADD)
 
-TESTS += test-calc-one-pmk test-circular-buffer test-circular-queue test-string-has-suffix
+TESTS += test-calc-one-pmk test-circular-buffer test-circular-queue test-string-has-suffix test-cpuset
 
 if !STATIC_BUILD
 TESTS += test-wpapsk
 TESTS += test-wpapsk-cmac
 endif
 
-check_PROGRAMS += test-calc-one-pmk test-circular-buffer test-circular-queue test-string-has-suffix
+check_PROGRAMS += test-calc-one-pmk test-circular-buffer test-circular-queue test-string-has-suffix test-cpuset
 
 if !STATIC_BUILD
 check_PROGRAMS += test-wpapsk
