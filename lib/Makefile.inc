@@ -307,7 +307,7 @@ if !STATIC_CRYPTO
 libaircrack_ce_wpa_la_LIBADD = $(LIBACCRYPTO_LIBS) $(PTHREAD_LIBS) $(CRYPTO_LDFLAGS) $(CRYPTO_LIBS) $(ZLIB_LIBS)
 endif
 
-# Build librarie(s)
+# Build libraries
 lib_LTLIBRARIES += libaircrack-ce-wpa.la
 
 if ARM

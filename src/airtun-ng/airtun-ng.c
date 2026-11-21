@@ -529,7 +529,7 @@ static int packet_recv(unsigned char * packet, size_t length)
 			smac, seqnum, &len, opt.crypt, lopt.wepkey, lopt.weplen);
 		timeoutFrag();
 
-		/* we got frag, no compelete packet avail -> do nothing */
+		/* we got frag, no complete packet avail -> do nothing */
 		if (buffer == NULL) return (1);
 
 		//             printf("got all frags!!!\n");

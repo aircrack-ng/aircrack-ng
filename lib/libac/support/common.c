@@ -675,7 +675,7 @@ int hexToInt(char s[], int len)
 
 	while (i < len)
 	{
-		if (s[i] != '0' || (i == 1 && toupper((int) s[i]) != 'X')) break;
+		if (s[i] != '0' && !(i == 1 && toupper((int) s[i]) == 'X')) break;
 
 		++i;
 	}

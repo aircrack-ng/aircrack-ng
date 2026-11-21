@@ -714,7 +714,7 @@ class packetGenerator:
                 packets.append([
                     self.buildPacket(
                         self.packetTypes[type], #packet type
-                        self.destination_addr,  #destinaion
+                        self.destination_addr,  #destination
                         self.source_addr,       #source
                         self.bss_id_addr,       #bssid
                         self.randReason()       #resoncode
