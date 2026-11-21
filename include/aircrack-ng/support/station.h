@@ -179,6 +179,7 @@ struct AP_info
 
 	int marked;
 	int marked_color;
+	int mfp; /* -1 = unknown, 0 = not enabled, 1 = capable, 2 = required */
 	struct WPS_info wps;
 };
 
@@ -210,6 +211,7 @@ struct ST_info
 	int wpatype; /* 1=wpa1 2=wpa2             */
 	int wpahash; /* 1=md5(tkip) 2=sha1(ccmp)  */
 	int wep; /* capability encryption bit */
+	int mfp; /* -1 = unknown, 0 = not enabled, 1 = capable, 2 = required */
 
 	int qos_to_ds; /* does it use 802.11e to ds */
 	int qos_fr_ds; /* does it receive 802.11e   */
