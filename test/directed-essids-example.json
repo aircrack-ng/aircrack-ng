@@ -1,0 +1,14 @@
+# Example directed ESSIDs file for airbase-ng --directed-essids
+# Each line is a JSON object with the following fields:
+#   essid (required): the network name
+#   bssid (optional): the MAC address for this AP's beacons
+#   enc   (optional): encryption type (open, wpa, wpa2, wpa2-ccmp, wpa2-tkip, wpa-tkip, wpa-ccmp, wep)
+#
+# This format allows simulating multiple distinct access points, each with
+# its own BSSID and encryption type, useful for WiFi location accuracy testing.
+
+{"essid": "Starbucks WiFi", "bssid": "AA:BB:CC:DD:EE:01", "enc": "open"}
+{"essid": "xfinitywifi", "bssid": "AA:BB:CC:DD:EE:02", "enc": "open"}
+{"essid": "NETGEAR-5G", "bssid": "AA:BB:CC:DD:EE:03", "enc": "wpa2"}
+{"essid": "linksys", "bssid": "AA:BB:CC:DD:EE:04", "enc": "wpa2"}
+{"essid": "ATT-WIFI-HOME", "bssid": "AA:BB:CC:DD:EE:05", "enc": "wpa2-ccmp"}

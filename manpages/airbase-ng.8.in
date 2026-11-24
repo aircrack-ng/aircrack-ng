@@ -142,6 +142,12 @@ This sets the time in milliseconds between each beacon.
 .I -C <seconds>
 The wildcard ESSIDs will also be beaconed this number of seconds. A good typical value to use is "-C 60" (require -P).
 .TP
+.I --pool-log <file>
+Log probed ESSIDs that are added to the beacon cache pool as CSV. Each line contains: timestamp, ESSID, client MAC address, and the assigned BSSID (if \-\-pool\-unique\-bssid is active). Useful for tracking which networks nearby devices are searching for.
+.TP
+.I --pool-unique-bssid
+When an ESSID is added to the beacon cache pool from a probe request, assign it a unique locally-administered BSSID derived from the AP's base MAC. This makes each pooled network appear as a distinct access point. The BSSID assignment is stable for the session (the same ESSID always gets the same BSSID).
+.TP
 .I -n <hex>
 ANonce (nonce from the AP) to use instead of a randomized one. It must be 64 hexadecimal characters.
 .PP
@@ -165,6 +171,19 @@ Specify a single ESSID. For SSID containing special characters, see https://www.
 .TP
 .I --essids <file>, -E <file>
 Read a list of ESSIDs out of that file. It will use the same BSSID for all AP which can generate some interesting output in Airodump-ng like: http://www.chimplabs.com/blog/2015/09/24/unintentional-fun-with-aircrack-ng-at-derbycon-5-0/
+.TP
+.I --directed-essids <file>
+Read a list of directed ESSIDs from a JSON-lines file. Each line is a JSON object with the following fields:
+.br
+  \fBessid\fR (required): the network name
+.br
+  \fBbssid\fR (optional): the MAC address to use for this network's beacons
+.br
+  \fBenc\fR (optional): encryption type \- one of "open", "wpa", "wpa2", "wpa2\-ccmp", "wpa2\-tkip", "wpa\-tkip", "wpa\-ccmp", "wep"
+.br
+Example: {"essid": "MyNetwork", "bssid": "AA:BB:CC:DD:EE:FF", "enc": "wpa2"}
+.br
+Lines starting with # are treated as comments. Each entry broadcasts beacons with its own BSSID and encryption type, allowing simulation of multiple distinct access points.
 .SH AUTHOR
 This manual page was written by Thomas d\(aqOtreppe.
 Permission is granted to copy, distribute and/or modify this document under the terms of the GNU General Public License, Version 2 or any later version published by the Free Software Foundation

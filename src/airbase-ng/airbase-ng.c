@@ -184,6 +184,9 @@ static const char usage[]
 	  "      -I interval      : sets the beacon interval value in ms\n"
 	  "      -C seconds       : enables beaconing of probed ESSID values "
 	  "(requires -P)\n"
+	  "      --pool-log file  : log probed ESSIDs added to the pool as CSV\n"
+	  "      --pool-unique-bssid : assign a unique BSSID to each pooled "
+	  "ESSID\n"
 	  "      -n hex           : User specified ANonce when doing the 4-way "
 	  "handshake\n"
 	  "\n"
@@ -194,6 +197,8 @@ static const char usage[]
 	  "      --clients file   : read a list of MACs out of that file\n"
 	  "      --essid ESSID    : specify a single ESSID (default: default)\n"
 	  "      --essids file    : read a list of ESSIDs out of that file\n"
+	  "      --directed-essids file : read directed ESSIDs with per-network\n"
+	  "                               bssid/encryption from a JSON-lines file\n"
 	  "\n"
 	  "      --help           : Displays this usage screen\n"
 	  "\n";
@@ -240,6 +245,13 @@ static struct local_options
 	// Fixed nonce
 	int use_fixed_nonce;
 	unsigned char fixed_nonce[32];
+
+	// Pool features
+	char * pool_log_file;
+	FILE * pool_log_fp;
+	int pool_unique_bssid;
+	unsigned char pool_bssid_base[6];
+	int pool_bssid_counter;
 } lopt;
 
 struct devices dev;
@@ -269,6 +281,11 @@ struct ESSID_list
 	unsigned char len;
 	pESSID_t next;
 	time_t expire;
+	int has_bssid;
+	unsigned char bssid[6];
+	int wpa1type;
+	int wpa2type;
+	int is_open;
 };
 
 #include "aircrack-ng/support/station.h"
@@ -360,6 +377,12 @@ static int addESSID(char * essid, int len, int expiration)
 	{
 		tmp->expire = 0;
 	}
+
+	tmp->has_bssid = 0;
+	memset(tmp->bssid, 0, 6);
+	tmp->wpa1type = 0;
+	tmp->wpa2type = 0;
+	tmp->is_open = 0;
 
 	tmp->next = NULL;
 	cur->next = tmp;
@@ -562,51 +585,6 @@ static int getESSID(char * essid)
 	return (len);
 }
 
-static int getNextESSID(char * essid)
-{
-	int len;
-	pESSID_t cur;
-
-	ALLEGE(pthread_mutex_lock(&rESSIDmutex) == 0);
-
-	if (rESSID == NULL || rESSID->next == NULL)
-	{
-		ALLEGE(pthread_mutex_unlock(&rESSIDmutex) == 0);
-		return (0);
-	}
-
-	len = strlen(essid);
-	for (cur = rESSID->next; cur != NULL; cur = cur->next)
-	{
-		if (*essid == 0)
-		{
-			break;
-		}
-		// Check if current SSID.
-		if (cur->len == len && cur->essid != NULL
-			&& strcmp(essid, cur->essid) == 0)
-		{
-			// SSID found, get next one
-			cur = cur->next;
-			if (cur == NULL)
-			{
-				cur = rESSID->next;
-			}
-			break;
-		}
-	}
-	len = 0;
-
-	if (cur != NULL)
-	{
-		memcpy(essid, cur->essid, cur->len + 1);
-		len = cur->len;
-	}
-	ALLEGE(pthread_mutex_unlock(&rESSIDmutex) == 0);
-
-	return (len);
-}
-
 static int getESSIDcount(void)
 {
 	pESSID_t cur;
@@ -658,6 +636,377 @@ static int addESSIDfile(char * filename)
 	fclose(list);
 
 	return (0);
+}
+
+struct directed_essid_info
+{
+	int has_bssid;
+	unsigned char bssid[6];
+	int wpa1type;
+	int wpa2type;
+	int is_open;
+};
+
+static int addDirectedESSID(const char * essid,
+							int len,
+							const unsigned char * bssid,
+							int wpa1type,
+							int wpa2type,
+							int is_open)
+{
+	if (addESSID((char *) essid, len, 0) != 0) return -1;
+
+	ALLEGE(pthread_mutex_lock(&rESSIDmutex) == 0);
+
+	pESSID_t cur = rESSID;
+	while (cur->next != NULL)
+	{
+		if (cur->next->len == len
+			&& memcmp(cur->next->essid, essid, len) == 0)
+		{
+			if (bssid != NULL)
+			{
+				cur->next->has_bssid = 1;
+				memcpy(cur->next->bssid, bssid, 6);
+			}
+			cur->next->wpa1type = wpa1type;
+			cur->next->wpa2type = wpa2type;
+			cur->next->is_open = is_open;
+			break;
+		}
+		cur = cur->next;
+	}
+
+	ALLEGE(pthread_mutex_unlock(&rESSIDmutex) == 0);
+	return 0;
+}
+
+static int getNextDirectedESSID(char * essid, struct directed_essid_info * info)
+{
+	int len;
+	pESSID_t cur;
+
+	ALLEGE(pthread_mutex_lock(&rESSIDmutex) == 0);
+
+	if (rESSID == NULL || rESSID->next == NULL)
+	{
+		ALLEGE(pthread_mutex_unlock(&rESSIDmutex) == 0);
+		return (0);
+	}
+
+	len = strlen(essid);
+	for (cur = rESSID->next; cur != NULL; cur = cur->next)
+	{
+		if (*essid == 0)
+		{
+			break;
+		}
+		if (cur->len == len && cur->essid != NULL
+			&& strcmp(essid, cur->essid) == 0)
+		{
+			cur = cur->next;
+			if (cur == NULL)
+			{
+				cur = rESSID->next;
+			}
+			break;
+		}
+	}
+	len = 0;
+
+	if (cur != NULL)
+	{
+		memcpy(essid, cur->essid, cur->len + 1);
+		len = cur->len;
+		if (info != NULL)
+		{
+			info->has_bssid = cur->has_bssid;
+			memcpy(info->bssid, cur->bssid, 6);
+			info->wpa1type = cur->wpa1type;
+			info->wpa2type = cur->wpa2type;
+			info->is_open = cur->is_open;
+		}
+	}
+	ALLEGE(pthread_mutex_unlock(&rESSIDmutex) == 0);
+
+	return (len);
+}
+
+static char * json_find_string(const char * json, const char * key, char * out, int maxlen)
+{
+	char search[128];
+	const char * p;
+	const char * start;
+	const char * end;
+	int slen;
+
+	snprintf(search, sizeof(search), "\"%s\"", key);
+	p = strstr(json, search);
+	if (p == NULL) return NULL;
+
+	p += strlen(search);
+	while (*p == ' ' || *p == '\t' || *p == ':') p++;
+
+	if (*p != '"') return NULL;
+	p++;
+	start = p;
+
+	end = strchr(start, '"');
+	if (end == NULL) return NULL;
+
+	slen = (int) (end - start);
+	if (slen >= maxlen) slen = maxlen - 1;
+	memcpy(out, start, slen);
+	out[slen] = '\0';
+
+	return out;
+}
+
+static int parse_enc_type(const char * enc, int * wpa1type, int * wpa2type, int * is_open)
+{
+	*wpa1type = 0;
+	*wpa2type = 0;
+	*is_open = 0;
+
+	if (strcasecmp(enc, "open") == 0 || strcasecmp(enc, "none") == 0)
+	{
+		*is_open = 1;
+		return 0;
+	}
+	else if (strcasecmp(enc, "wpa2") == 0 || strcasecmp(enc, "wpa2-ccmp") == 0)
+	{
+		*wpa2type = 4; // CCMP
+		return 0;
+	}
+	else if (strcasecmp(enc, "wpa2-tkip") == 0)
+	{
+		*wpa2type = 2; // TKIP
+		return 0;
+	}
+	else if (strcasecmp(enc, "wpa") == 0 || strcasecmp(enc, "wpa1") == 0
+			 || strcasecmp(enc, "wpa-tkip") == 0)
+	{
+		*wpa1type = 2; // TKIP
+		return 0;
+	}
+	else if (strcasecmp(enc, "wpa-ccmp") == 0 || strcasecmp(enc, "wpa1-ccmp") == 0)
+	{
+		*wpa1type = 4; // CCMP
+		return 0;
+	}
+	else if (strcasecmp(enc, "wep") == 0)
+	{
+		return 0;
+	}
+
+	return -1;
+}
+
+static int addDirectedESSIDfile(const char * filename)
+{
+	REQUIRE(filename != NULL);
+
+	FILE * list;
+	char line[1024];
+	char essid[256];
+	char bssid_str[32];
+	char enc[32];
+	unsigned char mac[6];
+	int wpa1type, wpa2type, is_open;
+	int count = 0;
+	int linenum = 0;
+
+	list = fopen(filename, "r");
+	if (list == NULL)
+	{
+		perror("Unable to open directed ESSID list");
+		return (-1);
+	}
+
+	while (fgets(line, sizeof(line), list) != NULL)
+	{
+		linenum++;
+		rtrim(line);
+		if (strlen(line) == 0 || line[0] == '#') continue;
+
+		if (json_find_string(line, "essid", essid, sizeof(essid)) == NULL)
+		{
+			fprintf(stderr,
+					"Warning: line %d: missing \"essid\" field, skipping\n",
+					linenum);
+			continue;
+		}
+
+		int has_bssid = 0;
+		memset(mac, 0, 6);
+		if (json_find_string(line, "bssid", bssid_str, sizeof(bssid_str))
+			!= NULL)
+		{
+			if (getmac(bssid_str, 1, mac) != 0)
+			{
+				fprintf(stderr,
+						"Warning: line %d: invalid bssid \"%s\", ignoring\n",
+						linenum,
+						bssid_str);
+			}
+			else
+			{
+				has_bssid = 1;
+			}
+		}
+
+		wpa1type = 0;
+		wpa2type = 0;
+		is_open = 0;
+		if (json_find_string(line, "enc", enc, sizeof(enc)) != NULL)
+		{
+			if (parse_enc_type(enc, &wpa1type, &wpa2type, &is_open) != 0)
+			{
+				fprintf(stderr,
+						"Warning: line %d: unknown enc \"%s\", using default\n",
+						linenum,
+						enc);
+			}
+		}
+
+		if (addDirectedESSID(
+				essid,
+				(int) strlen(essid),
+				has_bssid ? mac : NULL,
+				wpa1type,
+				wpa2type,
+				is_open)
+			!= 0)
+		{
+			fprintf(stderr,
+					"Warning: line %d: failed to add essid \"%s\"\n",
+					linenum,
+					essid);
+			continue;
+		}
+		count++;
+	}
+
+	fclose(list);
+
+	printf("Loaded %d directed ESSIDs from %s\n", count, filename);
+	return (0);
+}
+
+static void pool_generate_bssid(unsigned char * out)
+{
+	int idx;
+
+	ALLEGE(pthread_mutex_lock(&rESSIDmutex) == 0);
+	idx = lopt.pool_bssid_counter++;
+	ALLEGE(pthread_mutex_unlock(&rESSIDmutex) == 0);
+
+	memcpy(out, lopt.pool_bssid_base, 6);
+	out[3] = (unsigned char) ((out[3] + ((idx >> 16) & 0xFF)) & 0xFF);
+	out[4] = (unsigned char) ((out[4] + ((idx >> 8) & 0xFF)) & 0xFF);
+	out[5] = (unsigned char) ((out[5] + (idx & 0xFF)) & 0xFF);
+	out[0] &= 0xFE; // unicast
+	out[0] |= 0x02; // locally administered
+}
+
+static void pool_log_essid(const char * essid,
+						   int len,
+						   const unsigned char * client_mac,
+						   const unsigned char * assigned_bssid)
+{
+	struct timeval tv;
+	struct tm tm_info;
+	char timebuf[64];
+
+	if (lopt.pool_log_fp == NULL) return;
+
+	gettimeofday(&tv, NULL);
+	localtime_r(&tv.tv_sec, &tm_info);
+	strftime(timebuf, sizeof(timebuf), "%Y-%m-%d %H:%M:%S", &tm_info);
+
+	fprintf(lopt.pool_log_fp,
+			"%s.%03d,%.*s,"
+			"%02X:%02X:%02X:%02X:%02X:%02X,",
+			timebuf,
+			(int) (tv.tv_usec / 1000),
+			len,
+			essid,
+			client_mac[0],
+			client_mac[1],
+			client_mac[2],
+			client_mac[3],
+			client_mac[4],
+			client_mac[5]);
+
+	if (assigned_bssid != NULL)
+	{
+		fprintf(lopt.pool_log_fp,
+				"%02X:%02X:%02X:%02X:%02X:%02X",
+				assigned_bssid[0],
+				assigned_bssid[1],
+				assigned_bssid[2],
+				assigned_bssid[3],
+				assigned_bssid[4],
+				assigned_bssid[5]);
+	}
+
+	fprintf(lopt.pool_log_fp, "\n");
+	fflush(lopt.pool_log_fp);
+}
+
+static int addPoolESSID(char * essid, int len, int expiration,
+						const unsigned char * client_mac)
+{
+	int is_new;
+	unsigned char gen_bssid[6];
+
+	ALLEGE(pthread_mutex_lock(&rESSIDmutex) == 0);
+	is_new = 1;
+	if (rESSID != NULL)
+	{
+		pESSID_t cur = rESSID;
+		while (cur->next != NULL)
+		{
+			if (cur->next->len == len
+				&& memcmp(cur->next->essid, essid, len) == 0)
+			{
+				is_new = 0;
+				break;
+			}
+			cur = cur->next;
+		}
+	}
+	ALLEGE(pthread_mutex_unlock(&rESSIDmutex) == 0);
+
+	if (addESSID(essid, len, expiration) != 0) return -1;
+
+	if (is_new)
+	{
+		if (lopt.pool_unique_bssid)
+		{
+			pool_generate_bssid(gen_bssid);
+
+			ALLEGE(pthread_mutex_lock(&rESSIDmutex) == 0);
+			pESSID_t cur = rESSID;
+			while (cur->next != NULL)
+			{
+				if (cur->next->len == len
+					&& memcmp(cur->next->essid, essid, len) == 0)
+				{
+					cur->next->has_bssid = 1;
+					memcpy(cur->next->bssid, gen_bssid, 6);
+					break;
+				}
+				cur = cur->next;
+			}
+			ALLEGE(pthread_mutex_unlock(&rESSIDmutex) == 0);
+		}
+
+		pool_log_essid(essid, len, client_mac,
+					   lopt.pool_unique_bssid ? gen_bssid : NULL);
+	}
+
+	return 0;
 }
 
 static int addMACfile(pMAC_t pMAC, char * filename)
@@ -2060,7 +2409,8 @@ packet_recv(uint8_t * packet, size_t length, struct AP_conf * apc, int external)
 
 					/* add this to the beacon queue */
 					if (lopt.beacon_cache)
-						addESSID((char *) essid, (int) len, lopt.beacon_cache);
+						addPoolESSID((char *) essid, (int) len,
+									 lopt.beacon_cache, smac);
 
 					/* check if it's already in the ring buffer */
 					for (i = 0; i < NB_PRB; i++)
@@ -2729,6 +3079,9 @@ static THREAD_ENTRY(beacon_thread)
 	uint8_t essid[MAX_IE_ELEMENT_SIZE + 1];
 	float f, ticks[3];
 	ssize_t rc;
+	struct directed_essid_info dinfo;
+	int use_wpa1, use_wpa2;
+	unsigned char beacon_bssid[6];
 
 	memset(essid, 0, MAX_IE_ELEMENT_SIZE + 1);
 	memcpy(&apc, arg, sizeof(struct AP_conf));
@@ -2784,11 +3137,25 @@ static THREAD_ENTRY(beacon_thread)
 
 			/* flush expired ESSID entries */
 			flushESSID();
-			essid_len = (size_t) getNextESSID((char *) essid);
+			memset(&dinfo, 0, sizeof(dinfo));
+			essid_len = (size_t) getNextDirectedESSID((char *) essid, &dinfo);
 			if (!essid_len)
 			{
 				strncpy((char *) essid, "default", sizeof(essid) - 1);
 				essid_len = strlen("default"); //-V814
+			}
+
+			if (dinfo.has_bssid)
+				memcpy(beacon_bssid, dinfo.bssid, 6);
+			else
+				memcpy(beacon_bssid, apc.bssid, 6);
+
+			use_wpa1 = dinfo.wpa1type ? dinfo.wpa1type : lopt.wpa1type;
+			use_wpa2 = dinfo.wpa2type ? dinfo.wpa2type : lopt.wpa2type;
+			if (dinfo.is_open)
+			{
+				use_wpa1 = 0;
+				use_wpa2 = 0;
 			}
 
 			beacon_len = 0;
@@ -2800,11 +3167,11 @@ static THREAD_ENTRY(beacon_thread)
 			memcpy(beacon + beacon_len, BROADCAST, 6); // destination
 			beacon_len += 6;
 			if (!lopt.adhoc)
-				memcpy(beacon + beacon_len, apc.bssid, 6); // source
+				memcpy(beacon + beacon_len, beacon_bssid, 6); // source
 			else
 				memcpy(beacon + beacon_len, opt.r_smac, 6); // source
 			beacon_len += 6;
-			memcpy(beacon + beacon_len, apc.bssid, 6); // bssid
+			memcpy(beacon + beacon_len, beacon_bssid, 6); // bssid
 			beacon_len += 6;
 			memcpy(beacon + beacon_len, "\x00\x00", 2); // seq+frag
 			beacon_len += 2;
@@ -2820,6 +3187,10 @@ static THREAD_ENTRY(beacon_thread)
 				= (uint8_t) (((apc.interval * MAX(getESSIDcount(), 1)) >> 8)
 							 & 0xFF);
 			memcpy(beacon + beacon_len + 10, apc.capa, 2); // capability
+			if (dinfo.is_open)
+				beacon[beacon_len + 10] &= (uint8_t) ~0x10;
+			else if (use_wpa1 > 0 || use_wpa2 > 0)
+				beacon[beacon_len + 10] |= 0x10;
 			beacon_len += 12;
 
 			beacon[beacon_len] = 0x00; // essid tag
@@ -2860,18 +3231,19 @@ static THREAD_ENTRY(beacon_thread)
 
 			beacon_len += 3;
 
-			if (lopt.allwpa)
+			if (!dinfo.is_open && lopt.allwpa
+				&& !dinfo.wpa1type && !dinfo.wpa2type)
 			{
 				memcpy(beacon + beacon_len,
 					   ALL_WPA2_TAGS,
 					   sizeof(ALL_WPA2_TAGS) - 1);
 				beacon_len += sizeof(ALL_WPA2_TAGS) - 1;
 			}
-			else if (lopt.wpa2type > 0)
+			else if (use_wpa2 > 0)
 			{
 				memcpy(beacon + beacon_len, WPA2_TAG, 22);
-				beacon[beacon_len + 7] = (uint8_t) lopt.wpa2type;
-				beacon[beacon_len + 13] = (uint8_t) lopt.wpa2type;
+				beacon[beacon_len + 7] = (uint8_t) use_wpa2;
+				beacon[beacon_len + 13] = (uint8_t) use_wpa2;
 				beacon_len += 22;
 			}
 
@@ -2881,18 +3253,19 @@ static THREAD_ENTRY(beacon_thread)
 				   sizeof(EXTENDED_RATES) - 1);
 			beacon_len += sizeof(EXTENDED_RATES) - 1;
 
-			if (lopt.allwpa)
+			if (!dinfo.is_open && lopt.allwpa
+				&& !dinfo.wpa1type && !dinfo.wpa2type)
 			{
 				memcpy(beacon + beacon_len,
 					   ALL_WPA1_TAGS,
 					   sizeof(ALL_WPA1_TAGS) - 1);
 				beacon_len += sizeof(ALL_WPA1_TAGS) - 1;
 			}
-			else if (lopt.wpa1type > 0)
+			else if (use_wpa1 > 0)
 			{
 				memcpy(beacon + beacon_len, WPA1_TAG, 24);
-				beacon[beacon_len + 11] = (uint8_t) lopt.wpa1type;
-				beacon[beacon_len + 17] = (uint8_t) lopt.wpa1type;
+				beacon[beacon_len + 11] = (uint8_t) use_wpa1;
+				beacon[beacon_len + 17] = (uint8_t) use_wpa1;
 				beacon_len += 24;
 			}
 
@@ -3255,6 +3628,10 @@ int main(int argc, char * argv[])
 	lopt.channel = 0;
 	lopt.beacon_cache = 0; /* disable by default */
 	lopt.use_fixed_nonce = 0;
+	lopt.pool_log_file = NULL;
+	lopt.pool_log_fp = NULL;
+	lopt.pool_unique_bssid = 0;
+	lopt.pool_bssid_counter = 0;
 	lopt.ti_mtu = TI_MTU;
 	lopt.wif_mtu = WIF_MTU;
 	invalid_channel_displayed = 0;
@@ -3274,6 +3651,9 @@ int main(int argc, char * argv[])
 			   {"clients", 1, 0, 'D'},
 			   {"essid", 1, 0, 'e'},
 			   {"essids", 1, 0, 'E'},
+			   {"directed-essids", 1, 0, 'J'},
+			   {"pool-log", 1, 0, 'K'},
+			   {"pool-unique-bssid", 0, 0, 'U'},
 			   {"promiscuous", 0, 0, 'P'},
 			   {"interval", 1, 0, 'I'},
 			   {"mitm", 0, 0, 'M'},
@@ -3421,6 +3801,26 @@ int main(int argc, char * argv[])
 				if (addESSIDfile(optarg) != 0) return (EXIT_FAILURE);
 
 				lopt.f_essid = 1;
+
+				break;
+
+			case 'J':
+
+				if (addDirectedESSIDfile(optarg) != 0) return (EXIT_FAILURE);
+
+				lopt.f_essid = 1;
+
+				break;
+
+			case 'K':
+
+				lopt.pool_log_file = optarg;
+
+				break;
+
+			case 'U':
+
+				lopt.pool_unique_bssid = 1;
 
 				break;
 
@@ -4046,6 +4446,21 @@ int main(int argc, char * argv[])
 	}
 
 	memcpy(apc.bssid, opt.r_bssid, 6);
+
+	memcpy(lopt.pool_bssid_base, opt.r_bssid, 6);
+
+	if (lopt.pool_log_file != NULL)
+	{
+		lopt.pool_log_fp = fopen(lopt.pool_log_file, "a");
+		if (lopt.pool_log_fp == NULL)
+		{
+			perror("Unable to open pool log file");
+			return (EXIT_FAILURE);
+		}
+		fprintf(lopt.pool_log_fp, "timestamp,essid,client_mac,assigned_bssid\n");
+		fflush(lopt.pool_log_fp);
+	}
+
 	if (getESSIDcount() == 1 && lopt.hidden != 1)
 	{
 		apc.essid = (char *) malloc(MAX_IE_ELEMENT_SIZE + 1);
